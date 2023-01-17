@@ -31,17 +31,17 @@
         "crypto": "^1.0.1",
         "dotenv": "^8.2.0",
         "express": "^4.17.1",
-        "express-handlebars": "^3.0.0",
+        "express-handlebars": "^6.0.6",
         "jshint": "^2.11.0",
         "jsonapi-datastore": "^0.4.0-beta",
         "lodash": "^4.17.21",
         "mysql2": "^2.1.0",
         "node-cache": "^5.1.2",
-        "npm-check-updates": "^4.1.1",
-        "passport": "^0.4.1",
+        "npm-check-updates": "^16.6.2",
+        "passport": "^0.6.0",
         "passport-google-oauth20": "^2.0.0",
         "passport-reddit": "^0.2.4",
-        "patreon": "^0.4.1",
+        "patreon": "^0.0.1",
         "prisma": "^4.5.0",
         "rate-limiter-flexible": "^2.1.10",
         "sequelize": "^5.21.6",
@@ -50,7 +50,7 @@
     },
     "devDependencies": {
         "concurrently": "^7.2.1",
-        "handlebars": "4.5.3",
+        "handlebars": "^4.7.7",
         "nodemon": "^2.0.2"
     }
 }
