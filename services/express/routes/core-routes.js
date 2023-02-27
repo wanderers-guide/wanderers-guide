@@ -5,6 +5,21 @@ const Sequelize = require("sequelize");
 const homebrewRoutes = require("./homebrew/homebrew-routes");
 const buildsRoutes = require("./builds/builds-routes");
 const gmToolsRoutes = require("./gm_tools/gm-tools-routes");
+const vueDataRoutes = require("./vue-data-routes");
+const path = require("path");
+const fs = require("fs");
+
+// Vue Data Route
+router.use("/vue-data", vueDataRoutes);
+
+const page = fs.readFileSync(
+  path.resolve(__dirname, "../../../client/dist/index-vue.html"),
+  'utf-8',
+)
+
+router.get("/v/*", (req, res) => {
+  res.send(page)
+})
 
 // Home Route
 router.get("/", (req, res) => {

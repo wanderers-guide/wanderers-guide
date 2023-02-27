@@ -1,0 +1,331 @@
+{{#section 'header'}}
+
+<link rel="stylesheet" href="/css/encounter-builder.css">
+<link rel="stylesheet" href="/css/homebrew-builders.css">
+
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/encounter-builder.js"></script>
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/creature-select-quickview.js"></script>
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/roll-initiative.js"></script>
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/creature-utils.js"></script>
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/conditions-ui.js"></script>
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/balance-utils.js"></script>
+
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/campaigns-ui.js"></script>
+<script type="text/javascript" src="/js/gm_tools/encounter_builder/campaigns-handler.js"></script>
+<script type="text/javascript" src="/js/libraries/display_campaign/display-campaign.js"></script>
+
+<script src="/js/libraries/confirm_message/confirm-message.js"></script>
+
+<!-- Quickview -->
+<script src="/js/sheet/quickviews/_quickviews.js"></script>
+<script src="/js/sheet/quickviews/creature-view.js"></script>
+<script src="/js/sheet/quickviews/creature-custom-view.js"></script>
+<script src="/js/sheet/quickviews/ability-view.js"></script>
+<script src="/js/sheet/quickviews/tag-view.js"></script>
+<script src="/js/sheet/quickviews/character-view.js"></script>
+
+<script src="/js/sheet/quickviews/feat-view.js"></script>
+<script src="/js/sheet/quickviews/spell-view.js"></script>
+<script src="/js/sheet/quickviews/item-view.js"></script>
+<script src="/js/sheet/quickviews/condition-view.js"></script>
+<script src="/js/sheet/utils/item-utils.js"></script>
+<script src="/js/sheet/utils/material-utils.js"></script>
+
+<script src="/js/wsc/text-processing.js"></script>
+
+{{/section}}
+
+{{#section 'nav_home'}}
+<li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+<li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+<li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+<li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+<li><a href="/gm-tools" class="active">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+<li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+<li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+<div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader is-hidden">
+    <div class="lds-roller">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</div>
+
+<div class="container py-4 text-center">
+
+    <div class="box pt-0">
+
+        <p class="has-text-left is-size-4 title-font has-txt-value-string">Encounters</p>
+
+        <div class="is-flex" style="justify-content: space-between;">
+            <div id="encounter-tab-list" class="is-flex" style="flex-wrap: wrap;">
+                <!-- Encounter tabs populate here -->
+            </div>
+            <div>
+                <span id="encounter-add-btn" class="icon has-text-info cursor-clickable mb-3 mx-3">
+                    <i class="fal fa-lg fa-plus-circle"></i>
+                </span>
+            </div>
+        </div>
+
+        <hr class="my-1 mx-0">
+
+        <div id="encounter-view">
+
+            <div class="columns is-marginless">
+
+                <div class="column is-3 pl-0 pr-4">
+                    <input id="encounter-name-input" class="input" type="text" autocomplete="off" placeholder="Encounter Name">
+                </div>
+
+                <div class="column is-3 pl-0 is-flex">
+                    <div id="encounter-section-party-size" class="field">
+                        <p class="control has-icons-left">
+                            <input id="encounter-party-size-input" class="input" type="number" autocomplete="off" placeholder="Party" value="4" min="1" max="30">
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-users"></i>
+                            </span>
+                        </p>
+                    </div>
+                    <div id="encounter-section-party-level" class="field">
+                        <p class="control has-icons-left">
+                            <input id="encounter-party-level-input" class="input" type="number" autocomplete="off" placeholder="Level" value="1" min="1" max="30">
+                            <span class="icon is-small is-left">
+                                <span class="font-bebas-neue">Lvl</span>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="column is-flex" style="justify-content: space-between; flex-wrap: wrap;">
+
+                    <div>
+                        <button id="encounter-roll-initiative-btn" class="button is-info is-rounded is-outlined is-very-small">
+                            <span class="is-italic">Roll Initiative!</span>
+                            <span class="icon">
+                                <i class="fas fa-dice-d20"></i>
+                            </span>
+                        </button>
+                        
+                    </div>
+
+                    <div class="field has-addons">
+                      <p class="control">
+                        <button id="encounter-add-creature-btn" class="button is-info is-rounded is-very-small mb-1">
+                            <span>Add Creature</span>
+                            <span class="icon">
+                                <i class="fas fa-dragon"></i>
+                            </span>
+                        </button>
+                      </p>
+                      <p class="control">
+                        <button id="encounter-add-custom-btn" class="button is-info-offcolor is-rounded is-very-small">
+                            <span>Add Custom</span>
+                            <span class="icon">
+                                <i class="fas fa-user-crown"></i>
+                            </span>
+                        </button>
+                      </p>
+                    </div>
+
+                    <div>
+                      <button id="encounter-set-campaign-btn" class="button is-success is-rounded is-outlined is-very-small">
+                            <span id="encounter-set-campaign-title">Set Campaign</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="columns is-marginless is-mobile">
+                <div class="column is-1 text-center is-paddingless">
+                    <p class=""><strong class="has-txt-listing">Init.</strong></p>
+                </div>
+                <div class="column is-3 text-left is-paddingless">
+                    <p class="pl-3"><strong class="has-txt-listing">Name</strong></p>
+                </div>
+                <div class="column is-1 is-paddingless">
+                    <!-- View btn -->
+                </div>
+                <div class="column is-2 text-center is-paddingless">
+                    <p><strong class="has-txt-listing">HP</strong></p>
+                </div>
+                <div class="column is-4 text-left is-paddingless">
+                    <p class="pl-3"><strong class="has-txt-listing">Conditions</strong></p>
+                </div>
+                <div class="column is-1 is-paddingless">
+                    <!-- Delete btn -->
+                </div>
+            </div>
+            <div class="is-divider hr-light is-marginless"></div>
+
+            <div id="encounter-members-view">
+                <!-- Encounter members populate here -->
+            </div>
+
+            <div class="pos-relative mt-3" style="width: calc(20% + 100px); margin: auto;">
+                <progress id="encounter-balance-bar" class="progress is-marginless" value="100" max="100">100%</progress>
+                <span id="encounter-balance-display" class="text-white is-size-7-5" style="position: absolute; top: 1px; left: 0; right: 0; margin-left: auto; margin-right: auto;"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+{{#section 'overlay'}}
+    <!-- Right Quickview -->
+    <div id="quickviewDefault" class="quickview">
+        <div class="quickview-header">
+            <p id="quickViewTitle" class="title is-size-5 has-txt-value-number"></p>
+            <div class="is-inline-flex">
+                <p id="quickViewTitleRight"></p>
+                <p id="quickViewTitleClose"></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- Left Quickview -->
+    <div id="quickviewLeftDefault" class="quickview is-left">
+        <div class="quickview-header">
+            <p id="quickViewLeftTitle" class="title is-size-5 has-txt-value-number"></p>
+            <div class="is-inline-flex">
+                <p id="quickViewLeftTitleClose"></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewLeftContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Conditions Modal -->
+    <div id="conditionsModalDefault" name="" class="modal" style="z-index:30;">
+    <div id="conditionsModalBackground" class="modal-background"></div>
+    <div class="modal-card">
+        <div class="modal-card-head">
+        <p id="conditionsModalTitle" class="modal-card-title has-text-centered is-size-4 has-txt-value-number"></p>
+        <a id="conditionsModalRemoveButton" class="is-pulled-right is-size-6"><span class="icon is-medium has-text-danger"><i class="fal fa-minus-circle"></i></span></a>
+        </div>
+        <section class="modal-card-body py-2">
+            <p id="conditionsModalSourceSection" class="has-text-centered"><strong class="has-txt-listing">From: </strong><em id="conditionsModalSourceContent"></em></p>
+            <p id="conditionsModalContent"></p>
+        </section>
+        <div id="conditionsModalFooter" class="modal-card-foot buttons is-centered">
+                <button id="conditionsModalSubtractButton" class="button is-very-small is-info is-rounded">
+                    <span class="icon">
+                        <i class="fas fa-heading fa-minus"></i>
+                    </span>
+                </button>
+                <button id="conditionsModalValueButton" class="button is-static has-bg-selectable-hover border-dark">
+                    <p id="conditionsModalValue" class="has-txt-value-number"></p>
+                </button>
+                <button id="conditionsModalAddButton" class="button is-very-small is-info is-rounded">
+                    <span class="icon">
+                        <i class="fas fa-heading fa-plus"></i>
+                    </span>
+                </button>
+        </div>
+    </div>
+    <button id="conditionsModalCloseButton" class="modal-close is-large is-hidden-mobile" aria-label="close"></button>
+    </div>
+
+    <!-- Conditions Select Modal -->
+    <div id="conditionsSelectModalDefault" name="" class="modal" style="z-index:30;">
+    <div id="conditionsSelectModalBackground" class="modal-background"></div>
+    <div class="modal-card">
+        <div class="modal-card-head">
+        <p id="conditionsSelectModalTitle" class="modal-card-title has-text-centered is-size-4 has-txt-value-number">Choose a Condition</p>
+        <button id="conditionsSelectModalCloseButton" class="delete modal-card-close" aria-label="close"></button>
+        </div>
+        <section class="modal-card-body is-paddingless use-invisible-scrollbar p-2">
+            <div id="conditionsSelectModalContent" class="tile is-ancestor is-vertical"></div>
+        </section>
+        <div class="modal-card-foot">
+        </div>
+    </div>
+    </div>
+
+    <!-- Roll Initiative Modal -->
+    <div id="rollInitiativeModalDefault" name="" class="modal" style="z-index:30;">
+    <div id="rollInitiativeModalBackground" class="modal-background"></div>
+    <div class="modal-card">
+        <div class="modal-card-head">
+        <p id="rollInitiativeModalTitle" class="modal-card-title has-text-centered is-size-4 has-txt-value-number">Roll Initiative</p>
+        <button id="rollInitiativeModalCloseButton" class="delete modal-card-close" aria-label="close"></button>
+        </div>
+        <section class="modal-card-body is-paddingless use-custom-scrollbar p-2 pt-3" style="overflow-y: scroll;     overflow-x: hidden;">
+            <div id="rollInitiativeModalContent" class="tile is-ancestor is-vertical"></div>
+        </section>
+        <div class="modal-card-foot p-2">
+            <div style="margin: auto;">
+            <button id="rollInitiativeBtn" class="button is-info is-rounded is-small">
+                <span class="">Roll</span>
+                <span class="icon">
+                    <i class="fas fa-dice-d20"></i>
+                </span>
+            </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Campaigns Select Modal -->
+    <div id="campaignsSelectModalDefault" name="" class="modal" style="z-index:30;">
+    <div id="campaignsSelectModalBackground" class="modal-background"></div>
+    <div class="modal-card">
+        <div class="modal-card-head">
+        <p id="campaignsSelectModalTitle" class="modal-card-title has-text-centered is-size-4 has-txt-value-number">Select Campaign</p>
+        <button id="campaignsSelectModalCloseButton" class="delete modal-card-close" aria-label="close"></button>
+        </div>
+        <section class="modal-card-body is-paddingless use-invisible-scrollbar p-2">
+            <div id="campaignsSelectModalContent" class="tile is-ancestor is-vertical"></div>
+        </section>
+        <div class="modal-card-foot">
+        </div>
+    </div>
+    </div>
+
+{{/section}}

@@ -1,0 +1,632 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/homebrew-builders.css">
+    <script type="text/javascript" src="/js/confirm-page-leave.js"></script>
+    <script type="text/javascript" src="/js/homebrew/builder/cClass/builder-class.js"></script>
+    {{#if classID}}
+        <script type="text/javascript" src="/js/homebrew/builder/cClass/editor-class.js"></script>
+    {{/if}}
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew" class="active">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="pt-3">
+    <h1 class="title is-2 has-txt-value-number has-text-centered">Class Builder</h1>
+</div>
+
+<div id="builder-container" data-user-id="{{user.id}}" data-bundle-id="{{bundleID}}" data-class-id="{{classID}}" class="columns is-mobile is-centered mt-2 mb-3">
+    <div class="column is-8 tile is-ancestor is-vertical">
+
+        <div class="tile">
+
+            <div class="tile is-parent is-vertical box is-marginless mr-2">
+
+                <div class="tile is-child field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input id="inputName" class="input" type="text" placeholder="e.g. Wizard" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Hit Points</label>
+                    <div class="control">
+                        <input id="inputHitPoints" class="input" type="number" value="8">
+                    </div>
+                </div>
+
+                <div class="tile is-child columns is-centered">
+
+                    <div class="column"></div>
+
+                    <div class="column field">
+                        <label class="label">Key Ability</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputKeyAbility">
+                                    <option value="Strength" selected>Strength</option>
+                                    <option value="Dexterity">Dexterity</option>
+                                    <option value="Constitution">Constitution</option>
+                                    <option value="Intelligence">Intelligence</option>
+                                    <option value="Wisdom">Wisdom</option>
+                                    <option value="Charisma">Charisma</option>
+                                    <option value="OTHER">OTHER</option>
+                                    <option value="OR">OR</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column"></div>
+
+                </div>
+
+                <div id="abilityStoreOptionsSection" class="tile is-child columns is-hidden">
+
+                    <div class="column"></div>
+
+                    <div class="column field">
+                        <label class="label">Option 1</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputKeyAbilityOptionOne">
+                                    <option value="Strength" selected>Strength</option>
+                                    <option value="Dexterity">Dexterity</option>
+                                    <option value="Constitution">Constitution</option>
+                                    <option value="Intelligence">Intelligence</option>
+                                    <option value="Wisdom">Wisdom</option>
+                                    <option value="Charisma">Charisma</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Option 2</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputKeyAbilityOptionTwo">
+                                    <option value="Strength">Strength</option>
+                                    <option value="Dexterity" selected>Dexterity</option>
+                                    <option value="Constitution">Constitution</option>
+                                    <option value="Intelligence">Intelligence</option>
+                                    <option value="Wisdom">Wisdom</option>
+                                    <option value="Charisma">Charisma</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column"></div>
+
+                </div>
+
+                <div class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">Perception</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputPerception">
+                                    <option value="U">Untrained</option>
+                                    <option value="T" selected>Trained</option>
+                                    <option value="E">Expert</option>
+                                    <option value="M">Master</option>
+                                    <option value="L">Legendary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Class DC</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputClassDC">
+                                    <option value="U">Untrained</option>
+                                    <option value="T" selected>Trained</option>
+                                    <option value="E">Expert</option>
+                                    <option value="M">Master</option>
+                                    <option value="L">Legendary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Skill - Trained</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputSkills">
+                                    <option value="" selected>None</option>
+                                    <option value="Acrobatics">Acrobatics</option>
+                                    <option value="Arcana">Arcana</option>
+                                    <option value="Athletics">Athletics</option>
+                                    <option value="Crafting">Crafting</option>
+                                    <option value="Deception">Deception</option>
+                                    <option value="Diplomacy">Diplomacy</option>
+                                    <option value="Intimidation">Intimidation</option>
+                                    <option value="Medicine">Medicine</option>
+                                    <option value="Nature">Nature</option>
+                                    <option value="Occultism">Occultism</option>
+                                    <option value="Performance">Performance</option>
+                                    <option value="Religion">Religion</option>
+                                    <option value="Society">Society</option>
+                                    <option value="Stealth">Stealth</option>
+                                    <option value="Survival">Survival</option>
+                                    <option value="Thievery">Thievery</option>
+                                    <option value="Acrobatics or Athletics">Acrobatics or Athletics</option>
+                                    <option value="Arcana or Crafting">Arcana or Crafting</option>
+                                    <option value="Deception or Diplomacy">Deception or Diplomacy</option>
+                                    <option value="Medicine or Religion">Medicine or Religion</option>
+                                    <option value="Nature or Survival">Nature or Survival</option>
+                                    <option value="Stealth or Thievery">Stealth or Thievery</option>
+                                    <option value="Nature, Survival">Nature and Survival</option>
+                                    <option value="Occultism, Performance">Occultism and Performance</option>
+                                    <option value="Stealth, Thievery">Stealth and Thievery</option>
+                                    <option value="Arcana, Nature, Occultism, Religion">Arcana, Nature, Occultism, and Religion</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Additional Skills - Trained</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputSkillsMore">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3" selected>3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <div class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">Fortitude</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputFortitude">
+                                    <option value="U">Untrained</option>
+                                    <option value="T" selected>Trained</option>
+                                    <option value="E">Expert</option>
+                                    <option value="M">Master</option>
+                                    <option value="L">Legendary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Reflex</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputReflex">
+                                    <option value="U">Untrained</option>
+                                    <option value="T" selected>Trained</option>
+                                    <option value="E">Expert</option>
+                                    <option value="M">Master</option>
+                                    <option value="L">Legendary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Will</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputWill">
+                                    <option value="U">Untrained</option>
+                                    <option value="T" selected>Trained</option>
+                                    <option value="E">Expert</option>
+                                    <option value="M">Master</option>
+                                    <option value="L">Legendary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tile is-child columns">
+
+                    <div class="column">
+
+                        <div class="">
+                            <label class="label">Attacks - Trained</label>
+                            <select id="inputWeaponsTrained" data-placeholder="Select Weapons" multiple>
+                                <option value="Unarmed Attacks">Unarmed Attacks</option>
+                                <option value="Simple Weapons">Simple Weapons</option>
+                                <option value="Martial Weapons">Martial Weapons</option>
+                                <option value="Advanced Weapons">Advanced Weapons</option>
+                                {{#each weaponItems}}
+                                    <option value="{{name}}">{{name}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+
+
+                        <div class="">
+                            <label class="label">Attacks - Expert</label>
+                            <select id="inputWeaponsExpert" data-placeholder="Select Weapons" multiple>
+                                <option value="Unarmed Attacks">Unarmed Attacks</option>
+                                <option value="Simple Weapons">Simple Weapons</option>
+                                <option value="Martial Weapons">Martial Weapons</option>
+                                <option value="Advanced Weapons">Advanced Weapons</option>
+                                {{#each weaponItems}}
+                                    <option value="{{name}}">{{name}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="column">
+
+                        <div class="">
+                            <label class="label">Defenses - Trained</label>
+                            <select id="inputArmorTrained" data-placeholder="Select Armor" multiple>
+                                <option value="Unarmored Defense">Unarmored Defense</option>
+                                <option value="Light Armor">Light Armor</option>
+                                <option value="Medium Armor">Medium Armor</option>
+                                <option value="Heavy Armor">Heavy Armor</option>
+                            </select>
+                        </div>
+
+                        <div class="">
+                            <label class="label">Defenses - Expert</label>
+                            <select id="inputArmorExpert" data-placeholder="Select Armor" multiple>
+                                <option value="Unarmored Defense">Unarmored Defense</option>
+                                <option value="Light Armor">Light Armor</option>
+                                <option value="Medium Armor">Medium Armor</option>
+                                <option value="Heavy Armor">Heavy Armor</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            
+                <div class="tile is-child field">
+                    <label class="label">
+                        Description
+                        <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                    </label>
+                    <div class="control">
+                        <textarea id="inputDescription" class="textarea" placeholder="Always hungry for new experiences..."></textarea>
+                    </div>
+                </div>
+
+                <div class="tile is-child field is-marginless">
+                    <div class="control">
+                        <input id="inputImageURL" class="input isURL" type="text" maxlength="200" placeholder="Image URL" spellcheck="false" autocomplete="off">
+                    </div>
+                </div>
+                
+            </div>
+
+        </div>
+
+        <div class="tile is-vertical box mt-3">
+
+                <div class="tile is-child">
+                    <button id="addClassFeatureButton" class="button is-link">Add Class Feature</button>
+                </div>
+
+                <div id="classFeatureContent" class="tile is-child">
+
+                    <div id="classFeatureLayout" class="card mb-2 classFeature isLayout is-hidden">
+                        <div class="card-header cursor-clickable">
+                            <p class="card-header-title is-paddingless has-txt-value-number is-size-5">Feature</p>
+                            <a class="card-header-icon is-paddingless mt-1 delete is-medium"></a>
+                        </div>
+                        <div class="card-content">
+                            <div class="columns">
+                                <div class="column field">
+                                    <label class="label">Name</label>
+                                    <div class="control">
+                                        <input class="input inputClassFeatureName" type="text" placeholder="e.g. Skill Increase">
+                                    </div>
+                                </div>
+                                <div class="column field classFeatureLevelSection">
+                                    <label class="label">Level</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputClassFeatureLevel">
+                                                <option value="-1">Unacquirable</option>
+                                                <option value="1" selected>1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                                <option value="6">6</option>
+                                                <option value="7">7</option>
+                                                <option value="8">8</option>
+                                                <option value="9">9</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                                <option value="13">13</option>
+                                                <option value="14">14</option>
+                                                <option value="15">15</option>
+                                                <option value="16">16</option>
+                                                <option value="17">17</option>
+                                                <option value="18">18</option>
+                                                <option value="19">19</option>
+                                                <option value="20">20</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">
+                                    Description
+                                    <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputClassFeatureDesc" placeholder=""></textarea>
+                                </div>
+                            </div>
+                            <div class="field pos-relative">
+                                <label class="label">
+                                    Code
+                                    <a href="/wsc_docs/#code_basics" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                    <span class="code-block-statement-display">Builder & Sheet Statements</span>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputClassFeatureCode nanum-coding use-custom-scrollbar" rows="1" spellcheck="false" maxlength="4990"></textarea>
+                                </div>
+                            </div>
+                            <div class="field pt-1 classFeatureDisplayInSheetSection">
+                                <label class="checkbox">
+                                    <input type="checkbox" class="inputClassFeatureDisplayInSheet" value="1" checked>
+                                    <strong>Display In Sheet</strong>
+                                </label>
+                            </div>
+                            <div class="field pt-1 classFeatureIsSelectorSection">
+                                <label class="checkbox">
+                                    <input type="checkbox" class="inputClassFeatureIsSelector" value="1">
+                                    <strong>is Selector</strong>
+                                </label>
+                            </div>
+                            <div class="classFeatureSelectionOptions is-hidden">
+                                <div class="">
+                                    <button class="button is-link classFeatureAddOptionButton">Add Option</button>
+                                </div>
+                                <div class="classFeatureOptionsContent pt-2">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+        </div>
+
+        <div class="tile is-vertical box mt-3">
+
+                <div class="tile is-child">
+                    <button id="addFeatButton" class="button is-link">Add Class Feat</button>
+                </div>
+
+                <div id="featContent" class="tile is-child">
+
+                    <div id="featLayout" class="card mb-2 classFeat is-hidden">
+                        <div class="card-header cursor-clickable">
+                            <p class="card-header-title is-paddingless has-txt-value-number is-size-5">Class Feat</p>
+                            <a class="card-header-icon is-paddingless mt-1 delete is-medium"></a>
+                        </div>
+                        <div class="card-content">
+                            <div class="field">
+                                <label class="label">Name</label>
+                                <div class="control">
+                                    <input class="input inputFeatName" type="text" placeholder="e.g. Grim Insight">
+                                </div>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column field">
+                                    <label class="label">Level</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputFeatLevel">
+                                                <option value="-1">Unselectable</option>
+                                                <option value="1" selected>1</option>
+                                                <option value="2">2</option>
+                                                <option value="4">4</option>
+                                                <option value="6">6</option>
+                                                <option value="8">8</option>
+                                                <option value="10">10</option>
+                                                <option value="12">12</option>
+                                                <option value="14">14</option>
+                                                <option value="16">16</option>
+                                                <option value="18">18</option>
+                                                <option value="20">20</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="column field">
+                                    <label class="label">Actions</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputFeatActions pf-icon">
+                                                <option value="NONE">None</option>
+                                                <option value="ACTION">[one-action]</option>
+                                                <option value="TWO_ACTIONS">[two-actions]</option>
+                                                <option value="THREE_ACTIONS">[three-actions]</option>
+                                                <option value="FREE_ACTION">[free-action]</option>
+                                                <option value="REACTION">[reaction]</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="column field">
+                                    <label class="label">Rarity</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputFeatRarity">
+                                                <option value="COMMON">Common</option>
+                                                <option value="UNCOMMON">Uncommon</option>
+                                                <option value="RARE">Rare</option>
+                                                <option value="UNIQUE">Unique</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="">
+                                <label class="label">Other Traits</label>
+                                <select class="inputFeatTags" data-placeholder="Select Traits" multiple>
+                                  {{#each tags}}
+                                    <option value="{{id}}">{{name}}</option>
+                                  {{/each}}
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Prerequisites</label>
+                                <div class="control">
+                                    <input class="input inputFeatPrereq" type="text" maxlength="290" placeholder="">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Requirements</label>
+                                <div class="control">
+                                    <input class="input inputFeatReq" type="text" maxlength="590">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Frequency</label>
+                                <div class="control">
+                                    <input class="input inputFeatFreq" type="text" maxlength="290">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Cost</label>
+                                <div class="control">
+                                    <input class="input inputFeatCost" type="text" maxlength="290">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Trigger</label>
+                                <div class="control">
+                                    <input class="input inputFeatTrigger" type="text" maxlength="290">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">
+                                    Description
+                                    <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputFeatDesc" placeholder="Others’ attempts to scare you often grant you insights..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">
+                                  Special
+                                  <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                </label>
+                                <div class="control">
+                                    <input class="input inputFeatSpecial" type="text" maxlength="590">
+                                </div>
+                            </div>
+
+                            <div class="field pt-1">
+                                <label class="checkbox">
+                                    <input type="checkbox" class="inputFeatSelectMultiple" value="1">
+                                    <strong>Can Choose Multiple Times</strong>
+                                </label>
+                            </div>
+
+                            <div class="field pos-relative">
+                                <label class="label">
+                                    Code
+                                    <a href="/wsc_docs/#code_basics" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                    <span class="code-block-statement-display">Builder & Sheet Statements</span>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputFeatCode nanum-coding use-custom-scrollbar" rows="1" spellcheck="false" maxlength="4990"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+
+                </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="field is-grouped is-grouped-centered pb-2">
+    <div class="control">
+        {{#if classID}}
+            <button id="updateButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{else}}
+            <button id="createButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{/if}}
+    </div>
+</div>

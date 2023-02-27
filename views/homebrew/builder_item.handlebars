@@ -1,0 +1,644 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/homebrew-builders.css">
+    <script type="text/javascript" src="/js/confirm-page-leave.js"></script>
+    <script type="text/javascript" src="/js/homebrew/builder/item/builder-item.js"></script>
+    {{#if itemID}}
+        <script type="text/javascript" src="/js/homebrew/builder/item/editor-item.js"></script>
+    {{/if}}
+    <script src="/js/sheet/utils/material-utils.js"></script>
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew" class="active">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="pt-3">
+    <h1 class="title is-2 has-txt-value-number has-text-centered">Item Builder</h1>
+</div>
+
+<div id="builder-container" data-user-id="{{user.id}}" data-bundle-id="{{bundleID}}" data-item-id="{{itemID}}" class="columns is-mobile is-centered mt-2 mb-3">
+    <div class="column is-8 tile is-ancestor is-vertical">
+
+        <div class="tile">
+
+            <div class="tile is-parent is-vertical box is-marginless">
+
+                <div class="tile is-child">
+                    <div class="has-text-centered is-marginless">
+                        <p>Use this builder to create general items, storage, weapons, armor, shields, or runes.</p>
+                    </div>
+                    <div class="field is-grouped is-grouped-centered">
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputBuilderType">
+                                    <option value="GENERAL" selected>General Item</option>
+                                    <option value="STORAGE">Storage Item</option>
+                                    <option value="WEAPON">Weapon</option>
+                                    <option value="ARMOR">Armor</option>
+                                    <option value="SHIELD">Shield</option>
+                                    <option value="RUNE">Runestone</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="sectionItemCopyOfOther" class="control is-hidden">
+                            <div class="select">
+                                <select id="inputItemCopyOfOther">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input class="input" id="inputName" type="text" placeholder="e.g. Adventurer's Pack" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">Price (in cp)</label>
+                        <div class="control">
+                            <input id="inputPrice" class="input" type="number" value="100" min="0">
+                        </div>
+                    </div>
+
+                    <div id="sectionBulk" class="column field">
+                        <label class="label">Bulk</label>
+                        <div class="control">
+                            <input id="inputBulk" class="input" type="number" value="0.0" step="0.1" min="0">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Level</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputLevel">
+                                    <option value="0" selected>0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                    <option value="13">13</option>
+                                    <option value="14">14</option>
+                                    <option value="15">15</option>
+                                    <option value="16">16</option>
+                                    <option value="17">17</option>
+                                    <option value="18">18</option>
+                                    <option value="19">19</option>
+                                    <option value="20">20</option>
+                                    <option value="21">21</option>
+                                    <option value="22">22</option>
+                                    <option value="23">23</option>
+                                    <option value="24">24</option>
+                                    <option value="25">25</option>
+                                    <option value="26">26</option>
+                                    <option value="27">27</option>
+                                    <option value="28">28</option>
+                                    <option value="29">29</option>
+                                    <option value="30">30</option>
+                                    <option value="999">N/A</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label has-text-weight-normal"><strong class="has-tooltip-top" data-tooltip="Used to categorize the item in the item list">Category</strong></label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputCategory">
+                                    <option value="ADJUSTMENT">Adjustment</option>
+                                    <option value="ARTIFACT">Artifact</option>
+                                    <option value="AMMUNITION">Ammunition</option>
+                                    <option value="ARMOR">Armor</option>
+                                    <option value="BELT">Belt</option>
+                                    <option value="BOMB">Bomb</option>
+                                    <option value="BOOK">Book</option>
+                                    <option value="BOOTS">Boots</option>
+                                    <option value="BRACERS">Bracers</option>
+                                    <option value="CATALYST">Catalyst</option>
+                                    <option value="CIRCLET">Circlet</option>
+                                    <option value="CLOAK">Cloak</option>
+                                    <option value="COMPANION">Companion</option>
+                                    <option value="CURRENCY">Currency</option>
+                                    <option value="DRUG">Drug</option>
+                                    <option value="ELIXIR">Elixir</option>
+                                    <option value="EYEPIECE">Eyepiece</option>
+                                    <option value="FULU">Fulu</option>
+                                    <option value="GADGET">Gadget</option>
+                                    <option value="GIFT">Gift</option>
+                                    <option value="GLOVES">Gloves</option>
+                                    <option value="GRIMOIRE">Grimoire</option>
+                                    <option value="HAT">Hat</option>
+                                    <option value="INGREDIENT">Ingredient</option>
+                                    <option value="INSTRUMENT">Instrument</option>
+                                    <option value="KIT">Kit</option>
+                                    <option value="MASK">Mask</option>
+                                    <option value="NECKLACE">Necklace</option>
+                                    <option value="OIL">Oil</option>
+                                    <option value="POISON">Poison</option>
+                                    <option value="POTION">Potion</option>
+                                    <option value="RING">Ring</option>
+                                    <option value="ROD">Rod</option>
+                                    <option value="RUNE">Runestone</option>
+                                    <option value="SCROLL">Scroll</option>
+                                    <option value="SHIELD">Shield</option>
+                                    <option value="SIEGE">Siege</option>
+                                    <option value="SPELLHEART">Spellheart</option>
+                                    <option value="STAFF">Staff</option>
+                                    <option value="STORAGE">Storage</option>
+                                    <option value="STRUCTURE">Structure</option>
+                                    <option value="TALISMAN">Talisman</option>
+                                    <option value="TATTOO">Tattoo</option>
+                                    <option value="TOOL">Tool</option>
+                                    <option value="WAND">Wand</option>
+                                    <option value="WEAPON">Weapon</option>
+                                    <option value="OTHER">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Rarity</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputRarity">
+                                    <option value="COMMON">Common</option>
+                                    <option value="UNCOMMON">Uncommon</option>
+                                    <option value="RARE">Rare</option>
+                                    <option value="UNIQUE">Unique</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="sectionSize" class="column field">
+                        <label class="label">Size</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputSize">
+                                    <option value="TINY">Tiny</option>
+                                    <option value="SMALL">Small</option>
+                                    <option value="MEDIUM" selected>Medium</option>
+                                    <option value="LARGE">Large</option>
+                                    <option value="HUGE">Huge</option>
+                                    <option value="GARGANTUAN">Gargantuan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="sectionMaterial" class="column field">
+                        <label class="label">Material</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputMaterial">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="sectionHands" class="column field">
+                        <label class="label">Hands</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputHands">
+                                    <option value="NONE" selected>-</option>
+                                    <option value="ONE">1</option>
+                                    <option value="ONE_PLUS">1+</option>
+                                    <option value="TWO">2</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionWeapon" class="tile is-child columns">
+
+                    <div class="column is-2 field">
+                        <label class="label">Damage Die</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputDieType">
+                                    <option value="">1</option>
+                                    <option value="d2">d2</option>
+                                    <option value="d4">d4</option>
+                                    <option value="d6" selected>d6</option>
+                                    <option value="d8">d8</option>
+                                    <option value="d10">d10</option>
+                                    <option value="d12">d12</option>
+                                    <option value="d20">d20</option>
+                                    <option value="NONE">-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column is-5 field">
+                        <label class="label">Damage Type (most likely just: P, S, or B)</label>
+                        <div class="control">
+                            <input class="input" id="inputDamageType" type="text" maxlength="40" placeholder="">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Weapon Category</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputWeaponCategory">
+                                    <option value="SIMPLE" selected>Simple</option>
+                                    <option value="MARTIAL">Martial</option>
+                                    <option value="ADVANCED">Advanced</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionWeaponMelee" class="tile is-child columns">
+
+                    <div class="column field pt-5 pl-5">
+                        <label class="checkbox">
+                            <input type="checkbox" id="inputIsMelee" value="1">
+                            <strong>Is Melee</strong>
+                        </label>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Melee Weapon Group</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputMeleeWeaponType">
+                                    <option value="AXE" selected>Axe</option>
+                                    <option value="BRAWLING">Brawling</option>
+                                    <option value="CLUB">Club</option>
+                                    <option value="FLAIL">Flail</option>
+                                    <option value="HAMMER">Hammer</option>
+                                    <option value="KNIFE">Knife</option>
+                                    <option value="PICK">Pick</option>
+                                    <option value="POLEARM">Polearm</option>
+                                    <option value="SHIELD">Shield</option>
+                                    <option value="SPEAR">Spear</option>
+                                    <option value="SWORD">Sword</option>                                   
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionWeaponRanged" class="tile is-child columns">
+
+                    <div class="column field pt-5 pl-5">
+                        <label class="checkbox">
+                            <input type="checkbox" id="inputIsRanged" value="1">
+                            <strong>Is Ranged</strong>
+                        </label>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Ranged Weapon Group</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputRangedWeaponType">
+                                    <option value="BOW" selected>Bow</option>
+                                    <option value="CROSSBOW">Crossbow</option>
+                                    <option value="DART">Dart</option>
+                                    <option value="FIREARM">Firearm</option>
+                                    <option value="SLING">Sling</option>   
+                                    <option value="BOMB">Bomb</option>                             
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Range (in feet)</label>
+                        <div class="control">
+                            <input id="inputRange" class="input" type="number" value="20" maxlength="4">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Reload</label>
+                        <div class="control">
+                            <input id="inputReload" class="input" type="number" value="0" maxlength="1">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionStorage" class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">Max Bulk Storage</label>
+                        <div class="control">
+                            <input id="inputMaxBulkStorage" class="input" type="number" value="0.0" step="0.1" min="0">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Bulk Ignored</label>
+                        <div class="control">
+                            <input id="inputBulkIgnored" class="input" type="number" value="0.0" step="0.1" min="0">
+                        </div>
+                    </div>
+
+                    <div class="column field pt-5">
+                        <label class="checkbox">
+                            <input type="checkbox" id="inputIgnoreSelfBulkIfWearing" value="1">
+                            <strong>Ignore Self-Bulk If Wearing</strong>
+                        </label>
+                    </div>
+
+                </div>
+
+                <div id="sectionShield" class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">AC Bonus</label>
+                        <div class="control">
+                            <input id="inputShieldACBonus" class="input" type="number" value="0" maxlength="1">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Speed Penalty</label>
+                        <div class="control">
+                            <input id="inputShieldSpeedPenalty" class="input" type="number" value="0" step="5" maxlength="2">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionRunestone" class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">Rune Type</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputRuneType">
+                                    <option value="FUNDAMENTAL" selected>Fundamental</option>
+                                    <option value="PROPERTY">Property</option>                              
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">For</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputEtchedType">
+                                    <option value="WEAPON" selected>Weapons</option>
+                                    <option value="ARMOR">Armor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionArmor" class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">AC Bonus</label>
+                        <div class="control">
+                            <input id="inputArmorACBonus" class="input" type="number" value="0" maxlength="1">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Dex Cap</label>
+                        <div class="control">
+                            <input id="inputArmorDexCap" class="input" type="number" value="0" maxlength="1">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Armor Type</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputArmorType">
+                                    <option value="CLOTH">Cloth</option>
+                                    <option value="LEATHER" selected>Leather</option>
+                                    <option value="COMPOSITE">Composite</option>
+                                    <option value="CHAIN">Chain</option>
+                                    <option value="PLATE">Plate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Armor Category</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputArmorCategory">
+                                    <option value="UNARMORED">Unarmored</option>
+                                    <option value="LIGHT" selected>Light</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="HEAVY">Heavy</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div id="sectionArmorPenalties" class="tile is-child columns">
+                    <div class="column field">
+                        <label class="label">Check Penalty</label>
+                        <div class="control">
+                            <input id="inputArmorCheckPenalty" class="input" type="number" value="0" maxlength="1">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Speed Penalty</label>
+                        <div class="control">
+                            <input id="inputArmorSpeedPenalty" class="input" type="number" value="0" step="5" maxlength="2">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Min Strength</label>
+                        <div class="control">
+                            <input id="inputArmorMinStrength" class="input" type="number" value="10" maxlength="2">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child">
+                    <label class="label">Traits</label>
+                    <select id="inputTags" data-placeholder="Select Traits" multiple>
+                      {{#each tags}}
+                        <option value="{{id}}">{{name}}</option>
+                      {{/each}}
+                    </select>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Usage</label>
+                    <div class="control">
+                        <input class="input" id="inputUsage" type="text" maxlength="110" placeholder="">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">
+                        Description
+                        <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                    </label>
+                    <div class="control">
+                        <textarea class="textarea" id="inputDesc" placeholder="This item is the starter kit for an adventurer..."></textarea>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">
+                        Craft Requirements
+                        <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                    </label>
+                    <div class="control">
+                        <input class="input" id="inputCraftReq" type="text" maxlength="350" placeholder="">
+                    </div>
+                </div>
+
+                <div id="sectionIsShoddy" class="tile is-child field pt-1 pl-2">
+                     <label class="checkbox">
+                        <input type="checkbox" id="inputIsShoddy" value="1">
+                        <strong>Is Shoddy</strong>
+                    </label>
+                </div>
+
+                <div id="sectionQuantity" class="tile is-child columns">
+                    <div class="column field pt-5 is-grouped is-grouped-centered">
+                        <label class="checkbox">
+                            <input type="checkbox" id="inputHasQuantity" value="1">
+                            <strong>Has Quantity</strong>
+                        </label>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Quantity</label>
+                        <div class="control">
+                            <input id="inputQuantity" class="input" type="number" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sectionHealth" class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">
+                          <a href="/material_stats" class="has-text-bold-color" target="_blank">
+                            <strong class="has-tooltip-top" data-tooltip="Link to Material Stats page">Hardness<sup class="icon is-small"><i class="fas fa-xs fa-external-link-alt"></i></sup></strong>
+                          </a>
+                        </label>
+                        <div class="control">
+                            <input id="inputHardness" class="input" type="number" value="0">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">
+                          <a href="/material_stats" class="has-text-bold-color" target="_blank">
+                            <strong class="has-tooltip-top" data-tooltip="Link to Material Stats page">Hit Points<sup class="icon is-small"><i class="fas fa-xs fa-external-link-alt"></i></sup></strong>
+                          </a>
+                        </label>
+                        <div class="control">
+                            <input id="inputHitPoints" class="input" type="number" value="0">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">
+                          <a href="/material_stats" class="has-text-bold-color" target="_blank">
+                            <strong class="has-tooltip-top" data-tooltip="Link to Material Stats page">Broken Threshold<sup class="icon is-small"><i class="fas fa-xs fa-external-link-alt"></i></sup></strong>
+                          </a>
+                        </label>
+                        <div class="control">
+                            <input id="inputBrokenThreshold" class="input" type="number" value="0">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tile is-child field pos-relative">
+                    <label class="label">
+                        Code
+                        <a href="/wsc_docs/#code_basics" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                        <span class="code-block-statement-display">Sheet Statements Only</span>
+                    </label>
+                    <div class="control">
+                        <textarea id="inputCode" class="textarea nanum-coding use-custom-scrollbar" rows="1" spellcheck="false" maxlength="990"></textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="field is-grouped is-grouped-centered pb-2">
+    <div class="control">
+        {{#if itemID}}
+            <button id="updateButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{else}}
+            <button id="createButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{/if}}
+    </div>
+</div>

@@ -1,0 +1,365 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/homebrew-builders.css">
+    <script type="text/javascript" src="/js/confirm-page-leave.js"></script>
+    <script type="text/javascript" src="/js/homebrew/builder/spell/builder-spell.js"></script>
+    {{#if spellID}}
+        <script type="text/javascript" src="/js/homebrew/builder/spell/editor-spell.js"></script>
+    {{/if}}
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew" class="active">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="pt-3">
+    <h1 class="title is-2 has-txt-value-number has-text-centered">Animal Companion Builder</h1>
+</div>
+
+<div id="builder-container" data-user-id="{{user.id}}" data-bundle-id="{{bundleID}}" data-animal-comp-id="{{animalCompID}}" class="columns is-mobile is-centered mt-2 mb-3">
+    <div class="column is-8 tile is-ancestor is-vertical">
+
+        <div class="tile">
+
+            <div class="tile is-parent is-vertical box is-marginless">
+
+                <div class="tile is-child field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input class="input" id="inputName" type="text" placeholder="e.g. Crocodile" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="tile is-child columns">
+
+                    <div class="column field">
+                        <label class="label">Rarity</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputRarity">
+                                    <option value="COMMON">Common</option>
+                                    <option value="UNCOMMON">Uncommon</option>
+                                    <option value="RARE">Rare</option>
+                                    <option value="UNIQUE">Unique</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Starting Size</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputSize">
+                                    <option value="TINY">Tiny</option>
+                                    <option value="SMALL" selected>Small</option>
+                                    <option value="SMALL-MED">Small or Medium</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="MED-LARGE">Medium or Large</option>
+                                    <option value="LARGE">Large</option>
+                                    <option value="HUGE">Huge</option>
+                                    <option value="GARGANTUAN">Gargantuan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tile is-child columns">
+                    
+                    <div class="column field">
+                        <label class="label">Attack Name</label>
+                        <div class="control">
+                            <input class="input" id="inputA1Name" type="text" maxlength="40" placeholder="">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Type</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputA1Type">
+                                    <option value="MELEE" selected>Melee</option>
+                                    <option value="RANGED">Ranged</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column is-2 field">
+                        <label class="label">Damage Die</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputDieType">
+                                    <option value="">1</option>
+                                    <option value="d2">d2</option>
+                                    <option value="d4">d4</option>
+                                    <option value="d6" selected>d6</option>
+                                    <option value="d8">d8</option>
+                                    <option value="d10">d10</option>
+                                    <option value="d12">d12</option>
+                                    <option value="d20">d20</option>
+                                    <option value="NONE">-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Damage Type (most likely just: P, S, or B)</label>
+                        <div class="control">
+                            <input class="input" id="inputDamageType" type="text" maxlength="40" placeholder="">
+                        </div>
+                    </div>
+
+                    <div class="column field">
+                        <label class="label">Weapon Category</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="inputWeaponCategory">
+                                    <option value="SIMPLE" selected>Simple</option>
+                                    <option value="MARTIAL">Martial</option>
+                                    <option value="ADVANCED">Advanced</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="tile is-child">
+                    <label class="label">Traits</label>
+                    <select id="inputTags" data-placeholder="Select Traits" multiple>
+                        {{#each tags}}
+                            <option value="{{id}}">{{name}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Range</label>
+                    <div class="control">
+                        <input class="input" id="inputRange" type="text" maxlength="290" placeholder="">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Area</label>
+                    <div class="control">
+                        <input class="input" id="inputArea" type="text" maxlength="290" placeholder="">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Targets</label>
+                    <div class="control">
+                        <input class="input" id="inputTargets" type="text" maxlength="290" placeholder="">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Saving Throw</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputSavingThrow">
+                                <option value="">N/A</option>
+                                <option value="FORT">Fortitude</option>
+                                <option value="REFLEX">Reflex</option>
+                                <option value="WILL">Will</option>
+                                <option value="BASIC_FORT">Basic Fortitude</option>
+                                <option value="BASIC_REFLEX">Basic Reflex</option>
+                                <option value="BASIC_WILL">Basic Will</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Duration</label>
+                    <div class="control">
+                        <input class="input" id="inputDuration" type="text" maxlength="290" placeholder="">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">
+                        Description
+                        <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                    </label>
+                    <div class="control">
+                        <textarea class="textarea" id="inputDesc" placeholder="The target’s form appears blurry..."></textarea>
+                    </div>
+                </div>
+
+                <div class="tile is-child columns">
+                    <div class="column is-2 field">
+                        <div class="control is-pulled-right">
+                            <div class="select">
+                                <select id="inputHeightenedOneVal">
+                                    <option value="">N/A</option>
+                                    <option value="PLUS_ONE">+1</option>
+                                    <option value="PLUS_TWO">+2</option>
+                                    <option value="PLUS_THREE">+3</option>
+                                    <option value="PLUS_FOUR">+4</option>
+                                    <option value="LEVEL_2">2nd</option>
+                                    <option value="LEVEL_3">3rd</option>
+                                    <option value="LEVEL_4">4th</option>
+                                    <option value="LEVEL_5">5th</option>
+                                    <option value="LEVEL_6">6th</option>
+                                    <option value="LEVEL_7">7th</option>
+                                    <option value="LEVEL_8">8th</option>
+                                    <option value="LEVEL_9">9th</option>
+                                    <option value="LEVEL_10">10th</option>
+                                    <option value="CUSTOM">Custom</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column field">
+                        <label class="label">Heightened</label>
+                        <div class="control">
+                            <textarea id="inputHeightenedOneText" class="textarea"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child columns">
+                    <div class="column is-2 field">
+                        <div class="control is-pulled-right">
+                            <div class="select">
+                                <select id="inputHeightenedTwoVal">
+                                    <option value="">N/A</option>
+                                    <option value="PLUS_ONE">+1</option>
+                                    <option value="PLUS_TWO">+2</option>
+                                    <option value="PLUS_THREE">+3</option>
+                                    <option value="PLUS_FOUR">+4</option>
+                                    <option value="LEVEL_2">2nd</option>
+                                    <option value="LEVEL_3">3rd</option>
+                                    <option value="LEVEL_4">4th</option>
+                                    <option value="LEVEL_5">5th</option>
+                                    <option value="LEVEL_6">6th</option>
+                                    <option value="LEVEL_7">7th</option>
+                                    <option value="LEVEL_8">8th</option>
+                                    <option value="LEVEL_9">9th</option>
+                                    <option value="LEVEL_10">10th</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column field">
+                        <label class="label">Heightened</label>
+                        <div class="control">
+                            <textarea id="inputHeightenedTwoText" class="textarea"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child columns">
+                    <div class="column is-2 field">
+                        <div class="control is-pulled-right">
+                            <div class="select">
+                                <select id="inputHeightenedThreeVal">
+                                    <option value="">N/A</option>
+                                    <option value="PLUS_ONE">+1</option>
+                                    <option value="PLUS_TWO">+2</option>
+                                    <option value="PLUS_THREE">+3</option>
+                                    <option value="PLUS_FOUR">+4</option>
+                                    <option value="LEVEL_2">2nd</option>
+                                    <option value="LEVEL_3">3rd</option>
+                                    <option value="LEVEL_4">4th</option>
+                                    <option value="LEVEL_5">5th</option>
+                                    <option value="LEVEL_6">6th</option>
+                                    <option value="LEVEL_7">7th</option>
+                                    <option value="LEVEL_8">8th</option>
+                                    <option value="LEVEL_9">9th</option>
+                                    <option value="LEVEL_10">10th</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column field">
+                        <label class="label">Heightened</label>
+                        <div class="control">
+                            <textarea id="inputHeightenedThreeText" class="textarea"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child columns">
+                    <div class="column is-2 field">
+                        <div class="control is-pulled-right">
+                            <div class="select">
+                                <select id="inputHeightenedFourVal">
+                                    <option value="">N/A</option>
+                                    <option value="PLUS_ONE">+1</option>
+                                    <option value="PLUS_TWO">+2</option>
+                                    <option value="PLUS_THREE">+3</option>
+                                    <option value="PLUS_FOUR">+4</option>
+                                    <option value="LEVEL_2">2nd</option>
+                                    <option value="LEVEL_3">3rd</option>
+                                    <option value="LEVEL_4">4th</option>
+                                    <option value="LEVEL_5">5th</option>
+                                    <option value="LEVEL_6">6th</option>
+                                    <option value="LEVEL_7">7th</option>
+                                    <option value="LEVEL_8">8th</option>
+                                    <option value="LEVEL_9">9th</option>
+                                    <option value="LEVEL_10">10th</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column field">
+                        <label class="label">Heightened</label>
+                        <div class="control">
+                            <textarea id="inputHeightenedFourText" class="textarea"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="field is-grouped is-grouped-centered pb-2">
+    <div class="control">
+        {{#if spellID}}
+            <button id="updateButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{else}}
+            <button id="createButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{/if}}
+    </div>
+</div>

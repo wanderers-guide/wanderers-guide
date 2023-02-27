@@ -1,0 +1,108 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/homebrew-builders.css">
+    <script type="text/javascript" src="/js/confirm-page-leave.js"></script>
+    <script type="text/javascript" src="/js/homebrew/builder/language/builder-language.js"></script>
+    {{#if languageID}}
+        <script type="text/javascript" src="/js/homebrew/builder/language/editor-language.js"></script>
+    {{/if}}
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew" class="active">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="pt-3">
+    <h1 class="title is-2 has-txt-value-number has-text-centered">Language Builder</h1>
+</div>
+
+<div id="builder-container" data-user-id="{{user.id}}" data-bundle-id="{{bundleID}}" data-language-id="{{languageID}}" class="columns is-mobile is-centered mt-2 mb-3">
+    <div class="column is-8 tile is-ancestor is-vertical">
+
+        <div class="tile">
+
+            <div class="tile is-parent is-vertical box is-marginless">
+
+                <div class="tile is-child field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input id="inputName" class="input" type="text" placeholder="e.g. Dwarven" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Speakers</label>
+                    <div class="control">
+                        <input id="inputSpeakers" class="input" type="text" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Script</label>
+                    <div class="control">
+                        <input id="inputScript" class="input" type="text" autocomplete="off">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="tile">
+            <div class="tile is-parent is-vertical box mt-3">
+                <div class="tile is-child field">
+                    <label class="label">
+                        Description
+                        <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                    </label>
+                    <div class="control">
+                        <textarea id="inputDescription" class="textarea" placeholder="Dwarven is a clipped language of hard consonants and guttural pronunciation..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="field is-grouped is-grouped-centered pb-2">
+    <div class="control">
+        {{#if languageID}}
+            <button id="updateButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{else}}
+            <button id="createButton" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{/if}}
+    </div>
+</div>

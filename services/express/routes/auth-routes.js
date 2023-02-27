@@ -75,7 +75,7 @@ function handlePatreonAccess(req, res) {
     apiClient("/current_user")
       .then((result) => {
         console.log("Patreon - Valid Access Token - OK");
-        res.redirect("/profile/characters");
+        res.redirect("/v/profile/characters");
       })
       .catch((err) => {
         if (req.user.patreonRefreshToken != null) {
@@ -114,7 +114,7 @@ function handlePatreonAccess(req, res) {
       });
   } else {
     console.log("Patreon - No Access Token - OK");
-    res.redirect("/profile/characters");
+    res.redirect("/v/profile/characters");
   }
 }
 
@@ -307,7 +307,7 @@ function attemptAccessTokenRefresh(res, userID, refreshToken) {
         patreonRefreshToken: refresh_token,
       };
       User.update(updateValues, { where: { id: userID } }).then((result) => {
-        res.redirect("/profile/characters");
+        res.redirect("/v/profile/characters");
       });
     })
     .catch((err) => {

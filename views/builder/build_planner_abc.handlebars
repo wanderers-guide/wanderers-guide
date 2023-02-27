@@ -1,0 +1,425 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/build-planner.css">
+
+    <script defer src="/js/build_planner/main.js"></script>
+    <script defer src="/js/build_planner/ui-handler.js"></script>
+
+    <script defer src="/js/build_planner/processor/core-processor.js"></script>
+
+    <script defer src="/js/build_planner/processor/sub_processors/builder-statements.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/sheet-statements.js"></script>
+
+    <script defer src="/js/build_planner/scripts/init-variables.js"></script>
+    <script defer src="/js/build_planner/scripts/process-ancestry-stats.js"></script>
+    <script defer src="/js/build_planner/scripts/process-class-stats.js"></script>
+    <script defer src="/js/build_planner/scripts/unselected-options.js"></script>
+    <script defer src="/js/build_planner/scripts/extra-skills-and-langs.js"></script>
+
+    <script defer src="/js/build_planner/libraries/selector.js"></script>
+
+    <script defer src="/js/build_planner/data_mapping/data-map.js"></script>
+    <script defer src="/js/build_planner/data_mapping/data-map-ext.js"></script>
+    <script defer src="/js/build_planner/data_mapping/retrieval.js"></script>
+
+    <script defer src="/js/build_planner/modules/process-ancestry.js"></script>
+    <script defer src="/js/build_planner/modules/process-background.js"></script>
+    <script defer src="/js/build_planner/modules/process-class.js"></script>
+    
+    <script defer src="/js/build_planner/modules/process-custom-code.js"></script>
+
+    <script defer src="/js/build_planner/scripts/variants/auto-bonus-progression.js"></script>
+    <script defer src="/js/build_planner/scripts/variants/class-archetypes.js"></script>
+    <script defer src="/js/build_planner/scripts/variants/free-archetype.js"></script>
+    <script defer src="/js/build_planner/scripts/variants/gradual-ability-boosts.js"></script>
+
+    <!-- Dependencies -->
+    <script defer src="/js/wsc/text-processing.js"></script>
+    <script defer src="/js/wsc/add-text-processing.js"></script>
+    <script defer src="/js/wsc/misc-feat-processing.js"></script>
+    <script defer src="/js/wsc/removal-processing.js"></script>
+    <script defer src="/js/wsc/variable-processing.js"></script>
+    <script defer src="/js/sheet/general/stat-manager.js"></script>
+    <script defer src="/js/sheet/general/sheet-states.js"></script>
+
+    <script defer src="/js/wsc/errorHandling.js"></script>
+
+
+    <script defer src="/js/libraries/modal_selection/modal-selection.js"></script>
+
+    <script defer src="/js/libraries/display_class/display-class.js"></script>
+    <script defer src="/js/libraries/display_ancestry/display-ancestry.js"></script>
+    <script defer src="/js/libraries/display_archetype/display-archetype.js"></script>
+    <script defer src="/js/libraries/display_background/display-background.js"></script>
+    <script defer src="/js/libraries/display_uni_heritage/display-uni-heritage.js"></script>
+    <script defer src="/js/libraries/confirm_message/confirm-message.js"></script>
+
+
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-boosts.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-feats.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-class-feature.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-heritage.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-langs.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-lore.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-skills.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-profs.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-spells.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-spells-innate.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-spells-focus.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-resistances.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-domains.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-specializations.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-notes.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-charTags.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-phyFeats.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-senses.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-speeds.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-familiarity.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-keyAbility.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/wsc-scfs.js"></script>
+
+    <script defer src="/js/build_planner/processor/sub_processors/builder/display-structs.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/feats-selection.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/builder/prereq-parser.js"></script>
+
+    <script defer src="/js/build_planner/processor/sub_processors/expression-processor.js"></script>
+    <script defer src="/js/build_planner/processor/sub_processors/expression-utils.js"></script>
+
+    <!-- Quickview -->
+    <script defer src="/js/char_builders/wsc/quickview-left.js"></script>
+    <script defer src="/js/sheet/quickviews/_quickviews.js"></script>
+    <script defer src="/js/sheet/quickviews/feat-view.js"></script>
+    <script defer src="/js/sheet/quickviews/language-view.js"></script>
+    <script defer src="/js/sheet/quickviews/spell-view.js"></script>
+    <script defer src="/js/sheet/quickviews/item-view.js"></script>
+    <script defer src="/js/sheet/quickviews/tag-view.js"></script>
+    <script defer src="/js/sheet/quickviews/ability-view.js"></script>
+    <script defer src="/js/sheet/quickviews/condition-view.js"></script>
+    <script defer src="/js/sheet/quickviews/general-breakdown-view.js"></script>
+    <script defer src="/js/sheet/quickviews/hit-points-breakdown-view.js"></script>
+    <script defer src="/js/sheet/quickviews/ability-scores-breakdown-view.js"></script>
+    <script defer src="/js/sheet/quickviews/resist-view.js"></script>
+
+    <script defer src="/js/sheet/general/prof-history-display.js"></script>
+    <script defer src="/js/sheet/utils/item-utils.js"></script>
+
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters" class="active">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="">
+  <div class="dice-pageloader">
+    <div class="ldBar-container">
+      <div
+        class="ldBar label-center is-hidden"
+        data-type="fill"
+        data-img="/images/dice-d20.svg"
+        data-fill-background-extrude="0"
+        data-fill-background="var(--main-loading-bg-color)"
+        data-img-size="120,120"
+        data-duration="1"
+      ></div>
+      <p class="ldBar-message"></p>
+    </div>
+  </div>
+</div>
+
+<div class="planner-subpageloader subpageloader-like is-hidden"><div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div>
+
+<div class="container mt-3 pt-3">
+
+  <div id="errorDisplay" class="hero is-danger is-hidden text-center">
+      <div class="hero-body is-paddingless py-3">
+          <div id="errorMessage" class="container"></div>
+      </div>
+  </div>
+
+  <div id="builder-data" data-char-id="{{character.id}}" data-char-lvl="{{character.level}}" data-builder-type="by-abc" data-page-num="{{pageNum}}"></div>
+  
+  <div class="tile is-ancestor is-vertical">
+    <div class="tile">
+
+      <div class="tile is-parent is-vertical">
+
+        <div class="tile is-child box py-2 pl-2 pr-1">
+
+          <div class="steps">
+            <div id="builder-home-step" class="step-item is-completed is-info">
+                <div class="step-marker">
+                <a class="builder-basics-page-btn"><span id="builder-home-step-symbol" class="has-text-bck-color icon"><i class="fas fa-home-alt"></i></span></a>
+                </div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-basics-page-btn button is-rounded is-inverted is-tiny is-info"><p class="step-builder-title title-font">Home</p></a>
+                </div>
+            </div>
+            <div id="builder-ancestry-step" class="step-item">
+                <div class="step-marker"><a class="builder-ancestry-page-btn"><span id="builder-ancestry-step-symbol" class="has-text-bck-color">A</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-ancestry-page-btn button is-rounded is-inverted is-tiny is-info"><p class="step-builder-title title-font">Ancestry</p></a>
+                </div>
+            </div>
+            <div id="builder-background-step" class="step-item">
+                <div class="step-marker"><a class="builder-background-page-btn"><span id="builder-background-step-symbol" class="has-text-bck-color">B</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-background-page-btn button is-rounded is-inverted is-tiny is-info"><p class="step-builder-title title-font">Background</p></a>
+                </div>
+            </div>
+            <div id="builder-class-step" class="step-item">
+                <div class="step-marker"><a class="builder-class-page-btn"><span id="builder-class-step-symbol" class="has-text-bck-color">C</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-class-page-btn button is-rounded is-inverted is-tiny is-info"><p class="step-builder-title title-font">Class</p></a>
+                </div>
+            </div>
+            <div id="builder-finalize-step" class="step-item">
+                <div class="step-marker">
+                <a class="builder-finalize-page-btn"><span class="has-text-bck-color icon"><i class="fa fa-user-alt"></i></span></a>
+                </div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-finalize-page-btn button is-rounded is-inverted is-tiny is-info"><p class="step-builder-title title-font">Sheet</p></a>
+                </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    
+    </div>
+
+    <div class="tile">
+
+      <div class="tile is-parent is-vertical">
+
+        <div class="tile is-child box p-2 is-marginless">
+          
+          <div class="columns is-mobile is-marginless m-1">
+            <div class="column is-paddingless">
+              <p class="has-txt-value-string title-font has-text-centered" id="selected-abc-title">ABC</p>
+            </div>
+            <div class="column is-7 is-paddingless has-text-centered">
+              <span class="button is-info is-outlined is-small is-fullwidth" id="selected-abc">None</span>
+            </div>
+          </div>
+
+        </div>
+        
+        <div class="tile is-child box py-2 pl-2 pr-1">
+          <p class="has-txt-value-string title-font has-text-centered">Statistics</p>
+          <div id="builder-statistics-container" class="use-custom-scrollbar" style="height: 500px; max-height: 500px; overflow-y: scroll;">
+          
+            <!-- Ability Scores -->
+            <div id="ability-scores-body" class="accord-like-button mx-2 mb-2">
+              <div class="columns is-mobile is-centered is-marginless text-center mx-3">
+                <div class="column is-2 is-paddingless"><p class="is-bold-very">Str</p></div>
+                <div class="column is-2 is-paddingless"><p class="is-bold-very">Dex</p></div>
+                <div class="column is-2 is-paddingless"><p class="is-bold-very">Con</p></div>
+                <div class="column is-2 is-paddingless"><p class="is-bold-very">Int</p></div>
+                <div class="column is-2 is-paddingless"><p class="is-bold-very">Wis</p></div>
+                <div class="column is-2 is-paddingless"><p class="is-bold-very">Cha</p></div>
+              </div>
+              <div class="columns is-mobile is-centered is-marginless text-center mx-3">
+                <div class="column is-2 is-paddingless"><p id="str-score">10</p></div>
+                <div class="column is-2 is-paddingless"><p id="dex-score">10</p></div>
+                <div class="column is-2 is-paddingless"><p id="con-score">10</p></div>
+                <div class="column is-2 is-paddingless"><p id="int-score">10</p></div>
+                <div class="column is-2 is-paddingless"><p id="wis-score">10</p></div>
+                <div class="column is-2 is-paddingless"><p id="cha-score">10</p></div>
+              </div>
+            </div>
+
+            <!-- Hit Points -->
+            <div id="hit-points-body" class="accord-like-button columns is-mobile is-marginless my-1">
+              <div class="column is-8 is-paddingless"><span class="title-font pl-2">Hit Points</span></div>
+              <div class="column is-2 is-paddingless"><p id="hit-points-total" class="has-text-centered">130</p></div>
+              <div class="column is-2 is-paddingless"><p class="has-text-centered is-italic has-txt-noted is-size-7-5 pt-2">(at max)</p></div>
+            </div>
+
+            <!-- Class DC -->
+            <div id="class-dc-body" class="accord-like-button columns is-mobile is-marginless my-1">
+              <div class="column is-8 is-paddingless"><span class="title-font pl-2">Class DC</span></div>
+              <div class="column is-2 is-paddingless"><p id="class-dc-total" class="has-text-centered">18</p></div>
+              <div class="column is-2 is-paddingless"><p id="class-dc-rank" class="has-text-centered is-italic has-txt-noted">E</p></div>
+            </div>
+
+            <!-- Perception -->
+            <div id="perception-body" class="accord-like-button columns is-mobile is-marginless my-1">
+              <div class="column is-8 is-paddingless"><span class="title-font pl-2">Perception</span></div>
+              <div class="column is-2 is-paddingless"><p id="perception-total" class="has-text-centered">+28</p></div>
+              <div class="column is-2 is-paddingless"><p id="perception-rank" class="has-text-centered is-italic has-txt-noted">T</p></div>
+            </div>
+
+            <!-- Skills -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Skills</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="skills-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+
+            <!-- Saves -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Saves</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="saves-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+
+            <!-- Attacks -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Attacks</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="attacks-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+
+            <!-- Defenses -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Defenses</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="defenses-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+
+            <!-- Spellcasting -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Spellcasting</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="spellcasting-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+            
+            <!-- Languages -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Languages</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="languages-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+            
+            <!-- Resist & Weaks -->
+            <div class="accord-container my-1">
+              <div class="accord-header">
+                <span class="title-font pl-2">Resist & Weaks</span>
+                <span class="icon is-pulled-right">
+                  <i class="accord-chevron fas fa-chevron-down"></i>
+                </span>
+              </div>
+              <div id="resist-weaks-body" class="accord-body is-hidden">
+                <!-- Populated at runtime -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <div class="tile is-parent is-8">
+
+        <div class="tile is-child box py-2 pl-2 pr-1">
+          
+          <div id="creation-section" class="use-custom-scrollbar" style="height: 600px; max-height: 600px; overflow-y: scroll; overflow-x: hidden;">
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+    
+  </div>
+
+</div>
+
+
+{{#section 'overlay'}}
+    <!-- Right Quickview -->
+    <div id="quickviewDefault" class="quickview">
+        <div class="quickview-header">
+            <p id="quickViewTitle" class="title is-size-5 has-txt-value-number"></p>
+            <div class="is-inline-flex">
+                <p id="quickViewTitleRight"></p>
+                <p id="quickViewTitleClose"></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- Left Quickview -->
+    <div id="quickviewLeftDefault" class="quickview is-left" style="z-index: 34;">
+        <div class="quickview-header">
+            <p id="quickViewLeftTitle" class="title is-size-5 has-txt-value-number">Statistics</p>
+            <div class="is-inline-flex">
+                <p><a id="quickViewLeftTitleClose" class="delete"></a></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewLeftContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+{{/section}}

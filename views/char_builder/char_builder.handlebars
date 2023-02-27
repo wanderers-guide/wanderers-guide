@@ -1,0 +1,201 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/char-builder.css">
+
+    <script src="/js/require-signin.js"></script>
+
+    <script type="text/javascript" src="/js/char_builders/char-builder-general.js"></script>
+    <script type="text/javascript" src="/js/char_builders/pages/page-2-ancestry.js"></script>
+    <script type="text/javascript" src="/js/char_builders/pages/page-3-background.js"></script>
+    <script type="text/javascript" src="/js/char_builders/pages/page-4-class.js"></script>
+    <script type="text/javascript" src="/js/char_builders/pages/page-5-finalize.js"></script>
+
+    <!--<script type="text/javascript" src="/js/char_builders/pages/page-v-class_2.js"></script>-->
+
+    <script type="text/javascript" src="/js/char_builders/wsc/init-processing.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-boosts.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-feats.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-class-feature.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-heritage.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-langs.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-lore.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-skills.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-profs.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-spells.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-spells-innate.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-spells-focus.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-resistances.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-domains.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-specializations.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-notes.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-charTags.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-phyFeats.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-senses.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-speeds.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-familiarity.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-keyAbility.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/wsc-scfs.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/display-structs.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/feats-selection.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/skill-manager.js"></script>
+    <script type="text/javascript" src="/js/char_builders/wsc/prereq-parser.js"></script>
+
+    <script src="/js/prof/prof-manager.js"></script>
+
+    <script type="text/javascript" src="/js/wsc/text-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/variable-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/expression-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/expression-utils.js"></script>
+    <script type="text/javascript" src="/js/wsc/statement-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/misc-feat-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/removal-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/add-text-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/errorHandling.js"></script>
+
+    <script type="text/javascript" src="/js/char_builders/top-stickies.js"></script>
+    <script type="text/javascript" src="/js/char_builders/unselected-options.js"></script>
+    <script type="text/javascript" src="/js/char_builders/utils.js"></script>
+
+    <script type="text/javascript" src="/js/char_builders/variants/dual-class.js"></script>
+    <script type="text/javascript" src="/js/char_builders/variants/free-archetype.js"></script>
+    <script type="text/javascript" src="/js/char_builders/variants/auto-bonus-progression.js"></script>
+    <script type="text/javascript" src="/js/char_builders/variants/gradual-ability-boosts.js"></script>
+    <script type="text/javascript" src="/js/char_builders/variants/class-archetypes.js"></script>
+
+    <!-- Quickview -->
+    <script type="text/javascript" src="/js/char_builders/wsc/quickview-left.js"></script>
+    <script src="/js/sheet/quickviews/_quickviews.js"></script>
+    <script src="/js/sheet/quickviews/feat-view.js"></script>
+    <script src="/js/sheet/quickviews/language-view.js"></script>
+    <script src="/js/sheet/quickviews/spell-view.js"></script>
+    <script src="/js/sheet/quickviews/item-view.js"></script>
+    <script src="/js/sheet/quickviews/tag-view.js"></script>
+    <script src="/js/sheet/quickviews/condition-view.js"></script>
+    <script src="/js/sheet/utils/item-utils.js"></script>
+
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters" class="active">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="">
+  <div class="dice-pageloader">
+    <div class="ldBar-container">
+      <div
+        class="ldBar label-center is-hidden"
+        data-type="fill"
+        data-img="/images/dice-d20.svg"
+        data-fill-background-extrude="0"
+        data-fill-background="var(--main-loading-bg-color)"
+        data-img-size="120,120"
+        data-duration="1"
+      ></div>
+      <p class="ldBar-message"></p>
+    </div>
+  </div>
+</div>
+
+<div class="pageloader is-hidden">
+    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="sticky_buttons_shell sticky_button_left">
+  <button class="button is-info is-rounded sticky_button" id="prevButton">
+      <span class="icon">
+          <i class="fas fa-arrow-left"></i>
+      </span>
+  </button>
+</div>
+
+<div class="sticky_buttons_shell sticky_button_right">
+  <button class="button is-info is-rounded sticky_button" id="nextButton">
+      <span class="icon">
+          <i class="fas fa-arrow-right"></i>
+      </span>
+  </button>
+</div>
+
+<div class="sticky_buttons_shell sticky_button_right is-hidden">
+    <span class="icon is-medium has-text-info cursor-clickable sticky_button" id="goToCharBigButton">
+        <i class="fas fa-address-card" style="font-size: 2.75em;"></i>
+    </span>
+</div>
+
+<div class="sticky_buttons_shell sticky_button_leftest">
+  <span class="icon is-medium has-text-info cursor-clickable sticky_button is-upper has-tooltip-right" data-tooltip="View Character Stats" id="leftQuickviewButton">
+      <i class="fas fa-2x fa-chart-bar"></i>
+  </span>
+</div>
+
+{{#if isPlayable}}
+    <div class="sticky_buttons_shell sticky_button_rightest">
+        <span class="icon is-medium has-text-info cursor-clickable sticky_button is-upper has-tooltip-left" data-tooltip="Go To Sheet" id="goToCharButton">
+            <i class="fas fa-2x fa-address-card"></i>
+        </span>
+    </div>
+{{/if}}
+
+<div id="char-builder-container" data-char-id="{{character.id}}" data-page-num="{{pageNum}}">
+  <!-- Builder Content -->
+</div>
+
+{{#section 'overlay'}}
+    <!-- Right Quickview -->
+    <div id="quickviewDefault" class="quickview">
+        <div class="quickview-header">
+            <p id="quickViewTitle" class="title is-size-5 has-txt-value-number"></p>
+            <div class="is-inline-flex">
+                <p id="quickViewTitleRight"></p>
+                <p id="quickViewTitleClose"></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+
+    <!-- Left Quickview -->
+    <div id="quickviewLeftDefault" class="quickview is-left" data-str-base="{{charAbilities.STR}}" data-dex-base="{{charAbilities.DEX}}" data-con-base="{{charAbilities.CON}}" data-int-base="{{charAbilities.INT}}" data-wis-base="{{charAbilities.WIS}}" data-cha-base="{{charAbilities.CHA}}">
+        <div class="quickview-header">
+            <p id="quickViewLeftTitle" class="title is-size-5 has-txt-value-number"></p>
+            <div class="is-inline-flex">
+                <p id="quickViewLeftTitleClose"></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewLeftContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+{{/section}}

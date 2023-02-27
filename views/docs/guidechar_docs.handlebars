@@ -1,0 +1,196 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/docs-styles.css">
+    <script src="/js/wsc/docs-page.js"></script>
+    <script src="/js/wsc/text-processing.js"></script>
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div id="doc_nav_shell">
+    <div id="docs_nav" class="ml-2 mt-2">
+        <aside class="menu">
+            <p class="menu-label">
+                <a href="/guidechar_docs/#guidechar_docs">Version Documentation</a>
+            </p>
+            <ul class="menu-list">
+                <li class="pb-1"><a href="/guidechar_docs/#version_2">Version 2 (latest)</a></li>
+                <li class="pt-1"><a href="/guidechar_docs/#version_1">Version 1</a></li>
+            </ul>
+        </aside>
+    </div>
+</div>
+
+<div id="docs_content" class="tile is-ancestor is-paddingless is-marginless mb-3">
+    <div class="tile is-parent is-2">
+        <div class="tile is-child"></div>
+    </div>
+    <div class="tile is-parent is-vertical is-8">
+        <div id="guidechar_docs" class="tile is-child">
+            <h1 class="main-title is-size-2 is-family-code has-text-centered">Guidechar File Documentation</h1>
+            <p class="subtitle is-size-6-5 has-txt-listing has-text-centered is-italic p-2">
+              This documentation is for developering looking to understand the structure of guidechar files.
+            </p>
+            <p class="subtitle is-size-6-5 has-txt-listing">
+              Guidechar files are TEXT type code files that follow a minified JSON file format. To open and read a file, it's recommended to use a text editor (like <a class="has-text-info" href="https://notepad-plus-plus.org/" target="_blank">Notepad++</a>) and copy the contents over to a JSON formatter (such as <a class="has-text-info" href="https://jsonformatter.org/json-pretty-print" target="_blank">JSON Pretty Print</a>).
+            </p>
+            <p class="subtitle is-size-6-5 has-txt-listing">
+              When explaining the file structure, not all data will be covered - just the most important data worth noting. 
+            </p>
+        </div>
+        <div id="version_2" class="tile is-child is-paddingless">
+            <div class="isHideable">
+                <p class="text-center is-bold is-size-5">
+                  Version 2 File Structure
+                </p>
+            </div>
+            <div class="mt-4 isHideable">
+
+              <div class="">
+                <p class="has-txt-value-number">version</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">File version.</p>
+              </div>
+              <div class="">
+                <p class="has-txt-value-number">character</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Basic character info.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">_class</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Basic information about the character's class (or null if unselected).</p>
+              </div>
+              <div class="ml-4">
+                <p class="has-txt-value-number">_background</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Basic information about the character's background (or null if unselected).</p>
+              </div>
+              <div class="ml-4">
+                <p class="has-txt-value-number">_ancestry</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Basic information about the character's ancestry (or null if unselected).</p>
+              </div>
+              <div class="ml-4">
+                <p class="has-txt-value-number">_heritage</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Basic information about the character's heritage or versatile heritage (or null if unselected).</p>
+              </div>
+
+              <div class="">
+                <p class="has-txt-value-number">build</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Contains most of the selections made for the character when being built in the character builder. For example, what feats were selected when in the building process.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">boosts</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">A list of each ability boost (or flaw).</p>
+              </div>
+
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">Ability</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">The name of the targeted ability score.</p>
+              </div>
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">Bonus</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Whether it is a boost or flaw.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">domains</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">A list of each domains they have.</p>
+              </div>
+
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">value</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Information about the domain.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">feats</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">A list of each feat they have.</p>
+              </div>
+
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">value</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Information about the feat.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">languages</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">A list of each language they have.</p>
+              </div>
+
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">value</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Information about the language.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">proficiencies</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">A list of each proficiency change.</p>
+              </div>
+
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">For</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">The category of what the proficiency change is going towards ('Skill' for Nature, 'Save' for Will, etc).</p>
+              </div>
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">To</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">What the proficiency change is going towards (a skill, saving throw, weapon, etc).</p>
+              </div>
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">Prof</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">The updated proficiency. 'UP' means a skill increase.</p>
+              </div>
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">SourceName</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">The name of the feat or feature that gave this proficiency change.</p>
+              </div>
+
+              <div class="ml-4">
+                <p class="has-txt-value-number">senses</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">A list of each sense they have. This can include common senses, like darkvision, to things like tremorsense.</p>
+              </div>
+
+              <div class="ml-4 pl-4">
+                <p class="has-txt-value-number">value</p>
+                <p class="is-size-6-5 has-txt-listing is-italic">Information about the sense.</p>
+              </div>
+              
+              
+
+            </div>
+        </div>
+    </div>
+    <div class="tile is-parent is-2">
+        <div class="tile is-child"></div>
+    </div>
+</div>

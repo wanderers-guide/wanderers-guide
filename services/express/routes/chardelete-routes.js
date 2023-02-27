@@ -19,7 +19,7 @@ router.get("*", (req, res) => {
         Character.destroy({
           where: { id: character.id },
         }).then((result) => {
-          res.redirect("/profile/characters");
+          res.redirect("/v/profile/characters");
         });
       });
     } else {

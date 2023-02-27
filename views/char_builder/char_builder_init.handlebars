@@ -1,0 +1,713 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/char-builder.css">
+    <script type="text/javascript" src="/js/char_builders/char-builder-init.js"></script>
+
+    <script src="/js/require-signin.js"></script>
+
+    <script src="/js/libraries/confirm_message/confirm-message.js"></script>
+    
+    <script type="text/javascript" src="/js/wsc/text-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/errorHandling.js"></script>
+
+    <script type="text/javascript" src="/js/char_builders/top-stickies.js"></script>
+    <script type="text/javascript" src="/js/char_builders/utils.js"></script>
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters" class="active">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller" style="margin-bottom: 20%;"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="sticky_buttons_shell sticky_button_right">
+    <button class="button is-info is-rounded sticky_button" id="nextButton">
+        <span class="icon">
+            <i class="fas fa-arrow-right"></i>
+        </span>
+    </button>
+</div>
+
+<div id="char-builder-container" data-char-id="{{character.id}}">
+</div>
+
+<div id="char-builder" class="container py-4 text-center">
+
+    <div id="errorDisplay" class="hero is-danger is-hidden">
+        <div class="hero-body is-paddingless py-3">
+            <div id="errorMessage" class="container"></div>
+        </div>
+    </div>
+
+    <div class="box">
+
+        <h1 class="title is-2 has-txt-listing">Character Builder</h1>
+
+        <div class="steps">
+            <div class="step-item is-active is-info">
+                <div class="step-marker">
+                <a class="builder-basics-page-btn"><span class="icon"><i class="fas fa-home-alt"></i></span></a>
+                </div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-basics-page-btn button is-rounded is-inverted is-info"><p class="step-title">Home</p></a>
+                </div>
+            </div>
+            <div class="step-item is-builder-type-by-abc">
+                <div class="step-marker"><a class="builder-ancestry-page-btn"><span class="has-text-bck-color">A</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-ancestry-page-btn button is-rounded is-inverted is-info"><p class="step-title">Ancestry</p></a>
+                </div>
+            </div>
+            <div class="step-item is-builder-type-by-abc">
+                <div class="step-marker"><a class="builder-background-page-btn"><span class="has-text-bck-color">B</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-background-page-btn button is-rounded is-inverted is-info"><p class="step-title">Background</p></a>
+                </div>
+            </div>
+            <div class="step-item is-builder-type-by-abc">
+                <div class="step-marker"><a class="builder-class-page-btn"><span class="has-text-bck-color">C</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-class-page-btn button is-rounded is-inverted is-info"><p class="step-title">Class</p></a>
+                </div>
+            </div>
+            <div class="step-item is-builder-type-by-level">
+                <div class="step-marker"><a class="builder-ancestry-page-btn"><span class="has-text-bck-color">C</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-ancestry-page-btn button is-rounded is-inverted is-info"><p class="step-title">Creation</p></a>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-marker">
+                <a class="builder-finalize-page-btn"><span class="has-text-bck-color icon"><i class="fa fa-user-alt"></i></span></a>
+                </div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-finalize-page-btn button is-rounded is-inverted is-info"><p class="step-title">Sheet</p></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns py-2 pos-relative">
+
+            <div class="pos-absolute pos-b-5 pos-l-5">
+              <h6>Campaign</h6>
+
+              <div id="campaign-container-join">
+                <div class="field has-addons has-addons-centered" style="width: 137px;">
+                  <div class="control">
+                    <input id="campaign-access-code-input" class="input is-info is-very-small" type="text" maxlength="15" spellcheck="false" autocomplete="off" placeholder="Access Code">
+                  </div>
+                  <div class="control">
+                    <button id="campaign-access-code-btn" type="submit" class="button is-very-small is-info is-rounded is-outlined">Join</button>
+                  </div>
+                </div>
+              </div>
+              <div id="campaign-container-leave" class="is-hidden">
+                <div class="field has-addons has-addons-centered" style="width: 137px;">
+                  <div class="control text-overflow-ellipsis" style="cursor: text;">
+                    <button id="campaign-name" class="button is-static is-very-small is-extra border-darker" style="user-select: text;">
+                    </button>
+                  </div>
+                  <div class="control">
+                    <button id="campaign-leave-btn" type="submit" class="button is-very-small is-danger is-rounded is-outlined">
+                      <span class="icon is-small">
+                        <i class="fas fa-times"></i>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="pos-absolute pos-b-5 pos-r-5">
+              <h6>Build</h6>
+              <div class="control">
+                <label class="px-1 is-size-7 cursor-clickable">
+                  <input id="builder-by-abc" type="radio" name="build-type">
+                  by ABC
+                </label>
+                <label class="px-1 is-size-7 cursor-clickable">
+                  <input id="builder-by-level" type="radio" name="build-type">
+                  by Level
+                </label>
+              </div>
+            </div>
+
+            <div class="column is-4 is-offset-4">
+
+                <div class="columns">
+                    <div class="column is-10 is-paddingless p-1">
+
+                        <div>
+                            <h5>Character Name</h5>
+                        </div>
+                        <div class="field">
+                            <div id="charNameControlShell" class="control has-icons-left has-icons-right">
+                                <input class="input" type="text" placeholder="Name" spellcheck="false" id="charName" maxlength="28" value="{{character.name}}" style="text-align:center;">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                <span class="icon is-small is-right">
+                                    <i id="charNameSideIcon" class="fas fa-exclamation-triangle is-hidden"></i>
+                                </span>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    <div class="column is-paddingless p-1">
+
+                        <div>
+                            <h5>Level</h5>
+                        </div>
+                        <div class="select">
+                            <select id="charLevel" name="charLevel">
+                                <option value="1" {{chooseSelection 1 character.level}}>1</option>
+                                <option value="2" {{chooseSelection 2 character.level}}>2</option>
+                                <option value="3" {{chooseSelection 3 character.level}}>3</option>
+                                <option value="4" {{chooseSelection 4 character.level}}>4</option>
+                                <option value="5" {{chooseSelection 5 character.level}}>5</option>
+                                <option value="6" {{chooseSelection 6 character.level}}>6</option>
+                                <option value="7" {{chooseSelection 7 character.level}}>7</option>
+                                <option value="8" {{chooseSelection 8 character.level}}>8</option>
+                                <option value="9" {{chooseSelection 9 character.level}}>9</option>
+                                <option value="10" {{chooseSelection 10 character.level}}>10</option>
+                                <option value="11" {{chooseSelection 11 character.level}}>11</option>
+                                <option value="12" {{chooseSelection 12 character.level}}>12</option>
+                                <option value="13" {{chooseSelection 13 character.level}}>13</option>
+                                <option value="14" {{chooseSelection 14 character.level}}>14</option>
+                                <option value="15" {{chooseSelection 15 character.level}}>15</option>
+                                <option value="16" {{chooseSelection 16 character.level}}>16</option>
+                                <option value="17" {{chooseSelection 17 character.level}}>17</option>
+                                <option value="18" {{chooseSelection 18 character.level}}>18</option>
+                                <option value="19" {{chooseSelection 19 character.level}}>19</option>
+                                <option value="20" {{chooseSelection 20 character.level}}>20</option>
+                            </select>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="is-hidden has-text-centered is-size-6-5 has-txt-partial-noted is-italic">Using <a id="character-build" style="max-width: 300px;" class="btn button-style is-info m-1"></a> Build</p>
+
+    </div>
+
+    <div class="box p-2">
+        <div>
+            <h4>Ability Scores</h4>
+            <p class="help is-info is-italic is-marginless">(usually left unchanged as 10's)</p>
+        </div>
+        <div class="d-flex justify-content-center pb-2">
+            <div class="p-1">
+                <h4>STR</h4>
+                <input class="input abilScoreSet" type="number" name="abilSTR" id="abilSTR" min="0" max="30" value="{{charAbilities.STR}}" >
+            </div>
+            <div class="p-1">
+                <h4>DEX</h4>
+                <input class="input abilScoreSet" type="number" name="abilDEX" id="abilDEX" min="0" max="30" value="{{charAbilities.DEX}}" >
+            </div>
+            <div class="p-1">
+                <h4>CON</h4>
+                <input class="input abilScoreSet" type="number" name="abilCON" id="abilCON" min="0" max="30" value="{{charAbilities.CON}}" >
+            </div>
+            <div class="p-1">
+                <h4>INT</h4>
+                <input class="input abilScoreSet" type="number" name="abilINT" id="abilINT" min="0" max="30" value="{{charAbilities.INT}}" >
+            </div>
+            <div class="p-1">
+                <h4>WIS</h4>
+                <input class="input abilScoreSet" type="number" name="abilWIS" id="abilWIS" min="0" max="30" value="{{charAbilities.WIS}}" >
+            </div>
+            <div class="p-1">
+                <h4>CHA</h4>
+                <input class="input abilScoreSet" type="number" name="abilCHA" id="abilCHA" min="0" max="30" value="{{charAbilities.CHA}}" >
+            </div>
+        </div>
+    </div>
+
+
+    <div class="box p-2">
+
+        <div class="columns is-centered">
+            <div class="column is-4">
+                <div class="pb-2">
+                    <h4>Books</h4>
+                </div>
+                
+                <div id="booksColumn" class="columns is-mobile first-page-container my-1 use-custom-scrollbar">
+                    <span id="enableAllBooksBtn" class="button is-tiny is-info is-outlined pos-absolute pos-t-10 pos-r-10">Enable All</span>
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+
+                        <div class="field">
+                            <input id="contentSrc-CRB" type="checkbox" name="contentSrc-CRB" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1" disabled>
+                            <label for="contentSrc-CRB">
+                                Core Rulebook
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-ADV-PLAYER-GUIDE" type="checkbox" name="contentSrc-ADV-PLAYER-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-ADV-PLAYER-GUIDE">
+                                Advanced Player’s Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-GM-GUIDE" type="checkbox" name="contentSrc-GM-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-GM-GUIDE">
+                                Gamemastery Guide
+                            </label>
+                        </div>
+
+                        <hr class="m-2">
+
+                        <div class="field">
+                            <input id="contentSrc-BOOK-OF-DEAD" type="checkbox" name="contentSrc-BOOK-OF-DEAD" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-BOOK-OF-DEAD">
+                                Book of the Dead
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-DARK-ARCHIVE" type="checkbox" name="contentSrc-DARK-ARCHIVE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-DARK-ARCHIVE">
+                                Dark Archive
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-GUNS-AND-GEARS" type="checkbox" name="contentSrc-GUNS-AND-GEARS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-GUNS-AND-GEARS">
+                                Guns & Gears
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-RAGE-OF-ELEMENTS" type="checkbox" name="contentSrc-RAGE-OF-ELEMENTS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-RAGE-OF-ELEMENTS">
+                                Rage of Elements <sup class="is-thin">(in playtest)</sup>
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-SECRETS-OF-MAGIC" type="checkbox" name="contentSrc-SECRETS-OF-MAGIC" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-SECRETS-OF-MAGIC">
+                                Secrets of Magic
+                            </label>
+                        </div>
+
+                        <div class="pl-4">
+                            <p>Lost Omens</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+                        <div class="field">
+                            <input id="contentSrc-LOST-ANCESTRY-GUIDE" type="checkbox" name="contentSrc-LOST-ANCESTRY-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-ANCESTRY-GUIDE">
+                                Ancestry Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-CHAR-GUIDE" type="checkbox" name="contentSrc-LOST-CHAR-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-CHAR-GUIDE">
+                                Character Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-CITY-ABSALOM" type="checkbox" name="contentSrc-LOST-CITY-ABSALOM" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-CITY-ABSALOM">
+                                City of Absalom
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-GOD-MAGIC" type="checkbox" name="contentSrc-LOST-GOD-MAGIC" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-GOD-MAGIC">
+                                Gods & Magic
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-GRAND-BAZAAR" type="checkbox" name="contentSrc-LOST-GRAND-BAZAAR" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-GRAND-BAZAAR">
+                                Grand Bazaar
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-IMPOSSIBLE-LANDS" type="checkbox" name="contentSrc-LOST-IMPOSSIBLE-LANDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-IMPOSSIBLE-LANDS">
+                                Impossible Lands
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-KNIGHTS-WALL" type="checkbox" name="contentSrc-LOST-KNIGHTS-WALL" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-KNIGHTS-WALL">
+                                Knights of Lastwall
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-LEGENDS" type="checkbox" name="contentSrc-LOST-LEGENDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-LEGENDS">
+                                Legends
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-MONSTERS-MYTH" type="checkbox" name="contentSrc-LOST-MONSTERS-MYTH" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-MONSTERS-MYTH">
+                                Monsters of Myth
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-MWANGI" type="checkbox" name="contentSrc-LOST-MWANGI" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-MWANGI">
+                                The Mwangi Expanse
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-SOCIETY-GUIDE" type="checkbox" name="contentSrc-LOST-SOCIETY-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-SOCIETY-GUIDE">
+                                Pathfinder Society Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-TRAVEL-GUIDE" type="checkbox" name="contentSrc-LOST-TRAVEL-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-TRAVEL-GUIDE">
+                                Travel Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-WORLD-GUIDE" type="checkbox" name="contentSrc-LOST-WORLD-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-WORLD-GUIDE">
+                                World Guide
+                            </label>
+                        </div>
+
+                        <div class="pl-4">
+                            <p>Adventure Paths</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+
+                        <div class="field">
+                            <input id="contentSrc-ABOMINATION-VAULTS" type="checkbox" name="contentSrc-ABOMINATION-VAULTS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-ABOMINATION-VAULTS">
+                                Abomination Vaults
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-AGENTS-OF-EDGEWATCH" type="checkbox" name="contentSrc-AGENTS-OF-EDGEWATCH" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-AGENTS-OF-EDGEWATCH">
+                                Agents of Edgewatch
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-AGE-OF-ASHES" type="checkbox" name="contentSrc-AGE-OF-ASHES" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-AGE-OF-ASHES">
+                                Age of Ashes
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-BLOOD-LORDS" type="checkbox" name="contentSrc-BLOOD-LORDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-BLOOD-LORDS">
+                                Blood Lords <sup class="is-thin">(in progress)</sup>
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-EXTINCTION-CURSE" type="checkbox" name="contentSrc-EXTINCTION-CURSE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-EXTINCTION-CURSE">
+                                Extinction Curse
+                            </label>
+                        </div>
+                        
+                        <div class="field">
+                            <input id="contentSrc-FIST-PHOENIX" type="checkbox" name="contentSrc-FIST-PHOENIX" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-FIST-PHOENIX">
+                                Fists of the Ruby Phoenix
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-KINGMAKER" type="checkbox" name="contentSrc-KINGMAKER" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-KINGMAKER">
+                                Kingmaker
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-OUTLAWS-ALKENSTAR" type="checkbox" name="contentSrc-OUTLAWS-ALKENSTAR" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-OUTLAWS-ALKENSTAR">
+                                Outlaws of Alkenstar
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-QUEST-FROZEN-FLAME" type="checkbox" name="contentSrc-QUEST-FROZEN-FLAME" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-QUEST-FROZEN-FLAME">
+                                Quest for the Frozen Flame
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-STRENGTH-THOUSANDS" type="checkbox" name="contentSrc-STRENGTH-THOUSANDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-STRENGTH-THOUSANDS">
+                                Strength of Thousands
+                            </label>
+                        </div>
+
+                        <div class="pl-4">
+                            <p>Standalone Adventures</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+                        <div class="field">
+                            <input id="contentSrc-CROWN-OF-KOBOLD-KING" type="checkbox" name="contentSrc-CROWN-OF-KOBOLD-KING" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-CROWN-OF-KOBOLD-KING">
+                                Crown of the Kobold King
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-FALL-OF-PLAGUE" type="checkbox" name="contentSrc-FALL-OF-PLAGUE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-FALL-OF-PLAGUE">
+                                The Fall of Plaguestone
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-MALEVOLENCE" type="checkbox" name="contentSrc-MALEVOLENCE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-MALEVOLENCE">
+                                Malevolence
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-NIGHT-GRAY-DEATH" type="checkbox" name="contentSrc-NIGHT-GRAY-DEATH" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-NIGHT-GRAY-DEATH">
+                                Night of the Gray Death
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-SLITHERING" type="checkbox" name="contentSrc-SLITHERING" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-SLITHERING">
+                                The Slithering
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-THRESHOLD-KNOWLEDGE" type="checkbox" name="contentSrc-THRESHOLD-KNOWLEDGE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-THRESHOLD-KNOWLEDGE">
+                                Threshold of Knowledge
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-TROUBLES-IN-OTARI" type="checkbox" name="contentSrc-TROUBLES-IN-OTARI" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-TROUBLES-IN-OTARI">
+                                Troubles in Otari
+                            </label>
+                        </div>
+
+
+                        <div class="pl-4">
+                            <p>Other</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+                        <div class="field">
+                            <input id="contentSrc-PATH-SOCIETY" type="checkbox" name="contentSrc-PATH-SOCIETY" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-PATH-SOCIETY">
+                                Pathfinder Society - Extras
+                            </label>
+                        </div>
+
+                        
+
+                    </div>
+                </div>
+            </div>
+            <div class="column is-4" style="position: relative;">
+                <div class="pb-2">
+                    <h4>Homebrew</h4>
+                    <span id="noHomebrewMessage" class="is-hidden is-size-7 has-txt-noted is-italic has-text-centered">Your homebrew collection is empty.</span>
+                </div>
+
+                <div id="homebrewColumn" class="columns is-mobile first-page-container my-1 use-custom-scrollbar">
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+                      <div id="homebrewCollectionContainer"></div>
+                      <div style="position: absolute; left: 50%;">
+                        <div style="position: relative; left: -50%;">
+                          <span id="viewBrowseHomebrewBtn" class="is-hidden button is-rounded is-info is-very-small">Browse</span>
+                          <span id="viewHomebrewCollectionBtn" class="is-hidden button is-rounded is-info is-very-small">Go To Collection</span>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="column is-4">
+
+                <div class="pb-2">
+                    <h4>Variants</h4>
+                </div>
+
+                <div id="variantsColumn" class="columns is-mobile first-page-split-container is-top my-1 use-custom-scrollbar">
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+
+                        <div class="field">
+                            <input id="variantAncestryParagon" type="checkbox" name="variantAncestryParagon" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantAncestryParagon">Ancestry Paragon</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantAutoBonusProgression" type="checkbox" name="variantAutoBonusProgression" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantAutoBonusProgression">Auto Bonus Progression</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantFreeArchetype" type="checkbox" name="variantFreeArchetype" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantFreeArchetype">Free Archetype</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantGradualAbilityBoosts" type="checkbox" name="variantGradualAbilityBoosts" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantGradualAbilityBoosts">Gradual Ability Boosts</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantProficiencyWithoutLevel" type="checkbox" name="variantProficiencyWithoutLevel" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantProficiencyWithoutLevel">Proficiency Without Level</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantStamina" type="checkbox" name="variantStamina" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantStamina">Stamina</label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="pb-2">
+                    <h4>Options</h4>
+                </div>
+
+                <div id="optionsColumn" class="columns is-mobile first-page-split-container is-top is-bottom my-1 use-custom-scrollbar">
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+
+                        <div class="field">
+                            <input id="optionPublicCharacter" type="checkbox" name="optionPublicCharacter" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionPublicCharacter">Publicly Visible</label>
+                            <p id="optionPublicCharacterInfo" class="help is-info is-italic text-center is-hidden">Anyone can view the character using the sheet URL.</p>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionAutoDetectPreReqs" type="checkbox" name="optionAutoDetectPreReqs" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionAutoDetectPreReqs">Auto-Detect Prerequisites</label>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionAutoHeightenSpells" type="checkbox" name="optionAutoHeightenSpells" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionAutoHeightenSpells">Auto-Heighten Spells</label>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionClassArchetypes" type="checkbox" name="optionClassArchetypes" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionClassArchetypes">Class Archetypes</label>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionCustomCodeBlock" type="checkbox" name="optionCustomCodeBlock" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionCustomCodeBlock">Custom Code Block</label>
+                            <p id="optionCustomCodeBlockInfo" class="help is-info is-italic text-center is-hidden">A WSC block is enabled, the code is run under Initial Stats section and sheet.</p>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionDiceRoller" type="checkbox" name="optionDiceRoller" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionDiceRoller">Dice Integration</label>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionIgnoreBulk" type="checkbox" name="optionIgnoreBulk" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionIgnoreBulk">Ignore Bulk</label>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="option-custom-code-block-container" class="box p-0 is-hidden">
+      <div class="field pos-relative">
+        <label class="label">
+          <span class="is-size-5 has-txt-listing">Custom Code</span>
+          <a href="/wsc_docs/#code_basics" target="_blank" class="pl-1"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+          <span class="code-block-statement-display">Builder & Sheet Statements</span>
+        </label>
+        <div class="control">
+          <textarea id="inputCustomCodeBlock" class="textarea nanum-coding use-custom-scrollbar" placeholder="Insert code here, which will be executed on the Finalize page and sheet." rows="3" spellcheck="false" maxlength="1990">{{character.customCode}}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="box p-0 character-access-container is-hidden">
+
+      <div id="character-access-dropdown" class="columns is-mobile is-gapless is-marginless p-2 cursor-clickable">
+        <div class="column is-narrow is-2"></div>
+        <div class="column is-narrow is-8">
+          <h5>External Character Access</h5>
+        </div>
+        <div class="column is-narrow is-2">
+          <span class="icon cursor-clickable has-txt-listing">
+            <i id="character-access-chevron" class="fas fa-sm fa-chevron-down"></i>
+          </span>
+        </div>
+      </div>
+      <div id="character-access-content" class="is-hidden"></div>
+    </div>
+
+</div>

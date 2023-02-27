@@ -1,0 +1,246 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/profile.css">
+
+    <script src="/js/require-signin.js"></script>
+
+    <script src="/js/profile-page.js"></script>
+    <script src="/js/api/profile-api-clients.js"></script>
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+
+<div class="container profile-container mt-5 pt-3">
+    <div class="columns is-centered is-mobile">
+        <div class="column is-8 box p-4 pos-relative">
+            <div class="columns is-centered is-mobile">
+                <div class="column is-4">
+                    <figure class="image is-128x128 is-pulled-right">
+                        <img class="is-rounded" src="{{user.thumbnail}}" alt="Profile Image">
+                        <p class="has-text-centered is-size-7 pt-1">ID #{{user.id}}</p>
+                    </figure>
+                </div>
+                <div class="column is-8">
+                    <p class="is-size-3"><span id="profileName" data-profile-name="{{user.username}}" class="title-font has-txt-value-number is-bold">{{user.username}}</span><sup id="profileNameBtn" class="icon has-text-info is-size-6 pl-2 cursor-clickable"><i class="far fa-edit"></i></sup></p>
+
+                    <p id="developerStatusListing" class="is-italic is-size-6 pl-4 {{#ifEqual user.isDeveloper 0}}is-hidden{{/ifEqual}}">Developer</p>
+                    {{#ifEqual user.isAdmin 1}}
+                        <p class="is-italic is-size-6 pl-4">Admin</p>
+                    {{/ifEqual}}
+                    {{#ifEqual user.isPatreonSupporter 1}}
+                        {{#ifEqual user.isPatreonLegend 1}}
+                            <p class="is-italic is-size-6 pl-4">Patron - Legend</p>
+                        {{else}}
+                          {{#ifEqual user.isPatreonMember 1}}
+                              <p class="is-italic is-size-6 pl-4">Patron - Wanderer</p>
+                          {{/ifEqual}}
+                          {{#ifEqual user.isPatreonMember 0}}
+                              <p class="is-italic is-size-6 pl-4">Patron - Advocate</p>
+                          {{/ifEqual}}
+                        {{/ifEqual}}
+                    {{/ifEqual}}
+                    {{#ifEqual user.isPatreonSupporter 0}}
+                        <p class="is-italic is-size-6 pl-4">Non-Patron</p>
+                    {{/ifEqual}}
+
+
+                    <div class="field pos-absolute pos-t-10 pos-r-10 is-unselectable">
+                      <input class="is-checkradio is-rtl is-small has-background-color {{#ifEqual user.isDeveloper 1}}is-info{{else}}is-dark{{/ifEqual}}" id="developerModeBtn" type="checkbox" name="developerModeBtn" {{#ifEqual user.isDeveloper 1}}checked="checked"{{/ifEqual}}>
+                      <label for="developerModeBtn" class="is-size-6 pt-0 has-txt-partial-noted">Developer Mode</label>
+                    </div>
+                    <div class="field pos-absolute pos-t-40 pos-r-10 is-unselectable">
+                      <input class="is-checkradio is-rtl is-small has-background-color {{#ifEqual user.enabledLightMode 1}}is-info{{else}}is-dark{{/ifEqual}}" id="lightModeBtn" type="checkbox" name="lightModeBtn" {{#ifEqual user.enabledLightMode 1}}checked="checked"{{/ifEqual}}>
+                      <label for="lightModeBtn" class="is-size-6 pt-0 has-txt-partial-noted">Light Mode</label>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="text-center mt-5 py-2">
+                {{#if isPatreonConnected}}
+                    <a class="button is-info is-outlined" href="{{patreonAuthURL}}"><span class="icon"><i class="fab fa-patreon"></i></span><span>Refresh Patreon Link</span></a>
+                {{else}}
+                    <a class="button is-info" href="{{patreonAuthURL}}"><span class="icon"><i class="fab fa-patreon"></i></span><span class="has-txt-value-string">Connect to Patreon</span></a>
+                {{/if}}
+            </div>
+
+            <hr class="m-4">
+
+            <div class="text-center">
+              <p>Clients & API Keys <sub id="add-new-client-btn" class="icon cursor-clickable is-small has-text-success is-hidden"><i class="fal fa-plus-circle fa-lg"></i></sub></p> 
+              <div id="clients-section" class="mb-2">
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal create-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title is-size-4 has-txt-value-string">Create Client</p>
+            <button class="delete modal-card-close" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+			      <div class="field">
+                <label class="label">App Name (required)</label>
+                <div class="control">
+                    <input class="input inputAppName" type="text" maxlength="115">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Description</label>
+                <div class="control">
+                    <input class="input inputAppDescription" type="text" maxlength="395">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Company Name</label>
+                <div class="control">
+                    <input class="input inputCompanyName" type="text" maxlength="115">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Icon URL (square image URL that ends with png, jpeg, jpg, or gif)</label>
+                <div class="control">
+                    <input class="input inputIconURL" type="text" maxlength="295">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Redirect URI (required, valid URL with http or https)</label>
+                <div class="control">
+                    <input class="input inputRedirectURI" type="text" maxlength="295">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Character Access Rights</label>
+                <div class="control">
+                    <div class="select">
+                        <select class="inputAppPermissions">
+                            <option value="READ-ONLY" selected>Read Only</option>
+                            <option value="READ-UPDATE">Read / Update</option>
+                            <option value="READ-UPDATE-ADD-DELETE">Read / Update / Add / Delete</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <p class="is-size-6-5">By clicking create you are agreeing to follow the <a class="has-text-info" href="https://paizo.com/community/communityuse" target="_blank">Community Use Policy</a> for any project that makes use of Wanderer's Guide's API.</p>
+        </section>
+        <footer class="modal-card-foot is-paddingless p-3 field is-grouped is-grouped-centered">
+            <p class="control">
+                <a class="button is-success is-outlined is-rounded" id="create-client-btn">Create</a>
+            </p>
+        </footer>
+    </div>
+</div>
+
+<div class="modal update-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title is-size-4 has-txt-value-string">Update Client</p>
+            <button class="delete modal-card-close" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+			      <div class="field">
+                <label class="label">App Name (required)</label>
+                <div class="control">
+                    <input class="input inputAppName" type="text" maxlength="115">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Description</label>
+                <div class="control">
+                    <input class="input inputAppDescription" type="text" maxlength="395">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Company Name</label>
+                <div class="control">
+                    <input class="input inputCompanyName" type="text" maxlength="115">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Icon URL (square image URL that ends with png, jpeg, jpg, or gif)</label>
+                <div class="control">
+                    <input class="input inputIconURL" type="text" maxlength="295">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Redirect URI (required, valid URL with http or https)</label>
+                <div class="control">
+                    <input class="input inputRedirectURI" type="text" maxlength="295">
+                </div>
+            </div>
+            <div class="field">
+                <label class="label">Character Access Rights</label>
+                <div class="control">
+                    <div class="select">
+                        <select class="inputAppPermissions">
+                            <option value="READ-ONLY" selected>Read Only</option>
+                            <option value="READ-UPDATE">Read / Update</option>
+                            <option value="READ-UPDATE-ADD-DELETE">Read / Update / Add / Delete</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot is-paddingless p-3 field is-grouped is-grouped-centered">
+            <p class="control">
+                <a class="button is-success is-outlined is-rounded" id="update-client-btn">Update</a>
+            </p>
+        </footer>
+    </div>
+</div>
+
+<div class="modal delete-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title is-size-4 has-txt-value-string">Delete Client</p>
+            <button class="delete modal-card-close" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+            <p class="has-txt-value-string has-text-centered">Are you sure you want to delete this client?</p>
+        </section>
+        <footer class="modal-card-foot is-paddingless p-3 field is-grouped is-grouped-centered">
+            <p class="control">
+                <a class="button is-danger is-outlined" id="delete-client-btn">Delete</a>
+            </p>
+        </footer>
+    </div>
+</div>

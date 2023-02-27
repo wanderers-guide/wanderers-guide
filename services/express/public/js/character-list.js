@@ -135,7 +135,7 @@ function initCharacterImport(){
 
 socket.on("returnCharImport", function(){
   // Hardcoded redirect
-  window.location.href = '/profile/characters';
+  window.location.href = '/v/profile/characters';
 });
 
 

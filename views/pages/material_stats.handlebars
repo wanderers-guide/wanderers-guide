@@ -1,0 +1,83 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/docs-styles.css">
+    <script src="/js/wsc/docs-page.js"></script>
+    <script src="/js/wsc/text-processing.js"></script>
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+
+<div class="container profile-container mt-5 pt-3">
+    <div class="columns is-centered is-mobile">
+        <div class="column is-8 box p-4">
+
+          <h1 class="main-title is-size-2 is-family-code has-text-centered">Material Statistics</h1>
+          <p class="py-1">&emsp;
+            The table below (Table 11–4 in the CRB, pg. 577) provides the Hardness, Hit Points, Broken Threshold, and example items for some types of common materials. The table has separate entries for thin items (like shields), ordinary items (like armor), and reinforced or durable structures (such as walls).
+          </p>
+          <p class="py-1">&emsp;
+            Stone is a catchall for any hard stone, such as granite and marble. Likewise, wood covers ordinary woods, such as oak and pine. Metal weapons and armor are assumed to be made of iron or steel unless noted otherwise.
+          </p>
+          <p class="py-1">&emsp;
+            If an object consists of more than one material, the GM typically uses the statistics for the strongest material involved. For instance, breaking a wall made of paper panels over a woven wooden framework would require damaging thin wood, not paper. However, the GM might choose the weaker material based on the item’s function. For instance, breaking the wooden handle of a hammer rather than its iron head would still render the item unusable. Sometimes an item is even less sturdy than the Hardness and Hit Points provided for a thin object; for instance, a twig doesn’t take 9 damage to break, even though it’s made of thin wood. Similarly, a particularly sturdy item or structure might have even higher Hardness and Hit Points. Certain structures, particularly thick walls, are so reinforced that you have to break them down over time with tools. (CRB pg. 515 has more information on walls.)
+          </p>
+          <div class="code-block text-processing">
+            Material|Hardness|HP|BT|Example Items
+            :--|:-:|:-:|:-:|:--
+            Paper|0|1|—|Book pages, paper fan, scroll
+            Thin cloth|0|1|—|Kite, silk dress, undershirt
+            Thin glass|0|1|—|Bottle, spectacles, window pane
+            Cloth|1|4|2|Cloth armor, heavy jacket, sack, tent
+            Glass|1|4|2|Glass block, glass table, heavy vase
+            Glass structure|2|8|4|Glass block wall
+            Thin leather|2|8|4|Backpack, jacket, pouch, strap, whip
+            Thin rope|2|8|4|Standard adventuring rope
+            Thin wood|3|12|6|Chair, club, sapling, wooden shield
+            Leather|4|16|8|Leather armor, saddle
+            Rope|4|16|8|Industrial rope, ship rigging
+            Thin stone|4|16|8|Chalkboard, slate tiles, stone cladding
+            Thin iron or steel|5|20|10|Chain, steel shield, sword
+            Wood|5|20|10|Chest, simple door, table, tree trunk
+            Stone|7|28|14|Paving stone, statue
+            Iron or steel|9|36|18|Anvil, iron or steel armor, stove
+            Wooden structure|10|40|20|Reinforced door, wooden wall
+            Stone structure|14|56|28|Stone wall
+            Iron or steel structure|18|72|36|Iron plate wall
+          </div>
+
+        </div>
+    </div>
+</div>

@@ -96,6 +96,7 @@ app.set("view engine", "handlebars");
 
 // Set static folder
 app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "../../client/dist")));
 
 // Body Parser
 app.use(bodyParser.urlencoded({ extended: false }));

@@ -1,0 +1,128 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/homebrew.css">
+    <link rel="stylesheet" href="/css/browse.css">
+
+    <script src="/js/require-signin.js"></script>
+
+    <script src="/js/homebrew/general-homebrew.js"></script>
+    <script src="/js/homebrew/user-content.js"></script>
+    <script src="/js/homebrew/user-collection.js"></script>
+    <script src="/js/homebrew/bundle-browse.js"></script>
+    <script src="/js/browse/browse-utils.js"></script>
+
+    <script src="/js/libraries/display_class/display-class.js"></script>
+    <script src="/js/libraries/display_ancestry/display-ancestry.js"></script>
+    <script src="/js/libraries/display_archetype/display-archetype.js"></script>
+    <script src="/js/libraries/display_background/display-background.js"></script>
+    <script src="/js/libraries/display_uni_heritage/display-uni-heritage.js"></script>
+
+    <script src="/js/homebrew/bundle-view.js"></script>
+    <script src="/js/homebrew/bundle-manage-keys.js"></script>
+
+    <script src="/js/homebrew/builder/bundle-editor.js"></script>
+    <script src="/js/homebrew/builder/builder-templating.js"></script>
+
+    <script src="/js/libraries/confirm_message/confirm-message.js"></script>
+
+    <!-- Quickview -->
+    <script src="/js/sheet/quickviews/_quickviews.js"></script>
+    <script src="/js/sheet/quickviews/feat-view.js"></script>
+    <script src="/js/sheet/quickviews/language-view.js"></script>
+    <script src="/js/sheet/quickviews/spell-view.js"></script>
+    <script src="/js/sheet/quickviews/item-view.js"></script>
+    <script src="/js/sheet/quickviews/tag-view.js"></script>
+    <script src="/js/sheet/quickviews/ability-view.js"></script>
+    <script src="/js/sheet/quickviews/condition-view.js"></script>
+    <script src="/js/sheet/utils/item-utils.js"></script>
+    <script src="/js/sheet/utils/material-utils.js"></script>
+    <script src="/js/wsc/text-processing.js"></script>
+    <script src="/js/wsc/add-text-processing.js"></script>
+    <script src="/js/wsc/expression-utils.js"></script>
+
+    <!-- Discord Widget Bot -->
+    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer>
+      new Crate({
+        server: '735260060682289254',
+        channel: '735260060682289257'
+      })
+    </script>
+
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew" class="active">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div id="homebrew-container" class="container" data-edit-homebrew-id="{{editHomebrewID}}" data-view-homebrew-id="{{viewHomebrewID}}" data-direct-to-tab="{{homebrewTabName}}" data-user-id="{{user.id}}">
+  
+  <div class="tabs is-centered is-boxed use-custom-scrollbar mb-2">
+    <ul class="category-tabs">
+      <li><a id="browseTab">Browse Homebrew</a></li>
+      {{#if user}}<li><a id="userCollectionTab">My Collection</a></li>{{/if}}
+      {{#if user}}<li><a id="userContentTab">My Creations</a></li>{{/if}}
+    </ul>
+  </div>
+  <div id="tabContent" class="mx-3 mb-3"></div><!-- tabContent must be empty! -->
+  <div class="subpageloader mt-5 pt-5 is-hidden"><div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div>
+
+</div>
+
+{{#section 'overlay'}}
+    <!-- Right Quickview -->
+    <div id="quickviewDefault" class="quickview">
+        <div class="quickview-header">
+            <p id="quickViewTitle" class="title is-size-5 has-txt-value-number"></p>
+            <div class="is-inline-flex">
+                <p id="quickViewTitleRight"></p>
+                <p id="quickViewTitleClose"></p>
+            </div>
+        </div>
+        <div class="quickview-body use-custom-scrollbar">
+            <div id="quickViewContent" class="quickview-block pt-1 pb-3 px-3">
+            </div>
+        </div>
+    </div>
+{{/section}}
+
+<div id="manage-keys-modal" class="modal">
+  <div id="manage-keys-modal-background" class="modal-background"></div>
+  <div class="modal-card">
+      <header class="modal-card-head">
+          <p class="modal-card-title is-size-4 has-txt-value-number">Key Management</p>
+          <button id="manage-keys-modal-close" class="delete modal-card-close" aria-label="close"></button>
+      </header>
+      <section id="manage-keys-modal-body" class="modal-card-body">
+      </section>
+  </div>
+</div>

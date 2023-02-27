@@ -1,0 +1,475 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/homebrew-builders.css">
+    <script type="text/javascript" src="/js/confirm-page-leave.js"></script>
+    <script type="text/javascript" src="/js/homebrew/builder/ancestry/builder-ancestry.js"></script>
+    {{#if ancestryID}}
+        <script type="text/javascript" src="/js/homebrew/builder/ancestry/editor-ancestry.js"></script>
+    {{/if}}
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew" class="active">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="pt-3">
+    <h1 class="title is-2 has-txt-value-number has-text-centered">Ancestry Builder</h1>
+</div>
+
+<div id="builder-container" data-user-id="{{user.id}}" data-bundle-id="{{bundleID}}" data-ancestry-id="{{ancestryID}}" class="columns is-mobile is-centered mt-2 mb-3">
+    <div class="column is-8 tile is-ancestor is-vertical">
+
+        <div class="tile">
+
+            <div class="tile is-parent is-vertical box is-6 is-marginless mr-2">
+
+                <div class="tile is-child field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                        <input id="inputName" class="input" type="text" placeholder="e.g. Gnome" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Rarity</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputRarity">
+                                <option value="COMMON">Common</option>
+                                <option value="UNCOMMON">Uncommon</option>
+                                <option value="RARE">Rare</option>
+                                <option value="UNIQUE">Unique</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Hit Points</label>
+                    <div class="control">
+                        <input id="inputHitPoints" class="input" type="number" value="8">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Size</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputSize">
+                                <option value="TINY">Tiny</option>
+                                <option value="SMALL">Small</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="LARGE">Large</option>
+                                <option value="HUGE">Huge</option>
+                                <option value="GARGANTUAN">Gargantuan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Speed</label>
+                    <div class="control">
+                        <input id="inputSpeed" class="input" type="number" value="25" step="5">
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Vision Sense</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputVisionSense">
+                                {{#each senseTypes}}
+                                    {{#ifEqual isVisionType 1}}
+                                        <option value="{{id}}">{{name}}</option>
+                                    {{/ifEqual}}
+                                {{/each}}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Additional Sense</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputAdditionalSense">
+                                <option value="">Choose a Sense</option>
+                                {{#each senseTypes}}
+                                    {{#ifEqual isVisionType 0}}
+                                        <option value="{{id}}">{{name}}</option>
+                                    {{/ifEqual}}
+                                {{/each}}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Extra Feature</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputPhysicalFeatureOne">
+                                <option value="">Choose a Feature</option>
+                                {{#each physicalFeatures}}
+                                    <option value="{{id}}">{{name}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile is-child field">
+                    <label class="label">Extra Feature</label>
+                    <div class="control">
+                        <div class="select">
+                            <select id="inputPhysicalFeatureTwo">
+                                <option value="">Choose a Feature</option>
+                                {{#each physicalFeatures}}
+                                    <option value="{{id}}">{{name}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="tile is-parent is-vertical box is-6 is-marginless ml-2">
+
+                <div class="tile">
+                    <div class="tile is-child field">
+                        <label class="label">Boosts</label>
+                        <div class="control">
+                            <div class="select is-multiple">
+                                <select id="inputBoosts" multiple size="8" class="use-invisible-scrollbar">
+                                    <option id="boostOptionAnything1" value="Anything">Free</option>
+                                    <option id="boostOptionAnything2" value="Anything">Free</option>
+                                    <option value="Strength">Strength</option>
+                                    <option value="Dexterity">Dexterity</option>
+                                    <option value="Constitution">Constitution</option>
+                                    <option value="Intelligence">Intelligence</option>
+                                    <option value="Wisdom">Wisdom</option>
+                                    <option value="Charisma">Charisma</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tile is-child field">
+                        <label class="label">Flaws</label>
+                        <div class="control">
+                            <div class="select is-multiple">
+                                <select id="inputFlaws" multiple size="6" class="use-invisible-scrollbar">
+                                    <option value="Strength">Strength</option>
+                                    <option value="Dexterity">Dexterity</option>
+                                    <option value="Constitution">Constitution</option>
+                                    <option value="Intelligence">Intelligence</option>
+                                    <option value="Wisdom">Wisdom</option>
+                                    <option value="Charisma">Charisma</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tile">
+                    <div class="tile is-child">
+                      <label class="label">Languages (known by default)</label>
+                      <select id="inputLangs" data-placeholder="Select Languages" multiple>
+                        {{#each languages}}
+                          <option value="{{id}}" name="{{name}}">{{name}}</option>
+                        {{/each}}
+                      </select>
+                    </div>
+
+                    <div class="tile is-child">
+                      <label class="label">Bonus Languages</label>
+                      <select id="inputBonusLangs" data-placeholder="Select Languages" multiple>
+                        {{#each languages}}
+                          <option value="{{id}}" name="{{name}}">{{name}}</option>
+                        {{/each}}
+                      </select>
+                    </div>
+
+                </div>
+
+                <div class="tile is-vertical">
+
+                    <div class="tile is-child field">
+                        <label class="label">
+                            Description
+                            <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                        </label>
+                        <div class="control">
+                            <textarea id="inputDescription" class="textarea use-custom-scrollbar" placeholder="Always hungry for new experiences..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="tile is-child field is-marginless">
+                      <div class="control">
+                        <input id="inputImageURL" class="input isURL" type="text" maxlength="200" placeholder="Image URL" spellcheck="false" autocomplete="off">
+                      </div>
+                    </div>
+                    
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="tile is-vertical box mt-3">
+
+                <div class="tile is-child">
+                    <button id="addHeritageButton" class="button is-link">Add Hertiage</button>
+                </div>
+
+                <div id="heritageContent" class="tile is-child">
+
+                    <div id="heritageLayout" class="card mb-2 ancestryHeritage is-hidden">
+                        <div class="card-header cursor-clickable">
+                            <p class="card-header-title is-paddingless has-txt-value-number is-size-5">Heritage</p>
+                            <a class="card-header-icon is-paddingless mt-1 delete is-medium"></a>
+                        </div>
+                        <div class="card-content">
+                            <div class="field">
+                                <label class="label">Name</label>
+                                <div class="control">
+                                    <input class="input inputHeritageName" type="text" placeholder="e.g. Wellspring">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label class="label">
+                                    Description
+                                    <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputHeritageDesc" placeholder="Some other source of magic has a greater hold..."></textarea>
+                                </div>
+                            </div>
+                            <div class="field pos-relative">
+                                <label class="label">
+                                    Code
+                                    <a href="/wsc_docs/#code_basics" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                    <span class="code-block-statement-display">Builder & Sheet Statements</span>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputHeritageCode nanum-coding use-custom-scrollbar" rows="1" spellcheck="false" maxlength="4990"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+        </div>
+
+        <div class="tile is-vertical box mt-3">
+
+                <div class="tile is-child">
+                    <button id="addFeatButton" class="button is-link">Add Ancestry Feat</button>
+                </div>
+
+                <div id="featContent" class="tile is-child">
+
+                    <div id="featLayout" class="card mb-2 ancestryFeat is-hidden">
+                        <div class="card-header cursor-clickable">
+                            <p class="card-header-title is-paddingless has-txt-value-number is-size-5">Ancestry Feat</p>
+                            <a class="card-header-icon is-paddingless mt-1 delete is-medium"></a>
+                        </div>
+                        <div class="card-content">
+                            <div class="field">
+                                <label class="label">Name</label>
+                                <div class="control">
+                                    <input class="input inputFeatName" type="text" placeholder="e.g. Grim Insight">
+                                </div>
+                            </div>
+
+                            <div class="columns">
+                                <div class="column field">
+                                    <label class="label">Level</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputFeatLevel">
+                                                <option value="-1">Unselectable</option>
+                                                <option value="1" selected>1</option>
+                                                <option value="5">5</option>
+                                                <option value="9">9</option>
+                                                <option value="13">13</option>
+                                                <option value="17">17</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="column field">
+                                    <label class="label">Actions</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputFeatActions pf-icon">
+                                                <option value="NONE">None</option>
+                                                <option value="ACTION">[one-action]</option>
+                                                <option value="TWO_ACTIONS">[two-actions]</option>
+                                                <option value="THREE_ACTIONS">[three-actions]</option>
+                                                <option value="FREE_ACTION">[free-action]</option>
+                                                <option value="REACTION">[reaction]</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="column field">
+                                    <label class="label">Rarity</label>
+                                    <div class="control">
+                                        <div class="select">
+                                            <select class="inputFeatRarity">
+                                                <option value="COMMON">Common</option>
+                                                <option value="UNCOMMON">Uncommon</option>
+                                                <option value="RARE">Rare</option>
+                                                <option value="UNIQUE">Unique</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="">
+                                <label class="label">Other Traits</label>
+                                <select class="inputFeatTags" data-placeholder="Select Traits" multiple>
+                                  {{#each tags}}
+                                    <option value="{{id}}">{{name}}</option>
+                                  {{/each}}
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Prerequisites</label>
+                                <div class="control">
+                                    <input class="input inputFeatPrereq" type="text" maxlength="290" placeholder="e.g. umbral gnome heritage">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Requirements</label>
+                                <div class="control">
+                                    <input class="input inputFeatReq" type="text" maxlength="590">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Frequency</label>
+                                <div class="control">
+                                    <input class="input inputFeatFreq" type="text" maxlength="290">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Cost</label>
+                                <div class="control">
+                                    <input class="input inputFeatCost" type="text" maxlength="290">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Trigger</label>
+                                <div class="control">
+                                    <input class="input inputFeatTrigger" type="text" maxlength="290">
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">
+                                    Description
+                                    <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputFeatDesc" placeholder="Others’ attempts to scare you often grant you insights..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">
+                                  Special
+                                  <a href="/wsc_docs/#description_fields" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                </label>
+                                <div class="control">
+                                    <input class="input inputFeatSpecial" type="text" maxlength="590">
+                                </div>
+                            </div>
+
+                            <div class="field pt-1">
+                                <label class="checkbox">
+                                    <input type="checkbox" class="inputFeatSelectMultiple" value="1">
+                                    <strong>Can Choose Multiple Times</strong>
+                                </label>
+                            </div>
+
+                            <div class="field pos-relative">
+                                <label class="label">
+                                    Code
+                                    <a href="/wsc_docs/#code_basics" target="_blank"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+                                    <span class="code-block-statement-display">Builder & Sheet Statements</span>
+                                </label>
+                                <div class="control">
+                                    <textarea class="textarea inputFeatCode nanum-coding use-custom-scrollbar" rows="1" spellcheck="false" maxlength="4990"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    
+
+                </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="field is-grouped is-grouped-centered pb-2">
+    <div class="control">
+        <!--<a class="button is-info is-rounded is-small has-text-white">
+          <span class="icon is-small">
+            <i class="fas fa-arrow-left"></i>
+          </span>
+          <span>Back</span>
+        </a>-->
+        {{#if ancestryID}}
+            <button id="updateButton" onClick="canLeavePage()" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{else}}
+            <button id="createButton" onClick="canLeavePage()" onClick="canLeavePage()" class="button is-rounded is-success">Save</button>
+        {{/if}}
+    </div>
+</div>

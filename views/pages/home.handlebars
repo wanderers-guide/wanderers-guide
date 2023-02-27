@@ -1,0 +1,172 @@
+
+{{#section 'header'}}
+	<script src="/js/home-page.js"></script>
+	<link rel="stylesheet" href="/css/home-page.css">
+    <style>
+		.banner_w3lspvt-1 {
+			background-image: url("{{background.artworkURL}}"), url('../images/fb_back.png');
+			opacity: 0;
+		}
+	</style>
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/" class="active">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+<div class="banner_w3lspvt-1">
+	<div class="w3ls_banner_txt">
+
+    <div id="home-mobile-layout" class="columns is-hidden">
+      <div class="column home-containers">
+        <h4 class="w3ls_pvt-title has-text-white text-center">Your Guide to Pathfinder 2e</h4>
+        <hr class="my-0 mx-2">
+
+        <p class="text-center pt-2">
+          <a href="/browse" style="max-width: 150px;" class="btn button-style m-1"><i class="fas fa-search"></i> Search Pf2e</a>
+          {{#if user}}
+            <a href="/v/profile/characters" style="max-width: 180px;" class="btn button-style m-1">Create Character</a>
+          {{else}}
+            <a href="/auth/login" style="max-width: 180px;" class="btn button-style m-1">Create Character</a>
+          {{/if}}
+        </p>
+      </div>
+    </div>
+
+    <div id="home-desktop-layout" class="columns">
+      <div class="column home-containers">
+        <h4 class="w3ls_pvt-title has-text-white text-center">Announcements</h4>
+        <hr class="my-0 mx-2">
+
+        <div class="my-2">
+          <widgetbot
+            server="735260060682289254"
+            channel="750870359552688189"
+            width="400"
+            height="500"
+          ></widgetbot>
+          <script src="https://cdn.jsdelivr.net/npm/@widgetbot/html-embed"></script>
+        </div>
+
+        <hr class="my-0 mx-2">
+        
+        <p class="text-center pt-2">
+          <a href="/browse" style="max-width: 150px;" class="btn button-style m-1"><i class="fas fa-search"></i> Search Pf2e</a>
+          {{#if user}}
+            <a href="/v/profile/characters" style="max-width: 180px;" class="btn button-style m-1">Create Character</a>
+          {{else}}
+            <a href="/auth/login" style="max-width: 180px;" class="btn button-style m-1">Create Character</a>
+          {{/if}}
+        </p>
+
+      </div>
+      <div class="column">
+      
+      </div>
+      <div class="column is-2 home-containers">
+        <h4 class="w3ls_pvt-title has-text-white text-center">Top Builds</h4>
+        <hr class="my-0 mx-2">
+        <div id="top-builds-list" class="pos-relative" style="margin-top: 0.75rem; margin-bottom: 1rem;">
+
+          <div id="top-builds-loader" class="pageloader mt-5">
+            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          </div>
+
+        </div>
+      </div>
+      <div class="column is-2 home-containers">
+        <h4 class="w3ls_pvt-title has-text-white text-center">Top Homebrew</h4>
+        <hr class="my-0 mx-2">
+        <div id="top-homebrew-list" class="pos-relative" style="margin-top: 0.75rem; margin-bottom: 1rem;">
+
+          <div id="top-homebrew-loader" class="pageloader mt-5">
+            <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+	</div>
+	<a class="banner-1-artist" rel="author" target="_blank" href="{{background.artistPage}}"><span class="icon"><i class="fas fa-paint-brush"></i></span> <span>{{background.name}}</span></a>
+	<span id="backReportBtn" class="banner-1-image-report cursor-clickable icon" name="{{background.id}}"><i class="fas fa-exclamation-circle"></i></span>
+</div>
+
+<div class="what py-5" id="about_wanderers_guide">
+	<div class="container py-xl-5 py-lg-3">
+		<h3 class="title-w3 mb-2 text-center has-text-weight-bold has-txt-listing">What is Wanderer's Guide?</h3>
+		<p class="text-center mb-4">
+			Wanderer's Guide is a semi-automated character manager for Pathfinder Second Edition. Designed for desktop and tablets, Wanderer's Guide has an interactive inventory, conditions, and spells management system. Character building in Wanderer's Guide is intuitive and easier than ever, try it out for yourself!
+		</p>
+			
+		<h3 class="title-w2 mb-1 text-center has-text-weight-semibold has-txt-listing">Pathfinder 2e and License</h3>
+		<p class="text-center mb-3">
+			This website uses trademarks and/or copyrights owned by Paizo Inc., which are used under Paizo's Community Use Policy. We are expressly prohibited from charging you to use or access this content. This website is not published, endorsed, or specifically approved by Paizo Inc. For more information about Paizo's Community Use Policy, please visit paizo.com/communityuse. For more information about Paizo Inc. and Paizo products, please visit paizo.com.
+			<br>
+			Wanderer's Guide is produced under the <a href="/license" class="has-text-info-lighter">Open Game License 1.0a</a>.
+			<br>
+			Pathfinder Second Edition contains an enormous amount of content, as such, there are a few features with ambiguous wording. In these cases, we try to follow the ruling of what the community generally agrees upon (we may also adjust the feature's wording to support this). If there is any doubt on how a mechanic or feature works, we highly recommend referring back to the source books. In addition, Wanderer's Guide contains features which are not included in the official Pathfinder Second Edition source material. These features are included in cases where we believe such content was missing in the source material and will be replaced by official content if it is made available in the future (examples include an item for a piece of paper, things like that).
+		</p>
+
+		<h3 class="title-w2 mb-1 text-center has-text-weight-semibold has-txt-listing">Artwork</h3>
+		<p class="text-center">
+			Wanderer's Guide does not own any of the background artwork above.
+		</p>
+		<!--We have been given permission by the artists to use their work on our site.-->
+		<p class="text-center mb-3">
+			The creator of each piece has their name in the bottom right corner, which links to their website.
+		</p>
+
+	</div>
+</div>
+
+<div class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title is-size-4 has-txt-value-string">Report Background</p>
+            <button class="delete modal-card-close" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+			<div class="field">
+                <div class="control">
+                    <input id="inputEmail" class="input" type="text" placeholder="Email">
+                </div>
+            </div>
+            <div class="field">
+                <div class="control">
+                    <textarea id="reportMessage" class="textarea" maxlength="500" placeholder="What's the problem?"></textarea>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot is-paddingless p-3 field is-grouped is-grouped-centered">
+            <p class="control">
+                <a class="button is-danger is-outlined" id="report-confirmation-btn">Report</a>
+            </p>
+        </footer>
+    </div>
+</div>

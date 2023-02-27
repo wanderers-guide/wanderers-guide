@@ -1,0 +1,571 @@
+
+{{#section 'header'}}
+    <link rel="stylesheet" href="/css/char-builder.css">
+    <script type="text/javascript" src="/js/builds/build-creator-init.js"></script>
+
+    <script src="/js/require-signin.js"></script>
+
+    <script src="/js/libraries/confirm_message/confirm-message.js"></script>
+    
+    <script type="text/javascript" src="/js/wsc/text-processing.js"></script>
+    <script type="text/javascript" src="/js/wsc/errorHandling.js"></script>
+
+    <script type="text/javascript" src="/js/char_builders/top-stickies.js"></script>
+    <script type="text/javascript" src="/js/char_builders/utils.js"></script>
+
+    <!-- Build Creator Augment -->
+    <script src="/js/builds/build-creator-augment.js"></script>
+    
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds" class="active">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="pageloader">
+    <div class="lds-roller" style="margin-bottom: 20%;"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+</div>
+
+<div class="sticky_buttons_shell sticky_button_right">
+    <button class="button is-info is-rounded sticky_button" id="nextButton">
+        <span class="icon">
+            <i class="fas fa-arrow-right"></i>
+        </span>
+    </button>
+</div>
+
+<div id="char-builder-container" data-build-id="{{build.id}}">
+</div>
+
+<div id="char-builder" class="container py-4 text-center">
+
+    <div id="errorDisplay" class="hero is-danger is-hidden">
+        <div class="hero-body is-paddingless py-3">
+            <div id="errorMessage" class="container"></div>
+        </div>
+    </div>
+
+    <div class="box">
+
+        <h1 class="title is-2 has-txt-listing">Build Creator</h1>
+
+        <div class="steps">
+            <div class="step-item is-active is-info">
+                <div class="step-marker">
+                <a class="builder-build-home-page-btn"><span class="icon"><i class="fas fa-home-alt"></i></span></a>
+                </div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-build-home-page-btn button is-rounded is-inverted is-info"><p class="step-title">Home</p></a>
+                </div>
+            </div>
+            <div class="step-item is-builder-type-by-level">
+                <div class="step-marker"><a class="builder-creation-page-btn"><span class="has-text-bck-color">C</span></a></div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-creation-page-btn button is-rounded is-inverted is-info"><p class="step-title">Creation</p></a>
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-marker">
+                <a class="builder-build-publish-page-btn"><span class="has-text-bck-color icon"><i class="fa fa-user-alt"></i></span></a>
+                </div>
+                <div class="step-details is-hidden-touch">
+                    <a class="builder-build-publish-page-btn button is-rounded is-inverted is-info"><p class="step-title">Publish</p></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns is-marginless">
+            <div class="column is-4 is-offset-4">
+
+              <div class="field">
+                <div id="charNameControlShell" class="control has-icons-left has-icons-right">
+                  <input class="input" type="text" placeholder="Build Name" spellcheck="false" id="charName" maxlength="28" value="{{build.name}}" style="text-align:center;">
+                  <span class="icon is-small is-right">
+                    <i id="charNameSideIcon" class="fas fa-exclamation-triangle is-hidden"></i>
+                  </span>
+                </div>
+              </div>
+
+            </div>
+        </div>
+
+        <div class="columns is-marginless">
+            <div class="column is-paddingless is-8 is-offset-2" style="padding-left: 0.75rem!important; padding-right: 0.75rem!important;">
+              
+              <div class="control py-1">
+                <textarea id="buildDescription" class="textarea use-custom-scrollbar" placeholder="Build Description">{{build.description}}</textarea>
+              </div>
+
+            </div>
+        </div>
+
+        <div class="columns is-marginless py-1">
+          <div class="column is-paddingless is-8 is-offset-2 px-4">
+            <p class="has-text-left has-txt-partial-noted is-size-6-5">
+              You can write notes for specific feats you've selected by writing at the end of the description, each on their own line: "{feat name}: {notes}"
+            </p>
+            <p class="has-text-left has-txt-noted is-size-7 is-italic">
+              Example.
+            </p>
+            <p class="has-text-left has-txt-noted is-size-7">
+              Goblin Song: A great option for easily lowering an enemy's Perception and Will saves, this can be an amazing tool in helping rogues and casters alike.
+            </p>
+          </div>
+        </div>
+
+        <div class="columns is-marginless">
+            <div class="column is-4 is-offset-4">
+
+              <div class="control py-1">
+                <input id="buildContactInfo" class="input" type="text" placeholder="Contact Info" autocomplete="off" value="{{build.contactInfo}}">
+              </div>
+
+            </div>
+        </div>
+
+        <div class="columns is-marginless">
+            <div class="column is-paddingless is-4 is-offset-4" style="padding-left: 0.75rem!important; padding-right: 0.75rem!important;">
+              
+              <div class="control py-1">
+                <input id="buildArtworkURL" class="input isURL" type="text" maxlength="200" placeholder="Image URL" spellcheck="false" autocomplete="off" value="{{build.artworkURL}}">
+              </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    
+
+
+    <div class="box p-2">
+
+        <div class="columns is-centered">
+            <div class="column is-4">
+                <div class="pb-2">
+                    <h4>Books</h4>
+                </div>
+                
+                <div id="booksColumn" class="columns is-mobile first-page-container my-1 use-custom-scrollbar">
+                    <span id="enableAllBooksBtn" class="button is-tiny is-info is-outlined pos-absolute pos-t-10 pos-r-10">Enable All</span>
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+
+                        <div class="field">
+                            <input id="contentSrc-CRB" type="checkbox" name="contentSrc-CRB" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1" disabled>
+                            <label for="contentSrc-CRB">
+                                Core Rulebook
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-ADV-PLAYER-GUIDE" type="checkbox" name="contentSrc-ADV-PLAYER-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-ADV-PLAYER-GUIDE">
+                                Advanced Player’s Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-GM-GUIDE" type="checkbox" name="contentSrc-GM-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-GM-GUIDE">
+                                Gamemastery Guide
+                            </label>
+                        </div>
+
+                        <hr class="m-2">
+
+                        <div class="field">
+                            <input id="contentSrc-BOOK-OF-DEAD" type="checkbox" name="contentSrc-BOOK-OF-DEAD" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-BOOK-OF-DEAD">
+                                Book of the Dead
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-DARK-ARCHIVE" type="checkbox" name="contentSrc-DARK-ARCHIVE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-DARK-ARCHIVE">
+                                Dark Archive
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-GUNS-AND-GEARS" type="checkbox" name="contentSrc-GUNS-AND-GEARS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-GUNS-AND-GEARS">
+                                Guns & Gears
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-RAGE-OF-ELEMENTS" type="checkbox" name="contentSrc-RAGE-OF-ELEMENTS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-RAGE-OF-ELEMENTS">
+                                Rage of Elements <sup class="is-thin">(in playtest)</sup>
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-SECRETS-OF-MAGIC" type="checkbox" name="contentSrc-SECRETS-OF-MAGIC" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-SECRETS-OF-MAGIC">
+                                Secrets of Magic
+                            </label>
+                        </div>
+
+                        <div class="pl-4">
+                            <p>Lost Omens</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+                        <div class="field">
+                            <input id="contentSrc-LOST-ANCESTRY-GUIDE" type="checkbox" name="contentSrc-LOST-ANCESTRY-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-ANCESTRY-GUIDE">
+                                Ancestry Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-CHAR-GUIDE" type="checkbox" name="contentSrc-LOST-CHAR-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-CHAR-GUIDE">
+                                Character Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-CITY-ABSALOM" type="checkbox" name="contentSrc-LOST-CITY-ABSALOM" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-CITY-ABSALOM">
+                                City of Absalom
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-GOD-MAGIC" type="checkbox" name="contentSrc-LOST-GOD-MAGIC" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-GOD-MAGIC">
+                                Gods & Magic
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-GRAND-BAZAAR" type="checkbox" name="contentSrc-LOST-GRAND-BAZAAR" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-GRAND-BAZAAR">
+                                Grand Bazaar
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-IMPOSSIBLE-LANDS" type="checkbox" name="contentSrc-LOST-IMPOSSIBLE-LANDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-IMPOSSIBLE-LANDS">
+                                Impossible Lands
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-KNIGHTS-WALL" type="checkbox" name="contentSrc-LOST-KNIGHTS-WALL" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-KNIGHTS-WALL">
+                                Knights of Lastwall
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-LEGENDS" type="checkbox" name="contentSrc-LOST-LEGENDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-LEGENDS">
+                                Legends
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-MONSTERS-MYTH" type="checkbox" name="contentSrc-LOST-MONSTERS-MYTH" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-MONSTERS-MYTH">
+                                Monsters of Myth
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-MWANGI" type="checkbox" name="contentSrc-LOST-MWANGI" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-MWANGI">
+                                The Mwangi Expanse
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-SOCIETY-GUIDE" type="checkbox" name="contentSrc-LOST-SOCIETY-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-SOCIETY-GUIDE">
+                                Pathfinder Society Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-TRAVEL-GUIDE" type="checkbox" name="contentSrc-LOST-TRAVEL-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-TRAVEL-GUIDE">
+                                Travel Guide
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-LOST-WORLD-GUIDE" type="checkbox" name="contentSrc-LOST-WORLD-GUIDE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-LOST-WORLD-GUIDE">
+                                World Guide
+                            </label>
+                        </div>
+
+                        <div class="pl-4">
+                            <p>Adventure Paths</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+
+                        <div class="field">
+                            <input id="contentSrc-ABOMINATION-VAULTS" type="checkbox" name="contentSrc-ABOMINATION-VAULTS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-ABOMINATION-VAULTS">
+                                Abomination Vaults
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-AGENTS-OF-EDGEWATCH" type="checkbox" name="contentSrc-AGENTS-OF-EDGEWATCH" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-AGENTS-OF-EDGEWATCH">
+                                Agents of Edgewatch
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-AGE-OF-ASHES" type="checkbox" name="contentSrc-AGE-OF-ASHES" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-AGE-OF-ASHES">
+                                Age of Ashes
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-BLOOD-LORDS" type="checkbox" name="contentSrc-BLOOD-LORDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-BLOOD-LORDS">
+                                Blood Lords <sup class="is-thin">(in progress)</sup>
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-EXTINCTION-CURSE" type="checkbox" name="contentSrc-EXTINCTION-CURSE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-EXTINCTION-CURSE">
+                                Extinction Curse
+                            </label>
+                        </div>
+                        
+                        <div class="field">
+                            <input id="contentSrc-FIST-PHOENIX" type="checkbox" name="contentSrc-FIST-PHOENIX" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-FIST-PHOENIX">
+                                Fists of the Ruby Phoenix
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-KINGMAKER" type="checkbox" name="contentSrc-KINGMAKER" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-KINGMAKER">
+                                Kingmaker
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-OUTLAWS-ALKENSTAR" type="checkbox" name="contentSrc-OUTLAWS-ALKENSTAR" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-OUTLAWS-ALKENSTAR">
+                                Outlaws of Alkenstar
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-QUEST-FROZEN-FLAME" type="checkbox" name="contentSrc-QUEST-FROZEN-FLAME" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-QUEST-FROZEN-FLAME">
+                                Quest for the Frozen Flame
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-STRENGTH-THOUSANDS" type="checkbox" name="contentSrc-STRENGTH-THOUSANDS" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-STRENGTH-THOUSANDS">
+                                Strength of Thousands
+                            </label>
+                        </div>
+
+                        <div class="pl-4">
+                            <p>Standalone Adventures</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+                        <div class="field">
+                            <input id="contentSrc-CROWN-OF-KOBOLD-KING" type="checkbox" name="contentSrc-CROWN-OF-KOBOLD-KING" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-CROWN-OF-KOBOLD-KING">
+                                Crown of the Kobold King
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-FALL-OF-PLAGUE" type="checkbox" name="contentSrc-FALL-OF-PLAGUE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-FALL-OF-PLAGUE">
+                                The Fall of Plaguestone
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-MALEVOLENCE" type="checkbox" name="contentSrc-MALEVOLENCE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-MALEVOLENCE">
+                                Malevolence
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-NIGHT-GRAY-DEATH" type="checkbox" name="contentSrc-NIGHT-GRAY-DEATH" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-NIGHT-GRAY-DEATH">
+                                Night of the Gray Death
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-SLITHERING" type="checkbox" name="contentSrc-SLITHERING" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-SLITHERING">
+                                The Slithering
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-THRESHOLD-KNOWLEDGE" type="checkbox" name="contentSrc-THRESHOLD-KNOWLEDGE" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-THRESHOLD-KNOWLEDGE">
+                                Threshold of Knowledge
+                            </label>
+                        </div>
+
+                        <div class="field">
+                            <input id="contentSrc-TROUBLES-IN-OTARI" type="checkbox" name="contentSrc-TROUBLES-IN-OTARI" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-TROUBLES-IN-OTARI">
+                                Troubles in Otari
+                            </label>
+                        </div>
+
+
+                        <div class="pl-4">
+                            <p>Other</p>
+                        </div>
+                        <hr class="mt-0 mb-2 mx-2">
+                        <div class="field">
+                            <input id="contentSrc-PATH-SOCIETY" type="checkbox" name="contentSrc-PATH-SOCIETY" class="switch is-small is-rounded is-outlined is-info optionSwitch bookSwitch" value="1">
+                            <label for="contentSrc-PATH-SOCIETY">
+                                Pathfinder Society - Extras
+                            </label>
+                        </div>
+
+                        
+
+                    </div>
+                </div>
+            </div>
+            <div class="column is-4" style="position: relative;">
+                <div class="pb-2">
+                    <h4>Homebrew</h4>
+                    <span id="noHomebrewMessage" class="is-hidden is-size-7 has-txt-noted is-italic has-text-centered">Your homebrew collection is empty.</span>
+                </div>
+
+                <div id="homebrewColumn" class="columns is-mobile first-page-container my-1 use-custom-scrollbar">
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+                      <div id="homebrewCollectionContainer"></div>
+                      <div style="position: absolute; left: 50%;">
+                        <div style="position: relative; left: -50%;">
+                          <span id="viewBrowseHomebrewBtn" class="is-hidden button is-rounded is-info is-very-small">Browse</span>
+                          <span id="viewHomebrewCollectionBtn" class="is-hidden button is-rounded is-info is-very-small">Go To Collection</span>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="column is-4">
+
+                <div class="pb-2">
+                    <h4>Variants</h4>
+                </div>
+
+                <div id="variantsColumn" class="columns is-mobile first-page-split-container is-top my-1 use-custom-scrollbar">
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+
+                        <div class="field">
+                            <input id="variantAncestryParagon" type="checkbox" name="variantAncestryParagon" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantAncestryParagon">Ancestry Paragon</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantFreeArchetype" type="checkbox" name="variantFreeArchetype" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantFreeArchetype">Free Archetype</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantGradualAbilityBoosts" type="checkbox" name="variantGradualAbilityBoosts" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantGradualAbilityBoosts">Gradual Ability Boosts</label>
+                        </div>
+                        <div class="field">
+                            <input id="variantStamina" type="checkbox" name="variantStamina" class="switch is-small is-rounded is-outlined is-info optionSwitch variantSwitch" value="1">
+                            <label for="variantStamina">Stamina</label>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="pb-2">
+                    <h4>Options</h4>
+                </div>
+
+                <div id="optionsColumn" class="columns is-mobile first-page-split-container is-top is-bottom my-1 use-custom-scrollbar">
+                    <div class="column is-3"></div>
+                    <div class="column is-9 text-left">
+
+                        <div class="field">
+                            <input id="optionClassArchetypes" type="checkbox" name="optionClassArchetypes" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionClassArchetypes">Class Archetypes</label>
+                        </div>
+
+                        <div class="field">
+                            <input id="optionCustomCodeBlock" type="checkbox" name="optionCustomCodeBlock" class="switch is-small is-rounded is-outlined is-info optionSwitch charOptionSwitch" value="1">
+                            <label for="optionCustomCodeBlock">Custom Code Block</label>
+                            <p id="optionCustomCodeBlockInfo" class="help is-info is-italic text-center is-hidden">A WSC block is enabled, the code is run under Initial Stats section and sheet.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="option-custom-code-block-container" class="box p-0 is-hidden">
+      <div class="field pos-relative">
+        <label class="label">
+          <span class="is-size-5 has-txt-listing">Custom Code</span>
+          <a href="/wsc_docs/#code_basics" target="_blank" class="pl-1"><span class="icon is-small has-text-info has-tooltip-top" data-tooltip="WSC Docs"><i class="fas fa-book"></i></span></a>
+          <span class="code-block-statement-display">Builder & Sheet Statements</span>
+        </label>
+        <div class="control">
+          <textarea id="inputCustomCodeBlock" class="textarea nanum-coding use-custom-scrollbar" placeholder="Insert code here, which will be executed on the Finalize page and sheet." rows="3" spellcheck="false" maxlength="1990">{{build.customCode}}</textarea>
+        </div>
+      </div>
+    </div>
+
+</div>

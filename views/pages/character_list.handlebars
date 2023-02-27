@@ -1,0 +1,204 @@
+
+{{#section 'header'}}
+
+    <!-- PDF Lib -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/downloadjs@1.4.7"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.8.0/html2pdf.bundle.min.js"></script>
+    
+
+    <script type="text/javascript" src="/js/character-list.js"></script>
+    <link rel="stylesheet" href="/css/character-list.css">
+
+    <script src="/js/require-signin.js"></script>
+
+    <script type="text/javascript" src="/js/char_export/export-handler.js"></script>
+    <script type="text/javascript" src="/js/char_export/populate-pdf.js"></script>
+    <!--<script type="text/javascript" src="/js/char_export/pdf-sheet.js"></script>-->
+    <script type="application/pdf" src="/pdf/character_sheet.pdf"></script>
+
+    <!-- Discord Widget Bot -->
+    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer>
+      new Crate({
+        server: '735260060682289254',
+        channel: '735260060682289257'
+      })
+    </script>
+
+{{/section}}
+
+{{#section 'nav_home'}}
+    <li><a href="/">Home</a></li>
+{{/section}}
+
+{{#section 'nav_characters'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/v/profile/characters" class="active">Characters</a></li>
+{{/section}}
+
+{{#section 'nav_builds'}}
+    <li><a href="/builds">Builds</a></li>
+{{/section}}
+
+{{#section 'nav_homebrew'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/homebrew">Homebrew</a></li>
+{{/section}}
+
+{{#section 'nav_gm_tools'}}
+    <li><a href="/gm-tools">GM Tools</a></li>
+{{/section}}
+
+{{#section 'nav_browse'}}
+    <li class="mx-lg-4 mx-md-3 my-md-0 my-2"><a href="/browse"><i class="fas fa-lg fa-search"></i></a></li>
+{{/section}}
+
+{{#section 'nav_login'}}
+    <li class="mr-4"><a href="/auth/login">Login <i class="fas fa-sign-in-alt"></i></a></li>
+{{/section}}
+
+
+
+{{#section 'banner_nav'}}
+    <div class="banner_w3lspvt-2"></div>
+{{/section}}
+
+<div class="subpageloader is-hidden"><div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div>
+
+<div class="container">
+
+    <div class="columns is-mobile is-centered is-vcentered pt-3 is-marginless">
+        <div class="column is-5 is-paddingless" style="white-space: nowrap;">
+            <h1 class="is-size-2 is-inline-block has-txt-value-string title-font">Characters</h1>
+            {{#ifEqual user.isPatreonMember 0}}
+                <span class="is-size-5 ml-3 has-tooltip-bottom has-tooltip-multiline has-txt-listing" data-tooltip="You can only have up to six characters at once. To get unlimited characters, support us and what we're doing on Patreon!">({{characters.length}}/{{characterLimit}})</span>
+            {{/ifEqual}}
+        </div>
+        <div class="column is-5 is-paddingless">
+            {{#if canMakeCharacter}}
+              <a id="icon-character-import" class="is-size-3-5 is-pulled-right">
+                <label for="input-character-import">
+                  <span class="icon is-large has-text-info has-tooltip-bottom" data-tooltip="Import Character">
+                    <i class="fas fa-upload cursor-clickable"></i>
+                  </span>
+                </label>
+                <input id="input-character-import" type="file" accept=".guidechar"/>
+              </a>
+              <a class="is-size-3 is-pulled-right" href="/profile/characters/add"><span class="icon is-large has-text-info has-tooltip-bottom" data-tooltip="Create Character"><i class="fas fa-user-plus"></i></span></a>
+            {{else}}
+
+              <a class="is-size-3-5 is-pulled-right">
+                <label for="input-character-import">
+                  <span class="icon is-large has-text-danger has-tooltip-bottom" data-tooltip="Import Character">
+                    <i class="fas fa-upload cursor-clickable"></i>
+                  </span>
+                </label>
+              </a>
+              <a class="is-size-3 is-pulled-right"><span class="icon is-large has-text-danger has-tooltip-bottom" data-tooltip="Create Character"><i class="fas fa-user-times"></i></span></a>
+
+              <a href="https://www.patreon.com/bePatron?u=32932027" target="_blank" class="button is-rounded is-small is-hidden-mobile mt-2 mx-3 is-pulled-right" style="background-color: rgb(255, 66, 77);color: white;">
+                <span class="icon is-small">
+                  <i class="fab fa-patreon"></i>
+                </span>
+                <span>Become a patron</span>
+              </a>
+
+            {{/if}}
+        </div>
+    </div>
+    <hr>
+
+
+    <div class="columns is-centered is-multiline is-marginless mb-2">
+        {{#each characters}}
+            <div class="column is-4">
+                <div class="card character-card is-unselectable" data-char-id="{{id}}" data-char-name="{{name}}">
+                    <div class="card-content cursor-clickable pt-2">
+                      <a href="/profile/characters/{{id}}">
+                        <span class="is-size-8 has-txt-noted char-id"># {{id}}</span>
+                        <p class="is-size-5 has-txt-value-number text-overflow-ellipsis">{{name}}</p>
+                        <p class="is-size-7 pl-4 text-overflow-ellipsis"> Lvl {{level}} | {{heritageName}} {{className}}</p>
+                      </a>
+                    </div>
+                    <div class="card-footer is-paddingless">
+                        <a class="card-footer-item character-card-edit has-txt-listing">
+                            {{#if isPlayable}}
+                                <span class="character-card-edit-text is-size-6 pr-1">Edit</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-sm fa-edit"></i>
+                                </span>
+                            {{else}}
+                                <span class="character-card-edit-text is-size-6 pr-1">Continue</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-sm fa-wrench"></i>
+                                </span>
+                            {{/if}}
+                        </a>
+                        <a class="card-footer-item character-card-options has-txt-listing">
+                            <span class="character-card-options-text is-size-6 pr-1">Options</span>
+                            <span class="icon is-small">
+                                <i class="fas fa-sm fa-ellipsis-h"></i>
+                            </span>
+                        </a>
+                        <a class="card-footer-item character-card-delete has-txt-listing" style="overflow: hidden;">
+                            <span class="character-card-delete-text is-size-6 pr-1">Delete</span>
+                            <span class="icon is-small">
+                                <i class="fas fa-sm fa-trash"></i>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {{else}}
+            <div class="column">
+                <p class="has-text-centered is-italic">You have no characters.</p>
+            </div>
+        {{/each}}
+    </div>
+
+</div>
+
+<!-- Character Delete Modal -->
+<div class="modal modal-char-delete">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p id="modal-char-delete-title" class="modal-card-title is-size-4 has-txt-value-string">Delete Character</p>
+            <button class="delete modal-card-close" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+            <p class="has-txt-value-string has-text-centered">Are you sure you want to delete this character?</p>
+        </section>
+        <footer class="modal-card-foot is-paddingless p-3 field is-grouped is-grouped-centered">
+            <p class="control">
+                <a class="button is-danger is-outlined" id="delete-confirmation-btn">Delete</a>
+            </p>
+        </footer>
+    </div>
+</div>
+
+<!-- Character Options Modal -->
+<div class="modal modal-char-options">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title is-size-4 has-txt-value-number">Character Options</p>
+      <button class="delete modal-card-close" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body pb-3">
+
+      <div class="buttons is-centered">
+        {{#if canMakeCharacter}}
+          <button id="btn-duplicate-character" class="button is-info"><span>Create Copy</span><span class="icon"><i class="fas fa-user-friends"></i></span></button>
+        {{else}}
+          <button class="button is-danger"><span>Create Copy</span><span class="icon"><i class="fas fa-user-friends"></i></span></button>
+        {{/if}}
+        <button id="btn-export-character" class="button is-info"><span>Export</span><span class="icon"><i class="fas fa-download"></i></span></button>
+        <button id="btn-export-to-pdf" class="button is-info"><span>Export to PDF</span><span class="icon"><i class="fas fa-file-pdf"></i></span></button>
+      </div>
+      
+    </section>
+    <footer class="modal-card-foot">
+    </footer>
+  </div>
+</div>
+
+<div id="character-pdf-container" class="is-hidden"></div>
