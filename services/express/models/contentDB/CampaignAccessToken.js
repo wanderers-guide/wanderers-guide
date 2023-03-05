@@ -1,7 +1,7 @@
 const Sequelize = require("sequelize");
 const db = require("../../config/databases/content-database");
 
-const CampaignAccessToken = db.define("campaignaccesstokens", {
+const CampaignAccessToken = db.define("campaignAccessTokens", {
   campaignID: {
     type: Sequelize.INTEGER,
   },

@@ -13,13 +13,24 @@
     "typecheck": "tsc --noEmit"
   },
   "workspaces": [
-    "services/*"
+    "services/*",
+    "cdk"
   ],
   "devDependencies": {
     "@tsconfig/node18": "^1.0.1",
-    "aws-cdk-lib": "^2.62.2",
+    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "aws-cdk-lib": "^2.65.0",
     "constructs": "^10.1.156",
+    "eslint": "^8.34.0",
+    "eslint-config-standard-with-typescript": "^34.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-promise": "^6.1.1",
     "sst": "^2.0.16",
     "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@serverless-stack/resources": "^1.18.4",
+    "@typescript-eslint/parser": "^5.52.0"
   }
 }

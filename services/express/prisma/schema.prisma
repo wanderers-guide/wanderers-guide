@@ -7,21 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model accessTokens {
-  id            Int                       @id @default(autoincrement())
-  accessToken   String                    @unique @db.VarChar(90)
-  clientID      String                    @db.VarChar(60)
-  charID        Int
-  accessRights  accessTokens_accessRights @default(READ_ONLY)
-  createdAt     DateTime?                 @db.DateTime(0)
-  updatedAt     DateTime?                 @db.DateTime(0)
-  characters    characters                @relation(fields: [charID], references: [id])
-  apiClientApps apiClientApps             @relation(fields: [clientID], references: [clientID])
-
-  @@index([charID], name: "accessToken_charID")
-  @@index([clientID], name: "accessToken_clientID")
-}
-
 model ancestries {
   id                                                                 Int               @id @default(autoincrement())
   name                                                               String?           @db.VarChar(45)
@@ -36,25 +21,648 @@ model ancestries {
   physicalFeatureTwoID                                               Int?
   tagID                                                              Int?
   artworkURL                                                         String?           @db.VarChar(200)
-  isArchived                                                         Int?              @default(0)
+  isArchived                                                         Boolean           @default(false)
   contentSrc                                                         String            @default("CRB") @db.VarChar(45)
   homebrewID                                                         Int?
   version                                                            String?           @db.VarChar(90)
-  senseTypes_ancestries_additionalSenseIDTosenseTypes                senseTypes?       @relation("ancestries_additionalSenseIDTosenseTypes", fields: [additionalSenseID], references: [id])
-  homebrewBundles                                                    homebrewBundles?  @relation(fields: [homebrewID], references: [id])
-  physicalFeatures_ancestries_physicalFeatureOneIDTophysicalFeatures physicalFeatures? @relation("ancestries_physicalFeatureOneIDTophysicalFeatures", fields: [physicalFeatureOneID], references: [id])
-  physicalFeatures_ancestries_physicalFeatureTwoIDTophysicalFeatures physicalFeatures? @relation("ancestries_physicalFeatureTwoIDTophysicalFeatures", fields: [physicalFeatureTwoID], references: [id])
-  tags                                                               tags?             @relation(fields: [tagID], references: [id])
-  senseTypes_ancestries_visionSenseIDTosenseTypes                    senseTypes?       @relation("ancestries_visionSenseIDTosenseTypes", fields: [visionSenseID], references: [id])
-  characters                                                         characters[]
+  createdAt                                                          DateTime?         @db.DateTime(0)
+  updatedAt                                                          DateTime?         @db.DateTime(0)
+  senseTypes_ancestries_additionalSenseIDTosenseTypes                senseTypes?       @relation("ancestries_additionalSenseIDTosenseTypes", fields: [additionalSenseID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ancestry_additionalSenseID")
+  homebrewBundles                                                    homebrewBundles?  @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "ancestry_homebrewID")
+  physicalFeatures_ancestries_physicalFeatureOneIDTophysicalFeatures physicalFeatures? @relation("ancestries_physicalFeatureOneIDTophysicalFeatures", fields: [physicalFeatureOneID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ancestry_physicalFeatureOneID")
+  physicalFeatures_ancestries_physicalFeatureTwoIDTophysicalFeatures physicalFeatures? @relation("ancestries_physicalFeatureTwoIDTophysicalFeatures", fields: [physicalFeatureTwoID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ancestry_physicalFeatureTwoID")
+  tags                                                               tags?             @relation(fields: [tagID], references: [id], onUpdate: SetNull, map: "ancestry_tagID")
+  senseTypes_ancestries_visionSenseIDTosenseTypes                    senseTypes?       @relation("ancestries_visionSenseIDTosenseTypes", fields: [visionSenseID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ancestry_visionSenseID")
   builds                                                             builds[]
+  characters                                                         characters[]
 
-  @@index([additionalSenseID], name: "ancestry_additionalSenseID_idx")
-  @@index([homebrewID], name: "ancestry_homebrewID_idx")
-  @@index([physicalFeatureOneID], name: "ancestry_physicalFeatureOneID_idx")
-  @@index([physicalFeatureTwoID], name: "ancestry_physicalFeatureTwoID_idx")
-  @@index([tagID], name: "ancestry_tagID_idx")
-  @@index([visionSenseID], name: "ancestry_visionTypeID_idx")
+  @@index([additionalSenseID], map: "ancestry_additionalSenseID_idx")
+  @@index([homebrewID], map: "ancestry_homebrewID_idx")
+  @@index([physicalFeatureOneID], map: "ancestry_physicalFeatureOneID_idx")
+  @@index([physicalFeatureTwoID], map: "ancestry_physicalFeatureTwoID_idx")
+  @@index([tagID], map: "ancestry_tagID_idx")
+  @@index([visionSenseID], map: "ancestry_visionTypeID_idx")
+}
+
+model armors {
+  id           Int               @id @default(autoincrement())
+  itemID       Int?
+  profName     String?           @db.VarChar(45)
+  acBonus      Int?
+  dexCap       Int?
+  checkPenalty Int?
+  speedPenalty Int?
+  minStrength  Int?
+  armorType    armors_armorType?
+  category     armors_category?
+  createdAt    DateTime?         @db.DateTime(0)
+  updatedAt    DateTime?         @db.DateTime(0)
+  items        items?            @relation(fields: [itemID], references: [id], onDelete: Cascade, map: "armor_itemID")
+
+  @@index([itemID], map: "armor_itemID_idx")
+}
+
+model backgrounds {
+  id              Int                @id @default(autoincrement())
+  name            String?            @db.VarChar(45)
+  rarity          backgrounds_rarity @default(COMMON)
+  description     String?            @db.MediumText
+  boostOne        String?            @db.VarChar(60)
+  boostTwo        String?            @db.VarChar(60)
+  code            String?            @db.VarChar(1000)
+  isArchived      Boolean            @default(false)
+  contentSrc      String             @default("CRB") @db.VarChar(45)
+  homebrewID      Int?
+  version         String?            @db.VarChar(90)
+  createdAt       DateTime?          @db.DateTime(0)
+  updatedAt       DateTime?          @db.DateTime(0)
+  homebrewBundles homebrewBundles?   @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "backgrounds_homebrewID")
+  builds          builds[]
+  characters      characters[]
+
+  @@index([homebrewID])
+}
+
+model campaigns {
+  id                        Int                    @id @default(autoincrement())
+  accessID                  String                 @unique(map: "accessID_UNIQUE") @db.VarChar(60)
+  userID                    Int
+  name                      String?                @db.VarChar(120)
+  description               String?                @db.VarChar(4000)
+  imageURL                  String?                @db.VarChar(300)
+  optionDisplayPlayerHealth Int                    @default(1)
+  createdAt                 DateTime?              @db.DateTime(0)
+  updatedAt                 DateTime?              @db.DateTime(0)
+  campaignAccessTokens      campaignAccessTokens[]
+  users                     users                  @relation(fields: [userID], references: [id], onDelete: Cascade, map: "userID_campaign")
+
+  @@index([userID], map: "userID_campaign_idx")
+}
+
+model characters {
+  id                                    Int                    @id @default(autoincrement())
+  userID                                Int?
+  buildID                               Int?
+  name                                  String?                @db.VarChar(45)
+  level                                 Int                    @default(1)
+  experience                            Int                    @default(0)
+  currentHealth                         Int?
+  tempHealth                            Int?
+  heroPoints                            Int?                   @default(1)
+  currentStamina                        Int?
+  currentResolve                        Int?
+  dataID                                Int?
+  ancestryID                            Int?
+  heritageID                            Int?
+  uniHeritageID                         Int?
+  backgroundID                          Int?
+  classID                               Int?
+  classID_2                             Int?
+  inventoryID                           Int?
+  notes                                 String?                @db.MediumText
+  infoJSON                              String?                @db.VarChar(3000)
+  rollHistoryJSON                       String?                @db.VarChar(8000)
+  details                               String?                @db.Text
+  customCode                            String?                @db.VarChar(2000)
+  builderByLevel                        Boolean                @default(false)
+  optionAutoDetectPreReqs               Boolean                @default(true)
+  optionAutoHeightenSpells              Boolean                @default(false)
+  optionPublicCharacter                 Boolean                @default(false)
+  optionCustomCodeBlock                 Boolean                @default(false)
+  optionClassArchetypes                 Boolean                @default(true)
+  optionDiceRoller                      Boolean                @default(false)
+  optionIgnoreBulk                      Boolean                @default(false)
+  optionAltAbilityBoosts                Boolean                @default(false)
+  variantProfWithoutLevel               Boolean                @default(false)
+  variantFreeArchetype                  Boolean                @default(false)
+  variantAncestryParagon                Boolean                @default(false)
+  variantStamina                        Boolean                @default(false)
+  variantAutoBonusProgression           Boolean                @default(false)
+  variantGradualAbilityBoosts           Boolean                @default(false)
+  enabledSources                        String                 @default("[\"CRB\",\"ADV-PLAYER-GUIDE\",\"GM-GUIDE\"]") @db.VarChar(4000)
+  enabledHomebrew                       String                 @default("[null]") @db.VarChar(6000)
+  createdAt                             DateTime?              @db.DateTime(0)
+  updatedAt                             DateTime?              @db.DateTime(0)
+  accessTokens                          accessTokens[]
+  calculatedStats                       calculatedStats?
+  campaignAccessTokens                  campaignAccessTokens?
+  charAnimalCompanions                  charAnimalCompanions[]
+  charConditions                        charConditions[]
+  charDataMappings                      charDataMappings[]
+  charFamiliars                         charFamiliars[]
+  ancestries                            ancestries?            @relation(fields: [ancestryID], references: [id], onUpdate: SetNull, map: "char_ancestryID")
+  backgrounds                           backgrounds?           @relation(fields: [backgroundID], references: [id], onUpdate: SetNull, map: "char_backgroundID")
+  builds                                builds?                @relation(fields: [buildID], references: [id], onUpdate: SetNull, map: "char_buildID")
+  classes                               classes?               @relation(fields: [classID], references: [id], onUpdate: SetNull, map: "char_classID")
+  classes_characters_classID_2Toclasses classes?               @relation("characters_classID_2Toclasses", fields: [classID_2], references: [id], onUpdate: SetNull, map: "char_classID_2")
+  heritages                             heritages?             @relation(fields: [heritageID], references: [id], onUpdate: SetNull, map: "char_heritageID")
+  inventories                           inventories?           @relation(fields: [inventoryID], references: [id], onDelete: Cascade, map: "char_inventoryID")
+  uniHeritages                          uniHeritages?          @relation(fields: [uniHeritageID], references: [id], onUpdate: SetNull, map: "char_uniHeritageID")
+  users                                 users?                 @relation(fields: [userID], references: [id], onDelete: Cascade, map: "char_userID")
+  noteFields                            noteFields[]
+  spellbookSpells                       spellbookSpells[]
+
+  @@index([ancestryID], map: "char_ancestryID_idx")
+  @@index([backgroundID], map: "char_backgroundID_idx")
+  @@index([buildID], map: "char_buildID_idx")
+  @@index([classID_2], map: "char_classID_2_idx")
+  @@index([classID], map: "char_classID_idx")
+  @@index([heritageID], map: "char_heritageID_idx")
+  @@index([inventoryID], map: "char_inventoryID_idx")
+  @@index([uniHeritageID], map: "char_uniHeritageID_idx")
+  @@index([userID], map: "char_userID_idx")
+}
+
+model classes {
+  id                                       Int              @id @default(autoincrement())
+  name                                     String?          @db.VarChar(45)
+  rarity                                   classes_rarity   @default(COMMON)
+  description                              String?          @db.Text
+  keyAbility                               String?          @db.VarChar(45)
+  hitPoints                                Int?
+  tPerception                              String           @default("T") @db.VarChar(5)
+  tFortitude                               String           @default("T") @db.VarChar(5)
+  tReflex                                  String           @default("T") @db.VarChar(5)
+  tWill                                    String           @default("T") @db.VarChar(5)
+  tClassDC                                 String           @default("T") @db.VarChar(5)
+  tSkills                                  String?          @db.VarChar(60)
+  tSkillsMore                              Int?
+  tWeapons                                 String?          @db.VarChar(300)
+  weaponsExtra                             String?          @db.VarChar(500)
+  tArmor                                   String?          @db.VarChar(300)
+  tagID                                    Int?
+  artworkURL                               String?          @db.VarChar(200)
+  code                                     String?          @db.VarChar(1000)
+  isArchived                               Boolean          @default(false)
+  contentSrc                               String           @default("CRB") @db.VarChar(45)
+  homebrewID                               Int?
+  version                                  String?          @db.VarChar(90)
+  createdAt                                DateTime?        @db.DateTime(0)
+  updatedAt                                DateTime?        @db.DateTime(0)
+  builds_builds_classIDToclasses           builds[]         @relation("builds_classIDToclasses")
+  builds_builds_classID_2Toclasses         builds[]         @relation("builds_classID_2Toclasses")
+  characters                               characters[]
+  characters_characters_classID_2Toclasses characters[]     @relation("characters_classID_2Toclasses")
+  classAbilities                           classAbilities[]
+  homebrewBundles                          homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "classes_homebrewID")
+  tags                                     tags?            @relation(fields: [tagID], references: [id], onUpdate: SetNull, map: "classes_tagID")
+
+  @@index([homebrewID], map: "classes_homebrewID")
+  @@index([tagID])
+}
+
+model conditions {
+  id             Int              @id @default(autoincrement())
+  name           String?          @db.VarChar(45)
+  description    String?          @db.Text
+  hasValue       Boolean          @default(false)
+  code           String?          @db.VarChar(1000)
+  createdAt      DateTime?        @db.DateTime(0)
+  updatedAt      DateTime?        @db.DateTime(0)
+  charConditions charConditions[]
+}
+
+model domains {
+  id                                     Int              @id @default(autoincrement())
+  name                                   String?          @db.VarChar(45)
+  description                            String?          @db.TinyText
+  initialSpellID                         Int?
+  advancedSpellID                        Int?
+  contentSrc                             String           @default("CRB") @db.VarChar(45)
+  homebrewID                             Int?
+  createdAt                              DateTime?        @db.DateTime(0)
+  updatedAt                              DateTime?        @db.DateTime(0)
+  spells_domains_advancedSpellIDTospells spells?          @relation("domains_advancedSpellIDTospells", fields: [advancedSpellID], references: [id], onUpdate: SetNull, map: "domain_advancedSpellID")
+  homebrewBundles                        homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "domain_homebrewID")
+  spells_domains_initialSpellIDTospells  spells?          @relation("domains_initialSpellIDTospells", fields: [initialSpellID], references: [id], onUpdate: SetNull, map: "domain_initialSpellID")
+
+  @@index([advancedSpellID], map: "domain_advancedSpellID_idx")
+  @@index([homebrewID], map: "domain_homebrewID")
+  @@index([initialSpellID], map: "domain_initialSpellID_idx")
+}
+
+model creatures {
+  id                       String           @id @db.VarChar(45)
+  name                     String?          @db.VarChar(120)
+  level                    Int
+  rarity                   creatures_rarity
+  alignment                String?          @db.VarChar(5)
+  size                     creatures_size
+  traitsJSON               String?          @db.VarChar(450)
+  familyType               String?          @db.VarChar(120)
+  perceptionBonus          Int?
+  senses                   String?          @db.VarChar(450)
+  languagesJSON            String?          @db.VarChar(450)
+  languagesCustom          String?          @db.VarChar(600)
+  skillsJSON               String?          @db.VarChar(900)
+  itemsJSON                String?          @db.VarChar(3000)
+  strMod                   Int              @default(0)
+  dexMod                   Int              @default(0)
+  conMod                   Int              @default(0)
+  intMod                   Int              @default(0)
+  wisMod                   Int              @default(0)
+  chaMod                   Int              @default(0)
+  interactionAbilitiesJSON String?          @db.Text
+  acValue                  Int              @default(10)
+  fortBonus                Int              @default(0)
+  reflexBonus              Int
+  willBonus                Int              @default(0)
+  allSavesCustom           String?          @db.VarChar(600)
+  hpMax                    Int              @default(100)
+  hpDetails                String?          @db.VarChar(450)
+  immunitiesJSON           String?          @db.VarChar(600)
+  weaknessesJSON           String?          @db.VarChar(600)
+  resistancesJSON          String?          @db.VarChar(600)
+  defensiveAbilitiesJSON   String?          @db.Text
+  speed                    Int              @default(25)
+  otherSpeedsJSON          String?          @db.VarChar(450)
+  attacksJSON              String?          @db.VarChar(1600)
+  spellcastingJSON         String?          @db.VarChar(3000)
+  offensiveAbilitiesJSON   String?          @db.Text
+  flavorText               String?          @db.Text
+  contentSrc               String           @default("CRB") @db.VarChar(45)
+  homebrewID               Int?
+  createdAt                DateTime?        @db.DateTime(0)
+  updatedAt                DateTime?        @db.DateTime(0)
+  homebrewbundles          homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "creatures_homebrewID")
+
+  @@index([homebrewID])
+}
+
+model feats {
+  id                Int                @id @default(autoincrement())
+  name              String?            @default("Unnamed Feat") @db.VarChar(60)
+  actions           feats_actions?     @default(NONE)
+  level             Int
+  rarity            feats_rarity       @default(COMMON)
+  prerequisites     String?            @db.VarChar(300)
+  frequency         String?            @db.VarChar(300)
+  cost              String?            @db.VarChar(300)
+  trigger           String?            @db.VarChar(300)
+  requirements      String?            @db.VarChar(600)
+  description       String?            @db.Text
+  special           String?            @db.VarChar(600)
+  canSelectMultiple Boolean?           @default(false)
+  isDefault         Boolean?           @default(false)
+  skillID           Int?
+  minProf           String?            @db.VarChar(3)
+  code              String?            @db.VarChar(5000)
+  isCore            Boolean            @default(false)
+  genericType       feats_genericType?
+  genTypeName       String?            @db.VarChar(45)
+  isArchived        Boolean            @default(false)
+  contentSrc        String             @default("CRB") @db.VarChar(45)
+  homebrewID        Int?
+  version           String?            @db.VarChar(90)
+  createdAt         DateTime?          @db.DateTime(0)
+  updatedAt         DateTime?          @db.DateTime(0)
+  archetypes        archetypes[]
+  featTags          featTags[]
+  homebrewBundles   homebrewBundles?   @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "feats_homebrewID")
+  skills            skills?            @relation(fields: [skillID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "feats_skillID")
+
+  @@index([homebrewID], map: "feats_homebrewID")
+  @@index([skillID])
+}
+
+model extras {
+  id              Int              @id @default(autoincrement())
+  name            String?          @default("Unnamed Extra") @db.VarChar(60)
+  price           Int?
+  level           Int              @default(0)
+  rarity          extras_rarity    @default(COMMON)
+  size            extras_size      @default(MEDIUM)
+  description     String?          @db.Text
+  hitPoints       Int?
+  brokenThreshold Int?
+  hardness        Int?
+  type            String           @default("OTHER") @db.VarChar(45)
+  isArchived      Boolean          @default(false)
+  contentSrc      String           @default("CRB") @db.VarChar(45)
+  homebrewID      Int?
+  createdAt       DateTime?        @db.DateTime(0)
+  updatedAt       DateTime?        @db.DateTime(0)
+  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "extras_homebrewID")
+  taggedExtras    taggedExtras[]
+
+  @@index([homebrewID])
+}
+
+model heritages {
+  id                Int              @id @default(autoincrement())
+  name              String?          @db.VarChar(45)
+  ancestryID        Int?
+  rarity            heritages_rarity @default(COMMON)
+  description       String?          @db.Text
+  code              String?          @db.VarChar(5000)
+  isArchived        Boolean          @default(false)
+  contentSrc        String           @default("CRB") @db.VarChar(45)
+  indivAncestryName String?          @db.VarChar(45)
+  homebrewID        Int?
+  createdAt         DateTime?        @db.DateTime(0)
+  updatedAt         DateTime?        @db.DateTime(0)
+  builds            builds[]
+  characters        characters[]
+  homebrewBundles   homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "heritage_homebrewID")
+
+  @@index([homebrewID], map: "heritage_homebrewID_idx")
+}
+
+model inventories {
+  id                                                     Int              @id @default(autoincrement())
+  equippedArmorInvItemID                                 Int?
+  equippedShieldInvItemID                                Int?
+  equippedArmorCategory                                  armors_category?
+  createdAt                                              DateTime?        @db.DateTime(0)
+  updatedAt                                              DateTime?        @db.DateTime(0)
+  characters                                             characters[]
+  invItems_invItems_invIDToinventories                   invItems[]       @relation("invItems_invIDToinventories")
+  invItems_invItemsToinventories_equippedArmorInvItemID  invItems?        @relation("invItemsToinventories_equippedArmorInvItemID", fields: [equippedArmorInvItemID], references: [id], onUpdate: SetNull, map: "inv_armorInvItemID")
+  invItems_invItemsToinventories_equippedShieldInvItemID invItems?        @relation("invItemsToinventories_equippedShieldInvItemID", fields: [equippedShieldInvItemID], references: [id], onUpdate: SetNull, map: "inv_shieldInvItemID")
+
+  @@index([equippedArmorInvItemID], map: "inv_armorInvItemID_idx")
+  @@index([equippedShieldInvItemID], map: "inv_shieldInvItemID_idx")
+}
+
+model items {
+  id                Int                  @id @default(autoincrement())
+  name              String?              @db.VarChar(45)
+  price             Int?
+  bulk              Float?
+  level             Int?                 @default(0)
+  rarity            items_rarity?        @default(COMMON)
+  description       String?              @db.Text
+  itemType          items_itemType?
+  hands             items_hands          @default(NONE)
+  size              items_size           @default(MEDIUM)
+  craftRequirements String?              @db.VarChar(380)
+  usage             String?              @db.VarChar(120)
+  isShoddy          Boolean              @default(false)
+  hasQuantity       Boolean              @default(false)
+  quantity          Int                  @default(1)
+  materialType      String?              @db.VarChar(45)
+  hitPoints         Int?
+  brokenThreshold   Int?
+  hardness          Int?
+  hidden            Boolean              @default(false)
+  code              String?              @db.VarChar(1000)
+  itemStructType    items_itemStructType @default(GENERAL)
+  isArchived        Boolean              @default(false)
+  contentSrc        String               @default("CRB") @db.VarChar(45)
+  homebrewID        Int?
+  version           String?              @db.VarChar(90)
+  createdAt         DateTime?            @db.DateTime(0)
+  updatedAt         DateTime?            @db.DateTime(0)
+  armors            armors[]
+  invItems          invItems[]
+  itemRunes         itemRunes[]
+  homebrewBundles   homebrewBundles?     @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "items_homebrewID")
+  physicalFeatures  physicalFeatures[]
+  shields           shields[]
+  storages          storages[]
+  taggedItems       taggedItems[]
+  weapons           weapons[]
+
+  @@index([homebrewID])
+}
+
+model languages {
+  id                Int                 @id @default(autoincrement())
+  name              String?             @db.VarChar(45)
+  speakers          String?             @db.VarChar(120)
+  script            String?             @db.VarChar(45)
+  description       String?             @db.Text
+  contentSrc        String              @default("CRB") @db.VarChar(45)
+  homebrewID        Int?
+  createdAt         DateTime?           @db.DateTime(0)
+  updatedAt         DateTime?           @db.DateTime(0)
+  ancestryLanguages ancestryLanguages[]
+  homebrewBundles   homebrewBundles?    @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "languages_homebrewID")
+
+  @@index([homebrewID], map: "languages_homebrewID")
+}
+
+model shields {
+  id           Int       @id @default(autoincrement())
+  itemID       Int?
+  profName     String?   @db.VarChar(45)
+  acBonus      Int?
+  speedPenalty Int?
+  createdAt    DateTime? @db.DateTime(0)
+  updatedAt    DateTime? @db.DateTime(0)
+  items        items?    @relation(fields: [itemID], references: [id], onDelete: Cascade, map: "shield_itemID")
+
+  @@index([itemID], map: "shield_itemID_idx")
+}
+
+model skills {
+  id          Int             @id @default(autoincrement())
+  name        String?         @db.VarChar(45)
+  ability     skills_ability? @default(INT)
+  description String?         @db.Text
+  createdAt   DateTime?       @db.DateTime(0)
+  updatedAt   DateTime?       @db.DateTime(0)
+  feats       feats[]
+}
+
+model books {
+  codeName    String    @id @db.VarChar(45)
+  name        String    @db.VarChar(180)
+  url         String?   @db.VarChar(300)
+  description String?   @db.MediumText
+  code        String?   @db.VarChar(10000)
+  createdAt   DateTime? @db.DateTime(0)
+  updatedAt   DateTime? @db.DateTime(0)
+}
+
+model spells {
+  id                                      Int                 @id @default(autoincrement())
+  name                                    String?             @db.VarChar(45)
+  level                                   Int?
+  traditions                              String?             @db.VarChar(45)
+  cast                                    String?             @db.VarChar(45)
+  castingComponents                       String?             @db.VarChar(45)
+  cost                                    String?             @db.VarChar(300)
+  trigger                                 String?             @db.VarChar(300)
+  requirements                            String?             @db.VarChar(300)
+  range                                   String?             @db.VarChar(300)
+  area                                    String?             @db.VarChar(300)
+  targets                                 String?             @db.VarChar(300)
+  savingThrow                             spells_savingThrow?
+  duration                                String?             @db.VarChar(300)
+  rarity                                  spells_rarity?
+  description                             String?             @db.Text
+  heightenedOneVal                        String?             @db.VarChar(45)
+  heightenedOneText                       String?             @db.VarChar(2000)
+  heightenedTwoVal                        String?             @db.VarChar(45)
+  heightenedTwoText                       String?             @db.VarChar(1000)
+  heightenedThreeVal                      String?             @db.VarChar(45)
+  heightenedThreeText                     String?             @db.VarChar(1000)
+  heightenedFourVal                       String?             @db.VarChar(45)
+  heightenedFourText                      String?             @db.VarChar(1000)
+  isFocusSpell                            Boolean             @default(false)
+  isArchived                              Boolean             @default(false)
+  contentSrc                              String              @default("CRB") @db.VarChar(45)
+  homebrewID                              Int?
+  version                                 String?             @db.VarChar(90)
+  createdAt                               DateTime?           @db.DateTime(0)
+  updatedAt                               DateTime?           @db.DateTime(0)
+  domains_domains_advancedSpellIDTospells domains[]           @relation("domains_advancedSpellIDTospells")
+  domains_domains_initialSpellIDTospells  domains[]           @relation("domains_initialSpellIDTospells")
+  spellbookSpells                         spellbookSpells[]
+  homebrewBundles                         homebrewBundles?    @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "spells_homebrewID")
+  taggedSpells                            taggedSpells[]
+
+  @@index([homebrewID])
+}
+
+model storages {
+  id                      Int       @id @default(autoincrement())
+  itemID                  Int?
+  maxBulkStorage          Float?
+  bulkIgnored             Float?
+  ignoreSelfBulkIfWearing Boolean?  @default(false)
+  createdAt               DateTime? @db.DateTime(0)
+  updatedAt               DateTime? @db.DateTime(0)
+  items                   items?    @relation(fields: [itemID], references: [id], onDelete: Cascade, map: "storage_itemID")
+
+  @@index([itemID], map: "storage_itemID_idx")
+}
+
+model tags {
+  id              Int              @id @default(autoincrement())
+  name            String?          @db.VarChar(45)
+  description     String?          @db.Text
+  isImportant     Boolean          @default(false)
+  isHidden        Boolean          @default(false)
+  isArchived      Boolean          @default(false)
+  homebrewID      Int?
+  createdAt       DateTime?        @db.DateTime(0)
+  updatedAt       DateTime?        @db.DateTime(0)
+  ancestries      ancestries[]
+  archetypes      archetypes[]
+  classes         classes[]
+  featTags        featTags[]
+  taggedExtras    taggedExtras[]
+  taggedItems     taggedItems[]
+  taggedSpells    taggedSpells[]
+  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "tag_homebrewID")
+  uniHeritages    uniHeritages[]
+
+  @@index([homebrewID], map: "tag_homebrewID")
+}
+
+model users {
+  id                   Int                    @id @default(autoincrement())
+  googleID             String                 @db.VarChar(90)
+  redditID             String                 @db.VarChar(90)
+  username             String                 @db.VarChar(90)
+  thumbnail            String?                @db.VarChar(200)
+  isPatreonSupporter   Boolean                @default(false)
+  isPatreonMember      Boolean                @default(false)
+  isPatreonLegend      Boolean                @default(false)
+  isAdmin              Boolean                @default(false)
+  isDeveloper          Boolean                @default(false)
+  patreonUserID        Int?                   @unique(map: "patreonUserID_UNIQUE")
+  patreonFullName      String?                @db.VarChar(120)
+  patreonEmail         String?                @db.VarChar(120)
+  patreonAccessToken   String?                @db.VarChar(300)
+  patreonRefreshToken  String?                @db.VarChar(300)
+  enabledLightMode     Boolean                @default(false)
+  createdAt            DateTime?              @db.DateTime(0)
+  updatedAt            DateTime?              @db.DateTime(0)
+  apiClientApps        apiClientApps[]
+  builds               builds[]
+  campaignAccessTokens campaignAccessTokens[]
+  campaigns            campaigns[]
+  characters           characters[]
+  homeBackReports      homeBackReports[]
+  homebrewBundles      homebrewBundles[]
+  userHomebrewBundles  userHomebrewBundles[]
+
+  @@unique([googleID, redditID], name: "platform_compIDs", map: "platform_compIDs")
+}
+
+model weapons {
+  id               Int                       @id @default(autoincrement())
+  itemID           Int?
+  profName         String?                   @db.VarChar(45)
+  diceNum          Int?
+  dieType          weapons_dieType
+  damageType       String?                   @db.VarChar(45)
+  category         weapons_category
+  isMelee          Boolean?
+  meleeWeaponType  weapons_meleeWeaponType?
+  isRanged         Boolean?
+  rangedWeaponType weapons_rangedWeaponType?
+  rangedRange      Int?
+  rangedReload     Int?
+  createdAt        DateTime?                 @db.DateTime(0)
+  updatedAt        DateTime?                 @db.DateTime(0)
+  items            items?                    @relation(fields: [itemID], references: [id], onDelete: Cascade, map: "weapon_itemID")
+
+  @@index([itemID], map: "weapon_itemID_idx")
+}
+
+model builds {
+  id                                Int                 @id @default(autoincrement())
+  userID                            Int?
+  name                              String?             @db.VarChar(45)
+  description                       String?             @db.Text
+  contactInfo                       String?             @db.VarChar(120)
+  isPublished                       Boolean             @default(false)
+  authorName                        String              @default("Unknown") @db.VarChar(45)
+  artworkURL                        String?             @db.VarChar(200)
+  finalStatsJSON                    String?             @db.Text
+  ancestryID                        Int?
+  heritageID                        Int?
+  uniHeritageID                     Int?
+  backgroundID                      Int?
+  classID                           Int?
+  classID_2                         Int?
+  customCode                        String?             @db.VarChar(2000)
+  optionCustomCodeBlock             Boolean             @default(false)
+  optionClassArchetypes             Boolean             @default(true)
+  variantFreeArchetype              Boolean             @default(false)
+  variantAncestryParagon            Boolean             @default(false)
+  variantStamina                    Boolean             @default(false)
+  variantGradualAbilityBoosts       Boolean             @default(false)
+  enabledSources                    String              @default("[\"CRB\",\"ADV-PLAYER-GUIDE\",\"GM-GUIDE\"]") @db.VarChar(4000)
+  enabledHomebrew                   String              @default("[null]") @db.VarChar(6000)
+  createdAt                         DateTime?           @db.DateTime(0)
+  updatedAt                         DateTime?           @db.DateTime(0)
+  buildDataMappings                 buildDataMappings[]
+  ancestries                        ancestries?         @relation(fields: [ancestryID], references: [id], onUpdate: SetNull, map: "buildAncestryID")
+  backgrounds                       backgrounds?        @relation(fields: [backgroundID], references: [id], onUpdate: SetNull, map: "buildBackgroundID")
+  classes_builds_classIDToclasses   classes?            @relation("builds_classIDToclasses", fields: [classID], references: [id], onUpdate: SetNull, map: "buildClassID")
+  classes_builds_classID_2Toclasses classes?            @relation("builds_classID_2Toclasses", fields: [classID_2], references: [id], onUpdate: SetNull, map: "buildClassID_2")
+  heritages                         heritages?          @relation(fields: [heritageID], references: [id], onUpdate: SetNull, map: "buildHeritageID")
+  uniHeritages                      uniHeritages?       @relation(fields: [uniHeritageID], references: [id], onUpdate: SetNull, map: "buildUniHeritageID")
+  users                             users?              @relation(fields: [userID], references: [id], onDelete: Cascade, map: "buildUserID")
+  characters                        characters[]
+
+  @@index([ancestryID], map: "buildAncestryID_idx")
+  @@index([backgroundID], map: "buildBackgroundID_idx")
+  @@index([classID_2], map: "buildClass2ID_idx")
+  @@index([classID], map: "buildClassID_idx")
+  @@index([heritageID], map: "buildHeritageID_idx")
+  @@index([uniHeritageID], map: "buildUniHeritageID_idx")
+  @@index([userID], map: "buildUserID_idx")
+}
+
+model accessTokens {
+  id            Int                       @id @default(autoincrement())
+  accessToken   String                    @unique(map: "accessToken_UNIQUE") @db.VarChar(90)
+  clientID      String                    @db.VarChar(60)
+  charID        Int
+  accessRights  accessTokens_accessRights @default(READ_ONLY)
+  createdAt     DateTime?                 @db.DateTime(0)
+  updatedAt     DateTime?                 @db.DateTime(0)
+  characters    characters                @relation(fields: [charID], references: [id], onDelete: Cascade, map: "accessToken_charID")
+  apiClientApps apiClientApps             @relation(fields: [clientID], references: [clientID], onDelete: Cascade, map: "accessToken_clientID")
+
+  @@index([charID], map: "accessToken_charID")
+  @@index([clientID], map: "accessToken_clientID")
 }
 
 model ancestryBoosts {
@@ -62,9 +670,11 @@ model ancestryBoosts {
   ancestryID      Int?
   boostedAbility  ancestryBoosts_boostedAbility?
   homebrewID      Int?
-  homebrewBundles homebrewBundles?               @relation(fields: [homebrewID], references: [id])
+  createdAt       DateTime?                      @db.DateTime(0)
+  updatedAt       DateTime?                      @db.DateTime(0)
+  homebrewBundles homebrewBundles?               @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "ancestryBoost_homebrewID")
 
-  @@index([homebrewID], name: "ancestryBoost_homebrewID")
+  @@index([homebrewID], map: "ancestryBoost_homebrewID")
 }
 
 model ancestryFlaws {
@@ -72,22 +682,26 @@ model ancestryFlaws {
   ancestryID      Int?
   flawedAbility   ancestryFlaws_flawedAbility?
   homebrewID      Int?
-  homebrewBundles homebrewBundles?             @relation(fields: [homebrewID], references: [id])
+  createdAt       DateTime?                    @db.DateTime(0)
+  updatedAt       DateTime?                    @db.DateTime(0)
+  homebrewBundles homebrewBundles?             @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "ancestryFlaw_homebrewID")
 
-  @@index([homebrewID], name: "ancestryFlaw_homebrewID")
+  @@index([homebrewID], map: "ancestryFlaw_homebrewID")
 }
 
 model ancestryLanguages {
   ancestryID      Int
   langID          Int
-  isBonus         Int?             @default(0)
+  isBonus         Boolean?         @default(false)
   homebrewID      Int?
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  languages       languages        @relation(fields: [langID], references: [id])
+  createdAt       DateTime?        @db.DateTime(0)
+  updatedAt       DateTime?        @db.DateTime(0)
+  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "ancestLang_homebrewID")
+  languages       languages        @relation(fields: [langID], references: [id], onDelete: Cascade, map: "ancestLang_langID")
 
   @@id([ancestryID, langID])
-  @@index([homebrewID], name: "ancestLang_homebrewID")
-  @@index([langID], name: "ancestLang_langID_idx")
+  @@index([homebrewID], map: "ancestLang_homebrewID")
+  @@index([langID], map: "ancestLang_langID_idx")
 }
 
 model animalCompanions {
@@ -124,24 +738,26 @@ model animalCompanions {
   skills               String?                     @db.VarChar(120)
   senses               String?                     @db.VarChar(120)
   speeds               String?                     @db.VarChar(120)
-  special              String?                     @db.VarChar(200)
+  special              String?                     @db.VarChar(400)
   supportBenefit       String?                     @db.VarChar(800)
   advancedManeuver     String?                     @db.VarChar(45)
-  isArchived           Int?                        @default(0)
+  isArchived           Boolean                     @default(false)
   contentSrc           String                      @default("CRB") @db.VarChar(45)
   homebrewID           Int?
   version              String?                     @db.VarChar(90)
-  homebrewBundles      homebrewBundles?            @relation(fields: [homebrewID], references: [id])
+  createdAt            DateTime?                   @db.DateTime(0)
+  updatedAt            DateTime?                   @db.DateTime(0)
+  homebrewBundles      homebrewBundles?            @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "animalComp_homebrewID")
   charAnimalCompanions charAnimalCompanions[]
 
-  @@index([homebrewID], name: "animalComp_homebrewID_idx")
+  @@index([homebrewID], map: "animalComp_homebrewID_idx")
 }
 
 model apiClientApps {
   id           Int                        @id @default(autoincrement())
   userID       Int
-  clientID     String                     @unique @db.VarChar(60)
-  apiKey       String                     @unique @db.VarChar(60)
+  clientID     String                     @unique(map: "appID_UNIQUE") @db.VarChar(60)
+  apiKey       String                     @unique(map: "apiKey_UNIQUE") @db.VarChar(60)
   appName      String                     @db.VarChar(120)
   redirectURI  String                     @db.VarChar(300)
   companyName  String?                    @db.VarChar(120)
@@ -150,65 +766,26 @@ model apiClientApps {
   accessRights apiClientApps_accessRights @default(READ_ONLY)
   createdAt    DateTime?                  @db.DateTime(0)
   updatedAt    DateTime?                  @db.DateTime(0)
-  users        users                      @relation(fields: [userID], references: [id])
   accessTokens accessTokens[]
+  users        users                      @relation(fields: [userID], references: [id], onDelete: Cascade, map: "userID_appAPIAccess")
 
-  @@index([userID], name: "userID_appAPIAccess")
+  @@index([userID], map: "userID_appAPIAccess")
 }
 
-model archetypes {
-  id               Int              @id @default(autoincrement())
-  name             String?          @db.VarChar(45)
-  description      String?          @db.Text
-  dedicationFeatID Int?
-  isMulticlass     Int?
-  tagID            Int?
-  isArchived       Int?             @default(0)
-  contentSrc       String           @default("CRB") @db.VarChar(45)
-  homebrewID       Int?
-  version          String?          @db.VarChar(90)
-  feats            feats?           @relation(fields: [dedicationFeatID], references: [id])
-  homebrewBundles  homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  tags             tags?            @relation(fields: [tagID], references: [id])
+model buildDataMappings {
+  buildID        Int
+  source         String    @db.VarChar(45)
+  sourceType     String    @db.VarChar(45)
+  sourceLevel    Int
+  sourceCode     String    @db.VarChar(45)
+  sourceCodeSNum String    @db.VarChar(60)
+  value          String?   @db.VarChar(5100)
+  createdAt      DateTime? @db.DateTime(0)
+  updatedAt      DateTime? @db.DateTime(0)
+  builds         builds    @relation(fields: [buildID], references: [id], onDelete: Cascade, map: "buildDataMapping_buildID")
 
-  @@index([dedicationFeatID], name: "archetypes_dedicationFeatID_idx")
-  @@index([homebrewID], name: "archetypes_homebrewID_idx")
-  @@index([tagID], name: "archetypes_tagID_idx")
-}
-
-model armors {
-  id           Int               @id @default(autoincrement())
-  itemID       Int?
-  profName     String?           @db.VarChar(45)
-  acBonus      Int?
-  dexCap       Int?
-  checkPenalty Int?
-  speedPenalty Int?
-  minStrength  Int?
-  armorType    armors_armorType?
-  category     armors_category?
-  items        items?            @relation(fields: [itemID], references: [id])
-
-  @@index([itemID], name: "armor_itemID_idx")
-}
-
-model backgrounds {
-  id              Int                @id @default(autoincrement())
-  name            String?            @db.VarChar(45)
-  rarity          backgrounds_rarity @default(COMMON)
-  description     String?            @db.MediumText
-  boostOne        String?            @db.VarChar(60)
-  boostTwo        String?            @db.VarChar(60)
-  code            String?            @db.VarChar(1000)
-  isArchived      Int?               @default(0)
-  contentSrc      String             @default("CRB") @db.VarChar(45)
-  homebrewID      Int?
-  version         String?            @db.VarChar(90)
-  homebrewBundles homebrewBundles?   @relation(fields: [homebrewID], references: [id])
-  characters      characters[]
-  builds          builds[]
-
-  @@index([homebrewID], name: "backgrounds_homebrewID_idx")
+  @@id([buildID, source, sourceType, sourceCode, sourceLevel, sourceCodeSNum])
+  @@unique([buildID, source, sourceType, sourceLevel, sourceCode, sourceCodeSNum], map: "buildDataMappings_compKeys")
 }
 
 model calculatedStats {
@@ -226,127 +803,44 @@ model calculatedStats {
   weapons            String?    @db.VarChar(3000)
   conditions         String?    @db.VarChar(1000)
   generalInfo        String?    @db.VarChar(1000)
-  characters         characters @relation(fields: [charID], references: [id])
+  createdAt          DateTime?  @db.DateTime(0)
+  updatedAt          DateTime?  @db.DateTime(0)
+  characters         characters @relation(fields: [charID], references: [id], onDelete: Cascade, map: "calcStats_charID")
 }
 
 model campaignAccessTokens {
-  id            Int                       @id @default(autoincrement())
-  campaignID    Int
-  charID        Int                       @unique
-  userID        Int                       
-  createdAt     DateTime?                 @db.DateTime(0)
-  updatedAt     DateTime?                 @db.DateTime(0)
-  characters    characters                @relation(fields: [charID], references: [id])
-  users         users                     @relation(fields: [userID], references: [id])
-  campaigns     campaigns                 @relation(fields: [campaignID], references: [id])
+  id         Int        @id @default(autoincrement())
+  campaignID Int
+  charID     Int        @unique(map: "charID_UNIQUE")
+  userID     Int
+  createdAt  String?    @db.VarChar(45)
+  updatedAt  String?    @db.VarChar(45)
+  campaigns  campaigns  @relation(fields: [campaignID], references: [id], onDelete: Cascade, map: "campaignID_campacctoken")
+  characters characters @relation(fields: [charID], references: [id], onDelete: Cascade, map: "charID_campacctoken")
+  users      users      @relation(fields: [userID], references: [id], onDelete: Cascade, map: "userID_campacctoken")
 
-  @@index([charID], name: "charID_campacctoken")
-  @@index([userID], name: "userID_campacctoken")
-  @@index([campaignID], name: "campaignID_campacctoken")
-}
-
-model campaigns {
-  id           Int                        @id @default(autoincrement())
-  userID       Int
-  accessID     String                     @unique @db.VarChar(60)
-  name      String                        @db.VarChar(120)
-  description  String?                    @db.VarChar(4000)
-  imageURL      String?                   @db.VarChar(300)
-  optionDisplayPlayerHealth Int           @default(1)
-  createdAt    DateTime?                  @db.DateTime(0)
-  updatedAt    DateTime?                  @db.DateTime(0)
-  users        users                      @relation(fields: [userID], references: [id])
-  campaignAccessTokens campaignAccessTokens[]
-
-  @@index([userID], name: "userID_campaign")
-}
-
-model characters {
-  id                          Int                    @id @default(autoincrement())
-  userID                      Int?
-  buildID                     Int?
-  name                        String?                @db.VarChar(45)
-  level                       Int                    @default(1)
-  experience                  Int                    @default(0)
-  currentHealth               Int?
-  tempHealth                  Int?
-  heroPoints                  Int?                   @default(1)
-  currentStamina              Int?
-  currentResolve              Int?
-  dataID                      Int?
-  ancestryID                  Int?
-  heritageID                  Int?
-  uniHeritageID               Int?
-  backgroundID                Int?
-  classID                     Int?
-  classID_2                   Int?
-  inventoryID                 Int?
-  notes                       String?                @db.MediumText
-  infoJSON                    String?                @db.VarChar(3000)
-  rollHistoryJSON             String?                @db.VarChar(8000)
-  details                     String?                @db.Text
-  customCode                  String?                @db.VarChar(2000)
-  builderByLevel              Int?                   @default(0)
-  optionAutoDetectPreReqs     Int?                   @default(1)
-  optionAutoHeightenSpells    Int?                   @default(0)
-  optionPublicCharacter       Int?                   @default(0)
-  optionCustomCodeBlock       Int?                   @default(0)
-  optionDiceRoller            Int?                   @default(0)
-  optionClassArchetypes       Int?                   @default(1)
-  optionIgnoreBulk            Int?                   @default(0)
-  optionAltAbilityBoosts      Int?                   @default(0)
-  variantProfWithoutLevel     Int?                   @default(0)
-  variantFreeArchetype        Int?                   @default(0)
-  variantAncestryParagon      Int?                   @default(0)
-  variantStamina              Int?                   @default(0)
-  variantAutoBonusProgression Int?                   @default(0)
-  variantGradualAbilityBoosts Int?                   @default(0)
-  enabledSources              String                 @default("[\"CRB\",\"ADV-PLAYER-GUIDE\",\"GM-GUIDE\"]") @db.VarChar(4000)
-  enabledHomebrew             String                 @default("[null]") @db.VarChar(6000)
-  ancestries                  ancestries?            @relation(fields: [ancestryID], references: [id])
-  backgrounds                 backgrounds?           @relation(fields: [backgroundID], references: [id])
-  classes                     classes?               @relation(fields: [classID], references: [id])
-  heritages                   heritages?             @relation(fields: [heritageID], references: [id])
-  inventories                 inventories?           @relation(fields: [inventoryID], references: [id])
-  uniHeritages                uniHeritages?          @relation(fields: [uniHeritageID], references: [id])
-  users                       users?                 @relation(fields: [userID], references: [id])
-  builds                      builds?                @relation(fields: [buildID], references: [id])
-  accessTokens                accessTokens[]
-  calculatedStats             calculatedStats?
-  charAnimalCompanions        charAnimalCompanions[]
-  charConditions              charConditions[]
-  charDataMappings            charDataMappings[]
-  charFamiliars               charFamiliars[]
-  noteFields                  noteFields[]
-  spellBookSpells             spellBookSpells[]
-  campaignAccessTokens        campaignAccessTokens[]
-
-  @@index([ancestryID], name: "char_ancestryID_idx")
-  @@index([backgroundID], name: "char_backgroundID_idx")
-  @@index([buildID], name: "char_buildID_idx")
-  @@index([classID_2], name: "char_classID_2_idx")
-  @@index([classID], name: "char_classID_idx")
-  @@index([heritageID], name: "char_heritageID_idx")
-  @@index([inventoryID], name: "char_inventoryID_idx")
-  @@index([uniHeritageID], name: "char_uniHeritageID_idx")
-  @@index([userID], name: "char_userID_idx")
+  @@index([campaignID], map: "campaignID_campacctoken_idx")
+  @@index([charID], map: "charID_campacctoken_idx")
+  @@index([userID], map: "userID_campacctoken_idx")
 }
 
 model charAnimalCompanions {
-  id                Int                      @id @default(autoincrement())
+  id                Int              @id @default(autoincrement())
   charID            Int
   animalCompanionID Int
-  age               String                   @default("YOUNG") @db.VarChar(350)
-  specialization    String                   @default("NONE") @db.VarChar(350)
-  name              String                   @default("") @db.VarChar(95)
-  description       String                   @db.Text
-  imageURL          String                   @default("") @db.VarChar(205)
-  currentHP         Int                      @default(0)
-  animalCompanions  animalCompanions         @relation(fields: [animalCompanionID], references: [id])
-  characters        characters               @relation(fields: [charID], references: [id])
+  age               String           @default("YOUNG") @db.VarChar(350)
+  specialization    String           @default("NONE") @db.VarChar(350)
+  name              String           @default("") @db.VarChar(95)
+  description       String           @db.Text
+  imageURL          String           @default("") @db.VarChar(205)
+  currentHP         Int              @default(0)
+  createdAt         DateTime?        @db.DateTime(0)
+  updatedAt         DateTime?        @db.DateTime(0)
+  animalCompanions  animalCompanions @relation(fields: [animalCompanionID], references: [id], onDelete: Cascade, map: "charAnimComp_animID")
+  characters        characters       @relation(fields: [charID], references: [id], onDelete: Cascade, map: "charAnimComp_charID")
 
-  @@index([animalCompanionID], name: "charAnimComp_animID_idx")
-  @@index([charID], name: "charAnimComp_charID_idx")
+  @@index([animalCompanionID], map: "charAnimComp_animID_idx")
+  @@index([charID], map: "charAnimComp_charID_idx")
 }
 
 model charConditions {
@@ -356,14 +850,16 @@ model charConditions {
   value                Int?
   sourceText           String?          @db.VarChar(180)
   parentID             Int?
-  characters           characters?      @relation(fields: [charID], references: [id])
-  conditions           conditions?      @relation(fields: [conditionID], references: [id])
-  charConditions       charConditions?  @relation("charConditionsTocharConditions_parentID", fields: [parentID], references: [id])
-  other_charConditions charConditions[] @relation("charConditionsTocharConditions_parentID")
+  createdAt            DateTime?        @db.DateTime(0)
+  updatedAt            DateTime?        @db.DateTime(0)
+  characters           characters?      @relation(fields: [charID], references: [id], onDelete: Cascade, map: "charCond_charID")
+  conditions           conditions?      @relation(fields: [conditionID], references: [id], onDelete: Cascade, map: "charCond_conditionID")
+  charConditions       charConditions?  @relation("charConditionsTocharConditions", fields: [parentID], references: [id], onDelete: Cascade, map: "charCond_parentID")
+  other_charConditions charConditions[] @relation("charConditionsTocharConditions")
 
-  @@index([charID], name: "charCond_charID_idx")
-  @@index([conditionID], name: "charCond_conditionID_idx")
-  @@index([parentID], name: "charCond_parentID_idx")
+  @@index([charID], map: "charCond_charID_idx")
+  @@index([conditionID], map: "charCond_conditionID_idx")
+  @@index([parentID], map: "charCond_parentID_idx")
 }
 
 model charDataMappings {
@@ -374,9 +870,12 @@ model charDataMappings {
   sourceCode     String     @db.VarChar(45)
   sourceCodeSNum String     @db.VarChar(60)
   value          String?    @db.VarChar(5100)
-  characters     characters @relation(fields: [charID], references: [id])
+  createdAt      DateTime?  @db.DateTime(0)
+  updatedAt      DateTime?  @db.DateTime(0)
+  characters     characters @relation(fields: [charID], references: [id], onDelete: Cascade, map: "charDataMappings_charID")
 
-  @@unique([charID, source, sourceType, sourceLevel, sourceCode, sourceCodeSNum], name: "charDataMappings_compKeys")
+  @@id([charID, source, sourceType, sourceLevel, sourceCode, sourceCodeSNum])
+  @@unique([charID, source, sourceType, sourceLevel, sourceCode, sourceCodeSNum], map: "charDataMappings_compKeys")
 }
 
 model charFamiliars {
@@ -388,9 +887,11 @@ model charFamiliars {
   currentHP     Int
   abilitiesJSON String     @default("[]") @db.VarChar(600)
   specificType  String?    @db.VarChar(45)
-  characters    characters @relation(fields: [charID], references: [id])
+  createdAt     DateTime?  @db.DateTime(0)
+  updatedAt     DateTime?  @db.DateTime(0)
+  characters    characters @relation(fields: [charID], references: [id], onDelete: Cascade, map: "charFamiliar_charID")
 
-  @@index([charID], name: "charFamiliar_charID_idx")
+  @@index([charID], map: "charFamiliar_charID_idx")
 }
 
 model classAbilities {
@@ -402,148 +903,25 @@ model classAbilities {
   code                 String?                    @db.VarChar(3000)
   selectType           classAbilities_selectType? @default(NONE)
   selectOptionFor      Int?
-  displayInSheet       Int?                       @default(0)
+  displayInSheet       Boolean                    @default(false)
   indivClassName       String?                    @db.VarChar(45)
   indivClassAbilName   String?                    @db.VarChar(45)
-  isArchived           Int?                       @default(0)
+  isArchived           Boolean                    @default(false)
   contentSrc           String                     @default("CRB") @db.VarChar(45)
   homebrewID           Int?
-  classes              classes?                   @relation(fields: [classID], references: [id])
-  homebrewBundles      homebrewBundles?           @relation(fields: [homebrewID], references: [id])
-  classAbilities       classAbilities?            @relation("classAbilitiesToclassAbilities_selectOptionFor", fields: [selectOptionFor], references: [id])
-  other_classAbilities classAbilities[]           @relation("classAbilitiesToclassAbilities_selectOptionFor")
+  createdAt            DateTime?                  @db.DateTime(0)
+  updatedAt            DateTime?                  @db.DateTime(0)
+  classes              classes?                   @relation(fields: [classID], references: [id], onDelete: Cascade, map: "classAbil.classID")
+  homebrewBundles      homebrewBundles?           @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "classAbil_homebrewID")
+  classAbilities       classAbilities?            @relation("classAbilitiesToclassAbilities", fields: [selectOptionFor], references: [id], onDelete: Cascade, map: "classAbil_optionFor")
+  other_classAbilities classAbilities[]           @relation("classAbilitiesToclassAbilities")
 
-  @@index([classID], name: "classAbil.classID_idx")
-  @@index([homebrewID], name: "classAbil_homebrewID")
-  @@index([selectOptionFor], name: "classAbil_optionFor_idx")
-}
-
-model classes {
-  id              Int              @id @default(autoincrement())
-  name            String?          @db.VarChar(45)
-  rarity          classes_rarity   @default(COMMON)
-  description     String?          @db.Text
-  keyAbility      String?          @db.VarChar(45)
-  hitPoints       Int?
-  tPerception     String           @default("T") @db.VarChar(5)
-  tFortitude      String           @default("T") @db.VarChar(5)
-  tReflex         String           @default("T") @db.VarChar(5)
-  tWill           String           @default("T") @db.VarChar(5)
-  tClassDC        String           @default("T") @db.VarChar(5)
-  tSkills         String?          @db.VarChar(60)
-  tSkillsMore     Int?
-  tWeapons        String?          @db.VarChar(300)
-  weaponsExtra    String?          @db.VarChar(500)
-  tArmor          String?          @db.VarChar(300)
-  tagID           Int?
-  artworkURL      String?          @db.VarChar(60)
-  code            String?          @db.VarChar(1000)
-  isArchived      Int?             @default(0)
-  contentSrc      String           @default("CRB") @db.VarChar(45)
-  homebrewID      Int?
-  version         String?          @db.VarChar(90)
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  tags            tags?            @relation(fields: [tagID], references: [id])
-  builds_builds_classIDToclasses           builds[]         @relation("builds_classIDToclasses")
-  builds_builds_classID_2Toclasses         builds[]         @relation("builds_classID_2Toclasses")
-  characters      characters[]
-  classAbilities  classAbilities[]
-
-  @@index([homebrewID], name: "classes_homebrewID")
-  @@index([tagID], name: "classes_tagID_idx")
-}
-
-model conditions {
-  id             Int              @id @default(autoincrement())
-  name           String?          @db.VarChar(45)
-  description    String?          @db.Text
-  hasValue       Int?             @default(0)
-  code           String?          @db.VarChar(1000)
-  charConditions charConditions[]
+  @@index([classID], map: "classAbil.classID_idx")
+  @@index([homebrewID], map: "classAbil_homebrewID")
+  @@index([selectOptionFor], map: "classAbil_optionFor_idx")
 }
 
 model damageTypes {
-  id          Int     @id @default(autoincrement())
-  name        String? @db.VarChar(45)
-  description String? @db.TinyText
-}
-
-model domains {
-  id                                     Int              @id @default(autoincrement())
-  name                                   String?          @db.VarChar(45)
-  description                            String?          @db.TinyText
-  initialSpellID                         Int?
-  advancedSpellID                        Int?
-  contentSrc                             String           @default("CRB") @db.VarChar(45)
-  homebrewID                             Int?
-  spells_domains_advancedSpellIDTospells spells?          @relation("domains_advancedSpellIDTospells", fields: [advancedSpellID], references: [id])
-  homebrewBundles                        homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  spells_domains_initialSpellIDTospells  spells?          @relation("domains_initialSpellIDTospells", fields: [initialSpellID], references: [id])
-
-  @@index([advancedSpellID], name: "domain_advancedSpellID_idx")
-  @@index([homebrewID], name: "domain_homebrewID")
-  @@index([initialSpellID], name: "domain_initialSpellID_idx")
-}
-
-model classArchetypes {
-  id                  Int     @id @default(autoincrement())
-  name                String? @db.VarChar(45)
-  description         String? @db.Text
-  replacementCodeJSON String? @db.VarChar(8000)
-  dedicationFeatName  String? @db.VarChar(60)
-  contentSrc          String  @default("CRB") @db.VarChar(45)
-  homebrewID          Int?
-
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  @@index([homebrewID], name: "classArchetype_homebrewID")
-}
-
-model creatures {
-  id                  String           @id @db.VarChar(45)
-  name                String?          @db.VarChar(120)
-  level               Int
-  rarity              creatures_rarity
-  alignment           String?          @db.VarChar(5)
-  size                creatures_size
-  traitsJSON          String?          @db.VarChar(450)
-  familyType          String?          @db.VarChar(120)
-  perceptionBonus     Int?
-  senses              String?          @db.VarChar(450)
-  languagesJSON       String?          @db.VarChar(450)
-  languagesCustom     String?          @db.VarChar(600)
-  skillsJSON          String?          @db.VarChar(900)
-  itemsJSON           String?          @db.VarChar(3000)
-  strMod              Int              @default(0)
-  dexMod              Int              @default(0)
-  conMod              Int              @default(0)
-  intMod              Int              @default(0)
-  wisMod              Int              @default(0)
-  chaMod              Int              @default(0)
-  interactionAbilitiesJSON String?     @db.Text
-  acValue             Int              @default(10)
-  fortBonus           Int              @default(0)
-  reflexBonus         Int
-  willBonus           Int              @default(0)
-  allSavesCustom      String?          @db.VarChar(600)
-  hpMax               Int              @default(100)
-  hpDetails           String?          @db.VarChar(450)
-  immunitiesJSON      String?          @db.VarChar(600)
-  weaknessesJSON      String?          @db.VarChar(600)
-  resistancesJSON     String?          @db.VarChar(600)
-  defensiveAbilitiesJSON String?       @db.Text
-  speed               Int              @default(25)
-  otherSpeedsJSON     String?          @db.VarChar(450)
-  attacksJSON         String?          @db.VarChar(1600)
-  spellcastingJSON    String?          @db.VarChar(3000)
-  offensiveAbilitiesJSON String?       @db.Text
-  flavorText          String?          @db.Text
-  contentSrc          String           @default("CRB") @db.VarChar(45)
-  homebrewID          Int?
-  createdAt           DateTime?        @db.DateTime(0)
-  updatedAt           DateTime?        @db.DateTime(0)
-}
-
-model damagetypes {
   id          Int       @id @default(autoincrement())
   name        String?   @db.VarChar(45)
   description String?   @db.TinyText
@@ -558,113 +936,14 @@ model familiarAbilities {
   requirements    String?          @db.VarChar(200)
   description     String?          @db.VarChar(1000)
   code            String?          @db.VarChar(600)
-  isMaster        Int?             @default(0)
+  isMaster        Boolean          @default(false)
   contentSrc      String           @default("CRB") @db.VarChar(45)
   homebrewID      Int?
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
+  createdAt       DateTime?        @db.DateTime(0)
+  updatedAt       DateTime?        @db.DateTime(0)
+  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "familiarAbil_homebrewID")
 
-  @@index([homebrewID], name: "familiarAbil_homebrewID_idx")
-}
-
-model feats {
-  id                Int                @id @default(autoincrement())
-  name              String?            @default("Unnamed Feat") @db.VarChar(60)
-  actions           feats_actions?     @default(NONE)
-  level             Int
-  rarity            feats_rarity       @default(COMMON)
-  prerequisites     String?            @db.VarChar(300)
-  frequency         String?            @db.VarChar(300)
-  cost              String?            @db.VarChar(300)
-  trigger           String?            @db.VarChar(300)
-  requirements      String?            @db.VarChar(600)
-  description       String?            @db.Text
-  special           String?            @db.VarChar(600)
-  canSelectMultiple Int?               @default(0)
-  isDefault         Int?               @default(0)
-  skillID           Int?
-  minProf           String?            @db.VarChar(3)
-  code              String?            @db.VarChar(5000)
-  isCore            Int?               @default(0)
-  genericType       feats_genericType?
-  genTypeName       String?            @db.VarChar(45)
-  isArchived        Int?               @default(0)
-  contentSrc        String             @default("CRB") @db.VarChar(45)
-  homebrewID        Int?
-  version           String?            @db.VarChar(90)
-  homebrewBundles   homebrewBundles?   @relation(fields: [homebrewID], references: [id])
-  skills            skills?            @relation(fields: [skillID], references: [id])
-  archetypes        archetypes[]
-  featTags          featTags[]
-
-  @@index([homebrewID], name: "feats_homebrewID")
-  @@index([skillID], name: "feats_skillID_idx")
-}
-
-model featTags {
-  featID Int
-  tagID  Int
-  feats  feats @relation(fields: [featID], references: [id])
-  tags   tags  @relation(fields: [tagID], references: [id])
-
-  @@id([featID, tagID])
-  @@index([tagID], name: "featTag.tagID_idx")
-}
-
-model extras {
-  id                Int                @id @default(autoincrement())
-  name              String?            @default("Unnamed Extra") @db.VarChar(60)
-  level             Int
-  rarity            extras_rarity      @default(COMMON)
-  size              extras_size        @default(MEDIUM)
-  price             Int?
-  description       String?            @db.Text
-  hitPoints         Int?
-  brokenThreshold   Int?
-  hardness          Int?
-  type              String?            @db.VarChar(45)
-  isArchived        Int?               @default(0)
-  contentSrc        String             @default("CRB") @db.VarChar(45)
-  homebrewID        Int?
-  homebrewBundles   homebrewBundles?   @relation(fields: [homebrewID], references: [id])
-  taggedExtras      taggedExtras[]
-
-  @@index([homebrewID], name: "extras_homebrewID")
-}
-
-model taggedExtras {
-  extraID  Int
-  tagID    Int
-  extras   extras @relation(fields: [extraID], references: [id])
-  tags     tags   @relation(fields: [tagID], references: [id])
-
-  @@id([extraID, tagID])
-  @@index([tagID], name: "extraTag.tagID_idx")
-}
-
-model heritages {
-  id                Int              @id @default(autoincrement())
-  name              String?          @db.VarChar(45)
-  ancestryID        Int?
-  rarity            heritages_rarity @default(COMMON)
-  description       String?          @db.Text
-  code              String?          @db.VarChar(5000)
-  isArchived        Int?             @default(0)
-  contentSrc        String           @default("CRB") @db.VarChar(45)
-  indivAncestryName String?          @db.VarChar(45)
-  homebrewID        Int?
-  homebrewBundles   homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  characters        characters[]
-  builds            builds[]
-
-  @@index([homebrewID], name: "heritage_homebrewID_idx")
-}
-
-model homeBackgrounds {
-  id              Int               @id @default(autoincrement())
-  name            String?           @db.VarChar(45)
-  artworkURL      String?           @db.VarChar(160)
-  artistPage      String?           @db.VarChar(120)
-  homeBackReports homeBackReports[]
+  @@index([homebrewID], map: "familiarAbil_homebrewID_idx")
 }
 
 model homeBackReports {
@@ -673,20 +952,23 @@ model homeBackReports {
   backgroundID    Int
   email           String?         @db.VarChar(65)
   message         String          @db.VarChar(512)
-  homeBackgrounds homeBackgrounds @relation(fields: [backgroundID], references: [id])
-  users           users?          @relation(fields: [userID], references: [id])
+  createdAt       DateTime?       @db.DateTime(0)
+  updatedAt       DateTime?       @db.DateTime(0)
+  homeBackgrounds homeBackgrounds @relation(fields: [backgroundID], references: [id], onDelete: Cascade, map: "homeBackReport_backID")
+  users           users?          @relation(fields: [userID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "homeBackReport_userID")
 
-  @@index([backgroundID], name: "homeBackReport_backID_idx")
-  @@index([userID], name: "homeBackReport_userID_idx")
+  @@index([backgroundID], map: "homeBackReport_backID_idx")
+  @@index([userID], map: "homeBackReport_userID_idx")
 }
 
-model homebrewBundleKeys {
-  homebrewID      Int
-  keyCode         String          @db.VarChar(45)
-  isOneTimeUse    Int?            @default(0)
-  homebrewBundles homebrewBundles @relation(fields: [homebrewID], references: [id])
-
-  @@id([homebrewID, keyCode])
+model homeBackgrounds {
+  id              Int               @id @default(autoincrement())
+  name            String?           @db.VarChar(45)
+  artworkURL      String?           @db.VarChar(160)
+  artistPage      String?           @db.VarChar(120)
+  createdAt       DateTime?         @db.DateTime(0)
+  updatedAt       DateTime?         @db.DateTime(0)
+  homeBackReports homeBackReports[]
 }
 
 model homebrewBundles {
@@ -696,10 +978,11 @@ model homebrewBundles {
   description         String?               @db.Text
   contactInfo         String?               @db.VarChar(120)
   code                String?               @db.VarChar(10000)
-  hasKeys             Int?                  @default(0)
-  isPublished         Int?                  @default(0)
+  hasKeys             Boolean               @default(false)
+  isPublished         Boolean               @default(false)
   authorName          String                @default("Unknown") @db.VarChar(45)
-  users               users                 @relation(fields: [userID], references: [id])
+  createdAt           DateTime?             @db.DateTime(0)
+  updatedAt           DateTime?             @db.DateTime(0)
   ancestries          ancestries[]
   ancestryBoosts      ancestryBoosts[]
   ancestryFlaws       ancestryFlaws[]
@@ -708,13 +991,16 @@ model homebrewBundles {
   archetypes          archetypes[]
   backgrounds         backgrounds[]
   classAbilities      classAbilities[]
+  classArchetypes     classArchetypes[]
   classes             classes[]
+  creatures           creatures[]
   domains             domains[]
   extras              extras[]
   familiarAbilities   familiarAbilities[]
   feats               feats[]
   heritages           heritages[]
   homebrewBundleKeys  homebrewBundleKeys[]
+  users               users                 @relation(fields: [userID], references: [id], onDelete: Cascade, map: "homebrewBundleUserID")
   items               items[]
   languages           languages[]
   sheetStates         sheetStates[]
@@ -724,27 +1010,25 @@ model homebrewBundles {
   uniHeritages        uniHeritages[]
   userHomebrewBundles userHomebrewBundles[]
 
-  @@index([userID], name: "homebrewBundleUserID")
-  classArchetypes classArchetypes[]
+  @@index([userID], map: "homebrewBundleUserID")
+}
+
+model homebrewBundleKeys {
+  homebrewID      Int
+  keyCode         String          @db.VarChar(45)
+  isOneTimeUse    Boolean         @default(false)
+  createdAt       DateTime?       @db.DateTime(0)
+  updatedAt       DateTime?       @db.DateTime(0)
+  homebrewBundles homebrewBundles @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "homebrewBundleKey_homebrewID")
+
+  @@id([homebrewID, keyCode])
 }
 
 model innateSpellCastings {
-  innateSpellID String @id @db.VarChar(120)
+  innateSpellID String    @id @db.VarChar(120)
   timesCast     Int?
-}
-
-model inventories {
-  id                                                     Int              @id @default(autoincrement())
-  equippedArmorInvItemID                                 Int?
-  equippedShieldInvItemID                                Int?
-  equippedArmorCategory                                  armors_category?
-  invItems_invItemsToinventories_equippedArmorInvItemID  invItems?        @relation("invItemsToinventories_equippedArmorInvItemID", fields: [equippedArmorInvItemID], references: [id])
-  invItems_invItemsToinventories_equippedShieldInvItemID invItems?        @relation("invItemsToinventories_equippedShieldInvItemID", fields: [equippedShieldInvItemID], references: [id])
-  characters                                             characters[]
-  invItems_invItems_invIDToinventories                   invItems[]       @relation("invItems_invIDToinventories")
-
-  @@index([equippedArmorInvItemID], name: "inv_armorInvItemID_idx")
-  @@index([equippedShieldInvItemID], name: "inv_shieldInvItemID_idx")
+  createdAt     DateTime? @db.DateTime(0)
+  updatedAt     DateTime? @db.DateTime(0)
 }
 
 model invItems {
@@ -757,8 +1041,8 @@ model invItems {
   description                                               String?                     @db.Text
   size                                                      invItems_size?
   quantity                                                  Int?
-  isShoddy                                                  Int?                        @default(0)
-  isDropped                                                 Int?                        @default(0)
+  isShoddy                                                  Boolean                     @default(false)
+  isDropped                                                 Boolean                     @default(false)
   currentHitPoints                                          Int?
   hitPoints                                                 Int?
   materialType                                              String?                     @db.VarChar(45)
@@ -767,15 +1051,15 @@ model invItems {
   code                                                      String?                     @db.VarChar(1000)
   itemTags                                                  String?                     @db.VarChar(405)
   bagInvItemID                                              Int?
-  isInvested                                                Int?                        @default(0)
-  itemIsWeapon                                              Int?                        @default(0)
+  isInvested                                                Boolean                     @default(false)
+  itemIsWeapon                                              Boolean                     @default(false)
   itemWeaponDieType                                         invItems_itemWeaponDieType?
   itemWeaponDamageType                                      String?                     @db.VarChar(45)
-  itemWeaponRange                                           Int?                        @default(0)
-  itemWeaponReload                                          Int?                        @default(0)
-  itemWeaponAtkBonus                                        Int?                        @default(0)
-  itemWeaponDmgBonus                                        Int?                        @default(0)
-  itemIsStorage                                             Int?                        @default(0)
+  itemWeaponRange                                           Int?
+  itemWeaponReload                                          Int?
+  itemWeaponAtkBonus                                        Int?
+  itemWeaponDmgBonus                                        Int?
+  itemIsStorage                                             Boolean                     @default(false)
   itemStorageMaxBulk                                        Float?
   fundRuneID                                                Int?
   fundPotencyRuneID                                         Int?
@@ -783,80 +1067,30 @@ model invItems {
   propRune2ID                                               Int?
   propRune3ID                                               Int?
   propRune4ID                                               Int?
-  invItems                                                  invItems?                   @relation("invItemsToinvItems_bagInvItemID", fields: [bagInvItemID], references: [id])
-  inventories_invItems_invIDToinventories                   inventories?                @relation("invItems_invIDToinventories", fields: [invID], references: [id])
-  items                                                     items?                      @relation(fields: [itemID], references: [id])
+  createdAt                                                 DateTime?                   @db.DateTime(0)
+  updatedAt                                                 DateTime?                   @db.DateTime(0)
+  invItems                                                  invItems?                   @relation("invItemsToinvItems", fields: [bagInvItemID], references: [id], onDelete: Cascade, map: "invItem_bagItemID")
+  other_invItems                                            invItems[]                  @relation("invItemsToinvItems")
+  inventories_invItems_invIDToinventories                   inventories?                @relation("invItems_invIDToinventories", fields: [invID], references: [id], onDelete: Cascade, map: "invItem_invID")
+  items                                                     items?                      @relation(fields: [itemID], references: [id], map: "invItem_itemID")
   inventories_invItemsToinventories_equippedArmorInvItemID  inventories[]               @relation("invItemsToinventories_equippedArmorInvItemID")
   inventories_invItemsToinventories_equippedShieldInvItemID inventories[]               @relation("invItemsToinventories_equippedShieldInvItemID")
-  other_invItems                                            invItems[]                  @relation("invItemsToinvItems_bagInvItemID")
 
-  @@index([bagInvItemID], name: "invItem_bagInvItemID_idx")
-  @@index([invID], name: "invItem_invID_idx")
-  @@index([itemID], name: "invItem_itemID_idx")
+  @@index([bagInvItemID], map: "invItem_bagInvItemID_idx")
+  @@index([invID], map: "invItem_invID_idx")
+  @@index([itemID], map: "invItem_itemID_idx")
 }
 
 model itemRunes {
   id            Int                   @id @default(autoincrement())
   itemID        Int?
-  isFundamental Int?                  @default(0)
+  isFundamental Boolean               @default(false)
   etchedType    itemRunes_etchedType?
-  items         items?                @relation(fields: [itemID], references: [id])
+  createdAt     DateTime?             @db.DateTime(0)
+  updatedAt     DateTime?             @db.DateTime(0)
+  items         items?                @relation(fields: [itemID], references: [id], onDelete: Cascade, map: "itemRune_itemID")
 
-  @@index([itemID], name: "itemRune_itemID_idx")
-}
-
-model items {
-  id                Int                  @id @default(autoincrement())
-  name              String?              @db.VarChar(45)
-  price             Int?
-  bulk              Float?
-  level             Int?                 @default(0)
-  rarity            items_rarity?        @default(COMMON)
-  description       String?              @db.Text
-  itemType          items_itemType?
-  hands             items_hands          @default(NONE)
-  size              items_size           @default(MEDIUM)
-  craftRequirements String?              @db.VarChar(380)
-  usage             String?              @db.VarChar(120)
-  isShoddy          Int?                 @default(0)
-  hasQuantity       Int?                 @default(0)
-  quantity          Int                  @default(1)
-  materialType      String?              @db.VarChar(45)
-  hitPoints         Int?
-  brokenThreshold   Int?
-  hardness          Int?
-  hidden            Int?                 @default(0)
-  code              String?              @db.VarChar(1000)
-  itemStructType    items_itemStructType @default(GENERAL)
-  isArchived        Int?                 @default(0)
-  contentSrc        String               @default("CRB") @db.VarChar(45)
-  homebrewID        Int?
-  version           String?              @db.VarChar(90)
-  homebrewBundles   homebrewBundles?     @relation(fields: [homebrewID], references: [id])
-  armors            armors[]
-  invItems          invItems[]
-  itemRunes         itemRunes[]
-  physicalFeatures  physicalFeatures[]
-  shields           shields[]
-  storages          storages[]
-  taggedItems       taggedItems[]
-  weapons           weapons[]
-
-  @@index([homebrewID], name: "items_homebrewID_idx")
-}
-
-model languages {
-  id                Int                 @id @default(autoincrement())
-  name              String?             @db.VarChar(45)
-  speakers          String?             @db.VarChar(120)
-  script            String?             @db.VarChar(45)
-  description       String?             @db.Text
-  contentSrc        String              @default("CRB") @db.VarChar(45)
-  homebrewID        Int?
-  homebrewBundles   homebrewBundles?    @relation(fields: [homebrewID], references: [id])
-  ancestryLanguages ancestryLanguages[]
-
-  @@index([homebrewID], name: "languages_homebrewID")
+  @@index([itemID], map: "itemRune_itemID_idx")
 }
 
 model noteFields {
@@ -864,9 +1098,11 @@ model noteFields {
   charID          Int
   placeholderText String?    @default("") @db.VarChar(300)
   text            String?    @default("") @db.VarChar(3000)
-  characters      characters @relation(fields: [charID], references: [id])
+  createdAt       DateTime?  @db.DateTime(0)
+  updatedAt       DateTime?  @db.DateTime(0)
+  characters      characters @relation(fields: [charID], references: [id], onDelete: Cascade, map: "noteField_charID")
 
-  @@index([charID], name: "noteField_charID_idx")
+  @@index([charID], map: "noteField_charID_idx")
 }
 
 model physicalFeatures {
@@ -876,19 +1112,23 @@ model physicalFeatures {
   code                                                         String?      @db.VarChar(1000)
   itemWeaponID                                                 Int?
   overrides                                                    Int?
-  items                                                        items?       @relation(fields: [itemWeaponID], references: [id])
+  createdAt                                                    DateTime?    @db.DateTime(0)
+  updatedAt                                                    DateTime?    @db.DateTime(0)
   ancestries_ancestries_physicalFeatureOneIDTophysicalFeatures ancestries[] @relation("ancestries_physicalFeatureOneIDTophysicalFeatures")
   ancestries_ancestries_physicalFeatureTwoIDTophysicalFeatures ancestries[] @relation("ancestries_physicalFeatureTwoIDTophysicalFeatures")
+  items                                                        items?       @relation(fields: [itemWeaponID], references: [id], onUpdate: SetNull, map: "physicalFeatures_itemID")
 
-  @@index([itemWeaponID], name: "physicalFeatures_itemID_idx")
+  @@index([itemWeaponID], map: "physicalFeatures_itemID_idx")
 }
 
 model senseTypes {
   id                                                  Int          @id @default(autoincrement())
   name                                                String?      @db.VarChar(45)
   description                                         String?      @db.Text
-  isVisionType                                        Int?         @default(0)
+  isVisionType                                        Boolean?     @default(false)
   visionPrecedence                                    Int?
+  createdAt                                           DateTime?    @db.DateTime(0)
+  updatedAt                                           DateTime?    @db.DateTime(0)
   ancestries_ancestries_additionalSenseIDTosenseTypes ancestries[] @relation("ancestries_additionalSenseIDTosenseTypes")
   ancestries_ancestries_visionSenseIDTosenseTypes     ancestries[] @relation("ancestries_visionSenseIDTosenseTypes")
 }
@@ -900,36 +1140,11 @@ model sheetStates {
   code            String?          @db.VarChar(10000)
   contentSrc      String           @default("CRB") @db.VarChar(45)
   homebrewID      Int?
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
+  createdAt       DateTime?        @db.DateTime(0)
+  updatedAt       DateTime?        @db.DateTime(0)
+  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "sheetStates_homebrewID")
 
-  @@index([homebrewID], name: "sheetStates_homebrewID_idx")
-}
-
-model shields {
-  id           Int     @id @default(autoincrement())
-  itemID       Int?
-  profName     String? @db.VarChar(45)
-  acBonus      Int?
-  speedPenalty Int?
-  items        items?  @relation(fields: [itemID], references: [id])
-
-  @@index([itemID], name: "shield_itemID_idx")
-}
-
-model skills {
-  id          Int             @id @default(autoincrement())
-  name        String?         @db.VarChar(45)
-  ability     skills_ability? @default(INT)
-  description String?         @db.Text
-  feats       feats[]
-}
-
-model books {
-  codeName    String  @id @db.VarChar(45)
-  name        String? @db.VarChar(180)
-  url         String? @db.VarChar(300)
-  description String? @db.Text
-  code        String? @db.VarChar(1000)
+  @@index([homebrewID])
 }
 
 model specificFamiliars {
@@ -942,123 +1157,133 @@ model specificFamiliars {
   numAbils        Int              @default(0)
   abilsJSON       String           @default("[]") @db.VarChar(250)
   extraAbils      String?          @db.VarChar(4000)
-  isArchived      Int?             @default(0)
+  isArchived      Boolean          @default(false)
   contentSrc      String           @default("CRB") @db.VarChar(45)
   homebrewID      Int?
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
+  createdAt       DateTime?        @db.DateTime(0)
+  updatedAt       DateTime?        @db.DateTime(0)
+  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "familiar_homebrewID")
 
-  @@index([homebrewID], name: "familiar_homebrewID")
+  @@index([homebrewID], map: "familiar_homebrewID")
 }
 
-model spellBookSpells {
+model spellbookSpells {
   id              Int         @id @default(autoincrement())
-  spellSRC        String?     @db.VarChar(90)
+  spellSRC        String?     @db.VarChar(45)
   charID          Int?
   spellID         Int?
   spellLevel      Int?
   spellType       String?     @db.VarChar(15)
   srcStructHashed Int?
-  characters      characters? @relation(fields: [charID], references: [id])
-  spells          spells?     @relation(fields: [spellID], references: [id])
+  createdAt       DateTime?   @db.DateTime(0)
+  updatedAt       DateTime?   @db.DateTime(0)
+  characters      characters? @relation(fields: [charID], references: [id], onDelete: Cascade, map: "spellBookSpells_charID")
+  spells          spells?     @relation(fields: [spellID], references: [id], onDelete: Cascade, map: "spellBookSpells_spellID")
 
-  @@unique([spellSRC, charID, spellID, spellLevel], name: "scs_unique_three")
-  @@index([charID], name: "spellBookSpells_charID_idx")
-  @@index([spellID], name: "spellBookSpells_spellID_idx")
+  @@unique([spellSRC, charID, spellID, spellLevel], map: "scs_unique_three")
+  @@index([charID])
+  @@index([spellID])
 }
 
-model spells {
-  id                                      Int                 @id @default(autoincrement())
-  name                                    String?             @db.VarChar(45)
-  level                                   Int?
-  traditions                              String?             @db.VarChar(45)
-  cast                                    String?             @db.VarChar(45)
-  castingComponents                       String?             @db.VarChar(45)
-  cost                                    String?             @db.VarChar(300)
-  trigger                                 String?             @db.VarChar(300)
-  requirements                            String?             @db.VarChar(300)
-  range                                   String?             @db.VarChar(300)
-  area                                    String?             @db.VarChar(300)
-  targets                                 String?             @db.VarChar(300)
-  savingThrow                             spells_savingThrow?
-  duration                                String?             @db.VarChar(300)
-  rarity                                  spells_rarity?
-  description                             String?             @db.Text
-  heightenedOneVal                        String?             @db.VarChar(45)
-  heightenedOneText                       String?             @db.VarChar(2000)
-  heightenedTwoVal                        String?             @db.VarChar(45)
-  heightenedTwoText                       String?             @db.VarChar(500)
-  heightenedThreeVal                      String?             @db.VarChar(45)
-  heightenedThreeText                     String?             @db.VarChar(500)
-  heightenedFourVal                       String?             @db.VarChar(45)
-  heightenedFourText                      String?             @db.VarChar(500)
-  isFocusSpell                            Int?                @default(0)
-  isArchived                              Int?                @default(0)
-  contentSrc                              String              @default("CRB") @db.VarChar(45)
-  homebrewID                              Int?
-  version                                 String?             @db.VarChar(90)
-  homebrewBundles                         homebrewBundles?    @relation(fields: [homebrewID], references: [id])
-  domains_domains_advancedSpellIDTospells domains[]           @relation("domains_advancedSpellIDTospells")
-  domains_domains_initialSpellIDTospells  domains[]           @relation("domains_initialSpellIDTospells")
-  spellBookSpells                         spellBookSpells[]
-  taggedSpells                            taggedSpells[]
+model taggedExtras {
+  extraID   Int
+  tagID     Int
+  createdAt DateTime? @db.DateTime(0)
+  updatedAt DateTime? @db.DateTime(0)
+  extras    extras    @relation(fields: [extraID], references: [id], onDelete: Cascade, map: "taggedExtra_extraID")
+  tags      tags      @relation(fields: [tagID], references: [id], onDelete: Cascade, map: "taggedExtra_tagID")
 
-  @@index([homebrewID], name: "spells_homebrewID_idx")
-}
-
-model storages {
-  id                      Int    @id @default(autoincrement())
-  itemID                  Int?
-  maxBulkStorage          Float?
-  bulkIgnored             Float?
-  ignoreSelfBulkIfWearing Int?   @default(0)
-  items                   items? @relation(fields: [itemID], references: [id])
-
-  @@index([itemID], name: "storage_itemID_idx")
+  @@id([extraID, tagID])
+  @@index([tagID], map: "taggedExtra_tagID_idx")
 }
 
 model taggedItems {
-  itemID Int
-  tagID  Int
-  items  items @relation(fields: [itemID], references: [id])
-  tags   tags  @relation(fields: [tagID], references: [id])
+  itemID    Int
+  tagID     Int
+  createdAt DateTime? @db.DateTime(0)
+  updatedAt DateTime? @db.DateTime(0)
+  items     items     @relation(fields: [itemID], references: [id], onDelete: Cascade, map: "taggedItem_itemID")
+  tags      tags      @relation(fields: [tagID], references: [id], onDelete: Cascade, map: "taggedItem_tagID")
 
-
-  @@unique([itemID, tagID], name: "taggedItem_compKeys")
-  @@index([itemID], name: "itemApplied_itemID_idx")
-  @@index([tagID], name: "taggedItem_tagID_idx")
+  @@id([itemID, tagID])
+  @@index([itemID], map: "itemApplied_itemID_idx")
+  @@index([itemID, tagID], map: "taggedItem_compKeys")
+  @@index([tagID], map: "taggedItem_tagID_idx")
 }
 
 model taggedSpells {
-  spellID Int
-  tagID   Int
-  spells  spells @relation(fields: [spellID], references: [id])
-  tags    tags   @relation(fields: [tagID], references: [id])
+  spellID   Int
+  tagID     Int
+  createdAt DateTime? @db.DateTime(0)
+  updatedAt DateTime? @db.DateTime(0)
+  spells    spells    @relation(fields: [spellID], references: [id], onDelete: Cascade, map: "taggedSpell_spellID")
+  tags      tags      @relation(fields: [tagID], references: [id], onDelete: Cascade, map: "taggedTag_tagID")
 
-
-  @@unique([spellID, tagID], name: "taggedSpell_compKeys")
-  @@index([spellID], name: "taggedSpell_spellID_idx")
-  @@index([tagID], name: "taggedTag_tagID_idx")
+  @@id([spellID, tagID])
+  @@unique([spellID, tagID], map: "taggedSpell_compKeys")
+  @@index([spellID], map: "taggedSpell_spellID_idx")
+  @@index([tagID], map: "taggedTag_tagID_idx")
 }
 
-model tags {
-  id              Int              @id @default(autoincrement())
-  name            String?          @db.VarChar(45)
-  description     String?          @db.Text
-  isImportant     Int?             @default(0)
-  isHidden        Int?             @default(0)
-  isArchived      Int?             @default(0)
-  homebrewID      Int?
-  homebrewBundles homebrewBundles? @relation(fields: [homebrewID], references: [id])
-  ancestries      ancestries[]
-  archetypes      archetypes[]
-  classes         classes[]
-  featTags        featTags[]
-  taggedItems     taggedItems[]
-  taggedSpells    taggedSpells[]
-  taggedExtras    taggedExtras[]
-  uniHeritages    uniHeritages[]
+model userHomebrewBundles {
+  userID          Int
+  homebrewID      Int
+  createdAt       DateTime?       @db.DateTime(0)
+  updatedAt       DateTime?       @db.DateTime(0)
+  homebrewBundles homebrewBundles @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "userBundle_bundleID")
+  users           users           @relation(fields: [userID], references: [id], onDelete: Cascade, map: "userBundle_userID")
 
-  @@index([homebrewID], name: "tag_homebrewID")
+  @@id([userID, homebrewID])
+  @@index([homebrewID], map: "userBundle_bundleID")
+}
+
+model featTags {
+  featID    Int
+  tagID     Int
+  createdAt DateTime? @db.DateTime(0)
+  updatedAt DateTime? @db.DateTime(0)
+  feats     feats     @relation(fields: [featID], references: [id], onDelete: Cascade, map: "featTag.featID")
+  tags      tags      @relation(fields: [tagID], references: [id], onDelete: Cascade, map: "featTag.tagID")
+
+  @@id([featID, tagID])
+  @@index([tagID], map: "featTag.tagID_idx")
+}
+
+model archetypes {
+  id               Int              @id @default(autoincrement())
+  name             String?          @db.VarChar(45)
+  description      String?          @db.Text
+  dedicationFeatID Int?
+  isMulticlass     Boolean
+  tagID            Int?
+  isArchived       Boolean          @default(false)
+  contentSrc       String           @default("CRB") @db.VarChar(45)
+  homebrewID       Int?
+  version          String?          @db.VarChar(90)
+  createdAt        DateTime?        @db.DateTime(0)
+  updatedAt        DateTime?        @db.DateTime(0)
+  feats            feats?           @relation(fields: [dedicationFeatID], references: [id], onUpdate: SetNull, map: "archetypes_dedicationFeatID")
+  homebrewBundles  homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "archetypes_homebrewID")
+  tags             tags?            @relation(fields: [tagID], references: [id], onUpdate: SetNull, map: "archetypes_tagID")
+
+  @@index([dedicationFeatID])
+  @@index([homebrewID])
+  @@index([tagID])
+}
+
+model classArchetypes {
+  id                  Int              @id @default(autoincrement())
+  name                String?          @db.VarChar(45)
+  description         String?          @db.Text
+  replacementCodeJSON String?          @db.VarChar(20000)
+  dedicationFeatName  String?          @db.VarChar(60)
+  contentSrc          String           @default("CRB") @db.VarChar(45)
+  homebrewID          Int?
+  createdAt           DateTime?        @db.DateTime(0)
+  updatedAt           DateTime?        @db.DateTime(0)
+  homebrewBundles     homebrewBundles? @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "classArchetype_homebrewID")
+
+  @@index([homebrewID], map: "classArchetype_homebrewID_idx")
 }
 
 model uniHeritages {
@@ -1068,145 +1293,20 @@ model uniHeritages {
   description     String?             @db.Text
   tagID           Int?
   code            String?             @db.VarChar(1000)
-  artworkURL      String?             @db.VarChar(60)
-  isArchived      Int?                @default(0)
+  artworkURL      String?             @db.VarChar(200)
+  isArchived      Boolean             @default(false)
   contentSrc      String              @default("CRB") @db.VarChar(45)
   homebrewID      Int?
   version         String?             @db.VarChar(90)
-  homebrewBundles homebrewBundles?    @relation(fields: [homebrewID], references: [id])
-  tags            tags?               @relation(fields: [tagID], references: [id])
-  characters      characters[]
+  createdAt       DateTime?           @db.DateTime(0)
+  updatedAt       DateTime?           @db.DateTime(0)
   builds          builds[]
+  characters      characters[]
+  homebrewBundles homebrewBundles?    @relation(fields: [homebrewID], references: [id], onDelete: Cascade, map: "uniHeritage_homebrewID")
+  tags            tags?               @relation(fields: [tagID], references: [id], onUpdate: SetNull, map: "uniHeritage_tagID")
 
-  @@index([homebrewID], name: "uniHeritage_homebrewID_idx")
-  @@index([tagID], name: "uniHeritage_tagID_idx")
-}
-
-model userHomebrewBundles {
-  userID          Int
-  homebrewID      Int
-  homebrewBundles homebrewBundles @relation(fields: [homebrewID], references: [id])
-  users           users           @relation(fields: [userID], references: [id])
-
-  @@id([userID, homebrewID])
-  @@index([homebrewID], name: "userBundle_bundleID")
-}
-
-model users {
-  id                  Int                   @id @default(autoincrement())
-  googleID            String                @db.VarChar(90)
-  redditID            String                @db.VarChar(90)
-  username            String                @db.VarChar(90)
-  thumbnail           String?               @db.VarChar(200)
-  isPatreonSupporter  Int?                  @default(0)
-  isPatreonMember     Int?                  @default(0)
-  isPatreonLegend     Int?                  @default(0)
-  isAdmin             Int?                  @default(0)
-  isDeveloper         Int?                  @default(0)
-  patreonUserID       Int?                  @unique
-  patreonFullName     String?               @db.VarChar(120)
-  patreonEmail        String?               @db.VarChar(120)
-  patreonAccessToken  String?               @db.VarChar(300)
-  patreonRefreshToken String?               @db.VarChar(300)
-  enabledLightMode    Int?                  @default(0)
-  apiClientApps       apiClientApps[]
-  characters          characters[]
-  builds              builds[]
-  homeBackReports     homeBackReports[]
-  homebrewBundles     homebrewBundles[]
-  userHomebrewBundles userHomebrewBundles[]
-  campaigns           campaigns[]
-  campaignAccessTokens campaignAccessTokens[]
-
-  @@unique([googleID, redditID], name: "platform_compIDs")
-}
-
-model weapons {
-  id               Int                       @id @default(autoincrement())
-  itemID           Int?
-  profName         String?                   @db.VarChar(45)
-  diceNum          Int?
-  dieType          weapons_dieType
-  damageType       String?                   @db.VarChar(45)
-  category         weapons_category
-  isMelee          Int?
-  meleeWeaponType  weapons_meleeWeaponType?
-  isRanged         Int?
-  rangedWeaponType weapons_rangedWeaponType?
-  rangedRange      Int?
-  rangedReload     Int?
-  items            items?                    @relation(fields: [itemID], references: [id])
-
-  @@index([itemID], name: "weapon_itemID_idx")
-}
-
-
-model buildDataMappings {
-  buildID        Int
-  source         String    @db.VarChar(45)
-  sourceType     String    @db.VarChar(45)
-  sourceLevel    Int
-  sourceCode     String    @db.VarChar(45)
-  sourceCodeSNum String    @db.VarChar(60)
-  value          String?   @db.VarChar(5100)
-  createdAt      DateTime? @db.DateTime(0)
-  updatedAt      DateTime? @db.DateTime(0)
-  builds         builds    @relation(fields: [buildID], references: [id])
-
-  @@id([buildID, source, sourceType, sourceCode, sourceLevel, sourceCodeSNum])
-  @@unique([buildID, source, sourceType, sourceLevel, sourceCode, sourceCodeSNum], name: "buildDataMappings_compKeys")
-}
-
-model builds {
-  id                                Int                 @id @default(autoincrement())
-  userID                            Int?
-  name                              String?             @db.VarChar(45)
-  description                       String?             @db.Text
-  contactInfo                       String?             @db.VarChar(120)
-  isPublished                       Boolean             @default(false)
-  authorName                        String              @default("Unknown") @db.VarChar(45)
-  artworkURL                        String?             @db.VarChar(200)
-  finalStatsJSON                    String?             @db.Text
-  ancestryID                        Int?
-  heritageID                        Int?
-  uniHeritageID                     Int?
-  backgroundID                      Int?
-  classID                           Int?
-  classID_2                         Int?
-  customCode                        String?             @db.VarChar(2000)
-  optionCustomCodeBlock             Boolean             @default(false)
-  optionClassArchetypes             Boolean             @default(true)
-  variantFreeArchetype              Boolean             @default(false)
-  variantAncestryParagon            Boolean             @default(false)
-  variantStamina                    Boolean             @default(false)
-  variantGradualAbilityBoosts       Boolean             @default(false)
-  enabledSources                    String              @default("[\"CRB\",\"ADV-PLAYER-GUIDE\",\"GM-GUIDE\"]") @db.VarChar(4000)
-  enabledHomebrew                   String              @default("[null]") @db.VarChar(6000)
-  createdAt                         DateTime?           @db.DateTime(0)
-  updatedAt                         DateTime?           @db.DateTime(0)
-  ancestries                        ancestries?         @relation(fields: [ancestryID], references: [id])
-  backgrounds                       backgrounds?        @relation(fields: [backgroundID], references: [id])
-  classes_builds_classIDToclasses   classes?            @relation("builds_classIDToclasses", fields: [classID], references: [id])
-  classes_builds_classID_2Toclasses classes?            @relation("builds_classID_2Toclasses", fields: [classID_2], references: [id])
-  heritages                         heritages?          @relation(fields: [heritageID], references: [id])
-  uniHeritages                      uniHeritages?       @relation(fields: [uniHeritageID], references: [id])
-  users                             users?              @relation(fields: [userID], references: [id])
-  buildDataMappings                 buildDataMappings[]
-  characters                        characters[]
-
-  @@index([ancestryID], name: "buildAncestryID_idx")
-  @@index([backgroundID], name: "buildBackgroundID_idx")
-  @@index([classID_2], name: "buildClass2ID_idx")
-  @@index([classID], name: "buildClassID_idx")
-  @@index([heritageID], name: "buildHeritageID_idx")
-  @@index([uniHeritageID], name: "buildUniHeritageID_idx")
-  @@index([userID], name: "buildUserID_idx")
-}
-
-enum accessTokens_accessRights {
-  READ_ONLY               @map("READ-ONLY")
-  READ_UPDATE             @map("READ-UPDATE")
-  READ_UPDATE_ADD_DELETE  @map("READ-UPDATE-ADD-DELETE")
+  @@index([homebrewID], map: "uniHeritage_homebrewID_idx")
+  @@index([tagID], map: "uniHeritage_tagID_idx")
 }
 
 enum ancestries_rarity {
@@ -1225,127 +1325,8 @@ enum ancestries_size {
   GARGANTUAN
 }
 
-enum ancestryBoosts_boostedAbility {
-  Anything
-  Strength
-  Dexterity
-  Constitution
-  Intelligence
-  Wisdom
-  Charisma
-}
-
-enum ancestryFlaws_flawedAbility {
-  Anything
-  Strength
-  Dexterity
-  Constitution
-  Intelligence
-  Wisdom
-  Charisma
-}
-
-enum animalCompanions_rarity {
-  COMMON
-  UNCOMMON
-  RARE
-  UNIQUE
-}
-
-enum animalCompanions_size {
-  TINY
-  SMALL
-  SMALL_MED   @map("SMALL-MED")
-  MEDIUM
-  LARGE
-  MED_LARGE   @map("MED-LARGE")
-  HUGE
-  GARGANTUAN
-}
-
-enum animalCompanions_a1Type {
-  MELEE
-  RANGED
-}
-
-enum animalCompanions_a1Actions {
-  NONE
-  FREE_ACTION
-  REACTION
-  ACTION
-  TWO_ACTIONS
-  THREE_ACTIONS
-}
-
-enum animalCompanions_a1DmgDie {
-  EMPTY_ENUM_VALUE  @map("")
-  d2
-  d4
-  d6
-  d8
-  d10
-  d12
-  d20
-}
-
-enum animalCompanions_a2Type {
-  MELEE
-  RANGED
-}
-
-enum animalCompanions_a2Actions {
-  NONE
-  FREE_ACTION
-  REACTION
-  ACTION
-  TWO_ACTIONS
-  THREE_ACTIONS
-}
-
-enum animalCompanions_a2DmgDie {
-  EMPTY_ENUM_VALUE  @map("")
-  d2
-  d4
-  d6
-  d8
-  d10
-  d12
-  d20
-}
-
-enum animalCompanions_a3Type {
-  MELEE
-  RANGED
-}
-
-enum animalCompanions_a3Actions {
-  NONE
-  FREE_ACTION
-  REACTION
-  ACTION
-  TWO_ACTIONS
-  THREE_ACTIONS
-}
-
-enum animalCompanions_a3DmgDie {
-  EMPTY_ENUM_VALUE  @map("")
-  d2
-  d4
-  d6
-  d8
-  d10
-  d12
-  d20
-}
-
-enum apiClientApps_accessRights {
-  READ_ONLY               @map("READ-ONLY")
-  READ_UPDATE             @map("READ-UPDATE")
-  READ_UPDATE_ADD_DELETE  @map("READ-UPDATE-ADD-DELETE")
-}
-
 enum armors_armorType {
-  N_A        @map("N/A")
+  N_A       @map("N/A")
   CLOTH
   LEATHER
   COMPOSITE
@@ -1365,12 +1346,6 @@ enum backgrounds_rarity {
   UNCOMMON
   RARE
   UNIQUE
-}
-
-enum classAbilities_selectType {
-  NONE
-  SELECTOR
-  SELECT_OPTION
 }
 
 enum classes_rarity {
@@ -1397,15 +1372,15 @@ enum feats_rarity {
 }
 
 enum feats_genericType {
-  GENERAL_FEAT    @map("GENERAL-FEAT")
-  SKILL_FEAT      @map("SKILL-FEAT")
-  CLASS_FEAT      @map("CLASS-FEAT")
-  ARCHETYPE_FEAT  @map("ARCHETYPE-FEAT")
-  ANCESTRY_FEAT   @map("ANCESTRY-FEAT")
-  BASIC_ACTION    @map("BASIC-ACTION")
-  SKILL_ACTION    @map("SKILL-ACTION")
-  CREATURE_ACTION    @map("CREATURE-ACTION")
-  COMPANION_ACTION    @map("COMPANION-ACTION")
+  GENERAL_FEAT     @map("GENERAL-FEAT")
+  SKILL_FEAT       @map("SKILL-FEAT")
+  CLASS_FEAT       @map("CLASS-FEAT")
+  ARCHETYPE_FEAT   @map("ARCHETYPE-FEAT")
+  ANCESTRY_FEAT    @map("ANCESTRY-FEAT")
+  BASIC_ACTION     @map("BASIC-ACTION")
+  SKILL_ACTION     @map("SKILL-ACTION")
+  CREATURE_ACTION  @map("CREATURE-ACTION")
+  COMPANION_ACTION @map("COMPANION-ACTION")
 }
 
 enum heritages_rarity {
@@ -1425,38 +1400,12 @@ enum creatures_rarity {
 enum creatures_size {
   TINY
   SMALL
-  SMALL_MED @map("SMALL-MED")
+  SMALL_MED  @map("SMALL-MED")
   MEDIUM
   LARGE
-  MED_LARGE @map("MED-LARGE")
+  MED_LARGE  @map("MED-LARGE")
   HUGE
   GARGANTUAN
-}
-
-enum invItems_size {
-  TINY
-  SMALL
-  MEDIUM
-  LARGE
-  HUGE
-  GARGANTUAN
-}
-
-enum invItems_itemWeaponDieType {
-  EMPTY_ENUM_VALUE  @map("")
-  d2
-  d4
-  d6
-  d8
-  d10
-  d12
-  d20
-  NONE
-}
-
-enum itemRunes_etchedType {
-  WEAPON
-  ARMOR
 }
 
 enum items_rarity {
@@ -1464,57 +1413,6 @@ enum items_rarity {
   UNCOMMON
   RARE
   UNIQUE
-}
-
-enum items_itemType {
-  POTION
-  DRUG
-  TATTOO
-  FULU
-  CATALYST
-  SPELLHEART
-  ADJUSTMENT
-  GRIMOIRE
-  ARTIFACT
-  BOMB
-  EYEPIECE
-  CIRCLET
-  HAT
-  BOOTS
-  NECKLACE
-  GIFT
-  BRACERS
-  CLOAK
-  RING
-  MASK
-  GLOVES
-  BELT
-  ROD
-  ELIXIR
-  BOOK
-  POISON
-  COMPANION
-  ARMOR
-  STORAGE
-  TOOL
-  AMMUNITION
-  OIL
-  SCROLL
-  STAFF
-  STRUCTURE
-  TALISMAN
-  SNARE
-  GADGET
-  SIEGE
-  KIT
-  INGREDIENT
-  INSTRUMENT
-  OTHER
-  WEAPON
-  SHIELD
-  RUNE
-  WAND
-  CURRENCY
 }
 
 enum items_hands {
@@ -1567,13 +1465,6 @@ enum spells_rarity {
   UNIQUE
 }
 
-enum uniHeritages_rarity {
-  COMMON
-  UNCOMMON
-  RARE
-  UNIQUE
-}
-
 enum extras_rarity {
   COMMON
   UNCOMMON
@@ -1591,7 +1482,7 @@ enum extras_size {
 }
 
 enum weapons_dieType {
-  EMPTY_ENUM_VALUE  @map("")
+  EMPTY_ENUM_VALUE @map("")
   d2
   d4
   d6
@@ -1623,12 +1514,227 @@ enum weapons_meleeWeaponType {
   BRAWLING
 }
 
+enum items_itemType {
+  POTION
+  DRUG
+  GADGET
+  SIEGE
+  ADJUSTMENT
+  TATTOO
+  FULU
+  CATALYST
+  SPELLHEART
+  GRIMOIRE
+  ARTIFACT
+  GIFT
+  BOMB
+  EYEPIECE
+  CIRCLET
+  HAT
+  BOOTS
+  NECKLACE
+  BRACERS
+  CLOAK
+  RING
+  MASK
+  GLOVES
+  BELT
+  ROD
+  ELIXIR
+  BOOK
+  POISON
+  COMPANION
+  ARMOR
+  STORAGE
+  TOOL
+  AMMUNITION
+  OIL
+  SCROLL
+  STAFF
+  STRUCTURE
+  TALISMAN
+  SNARE
+  KIT
+  INGREDIENT
+  INSTRUMENT
+  OTHER
+  WEAPON
+  SHIELD
+  RUNE
+  WAND
+  CURRENCY
+}
+
 enum weapons_rangedWeaponType {
   DART
   BOW
-  CROSSBOW
   FIREARM
   SLING
-  BOMB
   KNIFE
+  BOMB
+  CROSSBOW
+}
+
+enum ancestryBoosts_boostedAbility {
+  Anything
+  Strength
+  Dexterity
+  Constitution
+  Intelligence
+  Wisdom
+  Charisma
+}
+
+enum ancestryFlaws_flawedAbility {
+  Anything
+  Strength
+  Dexterity
+  Constitution
+  Intelligence
+  Wisdom
+  Charisma
+}
+
+enum animalCompanions_rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  UNIQUE
+}
+
+enum itemRunes_etchedType {
+  WEAPON
+  ARMOR
+}
+
+enum accessTokens_accessRights {
+  READ_ONLY              @map("READ-ONLY")
+  READ_UPDATE            @map("READ-UPDATE")
+  READ_UPDATE_ADD_DELETE @map("READ-UPDATE-ADD-DELETE")
+}
+
+enum animalCompanions_size {
+  TINY
+  SMALL
+  SMALL_MED  @map("SMALL-MED")
+  MEDIUM
+  LARGE
+  MED_LARGE  @map("MED-LARGE")
+  HUGE
+  GARGANTUAN
+}
+
+enum animalCompanions_a1Type {
+  MELEE
+  RANGED
+}
+
+enum classAbilities_selectType {
+  NONE
+  SELECTOR
+  SELECT_OPTION
+}
+
+enum animalCompanions_a1Actions {
+  NONE
+  FREE_ACTION
+  REACTION
+  ACTION
+  TWO_ACTIONS
+  THREE_ACTIONS
+}
+
+enum invItems_size {
+  TINY
+  SMALL
+  MEDIUM
+  LARGE
+  HUGE
+  GARGANTUAN
+}
+
+enum animalCompanions_a1DmgDie {
+  EMPTY_ENUM_VALUE @map("")
+  d2
+  d4
+  d6
+  d8
+  d10
+  d12
+  d20
+}
+
+enum apiClientApps_accessRights {
+  READ_ONLY              @map("READ-ONLY")
+  READ_UPDATE            @map("READ-UPDATE")
+  READ_UPDATE_ADD_DELETE @map("READ-UPDATE-ADD-DELETE")
+}
+
+enum animalCompanions_a2Type {
+  MELEE
+  RANGED
+}
+
+enum animalCompanions_a2Actions {
+  NONE
+  FREE_ACTION
+  REACTION
+  ACTION
+  TWO_ACTIONS
+  THREE_ACTIONS
+}
+
+enum animalCompanions_a2DmgDie {
+  EMPTY_ENUM_VALUE @map("")
+  d2
+  d4
+  d6
+  d8
+  d10
+  d12
+  d20
+}
+
+enum animalCompanions_a3Type {
+  MELEE
+  RANGED
+}
+
+enum animalCompanions_a3Actions {
+  NONE
+  FREE_ACTION
+  REACTION
+  ACTION
+  TWO_ACTIONS
+  THREE_ACTIONS
+}
+
+enum animalCompanions_a3DmgDie {
+  EMPTY_ENUM_VALUE @map("")
+  d2
+  d4
+  d6
+  d8
+  d10
+  d12
+  d20
+}
+
+enum invItems_itemWeaponDieType {
+  EMPTY_ENUM_VALUE @map("")
+  d2
+  d4
+  d6
+  d8
+  d10
+  d12
+  d20
+  NONE
+}
+
+enum uniHeritages_rarity {
+  COMMON
+  UNCOMMON
+  RARE
+  UNIQUE
 }

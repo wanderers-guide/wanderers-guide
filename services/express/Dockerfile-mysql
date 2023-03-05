@@ -1,3 +1,3 @@
-FROM mysql/mysql-server:5.7
+FROM mysql/mysql-server:8.0
 ADD my.cnf /etc/mysql/my.cnf
 ADD WG-deb-db-1-28-23.sql /docker-entrypoint-initdb.d

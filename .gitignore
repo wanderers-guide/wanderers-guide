@@ -6,7 +6,6 @@ TO-DO.txt
 redis-server.exe
 redis.windows.conf
 dump.rdb
-*.sql
 *.log
 *.rdb
 
