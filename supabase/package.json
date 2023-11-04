@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "base64-arraybuffer": "^1.0.2",
+    "lodash": "^4.17.21",
+    "sharp": "^0.32.6"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.199"
+  }
+}

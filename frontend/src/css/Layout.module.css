@@ -1,0 +1,12 @@
+.control {
+  display: block;
+  padding: 5px var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-md);
+  font-weight: 500;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-gray-4);
+
+  &:hover {
+    background-color: #14151750;
+  }
+}

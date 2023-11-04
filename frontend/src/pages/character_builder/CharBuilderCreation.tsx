@@ -1,0 +1,540 @@
+import { CharacterInfo } from '@common/CharacterInfo';
+import {
+  Accordion,
+  Badge,
+  Box,
+  Button,
+  Group,
+  Indicator,
+  ScrollArea,
+  SegmentedControl,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
+import { Ancestry, Background, Character, Class, ContentSource } from '@typing/content';
+import classes from '@css/FaqSimple.module.css';
+import { useElementSize, useHover } from '@mantine/hooks';
+import { useState } from 'react';
+import { selectContent } from '@common/select/SelectContent';
+
+export default function CharBuilderCreation(props: {
+  character: Character;
+  setCharacter: React.Dispatch<React.SetStateAction<Character | undefined>>;
+  books: ContentSource[];
+  pageHeight: number;
+}) {
+
+  const { ref, height } = useElementSize();
+
+  const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
+
+  const levelItems = Array.from({ length: props.character.level + 1 }, (_, i) => i).map((level) => {
+    return <LevelSection key={level} level={level} opened={levelItemValue === `${level}`} />;
+  });
+
+  return (
+    <Group gap={0}>
+      <Box style={{ flexBasis: '35%' }}>
+        <Stack gap={5}>
+          <Box pb={5}>
+            <CharacterInfo
+              ref={ref}
+              character={props.character}
+              onClickAncestry={() => {
+                selectContent<Ancestry>(
+                  'ancestry',
+                  (option) => {
+                    props.setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        details: {
+                          ...prev.details,
+                          ancestry: option,
+                        },
+                      };
+                    });
+                  },
+                  {
+                    groupBySource: true,
+                    selectedId: props.character.details?.ancestry?.id,
+                  }
+                );
+              }}
+              onClickBackground={() => {
+                selectContent<Background>(
+                  'background',
+                  (option) => {
+                    props.setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        details: {
+                          ...prev.details,
+                          background: option,
+                        },
+                      };
+                    });
+                  },
+                  {
+                    groupBySource: true,
+                    selectedId: props.character.details?.background?.id,
+                  }
+                );
+              }}
+              onClickClass={() => {
+                selectContent<Class>(
+                  'class',
+                  (option) => {
+                    props.setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        details: {
+                          ...prev.details,
+                          class: option,
+                        },
+                      };
+                    });
+                  },
+                  {
+                    groupBySource: true,
+                    selectedId: props.character.details?.class?.id,
+                  }
+                );
+              }}
+            />
+          </Box>
+          <ScrollArea h={props.pageHeight - height - 20} pr={12}>
+            <Stack gap={5}>
+              <Box>
+                <Button variant='default' size='lg' fullWidth>
+                  <Group>
+                    <AttributeModPart attribute='Str' value={-1} marked={false} />
+                    <AttributeModPart attribute='Dex' value={0} marked={false} />
+                    <AttributeModPart attribute='Con' value={3} marked={false} />
+                    <AttributeModPart attribute='Int' value={4} marked={true} />
+                    <AttributeModPart attribute='Wis' value={3} marked={false} />
+                    <AttributeModPart attribute='Cha' value={3} marked={false} />
+                  </Group>
+                </Button>
+              </Box>
+              <StatButton>
+                <Box>
+                  <Text fz='sm'>Hit Points</Text>
+                </Box>
+                <Box>
+                  <Text>67</Text>
+                </Box>
+              </StatButton>
+              <StatButton>
+                <Box>
+                  <Text fz='sm'>Class DC</Text>
+                </Box>
+                <Group>
+                  <Text>14</Text>
+                  <Badge variant='default'>U</Badge>
+                </Group>
+              </StatButton>
+              <StatButton>
+                <Box>
+                  <Text fz='sm'>Perception</Text>
+                </Box>
+                <Group>
+                  <Text>+4</Text>
+                  <Badge variant='default'>E</Badge>
+                </Group>
+              </StatButton>
+              <Accordion
+                variant='separated'
+                styles={{
+                  label: {
+                    paddingTop: 5,
+                    paddingBottom: 5,
+                  },
+                  control: {
+                    paddingLeft: 13,
+                    paddingRight: 13,
+                  },
+                  item: {
+                    marginTop: 0,
+                    marginBottom: 5,
+                  },
+                }}
+              >
+                <Accordion.Item className={classes.item} value={'skills'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Skills
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Acrobatics</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Arcana</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item className={classes.item} value={'saves'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Saves
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Fortitude</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Reflex</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Will</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item className={classes.item} value={'attacks'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Attacks
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Fortitude</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Reflex</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Will</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item className={classes.item} value={'defenses'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Defenses
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Fortitude</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Reflex</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Will</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item className={classes.item} value={'spellcasting'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Spellcasting
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Fortitude</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Reflex</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Will</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item className={classes.item} value={'languages'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Languages
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Fortitude</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Reflex</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Will</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+                <Accordion.Item className={classes.item} value={'resist-weaks'}>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      Resist & Weaks
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Fortitude</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Reflex</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton>
+                        <Box>
+                          <Text fz='sm'>Will</Text>
+                        </Box>
+                        <Group>
+                          <Text>+4</Text>
+                          <Badge variant='default'>E</Badge>
+                        </Group>
+                      </StatButton>
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              </Accordion>
+            </Stack>
+          </ScrollArea>
+        </Stack>
+      </Box>
+      <Box style={{ flexBasis: '65%' }}>
+        <ScrollArea h={props.pageHeight} pr={12}>
+          <Accordion
+            value={levelItemValue}
+            onChange={setLevelItemValue}
+            variant='filled'
+            styles={{
+              label: {
+                paddingTop: 5,
+                paddingBottom: 5,
+              },
+              control: {
+                paddingLeft: 13,
+                paddingRight: 13,
+              },
+              item: {
+                marginTop: 0,
+                marginBottom: 5,
+              },
+            }}
+          >
+            {levelItems}
+          </Accordion>
+        </ScrollArea>
+      </Box>
+    </Group>
+  );
+}
+
+function AttributeModPart(props: { attribute: string; value: number; marked: boolean }) {
+  return (
+    <Box>
+      <Text ta='center' fz={11}>
+        {props.attribute}
+      </Text>
+      <Text ta='center'>
+        <Text span>{props.value < 0 ? '-' : '+'}</Text>
+
+        <Text td={props.marked ? 'underline' : undefined} span>
+          {Math.abs(props.value)}
+        </Text>
+      </Text>
+    </Box>
+  );
+}
+
+function StatButton(props: { children: React.ReactNode; onClick?: () => void }) {
+  return (
+    <Box>
+      <Button
+        variant='default'
+        size='compact-lg'
+        styles={{
+          inner: {
+            width: '100%',
+          },
+          label: {
+            width: '100%',
+          },
+        }}
+        fullWidth
+        onClick={props.onClick}
+      >
+        <Group w='100%' justify='space-between'>
+          {props.children}
+        </Group>
+      </Button>
+    </Box>
+  );
+}
+
+function LevelSection(props: { level: number; opened: boolean }) {
+  const { hovered, ref } = useHover();
+
+  const selectionsToDo = 3;
+  const selectionsTotal = 6;
+
+  return (
+    <Accordion.Item
+      ref={ref}
+      value={`${props.level}`}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+    >
+      <Accordion.Control>
+        <Group wrap='nowrap' justify='space-between' gap={0}>
+          <Text fw={700} fz='sm'>
+            {props.level === 0 ? (
+              <>
+                Initial Stats{' '}
+                <Text fs='italic' c='dimmed' fz='sm' span>
+                  (Level 1)
+                </Text>
+              </>
+            ) : (
+              `Level ${props.level}`
+            )}
+          </Text>
+          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+            <Text fz='sm' c='gray.5' span>
+              {selectionsToDo}
+            </Text>
+            <Text fz='sm' c='gray.5' span>
+              /{selectionsTotal}
+            </Text>
+          </Badge>
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel>Content</Accordion.Panel>
+    </Accordion.Item>
+  );
+}

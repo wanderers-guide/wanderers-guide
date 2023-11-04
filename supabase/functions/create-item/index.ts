@@ -1,0 +1,48 @@
+// @ts-ignore
+import { serve } from "std/server";
+import { connect, insertData } from "../_shared/helpers.ts";
+import type { Item } from "../_shared/content";
+
+serve(async (req: Request) => {
+  return await connect(req, async (client, body) => {
+    let {
+      name,
+      price,
+      bulk,
+      level,
+      rarity,
+      traits,
+      description,
+      type,
+      hands,
+      size,
+      craft_requirements,
+      usage,
+      meta_data,
+      operations,
+      content_source_id,
+      version,
+    } = body as Item;
+
+    const item = await insertData<Item>(client, 'item', {
+      name,
+      price,
+      bulk,
+      level,
+      rarity,
+      traits,
+      description,
+      type,
+      hands,
+      size,
+      craft_requirements,
+      usage,
+      meta_data,
+      operations,
+      content_source_id,
+      version,
+    });
+
+    return item;
+  });
+});
