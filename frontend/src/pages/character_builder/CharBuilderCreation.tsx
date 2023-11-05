@@ -17,19 +17,21 @@ import classes from '@css/FaqSimple.module.css';
 import { useElementSize, useHover } from '@mantine/hooks';
 import { useState } from 'react';
 import { selectContent } from '@common/select/SelectContent';
+import { characterState } from '@atoms/characterAtoms';
+import { useRecoilState } from 'recoil';
 
 export default function CharBuilderCreation(props: {
-  character: Character;
-  setCharacter: React.Dispatch<React.SetStateAction<Character | undefined>>;
   books: ContentSource[];
   pageHeight: number;
 }) {
 
   const { ref, height } = useElementSize();
 
+  const [character, setCharacter] = useRecoilState(characterState);
+
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const levelItems = Array.from({ length: props.character.level + 1 }, (_, i) => i).map((level) => {
+  const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
     return <LevelSection key={level} level={level} opened={levelItemValue === `${level}`} />;
   });
 
@@ -40,12 +42,12 @@ export default function CharBuilderCreation(props: {
           <Box pb={5}>
             <CharacterInfo
               ref={ref}
-              character={props.character}
+              character={character}
               onClickAncestry={() => {
                 selectContent<Ancestry>(
                   'ancestry',
                   (option) => {
-                    props.setCharacter((prev) => {
+                    setCharacter((prev) => {
                       if (!prev) return prev;
                       return {
                         ...prev,
@@ -58,7 +60,7 @@ export default function CharBuilderCreation(props: {
                   },
                   {
                     groupBySource: true,
-                    selectedId: props.character.details?.ancestry?.id,
+                    selectedId: character?.details?.ancestry?.id,
                   }
                 );
               }}
@@ -66,7 +68,7 @@ export default function CharBuilderCreation(props: {
                 selectContent<Background>(
                   'background',
                   (option) => {
-                    props.setCharacter((prev) => {
+                    setCharacter((prev) => {
                       if (!prev) return prev;
                       return {
                         ...prev,
@@ -79,7 +81,7 @@ export default function CharBuilderCreation(props: {
                   },
                   {
                     groupBySource: true,
-                    selectedId: props.character.details?.background?.id,
+                    selectedId: character?.details?.background?.id,
                   }
                 );
               }}
@@ -87,7 +89,7 @@ export default function CharBuilderCreation(props: {
                 selectContent<Class>(
                   'class',
                   (option) => {
-                    props.setCharacter((prev) => {
+                    setCharacter((prev) => {
                       if (!prev) return prev;
                       return {
                         ...prev,
@@ -100,7 +102,7 @@ export default function CharBuilderCreation(props: {
                   },
                   {
                     groupBySource: true,
-                    selectedId: props.character.details?.class?.id,
+                    selectedId: character?.details?.class?.id,
                   }
                 );
               }}

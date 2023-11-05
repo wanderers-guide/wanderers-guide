@@ -169,6 +169,10 @@ interface Character {
   notes: Record<string, any>; // TODO
   details?: {
     image_url?: string;
+    background_image_url?: string;
+    sheet_theme?: {
+      color: string;
+    },
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;

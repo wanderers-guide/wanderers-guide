@@ -61,6 +61,8 @@ import { UpdateResponse } from '@typing/requests';
 import CharBuilderHome from './CharBuilderHome';
 import CharBuilderCreation from './CharBuilderCreation';
 import { defineEnabledContentSources } from '@content/content-controller';
+import { useRecoilState } from 'recoil';
+import { characterState } from '@atoms/characterAtoms';
 
 export default function CharacterBuilderPage() {
   const theme = useMantineTheme();
@@ -86,8 +88,8 @@ export default function CharacterBuilderPage() {
   const pageHeight = 500;
 
   const queryClient = useQueryClient();
-
-  const [character, setCharacter] = useState<Character>();
+  
+  const [character, setCharacter] = useRecoilState(characterState);
 
   // Fetch character from db
   const { data: charDetails, isFetching } = useQuery({
@@ -106,6 +108,9 @@ export default function CharacterBuilderPage() {
     if (charDetails?.characters && charDetails?.characters.length > 0) {
       const newCharacter = charDetails.characters[0];
       setCharacter(newCharacter);
+
+      // Update the nav character state
+
 
       // Make sure we sync the enabled content sources
       defineEnabledContentSources(newCharacter.content_sources?.enabled ?? []);
@@ -202,8 +207,7 @@ export default function CharacterBuilderPage() {
                 <ScrollArea h={pageHeight}>
                   {character && charDetails ? (
                     <CharBuilderHome
-                      character={character}
-                      setCharacter={setCharacter}
+                      pageHeight={pageHeight}
                       books={charDetails.books}
                     />
                   ) : (
@@ -226,8 +230,6 @@ export default function CharacterBuilderPage() {
                   {character && charDetails ? (
                     <CharBuilderCreation
                       pageHeight={pageHeight}
-                      character={character}
-                      setCharacter={setCharacter}
                       books={charDetails.books}
                     />
                   ) : (
