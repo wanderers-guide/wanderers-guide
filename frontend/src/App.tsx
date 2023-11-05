@@ -3,7 +3,6 @@ import { theme } from "./theme";
 import Layout from "./nav/Layout";
 import { Outlet } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { backgroundState } from "@atoms/navAtoms";
 import { useEffect, useState } from "react";
 import { supabase } from "./main";
 import { sessionState } from "@atoms/supabaseAtoms";
@@ -12,7 +11,10 @@ import { Notifications } from '@mantine/notifications';
 import { ModalsProvider } from "@mantine/modals";
 import { SelectContentModal } from "@common/select/SelectContent";
 import { UpdateCharacterPortraitModal } from '@modals/UpdateCharacterPortraitModal';
-import { getBackgroundImages } from "@utils/background-images";
+import {
+  getBackgroundImage,
+  BckImage,
+} from '@utils/background-images';
 
 
 const modals = {
@@ -43,24 +45,23 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const backgroundIndex = useRecoilValue(backgroundState);
-
-  const imageStore = getBackgroundImages();
-
-  const Background = backgroundIndex !== null ? imageStore.offline_svgs[5].url : null;
+  const [background, setBackground] = useState<BckImage>();
+  useEffect(() => {
+    (async () => {
+      setBackground(await getBackgroundImage('ai_generated', 'Coastal Port'));
+    })();
+  }, []);
 
   return (
     <MantineProvider theme={theme} defaultColorScheme='dark'>
       <ModalsProvider modals={modals}>
-        {Background && (
-          <BackgroundImage
-            src={Background}
-            radius={0}
-            style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000 }}
-            w='100vw'
-            h='100vh'
-          />
-        )}
+        <BackgroundImage
+          src={background?.url ?? ''}
+          radius={0}
+          style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000 }}
+          w='100vw'
+          h='100vh'
+        />
         <SearchSpotlight />
         <Notifications position='top-right' />
         <Layout>
