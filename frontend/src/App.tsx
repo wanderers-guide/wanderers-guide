@@ -4,7 +4,6 @@ import Layout from "./nav/Layout";
 import { Outlet } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { backgroundState } from "@atoms/navAtoms";
-import Bg1 from "@assets/images/backgrounds/1.png";
 import { useEffect, useState } from "react";
 import { supabase } from "./main";
 import { sessionState } from "@atoms/supabaseAtoms";
@@ -13,6 +12,7 @@ import { Notifications } from '@mantine/notifications';
 import { ModalsProvider } from "@mantine/modals";
 import { SelectContentModal } from "@common/select/SelectContent";
 import { UpdateCharacterPortraitModal } from '@modals/UpdateCharacterPortraitModal';
+import { getBackgroundImages } from "@utils/background-images";
 
 
 const modals = {
@@ -44,7 +44,10 @@ export default function App() {
   }, []);
 
   const backgroundIndex = useRecoilValue(backgroundState);
-  const Background = backgroundIndex !== null ? Bg1 : null;
+
+  const imageStore = getBackgroundImages();
+
+  const Background = backgroundIndex !== null ? imageStore.offline_svgs[5].url : null;
 
   return (
     <MantineProvider theme={theme} defaultColorScheme='dark'>
