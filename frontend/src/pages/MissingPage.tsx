@@ -8,7 +8,7 @@ import {
   rem,
   useMantineTheme,
 } from "@mantine/core";
-import { setPageTitle } from "@utils/documentChange";
+import { setPageTitle } from "@utils/document-change";
 import Guy404 from "@assets/images/404-guy.png";
 import { useNavigate } from "react-router-dom";
 
