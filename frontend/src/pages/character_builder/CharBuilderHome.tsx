@@ -1,5 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import { LinksGroup } from '@common/LinksGroup';
+import { GUIDE_BLUE } from '@constants/data';
 import {
   Stack,
   Group,
@@ -362,6 +363,19 @@ export default function CharBuilderHome(props: {
                 size='xs'
                 label={<Text fz='sm'>Color Theme</Text>}
                 placeholder='Character Color Theme'
+                defaultValue={character?.details?.sheet_theme?.color || GUIDE_BLUE}
+                swatches={[
+                  '#25262b',
+                  '#868e96',
+                  '#fa5252',
+                  '#e64980',
+                  '#be4bdb',
+                  '#8d69f5',
+                  '#577deb',
+                  GUIDE_BLUE,
+                  '#15aabf',
+                  '#12b886',
+                ]}
                 onChange={(color) => {
                   setCharacter((prev) => {
                     if (!prev) return prev;
@@ -371,7 +385,7 @@ export default function CharBuilderHome(props: {
                         ...prev.details,
                         sheet_theme: {
                           ...prev.details?.sheet_theme,
-                          color: color
+                          color: color,
                         },
                       },
                     };
@@ -381,6 +395,7 @@ export default function CharBuilderHome(props: {
               <Box>
                 <Text fz='sm'>Background Artwork</Text>
                 <UnstyledButton
+                  w={'50%'}
                   onClick={() => {
                     openContextModal({
                       modal: 'selectImage',
@@ -407,7 +422,6 @@ export default function CharBuilderHome(props: {
                   <Image
                     radius='md'
                     h='auto'
-                    w={'50%'}
                     fit='contain'
                     src={character?.details?.background_image_url}
                     fallbackSrc='/src/assets/images/backgrounds/placeholder.jpeg'

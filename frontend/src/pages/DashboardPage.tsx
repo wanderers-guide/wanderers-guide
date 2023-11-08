@@ -4,8 +4,10 @@ import { selectContent } from "@common/select/SelectContent";
 import { Button } from "@mantine/core";
 import { AbilityBlock } from "@typing/content";
 import { OperationSection } from "@common/operations/Operations";
+import { setPageTitle } from "@utils/document-change";
 
 export default function DashboardPage() {
+  setPageTitle(`Dashboard`);
 
   useEffect(() => {
     
@@ -40,7 +42,9 @@ export default function DashboardPage() {
         });
       }}>Select Feat</Button>
 
-      <OperationSection title={'Title TODO'} />
+      <OperationSection title={'Title TODO'} onChange={(operations) => {
+        console.log(operations);
+      }} />
     </div>
   );
 }

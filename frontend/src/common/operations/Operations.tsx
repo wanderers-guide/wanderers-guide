@@ -10,6 +10,7 @@ import {
   Stack,
   useMantineTheme,
   Title,
+  Tooltip,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { createDefaultOperation } from '@operations/operation-runner';
@@ -25,7 +26,7 @@ import {
   OperationType,
 } from '@typing/operations';
 import _ from 'lodash';
-import { ReactNode, useRef, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import ConditionalOperation from './conditional/ConditionalOperation';
 import { GiveActionOperation } from './ability_block/GiveActionOperation';
 import { GiveClassFeatureOperation } from './ability_block/GiveClassFeatureOperation';
@@ -34,6 +35,7 @@ import { GiveSpellOperation } from './spell/GiveSpellOperation';
 import { AdjValOperation } from './variables/AdjValOperation';
 import { SetValOperation } from './variables/SetValOperation';
 import { CreateValOperation } from './variables/CreateValOperation';
+import { useDidUpdate } from '@mantine/hooks';
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -54,33 +56,37 @@ export function OperationWrapper(props: {
   return (
     <Container w={'min(700px, 100%)'}>
       <Paper
-        p='xs'
+        py='xs'
+        pl='xs'
+        pr={40}
         radius='xl'
         style={{
           position: 'relative',
         }}
       >
         <Group wrap='nowrap' align='flex-start'>
-          <Badge
-            variant='dot'
-            size='lg'
-            styles={{
-              root: {
-                // @ts-ignore
-                '--badge-dot-size': 0,
-                textTransform: 'initial',
-              },
-            }}
-            style={{
-              borderRadius: 0,
-              borderTopLeftRadius: theme.radius.xl,
-              borderBottomLeftRadius: theme.radius.xl,
-              borderTopRightRadius: 11,
-              borderBottomRightRadius: 11,
-            }}
-          >
-            {props.title}
-          </Badge>
+          <Group align='flex-start'>
+            <Badge
+              variant='dot'
+              size='lg'
+              styles={{
+                root: {
+                  // @ts-ignore
+                  '--badge-dot-size': 0,
+                  textTransform: 'initial',
+                },
+              }}
+              style={{
+                borderRadius: 0,
+                borderTopLeftRadius: theme.radius.xl,
+                borderBottomLeftRadius: theme.radius.xl,
+                borderTopRightRadius: 11,
+                borderBottomRightRadius: 11,
+              }}
+            >
+              {props.title}
+            </Badge>
+          </Group>
 
           {props.children}
         </Group>
@@ -89,26 +95,35 @@ export function OperationWrapper(props: {
             position: 'absolute',
             top: 12,
             right: 12,
+            zIndex: 100,
           }}
         >
-          <CloseButton
-            size='sm'
-            radius='xl'
-            onClick={() => {
-              openConfirmModal();
-            }}
-          />
+          <Tooltip label='Remove Operation' position='right' withArrow withinPortal>
+            <CloseButton
+              size='sm'
+              radius='xl'
+              onClick={() => {
+                openConfirmModal();
+              }}
+            />
+          </Tooltip>
         </Box>
       </Paper>
     </Container>
   );
 }
 
-export function OperationSection(props: { title: ReactNode, blacklist?: string[] }) {
+export function OperationSection(props: {
+  title: ReactNode;
+  blacklist?: string[];
+  onChange: (operations: Operation[]) => void;
+}) {
   const [operations, setOperations] = useState<Operation[]>([]);
   const selectRef = useRef<HTMLInputElement>(null);
 
-  console.log(operations);
+  useDidUpdate(() => {
+    props.onChange(operations);
+  }, [operations]);
 
   return (
     <Stack gap={10}>
@@ -186,7 +201,7 @@ export function OperationSection(props: { title: ReactNode, blacklist?: string[]
           />
         ))}
         {operations.length === 0 && (
-          <Text size='sm' c='gray.4' ta='center' fs='italic'>
+          <Text size='sm' c='gray.7' ta='center' fs='italic'>
             No operations
           </Text>
         )}
@@ -254,7 +269,17 @@ export function OperationDisplay(props: {
       );
     case 'conditional':
       let opConditional = props.operation as OperationConditional;
-      return <ConditionalOperation onRemove={props.onRemove} />;
+      return (
+        <ConditionalOperation
+          onChange={(conditions, trueOperations, falseOperations) => {
+            opConditional.data.conditions = conditions;
+            opConditional.data.trueOperations = trueOperations;
+            opConditional.data.falseOperations = falseOperations;
+            props.onChange(_.cloneDeep(opConditional));
+          }}
+          onRemove={props.onRemove}
+        />
+      );
     case 'adjValue':
       let opAdjValue = props.operation as OperationAdjValue;
       return (

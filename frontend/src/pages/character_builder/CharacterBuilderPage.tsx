@@ -63,8 +63,11 @@ import CharBuilderCreation from './CharBuilderCreation';
 import { defineEnabledContentSources } from '@content/content-controller';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
+import { setPageTitle } from '@utils/document-change';
 
 export default function CharacterBuilderPage() {
+  setPageTitle(`Builder`);
+
   const theme = useMantineTheme();
   const [active, setActive] = useState(0);
 

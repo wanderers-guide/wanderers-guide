@@ -6,8 +6,11 @@ import { getUploadStats, resetUploadStats, uploadContentList } from '@upload/con
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
+import { setPageTitle } from '@utils/document-change';
 
 export default function AdminPage() {
+  setPageTitle(`Admin Panel`);
+
   const [contentType, setContentType] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showUploadStats, setShowUploadStats] = useState(false);
@@ -72,6 +75,7 @@ export default function AdminPage() {
             { value: 'item', label: 'Item' },
             { value: 'creature', label: 'Creature' },
             { value: 'heritage', label: 'Heritage' },
+            { value: 'background', label: 'Background' },
           ]}
           value={contentType}
           onChange={(value) => {

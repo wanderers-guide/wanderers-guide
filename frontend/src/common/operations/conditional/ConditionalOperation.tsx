@@ -9,33 +9,56 @@ import {
   Text,
   TextInput,
   JsonInput,
+  Badge,
+  ActionIcon,
+  Divider,
+  Tooltip,
 } from '@mantine/core';
 import { Variable, VariableType } from '@typing/variables';
 import { useEffect, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
 import _ from 'lodash';
+import { IconCaretRightFilled, IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
+import { ConditionCheckData, ConditionOperator, Operation } from '@typing/operations';
+import { useDidUpdate } from '@mantine/hooks';
 
-export default function ConditionalOperation(props: { onRemove: () => void }) {
-  const [checks, setChecks] = useState<ConditionalCheckData[]>([
-    {
+export default function ConditionalOperation(props: {
+  onChange: (
+    conditions: ConditionCheckData[],
+    trueOperations: Operation[],
+    falseOperations: Operation[]
+  ) => void;
+  onRemove: () => void;
+}) {
+  const getDefaultCondition = (): ConditionCheckData => {
+    return {
       name: '',
       data: undefined,
-      operation: '',
+      operator: '',
       value: '',
-    },
-  ]);
+    } satisfies ConditionCheckData;
+  };
+
+  const [checks, setChecks] = useState<ConditionCheckData[]>([getDefaultCondition()]);
+
+  const [trueOperations, setTrueOperations] = useState<Operation[]>([]);
+  const [falseOperations, setFalseOperations] = useState<Operation[]>([]);
+
+  useDidUpdate(() => {
+    props.onChange(checks, trueOperations, falseOperations);
+  }, [checks, trueOperations, falseOperations]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Conditional'>
-      <Stack>
+      <Stack w='100%'>
         <>
-          {checks.map((check, index) => {
+          {checks.map((check, index) => (
             <ConditionalCheck
               key={index}
               defaultName={check.name}
               defaultData={check.data}
-              defaultOperation={check.operation}
+              defaultOperator={check.operator}
               defaultValue={check.value}
               onChange={(data) => {
                 setChecks((prev) => {
@@ -43,35 +66,80 @@ export default function ConditionalOperation(props: { onRemove: () => void }) {
                   return _.cloneDeep(prev);
                 });
               }}
-            />;
-          })}
+              includeAnd={index !== 0}
+              includeAdd={index === checks.length - 1}
+              onAdd={() => {
+                setChecks((prev) => {
+                  return [...prev, getDefaultCondition()];
+                });
+              }}
+              onRemove={() => {
+                setChecks((prev) => {
+                  return prev.filter((_, i) => i !== index);
+                });
+              }}
+            />
+          ))}
         </>
+        <Divider />
         <>
           {true && (
             <ScrollArea mah={400}>
               <Stack>
                 <OperationSection
                   title={
-                    <Text>
-                      If{' '}
-                      <Text fw={600} c='gray.4' span>
-                        true
+                    <Group gap={8} wrap='nowrap'>
+                      <IconCaretRightFilled size='1.1rem' />
+                      <Text fz='sm' c='gray.0'>
+                        If
                       </Text>
-                      :
-                    </Text>
+                      <Badge
+                        variant='dot'
+                        size='sm'
+                        styles={{
+                          root: {
+                            // @ts-ignore
+                            '--badge-dot-size': 0,
+                            textTransform: 'initial',
+                          },
+                        }}
+                      >
+                        True
+                      </Badge>
+                    </Group>
                   }
+                  onChange={(operations) => setTrueOperations(operations)}
+                  /* Don't allow nested conditionals and allowing creating new variables 
+                      under a condition would be a mess to support 
+                  */
                   blacklist={['conditional', 'createValue']}
                 />
                 <OperationSection
                   title={
-                    <Text>
-                      If{' '}
-                      <Text fw={600} c='gray.4' span>
-                        false
+                    <Group gap={8} wrap='nowrap'>
+                      <IconCaretRightFilled size='1.1rem' />
+                      <Text fz='sm' c='gray.0'>
+                        If
                       </Text>
-                      :
-                    </Text>
+                      <Badge
+                        variant='dot'
+                        size='sm'
+                        styles={{
+                          root: {
+                            // @ts-ignore
+                            '--badge-dot-size': 0,
+                            textTransform: 'initial',
+                          },
+                        }}
+                      >
+                        False
+                      </Badge>
+                    </Group>
                   }
+                  onChange={(operations) => setFalseOperations(operations)}
+                  /* Don't allow nested conditionals and allowing creating new variables 
+                      under a condition would be a mess to support 
+                  */
                   blacklist={['conditional', 'createValue']}
                 />
               </Stack>
@@ -83,42 +151,39 @@ export default function ConditionalOperation(props: { onRemove: () => void }) {
   );
 }
 
-type ConditionalCheckData = {
-  name: string;
-  data?: Variable;
-  operation: string;
-  value: string;
-};
-
 export function ConditionalCheck(props: {
   defaultName: string;
   defaultData?: Variable;
-  defaultOperation: string;
+  defaultOperator: ConditionOperator;
   defaultValue: string;
-  onChange: (data: ConditionalCheckData) => void;
+  onChange: (data: ConditionCheckData) => void;
+  includeAnd?: boolean;
+  includeAdd?: boolean;
+  onAdd?: () => void;
+  onRemove?: () => void;
 }) {
   const [variableName, setVariableName] = useState(props.defaultName);
   const [variableData, setVariableData] = useState<Variable | undefined>(props.defaultData);
 
-  const [operation, setOperation] = useState(props.defaultOperation);
+  const [operator, setOperator] = useState(props.defaultOperator);
   const [value, setValue] = useState(props.defaultValue);
 
   useEffect(() => {
     props.onChange({
       name: variableName,
       data: variableData,
-      operation: operation,
+      operator: operator,
       value: value,
     });
-  }, [variableName, variableData, operation, value]);
+  }, [variableName, variableData, operator, value]);
 
-  let operationOptions: { value: string; label: string }[] = [];
+  let operatorOptions: { value: ConditionOperator; label: string }[] = [];
   if (
     variableData?.type === 'attr' ||
     variableData?.type === 'num' ||
     variableData?.type === 'prof'
   ) {
-    operationOptions = [
+    operatorOptions = [
       { value: 'EQUALS', label: 'equals' },
       { value: 'LESS_THAN', label: 'less than' },
       { value: 'GREATER_THAN', label: 'greater than' },
@@ -126,20 +191,20 @@ export function ConditionalCheck(props: {
     ];
   }
   if (variableData?.type === 'bool') {
-    operationOptions = [
+    operatorOptions = [
       { value: 'EQUALS', label: 'equals' },
       { value: 'NOT_EQUALS', label: 'not equals' },
     ];
   }
   if (variableData?.type === 'str' || variableData?.type === 'list-str') {
-    operationOptions = [
+    operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
       { value: 'EQUALS', label: 'equals' },
       { value: 'NOT_EQUALS', label: 'not equals' },
     ];
   }
   if (!variableData) {
-    operationOptions = [
+    operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
       { value: 'EQUALS', label: 'equals' },
       { value: 'NOT_EQUALS', label: 'not equals' },
@@ -149,13 +214,62 @@ export function ConditionalCheck(props: {
   }
 
   return (
-    <Group wrap='nowrap'>
+    <Group wrap='nowrap' style={{ position: 'relative' }}>
+      {props.includeAnd && (
+        <>
+          <Text
+            style={{
+              position: 'absolute',
+              top: 3,
+              left: -35,
+            }}
+            c='dimmed'
+            fs='italic'
+          >
+            &&
+          </Text>
+          {props.includeAdd && (
+            <Tooltip label='Remove Condition' position='right' withArrow withinPortal>
+              <ActionIcon
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  right: -28,
+                }}
+                size='sm'
+                variant='subtle'
+                color='gray'
+                onClick={props.onRemove}
+              >
+                <IconCircleMinus size='0.9rem' />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </>
+      )}
+      {props.includeAdd && (
+        <Tooltip label='Add Condition' position='right' withArrow withinPortal>
+          <ActionIcon
+            style={{
+              position: 'absolute',
+              top: 23,
+              right: -28,
+            }}
+            size='sm'
+            variant='subtle'
+            color='gray'
+            onClick={props.onAdd}
+          >
+            <IconCirclePlus size='0.9rem' />
+          </ActionIcon>
+        </Tooltip>
+      )}
       <VariableSelect
         value={variableName}
         onChange={(value, variable) => {
           setVariableName(value);
           setVariableData(variable);
-          setOperation('');
+          setOperator('');
           setValue('');
         }}
       />
@@ -164,19 +278,19 @@ export function ConditionalCheck(props: {
           size='xs'
           placeholder='Operator'
           w={100}
-          value={operation}
-          searchValue={operationOptions.find((op) => op.value === operation)?.label || ''}
+          value={operator}
+          searchValue={operatorOptions.find((op) => op.value === operator)?.label || ''}
           onChange={(value) => {
             if (!value) return;
-            setOperation(value);
+            setOperator(value as ConditionOperator);
           }}
-          data={operationOptions}
+          data={operatorOptions}
         />
       )}
-      {variableName && operation && (
+      {variableName && operator && (
         <ConditionalValueSelect
           variableType={variableData?.type || 'str'}
-          operationType={operation}
+          operationType={operator}
           value={value}
           onChange={setValue}
         />

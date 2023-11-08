@@ -72,13 +72,22 @@ export interface OperationRemoveAbilityBlock extends OperationBase {
 }
 
 export interface OperationConditional extends OperationBase {
-  readonly type: "conditional";
+  readonly type: 'conditional';
   data: {
-    condition: {}; // TODO
-    trueOperation?: Operation;
-    falseOperation?: Operation;
+    conditions: ConditionalCheckData[];
+    trueOperations?: Operation[];
+    falseOperations?: Operation[];
   };
 }
+
+export type ConditionCheckData = {
+  name: string;
+  data?: Variable;
+  operator: ConditionOperator;
+  value: string;
+};
+
+export type ConditionOperator = '' | 'INCLUDES' | 'EQUALS' | 'NOT_EQUALS' | 'LESS_THAN' | 'GREATER_THAN';
 
 export interface OperationGiveSpell extends OperationBase {
   readonly type: "giveSpell";

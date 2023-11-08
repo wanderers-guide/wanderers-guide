@@ -55,8 +55,7 @@ export const PLAYER_CORE_SOURCE_ID = 1;
 let contentSources: number[] = [];
 
 export function defineEnabledContentSources(sourceIds: number[]) {
-  contentSources = sourceIds;
-  console.log(contentSources);
+  contentSources = _.uniq(sourceIds);
 }
 
 // Store of all table content //
@@ -180,7 +179,6 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
 
 export async function getEnabledContentSources() {
   if (contentSources.length === 0) throwError('No enabled content sources defined');
-  console.log('contentSources', contentSources)
   const sources: ContentSource[] = [];
   for(const sourceId of contentSources) {
     const source = await getContent<ContentSource>('content-source', sourceId);

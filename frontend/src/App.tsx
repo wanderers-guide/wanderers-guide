@@ -1,5 +1,4 @@
-import { Anchor, BackgroundImage, MantineProvider, Text } from '@mantine/core';
-import { theme } from './theme';
+import { Anchor, BackgroundImage, MantineProvider, Text, createTheme } from '@mantine/core';
 import Layout from './nav/Layout';
 import { Outlet } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -16,6 +15,9 @@ import { SelectImageModal } from '@modals/SelectImageModal';
 import { ImageOption } from './typing';
 import { characterState } from '@atoms/characterAtoms';
 import { IconBrush } from '@tabler/icons-react';
+import tinycolor from 'tinycolor2';
+import { usePrevious } from '@mantine/hooks';
+import { GUIDE_BLUE } from '@constants/data';
 
 const modals = {
   selectContent: SelectContentModal,
@@ -27,6 +29,26 @@ declare module '@mantine/modals' {
   export interface MantineModalsOverride {
     modals: typeof modals;
   }
+}
+
+function getShadesFromColor(color: string) {
+  let lightShades = [];
+  let darkShades = [];
+
+  for (let i = 0; i < 3; i++) {
+    let shade = tinycolor(color)
+      .lighten(i * 3)
+      .toString();
+    lightShades.push(shade);
+  }
+  for (let i = 0; i < 7; i++) {
+    let shade = tinycolor(color)
+      .darken(i * 3)
+      .toString();
+    darkShades.push(shade);
+  }
+
+  return [...lightShades, color, ...darkShades];
 }
 
 export default function App() {
@@ -46,11 +68,39 @@ export default function App() {
   }, []);
 
   const activeCharacer = useRecoilValue(characterState);
+  const prevCharacer = usePrevious(activeCharacer);
+
+  // Update background image when background_image_url changes
   const [background, setBackground] = useState<ImageOption>();
   useEffect(() => {
     (async () => {
+      if (
+        prevCharacer?.details?.background_image_url ===
+        activeCharacer?.details?.background_image_url
+      )
+        return;
+      console.log('Updating background image...');
       setBackground(await getBackgroundImageFromURL(activeCharacer?.details?.background_image_url));
     })();
+  }, [activeCharacer]);
+
+  // Update primary color when sheet_theme changes
+  const [theme, setTheme] = useState<any>();
+  useEffect(() => {
+    if (prevCharacer?.details?.sheet_theme === activeCharacer?.details?.sheet_theme) return;
+    console.log('Updating color theme...');
+    setTheme(
+      createTheme({
+        colors: {
+          // @ts-ignore
+          guide: getShadesFromColor(activeCharacer?.details?.sheet_theme?.color || GUIDE_BLUE),
+        },
+        primaryColor: 'guide',
+        defaultRadius: 'md',
+        fontFamily: 'Montserrat, sans-serif',
+        fontFamilyMonospace: 'Ubuntu Mono, monospace',
+      })
+    );
   }, [activeCharacer]);
 
   return (

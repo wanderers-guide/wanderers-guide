@@ -8,6 +8,14 @@ const imageStore: Record<string, ImageOption[]> = {
       name: 'Coastal Port',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/1.png',
     },
+    {
+      name: 'Village Road',
+      url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/2.png',
+    },
+    {
+      name: 'Path to the Chapel',
+      url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/3.png',
+    },
   ],
   oliver_ryan: [
     {

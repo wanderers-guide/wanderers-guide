@@ -32,10 +32,16 @@ export function SelectImageModal({
   const [loading, setLoading] = useState(false);
 
   const items = innerProps.options.map((option, index) => (
-    <HoverCard shadow='md' openDelay={1000} position='top' disabled={!option.name} withinPortal>
+    <HoverCard
+      key={index}
+      shadow='md'
+      openDelay={1000}
+      position='top'
+      disabled={!option.name}
+      withinPortal
+    >
       <HoverCard.Target>
         <UnstyledButton
-          key={index}
           className={classes.item}
           onClick={() => {
             innerProps.onSelect(option);

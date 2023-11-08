@@ -167,9 +167,9 @@ export const createDefaultOperation = (type: OperationType) => {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        condition: {},
-        trueOperation: undefined,
-        falseOperation: undefined,
+        conditions: [],
+        trueOperations: undefined,
+        falseOperations: undefined,
       },
     } satisfies OperationConditional;
   } else if (type === 'select') {

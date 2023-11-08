@@ -207,6 +207,9 @@ interface ContentSource {
   is_published: boolean;
   required_content_sources: number[];
   group: string;
+  meta_data?: {
+    counts?: Record<ContentType | AbilityBlockType, number>;
+  };
 }
 
 interface Ancestry {

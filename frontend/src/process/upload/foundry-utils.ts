@@ -1,4 +1,4 @@
-import { AbilityBlock, ActionCost, ContentSource, Creature, Item, Rarity, Size, Spell, Trait } from "@typing/content";
+import { AbilityBlock, ActionCost, Background, ContentSource, Creature, Item, Rarity, Size, Spell, Trait } from "@typing/content";
 import { isString } from "lodash";
 import Turndown from "turndown";
 import _ from "lodash";
@@ -125,6 +125,12 @@ export async function createItem(item: Item) {
 export async function createCreature(creature: Creature) {
   return await makeRequest<Creature>('create-creature', {
     ...creature,
+  });
+}
+
+export async function createBackground(background: Background) {
+  return await makeRequest<Background>('create-background', {
+    ...background,
   });
 }
 

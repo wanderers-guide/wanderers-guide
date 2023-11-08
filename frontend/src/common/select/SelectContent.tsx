@@ -188,6 +188,15 @@ export function SelectContentModal({
 
   const activeSource = contentSources?.find((source) => source.id === selectedSource);
 
+  const totalOptionCount =
+    contentSources?.reduce(
+      (total, source) =>
+        ((source.meta_data?.counts
+          ? source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
+          : undefined) ?? 0) + total,
+      0
+    ) ?? 0;
+
   return (
     <Box style={{ position: 'relative', height: 455 }}>
       <Transition mounted={openedDrawer} transition='slide-right'>
@@ -239,25 +248,37 @@ export function SelectContentModal({
               )}
               <ContentSourceOption
                 name={'All Books'}
-                description={'15 feats'}
+                description={`${totalOptionCount.toLocaleString()} ${pluralize(
+                  innerProps.options?.abilityBlockType ?? innerProps.type
+                )}`}
                 onClick={() => {
                   setSelectedSource('all');
                   setOpenedDrawer(false);
                 }}
                 selected={selectedSource === 'all'}
               />
-              {contentSources?.map((source, index) => (
-                <ContentSourceOption
-                  key={index}
-                  name={source.name}
-                  description={'15 feats'}
-                  onClick={() => {
-                    setSelectedSource(source.id);
-                    setOpenedDrawer(false);
-                  }}
-                  selected={source.id === selectedSource}
-                />
-              ))}
+              {contentSources
+                ?.filter(
+                  (source) =>
+                    source.meta_data?.counts &&
+                    source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
+                )
+                .map((source, index) => (
+                  <ContentSourceOption
+                    key={index}
+                    name={source.name}
+                    description={`${source.meta_data!.counts![
+                      innerProps.options?.abilityBlockType ?? innerProps.type
+                    ].toLocaleString()} ${pluralize(
+                      innerProps.options?.abilityBlockType ?? innerProps.type
+                    )}`}
+                    onClick={() => {
+                      setSelectedSource(source.id);
+                      setOpenedDrawer(false);
+                    }}
+                    selected={source.id === selectedSource}
+                  />
+                ))}
             </Box>
           </Box>
         )}
@@ -352,15 +373,25 @@ function ContentSourceOption(props: {
       }}
       onClick={props.onClick}
       justify='space-between'
+      align='center'
     >
       <Box>
         <Text>{props.name}</Text>
       </Box>
-      <Box>
-        <Text fz='xs' c='dimmed'>
+        <Badge
+          variant='dot'
+          size='xs'
+          styles={{
+            root: {
+              // @ts-ignore
+              '--badge-dot-size': 0,
+              textTransform: 'initial',
+              color: theme.colors.dark[1],
+            },
+          }}
+        >
           {props.description}
-        </Text>
-      </Box>
+        </Badge>
     </Group>
   );
 }
@@ -755,8 +786,6 @@ export function ClassSelectionOption(props: {
   );
 }
 
-
-
 export function AncestrySelectionOption(props: {
   ancestry: Ancestry;
   onClick: (ancestry: Ancestry) => void;
@@ -870,7 +899,6 @@ export function AncestrySelectionOption(props: {
   );
 }
 
-
 export function BackgroundSelectionOption(props: {
   background: Background;
   onClick: (background: Background) => void;
@@ -974,8 +1002,10 @@ export function BackgroundSelectionOption(props: {
   );
 }
 
-
 export function TraitsDisplay(props: { traitIds: number[]; rarity?: Rarity }) {
+  
+  const theme = useMantineTheme();
+
   const { data: traits } = useQuery({
     queryKey: [`find-traits-${props.traitIds.join('_')}`, {}],
     queryFn: async ({ queryKey }) => {
@@ -1015,6 +1045,7 @@ export function TraitsDisplay(props: { traitIds: number[]; rarity?: Rarity }) {
               // @ts-ignore
               '--badge-dot-size': trait.meta_data?.important ? undefined : 0,
               textTransform: 'initial',
+              color: theme.colors.dark[1],
             },
           }}
         >

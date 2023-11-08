@@ -1,11 +1,12 @@
 import { FileWithPath } from '@mantine/dropzone';
-import { AbilityBlock, ContentSource, Item, Spell } from '@typing/content';
+import { AbilityBlock, Background, ContentSource, Item, Spell } from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
   convertToRarity,
   convertToSize,
   createAbilityBlock,
+  createBackground,
   createCreature,
   createItem,
   createSpell,
@@ -106,6 +107,8 @@ async function uploadContent(type: string, file: FileWithPath) {
     success = await uploadCreature(source, json);
   } else if (type === 'heritage') {
     success = await uploadHeritage(source, json);
+  } else if (type === 'background') {
+    success = await uploadBackground(source, json);
   }
 
   if (success) {
@@ -464,6 +467,36 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>) 
   if (DEBUG) {
     console.log('Created Heritage:');
     console.log(createdHeritage);
+  }
+  return true;
+}
+
+
+async function uploadBackground(source: ContentSource, json: Record<string, any>) {
+  if (json.type !== 'background') {
+    if (DEBUG) {
+      console.error(`Not a background, it's a "${json.type}"!`);
+    }
+    return false;
+  }
+
+  const descValues = extractFromDescription(json.system?.description?.value);
+
+  const background = {
+    id: -1,
+    created_at: '',
+    name: toText(json.name) ?? '',
+    rarity: convertToRarity(json.system?.traits?.rarity),
+    description: toMarkdown(descValues.description) ?? '',
+    operations: [],
+    content_source_id: source.id,
+    version: '1.0',
+  } satisfies Background;
+
+  const createdBackground = await createBackground(background);
+  if (DEBUG) {
+    console.log('Created Background:');
+    console.log(createdBackground);
   }
   return true;
 }
