@@ -83,7 +83,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
     })();
   }, [props.selectedId, props.type]);
 
-  const typeName = _.startCase(props.options?.abilityBlockType || props.type);
+  const typeName = _.startCase(props.options?.abilityBlockType?.replace('-', ' ') || props.type);
   // @ts-ignore
   const label = selected ? selected.name : `Select ${typeName}`;
 
@@ -140,7 +140,7 @@ export function selectContent<T = Record<string, any>>(
 ) {
   openContextModal({
     modal: 'selectContent',
-    title: <Title order={3}>Select {_.startCase(options?.abilityBlockType || type)}</Title>,
+    title: <Title order={3}>Select {_.startCase(options?.abilityBlockType?.replace('-', ' ') || type)}</Title>,
     innerProps: {
       type,
       onClick: (option) => onClick(option as T),
@@ -169,7 +169,9 @@ export function SelectContentModal({
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
   const [selectedSource, setSelectedSource] = useState<number | 'all'>('all');
 
-  const typeName = _.startCase(innerProps.options?.abilityBlockType || innerProps.type);
+  const typeName = _.startCase(
+    innerProps.options?.abilityBlockType?.replace('-', ' ') || innerProps.type
+  );
 
   const {
     data: contentSources,
@@ -479,7 +481,7 @@ function SelectionOptionsInner(props: {
   const viewport = useRef<HTMLDivElement>(null);
   const scrollToTop = () => viewport.current?.scrollTo({ top: 0 });
 
-  const typeName = _.startCase(props.abilityBlockType || props.type);
+  const typeName = _.startCase(props.abilityBlockType?.replace('-', ' ') || props.type);
   if (!props.isLoading && props.options.length === 0) {
     return (
       <Box pt='lg'>

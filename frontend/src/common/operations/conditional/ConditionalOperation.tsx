@@ -220,11 +220,12 @@ export function ConditionalCheck(props: {
           <Text
             style={{
               position: 'absolute',
-              top: 3,
+              top: 6,
               left: -35,
             }}
             c='dimmed'
             fs='italic'
+            fz='sm'
           >
             &&
           </Text>

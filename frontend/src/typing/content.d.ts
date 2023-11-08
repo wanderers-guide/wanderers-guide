@@ -29,7 +29,11 @@ interface Trait {
   created_at: string;
   name: string;
   description: string;
-  meta_data: Record<string, any>; // TODO
+  meta_data?: {
+    important?: boolean;
+    creature_trait?: boolean;
+    unselectable?: boolean;
+  };
   content_source_id: number;
 }
 

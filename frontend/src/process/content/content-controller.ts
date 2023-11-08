@@ -213,7 +213,7 @@ export async function getContentStore<T = Record<string, any>>(
     contentSources = [options.sourceId];
   }
 
-  if (options?.fetch) {
+  if (options?.fetch || options?.fetch === undefined) {
     if (type === 'ancestry') {
       const ancestries = await findAllAncestries();
       if (ancestries) {

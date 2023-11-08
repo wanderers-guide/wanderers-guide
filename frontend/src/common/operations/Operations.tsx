@@ -131,8 +131,12 @@ export function OperationSection(props: {
         <Box>{props.title}</Box>
         <Select
           ref={selectRef}
+          variant='filled'
+          size='xs'
           placeholder='Add Operation'
           data={[
+            { value: 'select', label: 'Selection' },
+            { value: 'conditional', label: 'Conditional' },
             { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
             { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
             { value: 'giveSpell', label: 'Give Spell' },
@@ -141,8 +145,6 @@ export function OperationSection(props: {
             { value: 'adjValue', label: 'Adjust Value' },
             { value: 'setValue', label: 'Set Value' },
             { value: 'createValue', label: 'Create Value' },
-            { value: 'conditional', label: 'Conditional' },
-            { value: 'select', label: 'Selection' },
             { value: 'RESO', label: 'RESO' },
           ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
           searchValue={''}

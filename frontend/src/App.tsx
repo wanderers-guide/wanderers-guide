@@ -23,7 +23,6 @@ const modals = {
   selectContent: SelectContentModal,
   selectImage: SelectImageModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
-  /* ...other modals */
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {
