@@ -105,7 +105,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
                 abilityBlockType: props.options?.abilityBlockType,
                 groupBySource: props.options?.groupBySource,
                 // @ts-ignore
-                selectedId: selected.id,
+                selectedId: selected?.id,
               }
             );
           }}

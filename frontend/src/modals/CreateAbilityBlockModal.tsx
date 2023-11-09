@@ -28,6 +28,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Operation } from '@typing/operations';
 import ActionsInput from '@common/ActionsInput';
 import { OperationSection } from '@common/operations/Operations';
+import RichTextInput from '@common/rich_text_input/RichTextInput';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -251,7 +252,9 @@ export function CreateAbilityBlockModal(props: {
               </Stack>
             </Collapse>
 
-            <Textarea label='Description' required {...form.getInputProps('description')} />
+            {/* <Textarea label='Description' required {...form.getInputProps('description')} /> */}
+
+            <RichTextInput label='Description' />
 
             <Textarea
               label='Special'
