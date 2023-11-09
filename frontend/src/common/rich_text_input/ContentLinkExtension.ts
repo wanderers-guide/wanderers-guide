@@ -10,6 +10,7 @@ import {
   NodeWithPos,
 } from '@tiptap/core';
 import { MarkType } from '@tiptap/pm/model';
+import { ContentType, AbilityBlockType } from '@typing/content';
 
 export interface LinkProtocolOptions {
   scheme: string;
@@ -323,17 +324,18 @@ export function clickHandler(options: ClickHandlerOptions): Plugin {
         if (link && href) {
 
           // Content link
-          if (target === '_self' && rel === 'tag') {
+          const contentData = getContentDataFromHref(href);
+          if (target === '_self' && rel === 'tag' && contentData) {
 
-            console.log('content link', href);
-            
+            console.log('content link', contentData);
+
             event.preventDefault();
             return true;
           }
 
           // Normal link
           if (view.editable) {
-            window.open(href, target);
+            //window.open(href, target);
           }
 
           return true;
@@ -470,4 +472,21 @@ export function autolink(options: AutolinkOptions): Plugin {
       return tr;
     },
   });
+}
+
+export function getContentDataFromHref(href: string) {
+  // Get last part of url
+  const urlParts = href.split('/');
+  const lastPart = urlParts.length > 0 ? urlParts[urlParts.length - 1] : href;
+
+  // Check if it is a content link
+  if (!lastPart.startsWith('link_')) return null;
+
+  // Get content data
+  const [link, type, id] = lastPart.split('_');
+  return { type: type as ContentType | AbilityBlockType, id: parseInt(id) };
+}
+
+export function buildHrefFromContentData(type: ContentType | AbilityBlockType, id: number) {
+  return `link_${type}_${id}`;
 }
