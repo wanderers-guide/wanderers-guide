@@ -22,7 +22,7 @@ export default function TraitsInput(props: TraitsInputProps) {
   const traits =
     (data &&
       data
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort((a, b) => a?.name.localeCompare(b?.name))
         .filter((trait) => !trait.meta_data?.unselectable)
         .filter((trait) =>
           props.includeCreatureTraits ? true : !trait.meta_data?.creature_trait
