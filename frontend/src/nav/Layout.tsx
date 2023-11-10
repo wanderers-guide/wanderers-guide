@@ -65,7 +65,7 @@ export default function Layout(props: { children: React.ReactNode }) {
         <Group h="100%" px="md">
           <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" />
           <Group style={{ flex: 1 }}>
-            <WanderersGuideLogo size={32} />
+            <WanderersGuideLogo size={30} />
             <Group
               gap={0}
               style={{ flex: 1 }}

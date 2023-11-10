@@ -9,6 +9,8 @@ import SubScript from '@tiptap/extension-subscript';
 import { useMantineTheme, Text, Box } from '@mantine/core';
 import { ContentLink } from './ContentLinkExtension';
 import ContentLinkControl from './ContentLinkControl';
+import { useRecoilState } from 'recoil';
+import { drawerState } from '@atoms/navAtoms';
 
 interface RichTextInputProps {
   label?: string;
@@ -16,12 +18,13 @@ interface RichTextInputProps {
 
 export default function RichTextInput(props: RichTextInputProps) {
   const theme = useMantineTheme();
+  const _drawerState = useRecoilState(drawerState);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
-      ContentLink,
+      ContentLink(_drawerState),
       Superscript,
       SubScript,
       Highlight,

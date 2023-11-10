@@ -11,6 +11,9 @@ import {
 } from '@tiptap/core';
 import { MarkType } from '@tiptap/pm/model';
 import { ContentType, AbilityBlockType } from '@typing/content';
+import { SetterOrUpdater } from 'recoil';
+import { DrawerType } from '@typing/index';
+import { convertContentLink } from '@drawers/drawer-utils';
 
 export interface LinkProtocolOptions {
   scheme: string;
@@ -75,175 +78,210 @@ declare module '@tiptap/core' {
   }
 }
 
-export const ContentLink = Mark.create<LinkOptions>({
-  name: 'link',
+type DrawerState = [
+  {
+    type: DrawerType;
+    data: any;
+    extra?:
+      | {
+          addToHistory: boolean;
+          history?:
+            | {
+                type: DrawerType;
+                data: any;
+              }[]
+            | undefined;
+        }
+      | undefined;
+  } | null,
+  SetterOrUpdater<{
+    type: DrawerType;
+    data: any;
+    extra?:
+      | {
+          addToHistory: boolean;
+          history?:
+            | {
+                type: DrawerType;
+                data: any;
+              }[]
+            | undefined;
+        }
+      | undefined;
+  } | null>
+];
 
-  priority: 1000,
+export function ContentLink(_drawerState: DrawerState) {
+  return Mark.create<LinkOptions>({
+    name: 'link',
 
-  keepOnSplit: false,
+    priority: 1000,
 
-  onCreate() {
-    this.options.protocols.forEach((protocol) => {
-      if (typeof protocol === 'string') {
-        registerCustomProtocol(protocol);
-        return;
-      }
-      registerCustomProtocol(protocol.scheme, protocol.optionalSlashes);
-    });
-  },
+    keepOnSplit: false,
 
-  onDestroy() {
-    reset();
-  },
+    onCreate() {
+      this.options.protocols.forEach((protocol) => {
+        if (typeof protocol === 'string') {
+          registerCustomProtocol(protocol);
+          return;
+        }
+        registerCustomProtocol(protocol.scheme, protocol.optionalSlashes);
+      });
+    },
 
-  inclusive() {
-    return this.options.autolink;
-  },
+    onDestroy() {
+      reset();
+    },
 
-  addOptions() {
-    return {
-      openOnClick: true,
-      linkOnPaste: true,
-      autolink: true,
-      protocols: [],
-      HTMLAttributes: {
-        target: '_blank',
-        rel: 'noopener noreferrer nofollow',
-        class: null,
-      },
-      validate: undefined,
-    };
-  },
+    inclusive() {
+      return this.options.autolink;
+    },
 
-  addAttributes() {
-    return {
-      href: {
-        default: null,
-      },
-      target: {
-        default: this.options.HTMLAttributes.target,
-      },
-      rel: {
-        default: this.options.HTMLAttributes.rel,
-      },
-      class: {
-        default: this.options.HTMLAttributes.class,
-      },
-    };
-  },
-
-  parseHTML() {
-    return [{ tag: 'a[href]:not([href *= "javascript:" i])' }];
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
-    // ['code', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0]
-  },
-
-  addCommands() {
-    return {
-      setLink:
-        (attributes) =>
-        ({ chain }) => {
-          return chain().setMark(this.name, attributes).setMeta('preventAutolink', true).run();
+    addOptions() {
+      return {
+        openOnClick: true,
+        linkOnPaste: true,
+        autolink: true,
+        protocols: [],
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer nofollow',
+          class: null,
         },
+        validate: undefined,
+      };
+    },
 
-      toggleLink:
-        (attributes) =>
-        ({ chain }) => {
-          return chain()
-            .toggleMark(this.name, attributes, { extendEmptyMarkRange: true })
-            .setMeta('preventAutolink', true)
-            .run();
+    addAttributes() {
+      return {
+        href: {
+          default: null,
         },
-
-      unsetLink:
-        () =>
-        ({ chain }) => {
-          return chain()
-            .unsetMark(this.name, { extendEmptyMarkRange: true })
-            .setMeta('preventAutolink', true)
-            .run();
+        target: {
+          default: this.options.HTMLAttributes.target,
         },
-    };
-  },
+        rel: {
+          default: this.options.HTMLAttributes.rel,
+        },
+        class: {
+          default: this.options.HTMLAttributes.class,
+        },
+      };
+    },
 
-  addPasteRules() {
-    return [
-      markPasteRule({
-        find: (text) =>
-          find(text)
-            .filter((link) => {
-              if (this.options.validate) {
-                return this.options.validate(link.value);
-              }
+    parseHTML() {
+      return [{ tag: 'a[href]:not([href *= "javascript:" i])' }];
+    },
 
-              return true;
-            })
-            .filter((link) => link.isLink)
-            .map((link) => ({
-              text: link.value,
-              index: link.start,
-              data: link,
-            })),
-        type: this.type,
-        getAttributes: (match, pasteEvent) => {
-          const html = pasteEvent?.clipboardData?.getData('text/html');
-          const hrefRegex = /href="([^"]*)"/;
+    renderHTML({ HTMLAttributes }) {
+      return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+      // ['code', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0]
+    },
 
-          const existingLink = html?.match(hrefRegex);
+    addCommands() {
+      return {
+        setLink:
+          (attributes) =>
+          ({ chain }) => {
+            return chain().setMark(this.name, attributes).setMeta('preventAutolink', true).run();
+          },
 
-          if (existingLink) {
+        toggleLink:
+          (attributes) =>
+          ({ chain }) => {
+            return chain()
+              .toggleMark(this.name, attributes, { extendEmptyMarkRange: true })
+              .setMeta('preventAutolink', true)
+              .run();
+          },
+
+        unsetLink:
+          () =>
+          ({ chain }) => {
+            return chain()
+              .unsetMark(this.name, { extendEmptyMarkRange: true })
+              .setMeta('preventAutolink', true)
+              .run();
+          },
+      };
+    },
+
+    addPasteRules() {
+      return [
+        markPasteRule({
+          find: (text) =>
+            find(text)
+              .filter((link) => {
+                if (this.options.validate) {
+                  return this.options.validate(link.value);
+                }
+
+                return true;
+              })
+              .filter((link) => link.isLink)
+              .map((link) => ({
+                text: link.value,
+                index: link.start,
+                data: link,
+              })),
+          type: this.type,
+          getAttributes: (match, pasteEvent) => {
+            const html = pasteEvent?.clipboardData?.getData('text/html');
+            const hrefRegex = /href="([^"]*)"/;
+
+            const existingLink = html?.match(hrefRegex);
+
+            if (existingLink) {
+              return {
+                href: existingLink[1],
+              };
+            }
+
             return {
-              href: existingLink[1],
+              href: match.data?.href,
             };
-          }
+          },
+        }),
+      ];
+    },
 
-          return {
-            href: match.data?.href,
-          };
-        },
-      }),
-    ];
-  },
+    addProseMirrorPlugins() {
+      const plugins: Plugin[] = [];
 
-  addProseMirrorPlugins() {
-    const plugins: Plugin[] = [];
+      if (this.options.autolink) {
+        plugins.push(
+          autolink({
+            type: this.type,
+            validate: this.options.validate,
+          })
+        );
+      }
 
-    if (this.options.autolink) {
-      plugins.push(
-        autolink({
-          type: this.type,
-          validate: this.options.validate,
-        })
-      );
-    }
+      if (this.options.openOnClick) {
+        plugins.push(
+          clickHandler(
+            {
+              type: this.type,
+            },
+            _drawerState
+          )
+        );
+      }
 
-    if (this.options.openOnClick) {
-      plugins.push(
-        clickHandler({
-          type: this.type,
-        })
-      );
-    }
+      if (this.options.linkOnPaste) {
+        plugins.push(
+          pasteHandler({
+            // @ts-ignore
+            editor: this.editor,
+            type: this.type,
+          })
+        );
+      }
 
-    if (this.options.linkOnPaste) {
-      plugins.push(
-        pasteHandler({
-          // @ts-ignore
-          editor: this.editor,
-          type: this.type,
-        })
-      );
-    }
-
-    return plugins;
-  },
-});
-
-
-
+      return plugins;
+    },
+  });
+}
 
 type PasteHandlerOptions = {
   editor: Editor;
@@ -293,13 +331,11 @@ export function pasteHandler(options: PasteHandlerOptions): Plugin {
   });
 }
 
-
-
 type ClickHandlerOptions = {
   type: MarkType;
 };
 
-export function clickHandler(options: ClickHandlerOptions): Plugin {
+export function clickHandler(options: ClickHandlerOptions, _drawerState: DrawerState): Plugin {
   return new Plugin({
     key: new PluginKey('handleClickLink'),
     props: {
@@ -322,12 +358,20 @@ export function clickHandler(options: ClickHandlerOptions): Plugin {
         const rel = link?.rel ?? attrs.rel;
 
         if (link && href) {
-
           // Content link
           const contentData = getContentDataFromHref(href);
           if (target === '_self' && rel === 'tag' && contentData) {
 
-            console.log('content link', contentData);
+            // Deconstruct the drawer state
+            const [_drawer, openDrawer] = _drawerState;
+
+            // Convert the content link to the open drawer params & open the drawer
+            const { type, data } = convertContentLink(contentData);
+            openDrawer({
+              type: type,
+              data: data,
+              extra: { addToHistory: true },
+            });
 
             event.preventDefault();
             return true;
@@ -335,7 +379,7 @@ export function clickHandler(options: ClickHandlerOptions): Plugin {
 
           // Normal link
           if (view.editable) {
-            //window.open(href, target);
+            window.open(href, target);
           }
 
           return true;
@@ -346,7 +390,6 @@ export function clickHandler(options: ClickHandlerOptions): Plugin {
     },
   });
 }
-
 
 type AutolinkOptions = {
   type: MarkType;

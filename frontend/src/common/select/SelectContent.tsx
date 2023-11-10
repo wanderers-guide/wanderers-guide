@@ -240,6 +240,7 @@ export function SelectContentModal({
               /> */}
               {isFetching && (
                 <Loader
+                  type='bars'
                   style={{
                     position: 'absolute',
                     top: '35%',
@@ -497,6 +498,7 @@ function SelectionOptionsInner(props: {
       <ScrollArea viewportRef={viewport} h={372} style={{ position: 'relative' }}>
         {props.isLoading ? (
           <Loader
+            type='bars'
             style={{
               position: 'absolute',
               top: '35%',

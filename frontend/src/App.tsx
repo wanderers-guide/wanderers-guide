@@ -18,6 +18,7 @@ import { IconBrush } from '@tabler/icons-react';
 import tinycolor from 'tinycolor2';
 import { usePrevious } from '@mantine/hooks';
 import { GUIDE_BLUE } from '@constants/data';
+import DrawerBase from '@drawers/DrawerBase';
 
 const modals = {
   selectContent: SelectContentModal,
@@ -129,6 +130,7 @@ export default function App() {
         )}
         <SearchSpotlight />
         <Notifications position='top-right' />
+        <DrawerBase />
         <Layout>
           {/* Outlet is where react-router will render child routes */}
           <Outlet />

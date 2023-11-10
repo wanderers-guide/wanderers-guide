@@ -30,7 +30,9 @@ export default function ContentLinkControl() {
 
   const handleClose = () => {
     close();
-    setUrl('');
+    setTimeout(() => {
+      setUrl('');
+    }, 1000);
   };
 
   const setLink = (newUrl: string) => {
