@@ -1,18 +1,19 @@
-import { corsHeaders } from "./cors.ts";
-import { SupabaseClient, createClient } from "@supabase/supabase-js";
-import { uniqueId } from "./upload-utils.ts";
-import _ from "lodash";
+import { corsHeaders } from './cors.ts';
+import { SupabaseClient, createClient } from '@supabase/supabase-js';
+import { uniqueId } from './upload-utils.ts';
+import _ from 'lodash';
+import type { AbilityBlockType, ContentSource, ContentType } from './content';
 
 export async function connect(
   req: Request,
   executeFn: (
-    client: SupabaseClient<any, "public", any>,
+    client: SupabaseClient<any, 'public', any>,
     body: Record<string, any>
   ) => Promise<Record<string, any> | any[] | null>
 ) {
   // This is needed if you're planning to invoke your function from a browser.
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -22,15 +23,15 @@ export async function connect(
     const supabaseClient = createClient(
       // Supabase API URL - env var exported by default.
       // @ts-ignore
-      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get('SUPABASE_URL') ?? '',
       // Supabase API ANON KEY - env var exported by default.
       // @ts-ignore
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       // Create client with Auth context of the user that called the function.
       // This way your row-level-security (RLS) policies are applied.
       {
         global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
+          headers: { Authorization: req.headers.get('Authorization')! },
         },
       }
     );
@@ -38,32 +39,29 @@ export async function connect(
     const results = await executeFn(supabaseClient, body);
 
     return new Response(JSON.stringify(results), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
     return new Response(JSON.stringify({ error }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });
   }
 }
 
-
-
 type TableName =
-  | "ability_block"
-  | "content_source"
-  | "character"
-  | "ancestry"
-  | "trait"
-  | "class"
-  | "background"
-  | "item"
-  | "spell"
-  | "creature"
-  | "language";
-
+  | 'ability_block'
+  | 'content_source'
+  | 'character'
+  | 'ancestry'
+  | 'trait'
+  | 'class'
+  | 'background'
+  | 'item'
+  | 'spell'
+  | 'creature'
+  | 'language';
 
 interface SelectFilter {
   column: string;
@@ -73,18 +71,18 @@ interface SelectFilter {
   };
 }
 
-export async function fetchData<T=Record<string, any>[]>(
-  client: SupabaseClient<any, "public", any>,
+export async function fetchData<T = Record<string, any>[]>(
+  client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   filters: SelectFilter[]
 ) {
   let query = client.from(tableName).select();
   for (let filter of filters) {
-    if(filter.value === undefined) continue;
-    if(Array.isArray(filter.value)) {
+    if (filter.value === undefined) continue;
+    if (Array.isArray(filter.value)) {
       query = query.in(filter.column, filter.value);
     } else {
-      if(filter.options?.ignoreCase) {
+      if (filter.options?.ignoreCase) {
         query = query.ilike(filter.column, `${filter.value}`);
       } else {
         query = query.eq(filter.column, filter.value);
@@ -97,18 +95,35 @@ export async function fetchData<T=Record<string, any>[]>(
   return data as T[];
 }
 
-
-export async function insertData<T=Record<string, any>>(
-  client: SupabaseClient<any, "public", any>,
+export async function upsertData<T = Record<string, any>>(
+  client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
-  data: Record<
-    string,
-    undefined | string | number | boolean | Record<string, any>
-  >,
+  data: Record<string, undefined | null | string | number | boolean | Record<string, any>>,
   type?: string,
   hasUUID = true
 ) {
+  if(data.id && data.id !== -1) {
+    const status = await updateData(client, tableName, data.id as number, data);
+    return {
+      procedure: 'update',
+      result: { status },
+    };
+  } else {
+    const result = await insertData<T>(client, tableName, data, type, hasUUID);
+    return {
+      procedure: 'insert',
+      result,
+    };
+  }
+}
 
+export async function insertData<T = Record<string, any>>(
+  client: SupabaseClient<any, 'public', any>,
+  tableName: TableName,
+  data: Record<string, undefined | null | string | number | boolean | Record<string, any>>,
+  type?: string,
+  hasUUID = true
+) {
   // Add upload_uuid to data, to prevent duplicate uploads
   if (hasUUID) {
     data = {
@@ -122,42 +137,74 @@ export async function insertData<T=Record<string, any>>(
   }
 
   // Trim all string values
-  for(let key in data) {
+  for (let key in data) {
     const value = data[key];
     if (_.isString(value)) {
       data[key] = value.trim();
     }
   }
 
-  const { data: insertedData, error } = await client
-    .from(tableName)
-    .insert(data)
-    .select();
+  const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
-    if (error.code === "23505" && hasUUID) {
+    if (error.code === '23505' && hasUUID) {
       // Duplicate UUID, delete the old one and try again
-      const { error } = await client
-        .from(tableName)
-        .delete()
-        .eq("upload_uuid", data.upload_uuid);
-      if (error) { throw error; }
+      const { error } = await client.from(tableName).delete().eq('upload_uuid', data.upload_uuid);
+      if (error) {
+        throw error;
+      }
       return insertData<T>(client, tableName, data, type, hasUUID);
     } else {
       throw error;
     }
   }
 
+  // Update content source meta data with new counts
+  if (data.content_source_id !== undefined) {
+
+    // Get existing meta data
+    const contentSource = await fetchData<ContentSource>(client, 'content_source', [
+      { column: 'id', value: data.content_source_id as number },
+    ]);
+    if (contentSource.length === 0) {
+      throw new Error(`Content source with ID ${data.content_source_id} not found`);
+    }
+    let { meta_data } = contentSource[0];
+    const counts = meta_data?.counts ?? {} as Record<ContentType | AbilityBlockType, number>;
+
+    // Get count of data
+    let countQuery = client
+      .from(tableName)
+      .select(undefined, { count: 'estimated', head: true })
+      .eq('content_source_id', data.content_source_id);
+    if (type) {
+      countQuery = countQuery.eq('type', type);
+    }
+    const { count, error: countError } = await countQuery;
+    if (countError) throw countError;
+
+    // Update count & meta data
+    const sectionName = (type ? type : tableName) as ContentType | AbilityBlockType;
+    counts[sectionName] = count ?? -1;
+
+    meta_data = { ...contentSource[0].meta_data, counts };
+
+    // Update content source with updated meta data
+    const { error: updateError } = await client
+      .from('content_source')
+      .update({ meta_data })
+      .eq('id', data.content_source_id);
+    if (updateError) throw updateError;
+  }
+
   return insertedData[0] as T;
 }
-
 
 export async function updateData(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   id: number,
-  data: Record<string, undefined | string | number | boolean | Record<string, any>>,
+  data: Record<string, undefined | null | string | number | boolean | Record<string, any>>
 ): Promise<'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN'> {
-
   // Trim all string values
   for (let key in data) {
     const value = data[key];
@@ -186,4 +233,3 @@ export async function updateData(
 
   return 'SUCCESS';
 }
-

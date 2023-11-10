@@ -8,7 +8,7 @@ serve(async (req: Request) => {
     let { id, name, content_sources } = body as {
       id?: number;
       name?: string;
-      content_sources: number[];
+      content_sources?: number[];
     };
 
     let results: Trait[] = [];
@@ -23,8 +23,12 @@ serve(async (req: Request) => {
         { column: 'name', value: name, options: { ignoreCase: true } },
         { column: 'content_source_id', value: content_sources },
       ]);
+    } else {
+      results = await fetchData<Trait>(client, 'trait', [
+        { column: 'content_source_id', value: content_sources },
+      ]);
     }
 
-    return id === undefined ? results : results.length > 0 ? results[0] : null;
+    return (id === undefined && name === undefined) ? results : (results.length > 0 ? results[0] : null);
   });
 });

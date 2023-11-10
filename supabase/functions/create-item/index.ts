@@ -1,11 +1,12 @@
 // @ts-ignore
 import { serve } from "std/server";
-import { connect, insertData } from "../_shared/helpers.ts";
+import { connect, insertData, upsertData } from "../_shared/helpers.ts";
 import type { Item } from "../_shared/content";
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
     let {
+      id,
       name,
       price,
       bulk,
@@ -24,7 +25,8 @@ serve(async (req: Request) => {
       version,
     } = body as Item;
 
-    const item = await insertData<Item>(client, 'item', {
+    const { procedure, result } = await upsertData<Item>(client, 'item', {
+      id,
       name,
       price,
       bulk,
@@ -43,6 +45,6 @@ serve(async (req: Request) => {
       version,
     });
 
-    return item;
+    return result;
   });
 });

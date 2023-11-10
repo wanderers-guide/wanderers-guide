@@ -1,18 +1,20 @@
 // @ts-ignore
 import { serve } from "std/server";
 import { connect, insertData, upsertData } from "../_shared/helpers.ts";
-import type { Trait } from "../_shared/content";
+import type { Background } from "../_shared/content";
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id, name, description, meta_data, content_source_id } = body as Trait;
+    let { id, name, rarity, description, operations, content_source_id, version } = body as Background;
 
-    const { procedure, result } = await upsertData<Trait>(client, 'trait', {
+    const { procedure, result } = await upsertData<Background>(client, 'background', {
       id,
       name,
+      rarity,
       description,
-      meta_data,
+      operations,
       content_source_id,
+      version,
     });
 
     return result;

@@ -11,7 +11,7 @@ serve(async (req: Request) => {
     let { data, category, type } = body as { data: string; category: string; type: string };
     if (data.length > MAX_SIZE) return null;
     if (!['png', 'jpeg', 'jpg', 'webp'].includes(type)) return null;
-    if (!['portraits'].includes(category)) return null;
+    if (!['portraits', 'backgrounds'].includes(category)) return null;
 
     const {
       data: { user },
