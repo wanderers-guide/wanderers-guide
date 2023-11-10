@@ -17,7 +17,7 @@ import LoginPage from "@pages/LoginPage.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecoilRoot } from "recoil";
 import { createClient } from "@supabase/supabase-js";
-import AdminPage from "@pages/AdminPage.tsx";
+import AdminPage from "@pages/admin_panel/AdminPage.tsx";
 import './index.css';
 import CharacterBuilderPage from "@pages/character_builder/CharacterBuilderPage.tsx";
 

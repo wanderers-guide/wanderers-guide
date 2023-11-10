@@ -4,6 +4,7 @@ import Turndown from "turndown";
 import _ from "lodash";
 import { makeRequest } from "@requests/request-manager";
 import { PLAYER_CORE_SOURCE_ID } from "@content/content-controller";
+import * as showdown from 'showdown';
 
 export function convertToActionCost(
   actionType: string,
@@ -164,6 +165,12 @@ export function toMarkdown(html: any) {
     hr: "",
   });
   return td.turndown(html) || undefined;
+}
+
+export function toHTML(markdown: any) {
+  if (!isString(markdown)) return undefined;
+  const sd = new showdown.Converter();
+  return sd.makeHtml(markdown) || undefined;
 }
 
 export function toText(html: any) {

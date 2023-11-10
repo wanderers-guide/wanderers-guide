@@ -1,5 +1,5 @@
 import { RichTextEditor } from '@mantine/tiptap';
-import { useEditor } from '@tiptap/react';
+import { JSONContent, useEditor } from '@tiptap/react';
 import Highlight from '@tiptap/extension-highlight';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -11,9 +11,12 @@ import { ContentLink } from './ContentLinkExtension';
 import ContentLinkControl from './ContentLinkControl';
 import { useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
+import { toMarkdown } from '@upload/foundry-utils';
 
 interface RichTextInputProps {
   label?: string;
+  value?: string | JSONContent;
+  onChange?: (text: string, json: JSONContent) => void;
 }
 
 export default function RichTextInput(props: RichTextInputProps) {
@@ -30,7 +33,12 @@ export default function RichTextInput(props: RichTextInputProps) {
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
-    content: '',
+    content: props.value,
+    onUpdate({ editor }) {
+      if (props.onChange) {
+        props.onChange(toMarkdown(editor.getHTML()) ?? '', editor.getJSON());
+      }
+    },
   });
 
   return (

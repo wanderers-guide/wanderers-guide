@@ -1,4 +1,12 @@
-import { Center, Group, Progress, Select, Skeleton, Text, rem } from '@mantine/core';
+import {
+  Center,
+  Group,
+  Progress,
+  Select,
+  Text,
+  Title,
+  rem,
+} from '@mantine/core';
 import { IconUpload, IconPhoto, IconX } from '@tabler/icons-react';
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import BlurBox from '@common/BlurBox';
@@ -6,11 +14,8 @@ import { getUploadStats, resetUploadStats, uploadContentList } from '@upload/con
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
-import { setPageTitle } from '@utils/document-change';
 
-export default function AdminPage() {
-  setPageTitle(`Admin Panel`);
-
+export default function UploadContent() {
   const [contentType, setContentType] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showUploadStats, setShowUploadStats] = useState(false);
@@ -57,7 +62,10 @@ export default function AdminPage() {
     for (const sourceMap of uploadStats.failedUploads.values()) {
       totalErrors = [...sourceMap.values()].reduce((acc, cur) => acc + cur, totalErrors);
     }
-    totalMissing = [...uploadStats.missingSources.values()].reduce((acc, cur) => acc + cur, totalMissing);
+    totalMissing = [...uploadStats.missingSources.values()].reduce(
+      (acc, cur) => acc + cur,
+      totalMissing
+    );
     total = uploadStats.total;
     totalFound = totalUploaded + totalErrors + totalMissing;
   }
@@ -65,24 +73,27 @@ export default function AdminPage() {
   return (
     <BlurBox p='sm'>
       <Center p='sm'>
-        <Select
-          placeholder='Select content type'
-          data={[
-            { value: 'action', label: 'Action' },
-            { value: 'feat', label: 'Feat' },
-            { value: 'class-feature', label: 'Class Feature' },
-            { value: 'spell', label: 'Spell' },
-            { value: 'item', label: 'Item' },
-            { value: 'creature', label: 'Creature' },
-            { value: 'heritage', label: 'Heritage' },
-            { value: 'background', label: 'Background' },
-          ]}
-          value={contentType}
-          onChange={(value) => {
-            setContentType(value);
-            setShowUploadStats(false);
-          }}
-        />
+        <Group>
+          <Title order={3}>Upload Content</Title>
+          <Select
+            placeholder='Select content type'
+            data={[
+              { value: 'action', label: 'Action' },
+              { value: 'feat', label: 'Feat' },
+              { value: 'class-feature', label: 'Class Feature' },
+              { value: 'spell', label: 'Spell' },
+              { value: 'item', label: 'Item' },
+              { value: 'creature', label: 'Creature' },
+              { value: 'heritage', label: 'Heritage' },
+              { value: 'background', label: 'Background' },
+            ]}
+            value={contentType}
+            onChange={(value) => {
+              setContentType(value);
+              setShowUploadStats(false);
+            }}
+          />
+        </Group>
       </Center>
 
       {showUploadStats && totalFound > 0 && (

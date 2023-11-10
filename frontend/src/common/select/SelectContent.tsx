@@ -56,6 +56,7 @@ import {
   getContent,
   getContentStore,
   getEnabledContentSources,
+  getTraits,
 } from '@content/content-controller';
 import { ActionSymbol } from '@common/Actions';
 import * as JsSearch from 'js-search';
@@ -1018,17 +1019,7 @@ export function TraitsDisplay(props: { traitIds: number[]; rarity?: Rarity }) {
       const [_key, {}] = queryKey;
 
       if (props.traitIds.length === 0) return [];
-
-      let traits: Trait[] = [];
-      for (const traitId of props.traitIds ?? []) {
-        // TODO: If this was 1 request, it would be so much faster!
-        // But gotta make sure it caches too
-        const trait = await getContent<Trait>('trait', traitId);
-        if (trait) {
-          traits.push(trait);
-        }
-      }
-      return traits;
+      return await getTraits(props.traitIds);
     },
   });
 

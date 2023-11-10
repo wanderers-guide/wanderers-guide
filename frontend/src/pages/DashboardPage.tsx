@@ -29,8 +29,6 @@ export default function DashboardPage() {
     defineEnabledContentSources([1, 2, 3, 4, 5]);
   }, []);
 
-  const [opened, setOpened] = useState(false);
-
   return (
     <div>
       <h1>Dashboard Page</h1>
@@ -50,17 +48,6 @@ export default function DashboardPage() {
       >
         Select Feat
       </Button>
-
-      <Button onClick={() => setOpened(true)}>Create Feat</Button>
-      <CreateAbilityBlockModal
-        opened={opened}
-        type='feat'
-        onComplete={(feat) => {
-          console.log(feat);
-          setOpened(false);
-        }}
-        onCancel={() => setOpened(false)}
-      />
 
       <OperationSection
         title={'Title TODO'}

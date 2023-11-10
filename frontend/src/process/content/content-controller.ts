@@ -239,7 +239,7 @@ export async function getContentStore<T = Record<string, any>>(
       }
     }
     if (type === 'ability-block') {
-      const abilityBlocks = await findAllAbilityBlocks(options.abilityBlockType);
+      const abilityBlocks = await findAllAbilityBlocks(options?.abilityBlockType);
       if (abilityBlocks) {
         for (const abilityBlock of abilityBlocks) {
           setContent(type, abilityBlock);
@@ -298,6 +298,20 @@ export async function getContentStore<T = Record<string, any>>(
 
 export function resetContentStore() {
   contentStore = emptyContentStore();
+}
+
+
+export async function getTraits(ids?: number[]){
+  let traits: Trait[] = [];
+  for (const traitId of ids ?? []) {
+    // TODO: If this was 1 request, it would be so much faster!
+    // But gotta make sure it caches too
+    const trait = await getContent<Trait>('trait', traitId);
+    if (trait) {
+      traits.push(trait);
+    }
+  }
+  return traits;
 }
 
 

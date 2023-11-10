@@ -21,7 +21,7 @@ import _, { set } from 'lodash';
 import { useState } from 'react';
 import { AbilityBlock, AbilityBlockType, Rarity, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
-import { getContent } from '@content/content-controller';
+import { getContent, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
@@ -29,6 +29,8 @@ import { Operation } from '@typing/operations';
 import ActionsInput from '@common/ActionsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { JSONContent } from '@tiptap/react';
+import { toHTML } from '@upload/foundry-utils';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -45,17 +47,29 @@ export function CreateAbilityBlockModal(props: {
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedAdvanced, { toggle: toggleAdvanced }] = useDisclosure(false);
 
-  const { data, isFetching, refetch } = useQuery({
+  const { data, isFetching } = useQuery({
     queryKey: [`get-ability-block-${props.editId}`],
     queryFn: async () => {
       const abilityBlock = await getContent<AbilityBlock>('ability-block', props.editId!);
-      console.log(abilityBlock);
       if (abilityBlock && abilityBlock.type !== props.type) return null;
+      if (!abilityBlock) return null;
+
+      form.setInitialValues({
+        ...abilityBlock,
+        // @ts-ignore
+        level: abilityBlock.level.toString(),
+      });
+      form.reset();
+      setTraits(await getTraits(abilityBlock.traits));
+      setOperations(abilityBlock.operations ?? []);
+      setMetaData(abilityBlock.meta_data);
+
       return abilityBlock;
     },
     enabled: props.editId !== undefined,
   });
 
+  const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
   const [operations, setOperations] = useState<Operation[]>([]);
   const [metaData, setMetaData] = useState<Record<string, any>>({});
@@ -94,7 +108,10 @@ export function CreateAbilityBlockModal(props: {
   const onSubmit = async (values: typeof form.values) => {
     props.onComplete({
       ...values,
+      level: values.level ? +values.level : undefined,
       traits: traits.map((trait) => trait.id),
+      operations: operations,
+      meta_data: metaData,
     });
     onReset();
   };
@@ -102,6 +119,9 @@ export function CreateAbilityBlockModal(props: {
   const onReset = () => {
     form.reset();
     setTraits([]);
+    setOperations([]);
+    setMetaData({});
+    setDescription(undefined);
   };
 
   return (
@@ -252,9 +272,16 @@ export function CreateAbilityBlockModal(props: {
               </Stack>
             </Collapse>
 
-            {/* <Textarea label='Description' required {...form.getInputProps('description')} /> */}
-
-            <RichTextInput label='Description' />
+            {(description || form.values.description) && (
+              <RichTextInput
+                label='Description'
+                value={description ?? toHTML(form.values.description)}
+                onChange={(text, json) => {
+                  setDescription(json);
+                  form.setFieldValue('description', text);
+                }}
+              />
+            )}
 
             <Textarea
               label='Special'
