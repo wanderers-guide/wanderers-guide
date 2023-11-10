@@ -3,7 +3,7 @@ import { isString } from "lodash";
 import Turndown from "turndown";
 import _ from "lodash";
 import { makeRequest } from "@requests/request-manager";
-import { PLAYER_CORE_SOURCE_ID } from "@content/content-controller";
+import { PLAYER_CORE_SOURCE_ID, getAllContentSources } from "@content/content-controller";
 import * as showdown from 'showdown';
 
 export function convertToActionCost(
@@ -62,17 +62,23 @@ export function convertToSize(value?: string): Size {
 
 
 export async function getTraitIds(traitNames: string[], source: ContentSource) {
+  const sources = await getAllContentSources();
+
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
-    let trait = await findTrait(traitName, [PLAYER_CORE_SOURCE_ID, source.id]);
+    let trait = await findTrait(traitName, sources);
+    console.log(traitName, sources, trait);
     if (!trait) {
       await createTrait(_.startCase(traitName), '', source.id);
-      trait = await findTrait(traitName, [PLAYER_CORE_SOURCE_ID, source.id]);
+      console.log(`Created trait ${traitName}`);
+      trait = await findTrait(traitName, sources);
+      console.log(`Finding Created trait ${trait}`);
     }
     if (trait) {
       traitIds.push(trait.id);
     }
   }
+  console.log(traitIds, traitNames);
   return traitIds;
 }
 

@@ -33,7 +33,7 @@ export default function RichTextInput(props: RichTextInputProps) {
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
-    content: props.value,
+    content: props.value ?? '',
     onUpdate({ editor }) {
       if (props.onChange) {
         props.onChange(toMarkdown(editor.getHTML()) ?? '', editor.getJSON());

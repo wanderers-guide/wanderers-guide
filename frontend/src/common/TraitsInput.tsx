@@ -22,20 +22,27 @@ export default function TraitsInput(props: TraitsInputProps) {
   const traits =
     (data &&
       data
-        .sort((a, b) => a?.name.localeCompare(b?.name))
+        .filter((trait) => trait)
+        .sort((a, b) => a.name.localeCompare(b.name))
         .filter((trait) => !trait.meta_data?.unselectable)
         .filter((trait) =>
           props.includeCreatureTraits ? true : !trait.meta_data?.creature_trait
         )) ??
     [];
 
+  // Remove the added props so they don't get passed to TagsInput 
+  const passedProps = { ...props };
+  delete passedProps.defaultTraits;
+  delete passedProps.onTraitChange;
+  delete passedProps.includeCreatureTraits;
+
   return (
     <>
       {isFetching || !data ? (
-        <TagsInput {...props} readOnly />
+        <TagsInput {...passedProps} readOnly />
       ) : (
         <TagsInput
-          {...props}
+          {...passedProps}
           defaultValue={traits
             .filter((trait) => props.defaultTraits?.includes(trait.id))
             .map((trait) => trait.name)}

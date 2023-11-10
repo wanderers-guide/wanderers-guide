@@ -3,8 +3,7 @@ import { setPageTitle } from '@utils/document-change';
 import UploadContent from './UploadContent';
 import EditContent from './EditContent';
 import { useEffect } from 'react';
-import { defineEnabledContentSources, getContentStore } from '@content/content-controller';
-import { ContentSource } from '@typing/content';
+import { defineEnabledContentSources, getAllContentSources } from '@content/content-controller';
 
 export default function AdminPage() {
   setPageTitle(`Admin Panel`);
@@ -12,8 +11,7 @@ export default function AdminPage() {
   useEffect(() => {
     (async () => {
       // Enable all sources
-      const sources = await getContentStore<ContentSource>('content-source');
-      defineEnabledContentSources([...sources.values()].map((source) => source.id));
+      defineEnabledContentSources(await getAllContentSources());
     })();
   }, []);
 

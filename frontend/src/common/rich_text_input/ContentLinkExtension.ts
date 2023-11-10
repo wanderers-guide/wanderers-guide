@@ -355,12 +355,11 @@ export function clickHandler(options: ClickHandlerOptions, _drawerState: DrawerS
 
         const href = link?.href ?? attrs.href;
         const target = link?.target ?? attrs.target;
-        const rel = link?.rel ?? attrs.rel;
 
         if (link && href) {
           // Content link
           const contentData = getContentDataFromHref(href);
-          if (target === '_self' && rel === 'tag' && contentData) {
+          if (contentData) {
 
             // Deconstruct the drawer state
             const [_drawer, openDrawer] = _drawerState;

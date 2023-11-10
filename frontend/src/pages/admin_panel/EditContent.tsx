@@ -11,6 +11,11 @@ export default function EditContent() {
   const [id, setId] = useState<number | null>(null);
   const [contentType, openContentType] = useState<ContentType | AbilityBlockType | null>(null);
 
+  const handleReset = () => {
+    openContentType(null);
+    setId(null);
+  }
+
   return (
     <>
       <BlurBox p='sm'>
@@ -29,9 +34,10 @@ export default function EditContent() {
                 { value: 'heritage', label: 'Heritage' },
                 { value: 'background', label: 'Background' },
               ]}
-              value={contentType}
+              value=''
+              searchValue=''
               onChange={(value) => {
-                if (!value) return;
+                if (!value) return handleReset();
 
                 // Select content for id
                 const type = isAbilityBlockType(value) ? 'ability-block' : (value as ContentType);
@@ -62,9 +68,9 @@ export default function EditContent() {
           onComplete={(feat) => {
             console.log(feat);
 
-            openContentType(null);
+            handleReset();
           }}
-          onCancel={() => openContentType(null)}
+          onCancel={() => handleReset()}
         />
       )}
     </>

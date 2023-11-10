@@ -79,6 +79,7 @@ function emptyContentStore() {
 /* Get content from memory. If failed to find, fetch it */
 export async function getContent<T = Record<string, any>>(type: ContentType, id: number) {
   if(contentSources.length === 0) throwError('No enabled content sources defined');
+  if(!id) return null;
   const c = contentStore.get(type)!.get(id);
   if(c !== undefined) {
     return c ? (c as T) : null;
@@ -279,7 +280,9 @@ export async function getContentStore<T = Record<string, any>>(
       }
     }
     if (type === 'content-source') {
-      const contentSources = await findAllContentSources();
+      const contentSources = await findAllContentSources({
+        homebrew: false,
+      });
       if (contentSources) {
         for (const contentSource of contentSources) {
           setContent(type, contentSource);
@@ -312,6 +315,11 @@ export async function getTraits(ids?: number[]){
     }
   }
   return traits;
+}
+
+export async function getAllContentSources() {
+  const sources = await getContentStore<ContentSource>('content-source');
+  return [...sources.values()].map((source) => source.id);
 }
 
 
@@ -371,7 +379,6 @@ async function findContentSource(id: number) {
 }
 
 
-
 async function findAllAncestries() {
   return await makeRequest<Ancestry[]>('find-ancestry', {
     content_sources: contentSources,
@@ -413,9 +420,15 @@ async function findAllTraits() {
     content_sources: contentSources,
   });
 }
-async function findAllContentSources() {
+async function findAllContentSources(options?: {
+  group?: string,
+  homebrew?: boolean,
+  published?: boolean,
+}) {
   return await makeRequest<ContentSource[]>('find-content-source', {
-    content_sources: contentSources,
+    group: options?.group,
+    homebrew: options?.homebrew,
+    published: options?.published,
   });
 }
 

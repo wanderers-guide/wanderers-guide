@@ -43,7 +43,7 @@ export default function ContentLinkControl() {
           ?.chain()
           .focus()
           .extendMarkRange('link')
-          .setLink({ href: newUrl, target: '_self', rel: 'tag' })
+          .setLink({ href: newUrl, rel: 'tag' })
           .run();
   };
 
