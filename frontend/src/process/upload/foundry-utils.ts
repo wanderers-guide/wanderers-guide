@@ -111,7 +111,8 @@ export function extractFromDescription(description?: string) {
       description: "",
     };
 
-  const pattern = /<p><strong>(Trigger|Requirements|Area|Craft Requirements)<\/strong>(.*?)<\/p>/gs;
+  const pattern =
+    /<p><strong>(Frequency|Trigger|Requirements|Area|Craft Requirements|Special)<\/strong>(.*?)<\/p>/gs;
 
   const output: Record<string, string> = {};
   let match;

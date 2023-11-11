@@ -1,6 +1,7 @@
 export type RequestType =
   | 'get-sheet-content'
   | 'upload-public-file'
+  | 'open-ai-request'
   | 'find-content-source'
   | 'find-trait'
   | 'create-trait'

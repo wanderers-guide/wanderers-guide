@@ -12,12 +12,18 @@ import {
 import _ from 'lodash';
 import { uploadCreatureHandler } from './creature-import';
 import { throwError } from '@utils/notifications';
-import { upsertAbilityBlock, upsertSpell, upsertItem, upsertCreature, upsertBackground } from '@content/content-creation';
+import {
+  upsertAbilityBlock,
+  upsertSpell,
+  upsertItem,
+  upsertCreature,
+  upsertBackground,
+} from '@content/content-creation';
 import { toText, toMarkdown } from '@content/content-utils';
+import { classifySkillForAction } from '@ai/open-ai-handler';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
-
 
 const DEBUG = false;
 
@@ -143,19 +149,31 @@ async function uploadAction(source: ContentSource, json: Record<string, any>) {
 
   const descValues = extractFromDescription(json.system?.description?.value);
 
+  // Classify the skill for skill actions
+  // - Kinda an overkill to do this just for the actions
+  //   but it's a good test for using AI to curate our data
+  const isSkillAction = (json.system?.traits?.value ?? []).includes('skill');
+  let skill: string | null = null;
+  if (isSkillAction) {
+    skill = await classifySkillForAction(toMarkdown(descValues.description) ?? '');
+    console.log(`Classified skill for action: ${toText(json.name)}, ${skill}`);
+  }
+
   const action = {
     id: -1,
     created_at: '',
     name: toText(json.name) ?? '',
     actions: convertToActionCost(json.system?.actionType?.value, json.system?.actions?.value),
     rarity: convertToRarity(json.system?.traits?.rarity),
-    frequency: toText(json.system?.frequency),
+    frequency: toText(descValues.frequency),
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
     description: toMarkdown(descValues.description) ?? '',
+    special: toMarkdown(descValues.special),
     type: 'action',
     meta_data: {
+      skill: skill ?? undefined,
       foundry: {
         rules: json.system?.rules,
         tags: json.system?.traits?.otherTags,
@@ -175,7 +193,8 @@ async function uploadAction(source: ContentSource, json: Record<string, any>) {
 }
 
 async function uploadFeat(source: ContentSource, json: Record<string, any>) {
-  if (json.type === 'feat' && json.system?.category !== 'classfeature') {} else {
+  if (json.type === 'feat' && json.system?.category !== 'classfeature') {
+  } else {
     if (DEBUG) {
       console.error(`Not a feat, it's a "${json.type}"!`);
     }
@@ -194,11 +213,12 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>) {
     actions: convertToActionCost(json.system?.actionType?.value, json.system?.actions?.value),
     level: json.system?.level?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    frequency: toText(json.system?.frequency),
+    frequency: toText(descValues.frequency),
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
     description: toMarkdown(descValues.description) ?? '',
+    special: toMarkdown(descValues.special),
     prerequisites: prerequisites,
     type: 'feat',
     meta_data: {
@@ -221,7 +241,8 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>) {
 }
 
 async function uploadClassFeature(source: ContentSource, json: Record<string, any>) {
-  if (json.type === 'feat' && json.system?.category === 'classfeature') {} else {
+  if (json.type === 'feat' && json.system?.category === 'classfeature') {
+  } else {
     if (DEBUG) {
       console.error(`Not a class feature, it's a "${json.type}"!`);
     }
@@ -237,11 +258,12 @@ async function uploadClassFeature(source: ContentSource, json: Record<string, an
     actions: convertToActionCost(json.system?.actionType?.value, json.system?.actions?.value),
     level: json.system?.level?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    frequency: toText(json.system?.frequency),
+    frequency: toText(descValues.frequency),
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
     description: toMarkdown(descValues.description) ?? '',
+    special: toMarkdown(descValues.special),
     type: 'class-feature',
     meta_data: {
       foundry: {
@@ -420,7 +442,6 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>) 
   }
 }
 
-
 async function uploadHeritage(source: ContentSource, json: Record<string, any>) {
   if (json.type !== 'heritage') {
     if (DEBUG) {
@@ -441,6 +462,7 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>) 
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
     description: toMarkdown(descValues.description) ?? '',
+    special: toMarkdown(descValues.special) ?? '',
     type: 'heritage',
     meta_data: {
       foundry: {
@@ -455,7 +477,9 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>) 
 
   // Add ancestry trait
   if (json.system?.ancestry?.name) {
-    heritage.traits = heritage.traits.concat(await getTraitIds([json.system.ancestry.name], source));
+    heritage.traits = heritage.traits.concat(
+      await getTraitIds([json.system.ancestry.name], source)
+    );
   }
 
   const createdHeritage = await upsertAbilityBlock(heritage);
@@ -465,7 +489,6 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>) 
   }
   return true;
 }
-
 
 async function uploadBackground(source: ContentSource, json: Record<string, any>) {
   if (json.type !== 'background') {

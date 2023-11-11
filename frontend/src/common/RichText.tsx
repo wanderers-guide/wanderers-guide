@@ -12,9 +12,13 @@ export default function RichText(props: RichTextProps) {
       children={props.children}
       remarkPlugins={[remarkGfm]}
       components={{
-        p(props) {
-          const { children, className } = props;
-          return <Text className={className}>{children}</Text>;
+        p(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Text {...props} className={className}>
+              {children}
+            </Text>
+          );
         },
       }}
     />

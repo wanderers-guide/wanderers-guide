@@ -20,6 +20,7 @@
       "@upload/*": ["src/process/upload/*"],
       "@content/*": ["src/process/content/*"],
       "@css/*": ["src/css/*"],
+      "@ai/*": ["src/ai/*"],
     }
   }
 }

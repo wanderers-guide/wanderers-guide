@@ -180,12 +180,8 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
 
 export async function getEnabledContentSources() {
   if (contentSources.length === 0) throwError('No enabled content sources defined');
-  const sources: ContentSource[] = [];
-  for(const sourceId of contentSources) {
-    const source = await getContent<ContentSource>('content-source', sourceId);
-    if(source) sources.push(source);
-  }
-  return sources;
+  const store = await getContentStore<ContentSource>('content-source');
+  return [...store.values()];
 }
 
 
@@ -208,11 +204,42 @@ export async function getContentStore<T = Record<string, any>>(
     abilityBlockType?: AbilityBlockType,
   }
 ) {
-
-  const tempContentSources = _.cloneDeep(contentSources);
-  if (options?.sourceId !== undefined) {
-    contentSources = [options.sourceId];
+  if(options?.sourceId) {
+    // Easy, just fetch the content from the one source
+    return await getContentStoreSingleSourceId<T>(type, options.sourceId, options);
+  } else {
+    // Fetch the content from each source separately and merge them
+    // - We do this to avoid the 1000 item limit
+    // - Instead of a 1000 item limit total, we have a 1000 item limit per source
+    const finalStore = new Map<number, T>();
+    for(const sourceId of contentSources) {
+      const store = await getContentStoreSingleSourceId<T>(type, sourceId, options);
+      for(const [id, content] of store) {
+        finalStore.set(id, content);
+      }
+    }
+    return finalStore;
   }
+}
+
+/**
+ * Get all the content of a given type for a single source id
+ * - WARN: There's a limit of 1000 items of a given type per source
+ * @param type 
+ * @param options 
+ * @returns 
+ */
+async function getContentStoreSingleSourceId<T = Record<string, any>>(
+  type: ContentType,
+  sourceId: number,
+  options?: {
+    fetch?: boolean;
+    abilityBlockType?: AbilityBlockType;
+  }
+) {
+  // Set content sources to just the one we want
+  const tempContentSources = _.cloneDeep(contentSources);
+  contentSources = [sourceId];
 
   if (options?.fetch || options?.fetch === undefined) {
     if (type === 'ancestry') {
@@ -280,24 +307,30 @@ export async function getContentStore<T = Record<string, any>>(
       }
     }
     if (type === 'content-source') {
-      const contentSources = await findAllContentSources({
+      const _contentSources = await findAllContentSources({
         homebrew: false,
       });
-      if (contentSources) {
-        for (const contentSource of contentSources) {
-          setContent(type, contentSource);
+      if (_contentSources) {
+        for (const _contentSource of _contentSources) {
+          setContent(type, _contentSource);
         }
       }
     }
   }
 
-  if (options?.sourceId !== undefined) {
-    contentSources = tempContentSources;
+  // Reset content sources
+  contentSources = tempContentSources;
+
+  let content = contentStore.get(type)!;
+
+  // Filter by ability block type if we have one
+  if (options?.abilityBlockType) {
+    content = new Map([...content].filter(([_, v]) => v?.type === options.abilityBlockType));
   }
 
-  const content = contentStore.get(type)!;
   return content as Map<number, T>;
 }
+
 
 export function resetContentStore() {
   contentStore = emptyContentStore();
@@ -318,8 +351,10 @@ export async function getTraits(ids?: number[]){
 }
 
 export async function getAllContentSources() {
-  const sources = await getContentStore<ContentSource>('content-source');
-  return [...sources.values()].map((source) => source.id);
+  const sources = await findAllContentSources({
+    homebrew: false,
+  });
+  return [...sources ?? []].map((source) => source.id);
 }
 
 

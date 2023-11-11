@@ -64,6 +64,7 @@ import * as JsSearch from 'js-search';
 import { pluralize } from '@utils/strings';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
+import TraitsDisplay from '@common/TraitsDisplay';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -181,10 +182,7 @@ export function SelectContentModal({
     innerProps.options?.abilityBlockType?.replace('-', ' ') || innerProps.type
   );
 
-  const {
-    data: contentSources,
-    isFetching,
-  } = useQuery({
+  const { data: contentSources, isFetching } = useQuery({
     queryKey: [`enabled-content-sources`, {}],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -398,33 +396,23 @@ function SelectionOptions(props: {
   selectedId?: number;
 }) {
   const { data, isFetching } = useQuery({
-    queryKey: [`select-options-${props.type}`, { sourceId: props.sourceId }],
+    queryKey: [
+      `select-content-options-${props.type}`,
+      { sourceId: props.sourceId, abilityBlockType: props.abilityBlockType },
+    ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { sourceId }] = queryKey;
+      const [_key, { sourceId, abilityBlockType }] = queryKey;
       return await getContentStore(props.type, {
         fetch: true,
         sourceId: sourceId === 'all' ? undefined : sourceId,
-        abilityBlockType: props.abilityBlockType,
+        abilityBlockType: abilityBlockType,
       });
     },
+    refetchOnMount: true,
   });
   let options = data ? [...data.values()].filter((d) => d) : [];
-
-  // Sort by level/rank then name
-  options = options.sort((a, b) => {
-    if (a.level !== undefined && b.level !== undefined) {
-      if (a.level !== b.level) {
-        return a.level - b.level;
-      }
-    } else if (a.rank !== undefined && b.rank !== undefined) {
-      if (a.rank !== b.rank) {
-        return a.rank - b.rank;
-      }
-    }
-    return a.name.localeCompare(b.name);
-  });
 
   // Filter options based on source
   if (props.sourceId !== undefined && props.sourceId !== 'all') {
@@ -439,7 +427,23 @@ function SelectionOptions(props: {
     search.current.addIndex('description');
     search.current.addDocuments(options);
   }, [data]);
-  const filteredOptions = props.searchQuery ? search.current.search(props.searchQuery) : options;
+  let filteredOptions = props.searchQuery
+    ? (search.current.search(props.searchQuery) as Record<string, any>[])
+    : options;
+
+  // Sort by level/rank then name
+  filteredOptions = filteredOptions.sort((a, b) => {
+    if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== b.level) {
+        return a.level - b.level;
+      }
+    } else if (a.rank !== undefined && b.rank !== undefined) {
+      if (a.rank !== b.rank) {
+        return a.rank - b.rank;
+      }
+    }
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <SelectionOptionsInner
@@ -674,7 +678,7 @@ export function FeatSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end'>
         <Box>
-          <TraitsDisplay traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
+          <TraitsDisplay size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -706,8 +710,6 @@ export function ActionSelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  console.log(props.action)
-
   return (
     <Group
       ref={ref}
@@ -731,7 +733,12 @@ export function ActionSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end'>
         <Box>
-          <TraitsDisplay traitIds={props.action.traits ?? []} rarity={props.action.rarity} />
+          <TraitsDisplay
+            size='xs'
+            traitIds={props.action.traits ?? []}
+            rarity={props.action.rarity}
+            skill={props.action.meta_data?.skill}
+          />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -845,7 +852,7 @@ export function ClassSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end'>
         <Box>
-          <TraitsDisplay traitIds={[]} rarity={props.class_.rarity} />
+          <TraitsDisplay size='xs' traitIds={[]} rarity={props.class_.rarity} />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -960,7 +967,7 @@ export function AncestrySelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end'>
         <Box>
-          <TraitsDisplay traitIds={[]} rarity={props.ancestry.rarity} />
+          <TraitsDisplay size='xs' traitIds={[]} rarity={props.ancestry.rarity} />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -1065,7 +1072,7 @@ export function BackgroundSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end'>
         <Box>
-          <TraitsDisplay traitIds={[]} rarity={props.background.rarity} />
+          <TraitsDisplay size='xs' traitIds={[]} rarity={props.background.rarity} />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -1130,7 +1137,7 @@ export function ItemSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end'>
         <Box>
-          <TraitsDisplay traitIds={props.item.traits ?? []} rarity={props.item.rarity} />
+          <TraitsDisplay size='xs' traitIds={props.item.traits ?? []} rarity={props.item.rarity} />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -1150,71 +1157,5 @@ export function ItemSelectionOption(props: {
         Details
       </Button>
     </Group>
-  );
-}
-
-export function TraitsDisplay(props: { traitIds: number[]; rarity?: Rarity }) {
-  const theme = useMantineTheme();
-
-  const { data: traits } = useQuery({
-    queryKey: [`find-traits-${props.traitIds.join('_')}`, {}],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-      // eslint-disable-next-line
-      const [_key, {}] = queryKey;
-
-      if (props.traitIds.length === 0) return [];
-      return await getTraits(props.traitIds);
-    },
-  });
-
-  if (!traits) {
-    return <Loader color='blue' size='xs' type='dots' />;
-  }
-
-  return (
-    <Group gap={3}>
-      {props.rarity && <RarityDisplay rarity={props.rarity} />}
-      {traits.map((trait, index) => (
-        <Badge
-          key={index}
-          variant='dot'
-          size='xs'
-          styles={{
-            root: {
-              // @ts-ignore
-              '--badge-dot-size': trait.meta_data?.important ? undefined : 0,
-              textTransform: 'initial',
-              color: theme.colors.dark[1],
-            },
-          }}
-        >
-          {trait.name}
-        </Badge>
-      ))}
-    </Group>
-  );
-}
-
-export function RarityDisplay(props: { rarity: Rarity }) {
-  if (props.rarity === 'COMMON') return null;
-
-  let color: MantineColor = 'gray';
-  if (props.rarity === 'UNCOMMON') color = 'teal';
-  if (props.rarity === 'RARE') color = 'indigo';
-  if (props.rarity === 'UNIQUE') color = 'violet';
-
-  return (
-    <Badge
-      size='xs'
-      color={color}
-      styles={{
-        root: {
-          textTransform: 'initial',
-        },
-      }}
-    >
-      {_.startCase(props.rarity.toLowerCase())}
-    </Badge>
   );
 }

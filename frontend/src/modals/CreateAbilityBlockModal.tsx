@@ -62,7 +62,7 @@ export function CreateAbilityBlockModal(props: {
       });
       form.reset();
       setTraits(await getTraits(abilityBlock.traits));
-      setMetaData(abilityBlock.meta_data);
+      setMetaData(abilityBlock.meta_data ?? {});
 
       return abilityBlock;
     },

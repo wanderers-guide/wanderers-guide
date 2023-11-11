@@ -1,6 +1,8 @@
 
 export const DEBOUNCE_DELAY = 200; // ms
 
+export const TEXT_INDENT_AMOUNT = 20; // px
+
 export const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
 export const URL_REGEX =

@@ -151,7 +151,10 @@ interface AbilityBlock {
   description: string;
   special?: string;
   type: AbilityBlockType;
-  meta_data: {}; // TODO
+  meta_data?: {
+    skill?: string;
+    foundry?: Record<string, any>;
+  };
   traits?: number[];
   content_source_id: number;
   version?: string;

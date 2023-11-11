@@ -144,6 +144,9 @@ export async function insertData<T = Record<string, any>>(
     }
   }
 
+  // Delete forbidden keys
+  delete data.id;
+
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
     if (error.code === '23505' && hasUUID) {
@@ -160,7 +163,6 @@ export async function insertData<T = Record<string, any>>(
 
   // Update content source meta data with new counts
   if (data.content_source_id !== undefined) {
-
     // Get existing meta data
     const contentSource = await fetchData<ContentSource>(client, 'content_source', [
       { column: 'id', value: data.content_source_id as number },
@@ -169,7 +171,7 @@ export async function insertData<T = Record<string, any>>(
       throw new Error(`Content source with ID ${data.content_source_id} not found`);
     }
     let { meta_data } = contentSource[0];
-    const counts = meta_data?.counts ?? {} as Record<ContentType | AbilityBlockType, number>;
+    const counts = meta_data?.counts ?? ({} as Record<ContentType | AbilityBlockType, number>);
 
     // Get count of data
     let countQuery = client

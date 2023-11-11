@@ -1,5 +1,5 @@
 import { drawerState } from '@atoms/navAtoms';
-import { ActionIcon, Box, Drawer, Group, ScrollArea } from '@mantine/core';
+import { ActionIcon, Box, Divider, Drawer, Group, ScrollArea } from '@mantine/core';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import _ from 'lodash';
@@ -42,32 +42,37 @@ export default function DrawerBase() {
       onClose={handleDrawerClose}
       keepMounted={false}
       title={
-        <Group gap={5} justify='space-between'>
-          <Box style={{ flex: 1 }}>
-            <DrawerTitle />
-          </Box>
-          {!!_drawer?.extra?.history?.length ? (
-            <ActionIcon
-              variant='subtle'
-              color='gray.4'
-              radius='xl'
-              onClick={handleDrawerGoBack}
-              aria-label='Go back to previous drawer'
-            >
-              <IconArrowLeft size='1.3rem' stroke={1.5} />
-            </ActionIcon>
-          ) : (
-            <ActionIcon
-              variant='subtle'
-              color='gray.4'
-              radius='xl'
-              onClick={handleDrawerClose}
-              aria-label='Close drawer'
-            >
-              <IconX size='1.3rem' stroke={1.5} />
-            </ActionIcon>
-          )}
-        </Group>
+        <>
+          <Group gap={12} justify='space-between'>
+            <Box style={{ flex: 1 }}>
+              <DrawerTitle />
+              <Divider />
+            </Box>
+            {!!_drawer?.extra?.history?.length ? (
+              <ActionIcon
+                variant='light'
+                color='gray.4'
+                radius='xl'
+                size='md'
+                onClick={handleDrawerGoBack}
+                aria-label='Go back to previous drawer'
+              >
+                <IconArrowLeft size='1.2rem' stroke={1.5} />
+              </ActionIcon>
+            ) : (
+              <ActionIcon
+                variant='light'
+                color='gray.4'
+                radius='xl'
+                size='md'
+                onClick={handleDrawerClose}
+                aria-label='Close drawer'
+              >
+                <IconX size='1.2rem' stroke={1.5} />
+              </ActionIcon>
+            )}
+          </Group>
+        </>
       }
       withCloseButton={false}
       position='right'
@@ -75,6 +80,9 @@ export default function DrawerBase() {
       styles={{
         title: {
           width: '100%',
+        },
+        header: {
+          paddingBottom: 8,
         },
       }}
     >
