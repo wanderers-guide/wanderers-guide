@@ -15,8 +15,6 @@ export default function DrawerBase() {
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  console.log(_drawer);
-
   const handleDrawerClose = () => {
     openDrawer(null);
   };
@@ -30,7 +28,6 @@ export default function DrawerBase() {
       type: newDrawer.type,
       data: newDrawer.data,
       extra: {
-        addToHistory: false,
         history,
       },
     });

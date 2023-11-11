@@ -24,7 +24,7 @@ export function FeatDrawerTitle(props: { data: { id: number } }) {
   return (
     <>
       {feat && (
-        <Group justify='space-between'>
+        <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
               <Title order={3}>{feat.name}</Title>
@@ -33,7 +33,7 @@ export function FeatDrawerTitle(props: { data: { id: number } }) {
               <ActionSymbol cost={feat.actions} size={'2.1rem'} />
             </Box>
           </Group>
-          {feat.level && <Text>Feat {feat.level}</Text>}
+          {feat.level && <Text style={{ textWrap: 'nowrap' }}>Feat {feat.level}</Text>}
         </Group>
       )}
     </>

@@ -1,5 +1,6 @@
 import { DrawerType } from "@typing/index";
-import { atom, selector } from "recoil";
+import { isDefaultValue } from "@utils/type-fixing";
+import { DefaultValue, atom, selector } from "recoil";
 
 const userIconState = atom({
   key: "user-svg-icon",
@@ -17,7 +18,7 @@ const _internal_drawerState = atom({
   default: null as {
     type: DrawerType;
     data: any;
-    extra?: { addToHistory: boolean; history?: { type: DrawerType; data: any }[] };
+    extra?: { addToHistory?: boolean; history?: { type: DrawerType; data: any }[] };
   } | null,
 });
 
@@ -27,32 +28,40 @@ const drawerState = selector({
     const drawer = get(_internal_drawerState);
     const history = get(_internal_drawerHistoryState);
 
-    if (drawer && drawer.extra?.addToHistory) {
+    if (drawer) {
       return {
         ...drawer,
         extra: {
-          ...drawer.extra,
           history,
         },
-      };
+      } as typeof drawer;
     } else {
-      return drawer;
+      return null;
     }
   },
   set: ({ set, get }, newValue) => {
     const drawer = get(_internal_drawerState);
     const history = get(_internal_drawerHistoryState);
 
-    if (newValue) {
-      if (drawer && drawer.extra?.addToHistory) {
-        set(_internal_drawerHistoryState, [...history, { type: drawer.type, data: drawer.data }]);
-      }
-    } else {
+    // If new value is null, reset everything
+    if(!newValue){
       set(_internal_drawerHistoryState, []);
+      set(_internal_drawerState, null);
+      return;
+    }
+
+    // Add new value to history or replace history
+    if (!isDefaultValue(newValue)) {
+      if (newValue.extra?.addToHistory && drawer) {
+        // Add new value to history
+        set(_internal_drawerHistoryState, [...history, { type: drawer.type, data: drawer.data }]);
+      } else if (newValue.extra?.history) {
+        // Set history to new value's history
+        set(_internal_drawerHistoryState, newValue.extra.history);
+      }
     }
     set(_internal_drawerState, newValue);
   },
 });
-
 
 export { userIconState, drawerState };
