@@ -1,5 +1,5 @@
 import { drawerState } from '@atoms/navAtoms';
-import { ActionIcon, Box, Drawer, Group } from '@mantine/core';
+import { ActionIcon, Box, Drawer, Group, ScrollArea } from '@mantine/core';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { IconArrowLeft, IconX } from '@tabler/icons-react';
 import _ from 'lodash';
@@ -78,7 +78,9 @@ export default function DrawerBase() {
         },
       }}
     >
-      <DrawerContent />
+      <ScrollArea>
+        <DrawerContent />
+      </ScrollArea>
     </Drawer>
   );
 }

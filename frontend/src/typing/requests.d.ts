@@ -24,8 +24,6 @@ export type RequestType =
   | 'find-characters'
   | 'update-character'
 
-  
 export type UpdateResponse = {
-  success: boolean;
-  status: string;
+  status: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN';
 };

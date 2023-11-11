@@ -116,10 +116,17 @@ export function OperationWrapper(props: {
 export function OperationSection(props: {
   title: ReactNode;
   blacklist?: string[];
+  value?: Operation[];
   onChange: (operations: Operation[]) => void;
 }) {
   const [operations, setOperations] = useState<Operation[]>([]);
   const selectRef = useRef<HTMLInputElement>(null);
+
+  console.log(operations);
+
+  useDidUpdate(() => {
+    setOperations(props.value ?? []);
+  }, [props.value]);
 
   useDidUpdate(() => {
     props.onChange(operations);
@@ -158,8 +165,6 @@ export function OperationSection(props: {
               }
 
               const newOp = createDefaultOperation(value as OperationType);
-
-              console.log(newOp, value);
 
               if (newOp) {
                 if (abilBlockType) {

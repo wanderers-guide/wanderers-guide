@@ -7,7 +7,7 @@ serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
     let { id, name, level, details, content_sources } = body as Character;
 
-    const result = await updateData(client, 'character', id, {
+    const status = await updateData(client, 'character', id, {
       name,
       level,
       details,
@@ -15,8 +15,7 @@ serve(async (req: Request) => {
     });
 
     return {
-      success: result === 'SUCCESS',
-      status: result,
+      status: status,
     };
   });
 });

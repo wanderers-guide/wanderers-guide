@@ -1,5 +1,6 @@
 import { ContentSource, Creature } from "@typing/content";
-import { EQUIPMENT_TYPES, convertToActionCost, convertToRarity, convertToSize, getTraitIds, toMarkdown } from "./foundry-utils";
+import { EQUIPMENT_TYPES, convertToActionCost, convertToRarity, convertToSize, getTraitIds } from "./foundry-utils";
+import { toMarkdown } from "@content/content-utils";
 
 
 export async function uploadCreatureHandler(source: ContentSource, importData: Record<string, any>): Promise<Creature> {

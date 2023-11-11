@@ -11,10 +11,11 @@ import { ContentLink } from './ContentLinkExtension';
 import ContentLinkControl from './ContentLinkControl';
 import { useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
-import { toMarkdown } from '@upload/foundry-utils';
+import { toMarkdown } from '@content/content-utils';
 
 interface RichTextInputProps {
   label?: string;
+  required?: boolean;
   value?: string | JSONContent;
   onChange?: (text: string, json: JSONContent) => void;
 }
@@ -45,7 +46,12 @@ export default function RichTextInput(props: RichTextInputProps) {
     <Box>
       {props.label && (
         <Text fz='sm' fw={500}>
-          {props.label}
+          {props.label}{' '}
+          {props.required && (
+            <Text fz='sm' fw={500} c='red' span>
+              *
+            </Text>
+          )}
         </Text>
       )}
       <RichTextEditor

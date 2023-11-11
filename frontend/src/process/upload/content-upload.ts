@@ -5,20 +5,15 @@ import {
   convertToActionCost,
   convertToRarity,
   convertToSize,
-  createAbilityBlock,
-  createBackground,
-  createCreature,
-  createItem,
-  createSpell,
   extractFromDescription,
   findContentSource,
   getTraitIds,
-  toMarkdown,
-  toText,
 } from './foundry-utils';
 import _ from 'lodash';
 import { uploadCreatureHandler } from './creature-import';
 import { throwError } from '@utils/notifications';
+import { upsertAbilityBlock, upsertSpell, upsertItem, upsertCreature, upsertBackground } from '@content/content-creation';
+import { toText, toMarkdown } from '@content/content-utils';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -171,7 +166,7 @@ async function uploadAction(source: ContentSource, json: Record<string, any>) {
     version: '1.0',
   } satisfies AbilityBlock;
 
-  const abilityBlock = await createAbilityBlock(action);
+  const abilityBlock = await upsertAbilityBlock(action);
   if (DEBUG) {
     console.log('Created Ability Block:');
     console.log(abilityBlock);
@@ -217,7 +212,7 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>) {
     version: '1.0',
   } satisfies AbilityBlock;
 
-  const abilityBlock = await createAbilityBlock(action);
+  const abilityBlock = await upsertAbilityBlock(action);
   if (DEBUG) {
     console.log('Created Ability Block:');
     console.log(abilityBlock);
@@ -259,7 +254,7 @@ async function uploadClassFeature(source: ContentSource, json: Record<string, an
     version: '1.0',
   } satisfies AbilityBlock;
 
-  const abilityBlock = await createAbilityBlock(action);
+  const abilityBlock = await upsertAbilityBlock(action);
   if (DEBUG) {
     console.log('Created Ability Block:');
     console.log(abilityBlock);
@@ -317,7 +312,7 @@ async function uploadSpell(source: ContentSource, json: Record<string, any>) {
     version: '1.0',
   } satisfies Spell;
 
-  const createdSpell = await createSpell(spell);
+  const createdSpell = await upsertSpell(spell);
   if (DEBUG) {
     console.log('Created Spell:');
     console.log(createdSpell);
@@ -388,7 +383,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>) {
     version: '1.0',
   } satisfies Item;
 
-  const createdItem = await createItem(item);
+  const createdItem = await upsertItem(item);
   if (DEBUG) {
     console.log('Created Item:');
     console.log(createdItem);
@@ -408,7 +403,7 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>) 
     const creature = await uploadCreatureHandler(source, json);
     console.log(creature);
 
-    const createdCreature = await createCreature(creature);
+    const createdCreature = await upsertCreature(creature);
     if (DEBUG) {
       console.log('Created Creature:');
       console.log(createdCreature);
@@ -463,7 +458,7 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>) 
     heritage.traits = heritage.traits.concat(await getTraitIds([json.system.ancestry.name], source));
   }
 
-  const createdHeritage = await createAbilityBlock(heritage);
+  const createdHeritage = await upsertAbilityBlock(heritage);
   if (DEBUG) {
     console.log('Created Heritage:');
     console.log(createdHeritage);
@@ -493,7 +488,7 @@ async function uploadBackground(source: ContentSource, json: Record<string, any>
     version: '1.0',
   } satisfies Background;
 
-  const createdBackground = await createBackground(background);
+  const createdBackground = await upsertBackground(background);
   if (DEBUG) {
     console.log('Created Background:');
     console.log(createdBackground);

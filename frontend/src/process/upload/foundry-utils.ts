@@ -1,10 +1,7 @@
-import { AbilityBlock, ActionCost, Background, ContentSource, Creature, Item, Rarity, Size, Spell, Trait } from "@typing/content";
-import { isString } from "lodash";
-import Turndown from "turndown";
+import { ActionCost, ContentSource, Rarity, Size, Trait } from "@typing/content";
 import _ from "lodash";
 import { makeRequest } from "@requests/request-manager";
-import { PLAYER_CORE_SOURCE_ID, getAllContentSources } from "@content/content-controller";
-import * as showdown from 'showdown';
+import { getAllContentSources } from "@content/content-controller";
 
 export function convertToActionCost(
   actionType: string,
@@ -67,18 +64,14 @@ export async function getTraitIds(traitNames: string[], source: ContentSource) {
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
     let trait = await findTrait(traitName, sources);
-    console.log(traitName, sources, trait);
     if (!trait) {
       await createTrait(_.startCase(traitName), '', source.id);
-      console.log(`Created trait ${traitName}`);
       trait = await findTrait(traitName, sources);
-      console.log(`Finding Created trait ${trait}`);
     }
     if (trait) {
       traitIds.push(trait.id);
     }
   }
-  console.log(traitIds, traitNames);
   return traitIds;
 }
 
@@ -111,38 +104,6 @@ export async function findContentSource(id?: number, foundry_id?: string) {
   });
 }
 
-export async function createAbilityBlock(abilityBlock: AbilityBlock) {
-  return await makeRequest<AbilityBlock>('create-ability-block', {
-    ...abilityBlock,
-  });
-}
-
-export async function createSpell(spell: Spell) {
-  return await makeRequest<Spell>('create-spell', {
-    ...spell,
-  });
-}
-
-export async function createItem(item: Item) {
-  return await makeRequest<Item>('create-item', {
-    ...item,
-  });
-}
-
-export async function createCreature(creature: Creature) {
-  return await makeRequest<Creature>('create-creature', {
-    ...creature,
-  });
-}
-
-export async function createBackground(background: Background) {
-  return await makeRequest<Background>('create-background', {
-    ...background,
-  });
-}
-
-
-
 
 export function extractFromDescription(description?: string) {
   if (!description)
@@ -163,27 +124,6 @@ export function extractFromDescription(description?: string) {
   output.description = description.replace(pattern, "");
 
   return output;
-}
-
-export function toMarkdown(html: any) {
-  if (!isString(html)) return undefined;
-  const td = new Turndown({
-    hr: "",
-  });
-  return td.turndown(html) || undefined;
-}
-
-export function toHTML(markdown: any) {
-  if (!isString(markdown)) return undefined;
-  const sd = new showdown.Converter();
-  return sd.makeHtml(markdown) || undefined;
-}
-
-export function toText(html: any) {
-  if (!isString(html)) return undefined;
-  let tmp = document.createElement("div");
-  tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || undefined;
 }
 
 export const EQUIPMENT_TYPES = ['equipment', 'weapon', 'armor', 'kit', 'consumable', 'backpack', 'treasure'];

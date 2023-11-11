@@ -16,6 +16,7 @@ import {
   Anchor,
   HoverCard,
   Title,
+  Badge,
 } from '@mantine/core';
 import _, { set } from 'lodash';
 import { useState } from 'react';
@@ -30,7 +31,7 @@ import ActionsInput from '@common/ActionsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { JSONContent } from '@tiptap/react';
-import { toHTML } from '@upload/foundry-utils';
+import { toHTML } from '@content/content-utils';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -61,7 +62,6 @@ export function CreateAbilityBlockModal(props: {
       });
       form.reset();
       setTraits(await getTraits(abilityBlock.traits));
-      setOperations(abilityBlock.operations ?? []);
       setMetaData(abilityBlock.meta_data);
 
       return abilityBlock;
@@ -71,14 +71,13 @@ export function CreateAbilityBlockModal(props: {
 
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
-  const [operations, setOperations] = useState<Operation[]>([]);
   const [metaData, setMetaData] = useState<Record<string, any>>({});
 
   const form = useForm({
     initialValues: {
       id: -1,
       created_at: '',
-      operations: [],
+      operations: [] as Operation[] | undefined,
       name: '',
       actions: null,
       level: undefined as number | undefined,
@@ -110,16 +109,16 @@ export function CreateAbilityBlockModal(props: {
       ...values,
       level: values.level ? +values.level : undefined,
       traits: traits.map((trait) => trait.id),
-      operations: operations,
       meta_data: metaData,
     });
-    onReset();
+    setTimeout(() => {
+      onReset();
+    }, 1000);
   };
 
   const onReset = () => {
     form.reset();
     setTraits([]);
-    setOperations([]);
     setMetaData({});
     setDescription(undefined);
   };
@@ -275,6 +274,7 @@ export function CreateAbilityBlockModal(props: {
             {(description || form.values.description) && (
               <RichTextInput
                 label='Description'
+                required
                 value={description ?? toHTML(form.values.description)}
                 onChange={(text, json) => {
                   setDescription(json);
@@ -294,13 +294,20 @@ export function CreateAbilityBlockModal(props: {
             <Divider
               my='xs'
               label={
-                <Button
-                  variant={openedAdvanced ? 'light' : 'subtle'}
-                  size='compact-sm'
-                  color='gray.6'
-                >
-                  Operations
-                </Button>
+                <Group gap={3} wrap='nowrap'>
+                  <Button
+                    variant={openedAdvanced ? 'light' : 'subtle'}
+                    size='compact-sm'
+                    color='gray.6'
+                  >
+                    Operations
+                  </Button>
+                  {form.values.operations && form.values.operations.length > 0 && (
+                    <Badge variant='light' color='blue' size='xs'>
+                      {form.values.operations.length}
+                    </Badge>
+                  )}
+                </Group>
               }
               labelPosition='left'
               onClick={toggleAdvanced}
@@ -338,7 +345,8 @@ export function CreateAbilityBlockModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  onChange={(operations) => setOperations(operations)}
+                  value={form.values.operations}
+                  onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />
               </Stack>

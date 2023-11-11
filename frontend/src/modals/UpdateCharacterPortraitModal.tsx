@@ -36,8 +36,7 @@ export function UpdateCharacterPortraitModal({
         <Button
           disabled={!isValid}
           onClick={() => {
-            console.log(imageURL);
-            innerProps.updatePortrait(imageURL);
+            innerProps.updatePortrait(imageURL ?? '');
             context.closeModal(id);
           }}
         >
