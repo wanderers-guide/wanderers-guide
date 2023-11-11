@@ -30,6 +30,7 @@ import {
   Background,
   Class,
   ContentType,
+  Item,
   Rarity,
   Trait,
 } from '../../typing/content';
@@ -61,6 +62,8 @@ import {
 import { ActionSymbol } from '@common/Actions';
 import * as JsSearch from 'js-search';
 import { pluralize } from '@utils/strings';
+import { drawerState } from '@atoms/navAtoms';
+import { useRecoilState } from 'recoil';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -141,7 +144,11 @@ export function selectContent<T = Record<string, any>>(
 ) {
   openContextModal({
     modal: 'selectContent',
-    title: <Title order={3}>Select {_.startCase(options?.abilityBlockType?.replace('-', ' ') || type)}</Title>,
+    title: (
+      <Title order={3}>
+        Select {_.startCase(options?.abilityBlockType?.replace('-', ' ') || type)}
+      </Title>
+    ),
     innerProps: {
       type,
       onClick: (option) => onClick(option as T),
@@ -177,7 +184,6 @@ export function SelectContentModal({
   const {
     data: contentSources,
     isFetching,
-    refetch,
   } = useQuery({
     queryKey: [`enabled-content-sources`, {}],
     queryFn: async ({ queryKey }) => {
@@ -287,23 +293,6 @@ export function SelectContentModal({
           </Box>
         )}
       </Transition>
-      {/* {!openedDrawer && (
-        <ActionIcon
-          variant='subtle'
-          size='md'
-          radius='xl'
-          aria-label='Open Content Sources'
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            zIndex: 100,
-          }}
-          onClick={() => setOpenedDrawer(true)}
-        >
-          <IconChevronsRight size='2rem' stroke={1.5} />
-        </ActionIcon>
-      )} */}
       {openedDrawer && (
         <Overlay
           color={theme.colors.dark[7]}
@@ -382,20 +371,20 @@ function ContentSourceOption(props: {
       <Box>
         <Text>{props.name}</Text>
       </Box>
-        <Badge
-          variant='dot'
-          size='xs'
-          styles={{
-            root: {
-              // @ts-ignore
-              '--badge-dot-size': 0,
-              textTransform: 'initial',
-              color: theme.colors.dark[1],
-            },
-          }}
-        >
-          {props.description}
-        </Badge>
+      <Badge
+        variant='dot'
+        size='xs'
+        styles={{
+          root: {
+            // @ts-ignore
+            '--badge-dot-size': 0,
+            textTransform: 'initial',
+            color: theme.colors.dark[1],
+          },
+        }}
+      >
+        {props.description}
+      </Badge>
     </Group>
   );
 }
@@ -425,11 +414,11 @@ function SelectionOptions(props: {
 
   // Sort by level/rank then name
   options = options.sort((a, b) => {
-    if (a.level && b.level) {
+    if (a.level !== undefined && b.level !== undefined) {
       if (a.level !== b.level) {
         return a.level - b.level;
       }
-    } else if (a.rank && b.rank) {
+    } else if (a.rank !== undefined && b.rank !== undefined) {
       if (a.rank !== b.rank) {
         return a.rank - b.rank;
       }
@@ -557,6 +546,19 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
+    } else if (props.abilityBlockType === 'action') {
+      return (
+        <>
+          {props.options.map((action, index) => (
+            <ActionSelectionOption
+              key={index}
+              action={action as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === action.id}
+            />
+          ))}
+        </>
+      );
     }
   }
   if (props.type === 'class') {
@@ -604,6 +606,20 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
+  if (props.type === 'item') {
+    return (
+      <>
+        {props.options.map((item, index) => (
+          <ItemSelectionOption
+            key={index}
+            item={item as Item}
+            onClick={props.onClick}
+            selected={props.selectedId === item.id}
+          />
+        ))}
+      </>
+    );
+  }
 
   console.log(props.options);
   return (
@@ -620,6 +636,7 @@ export function FeatSelectionOption(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
     <Group
@@ -671,6 +688,64 @@ export function FeatSelectionOption(props: {
         }}
         onClick={(e) => {
           e.stopPropagation();
+          openDrawer({ type: 'feat', data: { id: props.feat.id } });
+        }}
+      >
+        Details
+      </Button>
+    </Group>
+  );
+}
+
+export function ActionSelectionOption(props: {
+  action: AbilityBlock;
+  onClick: (action: AbilityBlock) => void;
+  selected?: boolean;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  console.log(props.action)
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.action)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.action.name}</Text>
+        </Box>
+        <Box>
+          <ActionSymbol cost={props.action.actions} />
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end'>
+        <Box>
+          <TraitsDisplay traitIds={props.action.traits ?? []} rarity={props.action.rarity} />
+        </Box>
+        <Box w={50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'action', data: { id: props.action.id } });
         }}
       >
         Details
@@ -687,6 +762,7 @@ export function ClassSelectionOption(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -783,6 +859,7 @@ export function ClassSelectionOption(props: {
         }}
         onClick={(e) => {
           e.stopPropagation();
+          openDrawer({ type: 'class', data: { id: props.class_.id } });
         }}
       >
         Details
@@ -799,6 +876,7 @@ export function AncestrySelectionOption(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -896,6 +974,7 @@ export function AncestrySelectionOption(props: {
         }}
         onClick={(e) => {
           e.stopPropagation();
+          openDrawer({ type: 'ancestry', data: { id: props.ancestry.id } });
         }}
       >
         Details
@@ -912,6 +991,7 @@ export function BackgroundSelectionOption(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -999,6 +1079,72 @@ export function BackgroundSelectionOption(props: {
         }}
         onClick={(e) => {
           e.stopPropagation();
+          openDrawer({ type: 'background', data: { id: props.background.id } });
+        }}
+      >
+        Details
+      </Button>
+    </Group>
+  );
+}
+
+export function ItemSelectionOption(props: {
+  item: Item;
+  onClick: (item: Item) => void;
+  selected?: boolean;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.item)}
+      justify='space-between'
+    >
+      <Text
+        fz={10}
+        c='dimmed'
+        ta='right'
+        w={14}
+        style={{
+          position: 'absolute',
+          top: 15,
+          left: 1,
+        }}
+      >
+        {props.item.level}.
+      </Text>
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.item.name}</Text>
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end'>
+        <Box>
+          <TraitsDisplay traitIds={props.item.traits ?? []} rarity={props.item.rarity} />
+        </Box>
+        <Box w={50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'item', data: { id: props.item.id } });
         }}
       >
         Details
@@ -1008,7 +1154,6 @@ export function BackgroundSelectionOption(props: {
 }
 
 export function TraitsDisplay(props: { traitIds: number[]; rarity?: Rarity }) {
-  
   const theme = useMantineTheme();
 
   const { data: traits } = useQuery({

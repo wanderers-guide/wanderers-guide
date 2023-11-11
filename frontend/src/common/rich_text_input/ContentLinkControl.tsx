@@ -62,8 +62,7 @@ export default function ContentLinkControl() {
       },
       {
         abilityBlockType,
-        groupBySource: false,
-        selectedId: undefined,
+        groupBySource: true,
       }
     );
   }

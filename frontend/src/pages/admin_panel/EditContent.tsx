@@ -51,7 +51,7 @@ export default function EditContent() {
                   },
                   {
                     abilityBlockType,
-                    groupBySource: false,
+                    groupBySource: true,
                   }
                 );
 

@@ -19,7 +19,7 @@ import { toText, toMarkdown } from '@content/content-utils';
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
 
 
-const DEBUG = true;
+const DEBUG = false;
 
 let uploadStats: {
   total: number;
@@ -175,7 +175,7 @@ async function uploadAction(source: ContentSource, json: Record<string, any>) {
 }
 
 async function uploadFeat(source: ContentSource, json: Record<string, any>) {
-  if (json.type !== 'feat') {
+  if (json.type === 'feat' && json.system?.category !== 'classfeature') {} else {
     if (DEBUG) {
       console.error(`Not a feat, it's a "${json.type}"!`);
     }
@@ -221,7 +221,7 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>) {
 }
 
 async function uploadClassFeature(source: ContentSource, json: Record<string, any>) {
-  if (json.type !== 'feat' || json.system?.category !== 'classfeature') {
+  if (json.type === 'feat' && json.system?.category === 'classfeature') {} else {
     if (DEBUG) {
       console.error(`Not a class feature, it's a "${json.type}"!`);
     }
