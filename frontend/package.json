@@ -1,7 +1,7 @@
 {
-  "name": "vite-min-template",
+  "name": "wanderers-guide",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
