@@ -676,9 +676,14 @@ export function FeatSelectionOption(props: {
           <ActionSymbol cost={props.feat.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end'>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.feat.traits ?? []}
+            rarity={props.feat.rarity}
+          />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -731,9 +736,10 @@ export function ActionSelectionOption(props: {
           <ActionSymbol cost={props.action.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end'>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
           <TraitsDisplay
+            justify='flex-end'
             size='xs'
             traitIds={props.action.traits ?? []}
             rarity={props.action.rarity}
@@ -850,9 +856,9 @@ export function ClassSelectionOption(props: {
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end'>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay size='xs' traitIds={[]} rarity={props.class_.rarity} />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -965,9 +971,14 @@ export function AncestrySelectionOption(props: {
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end'>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay size='xs' traitIds={[]} rarity={props.ancestry.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={[]}
+            rarity={props.ancestry.rarity}
+          />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -1070,9 +1081,14 @@ export function BackgroundSelectionOption(props: {
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end'>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay size='xs' traitIds={[]} rarity={props.background.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={[]}
+            rarity={props.background.rarity}
+          />
         </Box>
         <Box w={50}></Box>
       </Group>
@@ -1135,9 +1151,14 @@ export function ItemSelectionOption(props: {
           <Text fz='sm'>{props.item.name}</Text>
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end'>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay size='xs' traitIds={props.item.traits ?? []} rarity={props.item.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.item.traits ?? []}
+            rarity={props.item.rarity}
+          />
         </Box>
         <Box w={50}></Box>
       </Group>

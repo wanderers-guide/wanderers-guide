@@ -4,7 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { getContent } from '@content/content-controller';
-import { Title, Text, Loader, Group, Divider, Stack, Box } from '@mantine/core';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 
@@ -76,66 +76,82 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
     feat.access;
 
   return (
-    <Stack gap={5}>
-      <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
-      {feat.prerequisites && feat.prerequisites.length > 0 && (
-        <IndentedText ta='justify'>
-          <Text fw={600} span>
-            Prerequisites
-          </Text>{' '}
-          {feat.prerequisites.join(', ')}
-        </IndentedText>
+    <Box>
+      {feat.meta_data?.image_url && (
+        <Image
+          style={{
+            float: 'right',
+            maxWidth: 150,
+            height: 'auto',
+          }}
+          ml='sm'
+          radius='md'
+          fit='contain'
+          src={feat.meta_data?.image_url}
+        />
       )}
-      {feat.frequency && (
-        <IndentedText ta='justify'>
-          <Text fw={600} span>
-            Frequency
-          </Text>{' '}
-          {feat.frequency}
-        </IndentedText>
-      )}
-      {feat.trigger && (
-        <IndentedText ta='justify'>
-          <Text fw={600} span>
-            Trigger
-          </Text>{' '}
-          {feat.trigger}
-        </IndentedText>
-      )}
-      {feat.cost && (
-        <IndentedText ta='justify'>
-          <Text fw={600} span>
-            Cost
-          </Text>{' '}
-          {feat.cost}
-        </IndentedText>
-      )}
-      {feat.requirements && (
-        <IndentedText ta='justify'>
-          <Text fw={600} span>
-            Requirements
-          </Text>{' '}
-          {feat.requirements}
-        </IndentedText>
-      )}
-      {feat.access && (
-        <IndentedText ta='justify'>
-          <Text fw={600} span>
-            Access
-          </Text>{' '}
-          {feat.access}
-        </IndentedText>
-      )}
-      {hasTopSection && <Divider />}
-      <RichText ta='justify'>{feat.description}</RichText>
-      {feat.special && (
-        <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-          <Text fw={600} span>
-            Special
-          </Text>{' '}
-          <RichText span>{feat.special}</RichText>
-        </Text>
-      )}
-    </Stack>
+      <Box>
+        {/* Note: Can't use a Stack here as it breaks the floating image */}
+        <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
+        {feat.prerequisites && feat.prerequisites.length > 0 && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Prerequisites
+            </Text>{' '}
+            {feat.prerequisites.join(', ')}
+          </IndentedText>
+        )}
+        {feat.frequency && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Frequency
+            </Text>{' '}
+            {feat.frequency}
+          </IndentedText>
+        )}
+        {feat.trigger && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Trigger
+            </Text>{' '}
+            {feat.trigger}
+          </IndentedText>
+        )}
+        {feat.cost && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Cost
+            </Text>{' '}
+            {feat.cost}
+          </IndentedText>
+        )}
+        {feat.requirements && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Requirements
+            </Text>{' '}
+            {feat.requirements}
+          </IndentedText>
+        )}
+        {feat.access && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Access
+            </Text>{' '}
+            {feat.access}
+          </IndentedText>
+        )}
+        {hasTopSection && <Divider />}
+        <RichText ta='justify'>{feat.description}</RichText>
+        {feat.special && (
+          <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
+            <Text fw={600} span>
+              Special
+            </Text>{' '}
+            <RichText span>{feat.special}</RichText>
+          </Text>
+        )}
+      </Box>
+    </Box>
   );
 }

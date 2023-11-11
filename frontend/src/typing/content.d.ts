@@ -153,6 +153,7 @@ interface AbilityBlock {
   type: AbilityBlockType;
   meta_data?: {
     skill?: string;
+    image_url?: string;
     foundry?: Record<string, any>;
   };
   traits?: number[];

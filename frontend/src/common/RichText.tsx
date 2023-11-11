@@ -5,6 +5,8 @@ import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
 import { useRecoilState } from 'recoil';
+import React from 'react';
+import IndentedText from './IndentedText';
 
 interface RichTextProps extends TextProps {
   children: any;
@@ -21,11 +23,19 @@ export default function RichText(props: RichTextProps) {
         // Override the default html tags with Mantine components
         p(innerProps) {
           const { children, className } = innerProps;
-          return (
-            <Text {...props} className={className}>
-              {children}
-            </Text>
-          );
+          if (shouldBeIndented(children)) {
+            return (
+              <IndentedText {...props} className={className}>
+                {children}
+              </IndentedText>
+            );
+          } else {
+            return (
+              <Text {...props} className={className}>
+                {children}
+              </Text>
+            );
+          }
         },
         span(innerProps) {
           const { children, className } = innerProps;
@@ -74,4 +84,16 @@ export default function RichText(props: RichTextProps) {
       }}
     />
   );
+}
+
+function shouldBeIndented(children: React.ReactNode) {
+  const childrenArray = React.Children.toArray(children);
+  const firstChild = childrenArray.length > 0 ? childrenArray[0] : null;
+
+  if (React.isValidElement(firstChild) && firstChild.type === 'strong') {
+    // @ts-ignore
+    const contents = (firstChild.props?.children ?? '') as string;
+    return ['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents);
+  }
+  return false;
 }

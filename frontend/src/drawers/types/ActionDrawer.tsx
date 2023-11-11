@@ -1,31 +1,161 @@
-import { getContent } from "@content/content-controller";
-import { AbilityBlock } from "@typing/content";
-import { useEffect, useState } from "react";
+import { ActionSymbol } from '@common/Actions';
+import IndentedText from '@common/IndentedText';
+import RichText from '@common/RichText';
+import TraitsDisplay from '@common/TraitsDisplay';
+import { TEXT_INDENT_AMOUNT } from '@constants/data';
+import { getContent } from '@content/content-controller';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
+import { AbilityBlock } from '@typing/content';
 
-export function ActionDrawerTitle({ data }: { data: { id: number } }) {
-  const [feat, setFeat] = useState<AbilityBlock>();
-  useEffect(() => {
-    (async () => {
-      const content = await getContent<AbilityBlock>('ability-block', data.id);
-      if (content) {
-        setFeat(content);
-      }
-    })();
-  }, [data.id]);
+export function ActionDrawerTitle(props: { data: { id: number } }) {
+  const id = props.data.id;
 
-  return <>{`Feat Drawer ${data.id}`}</>;
+  const { data: action } = useQuery({
+    queryKey: [`find-action-${id}`, { id }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { id }] = queryKey;
+      return await getContent<AbilityBlock>('ability-block', id);
+    },
+  });
+
+  return (
+    <>
+      {action && (
+        <Group justify='space-between' wrap='nowrap'>
+          <Group wrap='nowrap' gap={10}>
+            <Box>
+              <Title order={3}>{action.name}</Title>
+            </Box>
+            <Box>
+              <ActionSymbol cost={action.actions} size={'2.1rem'} />
+            </Box>
+          </Group>
+        </Group>
+      )}
+    </>
+  );
 }
 
-export function ActionDrawerContent({data}: {data:{ id: number }}) {
-  const [feat, setFeat] = useState<AbilityBlock>();
-  useEffect(() => {
-    (async () => {
-      const content = await getContent<AbilityBlock>('ability-block', data.id);
-      if (content) {
-        setFeat(content);
-      }
-    })();
-  }, [data.id]);
+export function ActionDrawerContent(props: { data: { id: number } }) {
+  const id = props.data.id;
 
-  return <>{`Feat Drawer ${data.id}`}</>;
+  const { data: action } = useQuery({
+    queryKey: [`find-action-${id}`, { id }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { id }] = queryKey;
+      return await getContent<AbilityBlock>('ability-block', id);
+    },
+  });
+
+  if (!action) {
+    return (
+      <Loader
+        type='bars'
+        style={{
+          position: 'absolute',
+          top: '35%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
+    );
+  }
+
+  const hasTopSection =
+    (action.prerequisites && action.prerequisites.length > 0) ||
+    action.frequency ||
+    action.trigger ||
+    action.cost ||
+    action.requirements ||
+    action.access;
+
+  return (
+    <Box>
+      {action.meta_data?.image_url && (
+        <Image
+          style={{
+            float: 'right',
+            maxWidth: 150,
+            height: 'auto',
+          }}
+          ml='sm'
+          radius='md'
+          fit='contain'
+          src={action.meta_data?.image_url}
+        />
+      )}
+      <Box>
+        {/* Note: Can't use a Stack here as it breaks the floating image */}
+        <TraitsDisplay
+          traitIds={action.traits ?? []}
+          rarity={action.rarity}
+          skill={action.meta_data?.skill}
+          interactable
+        />
+        {action.prerequisites && action.prerequisites.length > 0 && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Prerequisites
+            </Text>{' '}
+            {action.prerequisites.join(', ')}
+          </IndentedText>
+        )}
+        {action.frequency && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Frequency
+            </Text>{' '}
+            {action.frequency}
+          </IndentedText>
+        )}
+        {action.trigger && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Trigger
+            </Text>{' '}
+            {action.trigger}
+          </IndentedText>
+        )}
+        {action.cost && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Cost
+            </Text>{' '}
+            {action.cost}
+          </IndentedText>
+        )}
+        {action.requirements && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Requirements
+            </Text>{' '}
+            {action.requirements}
+          </IndentedText>
+        )}
+        {action.access && (
+          <IndentedText ta='justify'>
+            <Text fw={600} span>
+              Access
+            </Text>{' '}
+            {action.access}
+          </IndentedText>
+        )}
+        {hasTopSection && <Divider />}
+        <RichText ta='justify'>{action.description}</RichText>
+        {action.special && (
+          <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
+            <Text fw={600} span>
+              Special
+            </Text>{' '}
+            <RichText span>{action.special}</RichText>
+          </Text>
+        )}
+      </Box>
+    </Box>
+  );
 }

@@ -17,6 +17,7 @@ import {
   HoverCard,
   Title,
   Badge,
+  ScrollArea,
 } from '@mantine/core';
 import _, { set } from 'lodash';
 import { useState } from 'react';
@@ -32,6 +33,8 @@ import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { JSONContent } from '@tiptap/react';
 import { toHTML } from '@content/content-utils';
+import { isValidImage } from '@utils/images';
+import { EDIT_MODAL_HEIGHT } from '@constants/data';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -72,6 +75,7 @@ export function CreateAbilityBlockModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
   const [metaData, setMetaData] = useState<Record<string, any>>({});
+  const [isValidImageURL, setIsValidImageURL] = useState(true);
 
   const form = useForm({
     initialValues: {
@@ -136,11 +140,16 @@ export function CreateAbilityBlockModal(props: {
           {_.startCase(props.type.replace('-', ' '))}
         </Title>
       }
+      styles={{
+        body: {
+          paddingRight: 2,
+        },
+      }}
       size={openedAdvanced ? 'xl' : 'md'}
       closeOnClickOutside={false}
       closeOnEscape={false}
     >
-      <Box>
+      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14}>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
@@ -240,6 +249,23 @@ export function CreateAbilityBlockModal(props: {
                   maxRows={4}
                   autosize
                   {...form.getInputProps('access')}
+                />
+
+                <Divider mx='lg' label='Advanced' labelPosition='center' />
+
+                <TextInput
+                  defaultValue={metaData.image_url ?? ''}
+                  label='Image URL'
+                  onChange={async (e) => {
+                    setIsValidImageURL(
+                      !e.target?.value ? true : await isValidImage(e.target?.value)
+                    );
+                    setMetaData({
+                      ...metaData,
+                      image_url: e.target?.value,
+                    });
+                  }}
+                  error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
                 <Stack py='xs'>
@@ -366,7 +392,7 @@ export function CreateAbilityBlockModal(props: {
             </Group>
           </Stack>
         </form>
-      </Box>
+      </ScrollArea>
     </Modal>
   );
 }

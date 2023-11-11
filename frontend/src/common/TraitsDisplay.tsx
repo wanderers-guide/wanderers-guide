@@ -21,6 +21,7 @@ export default function TraitsDisplay(props: {
   size?: MantineSize;
   rarity?: Rarity;
   skill?: string;
+  justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
 
@@ -32,7 +33,7 @@ export default function TraitsDisplay(props: {
       const [_key, {}] = queryKey;
 
       if (props.traitIds.length === 0) return [];
-      return await getTraits(props.traitIds);
+      return (await getTraits(props.traitIds)).sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 
@@ -41,7 +42,7 @@ export default function TraitsDisplay(props: {
   }
 
   return (
-    <Group gap={3}>
+    <Group gap={3} justify={props.justify}>
       {props.rarity && (
         <RarityDisplay interactable={props.interactable} size={props.size} rarity={props.rarity} />
       )}
