@@ -2,14 +2,14 @@ import { corsHeaders } from './cors.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { uniqueId } from './upload-utils.ts';
 import _ from 'lodash';
-import type { AbilityBlockType, ContentSource, ContentType } from './content';
+import type { AbilityBlockType, ContentSource, ContentType, JSendResponse } from './content';
 
 export async function connect(
   req: Request,
   executeFn: (
     client: SupabaseClient<any, 'public', any>,
     body: Record<string, any>
-  ) => Promise<Record<string, any> | any[] | null>
+  ) => Promise<JSendResponse>
 ) {
   // This is needed if you're planning to invoke your function from a browser.
   if (req.method === 'OPTIONS') {
@@ -71,7 +71,52 @@ interface SelectFilter {
   };
 }
 
-export async function fetchData<T = Record<string, any>[]>(
+export function convertContentTypeToTableName(type: ContentType): TableName | null {
+  switch (type) {
+    case 'trait':
+      return 'trait';
+    case 'item':
+      return 'item';
+    case 'spell':
+      return 'spell';
+    case 'class':
+      return 'class';
+    case 'ability-block':
+      return 'ability_block';
+    case 'ancestry':
+      return 'ancestry';
+    case 'background':
+      return 'background';
+    case 'language':
+      return 'language';
+    case 'content-source':
+      return 'content_source';
+    default: return null;
+  }
+}
+
+export function upsertResponseWrapper(procedure: 'insert' | 'update', result: any): JSendResponse {
+  if (procedure === 'insert') {
+    return {
+      status: 'success',
+      data: result,
+    };
+  } else {
+    if (result.status === 'SUCCESS') {
+      return {
+        status: 'success',
+        data: true,
+      };
+    } else {
+      return {
+        status: 'error',
+        message: result.status,
+      };
+    }
+  }
+}
+
+export async function fetchData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   filters: SelectFilter[]
@@ -105,13 +150,13 @@ export async function upsertData<T = Record<string, any>>(
   if(data.id && data.id !== -1) {
     const status = await updateData(client, tableName, data.id as number, data);
     return {
-      procedure: 'update',
+      procedure: 'update' as 'update' | 'insert',
       result: { status },
     };
   } else {
     const result = await insertData<T>(client, tableName, data, type, hasUUID);
     return {
-      procedure: 'insert',
+      procedure: 'insert' as 'update' | 'insert',
       result,
     };
   }

@@ -23,13 +23,13 @@ serve(async (req: Request) => {
 
     if(res.ok) {
       return {
-        status: 'SUCCESS',
-        content: await res.text(),
+        status: 'success',
+        data: await res.text(),
       };
     } else {
       return {
-        status: 'ERROR_UNKNOWN',
-        content: 'Too many requests, please try again later.',
+        status: 'error',
+        message: 'Too many requests, please try again later.',
       };
     }
   });

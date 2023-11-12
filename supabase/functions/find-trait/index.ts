@@ -29,6 +29,10 @@ serve(async (req: Request) => {
       ]);
     }
 
-    return (id === undefined && name === undefined) ? results : (results.length > 0 ? results[0] : null);
+    const data = (id === undefined && name === undefined) ? results : (results.length > 0 ? results[0] : null);
+    return {
+      status: 'success',
+      data,
+    }
   });
 });

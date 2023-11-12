@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from "std/server";
-import { connect, insertData, upsertData } from "../_shared/helpers.ts";
+import { connect, insertData, upsertData, upsertResponseWrapper } from "../_shared/helpers.ts";
 import type { AbilityBlock, Trait } from "../_shared/content";
 
 serve(async (req: Request) => {
@@ -54,6 +54,6 @@ serve(async (req: Request) => {
       type
     );
 
-    return result;
+    return upsertResponseWrapper(procedure, result);
   });
 });

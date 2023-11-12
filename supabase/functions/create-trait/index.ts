@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from "std/server";
-import { connect, insertData, upsertData } from "../_shared/helpers.ts";
+import { connect, insertData, upsertResponseWrapper, upsertData } from '../_shared/helpers.ts';
 import type { Trait } from "../_shared/content";
 
 serve(async (req: Request) => {
@@ -15,6 +15,6 @@ serve(async (req: Request) => {
       content_source_id,
     });
 
-    return result;
+    return upsertResponseWrapper(procedure, result);
   });
 });

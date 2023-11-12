@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from "std/server";
-import { connect, insertData, upsertData } from "../_shared/helpers.ts";
+import { connect, insertData, upsertData, upsertResponseWrapper } from "../_shared/helpers.ts";
 import type { Background } from "../_shared/content";
 
 serve(async (req: Request) => {
@@ -17,6 +17,6 @@ serve(async (req: Request) => {
       version,
     });
 
-    return result;
+    return upsertResponseWrapper(procedure, result);
   });
 });

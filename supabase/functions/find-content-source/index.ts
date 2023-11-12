@@ -1,7 +1,7 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect, fetchData } from "../_shared/helpers.ts";
-import type { ContentSource } from "../_shared/content";
+import { serve } from 'std/server';
+import { connect, fetchData } from '../_shared/helpers.ts';
+import type { ContentSource } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -20,15 +20,20 @@ serve(async (req: Request) => {
       { column: 'is_published', value: published },
     ]);
 
-    // Filter out homebrew content 
+    // Filter out homebrew content
     if (homebrew === undefined || homebrew === false) {
       results = results.filter((result) => result.user_id === null);
     }
 
-    return id === undefined && foundry_id === undefined
-      ? results
-      : results.length > 0
-      ? results[0]
-      : null;
+    const data =
+      id === undefined && foundry_id === undefined
+        ? results
+        : results.length > 0
+        ? results[0]
+        : null;
+    return {
+      status: 'success',
+      data,
+    };
   });
 });

@@ -13,7 +13,10 @@ serve(async (req: Request) => {
       { column: 'id', value: ids },
     ]);
     if (characters.length === 0) {
-      return null;
+      return {
+        status: 'success',
+        data: [],
+      };
     }
 
     // TODO: Get all normal content sources and then check what homebrew this user has subscribed to
@@ -24,9 +27,13 @@ serve(async (req: Request) => {
       { column: 'user_id', value: undefined },
     ]);
 
-    return {
+    const data = {
       characters,
       books: book_contentSources,
+    };
+    return {
+      status: 'success',
+      data,
     };
   });
 });

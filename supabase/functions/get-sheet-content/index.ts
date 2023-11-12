@@ -10,6 +10,9 @@ serve(async (req: Request) => {
       { column: "id", value: character_id },
     ]);
 
-    return characters;
+    return {
+      status: "success",
+      data: characters[0],
+    };
   });
 });

@@ -15,6 +15,10 @@ serve(async (req: Request) => {
       { column: 'content_source_id', value: content_sources },
     ]);
 
-    return id === undefined ? results : results.length > 0 ? results[0] : null;
+    const data = id === undefined ? results : results.length > 0 ? results[0] : null;
+    return {
+      status: 'success',
+      data,
+    };
   });
 });

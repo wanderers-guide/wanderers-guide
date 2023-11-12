@@ -14,8 +14,16 @@ serve(async (req: Request) => {
       content_sources,
     });
 
-    return {
-      status: status,
-    };
+    if (status === 'SUCCESS') {
+      return {
+        status: 'success',
+        data: true,
+      };
+    } else {
+      return {
+        status: 'error',
+        message: status,
+      };
+    }
   });
 });

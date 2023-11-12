@@ -25,6 +25,23 @@ type ContentType =
   | 'language'
   | 'content-source';
 
+
+type JSendResponse = JSendResponseSuccess | JSendResponseFail | JSendResponseError;
+interface JSendResponseSuccess {
+  status: 'success';
+  data: NonNullable<any>;
+}
+interface JSendResponseFail {
+  status: 'fail';
+  data: NonNullable<any>;
+}
+interface JSendResponseError {
+  status: 'error';
+  message: string;
+  data?: NonNullable<any>;
+  code?: number;
+}
+
 interface Trait {
   id: number;
   created_at: string;
