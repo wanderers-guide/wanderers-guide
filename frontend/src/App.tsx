@@ -1,6 +1,6 @@
 import { Anchor, BackgroundImage, MantineProvider, Text, createTheme } from '@mantine/core';
 import Layout from './nav/Layout';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { useEffect, useState } from 'react';
 import { supabase } from './main';
@@ -19,6 +19,10 @@ import tinycolor from 'tinycolor2';
 import { usePrevious } from '@mantine/hooks';
 import { GUIDE_BLUE } from '@constants/data';
 import DrawerBase from '@drawers/DrawerBase';
+import { removeQueryParam } from '@utils/document-change';
+import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
+import { convertContentLink } from '@drawers/drawer-utils';
+import { drawerState } from '@atoms/navAtoms';
 
 const modals = {
   selectContent: SelectContentModal,
@@ -52,6 +56,9 @@ function getShadesFromColor(color: string) {
 }
 
 export default function App() {
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
   const [session, setSession] = useRecoilState(sessionState);
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -103,6 +110,28 @@ export default function App() {
     );
   }, [activeCharacer]);
 
+  // Handle query params
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    (async () => {
+
+      // If we have the `open=link_feat_3435` query param, open that content link
+      const openValue = searchParams.get('open');
+      if (openValue) {
+        const contentData = getContentDataFromHref(openValue);
+        const drawerData = contentData ? convertContentLink(contentData) : null;
+        if (drawerData) {
+          setTimeout(() => {
+            openDrawer(drawerData);
+          }, 500);
+        }
+        removeQueryParam('open');
+      }
+      
+    })();
+  }, [location]);
+
   return (
     <MantineProvider theme={theme} defaultColorScheme='dark'>
       <ModalsProvider modals={modals}>
@@ -129,7 +158,7 @@ export default function App() {
           </Anchor>
         )}
         <SearchSpotlight />
-        <Notifications position='top-right' />
+        <Notifications position='top-right' zIndex={9400} />
         <DrawerBase />
         <Layout>
           {/* Outlet is where react-router will render child routes */}

@@ -7,8 +7,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { sessionState } from "@atoms/supabaseAtoms";
 import { useRecoilValue } from "recoil";
 import { useEffect } from "react";
+import { setPageTitle } from "@utils/document-change";
 
 export default function LoginPage() {
+  setPageTitle('Login');
 
   const theme = useMantineTheme();
   const navigate = useNavigate();

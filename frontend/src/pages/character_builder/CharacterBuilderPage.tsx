@@ -140,7 +140,7 @@ export default function CharacterBuilderPage() {
         id: characterId,
         ...data,
       });
-      return response ? response.success : false;
+      return response ? response.status === 'SUCCESS' : false;
     },
     {
       onSuccess: () => {

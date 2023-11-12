@@ -1,6 +1,6 @@
 import { SITE_NAME } from "@constants/data";
 
-export function setPageTitle(title: string) {
+export function setPageTitle(title?: string) {
   if (!title) {
     document.title = SITE_NAME;
     return;

@@ -1,11 +1,17 @@
-import { runOperations } from "@operations/operation-runner";
-import { useEffect } from "react";
+import { defineEnabledContentSources, getAllContentSources } from '@content/content-controller';
+import { runOperations } from '@operations/operation-runner';
+import { setPageTitle } from '@utils/document-change';
+import { useEffect } from 'react';
 
 export default function HomePage() {
+  setPageTitle();
 
   useEffect(() => {
-    runOperations();
-  }, [])
+    (async () => {
+      // Enable all sources
+      defineEnabledContentSources(await getAllContentSources());
+    })();
+  }, []);
 
   return (
     <div>

@@ -1,8 +1,11 @@
 
 import { Title, Text, Button, Container, Group } from "@mantine/core";
 import classes from '@css/ErrorPage.module.css';
+import { setPageTitle } from "@utils/document-change";
 
 export function ErrorPage() {
+  setPageTitle(`Error 500`);
+
   return (
     <div className={classes.root}>
       <Container>

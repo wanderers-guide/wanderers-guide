@@ -2,6 +2,7 @@
   display: flex;
   align-items: center;
   padding: var(--mantine-spacing-xs) var(--mantine-spacing-md);
+  padding-right: 3px;
 }
 
 .track {

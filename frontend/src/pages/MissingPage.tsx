@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function MissingPage() {
   setPageTitle(`Error 404`);
+  
   const theme = useMantineTheme();
   const navigate = useNavigate();
 

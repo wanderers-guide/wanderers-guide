@@ -36,7 +36,7 @@ export function SelectImageModal({
       key={index}
       shadow='md'
       openDelay={1000}
-      position='top'
+      position='bottom'
       disabled={!option.name}
       withinPortal
     >
@@ -90,7 +90,7 @@ export function SelectImageModal({
             accept='image/png,image/jpeg,image/jpg,image/webp'
           >
             {(subProps) => (
-              <HoverCard shadow='md' openDelay={500} position='top' withinPortal>
+              <HoverCard shadow='md' openDelay={500} position='bottom' withinPortal>
                 <HoverCard.Target>
                   <UnstyledButton {...subProps} className={classes.item}>
                     <Avatar size={50} radius={'xl'}>
