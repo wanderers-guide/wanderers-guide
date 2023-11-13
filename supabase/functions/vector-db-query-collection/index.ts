@@ -48,7 +48,7 @@ serve(async (req: Request) => {
     for(let i = 0; i < results.ids.length; i++) {
       for(let c = 0; c < results.ids[i].length; c++) {
         const metadata = results.metadatas[i][c];
-        const distance = results.distances![i][c];
+        const distance = results.distances[i][c];
 
         if (metadata && distance <= (maxDistance ?? 1.0)) {
           formattedResults.push({

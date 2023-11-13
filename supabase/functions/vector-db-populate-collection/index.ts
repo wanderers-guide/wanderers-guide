@@ -30,8 +30,6 @@ serve(async (req: Request) => {
         message: 'No results found',
       };
 
-    console.log(results);
-
     const res = await fetch('https://vector-db-client.onrender.com/api/v1/add', {
       method: 'POST',
       headers: {
