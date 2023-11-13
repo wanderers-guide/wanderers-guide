@@ -11,9 +11,10 @@ import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import { getContent } from '@content/content-controller';
-import { isAbilityBlockType } from '@variables/variable-utils';
+import { convertToContentType } from '@variables/variable-utils';
 import _ from 'lodash';
 import { buildHrefFromContentData, getContentDataFromHref } from './ContentLinkExtension';
+import { toLabel } from '@utils/strings';
 
 export default function ContentLinkControl() {
   const { editor } = useRichTextEditorContext();
@@ -73,10 +74,7 @@ export default function ContentLinkControl() {
       const contentData = getContentDataFromHref(url);
       if (!contentData) return;
 
-      const type = (
-        isAbilityBlockType(contentData.type) ? 'ability-block' : contentData.type
-      ) satisfies ContentType;
-
+      const type = convertToContentType(contentData.type);
       const content = await getContent(type, contentData.id);
       if (content) {
         setContent(content);
@@ -84,9 +82,8 @@ export default function ContentLinkControl() {
     })();
   }, [url]);
 
-  const selectedContentType = _.startCase(
-    getContentDataFromHref(url)?.type?.replace('-', ' ') ?? ''
-  );
+  const selectedContentType = toLabel(getContentDataFromHref(url)?.type);
+
   const selectedContentName = content?.name ?? '';
 
   return (

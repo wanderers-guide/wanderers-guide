@@ -4,7 +4,8 @@ import {
   FunctionsFetchError,
 } from "@supabase/supabase-js";
 import { supabase } from "../main";
-import { RequestType } from "@typing/requests";
+import { JSendResponse, RequestType } from "@typing/requests";
+import { displayError, throwError } from "@utils/notifications";
 
 export async function makeRequest<T=Record<string, any>>(type: RequestType, body: Record<string, any>) {
   const { data, error } = await supabase.functions.invoke(type, { body });
@@ -18,5 +19,16 @@ export async function makeRequest<T=Record<string, any>>(type: RequestType, body
   } else if (error) {
     console.error("Request Unknown error:", error);
   }
-  return data ? data as T : null;
+  if(!data) { return null; }
+
+  const response = data as JSendResponse;
+  if(response.status === "error") {
+    throwError(response.message);
+    return null;
+  } else if (response.status === 'fail') {
+    displayError('Failed to make request');
+    return null;
+  } else {
+    return response.data as T;
+  }
 }

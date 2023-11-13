@@ -57,6 +57,11 @@ export default async function displayNotification(
 
 
 export function throwError(message: string){
+  displayError(message);
+  throw new Error(message);
+}
+
+export function displayError(message: string) {
   const id = message;
   hideNotification(id);
   showNotification({
@@ -67,5 +72,4 @@ export function throwError(message: string){
     color: 'red',
     icon: <IconX />,
   });
-  throw new Error(message);
 }

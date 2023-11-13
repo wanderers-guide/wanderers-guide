@@ -3,7 +3,6 @@
     "std/server": "https://deno.land/std@0.177.0/http/server.ts",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.7.1",
     "lodash": "https://esm.sh/lodash@4.17.21",
-    "base64-arraybuffer": "https://esm.sh/base64-arraybuffer@1.0.2",
-    "chromadb": "https://esm.sh/chromadb@1.6.1"
+    "base64-arraybuffer": "https://esm.sh/base64-arraybuffer@1.0.2"
   }
 }

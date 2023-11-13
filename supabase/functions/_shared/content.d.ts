@@ -21,6 +21,7 @@ type ContentType =
   | 'class'
   | 'ability-block'
   | 'ancestry'
+  | 'creature'
   | 'background'
   | 'language'
   | 'content-source';

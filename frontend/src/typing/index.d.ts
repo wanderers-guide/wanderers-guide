@@ -1,4 +1,3 @@
-
 import type { ContentType, AbilityBlockType } from './content';
 
 export type ImageOption = {
@@ -8,7 +7,9 @@ export type ImageOption = {
   source_url?: string;
 };
 
-export type DrawerType =
-  | ContentType
-  | AbilityBlockType
-  | 'character';
+export type DrawerType = ContentType | AbilityBlockType | 'character';
+
+export type UploadResult = {
+  success: boolean;
+  id?: number;
+};

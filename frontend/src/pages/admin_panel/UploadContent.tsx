@@ -14,9 +14,11 @@ import { getUploadStats, resetUploadStats, uploadContentList } from '@upload/con
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
+import { AbilityBlockType, ContentType } from '@typing/content';
+import { convertToContentType } from '@variables/variable-utils';
 
 export default function UploadContent() {
-  const [contentType, setContentType] = useState<string | null>(null);
+  const [contentType, setContentType] = useState<ContentType | AbilityBlockType | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showUploadStats, setShowUploadStats] = useState(false);
 
@@ -31,7 +33,7 @@ export default function UploadContent() {
       setUploading(false);
       showNotification({
         title: 'Upload Complete',
-        message: 'Files have been uploaded',
+        message: 'Files have been uploaded.',
         autoClose: 3000,
       });
     }, 1000);
@@ -77,19 +79,21 @@ export default function UploadContent() {
           <Title order={3}>Upload Content</Title>
           <Select
             placeholder='Select content type'
-            data={[
-              { value: 'action', label: 'Action' },
-              { value: 'feat', label: 'Feat' },
-              { value: 'class-feature', label: 'Class Feature' },
-              { value: 'spell', label: 'Spell' },
-              { value: 'item', label: 'Item' },
-              { value: 'creature', label: 'Creature' },
-              { value: 'heritage', label: 'Heritage' },
-              { value: 'background', label: 'Background' },
-            ]}
+            data={
+              [
+                { value: 'action', label: 'Action' },
+                { value: 'feat', label: 'Feat' },
+                { value: 'class-feature', label: 'Class Feature' },
+                { value: 'spell', label: 'Spell' },
+                { value: 'item', label: 'Item' },
+                { value: 'creature', label: 'Creature' },
+                { value: 'heritage', label: 'Heritage' },
+                { value: 'background', label: 'Background' },
+              ] satisfies { value: ContentType | AbilityBlockType; label: string }[]
+            }
             value={contentType}
             onChange={(value) => {
-              setContentType(value);
+              setContentType(value as ContentType | AbilityBlockType);
               setShowUploadStats(false);
             }}
           />

@@ -24,7 +24,23 @@ export type RequestType =
   | 'create-character'
   | 'find-characters'
   | 'update-character'
+  | 'vector-db-populate-collection'
+  | 'vector-db-query-collection'
 
-export type UpdateResponse = {
-  status: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN';
-};
+
+export type JSendResponse = JSendResponseSuccess | JSendResponseFail | JSendResponseError;
+interface JSendResponseSuccess {
+  status: 'success';
+  data: NonNullable<any>;
+}
+interface JSendResponseFail {
+  status: 'fail';
+  data: NonNullable<any>;
+}
+interface JSendResponseError {
+  status: 'error';
+  message: string;
+  data?: NonNullable<any>;
+  code?: number;
+}
+

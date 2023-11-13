@@ -57,13 +57,14 @@ import { makeRequest } from '@requests/request-manager';
 import { useLoaderData } from 'react-router-dom';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
-import { UpdateResponse } from '@typing/requests';
 import CharBuilderHome from './CharBuilderHome';
 import CharBuilderCreation from './CharBuilderCreation';
 import { defineEnabledContentSources } from '@content/content-controller';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { setPageTitle } from '@utils/document-change';
+import { isPlayable } from '@utils/character';
+import { JSendResponse } from '@typing/requests';
 
 export default function CharacterBuilderPage() {
   setPageTitle(`Builder`);
@@ -81,10 +82,6 @@ export default function CharacterBuilderPage() {
       return;
     }
     setActive(nextStep);
-  };
-
-  const canGoToSheet = () => {
-    return true;
   };
 
   const stepIconStyle = { width: rem(18), height: rem(18) };
@@ -136,11 +133,12 @@ export default function CharacterBuilderPage() {
   // Update character stats
   const { mutate: mutateCharacter } = useMutation(
     async (data: { name?: string; level?: number; details?: any; content_sources?: any }) => {
-      const response = await makeRequest<UpdateResponse>('update-character', {
+      const response = await makeRequest<JSendResponse>('update-character', {
         id: characterId,
         ...data,
       });
-      return response ? response.status === 'SUCCESS' : false;
+      console.log(response);
+      return response ? response.status === 'success' : false;
     },
     {
       onSuccess: () => {
@@ -209,10 +207,7 @@ export default function CharacterBuilderPage() {
               >
                 <ScrollArea h={pageHeight}>
                   {character && charDetails ? (
-                    <CharBuilderHome
-                      pageHeight={pageHeight}
-                      books={charDetails.books}
-                    />
+                    <CharBuilderHome pageHeight={pageHeight} books={charDetails.books} />
                   ) : (
                     <LoadingOverlay
                       visible={isFetching}
@@ -231,10 +226,7 @@ export default function CharacterBuilderPage() {
               >
                 <ScrollArea h={pageHeight}>
                   {character && charDetails ? (
-                    <CharBuilderCreation
-                      pageHeight={pageHeight}
-                      books={charDetails.books}
-                    />
+                    <CharBuilderCreation pageHeight={pageHeight} books={charDetails.books} />
                   ) : (
                     <LoadingOverlay
                       visible={isFetching}
@@ -247,7 +239,7 @@ export default function CharacterBuilderPage() {
               </Stepper.Step>
               <Stepper.Step
                 label='Sheet'
-                allowStepSelect={canGoToSheet()}
+                allowStepSelect={isPlayable(character)}
                 icon={<IconUser style={stepIconStyle} />}
                 completedIcon={<IconUser style={stepIconStyle} />}
               >

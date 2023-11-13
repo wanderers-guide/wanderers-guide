@@ -6,29 +6,25 @@ import type { Character, ContentSource } from '../_shared/content';
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
     let { ids } = body as {
-      ids: number[];
+      ids?: number[];
     };
+
+    const { data: { user } } = await client.auth.getUser();
 
     const characters = await fetchData<Character>(client, 'character', [
       { column: 'id', value: ids },
+      { column: 'user_id', value: user?.id }
     ]);
-    if (characters.length === 0) {
-      return {
-        status: 'success',
-        data: [],
-      };
-    }
 
     // TODO: Get all normal content sources and then check what homebrew this user has subscribed to
     //       and fetch the content sources for that.
-    const userId = characters[0].user_id;
 
     const book_contentSources = await fetchData<ContentSource>(client, 'content_source', [
       { column: 'user_id', value: undefined },
     ]);
 
     const data = {
-      characters,
+      characters: characters,
       books: book_contentSources,
     };
     return {

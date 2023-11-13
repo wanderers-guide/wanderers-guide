@@ -63,7 +63,16 @@ export const CharacterInfo = React.forwardRef((props: {
                 <Group wrap='nowrap' gap={10} mt={3}>
                   <IconTree stroke={1.5} size='1rem' className={classes.icon} />
                   <Text fz='xs' c='dimmed'>
-                    {props.character?.details?.ancestry?.name ?? 'Missing Ancestry'}
+                    {props.character?.details?.ancestry?.name ? (
+                      <>
+                        {props.character?.details?.heritage?.name ?? ''}{' '}
+                        {props.character.details.ancestry.name}
+                      </>
+                    ) : (
+                      <>
+                        Missing Ancestry
+                      </>
+                    )}
                   </Text>
                 </Group>
               )}

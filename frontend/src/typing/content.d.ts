@@ -19,6 +19,7 @@ type ContentType =
   | "spell"
   | "class"
   | "ability-block"
+  | "creature"
   | "ancestry"
   | "background"
   | "language"
@@ -184,6 +185,7 @@ interface Character {
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;
+    heritage?: AbilityBlock;
   };
   roll_history?: Record<string, any>; // TODO
   custom_operations?: Operation[];

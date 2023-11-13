@@ -1,5 +1,5 @@
 import { FileWithPath } from '@mantine/dropzone';
-import { AbilityBlock, Background, ContentSource, Item, Spell } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, Background, ContentSource, ContentType, Item, Spell } from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -21,6 +21,11 @@ import {
 } from '@content/content-creation';
 import { toText, toMarkdown } from '@content/content-utils';
 import { classifySkillForAction } from '@ai/open-ai-handler';
+import { UploadResult } from '@typing/index';
+import { populateContent } from '@ai/vector-db/vector-manager';
+import { showNotification } from '@mantine/notifications';
+import { pluralize, toLabel } from '@utils/strings';
+import { convertToContentType } from '@variables/variable-utils';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -48,14 +53,26 @@ export function resetUploadStats() {
   uploadStats = emptyUploadStats();
 }
 
-export async function uploadContentList(type: string, files: FileWithPath[]) {
+export async function uploadContentList(type: ContentType | AbilityBlockType, files: FileWithPath[]) {
   resetUploadStats();
 
   uploadStats.total = files.length;
 
+  const addedIds = new Set<number>();
   for (let file of files) {
-    await uploadContent(type, file);
+    const result = await uploadContent(type, file);
+    if (result.success && result.id) {
+      addedIds.add(result.id);
+    }
   }
+
+  // Generate embeddings for the added content
+  const result = await populateContent(convertToContentType(type), [...addedIds]);
+  showNotification({
+    title: `Successfully Generated Embeddings`,
+    message: `Generated ${result.total} embeddings for ${pluralize(toLabel(type))}.`,
+    autoClose: 10000,
+  });
 
   console.log('-------- UPLOAD STATS --------');
   console.group('Successful Uploads:');
@@ -79,7 +96,7 @@ export async function uploadContentList(type: string, files: FileWithPath[]) {
   console.groupEnd();
 }
 
-async function uploadContent(type: string, file: FileWithPath) {
+async function uploadContent(type: string, file: FileWithPath): Promise<UploadResult> {
   const jsonUrl = URL.createObjectURL(file);
 
   const res = await fetch(jsonUrl);
@@ -90,29 +107,36 @@ async function uploadContent(type: string, file: FileWithPath) {
   if (!source) {
     // Increase missing source count
     uploadStats.missingSources.set(foundryId, (uploadStats.missingSources.get(foundryId) ?? 0) + 1);
-    return false;
+    return {
+      success: false,
+    };
   }
 
-  let success = false;
+  let result;
   if (type === 'action') {
-    success = await uploadAction(source, json);
+    result = await uploadAction(source, json);
   } else if (type === 'feat') {
-    success = await uploadFeat(source, json);
+    result = await uploadFeat(source, json);
   } else if (type === 'class-feature') {
-    success = await uploadClassFeature(source, json);
+    result = await uploadClassFeature(source, json);
   } else if (type === 'spell') {
-    success = await uploadSpell(source, json);
+    result = await uploadSpell(source, json);
   } else if (type === 'item') {
-    success = await uploadItem(source, json);
+    result = await uploadItem(source, json);
   } else if (type === 'creature') {
-    success = await uploadCreature(source, json);
+    result = await uploadCreature(source, json);
   } else if (type === 'heritage') {
-    success = await uploadHeritage(source, json);
+    result = await uploadHeritage(source, json);
   } else if (type === 'background') {
-    success = await uploadBackground(source, json);
+    result = await uploadBackground(source, json);
+  } else {
+    console.error(`Unknown type: ${type}`)
+    result = {
+      success: false,
+    }
   }
 
-  if (success) {
+  if (result?.success) {
     // Increase upload count
     if (!uploadStats.uploads.has(type)) {
       uploadStats.uploads.set(type, new Map<string, number>());
@@ -136,15 +160,20 @@ async function uploadContent(type: string, file: FileWithPath) {
     console.log(json);
   }
 
-  return success;
+  return result;
 }
 
-async function uploadAction(source: ContentSource, json: Record<string, any>) {
+async function uploadAction(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (json.type !== 'action') {
     if (DEBUG) {
       console.error(`Not an action, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    }
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -189,16 +218,21 @@ async function uploadAction(source: ContentSource, json: Record<string, any>) {
     console.log('Created Ability Block:');
     console.log(abilityBlock);
   }
-  return true;
+  return {
+    success: !!abilityBlock,
+    id: abilityBlock?.id,
+  };
 }
 
-async function uploadFeat(source: ContentSource, json: Record<string, any>) {
+async function uploadFeat(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type === 'feat' && json.system?.category !== 'classfeature') {
   } else {
     if (DEBUG) {
       console.error(`Not a feat, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    }
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -237,16 +271,24 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>) {
     console.log('Created Ability Block:');
     console.log(abilityBlock);
   }
-  return true;
+  return {
+    success: !!abilityBlock,
+    id: abilityBlock?.id,
+  };
 }
 
-async function uploadClassFeature(source: ContentSource, json: Record<string, any>) {
+async function uploadClassFeature(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (json.type === 'feat' && json.system?.category === 'classfeature') {
   } else {
     if (DEBUG) {
       console.error(`Not a class feature, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    }
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -281,15 +323,20 @@ async function uploadClassFeature(source: ContentSource, json: Record<string, an
     console.log('Created Ability Block:');
     console.log(abilityBlock);
   }
-  return true;
+  return {
+    success: !!abilityBlock,
+    id: abilityBlock?.id,
+  };
 }
 
-async function uploadSpell(source: ContentSource, json: Record<string, any>) {
+async function uploadSpell(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type !== 'spell') {
     if (DEBUG) {
       console.error(`Not a spell, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -339,15 +386,20 @@ async function uploadSpell(source: ContentSource, json: Record<string, any>) {
     console.log('Created Spell:');
     console.log(createdSpell);
   }
-  return true;
+  return {
+    success: !!createdSpell,
+    id: createdSpell?.id,
+  };
 }
 
-async function uploadItem(source: ContentSource, json: Record<string, any>) {
+async function uploadItem(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (!EQUIPMENT_TYPES.includes(json.type)) {
     if (DEBUG) {
       console.error(`Not an item, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    }
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -410,15 +462,23 @@ async function uploadItem(source: ContentSource, json: Record<string, any>) {
     console.log('Created Item:');
     console.log(createdItem);
   }
-  return true;
+  return {
+    success: !!createdItem,
+    id: createdItem?.id,
+  };
 }
 
-async function uploadCreature(source: ContentSource, json: Record<string, any>) {
+async function uploadCreature(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (json.type !== 'npc') {
     if (DEBUG) {
       console.error(`Not a creature, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    }
   }
 
   try {
@@ -430,7 +490,10 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>) 
       console.log('Created Creature:');
       console.log(createdCreature);
     }
-    return true;
+    return {
+      success: !!createdCreature,
+      id: createdCreature?.id,
+    }
   } catch (e) {
     console.log(e);
     if (typeof e === 'string') {
@@ -438,16 +501,23 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>) 
     } else if (e instanceof Error) {
       throwError(e.message);
     }
-    return false;
+    return {
+      success: false,
+    };
   }
 }
 
-async function uploadHeritage(source: ContentSource, json: Record<string, any>) {
+async function uploadHeritage(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (json.type !== 'heritage') {
     if (DEBUG) {
       console.error(`Not a heritage, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    }
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -487,15 +557,23 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>) 
     console.log('Created Heritage:');
     console.log(createdHeritage);
   }
-  return true;
+  return {
+    success: !!createdHeritage,
+    id: createdHeritage?.id,
+  }
 }
 
-async function uploadBackground(source: ContentSource, json: Record<string, any>) {
+async function uploadBackground(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (json.type !== 'background') {
     if (DEBUG) {
       console.error(`Not a background, it's a "${json.type}"!`);
     }
-    return false;
+    return {
+      success: false,
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -516,5 +594,8 @@ async function uploadBackground(source: ContentSource, json: Record<string, any>
     console.log('Created Background:');
     console.log(createdBackground);
   }
-  return true;
+  return {
+    success: !!createdBackground,
+    id: createdBackground?.id,
+  };
 }

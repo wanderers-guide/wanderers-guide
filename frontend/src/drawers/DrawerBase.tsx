@@ -36,8 +36,6 @@ export default function DrawerBase() {
     });
   };
 
-  console.log(titleHeight)
-
   return (
     <Drawer
       opened={!!_drawer}

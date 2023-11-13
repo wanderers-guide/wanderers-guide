@@ -43,10 +43,16 @@ export async function connect(
       status: 200,
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    });
+    return new Response(
+      JSON.stringify({
+        status: 'fail',
+        data: error,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
+    );
   }
 }
 
@@ -81,6 +87,8 @@ export function convertContentTypeToTableName(type: ContentType): TableName | nu
       return 'spell';
     case 'class':
       return 'class';
+    case 'creature':
+      return 'creature';
     case 'ability-block':
       return 'ability_block';
     case 'ancestry':
@@ -91,7 +99,8 @@ export function convertContentTypeToTableName(type: ContentType): TableName | nu
       return 'language';
     case 'content-source':
       return 'content_source';
-    default: return null;
+    default:
+      return null;
   }
 }
 

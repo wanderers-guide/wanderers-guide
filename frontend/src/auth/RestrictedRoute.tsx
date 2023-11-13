@@ -13,9 +13,6 @@ export default function RestrictedRoute(props: { page: React.ReactNode }) {
       if (!session) {
         navigate(`/login?redirect=${redirect}`);
       }
-      // else if(userData && !userData.onboarded){
-      //   navigateToPage(navigate, '/onboarding');
-      // }
     });
   }, [session]);
 

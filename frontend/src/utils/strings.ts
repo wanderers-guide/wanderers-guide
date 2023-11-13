@@ -1,3 +1,4 @@
+import _ from "lodash";
 
 export function pluralize(word: string): string {
   if (word[word.length - 1] === 'y') {
@@ -7,4 +8,9 @@ export function pluralize(word: string): string {
   } else {
     return word+'s';
   }
+}
+
+export function toLabel(text?: string | null) {
+  if (!text) return '';
+  return _.startCase(text.toLowerCase().replace('-', ' '));
 }

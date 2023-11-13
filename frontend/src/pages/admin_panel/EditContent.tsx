@@ -5,7 +5,7 @@ import { Center, Group, Title, Select } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { CreateAbilityBlockModal } from '@modals/CreateAbilityBlockModal';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { isAbilityBlockType } from '@variables/variable-utils';
+import { convertToContentType, isAbilityBlockType } from '@variables/variable-utils';
 import { useState } from 'react';
 
 export default function EditContent() {
@@ -42,7 +42,7 @@ export default function EditContent() {
                 if (!value) return handleReset();
 
                 // Select content for id
-                const type = isAbilityBlockType(value) ? 'ability-block' : (value as ContentType);
+                const type = convertToContentType(value as ContentType | AbilityBlockType);
                 const abilityBlockType = isAbilityBlockType(value) ? value : undefined;
                 selectContent(
                   type,

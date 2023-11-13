@@ -35,6 +35,7 @@ import { JSONContent } from '@tiptap/react';
 import { toHTML } from '@content/content-utils';
 import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { toLabel } from '@utils/strings';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -137,7 +138,7 @@ export function CreateAbilityBlockModal(props: {
       title={
         <Title order={3}>
           {props.editId === undefined ? 'Create' : 'Edit'}{' '}
-          {_.startCase(props.type.replace('-', ' '))}
+          {toLabel(props.type)}
         </Title>
       }
       styles={{
