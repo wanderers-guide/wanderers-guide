@@ -15,12 +15,12 @@ import { SetterOrUpdater } from 'recoil';
 import { DrawerType } from '@typing/index';
 import { convertContentLink } from '@drawers/drawer-utils';
 
-export interface LinkProtocolOptions {
+interface LinkProtocolOptions {
   scheme: string;
   optionalSlashes?: boolean;
 }
 
-export interface LinkOptions {
+interface LinkOptions {
   /**
    * If enabled, it adds links as you type.
    */
@@ -78,38 +78,39 @@ declare module '@tiptap/core' {
   }
 }
 
-type DrawerState = [
-  {
-    type: DrawerType;
-    data: any;
-    extra?:
-      | {
-          addToHistory: boolean;
-          history?:
-            | {
-                type: DrawerType;
-                data: any;
-              }[]
-            | undefined;
-        }
-      | undefined;
-  } | null,
-  SetterOrUpdater<{
-    type: DrawerType;
-    data: any;
-    extra?:
-      | {
-          addToHistory: boolean;
-          history?:
-            | {
-                type: DrawerType;
-                data: any;
-              }[]
-            | undefined;
-        }
-      | undefined;
-  } | null>
-];
+export type DrawerState = [DrawerStateGet, DrawerStateSet];
+
+export type DrawerStateGet = {
+  type: DrawerType;
+  data: any;
+  extra?:
+    | {
+        addToHistory?: boolean | undefined;
+        history?:
+          | {
+              type: DrawerType;
+              data: any;
+            }[]
+          | undefined;
+      }
+    | undefined;
+} | null;
+
+export type DrawerStateSet = SetterOrUpdater<{
+  type: DrawerType;
+  data: any;
+  extra?:
+    | {
+        addToHistory?: boolean | undefined;
+        history?:
+          | {
+              type: DrawerType;
+              data: any;
+            }[]
+          | undefined;
+      }
+    | undefined;
+} | null>;
 
 export function ContentLink(_drawerState: DrawerState) {
   return Mark.create<LinkOptions>({
@@ -175,7 +176,6 @@ export function ContentLink(_drawerState: DrawerState) {
 
     renderHTML({ HTMLAttributes }) {
       return ['a', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
-      // ['code', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0]
     },
 
     addCommands() {

@@ -1,11 +1,13 @@
 import { queryByName } from '@ai/vector-db/vector-manager';
 import { drawerState } from '@atoms/navAtoms';
-import { Loader, Text, MantineTheme, rem, useMantineTheme, Center } from '@mantine/core';
+import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
+import { Loader, Text, MantineTheme, rem, useMantineTheme, Center, ActionIcon, Tooltip, HoverCard } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, isActionsGroup } from '@mantine/spotlight';
 import { makeRequest } from '@requests/request-manager';
-import { IconArchive, IconBrandDiscord, IconBrandPatreon, IconDashboard, IconFileText, IconHome, IconLayoutDashboard, IconSearch, IconUser } from '@tabler/icons-react';
-import { Character, ContentSource, ContentType } from '@typing/content';
+import { IconAdjustments, IconAdjustmentsFilled, IconArchive, IconBrandDiscord, IconBrandPatreon, IconDashboard, IconFileText, IconHome, IconLayoutDashboard, IconSearch, IconUser } from '@tabler/icons-react';
+import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
+import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
 import { pluralize, toLabel } from '@utils/strings';
 import _, { isArray } from 'lodash';
@@ -15,7 +17,9 @@ import {
 } from 'node_modules/@mantine/spotlight/lib/Spotlight';
 import { useRef, useState, useEffect } from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
+
+const MAX_QUERY_LENGTH = 100;
 
 export default function SearchSpotlight() {
   const theme = useMantineTheme();
@@ -57,6 +61,7 @@ export default function SearchSpotlight() {
         description: 'View your account details and settings',
         onClick: () => navigate(`/account`),
         leftSection: <IconUser style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+        highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
       },
       {
@@ -65,6 +70,7 @@ export default function SearchSpotlight() {
         description: 'View the community forums and discussions',
         onClick: () => navigate(`/community`),
         leftSection: <IconBrandDiscord style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+        highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
       },
       {
@@ -73,6 +79,7 @@ export default function SearchSpotlight() {
         description: 'Support the site on Patreon and get access to additional features',
         onClick: () => navigate(`/support`),
         leftSection: <IconBrandPatreon style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+        highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
       },
       {
@@ -83,6 +90,7 @@ export default function SearchSpotlight() {
           window.location.href = `https://legacy.wanderersguide.app/`;
         },
         leftSection: <IconArchive style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+        highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
       },
     ],
@@ -127,7 +135,31 @@ export default function SearchSpotlight() {
       highlightQuery
       searchProps={{
         leftSection: <IconSearch style={{ width: rem(20), height: rem(20) }} stroke={1.5} />,
-        placeholder: 'Search...',
+        rightSection: (
+          <HoverCard shadow='md' position='top' openDelay={250} zIndex={10000} withinPortal>
+            <HoverCard.Target>
+              <ActionIcon
+                variant='subtle'
+                radius='xl'
+                size='lg'
+                color='gray.6'
+                aria-label='Advanced Search'
+                onClick={() => {
+                  console.log('Advanced Search');
+                }}
+                style={{
+                  pointerEvents: 'auto',
+                }}
+              >
+                <IconAdjustments style={{ width: rem(20), height: rem(20) }} stroke={1.5} />
+              </ActionIcon>
+            </HoverCard.Target>
+            <HoverCard.Dropdown px={10} py={5}>
+              <Text size='sm'>Advanced Search</Text>
+            </HoverCard.Dropdown>
+          </HoverCard>
+        ),
+        placeholder: 'Search anything...',
       }}
       filter={(query, actions) => {
         if (!query) return actions;
@@ -163,15 +195,18 @@ export default function SearchSpotlight() {
  */
 async function activateQueryPipeline(
   defaultActions: SpotlightActionGroupData,
-  query: string,
+  rawQuery: string,
   navigate: NavigateFunction,
-  openDrawer: SetterOrUpdater<any>,
+  openDrawer: DrawerStateSet,
   theme: MantineTheme
 ): Promise<SpotlightActionGroupData[] | null | false> {
+  const query = (
+    rawQuery.length > MAX_QUERY_LENGTH ? rawQuery.slice(0, MAX_QUERY_LENGTH) : rawQuery
+  ).trim();
   let actions: SpotlightActionData[] = [];
   if (query && query.length >= 3) {
-    actions = [...(await queryResults(query, openDrawer)), ...actions];
-    actions = [...(await fetchCharacters(query, navigate)), ...actions];
+    actions = [...(await queryResults(query, openDrawer, theme)), ...actions];
+    actions = [...(await fetchCharacters(query, navigate, theme)), ...actions];
     // Add more here.
   }
 
@@ -189,30 +224,43 @@ async function activateQueryPipeline(
 
 async function queryResults(
   query: string,
-  openDrawer: SetterOrUpdater<any>
+  openDrawer: DrawerStateSet,
+  theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
   const result = await queryByName(query, undefined, 10);
 
   return result.map((data) => {
-    let description = `${data.description}`;
-    description = _.truncate(description.split('.')[0] + '.', { length: 80 });
+    let description = `${data.description}`.split('.')[0] + '.';
+
+    const abilityBlockType =
+      data._type === 'ability-block' ? (data.type as AbilityBlockType) : null;
+
+    if (data.level && (!abilityBlockType || +data.level > 0)) {
+      description = `Lvl. ${data.level} | ` + description;
+    } else if (data.rank) {
+      description = `Rk. ${data.rank} | ` + description;
+    }
+
+    description = _.truncate(description, { length: 80 });
     return {
       id: `${data._type}-${data.id}`,
       label: `${data.name}`,
       description: description,
       onClick: () => {
-        openDrawer({ type: data._type, data: { id: data.id } });
+        openDrawer({ type: data._type as DrawerType, data: { id: data.id } });
       },
       leftSection: <IconFileText style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+      highlightColor: theme.colors[theme.primaryColor][2],
       keywords: ['query', `${data._type}`],
-      _type: data._type,
+      _type: abilityBlockType ?? data._type,
     };
   });
 }
 
 async function fetchCharacters(
   query: string,
-  navigate: NavigateFunction
+  navigate: NavigateFunction,
+  theme: MantineTheme,
 ): Promise<SpotlightActionData[]> {
   const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
     'find-characters',
@@ -240,6 +288,7 @@ async function fetchCharacters(
         }
       },
       leftSection: <IconFileText style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+      highlightColor: theme.colors[theme.primaryColor][2],
       keywords: ['character'],
       _type: 'character',
     };

@@ -8,6 +8,7 @@ export function toMarkdown(html: any) {
   const td = new Turndown({
     hr: '',
   });
+  td.keep(['abbr']);
   return td.turndown(html) || undefined;
 }
 

@@ -12,6 +12,8 @@ import ContentLinkControl from './ContentLinkControl';
 import { useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
 import { toMarkdown } from '@content/content-utils';
+import { ActionSymbol } from './ActionSymbolExtension';
+import ActionSymbolControl from './ActionSymbolControl';
 
 interface RichTextInputProps {
   label?: string;
@@ -29,6 +31,7 @@ export default function RichTextInput(props: RichTextInputProps) {
       StarterKit,
       Underline,
       ContentLink(_drawerState),
+      ActionSymbol,
       Superscript,
       SubScript,
       Highlight,
@@ -66,7 +69,11 @@ export default function RichTextInput(props: RichTextInputProps) {
           },
         }}
       >
-        <RichTextEditor.Toolbar sticky stickyOffset={60}>
+        <RichTextEditor.Toolbar>
+          <RichTextEditor.ControlsGroup>
+            <ActionSymbolControl />
+          </RichTextEditor.ControlsGroup>
+
           <RichTextEditor.ControlsGroup>
             <ContentLinkControl />
             <RichTextEditor.Unlink />
@@ -86,7 +93,7 @@ export default function RichTextInput(props: RichTextInputProps) {
           </RichTextEditor.ControlsGroup>
 
           <RichTextEditor.ControlsGroup>
-            <RichTextEditor.H1 />
+            {/* <RichTextEditor.H1 /> */}
             <RichTextEditor.H2 />
             <RichTextEditor.H3 />
             <RichTextEditor.H4 />

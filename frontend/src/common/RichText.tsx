@@ -1,12 +1,13 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Anchor, List, Text, TextProps } from '@mantine/core';
+import { Anchor, Code, List, Text, TextProps } from '@mantine/core';
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
 import { useRecoilState } from 'recoil';
 import React from 'react';
 import IndentedText from './IndentedText';
+import { ActionSymbol } from './Actions';
 
 interface RichTextProps extends TextProps {
   children: any;
@@ -15,9 +16,14 @@ interface RichTextProps extends TextProps {
 export default function RichText(props: RichTextProps) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Convert action symbol text of abbr to code markdown (then convert it back)
+  // This is a hack to get around the fact that markdown doesn't really support abbr
+  const regex = /<abbr[^>]*class="action-symbol"[^>]*>(\d+)<\/abbr>/gm;
+  const convertedChildren = props.children.replace(regex, '`action_symbol_$1`');
+
   return (
     <Markdown
-      children={props.children}
+      children={convertedChildren}
       remarkPlugins={[remarkGfm]}
       components={{
         // Override the default html tags with Mantine components
@@ -52,6 +58,16 @@ export default function RichText(props: RichTextProps) {
         li(innerProps) {
           const { children, className } = innerProps;
           return <List.Item className={className}>{children}</List.Item>;
+        },
+        code(innerProps) {
+          const { children, className } = innerProps;
+          // Convert code back to action symbol text as abbr
+          if (children?.toString().startsWith('action_symbol_')) {
+            const symbol = children.toString().replace('action_symbol_', '');
+            return <abbr className='action-symbol'>{symbol}</abbr>;
+          } else {
+            return <Code className={className}>{children}</Code>;
+          }
         },
         a(innerProps) {
           const { children, className, href } = innerProps;

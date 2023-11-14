@@ -64,7 +64,7 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
               <IconExternalLink size='0.6rem' stroke={1.5} />
             </ActionIcon>
           </HoverCard.Target>
-          <HoverCard.Dropdown>
+          <HoverCard.Dropdown px={10} py={5}>
             <Text size='sm'>Open Source Info</Text>
           </HoverCard.Dropdown>
         </HoverCard>

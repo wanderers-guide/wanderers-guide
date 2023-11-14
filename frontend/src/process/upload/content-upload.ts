@@ -1,5 +1,13 @@
 import { FileWithPath } from '@mantine/dropzone';
-import { AbilityBlock, AbilityBlockType, Background, ContentSource, ContentType, Item, Spell } from '@typing/content';
+import {
+  AbilityBlock,
+  AbilityBlockType,
+  Background,
+  ContentSource,
+  ContentType,
+  Item,
+  Spell,
+} from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -23,7 +31,7 @@ import { toText, toMarkdown } from '@content/content-utils';
 import { classifySkillForAction } from '@ai/open-ai-handler';
 import { UploadResult } from '@typing/index';
 import { populateContent } from '@ai/vector-db/vector-manager';
-import { showNotification } from '@mantine/notifications';
+import { hideNotification, showNotification } from '@mantine/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { convertToContentType } from '@variables/variable-utils';
 
@@ -53,7 +61,10 @@ export function resetUploadStats() {
   uploadStats = emptyUploadStats();
 }
 
-export async function uploadContentList(type: ContentType | AbilityBlockType, files: FileWithPath[]) {
+export async function uploadContentList(
+  type: ContentType | AbilityBlockType,
+  files: FileWithPath[]
+) {
   resetUploadStats();
 
   uploadStats.total = files.length;
@@ -67,11 +78,19 @@ export async function uploadContentList(type: ContentType | AbilityBlockType, fi
   }
 
   // Generate embeddings for the added content
-  const result = await populateContent(convertToContentType(type), [...addedIds]);
   showNotification({
+    id: 'generate-embeddings',
+    title: `Generating embeddings...`,
+    message: `This may take a couple seconds, please wait.`,
+    autoClose: false,
+  });
+  const result = await populateContent(convertToContentType(type), [...addedIds]);
+  hideNotification('generate-embeddings');
+  showNotification({
+    id: 'generate-embeddings',
     title: `Successfully Generated Embeddings`,
     message: `Generated ${result.total} embeddings for ${pluralize(toLabel(type))}.`,
-    autoClose: 10000,
+    autoClose: 6000,
   });
 
   console.log('-------- UPLOAD STATS --------');
@@ -130,10 +149,10 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
   } else if (type === 'background') {
     result = await uploadBackground(source, json);
   } else {
-    console.error(`Unknown type: ${type}`)
+    console.error(`Unknown type: ${type}`);
     result = {
       success: false,
-    }
+    };
   }
 
   if (result?.success) {
@@ -173,7 +192,7 @@ async function uploadAction(
     }
     return {
       success: false,
-    }
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -232,7 +251,7 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
     }
     return {
       success: false,
-    }
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -288,7 +307,7 @@ async function uploadClassFeature(
     }
     return {
       success: false,
-    }
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -329,7 +348,10 @@ async function uploadClassFeature(
   };
 }
 
-async function uploadSpell(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
+async function uploadSpell(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (json.type !== 'spell') {
     if (DEBUG) {
       console.error(`Not a spell, it's a "${json.type}"!`);
@@ -399,7 +421,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
     }
     return {
       success: false,
-    }
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -478,22 +500,23 @@ async function uploadCreature(
     }
     return {
       success: false,
-    }
+    };
   }
 
   try {
     const creature = await uploadCreatureHandler(source, json);
-    console.log(creature);
 
     const createdCreature = await upsertCreature(creature);
     if (DEBUG) {
+      console.log('Converted Creature:');
+      console.log(creature);
       console.log('Created Creature:');
       console.log(createdCreature);
     }
     return {
       success: !!createdCreature,
       id: createdCreature?.id,
-    }
+    };
   } catch (e) {
     console.log(e);
     if (typeof e === 'string') {
@@ -517,7 +540,7 @@ async function uploadHeritage(
     }
     return {
       success: false,
-    }
+    };
   }
 
   const descValues = extractFromDescription(json.system?.description?.value);
@@ -560,7 +583,7 @@ async function uploadHeritage(
   return {
     success: !!createdHeritage,
     id: createdHeritage?.id,
-  }
+  };
 }
 
 async function uploadBackground(
