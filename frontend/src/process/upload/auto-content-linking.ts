@@ -1,7 +1,7 @@
 import { detectPotentialContentLinks } from "@ai/open-ai-handler";
 import { queryByName } from "@ai/vector-db/vector-manager";
 
-const ENABLED = true;
+const ENABLED = false;
 
 /**
  * Finds potential content links and attempts to convert them to actual content links.

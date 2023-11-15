@@ -122,7 +122,7 @@ export function extractFromDescription(description?: string) {
     const heightenedAmount = (match[2] ?? '').trim();
     const text = match[3].trim();
 
-    if(label === 'heightened') {
+    if(label.startsWith('heightened')) {
       if(!output.heightened) {
         output.heightened = [];
       }
