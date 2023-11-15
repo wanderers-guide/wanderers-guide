@@ -30,6 +30,12 @@ serve(async (req: Request) => {
         message: 'No results found',
       };
 
+    if (!results[0].uuid)
+      return {
+        status: 'error',
+        message: 'Data needs a UUID field',
+      };
+
     const res = await fetch('https://vector-db-client.onrender.com/api/v1/add', {
       method: 'POST',
       headers: {
@@ -39,15 +45,15 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         collection: collectionName,
-        ids: results.map((result) => `${type}-${result.id}`),
+        ids: results.map((result) => `${result.uuid}`),
         metadatas: results.map((result) => ({ ...filterObject(result), _type: type })),
         documents:
           collectionName === 'name'
-            ? results.map((result) => result.name)
+            ? results.map((result) => `${result.name} ${result.type || type}`)
             : results.map((result) => convertToString(filterObject(result))),
       }),
     });
-    if(!res.ok) {
+    if (!res.ok) {
       return {
         status: 'error',
         message: 'Failed to add to collection',

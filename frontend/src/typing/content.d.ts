@@ -3,14 +3,18 @@ import { Operation } from "./operations";
 type Rarity = "COMMON" | "UNCOMMON" | "RARE" | "UNIQUE";
 type Size = "TINY" | "SMALL" | "MEDIUM" | "LARGE" | "HUGE" | "GARGANTUAN";
 type ActionCost =
-  | "ONE-ACTION"
-  | "TWO-ACTIONS"
-  | "THREE-ACTIONS"
-  | "REACTION"
-  | "FREE-ACTION"
-  | "ONE-TO-TWO-ACTIONS"
-  | "ONE-TO-THREE-ACTIONS"
-  | "TWO-TO-THREE-ACTIONS"
+  | 'ONE-ACTION'
+  | 'TWO-ACTIONS'
+  | 'THREE-ACTIONS'
+  | 'REACTION'
+  | 'FREE-ACTION'
+  | 'ONE-TO-TWO-ACTIONS'
+  | 'ONE-TO-THREE-ACTIONS'
+  | 'TWO-TO-THREE-ACTIONS'
+  | 'TWO-TO-TWO-ROUNDS'
+  | 'TWO-TO-THREE-ROUNDS'
+  | 'THREE-TO-TWO-ROUNDS'
+  | 'THREE-TO-THREE-ROUNDS'
   | null;
 type AbilityBlockType = 'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage';
 type ContentType =
@@ -68,7 +72,7 @@ interface Spell {
   rarity: Rarity;
   cast: ActionCost | string;
   traits?: number[];
-  defenses?: string;
+  defense?: string;
   cost?: string;
   trigger?: string;
   requirements?: string;
@@ -77,7 +81,13 @@ interface Spell {
   targets?: string;
   duration?: string;
   description: string;
-  heightened?: {}; // TODO
+  heightened?: {
+    text: {
+      amount: string;
+      text: string;
+    }[];
+    data: Record<string, any>; // TODO
+  };
   meta_data: Record<string, any>; // TODO
   content_source_id: number;
   version: string;
@@ -155,6 +165,7 @@ interface AbilityBlock {
   meta_data?: {
     skill?: string;
     image_url?: string;
+    // auto_adjustments?: Record<string, string>; TODO: 
     foundry?: Record<string, any>;
   };
   traits?: number[];

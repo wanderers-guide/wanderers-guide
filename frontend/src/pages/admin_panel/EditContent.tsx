@@ -1,11 +1,11 @@
 import BlurBox from '@common/BlurBox';
 import { selectContent } from '@common/select/SelectContent';
 import { upsertAbilityBlock } from '@content/content-creation';
+import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { Center, Group, Title, Select } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { CreateAbilityBlockModal } from '@modals/CreateAbilityBlockModal';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { convertToContentType, isAbilityBlockType } from '@variables/variable-utils';
 import { useState } from 'react';
 
 export default function EditContent() {

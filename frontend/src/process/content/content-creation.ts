@@ -3,36 +3,36 @@ import _ from 'lodash';
 import { makeRequest } from '@requests/request-manager';
 
 export async function upsertAbilityBlock(abilityBlock: AbilityBlock) {
-  const result = await makeRequest<AbilityBlock>('create-ability-block', {
+  const result = await makeRequest<AbilityBlock | true>('create-ability-block', {
     ...abilityBlock,
   });
-  return result ? abilityBlock : null;
+  return result ? (result === true ? abilityBlock : result) : null;
 }
 
 export async function upsertSpell(spell: Spell) {
-  const result = await makeRequest<Spell>('create-spell', {
+  const result = await makeRequest<Spell | true>('create-spell', {
     ...spell,
   });
-  return result ? spell : null;
+  return result ? (result === true ? spell : result) : null;
 }
 
 export async function upsertItem(item: Item) {
-  const result = await makeRequest<Item>('create-item', {
+  const result = await makeRequest<Item | true>('create-item', {
     ...item,
   });
-  return result ? item : null;
+  return result ? (result === true ? item : result) : null;
 }
 
 export async function upsertCreature(creature: Creature) {
-  const result = await makeRequest<Creature>('create-creature', {
+  const result = await makeRequest<Creature | true>('create-creature', {
     ...creature,
   });
-  return result ? creature : null;
+  return result ? (result === true ? creature : result) : null;
 }
 
 export async function upsertBackground(background: Background) {
-  const result = await makeRequest<Background>('create-background', {
+  const result = await makeRequest<Background | true>('create-background', {
     ...background,
   });
-  return result ? background : null;
+  return result ? (result === true ? background : result) : null;
 }

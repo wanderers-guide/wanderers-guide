@@ -32,6 +32,7 @@ import {
   ContentType,
   Item,
   Rarity,
+  Spell,
   Trait,
 } from '../../typing/content';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
@@ -402,6 +403,7 @@ function SelectionOptions(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { sourceId, abilityBlockType }] = queryKey;
+      console.log('fetching', sourceId, abilityBlockType);
       return await getContentStore(props.type, {
         fetch: true,
         sourceId: sourceId === 'all' ? undefined : sourceId,
@@ -469,7 +471,7 @@ function SelectionOptionsInner(props: {
   useEffect(() => {
     setPage(1);
     scrollToTop();
-  }, [props.options]);
+  }, [props.options.length]);
 
   const viewport = useRef<HTMLDivElement>(null);
   const scrollToTop = () => viewport.current?.scrollTo({ top: 0 });
@@ -617,6 +619,20 @@ function SelectionOptionsRoot(props: {
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'spell') {
+    return (
+      <>
+        {props.options.map((spell, index) => (
+          <SpellSelectionOption
+            key={index}
+            spell={spell as Spell}
+            onClick={props.onClick}
+            selected={props.selectedId === spell.id}
           />
         ))}
       </>
@@ -1178,3 +1194,75 @@ export function ItemSelectionOption(props: {
     </Group>
   );
 }
+
+
+export function SpellSelectionOption(props: {
+  spell: Spell;
+  onClick: (spell: Spell) => void;
+  selected?: boolean;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.spell)}
+      justify='space-between'
+    >
+      <Text
+        fz={10}
+        c='dimmed'
+        ta='right'
+        w={14}
+        style={{
+          position: 'absolute',
+          top: 15,
+          left: 1,
+        }}
+      >
+        {props.spell.rank}.
+      </Text>
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.spell.name}</Text>
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.spell.traits ?? []}
+            rarity={props.spell.rarity}
+          />
+        </Box>
+        <Box w={50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'spell', data: { id: props.spell.id } });
+        }}
+      >
+        Details
+      </Button>
+    </Group>
+  );
+}
+

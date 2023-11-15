@@ -1,4 +1,3 @@
-import { AbilityBlockType, ActionCost, ContentType } from "@typing/content";
 import { throwError } from "@utils/notifications";
 import { isBoolean, isNumber, isString } from "lodash";
 import {
@@ -92,15 +91,6 @@ export function maxProficiencyType(
     : profType2;
 }
 
-export function convertToContentType(type: ContentType | AbilityBlockType): ContentType {
-  return (isAbilityBlockType(type) ? 'ability-block' : type) satisfies ContentType;
-}
-export function isAbilityBlockType(value: any): value is AbilityBlockType {
-  return ['action', 'feat', 'physical-feature', 'sense', 'class-feature', 'heritage'].includes(
-    value ?? ''
-  );
-}
-
 export function isAttribute(value: Attribute | any): value is Attribute {
   return (value as Attribute).type === "attribute";
 }
@@ -112,19 +102,6 @@ export function isProficiency(value: Proficiency | any): value is Proficiency {
 }
 export function isProficiencyType(value?: string): value is ProficiencyType {
   return ["U", "T", "E", "M", "L"].includes(value ?? "");
-}
-export function isActionCost(value: string | null): value is ActionCost {
-  return [
-    "ONE-ACTION",
-    "TWO-ACTIONS",
-    "THREE-ACTIONS",
-    "REACTION",
-    "FREE-ACTION",
-    "ONE-TO-TWO-ACTIONS",
-    "ONE-TO-THREE-ACTIONS",
-    "TWO-TO-THREE-ACTIONS",
-    null,
-  ].includes(value);
 }
 export function isListStr(value?: string[]): value is string[] {
   return Array.isArray(value) && value.every((v) => isString(v));

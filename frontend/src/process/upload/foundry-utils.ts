@@ -2,6 +2,7 @@ import { ActionCost, ContentSource, Rarity, Size, Trait } from "@typing/content"
 import _ from "lodash";
 import { makeRequest } from "@requests/request-manager";
 import { getAllContentSources } from "@content/content-controller";
+import * as math from 'mathjs';
 
 export function convertToActionCost(
   actionType: string,
@@ -100,7 +101,7 @@ async function createTrait(
 export async function findContentSource(id?: number, foundry_id?: string) {
   return await makeRequest<ContentSource>('find-content-source', {
     id,
-    foundry_id,
+    foundry_id: foundry_id === 'Pathfinder Core Rulebook' ? 'Pathfinder Player Core' : foundry_id,
   });
 }
 
@@ -112,19 +113,117 @@ export function extractFromDescription(description?: string) {
     };
 
   const pattern =
-    /<p><strong>(Frequency|Trigger|Requirements|Area|Craft Requirements|Special)<\/strong>(.*?)<\/p>/gs;
+    /<p><strong>(Frequency|Trigger|Requirements|Area|Craft Requirements|Special|Heightened (.*?))<\/strong>(.*?)<\/p>/gs;
 
-  const output: Record<string, string> = {};
+  const output: Record<string, string | Record<string, string>[]> = {};
   let match;
   while ((match = pattern.exec(description)) !== null) {
     const label = match[1].trim().toLowerCase().replace(/\s/g, "_");
-    const text = match[2].trim();
-    output[label] = text;
+    const heightenedAmount = (match[2] ?? '').trim();
+    const text = match[3].trim();
+
+    if(label === 'heightened') {
+      if(!output.heightened) {
+        output.heightened = [];
+      }
+      if(!_.isString(output.heightened)) {
+        output.heightened.push({
+          amount: heightenedAmount,
+          text: text,
+        });
+      }
+    } else {
+      output[label] = text;
+    }
   }
 
   output.description = description.replace(pattern, "");
 
-  return output;
+  return output as Record<string, string>;
 }
 
 export const EQUIPMENT_TYPES = ['equipment', 'weapon', 'armor', 'kit', 'consumable', 'backpack', 'treasure'];
+
+
+//// Foundry Content Linking Parsing & Removal ////
+// - Maybe save some of this data instead of deleting it all
+export function stripFoundryLinking(text: string) {
+  text = text.replace(/@actor\.level/g, '1');
+
+  text = stripCompendiumLinks(text);
+  text = stripDamageLinks(text);
+  text = stripCheckLinks(text, true);
+  text = stripCheckLinks(text, false);
+  text = stripDistanceLinks(text);
+
+  return text;
+}
+
+function stripDamageLinks(text: string) {
+  const regex = /@Damage\[([^\]]+)d(\d+)\[([^\]]+)\]\]/gm;
+
+  let newText = text;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const formula = match[1];
+    const diceType = match[2];
+    const damageType = match[3];
+
+    const result = math.evaluate(formula);
+
+    newText = newText.replace(match[0], `${result}d${diceType} ${damageType}`);
+  }
+
+  return newText;
+}
+
+
+function stripCheckLinks(text: string, basic: boolean) {
+  const regex = basic
+    ? /@Check\[type:([^\]]+)\|([^\]]+)\|basic:true\]/gm
+    : /@Check\[type:([^\]]+)\|([^\]]+)\|basic:false\]/gm;
+
+  let newText = text;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const type = match[1];
+    const extra = match[2];
+
+    newText = newText.replace(match[0], `basic ${_.startCase(type)}`);
+  }
+
+  return newText;
+}
+
+
+function stripDistanceLinks(text: string) {
+  const regex = /@Template\[type:([^\]]+)\|distance:([^\]]+)\]/gm;
+
+  let newText = text;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const type = match[1];
+    const distance = match[2];
+
+    newText = newText.replace(match[0], `${distance}-foot ${type}`);
+  }
+
+  return newText;
+}
+
+
+function stripCompendiumLinks(text: string) {
+  const regex = /@UUID\[Compendium\.([^\]]+)\]/gm;
+
+  let newText = text;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const contentParts = match[1].split('.');
+    const name = contentParts[contentParts.length - 1];
+
+    // We convert them to a potential content link for further processing
+    newText = newText.replace(match[0], `[[${name}]]`);
+  }
+
+  return newText;
+}

@@ -16,6 +16,7 @@ import {
   extractFromDescription,
   findContentSource,
   getTraitIds,
+  stripFoundryLinking,
 } from './foundry-utils';
 import _ from 'lodash';
 import { uploadCreatureHandler } from './creature-import';
@@ -27,13 +28,13 @@ import {
   upsertCreature,
   upsertBackground,
 } from '@content/content-creation';
-import { toText, toMarkdown } from '@content/content-utils';
+import { toText, toMarkdown, convertToContentType } from '@content/content-utils';
 import { classifySkillForAction } from '@ai/open-ai-handler';
 import { UploadResult } from '@typing/index';
 import { populateContent } from '@ai/vector-db/vector-manager';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { pluralize, toLabel } from '@utils/strings';
-import { convertToContentType } from '@variables/variable-utils';
+import { performAutoContentLinking } from './auto-content-linking';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -119,7 +120,7 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
   const jsonUrl = URL.createObjectURL(file);
 
   const res = await fetch(jsonUrl);
-  const json = await res.json();
+  const json = (await res.json()) as Record<string, any>;
 
   const foundryId = (json.system?.source?.value || json.system?.details?.source?.value) as string;
   const source = await findContentSource(undefined, foundryId);
@@ -195,7 +196,7 @@ async function uploadAction(
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
   // Classify the skill for skill actions
   // - Kinda an overkill to do this just for the actions
@@ -254,10 +255,11 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
   const prerequisites =
     json.system?.prerequisites?.value?.map((prereq: { value: string }) => toText(prereq.value)) ??
     undefined;
+  const description = await performAutoContentLinking(descValues.description);
 
   const action = {
     id: -1,
@@ -270,7 +272,7 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(descValues.description) ?? '',
+    description: toMarkdown(description) ?? '',
     special: toMarkdown(descValues.special),
     prerequisites: prerequisites,
     type: 'feat',
@@ -310,7 +312,7 @@ async function uploadClassFeature(
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
   const action = {
     id: -1,
@@ -361,7 +363,7 @@ async function uploadSpell(
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
   const spell = {
     id: -1,
@@ -372,10 +374,10 @@ async function uploadSpell(
     rarity: convertToRarity(json.system?.traits?.rarity),
     cast: json.system?.time?.value,
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
-    defenses: json.system?.save?.value,
+    defense: json.system?.save?.value,
     cost: json.system?.cost?.value,
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
-    requirements: toText(descValues?.requirements),
+    requirements: toText(descValues?.requirements) || json.system?.materials?.value,
     range: json.system?.range?.value,
     area:
       descValues?.area ||
@@ -383,7 +385,13 @@ async function uploadSpell(
     targets: json.system?.target?.value,
     duration: json.system?.duration?.value,
     description: toMarkdown(descValues.description) ?? '',
-    heightened: json.system?.heightening,
+    heightened: {
+      text: descValues.heightened as unknown as {
+        amount: string;
+        text: string;
+      }[], // actually a list of objects 😈
+      data: json.system?.heightening,
+    },
     meta_data: {
       damage: Object.values(json.system?.damage?.value ?? {}),
       type: json.system?.spellType?.value,
@@ -424,7 +432,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
   const item = {
     id: -1,
@@ -543,7 +551,7 @@ async function uploadHeritage(
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
   const heritage = {
     id: -1,
@@ -599,7 +607,7 @@ async function uploadBackground(
     };
   }
 
-  const descValues = extractFromDescription(json.system?.description?.value);
+  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
   const background = {
     id: -1,

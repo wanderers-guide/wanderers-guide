@@ -11,10 +11,10 @@ import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import { getContent } from '@content/content-controller';
-import { convertToContentType } from '@variables/variable-utils';
 import _ from 'lodash';
 import { buildHrefFromContentData, getContentDataFromHref } from './ContentLinkExtension';
 import { toLabel } from '@utils/strings';
+import { convertToContentType } from '@content/content-utils';
 
 export default function ContentLinkControl() {
   const { editor } = useRichTextEditorContext();

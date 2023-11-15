@@ -15,7 +15,6 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { convertToContentType } from '@variables/variable-utils';
 
 export default function UploadContent() {
   const [contentType, setContentType] = useState<ContentType | AbilityBlockType | null>(null);

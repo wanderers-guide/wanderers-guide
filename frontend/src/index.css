@@ -1,4 +1,9 @@
 
+:root {
+  --text-color: var(--mantine-color-dark-2);
+  --_text-line-height: 1.75;
+}
+
 @font-face {
   font-family: 'ActionIcons';
   src: url('./assets/fonts/Pathfinder2eActions.ttf') format('truetype');
@@ -8,4 +13,10 @@
   font-family: ActionIcons, sans-serif;
   font-size: 1.7em;
   line-height: 0.7;
+  color: var(--mantine-color-gray-5);
+}
+
+strong {
+  font-weight: 600;
+  color: var(--mantine-color-gray-5);
 }

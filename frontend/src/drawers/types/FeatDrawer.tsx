@@ -75,6 +75,8 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
     feat.requirements ||
     feat.access;
 
+    console.log(feat.description);
+
   return (
     <Box>
       {feat.meta_data?.image_url && (
@@ -92,10 +94,12 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
       )}
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
-        <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
+        <Box pb={2}>
+          <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
+        </Box>
         {feat.prerequisites && feat.prerequisites.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Prerequisites
             </Text>{' '}
             {feat.prerequisites.join(', ')}
@@ -103,7 +107,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         )}
         {feat.frequency && (
           <IndentedText ta='justify'>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Frequency
             </Text>{' '}
             {feat.frequency}
@@ -111,7 +115,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         )}
         {feat.trigger && (
           <IndentedText ta='justify'>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Trigger
             </Text>{' '}
             {feat.trigger}
@@ -119,7 +123,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         )}
         {feat.cost && (
           <IndentedText ta='justify'>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Cost
             </Text>{' '}
             {feat.cost}
@@ -127,7 +131,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         )}
         {feat.requirements && (
           <IndentedText ta='justify'>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Requirements
             </Text>{' '}
             {feat.requirements}
@@ -135,7 +139,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         )}
         {feat.access && (
           <IndentedText ta='justify'>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Access
             </Text>{' '}
             {feat.access}
@@ -145,7 +149,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         <RichText ta='justify'>{feat.description}</RichText>
         {feat.special && (
           <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} span>
+            <Text fw={600} c='gray.5' span>
               Special
             </Text>{' '}
             <RichText span>{feat.special}</RichText>

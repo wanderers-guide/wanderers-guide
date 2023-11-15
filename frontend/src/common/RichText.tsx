@@ -88,6 +88,7 @@ export default function RichText(props: RichTextProps) {
                   e.preventDefault();
                 }
               }}
+              
               href={drawerData ? undefined : href}
               target='_blank'
               underline='hover'

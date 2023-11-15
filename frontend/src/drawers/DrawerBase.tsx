@@ -1,12 +1,26 @@
 import { drawerState } from '@atoms/navAtoms';
-import { ActionIcon, Box, Divider, Drawer, Group, ScrollArea } from '@mantine/core';
+import {
+  ActionIcon,
+  Box,
+  Text,
+  Divider,
+  Drawer,
+  Group,
+  HoverCard,
+  ScrollArea,
+  Title,
+} from '@mantine/core';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { IconArrowLeft, IconX } from '@tabler/icons-react';
+import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import _ from 'lodash';
 import { FeatDrawerContent, FeatDrawerTitle } from './types/FeatDrawer';
 import { ActionDrawerContent, ActionDrawerTitle } from './types/ActionDrawer';
 import { useElementSize } from '@mantine/hooks';
 import React from 'react';
+import { SpellDrawerContent, SpellDrawerTitle } from './types/SpellDrawer';
+import { openContextModal } from '@mantine/modals';
+import { ContentType, AbilityBlockType } from '@typing/content';
+import { convertToContentType } from '@content/content-utils';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -100,10 +114,43 @@ export default function DrawerBase() {
           <DrawerContent />
         </Box>
       </ScrollArea>
+
+      {_drawer && !['character'].includes(_drawer.type) && (
+        <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
+          <HoverCard.Target>
+            <ActionIcon
+              variant='subtle'
+              aria-label='Help and Feedback'
+              radius='xl'
+              color='dark.3'
+              style={{
+                position: 'absolute',
+                bottom: 5,
+                right: 5,
+              }}
+              onClick={() => {
+                handleDrawerClose();
+                openContextModal({
+                  modal: 'contentFeedback',
+                  title: <Title order={3}>Content Details</Title>,
+                  innerProps: {
+                    type: convertToContentType(_drawer.type as ContentType | AbilityBlockType),
+                    data: _drawer.data,
+                  },
+                });
+              }}
+            >
+              <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+            </ActionIcon>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={0} px={10}>
+            <Text size='sm'>Something wrong?</Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      )}
     </Drawer>
   );
 }
-
 
 const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
@@ -111,6 +158,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
     <div ref={ref}>
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'spell' && <SpellDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -121,6 +169,7 @@ function DrawerContent() {
     <>
       {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}
     </>
   );
 }

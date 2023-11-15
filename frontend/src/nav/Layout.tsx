@@ -142,7 +142,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                             radius="xl"
                             size={30}
                           />
-                          <Text fw={500} size="sm" lh={1} mr={3}>
+                          <Text fw={500} size="sm" c='gray.4' lh={1} mr={3}>
                             {"Account"}
                           </Text>
                           <IconChevronDown

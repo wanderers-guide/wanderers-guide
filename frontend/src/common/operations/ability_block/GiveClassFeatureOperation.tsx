@@ -15,8 +15,10 @@ export function GiveClassFeatureOperation(props: {
         onClick={(option) => {
           props.onSelect(option);
         }}
-        abilityBlockType='class-feature'
         selectedId={props.selectedId}
+        options={{
+          abilityBlockType: 'class-feature',
+        }}
       />
     </OperationWrapper>
   );

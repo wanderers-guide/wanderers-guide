@@ -82,7 +82,7 @@ interface Spell {
   rarity: Rarity;
   cast: ActionCost | string;
   traits?: number[];
-  defenses?: string;
+  defense?: string;
   cost?: string;
   trigger?: string;
   requirements?: string;

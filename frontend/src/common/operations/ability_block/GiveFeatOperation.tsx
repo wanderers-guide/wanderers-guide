@@ -15,8 +15,10 @@ export function GiveFeatOperation(props: {
         onClick={(option) => {
           props.onSelect(option);
         }}
-        abilityBlockType='feat'
         selectedId={props.selectedId}
+        options={{
+          abilityBlockType: 'feat',
+        }}
       />
     </OperationWrapper>
   );

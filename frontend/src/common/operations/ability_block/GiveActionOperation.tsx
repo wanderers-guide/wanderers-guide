@@ -15,8 +15,10 @@ export function GiveActionOperation(props: {
         onClick={(option) => {
           props.onSelect(option);
         }}
-        abilityBlockType='action'
         selectedId={props.selectedId}
+        options={{
+          abilityBlockType: 'action',
+        }}
       />
     </OperationWrapper>
   );

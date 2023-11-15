@@ -1,5 +1,18 @@
 import { makeRequest } from '@requests/request-manager';
-import { AbilityBlock, AbilityBlockType, Ancestry, Background, Class, ContentSource, ContentType, Item, Language, Trait } from '@typing/content';
+import {
+  AbilityBlock,
+  AbilityBlockType,
+  Ancestry,
+  Background,
+  Class,
+  ContentSource,
+  ContentType,
+  Creature,
+  Item,
+  Language,
+  Spell,
+  Trait,
+} from '@typing/content';
 import { throwError } from '@utils/notifications';
 import _ from 'lodash';
 
@@ -78,14 +91,14 @@ function emptyContentStore() {
 
 /* Get content from memory. If failed to find, fetch it */
 export async function getContent<T = Record<string, any>>(type: ContentType, id: number) {
-  if(contentSources.length === 0) throwError('No enabled content sources defined');
-  if(!id) return null;
+  if (contentSources.length === 0) throwError('No enabled content sources defined');
+  if (!id) return null;
   const c = contentStore.get(type)!.get(id);
-  if(c !== undefined) {
+  if (c !== undefined) {
     return c ? (c as T) : null;
   }
 
-  if(type === 'ancestry') {
+  if (type === 'ancestry') {
     const ancestry = await findAncestry(id);
     if (!ancestry) {
       setContentEmpty(type, id);
@@ -95,7 +108,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return ancestry as T;
     }
   }
-  if(type === 'background') {
+  if (type === 'background') {
     const background = await findBackground(id);
     if (!background) {
       setContentEmpty(type, id);
@@ -105,7 +118,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return background as T;
     }
   }
-  if(type === 'class') {
+  if (type === 'class') {
     const class_ = await findClass(id);
     if (!class_) {
       setContentEmpty(type, id);
@@ -115,7 +128,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return class_ as T;
     }
   }
-  if(type === 'ability-block') {
+  if (type === 'ability-block') {
     const abilityBlock = await findAbilityBlock(id);
     if (!abilityBlock) {
       setContentEmpty(type, id);
@@ -125,7 +138,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return abilityBlock as T;
     }
   }
-  if(type === 'item') {
+  if (type === 'item') {
     const item = await findItem(id);
     if (!item) {
       setContentEmpty(type, id);
@@ -135,7 +148,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return item as T;
     }
   }
-  if(type === 'language') {
+  if (type === 'language') {
     const language = await findLanguage(id);
     if (!language) {
       setContentEmpty(type, id);
@@ -145,7 +158,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return language as T;
     }
   }
-  if(type === 'spell') {
+  if (type === 'spell') {
     const spell = await findSpell(id);
     if (!spell) {
       setContentEmpty(type, id);
@@ -155,7 +168,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return spell as T;
     }
   }
-  if(type === 'trait') {
+  if (type === 'trait') {
     const trait = await findTrait(id);
     if (!trait) {
       setContentEmpty(type, id);
@@ -165,7 +178,17 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
       return trait as T;
     }
   }
-  if(type === 'content-source') {
+  if (type === 'creature') {
+    const creature = await findCreature(id);
+    if (!creature) {
+      setContentEmpty(type, id);
+      return null;
+    } else {
+      setContent(type, creature);
+      return creature as T;
+    }
+  }
+  if (type === 'content-source') {
     const contentSource = await findContentSource(id);
     if (!contentSource) {
       setContentEmpty(type, id);
@@ -184,7 +207,6 @@ export async function getEnabledContentSources() {
   return [...store.values()];
 }
 
-
 export function setContent(type: ContentType, content: Record<string, any>) {
   const overriding = contentStore.get(type)!.has(content.id);
   contentStore.get(type)!.set(content.id, content);
@@ -199,39 +221,24 @@ export function setContentEmpty(type: ContentType, id: number) {
 export async function getContentStore<T = Record<string, any>>(
   type: ContentType,
   options?: {
-    fetch?: boolean,
-    sourceId?: number,
-    abilityBlockType?: AbilityBlockType,
+    fetch?: boolean;
+    sourceId?: number;
+    abilityBlockType?: AbilityBlockType;
   }
 ) {
-  if(options?.sourceId) {
-    // Easy, just fetch the content from the one source
-    return await getContentStoreSingleSourceId<T>(type, options.sourceId, options);
-  } else {
-    // Fetch the content from each source separately and merge them
-    // - We do this to avoid the 1000 item limit
-    // - Instead of a 1000 item limit total, we have a 1000 item limit per source
-    const finalStore = new Map<number, T>();
-    for(const sourceId of contentSources) {
-      const store = await getContentStoreSingleSourceId<T>(type, sourceId, options);
-      for(const [id, content] of store) {
-        finalStore.set(id, content);
-      }
-    }
-    return finalStore;
-  }
+  return await getContentStoreSingleSourceId<T>(type, options?.sourceId, options);
 }
 
 /**
  * Get all the content of a given type for a single source id
- * - WARN: There's a limit of 1000 items of a given type per source
- * @param type 
- * @param options 
- * @returns 
+ * - WARN: There's a limit of 10000 items of a given type per source
+ * @param type
+ * @param options
+ * @returns
  */
 async function getContentStoreSingleSourceId<T = Record<string, any>>(
   type: ContentType,
-  sourceId: number,
+  sourceId?: number,
   options?: {
     fetch?: boolean;
     abilityBlockType?: AbilityBlockType;
@@ -239,7 +246,9 @@ async function getContentStoreSingleSourceId<T = Record<string, any>>(
 ) {
   // Set content sources to just the one we want
   const tempContentSources = _.cloneDeep(contentSources);
-  contentSources = [sourceId];
+  if (sourceId) {
+    contentSources = [sourceId];
+  }
 
   if (options?.fetch || options?.fetch === undefined) {
     if (type === 'ancestry') {
@@ -306,22 +315,33 @@ async function getContentStoreSingleSourceId<T = Record<string, any>>(
         }
       }
     }
+    if (type === 'creature') {
+      const creatures = await findAllCreatures();
+      if (creatures) {
+        for (const creature of creatures) {
+          setContent(type, creature);
+        }
+      }
+    }
     if (type === 'content-source') {
       const _contentSources = await findAllContentSources({
         homebrew: false,
       });
-      if (_contentSources) {
-        for (const _contentSource of _contentSources) {
-          setContent(type, _contentSource);
-        }
+      for (const _contentSource of _contentSources) {
+        setContent(type, _contentSource);
       }
     }
   }
 
   // Reset content sources
-  contentSources = tempContentSources;
+  if (sourceId) {
+    contentSources = tempContentSources;
+  }
 
   let content = contentStore.get(type)!;
+  console.log('content', content);
+  console.log('type', type);
+  console.log('sources', sourceId);
 
   // Filter by ability block type if we have one
   if (options?.abilityBlockType) {
@@ -331,13 +351,11 @@ async function getContentStoreSingleSourceId<T = Record<string, any>>(
   return content as Map<number, T>;
 }
 
-
 export function resetContentStore() {
   contentStore = emptyContentStore();
 }
 
-
-export async function getTraits(ids?: number[]){
+export async function getTraits(ids?: number[]) {
   let traits: Trait[] = [];
   for (const traitId of ids ?? []) {
     // TODO: If this was 1 request, it would be so much faster!
@@ -354,9 +372,41 @@ export async function getAllContentSources() {
   const sources = await findAllContentSources({
     homebrew: false,
   });
-  return [...sources ?? []].map((source) => source.id);
+  return [...(sources ?? [])].map((source) => source.id);
 }
 
+export async function getAllContentForSource(sourceId: number) {
+  // Set content sources to just the one we want
+  const tempContentSources = _.cloneDeep(contentSources);
+  contentSources = [sourceId];
+
+  const content = await Promise.all([
+    findAllAncestries(),
+    findAllBackgrounds(),
+    findAllClasses(),
+    findAllAbilityBlocks(),
+    findAllItems(),
+    findAllLanguages(),
+    findAllSpells(),
+    findAllTraits(),
+    findAllCreatures(),
+  ]);
+
+  // Reset content sources
+  contentSources = tempContentSources;
+
+  return {
+    ancestries: (content[0] ?? []) as Ancestry[],
+    backgrounds: (content[1] ?? []) as Background[],
+    classes: (content[2] ?? []) as Class[],
+    abilityBlocks: (content[3] ?? []) as AbilityBlock[],
+    items: (content[4] ?? []) as Item[],
+    languages: (content[5] ?? []) as Language[],
+    spells: (content[6] ?? []) as Spell[],
+    traits: (content[7] ?? []) as Trait[],
+    creatures: (content[8] ?? []) as Creature[],
+  };
+}
 
 async function findAncestry(id: number) {
   return await makeRequest<Ancestry>('find-ancestry', {
@@ -395,7 +445,7 @@ async function findLanguage(id: number) {
   });
 }
 async function findSpell(id: number) {
-  return await makeRequest<Language>('find-spell', {
+  return await makeRequest<Spell>('find-spell', {
     id,
     content_sources: contentSources,
   });
@@ -406,13 +456,18 @@ async function findTrait(id: number) {
     content_sources: contentSources,
   });
 }
+async function findCreature(id: number) {
+  return await makeRequest<Creature>('find-creature', {
+    id,
+    content_sources: contentSources,
+  });
+}
 async function findContentSource(id: number) {
   return await makeRequest<ContentSource>('find-content-source', {
     id,
     content_sources: contentSources,
   });
 }
-
 
 async function findAllAncestries() {
   return await makeRequest<Ancestry[]>('find-ancestry', {
@@ -446,7 +501,7 @@ async function findAllLanguages() {
   });
 }
 async function findAllSpells() {
-  return await makeRequest<Language[]>('find-spell', {
+  return await makeRequest<Spell[]>('find-spell', {
     content_sources: contentSources,
   });
 }
@@ -455,15 +510,23 @@ async function findAllTraits() {
     content_sources: contentSources,
   });
 }
-async function findAllContentSources(options?: {
-  group?: string,
-  homebrew?: boolean,
-  published?: boolean,
+async function findAllCreatures() {
+  return await makeRequest<Creature[]>('find-creature', {
+    content_sources: contentSources,
+  });
+}
+export async function findAllContentSources(options?: {
+  group?: string;
+  homebrew?: boolean;
+  published?: boolean;
 }) {
-  return await makeRequest<ContentSource[]>('find-content-source', {
+  const sources = await makeRequest<ContentSource[]>('find-content-source', {
     group: options?.group,
     homebrew: options?.homebrew,
     published: options?.published,
   });
+  if (!sources) {
+    return [];
+  }
+  return sources.sort((a, b) => a.name.localeCompare(b.name));
 }
-

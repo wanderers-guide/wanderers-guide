@@ -16,6 +16,7 @@ function ActionStructure(props: ActionStructureProps) {
         {...props}
         fz={size}
         ff='ActionIcons, sans-serif'
+        c='gray.5'
         style={{
           position: 'absolute',
           top: -1,
@@ -62,6 +63,30 @@ export function ActionSymbol(props: ActionSymbolProps) {
       return (
         <Text {...rest}>
           <ActionStructure symbol={2} {...rest} /> to <ActionStructure symbol={3} {...rest} />
+        </Text>
+      );
+    case 'TWO-TO-TWO-ROUNDS':
+      return (
+        <Text {...rest}>
+          <ActionStructure symbol={2} {...rest} /> to 2 rounds
+        </Text>
+      );
+    case 'THREE-TO-TWO-ROUNDS':
+      return (
+        <Text {...rest}>
+          <ActionStructure symbol={3} {...rest} /> to 2 rounds
+        </Text>
+      );
+    case 'TWO-TO-THREE-ROUNDS':
+      return (
+        <Text {...rest}>
+          <ActionStructure symbol={2} {...rest} /> to 3 rounds
+        </Text>
+      );
+    case 'THREE-TO-THREE-ROUNDS':
+      return (
+        <Text {...rest}>
+          <ActionStructure symbol={3} {...rest} /> to 3 rounds
         </Text>
       );
     default:

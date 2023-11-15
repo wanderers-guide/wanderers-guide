@@ -18,7 +18,10 @@ export function CreateValOperation(props: {
         size='xs'
         w={110}
         value={props.variableType}
-        onChange={props.onTypeChange}
+        onChange={(value) => {
+          if (!value) return;
+          props.onTypeChange(value as VariableType);
+        }}
         data={[
           {
             label: 'Number',

@@ -1,13 +1,13 @@
-import { makeRequest } from "@requests/request-manager";
-import { ContentType } from "@typing/content";
-import _ from "lodash";
+import { makeRequest } from '@requests/request-manager';
+import { ContentType } from '@typing/content';
+import _ from 'lodash';
 
 /**
  * Generates embeddings for the given content
  */
 export async function populateContent(type: ContentType, ids: number[]) {
-  // Limited to 1000 ids at a time
-  const chunks = _.chunk(ids, 1000);
+  // Limited to 500 ids at a time
+  const chunks = _.chunk(ids, 500);
   for (const chunk of chunks) {
     const responseName = await makeRequest('vector-db-populate-collection', {
       collection: 'name',
@@ -27,45 +27,80 @@ export async function populateContent(type: ContentType, ids: number[]) {
   };
 }
 
+type QueryResult = {
+  distance: number;
+  data: Record<string, string | boolean | number>;
+};
+
 /**
  * Queries the vector database for the given content (only searching by name)
  */
-export async function queryByName(query: string, type?: ContentType, amount?: number) {
-  const response = await makeRequest<{
-    distance: number;
-    data: Record<string, string | boolean | number>;
-  }[]>('vector-db-query-collection', {
+export async function queryByName(
+  query: string,
+  options?: {
+    type?: ContentType;
+    amount?: number;
+    maxDistance?: number;
+    applyWeights?: boolean;
+  }
+) {
+  let amount = options?.amount ?? 1;
+  const response = await makeRequest<QueryResult[]>('vector-db-query-collection', {
     collection: 'name',
-    nResults: amount || 1,
+    nResults: options?.applyWeights ? amount + 10 : amount,
     // Most results range from 0.3 - 0.4, I've found that 0.35 does a good job at filtering out bad results
-    maxDistance: 0.35,
+    maxDistance: options?.maxDistance ?? 0.35,
     query: query,
-    where: type ? { _type: type } : undefined,
+    where: options?.type ? { _type: options.type } : undefined,
   });
-  if(!response) {
+  if (!response) {
     return [];
   }
-  console.log(response);
-  return response.map((result) => result.data);
+  return querySorter(response, amount, options?.applyWeights).map((result) => result.data);
 }
 
 /**
  * Queries the vector database for the given content (searching by entire object)
  */
-export async function queryByContent(query: string, type?: ContentType, amount?: number) {
-  const response = await makeRequest<{
-    distance: number;
-    data: Record<string, string | boolean | number>;
-  }[]>('vector-db-query-collection', {
+export async function queryByContent(
+  query: string,
+  options?: {
+    type?: ContentType;
+    amount?: number;
+    maxDistance?: number;
+    applyWeights?: boolean;
+  }
+) {
+  let amount = options?.amount ?? 1;
+  const response = await makeRequest<QueryResult[]>('vector-db-query-collection', {
     collection: 'content',
-    nResults: amount || 1,
+    nResults: options?.applyWeights ? amount + 10 : amount,
     maxDistance: undefined,
     query: query,
-    where: type ? { _type: type } : undefined,
+    where: options?.type ? { _type: options.type } : undefined,
   });
-  if(!response) {
+  if (!response) {
     return [];
   }
-  console.log(response);
-  return response.map((result) => result.data);
+  return querySorter(response, amount, options?.applyWeights).map((result) => result.data);
+}
+
+// Large weight = less important
+const TYPE_WEIGHTS: Record<string, number> = {
+  trait: 0.1,
+  action: 0.1,
+};
+
+function querySorter(results: QueryResult[], amount: number, applyWeights?: boolean) {
+  const sortedResults = results.sort((a, b) => {
+    if (applyWeights) {
+      const aWeight = a.distance + (TYPE_WEIGHTS[`${a.data.type || a.data._type}`] ?? 0);
+      const bWeight = b.distance + (TYPE_WEIGHTS[`${b.data.type || b.data._type}`] ?? 0);
+      return aWeight - bWeight;
+    } else {
+      return a.distance - b.distance;
+    }
+  });
+  console.log(sortedResults);
+  return sortedResults.slice(0, amount);
 }

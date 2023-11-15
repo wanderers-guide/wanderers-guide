@@ -23,11 +23,13 @@ import { removeQueryParam } from '@utils/document-change';
 import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
 import { convertContentLink } from '@drawers/drawer-utils';
 import { drawerState } from '@atoms/navAtoms';
+import { ContentFeedbackModal } from '@modals/ContentFeedbackModal';
 
 const modals = {
   selectContent: SelectContentModal,
   selectImage: SelectImageModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
+  contentFeedback: ContentFeedbackModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {

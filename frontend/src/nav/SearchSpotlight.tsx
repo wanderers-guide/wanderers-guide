@@ -1,6 +1,7 @@
 import { queryByName } from '@ai/vector-db/vector-manager';
 import { drawerState } from '@atoms/navAtoms';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
+import { getIconFromContentType } from '@content/content-utils';
 import { Loader, Text, MantineTheme, rem, useMantineTheme, Center, ActionIcon, Tooltip, HoverCard } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, isActionsGroup } from '@mantine/spotlight';
@@ -36,6 +37,8 @@ export default function SearchSpotlight() {
       activateQueryPipeline(defaultActions, query, navigate, openDrawer, theme).then((result) => {
         if (query === currentQuery.current) {
           setQueryResult(result);
+        } else {
+          setQuery(currentQuery.current);
         }
       });
     }
@@ -227,7 +230,10 @@ async function queryResults(
   openDrawer: DrawerStateSet,
   theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
-  const result = await queryByName(query, undefined, 10);
+  const result = await queryByName(query, {
+    amount: 10,
+    applyWeights: true,
+  });
 
   return result.map((data) => {
     let description = `${data.description}`.split('.')[0] + '.';
@@ -245,11 +251,11 @@ async function queryResults(
     return {
       id: `${data._type}-${data.id}`,
       label: `${data.name}`,
-      description: description,
+      description: data.description ? description : undefined,
       onClick: () => {
         openDrawer({ type: data._type as DrawerType, data: { id: data.id } });
       },
-      leftSection: <IconFileText style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+      leftSection: getIconFromContentType(data._type as ContentType, '1.5rem'),
       highlightColor: theme.colors[theme.primaryColor][2],
       keywords: ['query', `${data._type}`],
       _type: abilityBlockType ?? data._type,

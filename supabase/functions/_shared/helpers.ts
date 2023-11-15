@@ -178,11 +178,11 @@ export async function insertData<T = Record<string, any>>(
   type?: string,
   hasUUID = true
 ) {
-  // Add upload_uuid to data, to prevent duplicate uploads
+  // Add uuid to data, as way to track "identical" data
   if (hasUUID) {
     data = {
       ...data,
-      upload_uuid: uniqueId(
+      uuid: uniqueId(
         data.name as string,
         type ? type : tableName,
         data.content_source_id as number
@@ -205,7 +205,7 @@ export async function insertData<T = Record<string, any>>(
   if (error) {
     if (error.code === '23505' && hasUUID) {
       // Duplicate UUID, delete the old one and try again
-      const { error } = await client.from(tableName).delete().eq('upload_uuid', data.upload_uuid);
+      const { error } = await client.from(tableName).delete().eq('uuid', data.uuid);
       if (error) {
         throw error;
       }
@@ -273,7 +273,7 @@ export async function updateData(
   delete data.id;
   delete data.created_at;
   delete data.content_source_id;
-  delete data.upload_uuid;
+  delete data.uuid;
   delete data.user_id;
 
   const { error } = await client.from(tableName).update(data).eq('id', id);

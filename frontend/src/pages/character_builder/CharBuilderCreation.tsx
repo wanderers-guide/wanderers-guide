@@ -270,10 +270,10 @@ export default function CharBuilderCreation(props: {
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'defenses'}>
+                <Accordion.Item className={classes.item} value={'saving-throws'}>
                   <Accordion.Control>
                     <Text c='white' fz='sm'>
-                      Defenses
+                      Saving Throws
                     </Text>
                   </Accordion.Control>
                   <Accordion.Panel>
