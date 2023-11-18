@@ -24,6 +24,9 @@ import { ConditionCheckData, ConditionOperator, Operation } from '@typing/operat
 import { useDidUpdate } from '@mantine/hooks';
 
 export default function ConditionalOperation(props: {
+  conditions?: ConditionCheckData[];
+  trueOperations?: Operation[];
+  falseOperations?: Operation[];
   onChange: (
     conditions: ConditionCheckData[],
     trueOperations: Operation[],
@@ -40,10 +43,10 @@ export default function ConditionalOperation(props: {
     } satisfies ConditionCheckData;
   };
 
-  const [checks, setChecks] = useState<ConditionCheckData[]>([getDefaultCondition()]);
+  const [checks, setChecks] = useState<ConditionCheckData[]>(props.conditions ?? [getDefaultCondition()]);
 
-  const [trueOperations, setTrueOperations] = useState<Operation[]>([]);
-  const [falseOperations, setFalseOperations] = useState<Operation[]>([]);
+  const [trueOperations, setTrueOperations] = useState<Operation[]>(props.trueOperations ?? []);
+  const [falseOperations, setFalseOperations] = useState<Operation[]>(props.falseOperations ?? []);
 
   useDidUpdate(() => {
     props.onChange(checks, trueOperations, falseOperations);
@@ -108,6 +111,7 @@ export default function ConditionalOperation(props: {
                       </Badge>
                     </Group>
                   }
+                  value={trueOperations}
                   onChange={(operations) => setTrueOperations(operations)}
                   /* Don't allow nested conditionals and allowing creating new variables 
                       under a condition would be a mess to support 
@@ -136,6 +140,7 @@ export default function ConditionalOperation(props: {
                       </Badge>
                     </Group>
                   }
+                  value={falseOperations}
                   onChange={(operations) => setFalseOperations(operations)}
                   /* Don't allow nested conditionals and allowing creating new variables 
                       under a condition would be a mess to support 

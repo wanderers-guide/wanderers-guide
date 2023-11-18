@@ -1,8 +1,8 @@
 import { Autocomplete } from "@mantine/core";
-import { Variable } from "@typing/variables";
+import { Variable, VariableType } from "@typing/variables";
 import { getVariables } from "@variables/variable-manager";
 
-export default function VariableSelect(props: { value: string; onChange: (value: string, variable?: Variable) => void }) {
+export default function VariableSelect(props: { value: string; variableType?: VariableType; onChange: (value: string, variable?: Variable) => void }) {
   return (
     <Autocomplete
       ff='Ubuntu Mono, monospace'
@@ -14,7 +14,12 @@ export default function VariableSelect(props: { value: string; onChange: (value:
         const variable = value.toUpperCase().replace(/\s/g, '_');
         props.onChange(value, getVariables()[variable]);
       }}
-      data={Object.keys(getVariables())}
+      data={Object.keys(getVariables()).filter((variable) => {
+        if (props.variableType) {
+          return getVariables()[variable].type === props.variableType;
+        }
+        return true;
+      })}
     />
   );
 }

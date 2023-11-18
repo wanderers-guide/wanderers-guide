@@ -1,6 +1,6 @@
 
 import { Variable, AttributeValue, ProficiencyType } from "./variables";
-import { AbilityBlockType } from './content';
+import { AbilityBlockType, Rarity } from './content';
 
 export type Operation =
   | OperationAdjValue
@@ -10,6 +10,8 @@ export type Operation =
   | OperationRemoveAbilityBlock
   | OperationConditional
   | OperationSelect
+  | OperationGiveLanguage
+  | OperationRemoveLanguage
   | OperationGiveSpell
   | OperationRemoveSpell;
 export type OperationType =
@@ -18,6 +20,8 @@ export type OperationType =
   | "createValue"
   | "giveAbilityBlock"
   | "removeAbilityBlock"
+  | "giveLanguage"
+  | "removeLanguage"
   | "conditional"
   | "select"
   | "giveSpell"
@@ -103,15 +107,38 @@ export interface OperationRemoveSpell extends OperationBase {
   };
 }
 
-export interface OperationSelect extends OperationBase {
-  readonly type: "select";
+export interface OperationGiveLanguage extends OperationBase {
+  readonly type: 'giveLanguage';
   data: {
-    title: string;
-    description: string;
-    optionType: OperationSelectOptionType;
-    options: OperationSelectOption[];
+    languageId: number;
   };
 }
+
+export interface OperationRemoveLanguage extends OperationBase {
+  readonly type: 'removeLanguage';
+  data: {
+    languageId: number;
+  };
+}
+
+export interface OperationSelect extends OperationBase {
+  readonly type: 'select';
+  data: {
+    title?: string;
+    description?: string;// Not used
+    modeType: 'PREDEFINED' | 'FILTERED';
+    optionType: OperationSelectOptionType;
+    optionsPredefined?: OperationSelectOption[];
+    optionsFilters?: OperationSelectFilters;
+  };
+}
+
+export type OperationSelectOptionType =
+  | 'CUSTOM'
+  | 'ABILITY_BLOCK'
+  | 'SPELL'
+  | 'LANGUAGE'
+  | 'ADJ_VALUE';
 
 /**
  * OperationSelectOption
@@ -120,17 +147,8 @@ export type OperationSelectOption =
   | OperationSelectOptionCustom
   | OperationSelectOptionAbilityBlock
   | OperationSelectOptionSpell
-  | OperationSelectOptionAttribute
-  | OperationSelectOptionLanguage
-  | OperationSelectOptionProficiency;
-export type OperationSelectOptionType =
-  | "CUSTOM"
-  | "ABILITY_BLOCK"
-  | "SPELL"
-  | "ATTRIBUTE"
-  | "LANGUAGE"
-  | "PROFICIENCY";
-
+  | OperationSelectOptionAdjValue
+  | OperationSelectOptionLanguage;
 
 interface OperationSelectOptionBase {
   readonly id: string;
@@ -154,17 +172,53 @@ interface OperationSelectOptionSpell extends OperationSelectOptionBase {
   operation: OperationGiveSpell;
 }
 
-interface OperationSelectOptionAttribute extends OperationSelectOptionBase {
-  readonly type: "ATTRIBUTE";
-  operation: OperationAdjValue;
-}
-
 interface OperationSelectOptionLanguage extends OperationSelectOptionBase {
-  readonly type: "LANGUAGE";
-  //operation: OperationSetValue; TODO
+  readonly type: 'LANGUAGE';
+  operation: OperationGiveLanguage;
 }
 
-interface OperationSelectOptionProficiency extends OperationSelectOptionBase {
-  readonly type: "PROFICIENCY";
+interface OperationSelectOptionAdjValue extends OperationSelectOptionBase {
+  readonly type: 'ADJ_VALUE';
   operation: OperationAdjValue;
+}
+
+
+/**
+ * OperationSelectFilter
+ */
+export type OperationSelectFilters =
+  | OperationSelectFiltersAbilityBlock
+  | OperationSelectFiltersSpell
+  | OperationSelectFiltersLanguage;
+
+interface OperationSelectFiltersBase {
+  readonly id: string;
+  readonly type: OperationSelectOptionType;
+}
+
+interface OperationSelectFiltersAbilityBlock extends OperationSelectFiltersBase {
+  readonly type: 'ABILITY_BLOCK';
+  level: {
+    min?: number;
+    max?: number;
+  },
+  traits?: string[];
+  // TODO: add more filters
+}
+
+interface OperationSelectFiltersSpell extends OperationSelectFiltersBase {
+  readonly type: 'SPELL';
+  level: {
+    min?: number;
+    max?: number;
+  };
+  traits?: string[];
+  traditions?: string[];
+  // TODO: add more filters
+}
+
+interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
+  readonly type: 'LANGUAGE';
+  rarity?: Rarity;
+  core?: boolean;
 }

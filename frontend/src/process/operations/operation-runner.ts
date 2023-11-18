@@ -3,8 +3,10 @@ import {
   OperationConditional,
   OperationCreateValue,
   OperationGiveAbilityBlock,
+  OperationGiveLanguage,
   OperationGiveSpell,
   OperationRemoveAbilityBlock,
+  OperationRemoveLanguage,
   OperationRemoveSpell,
   OperationSelect,
   OperationSetValue,
@@ -179,8 +181,19 @@ export const createDefaultOperation = (type: OperationType) => {
       data: {
         title: '',
         description: '',
-        optionType: 'CUSTOM',
-        options: [],
+        modeType: 'PREDEFINED',
+        optionType: 'ABILITY_BLOCK',
+        optionsPredefined: [],
+        optionsFilters: undefined,
+        // {
+        //   id: crypto.randomUUID(),
+        //   type: 'ABILITY_BLOCK',
+        //   level: {
+        //     min: undefined,
+        //     max: undefined,
+        //   },
+        //   traits: undefined,
+        // },
       },
     } satisfies OperationSelect;
   } else if (type === 'giveSpell') {
@@ -208,5 +221,23 @@ export const createDefaultOperation = (type: OperationType) => {
         spellId: -1,
       },
     } satisfies OperationRemoveSpell;
+  } else if (type === 'giveLanguage') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        languageId: -1,
+      },
+    } satisfies OperationGiveLanguage;
+  } else if (type === 'removeLanguage') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        languageId: -1,
+      },
+    } satisfies OperationRemoveLanguage;
+  } else {
+    throw new Error(`Unknown operation type: ${type}`);
   }
 };

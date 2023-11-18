@@ -39,7 +39,7 @@ export function AdjValOperation(props: {
   );
 }
 
-function AdjustValueInput(props: {
+export function AdjustValueInput(props: {
   variableType: VariableType;
   value: any;
   onChange: (value: number | string | boolean) => void;

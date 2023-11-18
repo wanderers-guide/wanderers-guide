@@ -22,6 +22,7 @@ import {
   OperationCreateValue,
   OperationGiveAbilityBlock,
   OperationGiveSpell,
+  OperationSelect,
   OperationSetValue,
   OperationType,
 } from '@typing/operations';
@@ -36,6 +37,7 @@ import { AdjValOperation } from './variables/AdjValOperation';
 import { SetValOperation } from './variables/SetValOperation';
 import { CreateValOperation } from './variables/CreateValOperation';
 import { useDidUpdate } from '@mantine/hooks';
+import { SelectionOperation } from './selection/SelectionOperation';
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -119,7 +121,7 @@ export function OperationSection(props: {
   value?: Operation[];
   onChange: (operations: Operation[]) => void;
 }) {
-  const [operations, setOperations] = useState<Operation[]>([]);
+  const [operations, setOperations] = useState<Operation[]>(props.value ?? []);
   const selectRef = useRef<HTMLInputElement>(null);
 
   console.log(operations);
@@ -142,17 +144,17 @@ export function OperationSection(props: {
           size='xs'
           placeholder='Add Operation'
           data={[
-            { value: 'select', label: 'Selection' },
+            { value: 'select', label: 'Selection' }, // TODO
             { value: 'conditional', label: 'Conditional' },
             { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
             { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
             { value: 'giveSpell', label: 'Give Spell' },
-            { value: 'giveLang', label: 'Give Language' },
-            { value: 'giveSelectOption', label: 'Give Select Option' },
+            { value: 'giveLang', label: 'Give Language' }, // TODO
+            { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'adjValue', label: 'Adjust Value' },
             { value: 'setValue', label: 'Set Value' },
             { value: 'createValue', label: 'Create Value' },
-            { value: 'RESO', label: 'RESO' },
+            { value: 'RESO', label: 'RESO' }, // TODO
           ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
           searchValue={''}
           value={null}
@@ -278,6 +280,9 @@ export function OperationDisplay(props: {
       let opConditional = props.operation as OperationConditional;
       return (
         <ConditionalOperation
+          conditions={opConditional.data.conditions}
+          trueOperations={opConditional.data.trueOperations}
+          falseOperations={opConditional.data.falseOperations}
           onChange={(conditions, trueOperations, falseOperations) => {
             opConditional.data.conditions = conditions;
             opConditional.data.trueOperations = trueOperations;
@@ -286,6 +291,14 @@ export function OperationDisplay(props: {
           }}
           onRemove={props.onRemove}
         />
+      );
+    case 'select':
+      let opSelection = props.operation as OperationSelect;
+      return (
+        <SelectionOperation data={opSelection.data} onChange={(data) => {
+          opSelection.data = data;
+          props.onChange(_.cloneDeep(opSelection));
+        }} onRemove={props.onRemove} />
       );
     case 'adjValue':
       let opAdjValue = props.operation as OperationAdjValue;
