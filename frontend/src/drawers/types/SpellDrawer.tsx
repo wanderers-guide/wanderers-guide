@@ -23,7 +23,7 @@ export function SpellDrawerTitle(props: { data: { id: number } }) {
     },
   });
 
-  const cast = convertCastToActionCost(spell?.cast ?? '');
+  const cast = spell?.cast ?? '';
 
   return (
     <>
@@ -76,7 +76,7 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
   console.log(spell.heightened)
 
   const CR = [];
-  const cast = convertCastToActionCost(spell?.cast ?? '');
+  const cast = spell?.cast ?? '';
   if (cast && !isActionCost(cast)) {
     CR.push(
       <>
@@ -226,18 +226,21 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
           </IndentedText>
         )}
         {true && <Divider />}
-        <RichText ta='justify'>{spell.description}</RichText>
+        <RichText ta='justify' py={5}>{spell.description}</RichText>
 
-        
-
-        {/* {feat.special && (
-          <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} c='gray.5' span>
-              Special
-            </Text>{' '}
-            <RichText span>{feat.special}</RichText>
-          </Text>
-        )} */}
+        {spell.heightened && spell.heightened.text && (
+          <Box>
+            <Divider />
+            {spell.heightened.text.map((text, index) => (
+              <IndentedText key={index} ta='justify'>
+                <Text fw={600} c='gray.5' span>
+                  Heightened {text.amount}
+                </Text>{' '}
+                {text.text}
+              </IndentedText>
+            ))}
+          </Box>
+        )}
       </Box>
     </Box>
   );

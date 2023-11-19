@@ -48,7 +48,7 @@ export default function RichTextInput(props: RichTextInputProps) {
   return (
     <Box>
       {props.label && (
-        <Text fz='sm' fw={500}>
+        <Text fz='sm' c='gray.4' fw={500}>
           {props.label}{' '}
           {props.required && (
             <Text fz='sm' fw={500} c='red' span>

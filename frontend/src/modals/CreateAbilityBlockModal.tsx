@@ -43,9 +43,6 @@ export function CreateAbilityBlockModal(props: {
   type: AbilityBlockType;
   onComplete: (abilityBlock: AbilityBlock) => void;
   onCancel: () => void;
-  options?: {
-    changeSource?: boolean;
-  };
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -71,6 +68,7 @@ export function CreateAbilityBlockModal(props: {
       return abilityBlock;
     },
     enabled: props.editId !== undefined,
+    refetchOnWindowFocus: false,
   });
 
   const [description, setDescription] = useState<JSONContent>();
@@ -128,6 +126,13 @@ export function CreateAbilityBlockModal(props: {
     setDescription(undefined);
   };
 
+  const miscSectionCount =
+    (form.values.frequency && form.values.frequency.length > 0 ? 1 : 0) +
+    (form.values.cost && form.values.cost.length > 0 ? 1 : 0) +
+    (form.values.trigger && form.values.trigger.length > 0 ? 1 : 0) +
+    (form.values.requirements && form.values.requirements.length > 0 ? 1 : 0) +
+    (form.values.access && form.values.access.length > 0 ? 1 : 0);
+
   return (
     <Modal
       opened={props.opened}
@@ -137,8 +142,7 @@ export function CreateAbilityBlockModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined ? 'Create' : 'Edit'}{' '}
-          {toLabel(props.type)}
+          {props.editId === undefined ? 'Create' : 'Edit'} {toLabel(props.type)}
         </Title>
       }
       styles={{
@@ -199,13 +203,20 @@ export function CreateAbilityBlockModal(props: {
             <Divider
               my='xs'
               label={
-                <Button
-                  variant={openedAdditional ? 'light' : 'subtle'}
-                  size='compact-sm'
-                  color='gray.6'
-                >
-                  Misc. Sections
-                </Button>
+                <Group gap={3} wrap='nowrap'>
+                  <Button
+                    variant={openedAdditional ? 'light' : 'subtle'}
+                    size='compact-sm'
+                    color='gray.6'
+                  >
+                    Misc. Sections
+                  </Button>
+                  {miscSectionCount && miscSectionCount > 0 && (
+                    <Badge variant='light' color='blue' size='xs'>
+                      {miscSectionCount}
+                    </Badge>
+                  )}
+                </Group>
               }
               labelPosition='left'
               onClick={toggleAdditional}

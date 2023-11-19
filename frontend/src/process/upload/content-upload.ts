@@ -35,6 +35,7 @@ import { populateContent } from '@ai/vector-db/vector-manager';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { performAutoContentLinking } from './auto-content-linking';
+import { convertCastToActionCost } from '@utils/actions';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -372,7 +373,7 @@ async function uploadSpell(
     rank: json.system?.level?.value,
     traditions: json.system?.traditions?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    cast: json.system?.time?.value,
+    cast: convertCastToActionCost(json.system?.time?.value ?? ''),
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     defense: json.system?.save?.value,
     cost: json.system?.cost?.value,

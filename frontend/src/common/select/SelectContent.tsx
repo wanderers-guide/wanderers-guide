@@ -66,6 +66,7 @@ import { pluralize, toLabel } from '@utils/strings';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import TraitsDisplay from '@common/TraitsDisplay';
+import { isActionCost } from '@content/content-utils';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -1235,6 +1236,11 @@ export function SpellSelectionOption(props: {
         <Box pl={8}>
           <Text fz='sm'>{props.spell.name}</Text>
         </Box>
+        {isActionCost(props.spell.cast) && (
+          <Box>
+            <ActionSymbol cost={props.spell.cast} />
+          </Box>
+        )}
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>

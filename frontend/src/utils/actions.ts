@@ -13,9 +13,9 @@ export function convertCastToActionCost(cast: string): ActionCost | string {
     return 'REACTION';
   } else if (cast === 'free') {
     return 'FREE-ACTION';
-  } else if (cast === '1 or 2') {
+  } else if (cast === '1 or 2' || cast === '1 to 2') {
     return 'ONE-TO-TWO-ACTIONS';
-  } else if (cast === '2 or 3') {
+  } else if (cast === '2 or 3' || cast === '2 to 3') {
     return 'TWO-TO-THREE-ACTIONS';
   } else if (cast === '1 to 3') {
     return 'ONE-TO-THREE-ACTIONS';
