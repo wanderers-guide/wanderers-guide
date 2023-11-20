@@ -22,6 +22,7 @@ import {
   Avatar,
   MantineColor,
   BackgroundImage,
+  Indicator,
 } from '@mantine/core';
 import {
   AbilityBlock,
@@ -50,6 +51,7 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconSearch,
+  IconTrash,
   IconX,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -147,11 +149,7 @@ export function selectContent<T = Record<string, any>>(
 ) {
   openContextModal({
     modal: 'selectContent',
-    title: (
-      <Title order={3}>
-        Select {toLabel(options?.abilityBlockType || type)}
-      </Title>
-    ),
+    title: <Title order={3}>Select {toLabel(options?.abilityBlockType || type)}</Title>,
     innerProps: {
       type,
       onClick: (option) => onClick(option as T),
@@ -458,13 +456,15 @@ function SelectionOptions(props: {
   );
 }
 
-function SelectionOptionsInner(props: {
+export function SelectionOptionsInner(props: {
   options: Record<string, any>[];
   type: ContentType;
   abilityBlockType?: AbilityBlockType;
   isLoading: boolean;
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const NUM_PER_PAGE = 20;
   const [activePage, setPage] = useState(1);
@@ -511,6 +511,8 @@ function SelectionOptionsInner(props: {
             abilityBlockType={props.abilityBlockType}
             onClick={props.onClick}
             selectedId={props.selectedId}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
           />
         )}
       </ScrollArea>
@@ -535,6 +537,8 @@ function SelectionOptionsRoot(props: {
   abilityBlockType?: AbilityBlockType;
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   // Render appropriate options based on type
   if (props.type === 'ability-block') {
@@ -547,6 +551,8 @@ function SelectionOptionsRoot(props: {
               feat={feat as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === feat.id}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
             />
           ))}
         </>
@@ -560,6 +566,8 @@ function SelectionOptionsRoot(props: {
               action={action as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === action.id}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
             />
           ))}
         </>
@@ -576,6 +584,8 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === class_.id}
             hasSelected={props.selectedId !== undefined}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
           />
         ))}
       </>
@@ -591,6 +601,8 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === background.id}
             hasSelected={props.selectedId !== undefined}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
           />
         ))}
       </>
@@ -606,6 +618,8 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === ancestry.id}
             hasSelected={props.selectedId !== undefined}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
           />
         ))}
       </>
@@ -620,6 +634,8 @@ function SelectionOptionsRoot(props: {
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
           />
         ))}
       </>
@@ -634,6 +650,24 @@ function SelectionOptionsRoot(props: {
             spell={spell as Spell}
             onClick={props.onClick}
             selected={props.selectedId === spell.id}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'trait') {
+    return (
+      <>
+        {props.options.map((trait, index) => (
+          <TraitSelectionOption
+            key={index}
+            trait={trait as Trait}
+            onClick={props.onClick}
+            selected={props.selectedId === trait.id}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
           />
         ))}
       </>
@@ -652,6 +686,8 @@ export function FeatSelectionOption(props: {
   feat: AbilityBlock;
   onClick: (feat: AbilityBlock) => void;
   selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -700,7 +736,7 @@ export function FeatSelectionOption(props: {
             rarity={props.feat.rarity}
           />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -708,7 +744,7 @@ export function FeatSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -717,6 +753,24 @@ export function FeatSelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.feat.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
@@ -725,6 +779,8 @@ export function ActionSelectionOption(props: {
   action: AbilityBlock;
   onClick: (action: AbilityBlock) => void;
   selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -761,7 +817,7 @@ export function ActionSelectionOption(props: {
             skill={props.action.meta_data?.skill}
           />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -769,7 +825,7 @@ export function ActionSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -778,6 +834,24 @@ export function ActionSelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.action.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
@@ -787,6 +861,8 @@ export function ClassSelectionOption(props: {
   onClick: (class_: Class) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -875,7 +951,7 @@ export function ClassSelectionOption(props: {
         <Box>
           <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -883,7 +959,7 @@ export function ClassSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -892,6 +968,24 @@ export function ClassSelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 22,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.class_.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
@@ -901,6 +995,8 @@ export function AncestrySelectionOption(props: {
   onClick: (ancestry: Ancestry) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -995,7 +1091,7 @@ export function AncestrySelectionOption(props: {
             rarity={props.ancestry.rarity}
           />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1003,7 +1099,7 @@ export function AncestrySelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1012,6 +1108,24 @@ export function AncestrySelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 22,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.ancestry.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
@@ -1021,6 +1135,8 @@ export function BackgroundSelectionOption(props: {
   onClick: (background: Background) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1105,7 +1221,7 @@ export function BackgroundSelectionOption(props: {
             rarity={props.background.rarity}
           />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1113,7 +1229,7 @@ export function BackgroundSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1122,6 +1238,24 @@ export function BackgroundSelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 22,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.background.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
@@ -1130,6 +1264,8 @@ export function ItemSelectionOption(props: {
   item: Item;
   onClick: (item: Item) => void;
   selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1175,7 +1311,7 @@ export function ItemSelectionOption(props: {
             rarity={props.item.rarity}
           />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1183,7 +1319,7 @@ export function ItemSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1192,15 +1328,34 @@ export function ItemSelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.item.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
-
 
 export function SpellSelectionOption(props: {
   spell: Spell;
   onClick: (spell: Spell) => void;
   selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1251,7 +1406,7 @@ export function SpellSelectionOption(props: {
             rarity={props.spell.rarity}
           />
         </Box>
-        <Box w={50}></Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1259,7 +1414,7 @@ export function SpellSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: 10,
+          right: props.includeDelete ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1268,7 +1423,100 @@ export function SpellSelectionOption(props: {
       >
         Details
       </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.spell.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
     </Group>
   );
 }
 
+export function TraitSelectionOption(props: {
+  trait: Trait;
+  onClick: (trait: Trait) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.trait)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Indicator
+          disabled={!props.trait.meta_data?.important}
+          inline
+          size={12}
+          offset={-10}
+          position='middle-end'
+          color={theme.primaryColor}
+          withBorder
+        >
+          <Box pl={8}>
+            <Text fz='sm'>{props.trait.name}</Text>
+          </Box>
+        </Indicator>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'trait', data: { id: props.trait.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.trait.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}

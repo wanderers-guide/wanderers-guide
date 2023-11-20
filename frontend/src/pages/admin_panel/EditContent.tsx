@@ -1,23 +1,29 @@
+import { generateEmbeddings } from '@ai/vector-db/generate-embeddings';
 import BlurBox from '@common/BlurBox';
 import { selectContent } from '@common/select/SelectContent';
+import { findAllContentSources } from '@content/content-controller';
 import { upsertAbilityBlock, upsertSpell } from '@content/content-creation';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { Center, Group, Title, Select } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { CreateAbilityBlockModal } from '@modals/CreateAbilityBlockModal';
+import { CreateContentSourceModal } from '@modals/CreateContentSourceModal';
 import { CreateSpellModal } from '@modals/CreateSpellModal';
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { useQuery } from '@tanstack/react-query';
+import { AbilityBlockType, ContentType, Spell } from '@typing/content';
+import { set } from 'lodash';
 import { useState } from 'react';
 
 export default function EditContent() {
 
-  const [id, setId] = useState<number | null>(null);
-  const [contentType, openContentType] = useState<ContentType | AbilityBlockType | null>(null);
+  const [sourceId, setSourceId] = useState<number | undefined>(undefined);
 
-  const handleReset = () => {
-    openContentType(null);
-    setId(null);
-  }
+  const { data, isFetching } = useQuery({
+    queryKey: [`get-content-sources`],
+    queryFn: async () => {
+      return await findAllContentSources({ homebrew: false });
+    },
+  });
 
   return (
     <>
@@ -26,84 +32,31 @@ export default function EditContent() {
           <Group>
             <Title order={3}>Edit Content</Title>
             <Select
-              placeholder='Select content type'
-              data={[
-                { value: 'action', label: 'Action' },
-                { value: 'feat', label: 'Feat' },
-                { value: 'class-feature', label: 'Class Feature' },
-                { value: 'spell', label: 'Spell' },
-                { value: 'item', label: 'Item' },
-                { value: 'creature', label: 'Creature' },
-                { value: 'heritage', label: 'Heritage' },
-                { value: 'background', label: 'Background' },
-              ]}
+              placeholder='Select content source'
+              data={(data ?? []).map((source) => ({
+                value: source.id + '',
+                label: source.name,
+              }))}
               value=''
               searchValue=''
-              onChange={(value) => {
-                if (!value) return handleReset();
-
-                // Select content for id
-                const type = convertToContentType(value as ContentType | AbilityBlockType);
-                const abilityBlockType = isAbilityBlockType(value) ? value : undefined;
-                selectContent(
-                  type,
-                  (option) => {
-                    setId(option.id);
-                  },
-                  {
-                    abilityBlockType,
-                    groupBySource: true,
-                  }
-                );
-
-                // Set selected content type for modal
-                openContentType(value as ContentType | AbilityBlockType | null);
+              onChange={async (value) => {
+                if (!value) return;
+                setSourceId(parseInt(value));
               }}
             />
           </Group>
         </Center>
       </BlurBox>
-      {id && contentType && (
-        <>
-          <CreateAbilityBlockModal
-            opened={contentType === 'feat'}
-            type='feat'
-            editId={id}
-            onComplete={async (abilityBlock) => {
-              const result = await upsertAbilityBlock(abilityBlock);
+      <CreateContentSourceModal
+        opened={!!sourceId}
+        editId={sourceId}
+        onComplete={(source) => {
+          // Update logic
 
-              if (result) {
-                showNotification({
-                  title: `Updated ${result.name}`,
-                  message: `Successfully updated ${result.type}.`,
-                  autoClose: 3000,
-                });
-              }
-
-              handleReset();
-            }}
-            onCancel={() => handleReset()}
-          />
-          <CreateSpellModal
-            opened={contentType === 'spell'}
-            editId={id}
-            onComplete={async (spell) => {
-              const result = await upsertSpell(spell);
-
-              if (result) {
-                showNotification({
-                  title: `Updated ${result.name}`,
-                  message: `Successfully updated spell.`,
-                  autoClose: 3000,
-                });
-              }
-
-              handleReset();
-            }}
-            onCancel={() => handleReset()}
-          />
-        </>
-      )}
+          setSourceId(undefined);
+        }}
+        onCancel={() => setSourceId(undefined)}
+      />
     </>
   );
 }

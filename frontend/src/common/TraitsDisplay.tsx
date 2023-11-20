@@ -38,7 +38,7 @@ export default function TraitsDisplay(props: {
   });
 
   if (!traits) {
-    return <Loader color='blue' size={props.size ?? 'md'} type='dots' />;
+    return <Loader color={theme.primaryColor} size={props.size ?? 'md'} type='dots' />;
   }
 
   return (

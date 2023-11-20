@@ -21,6 +21,7 @@ import {
   Autocomplete,
   CloseButton,
   Tooltip,
+  useMantineTheme,
 } from '@mantine/core';
 import _, { set } from 'lodash';
 import { useState } from 'react';
@@ -47,6 +48,7 @@ export function CreateSpellModal(props: {
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const theme = useMantineTheme();
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedHeightened, { toggle: toggleHeightened }] = useDisclosure(false);
@@ -165,6 +167,7 @@ export function CreateSpellModal(props: {
       size={'md'}
       closeOnClickOutside={false}
       closeOnEscape={false}
+      keepMounted={false}
     >
       <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14}>
         <LoadingOverlay visible={loading || isFetching} />
@@ -249,7 +252,7 @@ export function CreateSpellModal(props: {
                     Misc. Sections
                   </Button>
                   {miscSectionCount && miscSectionCount > 0 && (
-                    <Badge variant='light' color='blue' size='xs'>
+                    <Badge variant='light' color={theme.primaryColor} size='xs'>
                       {miscSectionCount}
                     </Badge>
                   )}
@@ -375,7 +378,6 @@ export function CreateSpellModal(props: {
                 }}
               />
             )}
-            <Divider />
 
             <Divider
               my='xs'
@@ -389,7 +391,7 @@ export function CreateSpellModal(props: {
                     Heightened
                   </Button>
                   {form.values.heightened?.text && form.values.heightened.text.length > 0 && (
-                    <Badge variant='light' color='blue' size='xs'>
+                    <Badge variant='light' color={theme.primaryColor} size='xs'>
                       {form.values.heightened.text.length}
                     </Badge>
                   )}

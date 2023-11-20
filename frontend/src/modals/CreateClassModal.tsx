@@ -18,11 +18,15 @@ import {
   Title,
   Badge,
   ScrollArea,
+  Autocomplete,
+  CloseButton,
+  Tooltip,
   useMantineTheme,
+  NumberInput,
 } from '@mantine/core';
 import _, { set } from 'lodash';
 import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, Rarity, Trait } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, Class, Rarity, Spell, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
 import { getContent, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
@@ -38,72 +42,54 @@ import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
 
-export function CreateAbilityBlockModal(props: {
+export function CreateClassModal(props: {
   opened: boolean;
   editId?: number;
-  type: AbilityBlockType;
-  onComplete: (abilityBlock: AbilityBlock) => void;
+  onComplete: (class_: Class) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
 
-  const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-ability-block-${props.editId}`],
+    queryKey: [`get-class-${props.editId}`],
     queryFn: async () => {
-      const abilityBlock = await getContent<AbilityBlock>('ability-block', props.editId!);
-      if (abilityBlock && abilityBlock.type !== props.type) return null;
-      if (!abilityBlock) return null;
+      const class_ = await getContent<Class>('class', props.editId!);
+      if (!class_) return null;
 
       form.setInitialValues({
-        ...abilityBlock,
-        // @ts-ignore
-        level: abilityBlock.level.toString(),
+        ...class_,
       });
       form.reset();
-      setTraits(await getTraits(abilityBlock.traits));
-      setMetaData(abilityBlock.meta_data ?? {});
 
-      return abilityBlock;
+      return class_;
     },
     enabled: props.editId !== undefined,
     refetchOnWindowFocus: false,
   });
 
   const [description, setDescription] = useState<JSONContent>();
-  const [traits, setTraits] = useState<Trait[]>([]);
-  const [metaData, setMetaData] = useState<Record<string, any>>({});
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
   const form = useForm({
     initialValues: {
       id: -1,
       created_at: '',
-      operations: [] as Operation[] | undefined,
       name: '',
-      actions: null,
-      level: undefined as number | undefined,
-      rarity: 'COMMON',
-      prerequisites: [],
-      frequency: '',
-      cost: '',
-      trigger: '',
-      requirements: '',
-      access: '',
+      rarity: 'COMMON' as Rarity,
       description: '',
-      special: '',
-      type: 'feat',
-      meta_data: {},
-      traits: [],
+      operations: [] as Operation[] | undefined,
+      key_attribute: '',
+      hp: 0,
+      trait_id: -1,
+      artwork_url: '',
       content_source_id: -1,
       version: '1.0',
-    } satisfies AbilityBlock,
+    } satisfies Class,
 
     validate: {
-      level: (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level'),
       rarity: (value) =>
         ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
     },
@@ -112,9 +98,6 @@ export function CreateAbilityBlockModal(props: {
   const onSubmit = async (values: typeof form.values) => {
     props.onComplete({
       ...values,
-      level: values.level ? +values.level : undefined,
-      traits: traits.map((trait) => trait.id),
-      meta_data: metaData,
     });
     setTimeout(() => {
       onReset();
@@ -123,17 +106,8 @@ export function CreateAbilityBlockModal(props: {
 
   const onReset = () => {
     form.reset();
-    setTraits([]);
-    setMetaData({});
     setDescription(undefined);
   };
-
-  const miscSectionCount =
-    (form.values.frequency && form.values.frequency.length > 0 ? 1 : 0) +
-    (form.values.cost && form.values.cost.length > 0 ? 1 : 0) +
-    (form.values.trigger && form.values.trigger.length > 0 ? 1 : 0) +
-    (form.values.requirements && form.values.requirements.length > 0 ? 1 : 0) +
-    (form.values.access && form.values.access.length > 0 ? 1 : 0);
 
   return (
     <Modal
@@ -144,7 +118,8 @@ export function CreateAbilityBlockModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined ? 'Create' : 'Edit'} {toLabel(props.type)}
+          {props.editId === undefined ? 'Create' : 'Edit'}
+          {' Class'}
         </Title>
       }
       styles={{
@@ -152,7 +127,7 @@ export function CreateAbilityBlockModal(props: {
           paddingRight: 2,
         },
       }}
-      size={openedOperations ? 'xl' : 'md'}
+      size={'md'}
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
@@ -164,19 +139,27 @@ export function CreateAbilityBlockModal(props: {
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
                 <TextInput label='Name' required {...form.getInputProps('name')} />
-                <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
               </Group>
-
               <Select
-                label='Level'
+                label='Key Attribute'
                 required
-                data={Array.from({ length: 20 }, (_, i) => (i + 1).toString())}
-                w={70}
-                {...form.getInputProps('level')}
+                w={140}
+                {...form.getInputProps('key_attribute')}
+                data={[
+                  'STR',
+                  'DEX',
+                  'CON',
+                  'INT',
+                  'WIS',
+                  'CHA',
+                  'STR/DEX',
+                  'INT/WIS',
+                  'WIS/CHA',
+                  'VARIES',
+                ]}
               />
             </Group>
-
-            <Group wrap='nowrap' align='flex-start'>
+            <Group wrap='nowrap' justify='space-between'>
               <Select
                 label='Rarity'
                 required
@@ -189,128 +172,18 @@ export function CreateAbilityBlockModal(props: {
                 w={140}
                 {...form.getInputProps('rarity')}
               />
-              <TraitsInput
-                label='Other Traits'
-                value={traits.map((trait) => trait.name)}
-                onTraitChange={(traits) => setTraits(traits)}
-                style={{ flex: 1 }}
-              />
+              <NumberInput label='HP' required {...form.getInputProps('hp')} w={140} />
             </Group>
 
-            <TagsInput
-              label='Prerequisites'
-              splitChars={[',', ';', '|']}
-              {...form.getInputProps('prerequisites')}
+            <TextInput
+              defaultValue={form.values.artwork_url ?? ''}
+              label='Image URL'
+              onChange={async (e) => {
+                setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
+                form.setFieldValue('artwork_url', e.target?.value);
+              }}
+              error={isValidImageURL ? false : 'Invalid URL'}
             />
-
-            <Divider
-              my='xs'
-              label={
-                <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedAdditional ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
-                    Misc. Sections
-                  </Button>
-                  {miscSectionCount && miscSectionCount > 0 && (
-                    <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {miscSectionCount}
-                    </Badge>
-                  )}
-                </Group>
-              }
-              labelPosition='left'
-              onClick={toggleAdditional}
-            />
-            <Collapse in={openedAdditional}>
-              <Stack gap={10}>
-                <Textarea
-                  label='Frequency'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('frequency')}
-                />
-
-                <Textarea
-                  label='Cost'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('cost')}
-                />
-
-                <Textarea
-                  label='Trigger'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('trigger')}
-                />
-
-                <Textarea
-                  label='Requirements'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('requirements')}
-                />
-
-                <Textarea
-                  label='Access'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('access')}
-                />
-
-                <Divider mx='lg' label='Advanced' labelPosition='center' />
-
-                <TextInput
-                  defaultValue={metaData.image_url ?? ''}
-                  label='Image URL'
-                  onChange={async (e) => {
-                    setIsValidImageURL(
-                      !e.target?.value ? true : await isValidImage(e.target?.value)
-                    );
-                    setMetaData({
-                      ...metaData,
-                      image_url: e.target?.value,
-                    });
-                  }}
-                  error={isValidImageURL ? false : 'Invalid URL'}
-                />
-
-                <Stack py='xs'>
-                  <Switch
-                    label='Can Select Multiple Times'
-                    labelPosition='left'
-                    checked={metaData.canSelectMultipleTimes}
-                    onChange={(event) =>
-                      setMetaData({
-                        ...metaData,
-                        canSelectMultipleTimes: event.currentTarget.checked,
-                      })
-                    }
-                  />
-                  <Switch
-                    label='Unselectable'
-                    labelPosition='left'
-                    checked={metaData.unselectable}
-                    onChange={(event) =>
-                      setMetaData({
-                        ...metaData,
-                        unselectable: event.currentTarget.checked,
-                      })
-                    }
-                  />
-                </Stack>
-
-                <Divider />
-              </Stack>
-            </Collapse>
 
             {(description || form.values.description) && (
               <RichTextInput
@@ -323,14 +196,6 @@ export function CreateAbilityBlockModal(props: {
                 }}
               />
             )}
-
-            <Textarea
-              label='Special'
-              minRows={1}
-              maxRows={4}
-              autosize
-              {...form.getInputProps('special')}
-            />
 
             <Divider
               my='xs'

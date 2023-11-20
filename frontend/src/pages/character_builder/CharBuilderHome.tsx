@@ -327,10 +327,6 @@ export default function CharBuilderHome(props: {
                     />
                   </Stack>
                 </Tabs.Panel>
-
-                <Tabs.Panel value='messages'>Messages tab content</Tabs.Panel>
-
-                <Tabs.Panel value='settings'>Settings tab content</Tabs.Panel>
               </Tabs>
             </ScrollArea>
           </Paper>

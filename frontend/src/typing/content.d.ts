@@ -52,7 +52,7 @@ interface Item {
   rarity: Rarity;
   traits?: number[];
   description: string;
-  type: string;
+  group: string;
   hands?: string;
   size: Size;
   craft_requirements?: string;
@@ -136,7 +136,7 @@ interface Class {
   name: string;
   rarity: Rarity;
   description: string;
-  operations: Operation[];
+  operations: Operation[] | undefined;
   key_attribute: string;
   hp: number;
   trait_id: number;

@@ -147,14 +147,20 @@ export const EQUIPMENT_TYPES = ['equipment', 'weapon', 'armor', 'kit', 'consumab
 
 //// Foundry Content Linking Parsing & Removal ////
 // - Maybe save some of this data instead of deleting it all
-export function stripFoundryLinking(text: string) {
+export function stripFoundryLinking(text: string, level?: number) {
   text = text.replace(/@actor\.level/g, '1');
+  if(level) {
+    text = text.replace(/@item\.level/g, `${level}`);
+  }
 
   text = stripCompendiumLinks(text);
   text = stripDamageLinks(text);
   text = stripCheckLinks(text, true);
   text = stripCheckLinks(text, false);
   text = stripDistanceLinks(text);
+  text = stripMathLinks(text);
+
+  console.log(text);
 
   return text;
 }
@@ -172,6 +178,28 @@ function stripDamageLinks(text: string) {
     const result = math.evaluate(formula);
 
     newText = newText.replace(match[0], `${result}d${diceType} ${damageType}`);
+  }
+
+  return newText;
+}
+
+function stripMathLinks(text: string) {
+  const regex = /\[\[([^\]]+?)\(([^\]]+)\)\[([^\]]+)\]\]\]/gm;
+
+  let newText = text;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const beginning = match[1];
+    const formula = match[2];
+    let words = match[3];
+    words = words.replace(/[, ]/g, ' ');
+
+    let result = formula;
+    try {
+      result = math.evaluate(formula);
+    } catch (e) {}
+
+    newText = newText.replace(match[0], `${result} ${words}`);
   }
 
   return newText;

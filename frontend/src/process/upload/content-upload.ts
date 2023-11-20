@@ -256,7 +256,9 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
+  );
   const prerequisites =
     json.system?.prerequisites?.value?.map((prereq: { value: string }) => toText(prereq.value)) ??
     undefined;
@@ -364,7 +366,9 @@ async function uploadSpell(
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
+  );
 
   const spell = {
     id: -1,
@@ -433,7 +437,9 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
+  );
 
   const item = {
     id: -1,
@@ -444,7 +450,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
     rarity: convertToRarity(json.system?.traits?.rarity),
     bulk: json.system?.weight?.value,
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
-    type: (json.system?.consumableType?.value || json.system?.group) ?? '',
+    group: (json.system?.consumableType?.value || json.system?.group) ?? '',
     hands: undefined,
     size: convertToSize(json.system?.size?.value),
     craft_requirements: toText(descValues?.craft_requirements),
