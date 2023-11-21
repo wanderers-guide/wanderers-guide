@@ -54,9 +54,13 @@ export function CreateClassModal(props: {
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-class-${props.editId}`],
-    queryFn: async () => {
-      const class_ = await getContent<Class>('class', props.editId!);
+    queryKey: [`get-class-${props.editId}`, { editId: props.editId }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { editId }] = queryKey;
+
+      const class_ = await getContent<Class>('class', editId);
       if (!class_) return null;
 
       form.setInitialValues({
@@ -66,7 +70,7 @@ export function CreateClassModal(props: {
 
       return class_;
     },
-    enabled: props.editId !== undefined,
+    enabled: props.editId !== undefined && props.editId !== -1,
     refetchOnWindowFocus: false,
   });
 
@@ -118,7 +122,7 @@ export function CreateClassModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined ? 'Create' : 'Edit'}
+          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
           {' Class'}
         </Title>
       }
@@ -127,7 +131,7 @@ export function CreateClassModal(props: {
           paddingRight: 2,
         },
       }}
-      size={'md'}
+      size={openedOperations ? 'xl' : 'md'}
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
@@ -268,7 +272,9 @@ export function CreateClassModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>{props.editId === undefined ? 'Create' : 'Update'}</Button>
+              <Button type='submit'>
+                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
+              </Button>
             </Group>
           </Stack>
         </form>

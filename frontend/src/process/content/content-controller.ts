@@ -102,7 +102,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'ancestry') {
     const ancestry = await findAncestry(id);
     if (!ancestry) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, ancestry);
@@ -112,7 +112,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'background') {
     const background = await findBackground(id);
     if (!background) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, background);
@@ -122,7 +122,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'class') {
     const class_ = await findClass(id);
     if (!class_) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, class_);
@@ -132,7 +132,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'ability-block') {
     const abilityBlock = await findAbilityBlock(id);
     if (!abilityBlock) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, abilityBlock);
@@ -142,7 +142,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'item') {
     const item = await findItem(id);
     if (!item) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, item);
@@ -152,7 +152,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'language') {
     const language = await findLanguage(id);
     if (!language) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, language);
@@ -162,7 +162,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'spell') {
     const spell = await findSpell(id);
     if (!spell) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, spell);
@@ -172,7 +172,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'trait') {
     const trait = await findTrait(id);
     if (!trait) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, trait);
@@ -182,7 +182,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'creature') {
     const creature = await findCreature(id);
     if (!creature) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, creature);
@@ -192,7 +192,7 @@ export async function getContent<T = Record<string, any>>(type: ContentType, id:
   if (type === 'content-source') {
     const contentSource = await findContentSource(id);
     if (!contentSource) {
-      setContentEmpty(type, id);
+      clearContent(type, id);
       return null;
     } else {
       setContent(type, contentSource);
@@ -216,9 +216,9 @@ export function setContent(type: ContentType, content: Record<string, any>) {
   contentStore.get(type)!.set(content.id, content);
   return overriding;
 }
-export function setContentEmpty(type: ContentType, id: number) {
+export function clearContent(type: ContentType, id: number) {
   const overriding = contentStore.get(type)!.has(id);
-  contentStore.get(type)!.set(id, null);
+  contentStore.get(type)!.delete(id);
   return overriding;
 }
 
@@ -343,9 +343,6 @@ async function getContentStoreSingleSourceId<T = Record<string, any>>(
   }
 
   let content = contentStore.get(type)!;
-  console.log('content', content);
-  console.log('type', type);
-  console.log('sources', sourceId);
 
   // Filter by ability block type if we have one
   if (options?.abilityBlockType) {

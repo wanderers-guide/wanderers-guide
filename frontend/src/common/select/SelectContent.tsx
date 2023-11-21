@@ -31,6 +31,7 @@ import {
   Background,
   Class,
   ContentType,
+  Creature,
   Item,
   Language,
   Rarity,
@@ -466,6 +467,7 @@ export function SelectionOptionsInner(props: {
   selectedId?: number;
   includeDelete?: boolean;
   onDelete?: (id: number) => void;
+  h?: number;
 }) {
   const NUM_PER_PAGE = 20;
   const [activePage, setPage] = useState(1);
@@ -491,7 +493,7 @@ export function SelectionOptionsInner(props: {
 
   return (
     <>
-      <ScrollArea viewportRef={viewport} h={372} style={{ position: 'relative' }}>
+      <ScrollArea viewportRef={viewport} h={props.h ?? 372} style={{ position: 'relative' }}>
         {props.isLoading ? (
           <Loader
             type='bars'
@@ -582,6 +584,36 @@ function SelectionOptionsRoot(props: {
               classFeature={classFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === classFeature.id}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
+            />
+          ))}
+        </>
+      );
+    } else if (props.abilityBlockType === 'sense') {
+      return (
+        <>
+          {props.options.map((sense, index) => (
+            <SenseSelectionOption
+              key={index}
+              sense={sense as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === sense.id}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
+            />
+          ))}
+        </>
+      );
+    } else if (props.abilityBlockType === 'physical-feature') {
+      return (
+        <>
+          {props.options.map((physicalFeature, index) => (
+            <PhysicalFeatureSelectionOption
+              key={index}
+              physicalFeature={physicalFeature as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === physicalFeature.id}
               includeDelete={props.includeDelete}
               onDelete={props.onDelete}
             />
@@ -698,6 +730,22 @@ function SelectionOptionsRoot(props: {
             language={language as Language}
             onClick={props.onClick}
             selected={props.selectedId === language.id}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'creature') {
+    return (
+      <>
+        {props.options.map((creature, index) => (
+          <CreatureSelectionOption
+            key={index}
+            creature={creature as Creature}
+            onClick={props.onClick}
+            selected={props.selectedId === creature.id}
             includeDelete={props.includeDelete}
             onDelete={props.onDelete}
           />
@@ -958,6 +1006,166 @@ export function ClassFeatureSelectionOption(props: {
           onClick={(e) => {
             e.stopPropagation();
             props.onDelete?.(props.classFeature.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}
+
+export function PhysicalFeatureSelectionOption(props: {
+  physicalFeature: AbilityBlock;
+  onClick: (physicalFeature: AbilityBlock) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.physicalFeature)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.physicalFeature.name}</Text>
+        </Box>
+        <Box>
+          <ActionSymbol cost={props.physicalFeature.actions} />
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.physicalFeature.traits ?? []}
+            rarity={props.physicalFeature.rarity}
+          />
+        </Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'class-feature', data: { id: props.physicalFeature.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.physicalFeature.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}
+
+export function SenseSelectionOption(props: {
+  sense: AbilityBlock;
+  onClick: (sense: AbilityBlock) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.sense)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.sense.name}</Text>
+        </Box>
+        <Box>
+          <ActionSymbol cost={props.sense.actions} />
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.sense.traits ?? []}
+            rarity={props.sense.rarity}
+          />
+        </Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'class-feature', data: { id: props.sense.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.sense.id);
           }}
           aria-label='Delete'
         >
@@ -1700,6 +1908,156 @@ export function LanguageSelectionOption(props: {
           onClick={(e) => {
             e.stopPropagation();
             props.onDelete?.(props.language.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}
+
+export function CreatureSelectionOption(props: {
+  creature: Creature;
+  onClick: (creature: Creature) => void;
+  selected?: boolean;
+  hasSelected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => {
+        props.onClick(props.creature);
+      }}
+      justify='space-between'
+    >
+      <Text
+        fz={10}
+        c='dimmed'
+        ta='right'
+        w={14}
+        style={{
+          position: 'absolute',
+          top: 15,
+          left: 1,
+        }}
+      >
+        {props.creature.level}.
+      </Text>
+      <Group ml={8} wrap='nowrap'>
+        <Avatar
+          src={props.creature.meta_data?.image_url}
+          radius='sm'
+          styles={{
+            image: {
+              objectFit: 'contain',
+            },
+          }}
+        />
+
+        <div style={{ flex: 1 }}>
+          <Text size='sm' fw={500}>
+            {props.creature.name}
+          </Text>
+
+          <Group gap={5}>
+            {props.creature.family_type && (
+              <Badge
+                variant='dot'
+                size='xs'
+                styles={{
+                  root: {
+                    // @ts-ignore
+                    '--badge-dot-size': 0,
+                    textTransform: 'initial',
+                  },
+                }}
+                c='gray.6'
+              >
+                {props.creature.family_type}
+              </Badge>
+            )}
+            <Badge
+              variant='dot'
+              size='xs'
+              styles={{
+                root: {
+                  // @ts-ignore
+                  '--badge-dot-size': 0,
+                },
+              }}
+              c='gray.6'
+            >
+              AC {props.creature.stats?.ac}
+            </Badge>
+            <Badge
+              variant='dot'
+              size='xs'
+              styles={{
+                root: {
+                  // @ts-ignore
+                  '--badge-dot-size': 0,
+                },
+              }}
+              c='gray.6'
+            >
+              {props.creature.stats?.hp.max} HP
+            </Badge>
+          </Group>
+        </div>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.creature.traits ?? []}
+            rarity={props.creature.rarity}
+          />
+        </Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 20,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'creature', data: { id: props.creature.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 22,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.creature.id);
           }}
           aria-label='Delete'
         >

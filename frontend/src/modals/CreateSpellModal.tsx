@@ -54,9 +54,13 @@ export function CreateSpellModal(props: {
   const [openedHeightened, { toggle: toggleHeightened }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-spell-${props.editId}`],
-    queryFn: async () => {
-      const spell = await getContent<Spell>('spell', props.editId!);
+    queryKey: [`get-spell-${props.editId}`, { editId: props.editId }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { editId }] = queryKey;
+
+      const spell = await getContent<Spell>('spell', editId);
       if (!spell) return null;
 
       form.setInitialValues({
@@ -70,7 +74,7 @@ export function CreateSpellModal(props: {
 
       return spell;
     },
-    enabled: props.editId !== undefined,
+    enabled: props.editId !== undefined && props.editId !== -1,
     refetchOnWindowFocus: false,
   });
 
@@ -155,7 +159,7 @@ export function CreateSpellModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined ? 'Create' : 'Edit'}
+          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
           {' Spell'}
         </Title>
       }
@@ -496,7 +500,9 @@ export function CreateSpellModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>{props.editId === undefined ? 'Create' : 'Update'}</Button>
+              <Button type='submit'>
+                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
+              </Button>
             </Group>
           </Stack>
         </form>

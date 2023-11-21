@@ -1,13 +1,13 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Anchor, Code, List, Text, TextProps } from '@mantine/core';
+import { Anchor, Blockquote, Code, Divider, List, Text, TextProps } from '@mantine/core';
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
 import { useRecoilState } from 'recoil';
 import React from 'react';
 import IndentedText from './IndentedText';
-import { ActionSymbol } from './Actions';
+import { IconQuote } from '@tabler/icons-react';
 
 interface RichTextProps extends TextProps {
   children: any;
@@ -57,7 +57,11 @@ export default function RichText(props: RichTextProps) {
         },
         li(innerProps) {
           const { children, className } = innerProps;
-          return <List.Item className={className}>{children}</List.Item>;
+          return (
+            <List.Item className={className}>
+              <Text>{children}</Text>
+            </List.Item>
+          );
         },
         code(innerProps) {
           const { children, className } = innerProps;
@@ -88,7 +92,6 @@ export default function RichText(props: RichTextProps) {
                   e.preventDefault();
                 }
               }}
-              
               href={drawerData ? undefined : href}
               target='_blank'
               underline='hover'
@@ -96,6 +99,24 @@ export default function RichText(props: RichTextProps) {
             >
               {children}
             </Anchor>
+          );
+        },
+        hr(innerProps) {
+          const { className } = innerProps;
+          return <Divider className={className} />;
+        },
+        blockquote(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Blockquote
+              className={className}
+              icon={<IconQuote size='1.3rem' />}
+              iconSize={40}
+              ml={5}
+              my={10}
+            >
+              {children}
+            </Blockquote>
           );
         },
       }}

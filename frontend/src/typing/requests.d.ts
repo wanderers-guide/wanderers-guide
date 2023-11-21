@@ -3,6 +3,7 @@ export type RequestType =
   | 'upload-public-file'
   | 'open-ai-request'
   | 'find-content-source'
+  | 'create-content-source'
   | 'find-trait'
   | 'create-trait'
   | 'create-ability-block'

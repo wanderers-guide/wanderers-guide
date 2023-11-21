@@ -43,7 +43,9 @@ export default function ConditionalOperation(props: {
     } satisfies ConditionCheckData;
   };
 
-  const [checks, setChecks] = useState<ConditionCheckData[]>(props.conditions ?? [getDefaultCondition()]);
+  const [checks, setChecks] = useState<ConditionCheckData[]>(
+    props.conditions && props.conditions.length > 0 ? props.conditions : [getDefaultCondition()]
+  );
 
   const [trueOperations, setTrueOperations] = useState<Operation[]>(props.trueOperations ?? []);
   const [falseOperations, setFalseOperations] = useState<Operation[]>(props.falseOperations ?? []);

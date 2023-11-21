@@ -1,6 +1,13 @@
-import { AbilityBlock, Background, Creature, Item, Spell } from '@typing/content';
+import { AbilityBlock, Background, Class, ContentSource, Creature, Item, Spell } from '@typing/content';
 import _ from 'lodash';
 import { makeRequest } from '@requests/request-manager';
+
+export async function upsertContentSource(contentSource: ContentSource) {
+  const result = await makeRequest<ContentSource | true>('create-content-source', {
+    ...contentSource,
+  });
+  return result ? (result === true ? contentSource : result) : null;
+}
 
 export async function upsertAbilityBlock(abilityBlock: AbilityBlock) {
   const result = await makeRequest<AbilityBlock | true>('create-ability-block', {
@@ -35,4 +42,11 @@ export async function upsertBackground(background: Background) {
     ...background,
   });
   return result ? (result === true ? background : result) : null;
+}
+
+export async function upsertClass(class_: Class) {
+  const result = await makeRequest<Class | true>('create-class', {
+    ...class_,
+  });
+  return result ? (result === true ? class_ : result) : null;
 }

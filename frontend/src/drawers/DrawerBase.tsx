@@ -21,6 +21,7 @@ import { SpellDrawerContent, SpellDrawerTitle } from './types/SpellDrawer';
 import { openContextModal } from '@mantine/modals';
 import { ContentType, AbilityBlockType } from '@typing/content';
 import { convertToContentType } from '@content/content-utils';
+import { ClassDrawerTitle, ClassDrawerContent } from './types/ClassDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -159,6 +160,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'class' && <ClassDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -170,6 +172,7 @@ function DrawerContent() {
       {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'class' && <ClassDrawerContent data={_drawer.data} />}
     </>
   );
 }

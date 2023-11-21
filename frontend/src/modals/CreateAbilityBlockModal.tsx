@@ -52,14 +52,20 @@ export function CreateAbilityBlockModal(props: {
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-ability-block-${props.editId}`],
-    queryFn: async () => {
-      const abilityBlock = await getContent<AbilityBlock>('ability-block', props.editId!);
+    queryKey: [`get-ability-block-${props.editId}`, { editId: props.editId }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { editId }] = queryKey;
+
+      const abilityBlock = await getContent<AbilityBlock>('ability-block', editId);
       if (abilityBlock && abilityBlock.type !== props.type) return null;
       if (!abilityBlock) return null;
 
       form.setInitialValues({
         ...abilityBlock,
+        prerequisites: abilityBlock.prerequisites ?? [],
+        traits: abilityBlock.traits ?? [],
         // @ts-ignore
         level: abilityBlock.level.toString(),
       });
@@ -69,7 +75,7 @@ export function CreateAbilityBlockModal(props: {
 
       return abilityBlock;
     },
-    enabled: props.editId !== undefined,
+    enabled: props.editId !== undefined && props.editId !== -1,
     refetchOnWindowFocus: false,
   });
 
@@ -87,7 +93,7 @@ export function CreateAbilityBlockModal(props: {
       actions: null,
       level: undefined as number | undefined,
       rarity: 'COMMON',
-      prerequisites: [],
+      prerequisites: [] as string[],
       frequency: '',
       cost: '',
       trigger: '',
@@ -95,9 +101,9 @@ export function CreateAbilityBlockModal(props: {
       access: '',
       description: '',
       special: '',
-      type: 'feat',
+      type: props.type,
       meta_data: {},
-      traits: [],
+      traits: [] as number[],
       content_source_id: -1,
       version: '1.0',
     } satisfies AbilityBlock,
@@ -144,7 +150,8 @@ export function CreateAbilityBlockModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined ? 'Create' : 'Edit'} {toLabel(props.type)}
+          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}{' '}
+          {toLabel(props.type)}
         </Title>
       }
       styles={{
@@ -403,7 +410,9 @@ export function CreateAbilityBlockModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>{props.editId === undefined ? 'Create' : 'Update'}</Button>
+              <Button type='submit'>
+                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
+              </Button>
             </Group>
           </Stack>
         </form>

@@ -47,16 +47,13 @@ export default function EditContent() {
           </Group>
         </Center>
       </BlurBox>
-      <CreateContentSourceModal
-        opened={!!sourceId}
-        editId={sourceId}
-        onComplete={(source) => {
-          // Update logic
-
-          setSourceId(undefined);
-        }}
-        onCancel={() => setSourceId(undefined)}
-      />
+      {sourceId && (
+        <CreateContentSourceModal
+          opened={true}
+          sourceId={sourceId}
+          onClose={() => setSourceId(undefined)}
+        />
+      )}
     </>
   );
 }
