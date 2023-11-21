@@ -5,6 +5,7 @@ import EditContent from './EditContent';
 import { useEffect } from 'react';
 import { defineEnabledContentSources, getAllContentSources } from '@content/content-controller';
 import GenerateEmbeddings from './GenerateEmbeddings';
+import ImportLegacyContent from './ImportLegacyContent';
 
 export default function AdminPage() {
   setPageTitle(`Admin Panel`);
@@ -21,6 +22,7 @@ export default function AdminPage() {
       <GenerateEmbeddings />
       <UploadContent />
       <EditContent />
+      <ImportLegacyContent />
     </Stack>
   );
 }

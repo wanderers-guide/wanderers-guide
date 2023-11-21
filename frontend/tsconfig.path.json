@@ -19,6 +19,7 @@
       "@requests/*": ["src/request/*"],
       "@upload/*": ["src/process/upload/*"],
       "@content/*": ["src/process/content/*"],
+      "@import/*": ["src/process/import/*"],
       "@css/*": ["src/css/*"],
       "@ai/*": ["src/ai/*"],
     }

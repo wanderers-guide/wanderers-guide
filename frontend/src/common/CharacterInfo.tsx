@@ -39,12 +39,14 @@ export const CharacterInfo = React.forwardRef((props: {
         <div>
           <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
             <HoverCard.Target>
-              <Text pl={5} fz='lg' fw={500} className={classes.name}>
+              <Text c='gray.0' pl={5} fz='lg' fw={500} className={classes.name}>
                 {_.truncate(props.character?.name, { length: 16 })}
               </Text>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text size='sm'>{props.character?.name}</Text>
+              <Text c='gray.0' size='sm'>
+                {props.character?.name}
+              </Text>
             </HoverCard.Dropdown>
           </HoverCard>
 
@@ -69,9 +71,7 @@ export const CharacterInfo = React.forwardRef((props: {
                         {props.character.details.ancestry.name}
                       </>
                     ) : (
-                      <>
-                        Missing Ancestry
-                      </>
+                      <>Missing Ancestry</>
                     )}
                   </Text>
                 </Group>

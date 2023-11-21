@@ -32,6 +32,7 @@ import {
   Class,
   ContentType,
   Item,
+  Language,
   Rarity,
   Spell,
   Trait,
@@ -572,6 +573,21 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
+    } else if (props.abilityBlockType === 'class-feature') {
+      return (
+        <>
+          {props.options.map((classFeature, index) => (
+            <ClassFeatureSelectionOption
+              key={index}
+              classFeature={classFeature as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === classFeature.id}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
+            />
+          ))}
+        </>
+      );
     }
   }
   if (props.type === 'class') {
@@ -666,6 +682,22 @@ function SelectionOptionsRoot(props: {
             trait={trait as Trait}
             onClick={props.onClick}
             selected={props.selectedId === trait.id}
+            includeDelete={props.includeDelete}
+            onDelete={props.onDelete}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'language') {
+    return (
+      <>
+        {props.options.map((language, index) => (
+          <LanguageSelectionOption
+            key={index}
+            language={language as Language}
+            onClick={props.onClick}
+            selected={props.selectedId === language.id}
             includeDelete={props.includeDelete}
             onDelete={props.onDelete}
           />
@@ -846,6 +878,86 @@ export function ActionSelectionOption(props: {
           onClick={(e) => {
             e.stopPropagation();
             props.onDelete?.(props.action.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}
+
+export function ClassFeatureSelectionOption(props: {
+  classFeature: AbilityBlock;
+  onClick: (classFeature: AbilityBlock) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.classFeature)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.classFeature.name}</Text>
+        </Box>
+        <Box>
+          <ActionSymbol cost={props.classFeature.actions} />
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.classFeature.traits ?? []}
+            rarity={props.classFeature.rarity}
+          />
+        </Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'class-feature', data: { id: props.classFeature.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.classFeature.id);
           }}
           aria-label='Delete'
         >
@@ -1511,6 +1623,83 @@ export function TraitSelectionOption(props: {
           onClick={(e) => {
             e.stopPropagation();
             props.onDelete?.(props.trait.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}
+
+export function LanguageSelectionOption(props: {
+  language: Language;
+  onClick: (language: Language) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.language)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.language.name}</Text>
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={[]}
+            rarity={props.language.rarity}
+          />
+        </Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'language', data: { id: props.language.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.language.id);
           }}
           aria-label='Delete'
         >

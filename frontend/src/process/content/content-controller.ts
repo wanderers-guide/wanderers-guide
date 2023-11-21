@@ -5,6 +5,7 @@ import {
   Ancestry,
   Background,
   Class,
+  ContentPackage,
   ContentSource,
   ContentType,
   Creature,
@@ -206,6 +207,9 @@ export async function getEnabledContentSources() {
   const store = await getContentStore<ContentSource>('content-source');
   return [...store.values()];
 }
+export function getEnabledContentSourceIds() {
+  return _.cloneDeep(contentSources);
+}
 
 export function setContent(type: ContentType, content: Record<string, any>) {
   const overriding = contentStore.get(type)!.has(content.id);
@@ -375,10 +379,14 @@ export async function getAllContentSources() {
   return [...(sources ?? [])].map((source) => source.id);
 }
 
-export async function getAllContentForSource(sourceId: number) {
-  // Set content sources to just the one we want
-  const tempContentSources = _.cloneDeep(contentSources);
-  contentSources = [sourceId];
+export async function getContentPackage(sources?: number[]): Promise<ContentPackage> {
+
+  let tempContentSources: number[] = [];
+  if (sources && sources.length > 0) {
+    // Set content sources to just the ones we want
+    tempContentSources = _.cloneDeep(contentSources);
+    contentSources = sources;
+  }
 
   const content = await Promise.all([
     findAllAncestries(),
@@ -392,8 +400,10 @@ export async function getAllContentForSource(sourceId: number) {
     findAllCreatures(),
   ]);
 
-  // Reset content sources
-  contentSources = tempContentSources;
+  if (sources && sources.length > 0) {
+    // Reset content sources
+    contentSources = tempContentSources;
+  }
 
   return {
     ancestries: (content[0] ?? []) as Ancestry[],
@@ -405,7 +415,7 @@ export async function getAllContentForSource(sourceId: number) {
     spells: (content[6] ?? []) as Spell[],
     traits: (content[7] ?? []) as Trait[],
     creatures: (content[8] ?? []) as Creature[],
-  };
+  } satisfies ContentPackage;
 }
 
 async function findAncestry(id: number) {

@@ -21,6 +21,7 @@ import {
   OperationConditional,
   OperationCreateValue,
   OperationGiveAbilityBlock,
+  OperationGiveLanguage,
   OperationGiveSpell,
   OperationSelect,
   OperationSetValue,
@@ -38,6 +39,9 @@ import { SetValOperation } from './variables/SetValOperation';
 import { CreateValOperation } from './variables/CreateValOperation';
 import { useDidUpdate } from '@mantine/hooks';
 import { SelectionOperation } from './selection/SelectionOperation';
+import { GiveLanguageOperation } from './language/GiveLanguageOperation';
+import { GiveSenseOperation } from './ability_block/GiveSenseOperation';
+import { GivePhysicalFeatureOperation } from './ability_block/GivePhysicalFeatureOperation';
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -148,8 +152,10 @@ export function OperationSection(props: {
             { value: 'conditional', label: 'Conditional' },
             { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
             { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
+            { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
+            { value: 'giveAbilityBlock:::physical-feature', label: 'Give Physical Feature' },
             { value: 'giveSpell', label: 'Give Spell' },
-            { value: 'giveLang', label: 'Give Language' }, // TODO
+            { value: 'giveLanguage', label: 'Give Language' },
             { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'adjValue', label: 'Adjust Value' },
             { value: 'setValue', label: 'Set Value' },
@@ -261,6 +267,28 @@ export function OperationDisplay(props: {
               onRemove={props.onRemove}
             />
           );
+        case 'sense':
+          return (
+            <GiveSenseOperation
+              selectedId={opGiveAbilBlock.data.abilityBlockId}
+              onSelect={(option) => {
+                opGiveAbilBlock.data.abilityBlockId = option.id;
+                props.onChange(_.cloneDeep(opGiveAbilBlock));
+              }}
+              onRemove={props.onRemove}
+            />
+          );
+        case 'physical-feature':
+          return (
+            <GivePhysicalFeatureOperation
+              selectedId={opGiveAbilBlock.data.abilityBlockId}
+              onSelect={(option) => {
+                opGiveAbilBlock.data.abilityBlockId = option.id;
+                props.onChange(_.cloneDeep(opGiveAbilBlock));
+              }}
+              onRemove={props.onRemove}
+            />
+          );
         default:
           return null;
       }
@@ -269,6 +297,18 @@ export function OperationDisplay(props: {
       return (
         <GiveSpellOperation
           selectedId={opGiveSpell.data.spellId}
+          onSelect={(option) => {
+            opGiveSpell.data.spellId = option.id;
+            props.onChange(_.cloneDeep(opGiveSpell));
+          }}
+          onRemove={props.onRemove}
+        />
+      );
+    case 'giveLanguage':
+      let opGiveLanguage = props.operation as OperationGiveLanguage;
+      return (
+        <GiveLanguageOperation
+          selectedId={opGiveLanguage.data.languageId}
           onSelect={(option) => {
             opGiveSpell.data.spellId = option.id;
             props.onChange(_.cloneDeep(opGiveSpell));
@@ -295,10 +335,14 @@ export function OperationDisplay(props: {
     case 'select':
       let opSelection = props.operation as OperationSelect;
       return (
-        <SelectionOperation data={opSelection.data} onChange={(data) => {
-          opSelection.data = data;
-          props.onChange(_.cloneDeep(opSelection));
-        }} onRemove={props.onRemove} />
+        <SelectionOperation
+          data={opSelection.data}
+          onChange={(data) => {
+            opSelection.data = data;
+            props.onChange(_.cloneDeep(opSelection));
+          }}
+          onRemove={props.onRemove}
+        />
       );
     case 'adjValue':
       let opAdjValue = props.operation as OperationAdjValue;

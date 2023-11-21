@@ -11,29 +11,96 @@ import {
   Stack,
   Text,
   UnstyledButton,
+  useMantineTheme,
 } from '@mantine/core';
-import { Ancestry, Background, Character, Class, ContentSource } from '@typing/content';
+import {
+  Ancestry,
+  Background,
+  Character,
+  Class,
+  ContentPackage,
+  ContentSource,
+} from '@typing/content';
 import classes from '@css/FaqSimple.module.css';
-import { useElementSize, useHover } from '@mantine/hooks';
-import { useState } from 'react';
+import { useElementSize, useHover, useInterval } from '@mantine/hooks';
+import { useEffect, useState } from 'react';
 import { selectContent } from '@common/select/SelectContent';
 import { characterState } from '@atoms/characterAtoms';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { useQuery } from '@tanstack/react-query';
+import { getContentPackage } from '@content/content-controller';
+import D20Loader from '@assets/images/D20Loader';
 
-export default function CharBuilderCreation(props: {
+export default function CharBuilderCreation(props: { books: ContentSource[]; pageHeight: number }) {
+  const theme = useMantineTheme();
+  const character = useRecoilValue(characterState);
+
+  const { data: content, isFetching } = useQuery({
+    queryKey: [`find-content-${character?.id}`],
+    queryFn: async () => {
+      const content = await getContentPackage(props.books.map((book) => book.id));
+      interval.stop();
+      return content;
+    },
+    refetchOnWindowFocus: false,
+  });
+
+  // Just load progress manually
+  const [percentage, setPercentage] = useState(0);
+  const interval = useInterval(() => setPercentage((p) => p + 2), 20);
+  useEffect(() => {
+    interval.start();
+    return interval.stop;
+  }, []);
+
+  if (isFetching || !content) {
+    return (
+      <Box
+        style={{
+          width: '100%',
+          height: '300px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} />
+      </Box>
+    );
+  } else {
+    return (
+      <CharBuilderCreationInner
+        books={props.books}
+        content={content}
+        pageHeight={props.pageHeight}
+      />
+    );
+  }
+}
+
+export function CharBuilderCreationInner(props: {
   books: ContentSource[];
+  content: ContentPackage;
   pageHeight: number;
 }) {
-
   const { ref, height } = useElementSize();
 
   const [character, setCharacter] = useRecoilState(characterState);
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
-    return <LevelSection key={level} level={level} opened={levelItemValue === `${level}`} />;
-  });
+  const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map(
+    (level) => {
+      return (
+        <LevelSection
+          key={level}
+          level={level}
+          opened={levelItemValue === `${level}`}
+          content={props.content}
+        />
+      );
+    }
+  );
 
   return (
     <Group gap={0}>
@@ -124,27 +191,33 @@ export default function CharBuilderCreation(props: {
               </Box>
               <StatButton>
                 <Box>
-                  <Text fz='sm'>Hit Points</Text>
+                  <Text c='gray.0' fz='sm'>
+                    Hit Points
+                  </Text>
                 </Box>
                 <Box>
-                  <Text>67</Text>
+                  <Text c='gray.0'>67</Text>
                 </Box>
               </StatButton>
               <StatButton>
                 <Box>
-                  <Text fz='sm'>Class DC</Text>
+                  <Text c='gray.0' fz='sm'>
+                    Class DC
+                  </Text>
                 </Box>
                 <Group>
-                  <Text>14</Text>
+                  <Text c='gray.0'>14</Text>
                   <Badge variant='default'>U</Badge>
                 </Group>
               </StatButton>
               <StatButton>
                 <Box>
-                  <Text fz='sm'>Perception</Text>
+                  <Text c='gray.0' fz='sm'>
+                    Perception
+                  </Text>
                 </Box>
                 <Group>
-                  <Text>+4</Text>
+                  <Text c='gray.0'>+4</Text>
                   <Badge variant='default'>E</Badge>
                 </Group>
               </StatButton>
@@ -459,13 +532,15 @@ export default function CharBuilderCreation(props: {
 function AttributeModPart(props: { attribute: string; value: number; marked: boolean }) {
   return (
     <Box>
-      <Text ta='center' fz={11}>
+      <Text c='gray.0' ta='center' fz={11}>
         {props.attribute}
       </Text>
-      <Text ta='center'>
-        <Text span>{props.value < 0 ? '-' : '+'}</Text>
+      <Text c='gray.0' ta='center'>
+        <Text c='gray.0' span>
+          {props.value < 0 ? '-' : '+'}
+        </Text>
 
-        <Text td={props.marked ? 'underline' : undefined} span>
+        <Text c='gray.0' td={props.marked ? 'underline' : undefined} span>
           {Math.abs(props.value)}
         </Text>
       </Text>
@@ -498,7 +573,7 @@ function StatButton(props: { children: React.ReactNode; onClick?: () => void }) 
   );
 }
 
-function LevelSection(props: { level: number; opened: boolean }) {
+function LevelSection(props: { level: number; opened: boolean; content: ContentPackage }) {
   const { hovered, ref } = useHover();
 
   const selectionsToDo = 3;
@@ -514,7 +589,7 @@ function LevelSection(props: { level: number; opened: boolean }) {
     >
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text fw={700} fz='sm'>
+          <Text c='gray.5' fw={700} fz='sm'>
             {props.level === 0 ? (
               <>
                 Initial Stats{' '}

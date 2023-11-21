@@ -43,7 +43,7 @@ import {
   Trait,
 } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
-import { getAllContentForSource, getContent, getTraits } from '@content/content-controller';
+import { getContent, getContentPackage, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
@@ -78,7 +78,7 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.editId}`],
     queryFn: async () => {
-      const content = await getAllContentForSource(props.editId!);
+      const content = await getContentPackage([props.editId!]);
       const source = await getContent<ContentSource>('content-source', props.editId!);
       if (!source) return null;
 
