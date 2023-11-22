@@ -193,6 +193,7 @@ export default function DashboardPage() {
         <Group pt='sm'>
           {isLoading && (
             <Loader
+              size='lg'
               style={{
                 position: 'absolute',
                 top: '35%',
@@ -250,7 +251,7 @@ function CharacterCard(props: { character: Character }) {
           borderTopLeftRadius: theme.radius.md,
           borderTopRightRadius: theme.radius.md,
           backgroundColor:
-            hoveredMain && isPlayable(props.character) ? 'rgba(0, 0, 0, 0.1)' : undefined,
+            hoveredMain && isPlayable(props.character) ? 'rgba(0, 0, 0, 0.15)' : undefined,
           position: 'relative',
         }}
         onClick={(e) => {
