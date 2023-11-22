@@ -18,7 +18,7 @@ import { SearchBar } from "./Searchbar";
 import { useNavigate } from "react-router-dom";
 import { sessionState } from "@atoms/supabaseAtoms";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { IconChevronDown, IconHeart, IconStar, IconMessage, IconSettings, IconSwitchHorizontal, IconLogout, IconPlayerPause, IconTrash, IconCategory, IconLayersIntersect, IconSwords, IconUsers } from "@tabler/icons-react";
+import { IconChevronDown, IconHeart, IconStar, IconMessage, IconSettings, IconSwitchHorizontal, IconLogout, IconPlayerPause, IconTrash, IconCategory, IconLayersIntersect, IconSwords, IconUsers, IconSpeakerphone } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { getIcon } from "@utils/images";
 import { userIconState } from "@atoms/navAtoms";
@@ -95,10 +95,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                     size='compact-lg'
                     fz='sm'
                     onClick={() => {
-                      navigate('/dashboard');
+                      navigate('/characters');
                     }}
                   >
-                    Dashboard
+                    Characters
                   </Button>
                 ) : (
                   <Menu
@@ -145,21 +145,21 @@ export default function Layout(props: { children: React.ReactNode }) {
                     <Menu.Dropdown>
                       <Menu.Item
                         leftSection={
-                          <IconCategory
+                          <IconUsers
                             style={{ width: rem(16), height: rem(16) }}
                             color={theme.colors.blue[5]}
                             stroke={1.5}
                           />
                         }
                         onClick={() => {
-                          navigate('/dashboard');
+                          navigate('/characters');
                         }}
                       >
-                        Dashboard
+                        Characters
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
-                          <IconUsers
+                          <IconSpeakerphone
                             style={{ width: rem(16), height: rem(16) }}
                             color={theme.colors.violet[4]}
                             stroke={1.5}

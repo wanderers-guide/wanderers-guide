@@ -12,7 +12,7 @@ import MissingPage from "./pages/MissingPage.tsx";
 import { ErrorPage } from "./pages/ErrorPage.tsx";
 import HomePage from "./pages/HomePage.tsx";
 import RestrictedRoute from "@auth/RestrictedRoute.tsx";
-import DashboardPage from "@pages/DashboardPage.tsx";
+import DashboardPage from "@pages/CharactersPage.tsx";
 import LoginPage from "@pages/LoginPage.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecoilRoot } from "recoil";
@@ -20,6 +20,7 @@ import { createClient } from "@supabase/supabase-js";
 import AdminPage from "@pages/admin_panel/AdminPage.tsx";
 import './index.css';
 import CharacterBuilderPage from "@pages/character_builder/CharacterBuilderPage.tsx";
+import CharactersPage from "@pages/CharactersPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -57,8 +58,8 @@ const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: 'dashboard',
-        element: <RestrictedRoute page={<DashboardPage />} />,
+        path: 'characters',
+        element: <RestrictedRoute page={<CharactersPage />} />,
       },
       {
         path: 'admin',

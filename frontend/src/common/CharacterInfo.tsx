@@ -41,11 +41,11 @@ export const CharacterInfo = React.forwardRef((props: {
             <HoverCard.Target>
               <Text
                 c='gray.0'
-                fz={props.character && props.character.name.length >= 16 ? 'md' : 'lg'}
+                fz={props.character && props.character.name.length >= 16 ? '0.95rem' : 'lg'}
                 fw={500}
                 className={classes.name}
               >
-                {_.truncate(props.character?.name, { length: 19 })}
+                {_.truncate(props.character?.name, { length: 18 })}
               </Text>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>

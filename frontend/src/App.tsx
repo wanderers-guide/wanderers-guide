@@ -83,7 +83,7 @@ export default function App() {
   const [background, setBackground] = useState<ImageOption>();
   useEffect(() => {
     (async () => {
-      if (!activeCharacer?.details?.background_image_url ||
+      if (
         prevCharacer?.details?.background_image_url ===
         activeCharacer?.details?.background_image_url
       ) {

@@ -22,7 +22,7 @@
   transition: background-color 100ms ease, left 100ms ease;
 
   input:checked+*>& {
-    background-color: var(--mantine-color-blue-4);
+    /*background-color: var(--mantine-color-blue-4);*/
     left: calc(100% - rem(12px));
   }
 }

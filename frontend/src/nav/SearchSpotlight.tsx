@@ -6,7 +6,7 @@ import { Loader, Text, MantineTheme, rem, useMantineTheme, Center, ActionIcon, T
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, isActionsGroup } from '@mantine/spotlight';
 import { makeRequest } from '@requests/request-manager';
-import { IconAdjustments, IconAdjustmentsFilled, IconArchive, IconBrandDiscord, IconBrandPatreon, IconDashboard, IconFileText, IconHome, IconLayoutDashboard, IconSearch, IconUser } from '@tabler/icons-react';
+import { IconAdjustments, IconAdjustmentsFilled, IconArchive, IconBrandDiscord, IconBrandPatreon, IconDashboard, IconFileText, IconHome, IconLayoutDashboard, IconSearch, IconUser, IconUsers } from '@tabler/icons-react';
 import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
@@ -49,12 +49,12 @@ export default function SearchSpotlight() {
     group: 'Pages',
     actions: [
       {
-        id: 'page-dashboard',
-        label: 'Dashboard',
-        description: 'View your characters, campaigns, and more',
-        onClick: () => navigate(`/dashboard`),
+        id: 'page-characters',
+        label: 'Characters',
+        description: 'View and edit your characters',
+        onClick: () => navigate(`/characters`),
         leftSection: (
-          <IconLayoutDashboard style={{ width: rem(24), height: rem(24) }} stroke={1.5} />
+          <IconUsers style={{ width: rem(24), height: rem(24) }} stroke={1.5} />
         ),
         keywords: ['page'],
       },
