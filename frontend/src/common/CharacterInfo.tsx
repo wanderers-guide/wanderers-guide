@@ -23,7 +23,7 @@ export const CharacterInfo = React.forwardRef((props: {
   const hasBackground = props.character?.details?.background?.name !== undefined;
 
   return (
-    <div ref={ref}>
+    <div ref={ref} style={{ width: 260 }}>
       <Group wrap='nowrap' align='flex-start' gap={0}>
         <Avatar
           src={props.character?.details?.image_url}
@@ -36,11 +36,16 @@ export const CharacterInfo = React.forwardRef((props: {
           color='dark.3'
           bg={theme.colors.dark[6]}
         />
-        <div>
+        <div style={{ flex: 1 }}>
           <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
             <HoverCard.Target>
-              <Text c='gray.0' pl={5} fz='lg' fw={500} className={classes.name}>
-                {_.truncate(props.character?.name, { length: 16 })}
+              <Text
+                c='gray.0'
+                fz={props.character && props.character.name.length >= 16 ? 'md' : 'lg'}
+                fw={500}
+                className={classes.name}
+              >
+                {_.truncate(props.character?.name, { length: 19 })}
               </Text>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
@@ -64,7 +69,7 @@ export const CharacterInfo = React.forwardRef((props: {
               ) : (
                 <Group wrap='nowrap' gap={10} mt={3}>
                   <IconTree stroke={1.5} size='1rem' className={classes.icon} />
-                  <Text fz='xs' c='dimmed'>
+                  <Text fz='xs' c='gray.3'>
                     {props.character?.details?.ancestry?.name ? (
                       <>
                         {props.character?.details?.heritage?.name ?? ''}{' '}
@@ -90,7 +95,7 @@ export const CharacterInfo = React.forwardRef((props: {
               ) : (
                 <Group wrap='nowrap' gap={10} mt={3}>
                   <IconWindow stroke={1.5} size='1rem' className={classes.icon} />
-                  <Text fz='xs' c='dimmed'>
+                  <Text fz='xs' c='gray.3'>
                     {props.character?.details?.background?.name ?? 'Missing Background'}
                   </Text>
                 </Group>
@@ -109,7 +114,7 @@ export const CharacterInfo = React.forwardRef((props: {
               ) : (
                 <Group wrap='nowrap' gap={10} mt={3}>
                   <IconVocabulary stroke={1.5} size='1rem' className={classes.icon} />
-                  <Text fz='xs' c='dimmed'>
+                  <Text fz='xs' c='gray.3'>
                     {props.character?.details?.class?.name ?? 'Missing Class'}
                   </Text>
                 </Group>

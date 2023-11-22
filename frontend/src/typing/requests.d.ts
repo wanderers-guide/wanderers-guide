@@ -4,6 +4,7 @@ export type RequestType =
   | 'open-ai-request'
   | 'find-content-source'
   | 'create-content-source'
+  | 'delete-content'
   | 'find-trait'
   | 'create-trait'
   | 'create-ability-block'
@@ -26,7 +27,7 @@ export type RequestType =
   | 'find-characters'
   | 'update-character'
   | 'vector-db-populate-collection'
-  | 'vector-db-query-collection'
+  | 'vector-db-query-collection';
 
 
 export type JSendResponse = JSendResponseSuccess | JSendResponseFail | JSendResponseError;

@@ -49,6 +49,7 @@ import { Character, ContentSource } from '@typing/content';
 import { uploadImage } from '@upload/image-upload';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
+import _ from 'lodash';
 import { useRecoilState } from 'recoil';
 
 export default function CharBuilderHome(props: {
@@ -100,7 +101,7 @@ export default function CharBuilderHome(props: {
         content_sources: {
           ...prev.content_sources,
           enabled: enabled
-            ? [...(prev.content_sources?.enabled ?? []), bookId]
+            ? _.uniq([...(prev.content_sources?.enabled ?? []), bookId])
             : prev.content_sources?.enabled?.filter((id: number) => id !== bookId),
         },
       };
@@ -154,7 +155,7 @@ export default function CharBuilderHome(props: {
               <TextInput
                 label='Name'
                 placeholder='Unknown Wanderer'
-                defaultValue={character?.name}
+                defaultValue={character?.name === 'Unknown Wanderer' ? '' : character?.name}
                 onChange={(e) => {
                   setCharacter((prev) => {
                     if (!prev) return prev;

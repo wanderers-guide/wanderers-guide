@@ -395,7 +395,7 @@ export async function getBackgroundImageFromName(category: string, name: string)
 }
 
 async function getBackgroundImageInternal(background?: ImageOption) {
-  if (!background) {
+  if (!background || !background.url) {
     return getDefaultBackgroundImage();
   }
 

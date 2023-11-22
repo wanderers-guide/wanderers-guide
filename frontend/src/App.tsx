@@ -83,11 +83,16 @@ export default function App() {
   const [background, setBackground] = useState<ImageOption>();
   useEffect(() => {
     (async () => {
-      if (
+      if (!activeCharacer?.details?.background_image_url ||
         prevCharacer?.details?.background_image_url ===
         activeCharacer?.details?.background_image_url
-      )
+      ) {
+        if (!background?.url) {
+          // TODO: Use account default
+          setBackground(await getBackgroundImageFromURL());
+        }
         return;
+      }
       console.log('Updating background image...');
       setBackground(await getBackgroundImageFromURL(activeCharacer?.details?.background_image_url));
     })();

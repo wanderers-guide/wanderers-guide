@@ -37,8 +37,8 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
   const [opened, setOpened] = useState(initiallyOpened || false);
   const items = (hasLinks ? links : [])
     .sort((a, b) => a.label.localeCompare(b.label))
-    .map((link) => (
-      <Group gap={0}>
+    .map((link, index) => (
+      <Group key={index} gap={0}>
         <Text<'a'> component='a' className={classes.link} key={link.label}>
           <Switch
             label={link.label}

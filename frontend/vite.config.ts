@@ -24,6 +24,7 @@ export default defineConfig({
       '@upload': path.resolve(__dirname, './src/process/upload'),
       '@content': path.resolve(__dirname, './src/process/content'),
       '@import': path.resolve(__dirname, './src/process/import'),
+      '@export': path.resolve(__dirname, './src/process/export'),
       '@css': path.resolve(__dirname, './src/css'),
       '@ai': path.resolve(__dirname, './src/ai'),
     },

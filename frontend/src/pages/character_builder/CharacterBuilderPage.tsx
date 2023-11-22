@@ -65,6 +65,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { setPageTitle } from '@utils/document-change';
 import { isPlayable } from '@utils/character';
 import { JSendResponse } from '@typing/requests';
+import _ from 'lodash';
 
 export default function CharacterBuilderPage() {
   setPageTitle(`Builder`);
@@ -88,34 +89,34 @@ export default function CharacterBuilderPage() {
   const pageHeight = 500;
 
   const queryClient = useQueryClient();
-  
+
   const [character, setCharacter] = useRecoilState(characterState);
 
   // Fetch character from db
-  const { data: charDetails, isFetching } = useQuery({
+  const { data: charDetails, isLoading, isInitialLoading } = useQuery({
     queryKey: [`find-character-${characterId}`],
     queryFn: async () => {
-      const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>('find-characters', {
-        ids: [characterId],
-      });
+      const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
+        'find-characters',
+        {
+          ids: [characterId],
+        }
+      );
       return charDetails;
     },
     refetchOnWindowFocus: false,
   });
+  
+  
+  useEffect(() => {
+    if (!charDetails || !charDetails.characters[0] || character) return;
+    // Update character nav state
+    setCharacter(charDetails.characters[0]);
 
-  // Update character state when fetched from db
-  useDidUpdate(() => {
-    if (charDetails?.characters && charDetails?.characters.length > 0) {
-      const newCharacter = charDetails.characters[0];
-      setCharacter(newCharacter);
+    // Make sure we sync the enabled content sources
+    defineEnabledContentSources(charDetails.characters[0].content_sources?.enabled ?? []);
+  }, [isInitialLoading, character]);
 
-      // Update the nav character state
-
-
-      // Make sure we sync the enabled content sources
-      defineEnabledContentSources(newCharacter.content_sources?.enabled ?? []);
-    }
-  }, [charDetails]);
 
   // Update character in db when state changed
   const [debouncedCharacter] = useDebouncedValue(character, 200);
@@ -147,7 +148,7 @@ export default function CharacterBuilderPage() {
     }
   );
 
-
+  console.log(character, charDetails, !isLoading);
 
   return (
     <Center>
@@ -206,11 +207,11 @@ export default function CharacterBuilderPage() {
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
                 <ScrollArea h={pageHeight}>
-                  {character && charDetails ? (
+                  {character && charDetails && !isLoading ? (
                     <CharBuilderHome pageHeight={pageHeight} books={charDetails.books} />
                   ) : (
                     <LoadingOverlay
-                      visible={isFetching}
+                      visible={isLoading}
                       zIndex={1000}
                       overlayProps={{ radius: 'md', backgroundOpacity: 0 }}
                       loaderProps={{ type: 'bars' }}
@@ -225,11 +226,11 @@ export default function CharacterBuilderPage() {
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
                 <ScrollArea h={pageHeight}>
-                  {character && charDetails ? (
+                  {character && charDetails && !isLoading ? (
                     <CharBuilderCreation pageHeight={pageHeight} books={charDetails.books} />
                   ) : (
                     <LoadingOverlay
-                      visible={isFetching}
+                      visible={isLoading}
                       zIndex={1000}
                       overlayProps={{ radius: 'md', backgroundOpacity: 0 }}
                       loaderProps={{ type: 'bars' }}
