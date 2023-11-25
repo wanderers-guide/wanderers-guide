@@ -95,8 +95,10 @@ import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSele
   //   },
   // ]);
 
-export async function runOperations(selectionNode: SelectionTreeNode, operations: Operation[]) {
-
+export async function runOperations(
+  selectionNode: SelectionTreeNode | undefined,
+  operations: Operation[]
+) {
   const runOp = async (operation: Operation) => {
     if (operation.type === 'adjValue') {
       await runAdjValue(operation);
@@ -105,7 +107,7 @@ export async function runOperations(selectionNode: SelectionTreeNode, operations
     } else if (operation.type === 'createValue') {
       await runCreateValue(operation);
     } else if (operation.type === 'giveAbilityBlock') {
-      await runGiveAbilityBlock(operation);
+      await runGiveAbilityBlock(selectionNode, operation);
     } else if (operation.type === 'giveLanguage') {
       await runGiveLanguage(operation);
     } else if (operation.type === 'giveSpell') {
@@ -119,7 +121,7 @@ export async function runOperations(selectionNode: SelectionTreeNode, operations
     } else if (operation.type === 'select') {
       await runSelect(selectionNode, operation);
     }
-  }
+  };
 
   for (const operation of operations) {
     await runOp(operation);
@@ -169,8 +171,6 @@ async function runSelect(selectionNode: SelectionTreeNode | undefined, operation
   if(selectedOption.operations){
     await runOperations(selectionNode.children[selectedOption._select_uuid], selectedOption.operations);
   }
-
-  // Run the operations of the selected option, Pass the selection node down to the next level. Passing in the UUID to the child.
 }
 
 
@@ -186,7 +186,7 @@ async function runCreateValue(operation: OperationCreateValue) {
   addVariable(operation.data.type, operation.data.variable, operation.data.value);
 }
 
-async function runGiveAbilityBlock(operation: OperationGiveAbilityBlock) {
+async function runGiveAbilityBlock(selectionNode: SelectionTreeNode | undefined, operation: OperationGiveAbilityBlock) {
   const abilityBlock = await getContent<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
     throwError('Ability block not found');
@@ -208,6 +208,10 @@ async function runGiveAbilityBlock(operation: OperationGiveAbilityBlock) {
   } else if (operation.data.type === 'physical-feature') {
     adjVariable('PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`);
     adjVariable('PHYSICAL_FEATURE_NAMES', abilityBlock.name);
+  }
+
+  if (abilityBlock.operations) {
+    await runOperations(selectionNode?.children[operation.id], abilityBlock.operations);
   }
 }
 
