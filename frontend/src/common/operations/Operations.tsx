@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { createDefaultOperation } from '@operations/operation-runner';
+import { createDefaultOperation } from '@operations/operation-utils';
 import { AbilityBlockType, Spell } from '@typing/content';
 import {
   Operation,

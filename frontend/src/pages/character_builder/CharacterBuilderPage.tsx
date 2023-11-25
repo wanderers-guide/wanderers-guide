@@ -102,6 +102,12 @@ export default function CharacterBuilderPage() {
           ids: [characterId],
         }
       );
+
+      if (charDetails) {
+        // Make sure we sync the enabled content sources
+        defineEnabledContentSources(charDetails.characters[0].content_sources?.enabled ?? []);
+      }
+
       return charDetails;
     },
     refetchOnWindowFocus: false,
@@ -112,9 +118,6 @@ export default function CharacterBuilderPage() {
     if (!charDetails || !charDetails.characters[0] || character) return;
     // Update character nav state
     setCharacter(charDetails.characters[0]);
-
-    // Make sure we sync the enabled content sources
-    defineEnabledContentSources(charDetails.characters[0].content_sources?.enabled ?? []);
   }, [isInitialLoading, character]);
 
 

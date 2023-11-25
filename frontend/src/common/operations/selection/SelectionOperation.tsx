@@ -34,12 +34,13 @@ import {
 import { useState } from 'react';
 import { useDidUpdate } from '@mantine/hooks';
 import { isString, set } from 'lodash';
-import { createDefaultOperation } from '@operations/operation-runner';
+import { createDefaultOperation } from '@operations/operation-utils';
 import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { setOption } from 'showdown';
 import VariableSelect from '@common/VariableSelect';
 import { VariableType } from '@typing/variables';
 import { AdjustValueInput } from '../variables/AdjValOperation';
+import { getVariable } from '@variables/variable-manager';
 
 export function SelectionOperation(props: {
   data: {
@@ -433,16 +434,15 @@ function SelectionPredefined(props: {
       />
     );
   }
-    if (props.optionType === 'ADJ_VALUE') {
-      return (
-        <SelectionPredefinedAdjValue
-          optionType={props.optionType}
-          options={props.options as OperationSelectOptionAdjValue[]}
-          onChange={props.onChange}
-          variableType='prof'
-        />
-      );
-    }
+  if (props.optionType === 'ADJ_VALUE') {
+    return (
+      <SelectionPredefinedAdjValue
+        optionType={props.optionType}
+        options={props.options as OperationSelectOptionAdjValue[]}
+        onChange={props.onChange}
+      />
+    );
+  }
 
   return null;
 }
@@ -759,15 +759,18 @@ function SelectionPredefinedLanguage(props: {
   );
 }
 
-
 function SelectionPredefinedAdjValue(props: {
   optionType: OperationSelectOptionType;
   options?: OperationSelectOptionAdjValue[];
   onChange: (options: OperationSelectOptionAdjValue[]) => void;
-  variableType: VariableType;
 }) {
+  const [variableType, setVariableType] = useState<VariableType>(
+    (props.options ?? []).length > 0 ? getVariable(props.options![0].operation.data.variable)?.type ?? 'prof' : 'prof'
+  );
   const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);
-  const [adjustment, setAdjustment] = useState<string | number | boolean>((props.options ?? []).length > 0 ? props.options![0].operation.data.value : 0);
+  const [adjustment, setAdjustment] = useState<string | number | boolean | undefined>(
+    (props.options ?? []).length > 0 ? props.options![0].operation.data.value : undefined
+  );
 
   useDidUpdate(() => {
     props.onChange(options);
@@ -786,15 +789,38 @@ function SelectionPredefinedAdjValue(props: {
 
   return (
     <Stack gap={10}>
-      <Box>
+      <Group>
+        <Select
+          size='xs'
+          placeholder='Value Type'
+          data={
+            [
+              { label: 'String', value: 'str' },
+              { label: 'Number', value: 'num' },
+              { label: 'Boolean', value: 'bool' },
+              { label: 'Proficiency', value: 'prof' },
+              { label: 'Attribute', value: 'attr' },
+              { label: 'List', value: 'list-str' },
+            ] satisfies { label: string; value: VariableType }[]
+          }
+          value={variableType}
+          onChange={(value) => {
+            if (value === null) {
+              setVariableType('prof');
+            }
+            setVariableType(value as VariableType);
+            setOptions([]);
+            setAdjustment(undefined);
+          }}
+        />
         <AdjustValueInput
-          variableType={props.variableType}
+          variableType={variableType}
           value={adjustment}
           onChange={(value) => {
             setAdjustment(value);
           }}
         />
-      </Box>
+      </Group>
 
       {optionsForUI.map((option, index) => (
         <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
@@ -811,14 +837,14 @@ function SelectionPredefinedAdjValue(props: {
                     data: {
                       ...option.operation.data,
                       variable: variableName,
-                      value: adjustment,
+                      value: adjustment === undefined ? 0 : adjustment,
                     },
                   },
                 });
                 return ops;
               });
             }}
-            variableType={props.variableType}
+            variableType={variableType}
           />
           {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
             <Tooltip label='Remove Option' position='right' withArrow withinPortal>

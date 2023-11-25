@@ -71,6 +71,9 @@ import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { isActionCost } from '@content/content-utils';
+import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
+import { compactLabels } from '@variables/variable-utils';
+import { getAllAttributeVariables } from '@variables/variable-manager';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -168,6 +171,7 @@ export function SelectContentModal({
   type: ContentType;
   onClick: (option: Record<string, any>) => void;
   options?: {
+    overrideOptions?: Record<string, any>[];
     abilityBlockType?: AbilityBlockType;
     groupBySource?: boolean;
     selectedId?: number;
@@ -190,7 +194,7 @@ export function SelectContentModal({
       const [_key, {}] = queryKey;
       return await getEnabledContentSources();
     },
-    enabled: !!innerProps.options?.groupBySource,
+    enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
   });
 
   const activeSource = contentSources?.find((source) => source.id === selectedSource);
@@ -333,6 +337,7 @@ export function SelectContentModal({
           abilityBlockType={innerProps.options?.abilityBlockType}
           sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
           selectedId={innerProps.options?.selectedId}
+          overrideOptions={innerProps.options?.overrideOptions}
           searchQuery={searchQuery}
           onClick={(option) => {
             innerProps.onClick(option);
@@ -394,6 +399,7 @@ function SelectionOptions(props: {
   sourceId?: number | 'all';
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
+  overrideOptions?: Record<string, any>[];
 }) {
   const { data, isFetching } = useQuery({
     queryKey: [
@@ -412,8 +418,10 @@ function SelectionOptions(props: {
       });
     },
     refetchOnMount: true,
+    enabled: !props.overrideOptions,
   });
   let options = data ? [...data.values()].filter((d) => d) : [];
+  if (props.overrideOptions) options = props.overrideOptions;
 
   // Filter options based on source
   if (props.sourceId !== undefined && props.sourceId !== 'all') {
@@ -554,6 +562,8 @@ function SelectionOptionsRoot(props: {
               feat={feat as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === feat.id}
+              displayLevel={true}
+              includeDetails={true}
               includeDelete={props.includeDelete}
               onDelete={props.onDelete}
             />
@@ -614,6 +624,21 @@ function SelectionOptionsRoot(props: {
               physicalFeature={physicalFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === physicalFeature.id}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
+            />
+          ))}
+        </>
+      );
+    } else if (props.abilityBlockType === 'heritage') {
+      return (
+        <>
+          {props.options.map((heritage, index) => (
+            <HeritageSelectionOption
+              key={index}
+              heritage={heritage as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === heritage.id}
               includeDelete={props.includeDelete}
               onDelete={props.onDelete}
             />
@@ -766,6 +791,8 @@ export function FeatSelectionOption(props: {
   feat: AbilityBlock;
   onClick: (feat: AbilityBlock) => void;
   selected?: boolean;
+  displayLevel?: boolean;
+  includeDetails?: boolean;
   includeDelete?: boolean;
   onDelete?: (id: number) => void;
 }) {
@@ -786,19 +813,21 @@ export function FeatSelectionOption(props: {
       onClick={() => props.onClick(props.feat)}
       justify='space-between'
     >
-      <Text
-        fz={10}
-        c='dimmed'
-        ta='right'
-        w={14}
-        style={{
-          position: 'absolute',
-          top: 15,
-          left: 1,
-        }}
-      >
-        {props.feat.level}.
-      </Text>
+      {props.displayLevel && (
+        <Text
+          fz={10}
+          c='dimmed'
+          ta='right'
+          w={14}
+          style={{
+            position: 'absolute',
+            top: 15,
+            left: 1,
+          }}
+        >
+          {props.feat.level}.
+        </Text>
+      )}
       <Group wrap='nowrap' gap={5}>
         <Box pl={8}>
           <Text fz='sm'>{props.feat.name}</Text>
@@ -816,23 +845,27 @@ export function FeatSelectionOption(props: {
             rarity={props.feat.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeDelete) && (
+          <Box w={props.includeDelete ? 80 : 50}></Box>
+        )}
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeDelete ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'feat', data: { id: props.feat.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails && (
+        <Button
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: props.includeDelete ? 40 : 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openDrawer({ type: 'feat', data: { id: props.feat.id } });
+          }}
+        >
+          Details
+        </Button>
+      )}
       {props.includeDelete && (
         <ActionIcon
           size='compact-xs'
@@ -960,6 +993,19 @@ export function ClassFeatureSelectionOption(props: {
       onClick={() => props.onClick(props.classFeature)}
       justify='space-between'
     >
+      <Text
+        fz={10}
+        c='dimmed'
+        ta='right'
+        w={14}
+        style={{
+          position: 'absolute',
+          top: 15,
+          left: 1,
+        }}
+      >
+        {props.classFeature.level}.
+      </Text>
       <Group wrap='nowrap' gap={5}>
         <Box pl={8}>
           <Text fz='sm'>{props.classFeature.name}</Text>
@@ -1006,6 +1052,86 @@ export function ClassFeatureSelectionOption(props: {
           onClick={(e) => {
             e.stopPropagation();
             props.onDelete?.(props.classFeature.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
+  );
+}
+
+export function HeritageSelectionOption(props: {
+  heritage: AbilityBlock;
+  onClick: (heritage: AbilityBlock) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.heritage)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.heritage.name}</Text>
+        </Box>
+        <Box>
+          <ActionSymbol cost={props.heritage.actions} />
+        </Box>
+      </Group>
+      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+        <Box>
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.heritage.traits ?? []}
+            rarity={props.heritage.rarity}
+          />
+        </Box>
+        <Box w={props.includeDelete ? 80 : 50}></Box>
+      </Group>
+      <Button
+        size='compact-xs'
+        variant='subtle'
+        style={{
+          position: 'absolute',
+          top: 12,
+          right: props.includeDelete ? 40 : 10,
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          openDrawer({ type: 'class-feature', data: { id: props.heritage.id } });
+        }}
+      >
+        Details
+      </Button>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.heritage.id);
           }}
           aria-label='Delete'
         >
@@ -1188,6 +1314,24 @@ export function ClassSelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  const classHp = getStatDisplay(
+    'MAX_HEALTH_CLASS_PER_LEVEL',
+    props.class_.operations ?? [],
+    'READ'
+  );
+  const attributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    props.class_.operations ?? [],
+    'READ'
+  );
+  const keyAttribute =
+    attributes.length > 0
+      ? attributes[0]
+      : {
+          ui: null,
+          operation: null,
+        };
+
   const openConfirmModal = () =>
     modals.openConfirmModal({
       id: 'change-option',
@@ -1249,7 +1393,7 @@ export function ClassSelectionOption(props: {
               }}
               c='gray.6'
             >
-              {props.class_.hp} HP
+              {classHp.ui} HP
             </Badge>
             <Badge
               variant='dot'
@@ -1262,7 +1406,7 @@ export function ClassSelectionOption(props: {
               }}
               c='gray.6'
             >
-              {props.class_.key_attribute}
+              {compactLabels(keyAttribute.ui as string)}
             </Badge>
           </Group>
         </div>
@@ -1321,6 +1465,8 @@ export function AncestrySelectionOption(props: {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', props.ancestry.operations, 'READ');
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -1384,7 +1530,7 @@ export function AncestrySelectionOption(props: {
               }}
               c='gray.6'
             >
-              {props.ancestry.hp} HP
+              {ancestryHp.ui} HP
             </Badge>
             <Badge
               variant='dot'

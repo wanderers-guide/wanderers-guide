@@ -15,13 +15,16 @@ import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-reac
 import _ from 'lodash';
 import { FeatDrawerContent, FeatDrawerTitle } from './types/FeatDrawer';
 import { ActionDrawerContent, ActionDrawerTitle } from './types/ActionDrawer';
-import { useElementSize } from '@mantine/hooks';
-import React from 'react';
+import { useElementSize, useLocalStorage, usePrevious } from '@mantine/hooks';
+import React, { useRef, useState } from 'react';
 import { SpellDrawerContent, SpellDrawerTitle } from './types/SpellDrawer';
 import { openContextModal } from '@mantine/modals';
 import { ContentType, AbilityBlockType } from '@typing/content';
 import { convertToContentType } from '@content/content-utils';
 import { ClassDrawerTitle, ClassDrawerContent } from './types/ClassDrawer';
+import { ClassFeatureDrawerContent, ClassFeatureDrawerTitle } from './types/ClassFeatureDrawer';
+import { PrevMetadata } from './drawer-utils';
+import { AncestryDrawerContent, AncestryDrawerTitle } from './types/AncestryDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -31,7 +34,25 @@ export default function DrawerBase() {
   */
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
   const { ref, height: titleHeight } = useElementSize();
+
+  const viewport = useRef<HTMLDivElement>(null);
+  const [value, setValue] = useLocalStorage<PrevMetadata>({
+    key: 'prev-drawer-metadata',
+    defaultValue: {
+      scrollTop: 0,
+      openedDict: {},
+    },
+  });
+
+  const saveMetadata = (openedDict?: Record<string, string>) => {
+    const newMetadata = {
+      scrollTop: viewport.current!.scrollTop ?? 0,
+      openedDict: openedDict ?? value.openedDict,
+    };
+    setValue(newMetadata);
+  };
 
   const handleDrawerClose = () => {
     openDrawer(null);
@@ -49,6 +70,10 @@ export default function DrawerBase() {
         history,
       },
     });
+
+    setTimeout(() => {
+      viewport.current!.scrollTo({ top: value.scrollTop });
+    }, 1);
   };
 
   return (
@@ -105,14 +130,22 @@ export default function DrawerBase() {
     >
       {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
       {/* This "fix" will still have the bug on titles that are multiline */}
-      <ScrollArea h={`calc(100vh - (${titleHeight || 30}px + 40px))`} pr={18}>
+      <ScrollArea
+        viewportRef={viewport}
+        h={`calc(100vh - (${titleHeight || 30}px + 40px))`}
+        pr={18}
+      >
         <Box
           pt={8}
           style={{
             overflowX: 'hidden',
           }}
         >
-          <DrawerContent />
+          <DrawerContent
+            onMetadataChange={(openedDict) => {
+              saveMetadata(openedDict);
+            }}
+          />
         </Box>
       </ScrollArea>
 
@@ -161,18 +194,28 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'action' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'class' && <ClassDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'class-feature' && <ClassFeatureDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'ancestry' && <AncestryDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
 
-function DrawerContent() {
+function DrawerContent(props: {
+  onMetadataChange?: (openedDict?: Record<string, string>) => void;
+}) {
   const _drawer = useRecoilValue(drawerState);
   return (
     <>
       {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'class' && <ClassDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'class' && (
+        <ClassDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
+      )}
+      {_drawer?.type === 'class-feature' && <ClassFeatureDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'ancestry' && (
+        <AncestryDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
+      )}
     </>
   );
 }

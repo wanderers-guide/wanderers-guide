@@ -58,7 +58,14 @@ import importFromJSON from '@import/json/import-from-json';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 
 export default function DashboardPage() {
-  setPageTitle(`Dashboard`);
+  setPageTitle(`Characters`);
+
+  useEffect(() => {
+    (async () => {
+      // Enable all sources
+      defineEnabledContentSources(await getAllContentSources());
+    })();
+  }, []);
 
   const {
     data: charDetails,

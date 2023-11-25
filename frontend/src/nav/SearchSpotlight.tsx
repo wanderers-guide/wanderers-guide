@@ -253,7 +253,7 @@ async function queryResults(
       label: `${data.name}`,
       description: data.description ? description : undefined,
       onClick: () => {
-        openDrawer({ type: data._type as DrawerType, data: { id: data.id } });
+        openDrawer({ type: (abilityBlockType ?? data._type) as DrawerType, data: { id: data.id } });
       },
       leftSection: getIconFromContentType(data._type as ContentType, '1.5rem'),
       highlightColor: theme.colors[theme.primaryColor][2],

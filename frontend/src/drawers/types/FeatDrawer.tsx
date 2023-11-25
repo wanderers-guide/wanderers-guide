@@ -1,12 +1,15 @@
+import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { getContent } from '@content/content-controller';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { findAllPrereqs, getContent } from '@content/content-controller';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Anchor } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
+import { listToLabel } from '@utils/strings';
+import { useRecoilState } from 'recoil';
 
 export function FeatDrawerTitle(props: { data: { id: number } }) {
   const id = props.data.id;
@@ -39,6 +42,8 @@ export function FeatDrawerTitle(props: { data: { id: number } }) {
     </>
   );
 }
+
+const DISPLAY_PREREQUS = true;
 
 export function FeatDrawerContent(props: { data: { id: number } }) {
   const id = props.data.id;
@@ -97,7 +102,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         <Box pb={2}>
           <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
         </Box>
-        {feat.prerequisites && feat.prerequisites.length > 0 && (
+        {DISPLAY_PREREQUS && feat.prerequisites && feat.prerequisites.length > 0 && (
           <IndentedText ta='justify'>
             <Text fw={600} c='gray.5' span>
               Prerequisites
@@ -155,7 +160,67 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
             <RichText span>{feat.special}</RichText>
           </Text>
         )}
+
+        {DISPLAY_PREREQUS && (
+          <PrerequisiteForSection name={feat.name} />
+        )}
       </Box>
     </Box>
   );
+}
+
+
+export function PrerequisiteForSection(props: { name: string }) {
+
+  const { data } = useQuery({
+    queryKey: [`find-prereqs-for-${props.name}`, { name: props.name }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { name }] = queryKey;
+      return await findAllPrereqs(name);
+    },
+  });
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  if(!data || data.length === 0) { return null; }
+
+  const options = data.sort((a, b) => {
+    if (a.level === undefined || b.level === undefined) {
+      return a.name.localeCompare(b.name);
+    }
+    return a.level - b.level;
+  });
+
+  return (
+    <Box pt='sm'>
+      <Divider />
+      <IndentedText>
+        <Text fw={600} c='gray.5' span>
+          Prerequisite for
+        </Text>{' '}
+        {listToLabel(
+          options.map((feat, index) => (
+            <Text key={index} span>
+              <Anchor
+                onClick={() => {
+                  openDrawer({
+                    type: 'class-feature',
+                    data: { id: feat.id },
+                    extra: { addToHistory: true },
+                  });
+                }}
+              >
+                {feat.name}
+              </Anchor>{' '}
+              ({feat.level})
+            </Text>
+          )),
+          'and'
+        )}
+      </IndentedText>
+    </Box>
+  );
+
 }

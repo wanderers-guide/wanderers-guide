@@ -15,6 +15,7 @@ import {
 } from './variable-utils';
 import _ from "lodash";
 import { throwError } from "@utils/notifications";
+import { re } from "mathjs";
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
   ATTRIBUTE_STR: newVariable('attr', 'ATTRIBUTE_STR'),
@@ -68,10 +69,12 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   PERCEPTION: newVariable('prof', 'PERCEPTION'),
   CLASS_DC: newVariable('prof', 'CLASS_DC'),
   LEVEL: newVariable('num', 'LEVEL'),
+  SIZE: newVariable('str', 'SIZE'),
   //FOCUS_POINTS: newVariable('num', 'FOCUS_POINTS'),
 
-  MAX_HEALTH: newVariable('num', 'MAX_HEALTH'),
-  MAX_HEALTH_PER_LEVEL: newVariable('num', 'MAX_HEALTH_PER_LEVEL'),
+  MAX_HEALTH_ANCESTRY: newVariable('num', 'MAX_HEALTH_ANCESTRY'),
+  MAX_HEALTH_CLASS_PER_LEVEL: newVariable('num', 'MAX_HEALTH_CLASS_PER_LEVEL'),
+  MAX_HEALTH_BONUS: newVariable('num', 'MAX_HEALTH_BONUS'),
   HEALTH: newVariable('num', 'HEALTH'),
   TEMP_HEALTH: newVariable('num', 'TEMP_HEALTH'),
 
@@ -88,16 +91,28 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SPEED_SWIM: newVariable('num', 'SPEED_SWIM'),
 
   // List variables, just storing the names
-  SENSES: newVariable('list-str', 'SENSES'),
-  CLASSES: newVariable('list-str', 'CLASSES'),
-  ANCESTRIES: newVariable('list-str', 'ANCESTRIES'),
-  BACKGROUNDS: newVariable('list-str', 'BACKGROUNDS'),
-  HERITAGES: newVariable('list-str', 'HERITAGES'),
-  FEATS: newVariable('list-str', 'FEATS'),
-  SPELLS: newVariable('list-str', 'SPELLS'),
-  LANGUAGES: newVariable('list-str', 'LANGUAGES'),
-  CLASS_FEATURES: newVariable('list-str', 'CLASS_FEATURES'),
+  SENSE_NAMES: newVariable('list-str', 'SENSE_NAMES'),
+  CLASS_NAMES: newVariable('list-str', 'CLASS_NAMES'),
+  ANCESTRY_NAMES: newVariable('list-str', 'ANCESTRY_NAMES'),
+  BACKGROUND_NAMES: newVariable('list-str', 'BACKGROUND_NAMES'),
+  HERITAGE_NAMES: newVariable('list-str', 'HERITAGE_NAMES'),
+  FEAT_NAMES: newVariable('list-str', 'FEAT_NAMES'),
+  SPELL_NAMES: newVariable('list-str', 'SPELL_NAMES'),
+  LANGUAGE_NAMES: newVariable('list-str', 'LANGUAGE_NAMES'),
+  CLASS_FEATURE_NAMES: newVariable('list-str', 'CLASS_FEATURE_NAMES'),
+  PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
   //
+  // List variables, storing the IDs
+  SENSE_IDS: newVariable('list-str', 'SENSE_IDS'),
+  CLASS_IDS: newVariable('list-str', 'CLASS_IDS'),
+  ANCESTRY_IDS: newVariable('list-str', 'ANCESTRY_IDS'),
+  BACKGROUND_IDS: newVariable('list-str', 'BACKGROUND_IDS'),
+  HERITAGE_IDS: newVariable('list-str', 'HERITAGE_IDS'),
+  FEAT_IDS: newVariable('list-str', 'FEAT_IDS'),
+  SPELL_IDS: newVariable('list-str', 'SPELL_IDS'),
+  LANGUAGE_IDS: newVariable('list-str', 'LANGUAGE_IDS'),
+  CLASS_FEATURE_IDS: newVariable('list-str', 'CLASS_FEATURE_IDS'),
+  PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
 
   // BULK_LIMIT: newVariable("num", "BULK_LIMIT"),
   // INVEST_LIMIT: newVariable("num", "INVEST_LIMIT"),
@@ -137,7 +152,7 @@ export function getVariables() {
  * @param name - name of the variable to get
  * @returns - the variable
  */
-export function getVariable(name: string) {
+export function getVariable(name: string): Variable | null {
   return _.cloneDeep(variables[name]);
 }
 
@@ -233,4 +248,34 @@ export function adjVariable(name: string, amount: any) {
   } else {
     throwError(`Invalid adjust amount for variable: ${name}, ${amount}`);
   }
+}
+
+export function getAllSkillVariables(): Variable[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('SKILL_')) {
+      variables.push(variable);
+    }
+  }
+  return variables;
+}
+
+export function getAllSaveVariables(): Variable[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('SAVE_')) {
+      variables.push(variable);
+    }
+  }
+  return variables;
+}
+
+export function getAllAttributeVariables(): Variable[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('ATTRIBUTE_')) {
+      variables.push(variable);
+    }
+  }
+  return variables;
 }

@@ -537,3 +537,14 @@ export async function findAllContentSources(options?: {
   }
   return sources.sort((a, b) => a.name.localeCompare(b.name));
 }
+export async function findAllPrereqs(name: string) {
+  return await makeRequest<AbilityBlock[]>('find-ability-block', {
+    prerequisites: [name],
+  });
+}
+export async function findTraitByName(name: string, contentSources: number[]) {
+  return await makeRequest<Trait>('find-trait', {
+    name,
+    contentSources,
+  });
+}

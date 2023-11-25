@@ -1,5 +1,5 @@
 
-import { Variable, AttributeValue, ProficiencyType } from "./variables";
+import { Variable, VariableType, AttributeValue, ProficiencyType } from "./variables";
 import { AbilityBlockType, Rarity } from './content';
 
 export type Operation =
