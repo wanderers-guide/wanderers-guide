@@ -56,7 +56,7 @@ export async function connect(
   }
 }
 
-type TableName =
+export type TableName =
   | 'ability_block'
   | 'content_source'
   | 'character'
@@ -74,6 +74,7 @@ interface SelectFilter {
   value: undefined | string | number | boolean | string[] | number[];
   options?: {
     ignoreCase?: boolean;
+    arrayContains?: boolean;
   };
 }
 
@@ -125,6 +126,20 @@ export function upsertResponseWrapper(procedure: 'insert' | 'update', result: an
   }
 }
 
+export function deleteResponseWrapper(result: 'SUCCESS' | 'ERROR_UNKNOWN'): JSendResponse {
+  if (result === 'SUCCESS') {
+    return {
+      status: 'success',
+      data: true,
+    };
+  } else {
+    return {
+      status: 'error',
+      message: result,
+    };
+  }
+}
+
 export async function fetchData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
@@ -134,7 +149,11 @@ export async function fetchData<T = Record<string, any>>(
   for (let filter of filters) {
     if (filter.value === undefined) continue;
     if (Array.isArray(filter.value)) {
-      query = query.in(filter.column, filter.value);
+      if (filter.options?.arrayContains) {
+        query = query.contains(filter.column, filter.value);
+      } else {
+        query = query.in(filter.column, filter.value);
+      }
     } else {
       if (filter.options?.ignoreCase) {
         query = query.ilike(filter.column, `${filter.value}`);
@@ -156,7 +175,7 @@ export async function upsertData<T = Record<string, any>>(
   type?: string,
   hasUUID = true
 ) {
-  if(data.id && data.id !== -1) {
+  if (data.id && data.id !== -1) {
     const status = await updateData(client, tableName, data.id as number, data);
     return {
       procedure: 'update' as 'update' | 'insert',
@@ -288,4 +307,18 @@ export async function updateData(
   }
 
   return 'SUCCESS';
+}
+
+export async function deleteData(
+  client: SupabaseClient<any, 'public', any>,
+  tableName: TableName,
+  id: number
+) {
+  const { error } = await client.from(tableName).delete().eq('id', id);
+  if (error) {
+    console.error(error);
+    return 'ERROR_UNKNOWN';
+  } else {
+    return 'SUCCESS';
+  }
 }

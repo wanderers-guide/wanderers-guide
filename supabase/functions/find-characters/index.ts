@@ -24,7 +24,7 @@ serve(async (req: Request) => {
     ]);
 
     const data = {
-      characters: characters,
+      characters: characters.sort((a, b) => a.id - b.id),
       books: book_contentSources,
     };
     return {
