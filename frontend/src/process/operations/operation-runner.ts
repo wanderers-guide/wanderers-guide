@@ -1,5 +1,6 @@
 import { AbilityBlock, Character, Language, Spell } from '@typing/content';
 import {
+  ConditionCheckData,
   Operation,
   OperationAdjValue,
   OperationConditional,
@@ -19,33 +20,17 @@ import _ from 'lodash';
 import { SelectionTreeNode } from './selection-tree';
 import { getContent } from '@content/content-controller';
 import { throwError } from '@utils/notifications';
-import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSelectionList } from './operation-utils';
+import {
+  ObjectWithUUID,
+  determineFilteredSelectionList,
+  determinePredefinedSelectionList,
+} from './operation-utils';
+import { e } from 'mathjs';
+import { maxProficiencyType } from '@variables/variable-utils';
+import { Proficiency, ProficiencyType } from '@typing/variables';
+import { ReactNode } from 'react';
 
-  /*
-    Algo:
-
-    - Run value creation for content_source
-    - Run value creation for character
-    - Run value creation for class
-    - Run value creation for ancestry
-    - Run value creation for background
-    - Run value creation for items
-
-    (skip value creation for these)
-    - Run content_source
-    - Run character
-    - Run class
-    - Run ancestry
-    - Run background
-    - Run items
-
-    - Run conditionals content_source
-    - Run conditionals character
-    - Run conditionals class
-    - Run conditionals ancestry
-    - Run conditionals background
-    - Run conditionals items
-
+/*
 
     Operation Selections:
 
@@ -68,73 +53,110 @@ import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSele
 
   */
 
-  // setSelections([
-  //   {
-  //     key: 'ancestry-heritage_1_34_67',
-  //     value: 9,
-  //   },
-  //   {
-  //     key: 'ancestry-heritage_1',
-  //     value: 1,
-  //   },
-  //   {
-  //     key: 'ancestry-heritage_2_45',
-  //     value: 13,
-  //   },
-  //   {
-  //     key: 'ancestry-heritage_1_45',
-  //     value: 10,
-  //   },
-  //   {
-  //     key: 'ancestry-heritage_1_45_3',
-  //     value: 8,
-  //   },
-  //   {
-  //     key: 'ancestry-heritage',
-  //     value: 22,
-  //   },
-  // ]);
+// setSelections([
+//   {
+//     key: 'ancestry-heritage_1_34_67',
+//     value: 9,
+//   },
+//   {
+//     key: 'ancestry-heritage_1',
+//     value: 1,
+//   },
+//   {
+//     key: 'ancestry-heritage_2_45',
+//     value: 13,
+//   },
+//   {
+//     key: 'ancestry-heritage_1_45',
+//     value: 10,
+//   },
+//   {
+//     key: 'ancestry-heritage_1_45_3',
+//     value: 8,
+//   },
+//   {
+//     key: 'ancestry-heritage',
+//     value: 22,
+//   },
+// ]);
+
+export type OperationOptions = {
+  doOnlyValueCreation?: boolean;
+  doConditionals?: boolean;
+  doOnlyConditionals?: boolean;
+};
+
+export type OperationResult = {
+  selection?: {
+    title?: string;
+    description?: string;
+    options: ObjectWithUUID[];
+  },
+  result?: {
+    source?: Record<string, any>,
+    results: OperationResult[],
+  };
+} | null;
 
 export async function runOperations(
   selectionNode: SelectionTreeNode | undefined,
-  operations: Operation[]
-) {
-  const runOp = async (operation: Operation) => {
-    if (operation.type === 'adjValue') {
-      await runAdjValue(operation);
-    } else if (operation.type === 'setValue') {
-      await runSetValue(operation);
-    } else if (operation.type === 'createValue') {
-      await runCreateValue(operation);
-    } else if (operation.type === 'giveAbilityBlock') {
-      await runGiveAbilityBlock(selectionNode, operation);
-    } else if (operation.type === 'giveLanguage') {
-      await runGiveLanguage(operation);
-    } else if (operation.type === 'giveSpell') {
-      await runGiveSpell(operation);
-    } else if (operation.type === 'removeAbilityBlock') {
-      await runRemoveAbilityBlock(operation);
-    } else if (operation.type === 'removeLanguage') {
-      await runRemoveLanguage(operation);
-    } else if (operation.type === 'removeSpell') {
-      await runRemoveSpell(operation);
-    } else if (operation.type === 'select') {
-      await runSelect(selectionNode, operation);
+  operations: Operation[],
+  options?: OperationOptions
+): Promise<OperationResult[]> {
+  const runOp = async (operation: Operation): Promise<OperationResult> => {
+    if (options?.doOnlyValueCreation) {
+      if (operation.type === 'createValue') {
+        return await runCreateValue(operation);
+      }
+      return null;
     }
+
+    if (options?.doOnlyConditionals) {
+      if (operation.type === 'conditional') {
+        return await runConditional(selectionNode, operation, options);
+      }
+      return null;
+    }
+
+    if (options?.doConditionals && operation.type === 'conditional') {
+      return await runConditional(selectionNode, operation, options);
+    } else if (operation.type === 'adjValue') {
+      return await runAdjValue(operation);
+    } else if (operation.type === 'setValue') {
+      return await runSetValue(operation);
+    } else if (operation.type === 'giveAbilityBlock') {
+      return await runGiveAbilityBlock(selectionNode, operation, options);
+    } else if (operation.type === 'giveLanguage') {
+      return await runGiveLanguage(operation);
+    } else if (operation.type === 'giveSpell') {
+      return await runGiveSpell(operation);
+    } else if (operation.type === 'removeAbilityBlock') {
+      return await runRemoveAbilityBlock(operation);
+    } else if (operation.type === 'removeLanguage') {
+      return await runRemoveLanguage(operation);
+    } else if (operation.type === 'removeSpell') {
+      return await runRemoveSpell(operation);
+    } else if (operation.type === 'select') {
+      return await runSelect(selectionNode, operation, options);
+    }
+    return null;
   };
 
+  const results: OperationResult[] = [];
   for (const operation of operations) {
-    await runOp(operation);
+    results.push(await runOp(operation));
   }
 
   // Alt. Faster as it runs in parallel but doesn't have consistent execution order
   // await Promise.all(operations.map(runOp));
+  return results;
 }
 
-
-async function runSelect(selectionNode: SelectionTreeNode | undefined, operation: OperationSelect) {
-  if (!selectionNode) return;
-
+async function runSelect(
+  selectionNode: SelectionTreeNode | undefined,
+  operation: OperationSelect,
+  options?: OperationOptions
+): Promise<OperationResult> {
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
@@ -146,51 +168,89 @@ async function runSelect(selectionNode: SelectionTreeNode | undefined, operation
     );
   }
 
-  const selectedOption = optionList.find((option) => option.id === selectionNode.value);
-  if (!selectedOption) {
-    throwError(`Selected option "${selectionNode.value}" not found`);
-    return;
+  let selected: ObjectWithUUID | undefined = undefined;
+  let results: OperationResult[] = [];
+
+  if (selectionNode) {
+    const selectedOption = optionList.find((option) => option._select_uuid === selectionNode.value);
+    if (!selectedOption) {
+      throwError(`Selected option "${selectionNode.value}" not found`);
+      return null;
+    }
+    selected = selectedOption;
+
+    if (operation.data.optionType === 'ABILITY_BLOCK') {
+      adjVariable('ABILITY_BLOCK_IDS', `${selectedOption.id}`);
+      adjVariable('ABILITY_BLOCK_NAMES', selectedOption.name);
+    } else if (operation.data.optionType === 'LANGUAGE') {
+      adjVariable('LANGUAGE_IDS', `${selectedOption.id}`);
+      adjVariable('LANGUAGE_NAMES', selectedOption.name);
+    } else if (operation.data.optionType === 'SPELL') {
+      adjVariable('SPELL_IDS', `${selectedOption.id}`);
+      adjVariable('SPELL_NAMES', selectedOption.name);
+    } else if (operation.data.optionType === 'ADJ_VALUE') {
+      adjVariable(selectedOption.variable, selectedOption.value);
+    } else if (operation.data.optionType === 'CUSTOM') {
+      // Doesn't inherently do anything, just runs its operations
+    }
+
+    // Run the operations of the selected option
+    if (selectedOption.operations) {
+      results = await runOperations(
+        selectionNode.children[selectedOption._select_uuid],
+        selectedOption.operations,
+        options
+      );
+    }
   }
 
-  if(operation.data.optionType === 'ABILITY_BLOCK'){
-    adjVariable('ABILITY_BLOCK_IDS', `${selectedOption.id}`);
-    adjVariable('ABILITY_BLOCK_NAMES', selectedOption.name);
-  } else if(operation.data.optionType === 'LANGUAGE'){
-    adjVariable('LANGUAGE_IDS', `${selectedOption.id}`);
-    adjVariable('LANGUAGE_NAMES', selectedOption.name);
-  } else if(operation.data.optionType === 'SPELL'){
-    adjVariable('SPELL_IDS', `${selectedOption.id}`);
-    adjVariable('SPELL_NAMES', selectedOption.name);
-  } else if(operation.data.optionType === 'ADJ_VALUE'){
-    adjVariable(selectedOption.variable, selectedOption.value);
-  } else if(operation.data.optionType === 'CUSTOM'){
-    // Doesn't inherently do anything, just runs its operations
-  }
+    console.log('runSelect', {
+      title: operation.data.title,
+      description: operation.data.description,
+      options: optionList,
+    });
 
-  // Run the operations of the selected option
-  if(selectedOption.operations){
-    await runOperations(selectionNode.children[selectedOption._select_uuid], selectedOption.operations);
+  return {
+    selection: {
+      title: operation.data.title,
+      description: operation.data.description,
+      options: optionList,
+    },
+    result: selected ? {
+      source: selected,
+      results,
+    } : undefined,
   }
 }
 
-
-async function runAdjValue(operation: OperationAdjValue) {
+async function runAdjValue(operation: OperationAdjValue): Promise<OperationResult> {
   adjVariable(operation.data.variable, operation.data.value);
+  return null;
 }
 
-async function runSetValue(operation: OperationSetValue) {
+async function runSetValue(operation: OperationSetValue): Promise<OperationResult> {
   setVariable(operation.data.variable, operation.data.value);
+  return null;
 }
 
-async function runCreateValue(operation: OperationCreateValue) {
+async function runCreateValue(operation: OperationCreateValue): Promise<OperationResult> {
   addVariable(operation.data.type, operation.data.variable, operation.data.value);
+  return null;
 }
 
-async function runGiveAbilityBlock(selectionNode: SelectionTreeNode | undefined, operation: OperationGiveAbilityBlock) {
-  const abilityBlock = await getContent<AbilityBlock>('ability-block', operation.data.abilityBlockId);
+async function runGiveAbilityBlock(
+  selectionNode: SelectionTreeNode | undefined,
+  operation: OperationGiveAbilityBlock,
+  options?: OperationOptions
+): Promise<OperationResult> {
+  const abilityBlock = await getContent<AbilityBlock>(
+    'ability-block',
+    operation.data.abilityBlockId
+  );
   if (!abilityBlock) {
-    throwError('Ability block not found');
-    return;
+    console.log(abilityBlock);
+    throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    return null;
   }
 
   if (operation.data.type === 'feat') {
@@ -210,41 +270,53 @@ async function runGiveAbilityBlock(selectionNode: SelectionTreeNode | undefined,
     adjVariable('PHYSICAL_FEATURE_NAMES', abilityBlock.name);
   }
 
+  let results: OperationResult[] = [];
   if (abilityBlock.operations) {
-    await runOperations(selectionNode?.children[operation.id], abilityBlock.operations);
+    results = await runOperations(selectionNode?.children[operation.id], abilityBlock.operations, options);
   }
+
+  return {
+    result: {
+      source: abilityBlock,
+      results,
+    },
+  };
 }
 
-async function runGiveLanguage(operation: OperationGiveLanguage) {
+async function runGiveLanguage(operation: OperationGiveLanguage): Promise<OperationResult> {
   const language = await getContent<Language>('language', operation.data.languageId);
   if (!language) {
     throwError('Language not found');
-    return;
+    return null;
   }
 
   adjVariable('LANGUAGE_IDS', `${language.id}`);
   adjVariable('LANGUAGE_NAMES', language.name);
+  return null;
 }
 
-async function runGiveSpell(operation: OperationGiveSpell) {
+async function runGiveSpell(operation: OperationGiveSpell): Promise<OperationResult> {
   const spell = await getContent<Spell>('spell', operation.data.spellId);
   if (!spell) {
     throwError('Spell not found');
-    return;
+    return null;
   }
 
   adjVariable('SPELL_IDS', `${spell.id}`);
   adjVariable('SPELL_NAMES', spell.name);
+  return null;
 }
 
-async function runRemoveAbilityBlock(operation: OperationRemoveAbilityBlock) {
+async function runRemoveAbilityBlock(
+  operation: OperationRemoveAbilityBlock
+): Promise<OperationResult> {
   const abilityBlock = await getContent<AbilityBlock>(
     'ability-block',
     operation.data.abilityBlockId
   );
   if (!abilityBlock) {
-    throwError('Ability block not found');
-    return;
+    throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    return null;
   }
 
   const getVariableList = (variableName: string) => {
@@ -297,13 +369,14 @@ async function runRemoveAbilityBlock(operation: OperationRemoveAbilityBlock) {
       getVariableList('PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name)
     );
   }
+  return null;
 }
 
-async function runRemoveLanguage(operation: OperationRemoveLanguage) {
+async function runRemoveLanguage(operation: OperationRemoveLanguage): Promise<OperationResult> {
   const language = await getContent<Language>('language', operation.data.languageId);
   if (!language) {
     throwError('Language not found');
-    return;
+    return null;
   }
 
   const getVariableList = (variableName: string) => {
@@ -318,13 +391,14 @@ async function runRemoveLanguage(operation: OperationRemoveLanguage) {
     'LANGUAGE_NAMES',
     getVariableList('LANGUAGE_NAMES').filter((name) => name !== language.name)
   );
+  return null;
 }
 
-async function runRemoveSpell(operation: OperationRemoveSpell) {
+async function runRemoveSpell(operation: OperationRemoveSpell): Promise<OperationResult> {
   const spell = await getContent<Spell>('spell', operation.data.spellId);
   if (!spell) {
     throwError('Spell not found');
-    return;
+    return null;
   }
 
   const getVariableList = (variableName: string) => {
@@ -339,5 +413,108 @@ async function runRemoveSpell(operation: OperationRemoveSpell) {
     'SPELL_NAMES',
     getVariableList('SPELL_NAMES').filter((name) => name !== spell.name)
   );
+  return null;
 }
 
+async function runConditional(
+  selectionNode: SelectionTreeNode | undefined,
+  operation: OperationConditional,
+  options?: OperationOptions
+): Promise<OperationResult> {
+  const makeCheck = (check: ConditionCheckData) => {
+    const variable = getVariable(check.name);
+    if (!variable) return false;
+
+    if (variable.type === 'attr') {
+      const value = parseInt(check.value);
+      if (check.operator === 'EQUALS') {
+        return variable.value.value === value;
+      } else if (check.operator === 'GREATER_THAN') {
+        return variable.value.value > value;
+      } else if (check.operator === 'LESS_THAN') {
+        return variable.value.value < value;
+      } else if (check.operator === 'NOT_EQUALS') {
+        return variable.value.value !== value;
+      }
+    } else if (variable.type === 'num') {
+      const value = parseInt(check.value);
+      if (check.operator === 'EQUALS') {
+        return variable.value === value;
+      } else if (check.operator === 'GREATER_THAN') {
+        return variable.value > value;
+      } else if (check.operator === 'LESS_THAN') {
+        return variable.value < value;
+      } else if (check.operator === 'NOT_EQUALS') {
+        return variable.value !== value;
+      }
+    } else if (variable.type === 'str') {
+      if (check.operator === 'EQUALS') {
+        return variable.value === check.value;
+      } else if (check.operator === 'NOT_EQUALS') {
+        return variable.value !== check.value;
+      } else if (check.operator === 'INCLUDES') {
+        return variable.value.includes(check.value);
+      }
+    } else if (variable.type === 'bool') {
+      if (check.operator === 'EQUALS') {
+        return variable.value === (check.value === 'TRUE');
+      } else if (check.operator === 'NOT_EQUALS') {
+        return variable.value !== (check.value === 'TRUE');
+      }
+    } else if (variable.type === 'list-str') {
+      let value: string[] = [];
+      try {
+        value = JSON.parse(check.value);
+      } catch (e) {}
+      if (check.operator === 'EQUALS') {
+        return _.isEqual(variable.value, value);
+      } else if (check.operator === 'NOT_EQUALS') {
+        return !_.isEqual(variable.value, value);
+      } else if (check.operator === 'INCLUDES') {
+        return variable.value.includes(check.value);
+      }
+    } else if (variable.type === 'prof') {
+      if (check.operator === 'EQUALS') {
+        return variable.value.value === check.value;
+      } else if (check.operator === 'GREATER_THAN') {
+        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
+        return bestProf === variable.value.value;
+      } else if (check.operator === 'LESS_THAN') {
+        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
+        return bestProf === check.value;
+      } else if (check.operator === 'NOT_EQUALS') {
+        return variable.value.value !== check.value;
+      }
+    }
+    return false;
+  };
+
+  let isTrue = true;
+  for (const check of operation.data.conditions) {
+    if (!makeCheck(check)) {
+      isTrue = false;
+    }
+  }
+
+  let results: OperationResult[] = [];
+  if (isTrue) {
+    results = await runOperations(selectionNode, operation.data.trueOperations ?? [], {
+      ...options,
+      doOnlyConditionals: false,
+      doConditionals: true,
+    });
+  } else {
+    results = await runOperations(selectionNode, operation.data.falseOperations ?? [], {
+      ...options,
+      doOnlyConditionals: false,
+      doConditionals: true,
+    });
+  }
+
+  return {
+    result: {
+      source: undefined,// use the parent source
+      results,
+    },
+  };
+}

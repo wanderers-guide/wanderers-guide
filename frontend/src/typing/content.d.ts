@@ -222,9 +222,9 @@ interface Character {
   content_sources?: {
     enabled?: number[];
   };
-  operation_data: {
-    selections: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
-    notes: Record<string, string>; // <op UUID> -> string
+  operation_data?: {
+    selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
+    notes?: Record<string, string>; // <op UUID> -> string
   };
   spells?: Record<string, any>; // TODO
   companions?: Record<string, any>; // TODO
@@ -237,7 +237,7 @@ interface ContentSource {
   foundry_id: string;
   url: string;
   description: string;
-  operations: Operation[];
+  operations?: Operation[];
   user_id: number;
   contact_info: string;
   require_key: boolean;
@@ -259,7 +259,7 @@ interface Ancestry {
   artwork_url: string;
   content_source_id: number;
   version: string;
-  operations: Operation[];
+  operations: Operation[] | undefined;
 }
 
 type Background = {
@@ -268,7 +268,7 @@ type Background = {
   name: string;
   rarity: Rarity;
   description: string;
-  operations: Operation[];
+  operations?: Operation[];
   content_source_id: number;
   version: string;
 };

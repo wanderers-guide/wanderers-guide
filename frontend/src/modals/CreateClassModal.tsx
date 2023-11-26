@@ -85,8 +85,6 @@ export function CreateClassModal(props: {
       rarity: 'COMMON' as Rarity,
       description: '',
       operations: [] as Operation[] | undefined,
-      key_attribute: '',
-      hp: 0,
       trait_id: -1,
       artwork_url: '',
       content_source_id: -1,
@@ -145,26 +143,6 @@ export function CreateClassModal(props: {
                 <TextInput label='Name' required {...form.getInputProps('name')} />
               </Group>
               <Select
-                label='Key Attribute'
-                required
-                w={140}
-                {...form.getInputProps('key_attribute')}
-                data={[
-                  'STR',
-                  'DEX',
-                  'CON',
-                  'INT',
-                  'WIS',
-                  'CHA',
-                  'STR/DEX',
-                  'INT/WIS',
-                  'WIS/CHA',
-                  'VARIES',
-                ]}
-              />
-            </Group>
-            <Group wrap='nowrap' justify='space-between'>
-              <Select
                 label='Rarity'
                 required
                 data={[
@@ -176,7 +154,6 @@ export function CreateClassModal(props: {
                 w={140}
                 {...form.getInputProps('rarity')}
               />
-              <NumberInput label='HP' required {...form.getInputProps('hp')} w={140} />
             </Group>
 
             <TextInput

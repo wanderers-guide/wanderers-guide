@@ -1,7 +1,8 @@
+import _ from "lodash";
 
 
 export interface SelectionTreeNode {
-  value: number | string | null;
+  value: string | null;
   children: Record<string, SelectionTreeNode>;
 }
 
@@ -10,17 +11,17 @@ let selectionTree: SelectionTreeNode = { value: null, children: {} };
 /**
  *
  * @param key - Key, format: <primary source ID>_<UUID>_<UUID>_<UUID>...
- * @param value - ID of the selected option, either number or string
+ * @param value - UUID of the selected option
  *
  */
-export function setSelections(metadata: { key: string; value: number | string }[]) {
+export function setSelections(metadata: { key: string; value: string }[]) {
   selectionTree = { value: null, children: {} };
   for (const item of metadata) {
     addToSelectionTree(selectionTree, item.key, item.value);
   }
 }
 
-function addToSelectionTree(root: SelectionTreeNode, key: string, value: number | string): void {
+function addToSelectionTree(root: SelectionTreeNode, key: string, value: string): void {
   const subIds = key.split('_');
   let currentNode = root;
 
@@ -34,6 +35,6 @@ function addToSelectionTree(root: SelectionTreeNode, key: string, value: number 
   currentNode.value = value;
 }
 
-export function getSelection() {
-
+export function getRootSelection() {
+  return _.cloneDeep(selectionTree);
 }

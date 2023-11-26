@@ -106,7 +106,7 @@ export function getStatDisplay(
         // Check all operations in all the options in the select
         for (const option of (operation.data.optionsPredefined ??
           []) as OperationSelectOptionCustom[]) {
-          for (const subop of option.operations) {
+          for (const subop of option.operations ?? []) {
             if (subop.type === 'adjValue' || subop.type === 'setValue') {
               if (subop.data.variable === variableName) {
                 const changed = setBestValue(subop.data.value);
@@ -203,7 +203,7 @@ function getVarList(operation: OperationSelect, type: VariableType): string[] {
   } else if (operation.data.optionType === 'CUSTOM') {
     for (const option of (operation.data.optionsPredefined ??
       []) as OperationSelectOptionCustom[]) {
-      for (const subop of option.operations) {
+      for (const subop of option.operations ?? []) {
         if (subop.type === 'adjValue' || subop.type === 'setValue') {
           const variable = getVariable(subop.data.variable);
           if (variable && variable.type === type) {

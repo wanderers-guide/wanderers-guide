@@ -50,7 +50,7 @@ function SetValueInput(props: {
         size='xs'
         placeholder='Number'
         value={props.value}
-        onChange={props.onChange}
+        onChange={(value) => props.onChange(parseInt(`${value}`))}
         allowDecimal={false}
       />
     );

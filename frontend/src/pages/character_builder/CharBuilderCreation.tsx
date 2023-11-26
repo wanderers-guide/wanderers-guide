@@ -4,6 +4,7 @@ import {
   Badge,
   Box,
   Button,
+  Divider,
   Group,
   Indicator,
   ScrollArea,
@@ -24,12 +25,18 @@ import {
 import classes from '@css/FaqSimple.module.css';
 import { useElementSize, useHover, useInterval } from '@mantine/hooks';
 import { useEffect, useState } from 'react';
-import { selectContent } from '@common/select/SelectContent';
+import { SelectContentButton, selectContent } from '@common/select/SelectContent';
 import { characterState } from '@atoms/characterAtoms';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { useQuery } from '@tanstack/react-query';
 import { getContentPackage } from '@content/content-controller';
 import D20Loader from '@assets/images/D20Loader';
+import { getIconFromContentType } from '@content/content-utils';
+import { executeCharacterOperations } from '@operations/operation-controller';
+import ResultWrapper from '@common/operations/results/ResultWrapper';
+import { IconPuzzle } from '@tabler/icons-react';
+import { OperationResult } from '@operations/operation-runner';
+import { ClassInitialOverview } from '@drawers/types/ClassDrawer';
 
 export default function CharBuilderCreation(props: { books: ContentSource[]; pageHeight: number }) {
   const theme = useMantineTheme();
@@ -89,6 +96,15 @@ export function CharBuilderCreationInner(props: {
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
+  const [operationResults, setOperationResults] = useState<any>();
+
+  useEffect(() => {
+    if (!character) return;
+    executeCharacterOperations(character, props.books, props.content).then((results) => {
+      setOperationResults(results);
+    });
+  }, []);
+
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map(
     (level) => {
       return (
@@ -97,6 +113,7 @@ export function CharBuilderCreationInner(props: {
           level={level}
           opened={levelItemValue === `${level}`}
           content={props.content}
+          operationResults={operationResults}
         />
       );
     }
@@ -573,7 +590,12 @@ function StatButton(props: { children: React.ReactNode; onClick?: () => void }) 
   );
 }
 
-function LevelSection(props: { level: number; opened: boolean; content: ContentPackage }) {
+function LevelSection(props: {
+  level: number;
+  opened: boolean;
+  content: ContentPackage;
+  operationResults: any;
+}) {
   const { hovered, ref } = useHover();
 
   const selectionsToDo = 3;
@@ -611,7 +633,150 @@ function LevelSection(props: { level: number; opened: boolean; content: ContentP
           </Badge>
         </Group>
       </Accordion.Control>
-      <Accordion.Panel>Content</Accordion.Panel>
+      <Accordion.Panel>
+        {props.level === 0 ? (
+          <InitialStatsLevelSection
+            content={props.content}
+            operationResults={props.operationResults}
+          />
+        ) : (
+          <></>
+        )}
+      </Accordion.Panel>
     </Accordion.Item>
+  );
+}
+
+function InitialStatsLevelSection(props: { content: ContentPackage; operationResults: any }) {
+  console.log(props.operationResults);
+
+  const character = useRecoilValue(characterState);
+
+  const class_ = props.content.classes.find((class_) => class_.id === character?.details?.class?.id);
+  const ancestry = props.content.ancestries.find(
+    (ancestry) => ancestry.id === character?.details?.ancestry?.id
+  );
+  const background = props.content.backgrounds.find(
+    (background) => background.id === character?.details?.background?.id
+  );
+  const heritage = props.content.abilityBlocks.find(
+    (ab) => ab.id === character?.details?.heritage?.id && ab.type === 'heritage'
+  );
+
+  if(!props.operationResults) return null;
+
+  return (
+    <>
+      <Divider />
+      <Accordion variant='contained' defaultValue=''>
+        <Accordion.Item value='ancestry'>
+          <Accordion.Control icon={getIconFromContentType('ancestry', '1rem')}>
+            Ancestry
+          </Accordion.Control>
+          <Accordion.Panel>
+            <DisplayOperationResult
+              source={undefined}
+              results={props.operationResults.results.ancestryResults}
+            />
+          </Accordion.Panel>
+        </Accordion.Item>
+        <Accordion.Item value='background'>
+          <Accordion.Control icon={getIconFromContentType('background', '1rem')}>
+            Background
+          </Accordion.Control>
+          <Accordion.Panel>
+            <DisplayOperationResult
+              source={undefined}
+              results={props.operationResults.results.backgroundResults}
+            />
+          </Accordion.Panel>
+        </Accordion.Item>
+        <Accordion.Item value='class'>
+          <Accordion.Control icon={getIconFromContentType('class', '1rem')}>
+            Class
+          </Accordion.Control>
+          <Accordion.Panel>
+            {class_ && <ClassInitialOverview class_={class_} mode='READ' />}
+            <DisplayOperationResult
+              source={undefined}
+              results={props.operationResults.results.classResults}
+            />
+          </Accordion.Panel>
+        </Accordion.Item>
+        <Accordion.Item value='books'>
+          <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
+            Books
+          </Accordion.Control>
+          <Accordion.Panel></Accordion.Panel>
+        </Accordion.Item>
+        <Accordion.Item value='items'>
+          <Accordion.Control icon={getIconFromContentType('item', '1rem')}>Items</Accordion.Control>
+          <Accordion.Panel></Accordion.Panel>
+        </Accordion.Item>
+        <Accordion.Item value='custom'>
+          <Accordion.Control icon={<IconPuzzle size='1rem' />}>Custom</Accordion.Control>
+          <Accordion.Panel>
+            <DisplayOperationResult
+              source={undefined}
+              results={props.operationResults.results.characterResults}
+            />
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
+    </>
+  );
+}
+
+function DisplayOperationResult(props: {
+  source?: Record<string, any>;
+  results: OperationResult[];
+}) {
+
+  const hasSelection = (result: OperationResult) => {
+    if(result?.selection) return true;
+    for(const subResult of result?.result?.results ?? []) {
+      if(hasSelection(subResult)) return true;
+    }
+    return false;
+  }
+
+  return (
+    <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>
+      <Stack gap={10}>
+        {props.results
+          .filter((result) => hasSelection(result))
+          .map((result, i) => (
+            <Box key={i}>
+              {result?.selection && (
+                <SelectContentButton
+                  type={
+                    (result?.selection?.options ?? []).length > 0
+                      ? result?.selection?.options[0]._content_type
+                      : 'ability-block'
+                  }
+                  onClick={(option) => {
+                    console.log(option);
+                  }}
+                  selectedId={result.result?.source?.id}
+                  options={{
+                    overrideOptions: result?.selection?.options,
+                    overrideLabel: result?.selection?.title || 'Select an Option',
+                    abilityBlockType:
+                      (result?.selection?.options ?? []).length > 0
+                        ? result?.selection?.options[0].type
+                        : undefined,
+                  }}
+                />
+              )}
+              {result?.result && (
+                <DisplayOperationResult
+                  source={result.result.source}
+                  results={result.result.results}
+                />
+              )}
+            </Box>
+          ))}
+      </Stack>
+    </ResultWrapper>
   );
 }

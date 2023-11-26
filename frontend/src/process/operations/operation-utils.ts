@@ -4,7 +4,8 @@ import {
   getContentStore,
   getEnabledContentSourceIds,
 } from '@content/content-controller';
-import { AbilityBlock, Language, Spell } from '@typing/content';
+import { Content } from '@tiptap/react';
+import { AbilityBlock, ContentType, Language, Spell } from '@typing/content';
 import {
   OperationType,
   OperationGiveAbilityBlock,
@@ -31,6 +32,8 @@ import {
   OperationSelectOptionCustom,
   Operation,
 } from '@typing/operations';
+import { getVariable } from '@variables/variable-manager';
+import { variableToLabel } from '@variables/variable-utils';
 import _, { filter } from 'lodash';
 
 export const createDefaultOperation = (type: OperationType) => {
@@ -152,6 +155,7 @@ export const createDefaultOperation = (type: OperationType) => {
 export interface ObjectWithUUID {
   [key: string]: any;
   _select_uuid: string;
+  _content_type: ContentType;
 }
 
 export async function determineFilteredSelectionList(
@@ -210,6 +214,7 @@ async function getAbilityBlockList(
     return {
       ...ab,
       _select_uuid: `${operationUUID}~${ab.id}`,
+      _content_type: 'ability-block' as ContentType,
     };
   });
 }
@@ -255,6 +260,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
     return {
       ...spell,
       _select_uuid: `${operationUUID}~${spell.id}`,
+      _content_type: 'spell' as ContentType,
     };
   });
 }
@@ -274,6 +280,7 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
     return {
       ...language,
       _select_uuid: `${operationUUID}~${language.id}`,
+      _content_type: 'language' as ContentType,
     };
   });
 }
@@ -310,6 +317,7 @@ async function getAbilityBlockPredefinedList(options: OperationSelectOptionAbili
       result.push({
         ...abilityBlock,
         _select_uuid: option!.id,
+        _content_type: 'ability-block' as ContentType,
       });
     }
   }
@@ -328,6 +336,7 @@ async function getSpellPredefinedList(options: OperationSelectOptionSpell[]) {
       result.push({
         ...spell,
         _select_uuid: option!.id,
+        _content_type: 'spell' as ContentType,
       });
     }
   }
@@ -346,6 +355,7 @@ async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[
       result.push({
         ...language,
         _select_uuid: option!.id,
+        _content_type: 'language' as ContentType,
       });
     }
   }
@@ -354,8 +364,12 @@ async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[
 
 async function getAdjValuePredefinedList(options: OperationSelectOptionAdjValue[]) {
   return options.map((option) => {
+    const variable = getVariable(option.operation.data.variable);
     return {
       _select_uuid: option.operation.id,
+      _content_type: 'ability-block' as ContentType,
+      id: option.operation.id,
+      name: variable ? variableToLabel(variable) : 'Unknown Value',
       value: option.operation.data.value,
       variable: option.operation.data.variable,
     };
@@ -366,6 +380,9 @@ async function getCustomPredefinedList(options: OperationSelectOptionCustom[]) {
   return options.map((option) => {
     return {
       _select_uuid: option.id,
+      _content_type: 'ability-block' as ContentType,
+      id: option.id,
+      name: option.title,
       title: option.title,
       description: option.description,
       operations: option.operations,

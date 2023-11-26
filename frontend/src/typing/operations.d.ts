@@ -78,7 +78,7 @@ export interface OperationRemoveAbilityBlock extends OperationBase {
 export interface OperationConditional extends OperationBase {
   readonly type: 'conditional';
   data: {
-    conditions: ConditionalCheckData[];
+    conditions: ConditionCheckData[];
     trueOperations?: Operation[];
     falseOperations?: Operation[];
   };
@@ -159,7 +159,7 @@ interface OperationSelectOptionCustom extends OperationSelectOptionBase {
   readonly type: "CUSTOM";
   title: string;
   description: string;
-  operations: Operation[];
+  operations?: Operation[];
 }
 
 interface OperationSelectOptionAbilityBlock extends OperationSelectOptionBase {

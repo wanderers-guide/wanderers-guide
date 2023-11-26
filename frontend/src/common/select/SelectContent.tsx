@@ -80,11 +80,15 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   onClick: (option: T) => void;
   selectedId?: number;
   options?: {
+    overrideOptions?: T[];
+    overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
     groupBySource?: boolean;
   };
 }) {
   const [selected, setSelected] = useState<T | undefined>();
+
+  console.log(props.options?.overrideOptions, props.type, selected);
 
   // Fill in selected content
   useEffect(() => {
@@ -93,13 +97,17 @@ export function SelectContentButton<T = Record<string, any>>(props: {
       const content = await getContent<T>(props.type, props.selectedId);
       if (content) {
         setSelected(content);
+      } else if (props.options?.overrideOptions) {
+        // @ts-ignore
+        const option = props.options.overrideOptions.find((option) => option.id === props.selectedId);
+        if (option) setSelected(option);
       }
     })();
   }, [props.selectedId, props.type]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
   // @ts-ignore
-  const label = selected ? selected.name : `Select ${typeName}`;
+  const label = selected ? selected.name : (props.options?.overrideLabel ?? `Select ${typeName}`);
 
   return (
     <Box>
@@ -116,6 +124,8 @@ export function SelectContentButton<T = Record<string, any>>(props: {
                 props.onClick(option);
               },
               {
+                overrideOptions: props.options?.overrideOptions as Record<string, any>[],
+                overrideLabel: props.options?.overrideLabel,
                 abilityBlockType: props.options?.abilityBlockType,
                 groupBySource: props.options?.groupBySource,
                 // @ts-ignore
@@ -147,14 +157,19 @@ export function selectContent<T = Record<string, any>>(
   type: ContentType,
   onClick: (option: T) => void,
   options?: {
+    overrideOptions?: Record<string, any>[];
+    overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
     groupBySource?: boolean;
     selectedId?: number;
   }
 ) {
+  let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
+  if (options?.overrideLabel) label = options.overrideLabel;
+
   openContextModal({
     modal: 'selectContent',
-    title: <Title order={3}>Select {toLabel(options?.abilityBlockType || type)}</Title>,
+    title: <Title order={3}>{label}</Title>,
     innerProps: {
       type,
       onClick: (option) => onClick(option as T),
@@ -410,15 +425,14 @@ function SelectionOptions(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { sourceId, abilityBlockType }] = queryKey;
-      console.log('fetching', sourceId, abilityBlockType);
       return await getContentStore(props.type, {
         fetch: true,
         sourceId: sourceId === 'all' ? undefined : sourceId,
         abilityBlockType: abilityBlockType,
-      });
+      }) ?? null;
     },
     refetchOnMount: true,
-    enabled: !props.overrideOptions,
+    //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
   let options = data ? [...data.values()].filter((d) => d) : [];
   if (props.overrideOptions) options = props.overrideOptions;
@@ -431,10 +445,11 @@ function SelectionOptions(props: {
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
   useEffect(() => {
-    if (!data) return;
+    if (!options) return;
     search.current.addIndex('name');
     search.current.addIndex('description');
     search.current.addDocuments(options);
+    console.log('search', options);
   }, [data]);
   let filteredOptions = props.searchQuery
     ? (search.current.search(props.searchQuery) as Record<string, any>[])
@@ -779,11 +794,72 @@ function SelectionOptionsRoot(props: {
     );
   }
 
-  console.log(props.options);
+  console.log(props.options, `${props.type} (${props.abilityBlockType}) TODO`);
+
+  // Generic ability block. Probably used for variables.
   return (
-    <Stack>
-      {props.type} ({props.abilityBlockType}) TODO
-    </Stack>
+    <>
+      {props.options.map((option, index) => (
+        <GenericSelectionOption
+          key={index}
+          option={option as AbilityBlock}
+          onClick={props.onClick}
+          selected={props.selectedId === option.id}
+          includeDelete={props.includeDelete}
+          onDelete={props.onDelete}
+        />
+      ))}
+    </>
+  );
+}
+
+export function GenericSelectionOption(props: {
+  option: AbilityBlock;
+  onClick: (option: AbilityBlock) => void;
+  selected?: boolean;
+  includeDelete?: boolean;
+  onDelete?: (id: number) => void;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover();
+
+  return (
+    <Group
+      ref={ref}
+      p='sm'
+      style={{
+        cursor: 'pointer',
+        borderBottom: '1px solid ' + theme.colors.dark[6],
+        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        position: 'relative',
+      }}
+      onClick={() => props.onClick(props.option)}
+      justify='space-between'
+    >
+      <Group wrap='nowrap' gap={5}>
+        <Box pl={8}>
+          <Text fz='sm'>{props.option.name}</Text>
+        </Box>
+      </Group>
+      {props.includeDelete && (
+        <ActionIcon
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 13,
+            right: 15,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            props.onDelete?.(props.option.id);
+          }}
+          aria-label='Delete'
+        >
+          <IconTrash size='1rem' />
+        </ActionIcon>
+      )}
+    </Group>
   );
 }
 
@@ -1393,7 +1469,7 @@ export function ClassSelectionOption(props: {
               }}
               c='gray.6'
             >
-              {classHp.ui} HP
+              {classHp.ui ?? '-'} HP
             </Badge>
             <Badge
               variant='dot'
@@ -1406,7 +1482,7 @@ export function ClassSelectionOption(props: {
               }}
               c='gray.6'
             >
-              {compactLabels(keyAttribute.ui as string)}
+              {keyAttribute.ui ? compactLabels(keyAttribute.ui as string) : 'Varies'}
             </Badge>
           </Group>
         </div>
@@ -1466,7 +1542,7 @@ export function AncestrySelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', props.ancestry.operations, 'READ');
+  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', props.ancestry.operations ?? [], 'READ');
 
   const openConfirmModal = () =>
     modals.openConfirmModal({

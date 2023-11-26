@@ -51,7 +51,7 @@ export function AdjustValueInput(props: {
         prefix={props.value >= 0 ? '+' : undefined}
         placeholder='Number to Add'
         value={props.value}
-        onChange={props.onChange}
+        onChange={(value) => props.onChange(parseInt(`${value}`))}
         allowDecimal={false}
       />
     );

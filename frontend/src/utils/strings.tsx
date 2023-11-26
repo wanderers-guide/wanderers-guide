@@ -13,6 +13,7 @@ export function pluralize(word: string): string {
 
 export function toLabel(text?: string | null) {
   if (!text) return '';
+  text = text.replace('ability-block', 'option');
   return _.startCase(text.toLowerCase().replace('-', ' '));
 }
 
