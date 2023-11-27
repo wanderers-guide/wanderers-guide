@@ -1,3 +1,4 @@
+import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
@@ -257,15 +258,26 @@ export function ClassInitialOverview(props: {
 }) {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
+  const charState = useRecoilState(characterState);
 
   // Reading thru operations to get display UI
   const classOperations = props.class_.operations ?? [];
   const MODE = props.mode;
+  const writeDetails =
+    MODE === 'READ/WRITE'
+      ? {
+          operationResults: props.operationResults ?? [],
+          characterState: charState,
+          primarySource: 'class',
+        }
+      : undefined;
+
 
   const attributes = getStatBlockDisplay(
     getAllAttributeVariables().map((v) => v.name),
     classOperations,
-    MODE, props.operationResults
+    MODE,
+    writeDetails
   );
   const keyAttribute =
     attributes.length > 0
@@ -275,28 +287,30 @@ export function ClassInitialOverview(props: {
           operation: null,
         };
 
-  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE, props.operationResults);
+  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE, writeDetails);
 
-  const perception = getStatDisplay('PERCEPTION', classOperations, MODE, props.operationResults);
+  const perception = getStatDisplay('PERCEPTION', classOperations, MODE, writeDetails);
   const skills = getStatBlockDisplay(
     getAllSkillVariables().map((v) => v.name),
     classOperations,
-    MODE, props.operationResults
+    MODE,
+    writeDetails
   );
   const saves = getStatBlockDisplay(
     getAllSaveVariables().map((v) => v.name),
     classOperations,
-    MODE, props.operationResults
+    MODE,
+    writeDetails
   );
-  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE, props.operationResults);
-  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE, props.operationResults);
-  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE, props.operationResults);
-  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE, props.operationResults);
-  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE, props.operationResults);
-  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, props.operationResults);
-  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, props.operationResults);
-  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, props.operationResults);
-  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE, props.operationResults);
+  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE, writeDetails);
+  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE, writeDetails);
+  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE, writeDetails);
+  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE, writeDetails);
+  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE, writeDetails);
+  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, writeDetails);
+  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, writeDetails);
+  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, writeDetails);
+  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE, writeDetails);
 
   return (
     <>
@@ -383,8 +397,8 @@ export function ClassInitialOverview(props: {
           <Text c='gray.5' ta='center'>
             Key Attribute
           </Text>
-          <Text c='gray.4' fw={700} ta='center'>
-            {keyAttribute.ui ? compactLabels(keyAttribute.ui as string) : 'Varies'}
+          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+            {keyAttribute.ui ?? 'Varies'}
           </Text>
         </Paper>
         <Paper
@@ -442,7 +456,7 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {perception.ui}
         </IndentedText>
       </Box>
@@ -458,11 +472,11 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         {skills.map((skill, index) => (
-          <IndentedText key={index} px='xs' c='gray.5' fz='sm'>
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {skill.ui}
           </IndentedText>
         ))}
-        {/* <IndentedText px='xs' c='gray.5' fz='sm'> TODO: Add this
+        {/* <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'> TODO: Add this
           Trained in a number of additional skills equal to 3 plus your Intelligence modifier
         </IndentedText> */}
       </Box>
@@ -478,7 +492,7 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         {saves.map((save, index) => (
-          <IndentedText key={index} px='xs' c='gray.5' fz='sm'>
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {save.ui}
           </IndentedText>
         ))}
@@ -494,16 +508,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {simpleWeapons.ui}
         </IndentedText>
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {martialWeapons.ui}
         </IndentedText>
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {advancedWeapons.ui}
         </IndentedText>
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {unarmedAttacks.ui}
         </IndentedText>
       </Box>
@@ -518,16 +532,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {lightArmor.ui}
         </IndentedText>
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {mediumArmor.ui}
         </IndentedText>
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {heavyArmor.ui}
         </IndentedText>
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {unarmoredDefense.ui}
         </IndentedText>
       </Box>
@@ -542,7 +556,7 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
           {classDC.ui}
         </IndentedText>
       </Box>

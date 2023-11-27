@@ -12,30 +12,27 @@ import _ from 'lodash';
 import { listToLabel } from '@utils/strings';
 import { SelectContentButton } from '@common/select/SelectContent';
 import { OperationResult } from '@operations/operation-runner';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
-import { characterState } from '@atoms/characterAtoms';
+import { SetterOrUpdater } from 'recoil';
 import { Character } from '@typing/content';
+import { Box } from '@mantine/core';
 
-type CharacterState = [Character, SetterOrUpdater<Character | null>];
+type CharacterState = [Character | null, SetterOrUpdater<Character | null>];
 
 export function getStatBlockDisplay(
   variableNames: string[],
   operations: Operation[],
   mode: 'READ' | 'READ/WRITE',
-  operationResults?: OperationResult[],
-  characterState?: CharacterState,
+  writeDetails?: {
+    operationResults: OperationResult[];
+    characterState: CharacterState;
+    primarySource: string;
+  }
 ) {
   let output: { ui: ReactNode; operation: OperationSelect | null }[] = [];
   const foundSet: Set<string> = new Set();
 
   for (const variableName of variableNames) {
-    const { ui, operation } = getStatDisplay(
-      variableName,
-      operations,
-      mode,
-      operationResults,
-      characterState
-    );
+    const { ui, operation } = getStatDisplay(variableName, operations, mode, writeDetails);
     if (ui && !foundSet.has(ui.toString())) {
       output.push({ ui, operation });
       foundSet.add(ui.toString());
@@ -57,8 +54,11 @@ export function getStatDisplay(
   variableName: string,
   operations: Operation[],
   mode: 'READ' | 'READ/WRITE',
-  operationResults?: OperationResult[],
-  characterState?: CharacterState,
+  writeDetails?: {
+    operationResults: OperationResult[];
+    characterState: CharacterState;
+    primarySource: string;
+  }
 ): { ui: ReactNode; operation: OperationSelect | null } {
   const variable = getVariable(variableName);
   if (!variable) return { ui: null, operation: null };
@@ -139,7 +139,7 @@ export function getStatDisplay(
   }
 
   return {
-    ui: getDisplay(bestValue, bestOperation, variable, mode, operationResults, characterState),
+    ui: getDisplay(bestValue, bestOperation, variable, mode, writeDetails),
     operation: bestOperation,
   };
 }
@@ -149,37 +149,51 @@ function getDisplay(
   operation: OperationSelect | null,
   variable: Variable,
   mode: 'READ' | 'READ/WRITE',
-  operationResults?: OperationResult[],
-  characterState?: CharacterState,
+  writeDetails?: {
+    operationResults: OperationResult[],
+    characterState: CharacterState,
+    primarySource: string,
+  }
 ): ReactNode {
   if (value === null) return null;
 
-  const result = operation?.id ? operationResults?.find((r) => r?.selection?.id === operation?.id) : null;
+  const result = operation?.id
+    ? writeDetails?.operationResults.find((r) => r?.selection?.id === operation?.id)
+    : null;
 
   // Handle attributes
-  if (isAttribute(value) || (_.isNumber(value) && variable.type === 'attr')) {
+  if (isAttribute(value) || (_.isNumber(+value) && variable.type === 'attr')) {
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (
-          <SelectContentButton
-            type={'ability-block'}
-            onClick={(option) => {
-              //props.onChange(props.source?._select_uuid ?? '', option._select_uuid);
-              updateCharacter(characterState, operation.id, option._select_uuid);
-            }}
-            onClear={() => {
-              //props.onChange(props.source?._select_uuid ?? '', '');
-            }}
-            selectedId={result?.result?.source?.id}
-            options={{
-              overrideOptions: result?.selection?.options,
-              overrideLabel: result?.selection?.title || 'Select an Option',
-              abilityBlockType:
-                (result?.selection?.options ?? []).length > 0
-                  ? result?.selection?.options[0].type
-                  : undefined,
-            }}
-          />
+          <Box py={0}>
+            <SelectContentButton
+              type={'ability-block'}
+              onClick={(option) => {
+                updateCharacter(
+                  writeDetails?.characterState,
+                  `${writeDetails?.primarySource}_${operation.id}`,
+                  option._select_uuid
+                );
+              }}
+              onClear={() => {
+                updateCharacter(
+                  writeDetails?.characterState,
+                  `${writeDetails?.primarySource}_${operation.id}`,
+                  ''
+                );
+              }}
+              selectedId={result?.result?.source?.id}
+              options={{
+                overrideOptions: result?.selection?.options,
+                overrideLabel: result?.selection?.title || 'Select an Option',
+                abilityBlockType:
+                  (result?.selection?.options ?? []).length > 0
+                    ? result?.selection?.options[0].type
+                    : undefined,
+              }}
+            />
+          </Box>
         );
       } else {
         const attrs = getVarList(operation, 'attr');
@@ -194,8 +208,36 @@ function getDisplay(
   if (_.isString(value) && isProficiencyType(value)) {
     if (operation) {
       if (mode === 'READ/WRITE') {
-        // TODO: Make selector. This should just be piped into the function that will convert a OperationSelect -> Selection UI
-        return null;
+        return (
+          <Box py={5}>
+            <SelectContentButton
+              type={'ability-block'}
+              onClick={(option) => {
+                updateCharacter(
+                  writeDetails?.characterState,
+                  `${writeDetails?.primarySource}_${operation.id}`,
+                  option._select_uuid
+                );
+              }}
+              onClear={() => {
+                updateCharacter(
+                  writeDetails?.characterState,
+                  `${writeDetails?.primarySource}_${operation.id}`,
+                  ''
+                );
+              }}
+              selectedId={result?.result?.source?.id}
+              options={{
+                overrideOptions: result?.selection?.options,
+                overrideLabel: result?.selection?.title || 'Select an Option',
+                abilityBlockType:
+                  (result?.selection?.options ?? []).length > 0
+                    ? result?.selection?.options[0].type
+                    : undefined,
+              }}
+            />
+          </Box>
+        );
       } else {
         // Display as `Trained in your choice of Acrobatics or Athletics`
         const profs = getVarList(operation, 'prof');
@@ -214,8 +256,36 @@ function getDisplay(
   // Handle numbers
   if (variable.type === 'num') {
     if (operation) {
-      // TODO:
-      return null;
+      return (
+        <Box py={5}>
+          <SelectContentButton
+            type={'ability-block'}
+            onClick={(option) => {
+              updateCharacter(
+                writeDetails?.characterState,
+                `${writeDetails?.primarySource}_${operation.id}`,
+                option._select_uuid
+              );
+            }}
+            onClear={() => {
+              updateCharacter(
+                writeDetails?.characterState,
+                `${writeDetails?.primarySource}_${operation.id}`,
+                ''
+              );
+            }}
+            selectedId={result?.result?.source?.id}
+            options={{
+              overrideOptions: result?.selection?.options,
+              overrideLabel: result?.selection?.title || 'Select an Option',
+              abilityBlockType:
+                (result?.selection?.options ?? []).length > 0
+                  ? result?.selection?.options[0].type
+                  : undefined,
+            }}
+          />
+        </Box>
+      );
     } else {
       return <>{value}</>;
     }

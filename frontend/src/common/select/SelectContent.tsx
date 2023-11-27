@@ -105,47 +105,45 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
 
   return (
-    <Box>
-      <Button.Group>
+    <Button.Group>
+      <Button
+        variant={selected ? 'filled' : 'light'}
+        size='compact-sm'
+        radius='xl'
+        onClick={() => {
+          selectContent<T>(
+            props.type,
+            (option) => {
+              setSelected(option);
+              props.onClick(option);
+            },
+            {
+              overrideOptions: props.options?.overrideOptions as Record<string, any>[],
+              overrideLabel: props.options?.overrideLabel,
+              abilityBlockType: props.options?.abilityBlockType,
+              groupBySource: props.options?.groupBySource,
+              // @ts-ignore
+              selectedId: selected?.id,
+            }
+          );
+        }}
+      >
+        {label}
+      </Button>
+      {selected && (
         <Button
-          variant={selected ? 'filled' : 'light'}
+          variant='filled'
           size='compact-sm'
           radius='xl'
           onClick={() => {
-            selectContent<T>(
-              props.type,
-              (option) => {
-                setSelected(option);
-                props.onClick(option);
-              },
-              {
-                overrideOptions: props.options?.overrideOptions as Record<string, any>[],
-                overrideLabel: props.options?.overrideLabel,
-                abilityBlockType: props.options?.abilityBlockType,
-                groupBySource: props.options?.groupBySource,
-                // @ts-ignore
-                selectedId: selected?.id,
-              }
-            );
+            setSelected(undefined);
+            props.onClear && props.onClear();
           }}
         >
-          {label}
+          <IconX size='1rem' />
         </Button>
-        {selected && (
-          <Button
-            variant='filled'
-            size='compact-sm'
-            radius='xl'
-            onClick={() => {
-              setSelected(undefined);
-              props.onClear && props.onClear();
-            }}
-          >
-            <IconX size='1rem' />
-          </Button>
-        )}
-      </Button.Group>
-    </Box>
+      )}
+    </Button.Group>
   );
 }
 
