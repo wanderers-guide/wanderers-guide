@@ -18,7 +18,6 @@ import {
 import { addVariable, adjVariable, getVariable, setVariable } from '@variables/variable-manager';
 import _ from 'lodash';
 import { SelectionTreeNode } from './selection-tree';
-import { getContent } from '@content/content-controller';
 import { throwError } from '@utils/notifications';
 import {
   ObjectWithUUID,
@@ -29,6 +28,7 @@ import { e } from 'mathjs';
 import { maxProficiencyType } from '@variables/variable-utils';
 import { Proficiency, ProficiencyType } from '@typing/variables';
 import { ReactNode } from 'react';
+import { fetchContentById } from '@content/content-store';
 
 /*
 
@@ -91,10 +91,10 @@ export type OperationResult = {
     title?: string;
     description?: string;
     options: ObjectWithUUID[];
-  },
+  };
   result?: {
-    source?: Record<string, any>,
-    results: OperationResult[],
+    source?: ObjectWithUUID;
+    results: OperationResult[];
   };
 } | null;
 
@@ -171,17 +171,35 @@ async function runSelect(
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
 
-  if (selectionNode) {
+  if (selectionNode && selectionNode.value) {
     const selectedOption = optionList.find((option) => option._select_uuid === selectionNode.value);
     if (!selectedOption) {
+      console.error('Selected option not found', selectionNode);
       throwError(`Selected option "${selectionNode.value}" not found`);
       return null;
     }
     selected = selectedOption;
+    console.log('Selected option', selectedOption)
 
     if (operation.data.optionType === 'ABILITY_BLOCK') {
-      adjVariable('ABILITY_BLOCK_IDS', `${selectedOption.id}`);
-      adjVariable('ABILITY_BLOCK_NAMES', selectedOption.name);
+      if (selectedOption.type === 'feat') {
+        adjVariable('FEAT_IDS', `${selectedOption.id}`);
+        adjVariable('FEAT_NAMES', selectedOption.name);
+      } else if (selectedOption.type === 'class-feature') {
+        adjVariable('CLASS_FEATURE_IDS', `${selectedOption.id}`);
+        adjVariable('CLASS_FEATURE_NAMES', selectedOption.name);
+      } else if (selectedOption.type === 'sense') {
+        adjVariable('SENSE_IDS', `${selectedOption.id}`);
+        adjVariable('SENSE_NAMES', selectedOption.name);
+      } else if (selectedOption.type === 'heritage') {
+        adjVariable('HERITAGE_IDS', `${selectedOption.id}`);
+        adjVariable('HERITAGE_NAMES', selectedOption.name);
+      } else if (selectedOption.type === 'physical-feature') {
+        adjVariable('PHYSICAL_FEATURE_IDS', `${selectedOption.id}`);
+        adjVariable('PHYSICAL_FEATURE_NAMES', selectedOption.name);
+      } else {
+        throwError(`Invalid ability block type: ${selectedOption.type}`);
+      }
     } else if (operation.data.optionType === 'LANGUAGE') {
       adjVariable('LANGUAGE_IDS', `${selectedOption.id}`);
       adjVariable('LANGUAGE_NAMES', selectedOption.name);
@@ -243,7 +261,7 @@ async function runGiveAbilityBlock(
   operation: OperationGiveAbilityBlock,
   options?: OperationOptions
 ): Promise<OperationResult> {
-  const abilityBlock = await getContent<AbilityBlock>(
+  const abilityBlock = await fetchContentById<AbilityBlock>(
     'ability-block',
     operation.data.abilityBlockId
   );
@@ -277,14 +295,18 @@ async function runGiveAbilityBlock(
 
   return {
     result: {
-      source: abilityBlock,
+      source: {
+        ...abilityBlock,
+        _select_uuid: operation.id,
+        _content_type: 'ability-block',
+      },
       results,
     },
   };
 }
 
 async function runGiveLanguage(operation: OperationGiveLanguage): Promise<OperationResult> {
-  const language = await getContent<Language>('language', operation.data.languageId);
+  const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
     throwError('Language not found');
     return null;
@@ -296,7 +318,7 @@ async function runGiveLanguage(operation: OperationGiveLanguage): Promise<Operat
 }
 
 async function runGiveSpell(operation: OperationGiveSpell): Promise<OperationResult> {
-  const spell = await getContent<Spell>('spell', operation.data.spellId);
+  const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
     throwError('Spell not found');
     return null;
@@ -310,7 +332,7 @@ async function runGiveSpell(operation: OperationGiveSpell): Promise<OperationRes
 async function runRemoveAbilityBlock(
   operation: OperationRemoveAbilityBlock
 ): Promise<OperationResult> {
-  const abilityBlock = await getContent<AbilityBlock>(
+  const abilityBlock = await fetchContentById<AbilityBlock>(
     'ability-block',
     operation.data.abilityBlockId
   );
@@ -373,7 +395,7 @@ async function runRemoveAbilityBlock(
 }
 
 async function runRemoveLanguage(operation: OperationRemoveLanguage): Promise<OperationResult> {
-  const language = await getContent<Language>('language', operation.data.languageId);
+  const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
     throwError('Language not found');
     return null;
@@ -395,7 +417,7 @@ async function runRemoveLanguage(operation: OperationRemoveLanguage): Promise<Op
 }
 
 async function runRemoveSpell(operation: OperationRemoveSpell): Promise<OperationResult> {
-  const spell = await getContent<Spell>('spell', operation.data.spellId);
+  const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
     throwError('Spell not found');
     return null;

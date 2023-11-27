@@ -1,8 +1,8 @@
 import { ActionCost, ContentSource, Rarity, Size, Trait } from "@typing/content";
 import _ from "lodash";
 import { makeRequest } from "@requests/request-manager";
-import { findTraitByName, getAllContentSources } from "@content/content-controller";
 import * as math from 'mathjs';
+import { fetchContentSources, fetchTraitByName } from '@content/content-store';
 
 export function convertToActionCost(
   actionType: string,
@@ -60,14 +60,17 @@ export function convertToSize(value?: string): Size {
 
 
 export async function getTraitIds(traitNames: string[], source: ContentSource) {
-  const sources = await getAllContentSources();
+  const sources = await fetchContentSources();
 
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
-    let trait = await findTraitByName(traitName, sources);
+    let trait = await fetchTraitByName(traitName, sources.map(s => s.id));
     if (!trait) {
       await createTrait(_.startCase(traitName), '', source.id);
-      trait = await findTraitByName(traitName, sources);
+      trait = await fetchTraitByName(
+        traitName,
+        sources.map((s) => s.id)
+      );
     }
     if (trait) {
       traitIds.push(trait.id);

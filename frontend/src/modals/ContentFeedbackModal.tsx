@@ -5,10 +5,10 @@ import _ from 'lodash';
 import { isValidImage } from '@utils/images';
 import { useState } from 'react';
 import { DrawerType } from '@typing/index';
-import { getContent } from '@content/content-controller';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconHash, IconStar } from '@tabler/icons-react';
 import { getIconFromContentType } from '@content/content-utils';
+import { fetchContentById } from '@content/content-store';
 
 export function ContentFeedbackModal({
   context,
@@ -23,8 +23,10 @@ export function ContentFeedbackModal({
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-${innerProps.type}-${contentId}`],
     queryFn: async () => {
-      const content = await getContent(innerProps.type, contentId!);
-      const source = content ? await getContent<ContentSource>('content-source', content.content_source_id) : null;
+      const content = await fetchContentById(innerProps.type, contentId!);
+      const source = content
+        ? await fetchContentById<ContentSource>('content-source', content.content_source_id)
+        : null;
       return {
         content,
         source,

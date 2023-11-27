@@ -1,8 +1,8 @@
 import { generateEmbeddings } from '@ai/vector-db/generate-embeddings';
 import BlurBox from '@common/BlurBox';
 import { selectContent } from '@common/select/SelectContent';
-import { findAllContentSources } from '@content/content-controller';
 import { upsertAbilityBlock } from '@content/content-creation';
+import { fetchContentSources } from '@content/content-store';
 import { Center, Group, Title, Select } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { CreateAbilityBlockModal } from '@modals/CreateAbilityBlockModal';
@@ -14,7 +14,7 @@ export default function GenerateEmbeddings() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      return await findAllContentSources({ homebrew: false });
+      return await fetchContentSources({ homebrew: false });
     },
   });
 

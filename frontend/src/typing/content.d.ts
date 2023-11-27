@@ -10,6 +10,7 @@ type ContentPackage = {
   spells: Spell[];
   traits: Trait[];
   creatures: Creature[];
+  sources?: ContentSource[];
 };
 
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'UNIQUE';

@@ -1,4 +1,3 @@
-import { getTraits } from '@content/content-controller';
 import {
   useMantineTheme,
   Loader,
@@ -14,6 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Rarity } from '@typing/content';
 import _ from 'lodash';
 import RichText from './RichText';
+import { fetchTraits } from '@content/content-store';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -33,7 +33,7 @@ export default function TraitsDisplay(props: {
       const [_key, {}] = queryKey;
 
       if (props.traitIds.length === 0) return [];
-      return (await getTraits(props.traitIds)).sort((a, b) => a.name.localeCompare(b.name));
+      return (await fetchTraits(props.traitIds)).sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 

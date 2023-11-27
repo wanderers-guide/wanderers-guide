@@ -10,11 +10,11 @@ import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { getContent } from '@content/content-controller';
 import _ from 'lodash';
 import { buildHrefFromContentData, getContentDataFromHref } from './ContentLinkExtension';
 import { toLabel } from '@utils/strings';
 import { convertToContentType } from '@content/content-utils';
+import { fetchContentById } from '@content/content-store';
 
 export default function ContentLinkControl() {
   const { editor } = useRichTextEditorContext();
@@ -75,7 +75,7 @@ export default function ContentLinkControl() {
       if (!contentData) return;
 
       const type = convertToContentType(contentData.type);
-      const content = await getContent(type, contentData.id);
+      const content = await fetchContentById(type, contentData.id);
       if (content) {
         setContent(content);
       }

@@ -1,9 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  defineEnabledContentSources,
-  getAllContentSources,
-  getContent,
-} from '@content/content-controller';
 import { selectContent } from '@common/select/SelectContent';
 import {
   ActionIcon,
@@ -60,22 +55,15 @@ import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 export default function DashboardPage() {
   setPageTitle(`Characters`);
 
-  useEffect(() => {
-    (async () => {
-      // Enable all sources
-      defineEnabledContentSources(await getAllContentSources());
-    })();
-  }, []);
-
   const {
     data: charDetails,
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: [`find-characters`],
+    queryKey: [`find-character`],
     queryFn: async () => {
       return await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
-        'find-characters',
+        'find-character',
         {}
       );
     },
@@ -242,7 +230,7 @@ function CharacterCard(props: { character: Character }) {
       onCancel: () => {},
       onConfirm: async () => {
         await deleteCharacter(character);
-        queryClient.refetchQueries(['find-characters']);
+        queryClient.refetchQueries(['find-character']);
       },
     });
 
@@ -327,7 +315,7 @@ function CharacterCard(props: { character: Character }) {
               leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
               onClick={async () => {
                 const newCharacter = await createCharacterCopy(props.character);
-                queryClient.refetchQueries(['find-characters']);
+                queryClient.refetchQueries(['find-character']);
               }}
             >
               Create Copy

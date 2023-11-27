@@ -28,7 +28,6 @@ import _, { set } from 'lodash';
 import { useState } from 'react';
 import { AbilityBlock, AbilityBlockType, Class, Rarity, Spell, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
-import { getContent, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
@@ -41,6 +40,7 @@ import { toHTML } from '@content/content-utils';
 import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
+import { fetchContentById } from '@content/content-store';
 
 export function CreateClassModal(props: {
   opened: boolean;
@@ -60,7 +60,7 @@ export function CreateClassModal(props: {
       // eslint-disable-next-line
       const [_key, { editId }] = queryKey;
 
-      const class_ = await getContent<Class>('class', editId);
+      const class_ = await fetchContentById<Class>('class', editId);
       if (!class_) return null;
 
       form.setInitialValues({

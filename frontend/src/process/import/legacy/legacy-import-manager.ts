@@ -1,4 +1,4 @@
-import { findTraitByName, getEnabledContentSourceIds } from '@content/content-controller';
+import { fetchTraitByName } from '@content/content-store';
 import { showNotification } from '@mantine/notifications';
 import { makeRequest } from '@requests/request-manager';
 import { AbilityBlockType, ContentType, Trait } from '@typing/content';
@@ -45,7 +45,7 @@ export async function importContent(type: ContentType, abilityBlockType?: Abilit
     // Update all trait descriptions
 
     for (const trait of traits) {
-      const foundTrait = await findTraitByName(trait.name, getEnabledContentSourceIds());
+      const foundTrait = await fetchTraitByName(trait.name);
 
       console.log(foundTrait);
 

@@ -5,7 +5,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { getContent, getContentStore } from '@content/content-controller';
+import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Title,
@@ -65,7 +65,7 @@ export function ClassDrawerTitle(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<Class>('class', id);
+      return await fetchContentById<Class>('class', id);
     },
   });
 
@@ -97,8 +97,8 @@ export function ClassDrawerContent(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      const class_ = await getContent<Class>('class', id);
-      const abilityBlocks = [...(await getContentStore<AbilityBlock>('ability-block')).values()];
+      const class_ = await fetchContentById<Class>('class', id);
+      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
       return {
         class_,
         abilityBlocks,

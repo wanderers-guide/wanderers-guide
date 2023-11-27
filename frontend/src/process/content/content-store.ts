@@ -1,0 +1,174 @@
+import { makeRequest } from '@requests/request-manager';
+import {
+  AbilityBlock,
+  Ancestry,
+  Background,
+  Class,
+  ContentPackage,
+  ContentSource,
+  ContentType,
+  Creature,
+  Item,
+  Language,
+  Spell,
+  Trait,
+} from '@typing/content';
+import { RequestType } from '@typing/requests';
+import { hashData } from '@utils/numbers';
+
+///////////////////////////////////////////////////////
+//                      Storing                      //
+///////////////////////////////////////////////////////
+
+const contentStore = new Map<number, any>();
+
+function hashFetch(type: ContentType, data: Record<string, any>) {
+  return hashData({ type, data });
+}
+
+function getStoredFetch(type: ContentType, data: Record<string, any>) {
+  return contentStore.get(hashFetch(type, data));
+}
+function setStoredFetch(type: ContentType, data: Record<string, any>, value: any) {
+  contentStore.set(hashFetch(type, data), value);
+}
+
+///////////////////////////////////////////////////////
+//                      Fetching                     //
+///////////////////////////////////////////////////////
+
+let defaultSources: number[] | undefined = undefined;// undefined means all sources
+export function defineDefaultSources(sources?: number[]) {
+  defaultSources = sources;
+}
+
+export async function fetchContentById<T = Record<string, any>>(
+  type: ContentType,
+  id: number,
+  sources?: number[]
+) {
+  return await fetchContent<T>(type, { id, content_sources: sources });
+}
+
+export async function fetchContentAll<T = Record<string, any>>(
+  type: ContentType,
+  sources?: number[]
+) {
+  const result = await fetchContent<T>(type, { content_sources: sources });
+  if (result) {
+    return result as T[];
+  } else {
+    return [];
+  }
+}
+
+export async function fetchContent<T = Record<string, any>>(
+  type: ContentType,
+  data: Record<string, any>,
+  dontStore?: boolean,
+) {
+  const FETCH_REQUEST_MAP: Record<ContentType, RequestType> = {
+    'ability-block': 'find-ability-block',
+    ancestry: 'find-ancestry',
+    background: 'find-background',
+    class: 'find-class',
+    'content-source': 'find-content-source',
+    creature: 'find-creature',
+    item: 'find-item',
+    language: 'find-language',
+    spell: 'find-spell',
+    trait: 'find-trait',
+  };
+
+  const storedFetch = getStoredFetch(type, data);
+  if (storedFetch) {
+    return storedFetch as T;
+  } else {
+
+    // Make sure we're always filtering by content source
+    if (type !== 'content-source' && !data.content_sources) {
+      const sources = await fetchContentSources(); // TODO: Add homebrew
+      data.content_sources = sources.map((source) => source.id);
+    }
+
+    const result = await makeRequest<T>(FETCH_REQUEST_MAP[type], data);
+    if (result && !dontStore) setStoredFetch(type, data, result);
+    return result;
+  }
+}
+
+export async function resetContentStore() {
+  contentStore.clear();
+}
+
+///////////////////////////////////////////////////////
+//                 Utility Functions                 //
+///////////////////////////////////////////////////////
+
+export async function fetchContentSources(options?: {
+  group?: string;
+  homebrew?: boolean;
+  published?: boolean;
+  ids?: number[];
+}) {
+  const sources = await fetchContent<ContentSource[]>('content-source', {
+    group: options?.group,
+    homebrew: options?.homebrew,
+    published: options?.published,
+    id: options?.ids ?? defaultSources,
+  });
+  if (!sources) {
+    return [];
+  }
+  console.log(sources);
+  return sources.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function fetchContentPackage(
+  sources?: number[],
+  fetchSources?: boolean
+): Promise<ContentPackage> {
+  const content = await Promise.all([
+    fetchContentAll<Ancestry>('ancestry', sources),
+    fetchContentAll<Background>('background', sources),
+    fetchContentAll<Class>('class', sources),
+    fetchContentAll<AbilityBlock>('ability-block', sources),
+    fetchContentAll<Item>('item', sources),
+    fetchContentAll<Language>('language', sources),
+    fetchContentAll<Spell>('spell', sources),
+    fetchContentAll<Trait>('trait', sources),
+    fetchContentAll<Creature>('creature', sources),
+  ]);
+  const contentSources = fetchSources ? await fetchContentSources({ ids: sources }) : null;
+
+  return {
+    ancestries: (content[0] ?? []) as Ancestry[],
+    backgrounds: (content[1] ?? []) as Background[],
+    classes: (content[2] ?? []) as Class[],
+    abilityBlocks: (content[3] ?? []) as AbilityBlock[],
+    items: (content[4] ?? []) as Item[],
+    languages: (content[5] ?? []) as Language[],
+    spells: (content[6] ?? []) as Spell[],
+    traits: (content[7] ?? []) as Trait[],
+    creatures: (content[8] ?? []) as Creature[],
+    sources: contentSources ?? undefined,
+  } satisfies ContentPackage;
+}
+
+export async function fetchAllPrereqs(name: string) {
+  return await fetchContent<AbilityBlock[]>('ability-block', {
+    prerequisites: [name],
+  });
+}
+export async function fetchTraitByName(name: string, sources?: number[]) {
+  return await fetchContent<Trait>('trait', {
+    name,
+    content_sources: sources,
+  });
+}
+export async function fetchTraits(ids?: number[]) {
+  if(!ids || ids.length === 0) return [];
+  return (await fetchContent<Trait[]>('trait', {
+    id: ids,
+  })) ?? [];
+}

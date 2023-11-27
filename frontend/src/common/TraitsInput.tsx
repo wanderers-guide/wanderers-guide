@@ -1,4 +1,4 @@
-import { getContentStore } from '@content/content-controller';
+import { fetchContentAll } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@typing/content';
@@ -14,8 +14,7 @@ export default function TraitsInput(props: TraitsInputProps) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-traits`],
     queryFn: async () => {
-      const traits = await getContentStore<Trait>('trait');
-      return [...traits.values()];
+      return await fetchContentAll<Trait>('trait');
     },
   });
 

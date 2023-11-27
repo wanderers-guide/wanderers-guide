@@ -11,7 +11,6 @@ import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ActionCost, ContentType } from '@typing/content';
-import { getContent } from '@content/content-controller';
 import _ from 'lodash';
 import { ActionSymbol } from '@common/Actions';
 

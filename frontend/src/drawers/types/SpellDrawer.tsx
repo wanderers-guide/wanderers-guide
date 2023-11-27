@@ -3,7 +3,7 @@ import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { getContent } from '@content/content-controller';
+import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
@@ -19,7 +19,7 @@ export function SpellDrawerTitle(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<Spell>('spell', id);
+      return await fetchContentById<Spell>('spell', id);
     },
   });
 
@@ -55,7 +55,7 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<Spell>('spell', id);
+      return await fetchContentById<Spell>('spell', id);
     },
   });
 

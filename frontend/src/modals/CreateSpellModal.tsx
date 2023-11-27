@@ -27,7 +27,6 @@ import _, { set } from 'lodash';
 import { useState } from 'react';
 import { AbilityBlock, AbilityBlockType, Rarity, Spell, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
-import { getContent, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
@@ -40,6 +39,7 @@ import { toHTML } from '@content/content-utils';
 import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
+import { fetchContentById, fetchTraits } from '@content/content-store';
 
 export function CreateSpellModal(props: {
   opened: boolean;
@@ -60,7 +60,7 @@ export function CreateSpellModal(props: {
       // eslint-disable-next-line
       const [_key, { editId }] = queryKey;
 
-      const spell = await getContent<Spell>('spell', editId);
+      const spell = await fetchContentById<Spell>('spell', editId);
       if (!spell) return null;
 
       form.setInitialValues({
@@ -69,7 +69,7 @@ export function CreateSpellModal(props: {
         rank: spell.rank.toString(),
       });
       form.reset();
-      setTraits(await getTraits(spell.traits));
+      setTraits(await fetchTraits(spell.traits));
       setMetaData(spell.meta_data ?? {});
 
       return spell;

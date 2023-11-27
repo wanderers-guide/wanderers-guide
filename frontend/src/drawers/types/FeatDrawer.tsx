@@ -4,7 +4,7 @@ import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { findAllPrereqs, getContent } from '@content/content-controller';
+import { fetchAllPrereqs, fetchContentById } from '@content/content-store';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Anchor } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
@@ -20,7 +20,7 @@ export function FeatDrawerTitle(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<AbilityBlock>('ability-block', id);
+      return await fetchContentById<AbilityBlock>('ability-block', id);
     },
   });
 
@@ -54,7 +54,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<AbilityBlock>('ability-block', id);
+      return await fetchContentById<AbilityBlock>('ability-block', id);
     },
   });
 
@@ -178,7 +178,7 @@ export function PrerequisiteForSection(props: { name: string }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { name }] = queryKey;
-      return await findAllPrereqs(name);
+      return await fetchAllPrereqs(name);
     },
   });
 

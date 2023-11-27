@@ -195,6 +195,7 @@ export function resetVariables() {
  */
 export function setVariable(name: string, value: any) {
   let variable = variables[name];
+  if(!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(value)) {
     variable.value = value;
   } else if (isVariableStr(variable) && _.isString(value)) {
@@ -220,6 +221,7 @@ export function setVariable(name: string, value: any) {
  */
 export function adjVariable(name: string, amount: any) {
   let variable = variables[name];
+  if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(amount)) {
     variable.value += amount;
   } else if (isVariableStr(variable) && _.isString(amount)) {

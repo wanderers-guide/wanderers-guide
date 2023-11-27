@@ -59,13 +59,13 @@ import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import CharBuilderHome from './CharBuilderHome';
 import CharBuilderCreation from './CharBuilderCreation';
-import { defineEnabledContentSources } from '@content/content-controller';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { setPageTitle } from '@utils/document-change';
 import { isPlayable } from '@utils/character';
 import { JSendResponse } from '@typing/requests';
 import _ from 'lodash';
+import { defineDefaultSources } from '@content/content-store';
 
 export default function CharacterBuilderPage() {
   setPageTitle(`Builder`);
@@ -97,15 +97,16 @@ export default function CharacterBuilderPage() {
     queryKey: [`find-character-${characterId}`],
     queryFn: async () => {
       const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
-        'find-characters',
+        'find-character',
         {
-          ids: [characterId],
+          id: characterId,
         }
       );
 
       if (charDetails) {
         // Make sure we sync the enabled content sources
-        defineEnabledContentSources(charDetails.characters[0].content_sources?.enabled ?? []);
+        defineDefaultSources(charDetails.characters[0].content_sources?.enabled ?? []);
+
       }
 
       return charDetails;
@@ -115,10 +116,10 @@ export default function CharacterBuilderPage() {
   
   
   useEffect(() => {
-    if (!charDetails || !charDetails.characters[0] || character) return;
+    if (!charDetails || !charDetails.characters[0]) return;
     // Update character nav state
     setCharacter(charDetails.characters[0]);
-  }, [isInitialLoading, character]);
+  }, [charDetails]);
 
 
   // Update character in db when state changed
@@ -131,12 +132,19 @@ export default function CharacterBuilderPage() {
       name: debouncedCharacter.name,
       details: debouncedCharacter.details,
       content_sources: debouncedCharacter.content_sources,
+      operation_data: debouncedCharacter.operation_data,
     });
   }, [debouncedCharacter]);
 
   // Update character stats
   const { mutate: mutateCharacter } = useMutation(
-    async (data: { name?: string; level?: number; details?: any; content_sources?: any }) => {
+    async (data: {
+      name?: string;
+      level?: number;
+      details?: any;
+      content_sources?: any;
+      operation_data?: any;
+    }) => {
       const response = await makeRequest<JSendResponse>('update-character', {
         id: characterId,
         ...data,

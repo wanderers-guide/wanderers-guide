@@ -43,7 +43,6 @@ import {
   Trait,
 } from '@typing/content';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { clearContent, getContent, getContentPackage, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
 import { useDebouncedState, useDisclosure } from '@mantine/hooks';
@@ -64,6 +63,7 @@ import { upsertAbilityBlock, upsertClass, upsertContentSource, upsertSpell } fro
 import { showNotification } from '@mantine/notifications';
 import { CreateSpellModal } from './CreateSpellModal';
 import { CreateClassModal } from './CreateClassModal';
+import { fetchContentPackage } from '@content/content-store';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -78,8 +78,8 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      const content = await getContentPackage([props.sourceId]);
-      const source = await getContent<ContentSource>('content-source', props.sourceId);
+      const content = await fetchContentPackage([props.sourceId], true);
+      const source = content.sources![0];
       if (!source) return null;
 
       form.setInitialValues({
@@ -87,7 +87,7 @@ export function CreateContentSourceModal(props: {
         foundry_id: source.foundry_id,
         url: source.url,
         description: source.description,
-        operations: source.operations,
+        operations: source.operations ?? [],
         contact_info: source.contact_info,
         group: source.group,
       });
@@ -754,7 +754,7 @@ function ContentList<T extends { name: string, level?: number, rank?: number, ty
               });
             }
 
-            clearContent('ability-block', abilityBlock.id);
+            //clearContent('ability-block', abilityBlock.id);
             handleReset();
           }}
           onCancel={() => handleReset()}
@@ -776,7 +776,7 @@ function ContentList<T extends { name: string, level?: number, rank?: number, ty
               });
             }
 
-            clearContent('spell', spell.id);
+            //clearContent('spell', spell.id);
             handleReset();
           }}
           onCancel={() => handleReset()}
@@ -798,7 +798,7 @@ function ContentList<T extends { name: string, level?: number, rank?: number, ty
               });
             }
 
-            clearContent('class', class_.id);
+            //clearContent('class', class_.id);
             handleReset();
           }}
           onCancel={() => handleReset()}

@@ -3,7 +3,7 @@ import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { getContent } from '@content/content-controller';
+import { fetchContentById } from '@content/content-store';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
@@ -17,7 +17,7 @@ export function ClassFeatureDrawerTitle(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<AbilityBlock>('ability-block', id);
+      return await fetchContentById<AbilityBlock>('ability-block', id);
     },
   });
 
@@ -51,7 +51,7 @@ export function ClassFeatureDrawerContent(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await getContent<AbilityBlock>('ability-block', id);
+      return await fetchContentById<AbilityBlock>('ability-block', id);
     },
   });
 

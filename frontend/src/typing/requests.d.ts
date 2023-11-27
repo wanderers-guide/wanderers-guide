@@ -24,7 +24,7 @@ export type RequestType =
   | 'create-spell'
   | 'find-spell'
   | 'create-character'
-  | 'find-characters'
+  | 'find-character'
   | 'update-character'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';

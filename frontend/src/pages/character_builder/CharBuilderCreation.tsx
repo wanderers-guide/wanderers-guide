@@ -29,7 +29,6 @@ import { SelectContentButton, selectContent } from '@common/select/SelectContent
 import { characterState } from '@atoms/characterAtoms';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { useQuery } from '@tanstack/react-query';
-import { getContentPackage } from '@content/content-controller';
 import D20Loader from '@assets/images/D20Loader';
 import { getIconFromContentType } from '@content/content-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
@@ -37,6 +36,7 @@ import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { IconPuzzle } from '@tabler/icons-react';
 import { OperationResult } from '@operations/operation-runner';
 import { ClassInitialOverview } from '@drawers/types/ClassDrawer';
+import { fetchContentPackage } from '@content/content-store';
 
 export default function CharBuilderCreation(props: { books: ContentSource[]; pageHeight: number }) {
   const theme = useMantineTheme();
@@ -45,7 +45,7 @@ export default function CharBuilderCreation(props: { books: ContentSource[]; pag
   const { data: content, isFetching } = useQuery({
     queryKey: [`find-content-${character?.id}`],
     queryFn: async () => {
-      const content = await getContentPackage(props.books.map((book) => book.id));
+      const content = await fetchContentPackage(props.books.map((book) => book.id));
       interval.stop();
       return content;
     },
@@ -103,7 +103,7 @@ export function CharBuilderCreationInner(props: {
     executeCharacterOperations(character, props.books, props.content).then((results) => {
       setOperationResults(results);
     });
-  }, []);
+  }, [character]);
 
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map(
     (level) => {
@@ -650,9 +650,11 @@ function LevelSection(props: {
 function InitialStatsLevelSection(props: { content: ContentPackage; operationResults: any }) {
   console.log(props.operationResults);
 
-  const character = useRecoilValue(characterState);
+  const [character, setCharacter] = useRecoilState(characterState);
 
-  const class_ = props.content.classes.find((class_) => class_.id === character?.details?.class?.id);
+  const class_ = props.content.classes.find(
+    (class_) => class_.id === character?.details?.class?.id
+  );
   const ancestry = props.content.ancestries.find(
     (ancestry) => ancestry.id === character?.details?.ancestry?.id
   );
@@ -663,7 +665,26 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
     (ab) => ab.id === character?.details?.heritage?.id && ab.type === 'heritage'
   );
 
-  if(!props.operationResults) return null;
+  const saveSelectionChange = (path: string, value: string) => {
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      const newSelections = { ...prev.operation_data?.selections };
+      if(!value) {
+        delete newSelections[path];
+      } else {
+        newSelections[path] = value;
+      }
+      return {
+        ...prev,
+        operation_data: {
+          ...prev.operation_data,
+          selections: newSelections,
+        },
+      };
+    });
+  };
+
+  if (!props.operationResults) return null;
 
   return (
     <>
@@ -677,6 +698,9 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.ancestryResults}
+              onChange={(path, value) => {
+                console.log(path, value);
+              }}
             />
           </Accordion.Panel>
         </Accordion.Item>
@@ -688,6 +712,9 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.backgroundResults}
+              onChange={(path, value) => {
+                console.log(path, value);
+              }}
             />
           </Accordion.Panel>
         </Accordion.Item>
@@ -700,6 +727,10 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.classResults}
+              onChange={(path, value) => {
+                console.log(`Path: ${path}`, `Value: ${value}`);
+                saveSelectionChange(`class_${path}`, value);
+              }}
             />
           </Accordion.Panel>
         </Accordion.Item>
@@ -719,6 +750,9 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.characterResults}
+              onChange={(path, value) => {
+                console.log(path, value);
+              }}
             />
           </Accordion.Panel>
         </Accordion.Item>
@@ -730,15 +764,17 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
 function DisplayOperationResult(props: {
   source?: Record<string, any>;
   results: OperationResult[];
+  onChange: (path: string, value: string) => void;
 }) {
-
   const hasSelection = (result: OperationResult) => {
-    if(result?.selection) return true;
-    for(const subResult of result?.result?.results ?? []) {
-      if(hasSelection(subResult)) return true;
+    if (result?.selection) return true;
+    for (const subResult of result?.result?.results ?? []) {
+      if (hasSelection(subResult)) return true;
     }
     return false;
-  }
+  };
+
+  console.log(props.results);
 
   return (
     <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>
@@ -746,7 +782,7 @@ function DisplayOperationResult(props: {
         {props.results
           .filter((result) => hasSelection(result))
           .map((result, i) => (
-            <Box key={i}>
+            <Stack key={i} gap={10}>
               {result?.selection && (
                 <SelectContentButton
                   type={
@@ -755,7 +791,10 @@ function DisplayOperationResult(props: {
                       : 'ability-block'
                   }
                   onClick={(option) => {
-                    console.log(option);
+                    props.onChange(props.source?._select_uuid ?? '', option._select_uuid);
+                  }}
+                  onClear={() => {
+                    props.onChange(props.source?._select_uuid ?? '', '');
                   }}
                   selectedId={result.result?.source?.id}
                   options={{
@@ -768,13 +807,19 @@ function DisplayOperationResult(props: {
                   }}
                 />
               )}
-              {result?.result && (
+              {result?.result?.results && result.result.results.length > 0 && (
                 <DisplayOperationResult
                   source={result.result.source}
                   results={result.result.results}
+                  onChange={(path, value) =>
+                    props.onChange(
+                      props.source?._select_uuid ? `${props.source?._select_uuid}_${path}` : path,
+                      value
+                    )
+                  }
                 />
               )}
-            </Box>
+            </Stack>
           ))}
       </Stack>
     </ResultWrapper>

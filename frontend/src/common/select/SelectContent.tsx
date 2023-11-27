@@ -57,13 +57,6 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  PLAYER_CORE_SOURCE_ID,
-  getContent,
-  getContentStore,
-  getEnabledContentSources,
-  getTraits,
-} from '@content/content-controller';
 import { ActionSymbol } from '@common/Actions';
 import * as JsSearch from 'js-search';
 import { pluralize, toLabel } from '@utils/strings';
@@ -74,10 +67,12 @@ import { isActionCost } from '@content/content-utils';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { compactLabels } from '@variables/variable-utils';
 import { getAllAttributeVariables } from '@variables/variable-manager';
+import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
   onClick: (option: T) => void;
+  onClear?: () => void;
   selectedId?: number;
   options?: {
     overrideOptions?: T[];
@@ -88,18 +83,18 @@ export function SelectContentButton<T = Record<string, any>>(props: {
 }) {
   const [selected, setSelected] = useState<T | undefined>();
 
-  console.log(props.options?.overrideOptions, props.type, selected);
-
   // Fill in selected content
   useEffect(() => {
     (async () => {
       if (!props.selectedId) return;
-      const content = await getContent<T>(props.type, props.selectedId);
+      const content = await fetchContentById<T>(props.type, props.selectedId);
       if (content) {
         setSelected(content);
       } else if (props.options?.overrideOptions) {
-        // @ts-ignore
-        const option = props.options.overrideOptions.find((option) => option.id === props.selectedId);
+        const option = props.options.overrideOptions.find(
+          // @ts-ignore
+          (option) => option.id === props.selectedId
+        );
         if (option) setSelected(option);
       }
     })();
@@ -107,7 +102,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
   // @ts-ignore
-  const label = selected ? selected.name : (props.options?.overrideLabel ?? `Select ${typeName}`);
+  const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
 
   return (
     <Box>
@@ -143,6 +138,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
             radius='xl'
             onClick={() => {
               setSelected(undefined);
+              props.onClear && props.onClear();
             }}
           >
             <IconX size='1rem' />
@@ -207,7 +203,7 @@ export function SelectContentModal({
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, {}] = queryKey;
-      return await getEnabledContentSources();
+      return await fetchContentSources();
     },
     enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
   });
@@ -425,11 +421,9 @@ function SelectionOptions(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { sourceId, abilityBlockType }] = queryKey;
-      return await getContentStore(props.type, {
-        fetch: true,
-        sourceId: sourceId === 'all' ? undefined : sourceId,
-        abilityBlockType: abilityBlockType,
-      }) ?? null;
+      return (
+        (await fetchContentAll(props.type, sourceId === 'all' ? undefined : [sourceId])) ?? null
+      );
     },
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch

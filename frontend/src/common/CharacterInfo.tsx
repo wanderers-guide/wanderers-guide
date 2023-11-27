@@ -3,7 +3,6 @@ import { Avatar, Text, Group, useMantineTheme, Button, Stack, Box, HoverCard } f
 import { IconPhoneCall, IconAt, IconSword, IconHomeEco, IconUsersGroup, IconTree, IconWindow, IconVocabulary } from '@tabler/icons-react';
 import classes from '@css/UserInfoIcons.module.css';
 import { Character, Class } from '@typing/content';
-import { getContent } from '@content/content-controller';
 import { useQuery } from '@tanstack/react-query';
 import _ from 'lodash';
 import React from 'react';

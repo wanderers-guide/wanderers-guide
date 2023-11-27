@@ -1,3 +1,4 @@
+import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { characterState } from '@atoms/characterAtoms';
 import { LinksGroup } from '@common/LinksGroup';
 import { GUIDE_BLUE } from '@constants/data';
@@ -23,9 +24,11 @@ import {
   Paper,
   ScrollArea,
   ColorInput,
+  HoverCard,
 } from '@mantine/core';
 import { useElementSize } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
+import { showNotification } from '@mantine/notifications';
 import {
   IconUserCircle,
   IconRefreshDot,
@@ -49,19 +52,21 @@ import { Character, ContentSource } from '@typing/content';
 import { uploadImage } from '@upload/image-upload';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
+import useRefresh from '@utils/use-refresh';
 import _ from 'lodash';
+import { useState } from 'react';
 import { useRecoilState } from 'recoil';
+import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 
-export default function CharBuilderHome(props: {
-  pageHeight: number;
-  books: ContentSource[];
-}) {
+export default function CharBuilderHome(props: { pageHeight: number; books: ContentSource[] }) {
   const theme = useMantineTheme();
 
   const { ref, height } = useElementSize();
   const topGap = 30;
 
   const [character, setCharacter] = useRecoilState(characterState);
+  const [loadingGenerateName, setLoadingGenerateName] = useState(false);
+  const [displayNameInput, refreshNameInput] = useRefresh();
 
   const openConfirmLevelChangeModal = (oldLevel: number, newLevel: number) =>
     modals.openConfirmModal({
@@ -152,26 +157,122 @@ export default function CharBuilderHome(props: {
                   <IconUserCircle size='1.5rem' stroke={1.5} />
                 </Avatar>
               </UnstyledButton>
-              <TextInput
-                label='Name'
-                placeholder='Unknown Wanderer'
-                defaultValue={character?.name === 'Unknown Wanderer' ? '' : character?.name}
-                onChange={(e) => {
-                  setCharacter((prev) => {
-                    if (!prev) return prev;
-                    return {
-                      ...prev,
-                      name: e.target.value,
-                    };
-                  });
-                }}
-                w={220}
-                rightSection={
-                  <ActionIcon size={22} radius='xl' color='dark' variant='subtle'>
-                    <IconRefreshDot style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
-                  </ActionIcon>
-                }
-              />
+              {displayNameInput && (
+                <TextInput
+                  label='Name'
+                  placeholder='Unknown Wanderer'
+                  defaultValue={character?.name === 'Unknown Wanderer' ? '' : character?.name}
+                  onChange={(e) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        name: e.target.value,
+                      };
+                    });
+                  }}
+                  w={220}
+                  rightSection={
+                    <HoverCard width={280} shadow='md' openDelay={750}>
+                      <HoverCard.Target>
+                        <ActionIcon
+                          size={22}
+                          loading={loadingGenerateName}
+                          radius='xl'
+                          color='dark'
+                          variant='subtle'
+                          onClick={async () => {
+                            if (!character) return;
+                            setLoadingGenerateName(true);
+                            const names = await generateNames(character, 1);
+                            setLoadingGenerateName(false);
+                            if (names.length > 0) {
+                              const name = names[0].replace(/\*/g, '');
+                              setCharacter((prev) => {
+                                if (!prev) return prev;
+                                return {
+                                  ...prev,
+                                  name: name,
+                                };
+                              });
+                              refreshNameInput();
+                            } else {
+                              showNotification({
+                                title: 'Failed to Generate Name',
+                                message: 'Please try again.',
+                                color: 'red',
+                                icon: null,
+                                autoClose: 3000,
+                              });
+                            }
+                          }}
+                        >
+                          <IconRefreshDot
+                            style={{ width: rem(18), height: rem(18) }}
+                            stroke={1.5}
+                          />
+                        </ActionIcon>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown>
+                        <Group gap={5} wrap='nowrap' align='center'>
+                          <IconRefreshDot size='1rem' stroke={1.5} />
+                          <Title order={5}>Random Name Generator</Title>
+                        </Group>
+                        <Text size='sm'>
+                          Produces a random name and title based on your character stats.
+                          {character?.details?.ancestry?.name && (
+                            <Text>
+                              <Text fw='bold' span>
+                                Ancestry:
+                              </Text>{' '}
+                              {character?.details?.ancestry?.name}
+                            </Text>
+                          )}
+                          {character?.details?.background?.name && (
+                            <Text>
+                              <Text fw='bold' span>
+                                Background:
+                              </Text>{' '}
+                              {character?.details?.background?.name}
+                            </Text>
+                          )}
+                          {character?.details?.class?.name && (
+                            <Text>
+                              <Text fw='bold' span>
+                                Class:
+                              </Text>{' '}
+                              {character?.details?.class?.name}
+                            </Text>
+                          )}
+                          {!character?.details?.class?.name &&
+                            !character?.details?.background?.name &&
+                            !character?.details?.ancestry?.name && (
+                              <Text>
+                                <Text fw='bold' span>
+                                  None Set:
+                                </Text>{' '}
+                                Will be a random name
+                              </Text>
+                            )}
+                        </Text>
+                        <Divider mt={10} mb={5} />
+                        <Group align='flex-end' justify='flex-end' gap={5} wrap='nowrap'>
+                          <Text fz='xs' fw={600}>
+                            Powered by
+                          </Text>
+                          <Image
+                            onClick={() => window.open('https://fantasygen.dev/')}
+                            style={{ cursor: 'pointer' }}
+                            radius='md'
+                            w={160}
+                            src={FantasyGen_dev}
+                          />
+                        </Group>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                  }
+                />
+              )}
               <Select
                 label='Level'
                 data={Array.from({ length: 20 }, (_, i) => (i + 1).toString())}

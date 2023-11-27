@@ -24,7 +24,6 @@ import _, { set } from 'lodash';
 import { useState } from 'react';
 import { AbilityBlock, AbilityBlockType, Rarity, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
-import { getContent, getTraits } from '@content/content-controller';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
@@ -37,6 +36,7 @@ import { toHTML } from '@content/content-utils';
 import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
+import { fetchContentById, fetchTraits } from '@content/content-store';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -58,7 +58,7 @@ export function CreateAbilityBlockModal(props: {
       // eslint-disable-next-line
       const [_key, { editId }] = queryKey;
 
-      const abilityBlock = await getContent<AbilityBlock>('ability-block', editId);
+      const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', editId);
       if (abilityBlock && abilityBlock.type !== props.type) return null;
       if (!abilityBlock) return null;
 
@@ -70,7 +70,7 @@ export function CreateAbilityBlockModal(props: {
         level: abilityBlock.level.toString(),
       });
       form.reset();
-      setTraits(await getTraits(abilityBlock.traits));
+      setTraits(await fetchTraits(abilityBlock.traits));
       setMetaData(abilityBlock.meta_data ?? {});
 
       return abilityBlock;

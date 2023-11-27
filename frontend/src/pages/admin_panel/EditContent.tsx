@@ -1,8 +1,8 @@
 import { generateEmbeddings } from '@ai/vector-db/generate-embeddings';
 import BlurBox from '@common/BlurBox';
 import { selectContent } from '@common/select/SelectContent';
-import { findAllContentSources } from '@content/content-controller';
 import { upsertAbilityBlock, upsertSpell } from '@content/content-creation';
+import { fetchContentSources } from '@content/content-store';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { Center, Group, Title, Select } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
@@ -21,7 +21,7 @@ export default function EditContent() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      return await findAllContentSources({ homebrew: false });
+      return await fetchContentSources({ homebrew: false });
     },
   });
 

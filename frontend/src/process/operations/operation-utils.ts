@@ -1,9 +1,4 @@
-import {
-  findTraitByName,
-  getContent,
-  getContentStore,
-  getEnabledContentSourceIds,
-} from '@content/content-controller';
+import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
 import { Content } from '@tiptap/react';
 import { AbilityBlock, ContentType, Language, Spell } from '@typing/content';
 import {
@@ -176,7 +171,7 @@ async function getAbilityBlockList(
   operationUUID: string,
   filters: OperationSelectFiltersAbilityBlock
 ) {
-  let abilityBlocks = [...(await getContentStore<AbilityBlock>('ability-block')).values()];
+  let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
   if (filters.level.min !== undefined) {
     abilityBlocks = abilityBlocks.filter(
@@ -189,9 +184,7 @@ async function getAbilityBlockList(
     );
   }
   if (filters.traits !== undefined) {
-    const traits = await Promise.all(
-      filters.traits.map((trait) => findTraitByName(trait, getEnabledContentSourceIds()))
-    );
+    const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
     const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
 
     // Filter out ability blocks that don't have all the traits
@@ -220,7 +213,7 @@ async function getAbilityBlockList(
 }
 
 async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
-  let spells = [...(await getContentStore<Spell>('spell')).values()];
+  let spells = await fetchContentAll<Spell>('spell');
 
   if (filters.level.min !== undefined) {
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
@@ -229,9 +222,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
     spells = spells.filter((spell) => spell.rank >= filters.level.max!);
   }
   if (filters.traits !== undefined) {
-    const traits = await Promise.all(
-      filters.traits.map((trait) => findTraitByName(trait, getEnabledContentSourceIds()))
-    );
+    const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
     const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
 
     // Filter out spells that don't have all the traits
@@ -266,7 +257,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
 }
 
 async function getLanguageList(operationUUID: string, filters: OperationSelectFiltersLanguage) {
-  let languages = [...(await getContentStore<Language>('language')).values()];
+  let languages = await fetchContentAll<Language>('language');
 
   if (filters.rarity) {
     languages = languages.filter((language) => language.rarity === filters.rarity);
@@ -306,7 +297,7 @@ export async function determinePredefinedSelectionList(
 async function getAbilityBlockPredefinedList(options: OperationSelectOptionAbilityBlock[]) {
   const abilityBlocks = await Promise.all(
     options.map((option) =>
-      getContent<AbilityBlock>('ability-block', option.operation.data.abilityBlockId)
+      fetchContentById<AbilityBlock>('ability-block', option.operation.data.abilityBlockId)
     )
   );
 
@@ -326,7 +317,7 @@ async function getAbilityBlockPredefinedList(options: OperationSelectOptionAbili
 
 async function getSpellPredefinedList(options: OperationSelectOptionSpell[]) {
   const spells = await Promise.all(
-    options.map((option) => getContent<Spell>('spell', option.operation.data.spellId))
+    options.map((option) => fetchContentById<Spell>('spell', option.operation.data.spellId))
   );
 
   const result = [];
@@ -345,7 +336,9 @@ async function getSpellPredefinedList(options: OperationSelectOptionSpell[]) {
 
 async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[]) {
   const languages = await Promise.all(
-    options.map((option) => getContent<Language>('language', option.operation.data.languageId))
+    options.map((option) =>
+      fetchContentById<Language>('language', option.operation.data.languageId)
+    )
   );
 
   const result = [];

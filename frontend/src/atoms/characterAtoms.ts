@@ -3,7 +3,7 @@ import { atom, selector } from "recoil";
 
 const _internal_characterState = atom({
   key: 'character-active-internal',
-  default: loadCharacter(),
+  default: loadCharacter() as Character | null,
 });
 
 const characterState = selector({
@@ -25,7 +25,7 @@ const characterState = selector({
 
 
 function saveCharacter(character: Character) {
-  localStorage.setItem('character', JSON.stringify(character));
+  //localStorage.setItem('character', JSON.stringify(character));
 }
 
 function deleteCharacter() {
@@ -33,10 +33,10 @@ function deleteCharacter() {
 }
 
 function loadCharacter() {
-  const character = localStorage.getItem('character');
-  if (character) {
-    return JSON.parse(character) as Character;
-  }
+  // const character = localStorage.getItem('character');
+  // if (character) {
+  //   return JSON.parse(character) as Character;
+  // }
   return null;
 }
 

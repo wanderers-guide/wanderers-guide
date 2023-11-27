@@ -269,7 +269,7 @@ async function fetchCharacters(
   theme: MantineTheme,
 ): Promise<SpotlightActionData[]> {
   const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
-    'find-characters',
+    'find-character',
     {}
   );
   if (!charDetails) return [];
