@@ -20,6 +20,7 @@ import { hashData } from '@utils/numbers';
 //                      Storing                      //
 ///////////////////////////////////////////////////////
 
+// Fetch storing //
 const contentStore = new Map<number, any>();
 
 function hashFetch(type: ContentType, data: Record<string, any>) {
@@ -31,6 +32,51 @@ function getStoredFetch(type: ContentType, data: Record<string, any>) {
 }
 function setStoredFetch(type: ContentType, data: Record<string, any>, value: any) {
   contentStore.set(hashFetch(type, data), value);
+}
+
+// Id storing //
+let idStore = emptyIdStore();
+function emptyIdStore() {
+  let newStore = new Map<ContentType, Map<number, Record<string, any> | null>>();
+  newStore.set('ancestry', new Map());
+  newStore.set('background', new Map());
+  newStore.set('class', new Map());
+  newStore.set('ability-block', new Map());
+  newStore.set('item', new Map());
+  newStore.set('language', new Map());
+  newStore.set('spell', new Map());
+  newStore.set('trait', new Map());
+  newStore.set('content-source', new Map());
+  return newStore;
+}
+
+function getStoredIds(type: ContentType, data: Record<string, any>) {
+  if(!data.id) return null;
+  if(Array.isArray(data.id)) {
+    const results = data.id
+      .map((id) => idStore.get(type)?.get(parseInt(id)))
+      .filter((result) => result);
+    if(results.length !== data.id.length) return null;
+    return results;
+  } else {
+    const id = parseInt(data.id);
+    return idStore.get(type)?.get(id);
+  }
+}
+
+function setStoredIds(type: ContentType, data: Record<string, any>, value: any) {
+  if (!data.id) return true;
+  if (Array.isArray(data.id)) {
+    if (!Array.isArray(value)) return 'Value is not an array';
+    for(const v of value) {
+      if(!v.id) return 'Value is not an array of objects with ids';
+      idStore.get(type)?.set(v.id, v);
+    }
+  } else {
+    if (Array.isArray(value) || !value.id) return 'Value is not an object with an id';
+    idStore.get(type)?.set(value.id, value);
+  }
+  return true;
 }
 
 ///////////////////////////////////////////////////////
@@ -80,25 +126,34 @@ export async function fetchContent<T = Record<string, any>>(
     trait: 'find-trait',
   };
 
+
+  const storedIds = getStoredIds(type, data);
   const storedFetch = getStoredFetch(type, data);
   if (storedFetch) {
     return storedFetch as T;
+  } else if (storedIds) {
+    return storedIds as T;
   } else {
-
     // Make sure we're always filtering by content source
-    if (type !== 'content-source' && !data.content_sources) {
+    const newData = { ...data };
+    if (type !== 'content-source' && !newData.content_sources) {
       const sources = await fetchContentSources(); // TODO: Add homebrew
-      data.content_sources = sources.map((source) => source.id);
+      newData.content_sources = sources.map((source) => source.id);
     }
 
-    const result = await makeRequest<T>(FETCH_REQUEST_MAP[type], data);
-    if (result && !dontStore) setStoredFetch(type, data, result);
+    const result = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
+    if (result && !dontStore) {
+      setStoredFetch(type, data, result);
+      const added = setStoredIds(type, data, result);
+      if(added !== true) console.error('Failed to add to id store', added, data, result);
+    }
     return result;
   }
 }
 
 export async function resetContentStore() {
   contentStore.clear();
+  idStore = emptyIdStore();
 }
 
 ///////////////////////////////////////////////////////
@@ -120,7 +175,6 @@ export async function fetchContentSources(options?: {
   if (!sources) {
     return [];
   }
-  console.log(sources);
   return sources.sort((a, b) => a.name.localeCompare(b.name));
 }
 

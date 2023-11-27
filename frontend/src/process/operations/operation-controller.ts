@@ -55,7 +55,6 @@ async function executeOperations(
 */
 export async function executeCharacterOperations(
   character: Character,
-  sources: ContentSource[],
   content: ContentPackage
 ) {
   defineSelectionTree(character);
@@ -80,7 +79,7 @@ export async function executeCharacterOperations(
 
   const operationsPassthrough = async (options?: OperationOptions) => {
     let contentSourceResults: { baseSource: ContentSource; baseResults: OperationResult[] }[] = [];
-    for (const source of sources) {
+    for (const source of content.sources ?? []) {
       contentSourceResults.push({
         baseSource: source,
         baseResults: await executeOperations(

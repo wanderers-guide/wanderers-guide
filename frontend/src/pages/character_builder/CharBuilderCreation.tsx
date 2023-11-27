@@ -38,14 +38,14 @@ import { OperationResult } from '@operations/operation-runner';
 import { ClassInitialOverview } from '@drawers/types/ClassDrawer';
 import { fetchContentPackage } from '@content/content-store';
 
-export default function CharBuilderCreation(props: { books: ContentSource[]; pageHeight: number }) {
+export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
 
   const { data: content, isFetching } = useQuery({
     queryKey: [`find-content-${character?.id}`],
     queryFn: async () => {
-      const content = await fetchContentPackage(props.books.map((book) => book.id));
+      const content = await fetchContentPackage(undefined, true);
       interval.stop();
       return content;
     },
@@ -77,7 +77,6 @@ export default function CharBuilderCreation(props: { books: ContentSource[]; pag
   } else {
     return (
       <CharBuilderCreationInner
-        books={props.books}
         content={content}
         pageHeight={props.pageHeight}
       />
@@ -86,7 +85,6 @@ export default function CharBuilderCreation(props: { books: ContentSource[]; pag
 }
 
 export function CharBuilderCreationInner(props: {
-  books: ContentSource[];
   content: ContentPackage;
   pageHeight: number;
 }) {
@@ -100,7 +98,7 @@ export function CharBuilderCreationInner(props: {
 
   useEffect(() => {
     if (!character) return;
-    executeCharacterOperations(character, props.books, props.content).then((results) => {
+    executeCharacterOperations(character, props.content).then((results) => {
       setOperationResults(results);
     });
   }, [character]);

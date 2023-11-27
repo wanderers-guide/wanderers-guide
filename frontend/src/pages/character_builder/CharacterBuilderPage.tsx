@@ -93,33 +93,33 @@ export default function CharacterBuilderPage() {
   const [character, setCharacter] = useRecoilState(characterState);
 
   // Fetch character from db
-  const { data: charDetails, isLoading, isInitialLoading } = useQuery({
+  const {
+    data: resultCharacter,
+    isLoading,
+    isInitialLoading,
+  } = useQuery({
     queryKey: [`find-character-${characterId}`],
     queryFn: async () => {
-      const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
-        'find-character',
-        {
-          id: characterId,
-        }
-      );
+      const resultCharacter = await makeRequest<Character>('find-character', {
+        id: characterId,
+      });
 
-      if (charDetails) {
+      if (resultCharacter) {
         // Make sure we sync the enabled content sources
-        defineDefaultSources(charDetails.characters[0].content_sources?.enabled ?? []);
-
+        defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
       }
 
-      return charDetails;
+      return resultCharacter;
     },
     refetchOnWindowFocus: false,
   });
   
   
   useEffect(() => {
-    if (!charDetails || !charDetails.characters[0]) return;
+    if (!resultCharacter) return;
     // Update character nav state
-    setCharacter(charDetails.characters[0]);
-  }, [charDetails]);
+    setCharacter(resultCharacter);
+  }, [resultCharacter]);
 
 
   // Update character in db when state changed
@@ -159,7 +159,7 @@ export default function CharacterBuilderPage() {
     }
   );
 
-  console.log(character, charDetails, !isLoading);
+  console.log(character, resultCharacter, !isLoading);
 
   return (
     <Center>
@@ -218,8 +218,8 @@ export default function CharacterBuilderPage() {
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
                 <ScrollArea h={pageHeight}>
-                  {character && charDetails && !isLoading ? (
-                    <CharBuilderHome pageHeight={pageHeight} books={charDetails.books} />
+                  {character && !isLoading ? (
+                    <CharBuilderHome pageHeight={pageHeight} />
                   ) : (
                     <LoadingOverlay
                       visible={isLoading}
@@ -237,8 +237,8 @@ export default function CharacterBuilderPage() {
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
                 <ScrollArea h={pageHeight}>
-                  {character && charDetails && !isLoading ? (
-                    <CharBuilderCreation pageHeight={pageHeight} books={charDetails.books} />
+                  {character && !isLoading ? (
+                    <CharBuilderCreation pageHeight={pageHeight} />
                   ) : (
                     <LoadingOverlay
                       visible={isLoading}

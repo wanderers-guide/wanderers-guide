@@ -268,12 +268,11 @@ async function fetchCharacters(
   navigate: NavigateFunction,
   theme: MantineTheme,
 ): Promise<SpotlightActionData[]> {
-  const charDetails = await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
+  const characters = await makeRequest<Character[]>(
     'find-character',
     {}
   );
-  if (!charDetails) return [];
-  return charDetails.characters.map((character) => {
+  return (characters ?? []).map((character) => {
     const level = character.level;
     const heritage = character.details?.heritage?.name ?? '';
     const ancestry = character.details?.ancestry?.name ?? '';

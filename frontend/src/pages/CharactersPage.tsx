@@ -56,16 +56,13 @@ export default function DashboardPage() {
   setPageTitle(`Characters`);
 
   const {
-    data: charDetails,
+    data: characters,
     isLoading,
     refetch,
   } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
-      return await makeRequest<{ characters: Character[]; books: ContentSource[] }>(
-        'find-character',
-        {}
-      );
+      return await makeRequest<Character[]>('find-character', {});
     },
   });
 
@@ -79,7 +76,6 @@ export default function DashboardPage() {
     setCharacter(null);
   }, []);
 
-  console.log(charDetails);
   const CHARACTER_LIMIT = 3;
 
   return (
@@ -91,9 +87,7 @@ export default function DashboardPage() {
               <Title order={1} c='gray.0'>
                 Characters
                 <Text pl={10} fz='xl' fw={500} c='gray.2' span>
-                  {charDetails && CHARACTER_LIMIT
-                    ? `(${charDetails?.characters.length}/${CHARACTER_LIMIT})`
-                    : ''}
+                  {characters && CHARACTER_LIMIT ? `(${characters.length}/${CHARACTER_LIMIT})` : ''}
                 </Text>
               </Title>
             </Box>
@@ -197,7 +191,7 @@ export default function DashboardPage() {
               }}
             />
           )}
-          {charDetails?.characters.map((character, index) => (
+          {(characters ?? []).map((character, index) => (
             <CharacterCard key={index} character={character} />
           ))}
         </Group>

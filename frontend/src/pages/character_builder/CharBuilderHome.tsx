@@ -57,8 +57,10 @@ import _ from 'lodash';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
+import { useQuery } from '@tanstack/react-query';
+import { fetchContentSources } from '@content/content-store';
 
-export default function CharBuilderHome(props: { pageHeight: number; books: ContentSource[] }) {
+export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
 
   const { ref, height } = useElementSize();
@@ -67,6 +69,14 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();
+
+  const { data: fetchedBooks } = useQuery({
+    queryKey: [`get-content-sources`],
+    queryFn: async () => {
+      return await fetchContentSources();
+    },
+  });
+  const books = fetchedBooks ?? [];
 
   const openConfirmLevelChangeModal = (oldLevel: number, newLevel: number) =>
     modals.openConfirmModal({
@@ -330,7 +340,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                     <LinksGroup
                       icon={IconBook2}
                       label={'Core'}
-                      links={props.books
+                      links={books
                         .filter((book) => book.group === 'core')
                         .map((book) => ({
                           label: book.name,
@@ -340,7 +350,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                         }))}
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
-                        props.books
+                        books
                           .filter((book) => book.group === 'core')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
@@ -350,7 +360,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                     <LinksGroup
                       icon={IconWorld}
                       label={'Lost Omens'}
-                      links={props.books
+                      links={books
                         .filter((book) => book.group === 'lost-omens')
                         .map((book) => ({
                           label: book.name,
@@ -360,7 +370,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                         }))}
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
-                        props.books
+                        books
                           .filter((book) => book.group === 'lost-omens')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
@@ -370,7 +380,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                     <LinksGroup
                       icon={IconMap}
                       label={'Adventure Paths'}
-                      links={props.books
+                      links={books
                         .filter((book) => book.group === 'adventure-path')
                         .map((book) => ({
                           label: book.name,
@@ -380,7 +390,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                         }))}
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
-                        props.books
+                        books
                           .filter((book) => book.group === 'adventure-path')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
@@ -390,7 +400,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                     <LinksGroup
                       icon={IconBrandSafari}
                       label={'Standalone Adventures'}
-                      links={props.books
+                      links={books
                         .filter((book) => book.group === 'standalone-adventure')
                         .map((book) => ({
                           label: book.name,
@@ -400,7 +410,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                         }))}
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
-                        props.books
+                        books
                           .filter((book) => book.group === 'standalone-adventure')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
@@ -410,7 +420,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                     <LinksGroup
                       icon={IconDots}
                       label={'Miscellaneous'}
-                      links={props.books
+                      links={books
                         .filter((book) => book.group === 'misc')
                         .map((book) => ({
                           label: book.name,
@@ -420,7 +430,7 @@ export default function CharBuilderHome(props: { pageHeight: number; books: Cont
                         }))}
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
-                        props.books
+                        books
                           .filter((book) => book.group === 'misc')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
