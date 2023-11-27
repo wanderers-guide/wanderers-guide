@@ -164,13 +164,13 @@ export async function fetchContentSources(options?: {
   group?: string;
   homebrew?: boolean;
   published?: boolean;
-  ids?: number[];
+  ids?: number[] | 'all';
 }) {
   const sources = await fetchContent<ContentSource[]>('content-source', {
     group: options?.group,
     homebrew: options?.homebrew,
     published: options?.published,
-    id: options?.ids ?? defaultSources,
+    id: options?.ids === 'all' ? undefined : (options?.ids ?? defaultSources),
   });
   if (!sources) {
     return [];

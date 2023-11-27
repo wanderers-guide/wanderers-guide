@@ -73,7 +73,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const { data: fetchedBooks } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      return await fetchContentSources();
+      return await fetchContentSources({ ids: 'all' });
     },
   });
   const books = fetchedBooks ?? [];

@@ -37,6 +37,7 @@ import { IconPuzzle } from '@tabler/icons-react';
 import { OperationResult } from '@operations/operation-runner';
 import { ClassInitialOverview } from '@drawers/types/ClassDrawer';
 import { fetchContentPackage } from '@content/content-store';
+import { ObjectWithUUID } from '@operations/operation-utils';
 
 export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -75,19 +76,11 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
       </Box>
     );
   } else {
-    return (
-      <CharBuilderCreationInner
-        content={content}
-        pageHeight={props.pageHeight}
-      />
-    );
+    return <CharBuilderCreationInner content={content} pageHeight={props.pageHeight} />;
   }
 }
 
-export function CharBuilderCreationInner(props: {
-  content: ContentPackage;
-  pageHeight: number;
-}) {
+export function CharBuilderCreationInner(props: { content: ContentPackage; pageHeight: number }) {
   const { ref, height } = useElementSize();
 
   const [character, setCharacter] = useRecoilState(characterState);
@@ -667,7 +660,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
     setCharacter((prev) => {
       if (!prev) return prev;
       const newSelections = { ...prev.operation_data?.selections };
-      if(!value) {
+      if (!value) {
         delete newSelections[path];
       } else {
         newSelections[path] = value;
@@ -687,9 +680,15 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   return (
     <>
       <Divider />
-      <Accordion variant='contained' defaultValue=''>
+      <Accordion
+        variant='contained'
+        defaultValue=''
+        styles={{
+          label: { paddingTop: 5, paddingBottom: 5 },
+        }}
+      >
         <Accordion.Item value='ancestry'>
-          <Accordion.Control icon={getIconFromContentType('ancestry', '1rem')}>
+          <Accordion.Control disabled={!ancestry} icon={getIconFromContentType('ancestry', '1rem')}>
             Ancestry
           </Accordion.Control>
           <Accordion.Panel>
@@ -703,7 +702,10 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
           </Accordion.Panel>
         </Accordion.Item>
         <Accordion.Item value='background'>
-          <Accordion.Control icon={getIconFromContentType('background', '1rem')}>
+          <Accordion.Control
+            disabled={!background}
+            icon={getIconFromContentType('background', '1rem')}
+          >
             Background
           </Accordion.Control>
           <Accordion.Panel>
@@ -717,11 +719,18 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
           </Accordion.Panel>
         </Accordion.Item>
         <Accordion.Item value='class'>
-          <Accordion.Control icon={getIconFromContentType('class', '1rem')}>
+          <Accordion.Control disabled={!class_} icon={getIconFromContentType('class', '1rem')}>
             Class
           </Accordion.Control>
           <Accordion.Panel>
-            {class_ && <ClassInitialOverview class_={class_} mode='READ' />}
+            {class_ && (
+              <ClassInitialOverview
+                class_={class_}
+                mode='READ/WRITE'
+                operationResults={props.operationResults.results.classResults}
+              />
+            )}
+
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.classResults}
@@ -732,35 +741,54 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             />
           </Accordion.Panel>
         </Accordion.Item>
-        <Accordion.Item value='books'>
-          <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
-            Books
-          </Accordion.Control>
-          <Accordion.Panel></Accordion.Panel>
-        </Accordion.Item>
-        <Accordion.Item value='items'>
-          <Accordion.Control icon={getIconFromContentType('item', '1rem')}>Items</Accordion.Control>
-          <Accordion.Panel></Accordion.Panel>
-        </Accordion.Item>
-        <Accordion.Item value='custom'>
-          <Accordion.Control icon={<IconPuzzle size='1rem' />}>Custom</Accordion.Control>
-          <Accordion.Panel>
-            <DisplayOperationResult
-              source={undefined}
-              results={props.operationResults.results.characterResults}
-              onChange={(path, value) => {
-                console.log(path, value);
-              }}
-            />
-          </Accordion.Panel>
-        </Accordion.Item>
+        {props.operationResults.results.contentSourceResults.length > 0 && (
+          <Accordion.Item value='books'>
+            <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
+              Books
+            </Accordion.Control>
+            <Accordion.Panel>
+              {props.operationResults.results.contentSourceResults.map((s: any, index: number) => (
+                <DisplayOperationResult
+                  key={index}
+                  source={s.baseSource}
+                  results={s.baseResults}
+                  onChange={(path, value) => {
+                    console.log(path, value);
+                  }}
+                />
+              ))}
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
+        {props.operationResults.results.itemResults.length > 0 && (
+          <Accordion.Item value='items'>
+            <Accordion.Control icon={getIconFromContentType('item', '1rem')}>
+              Items
+            </Accordion.Control>
+            <Accordion.Panel></Accordion.Panel>
+          </Accordion.Item>
+        )}
+        {props.operationResults.results.characterResults.length > 0 && (
+          <Accordion.Item value='custom'>
+            <Accordion.Control icon={<IconPuzzle size='1rem' />}>Custom</Accordion.Control>
+            <Accordion.Panel>
+              <DisplayOperationResult
+                source={undefined}
+                results={props.operationResults.results.characterResults}
+                onChange={(path, value) => {
+                  console.log(path, value);
+                }}
+              />
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
       </Accordion>
     </>
   );
 }
 
 function DisplayOperationResult(props: {
-  source?: Record<string, any>;
+  source?: ObjectWithUUID;
   results: OperationResult[];
   onChange: (path: string, value: string) => void;
 }) {
@@ -771,8 +799,6 @@ function DisplayOperationResult(props: {
     }
     return false;
   };
-
-  console.log(props.results);
 
   return (
     <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>
@@ -789,10 +815,10 @@ function DisplayOperationResult(props: {
                       : 'ability-block'
                   }
                   onClick={(option) => {
-                    props.onChange(props.source?._select_uuid ?? '', option._select_uuid);
+                    props.onChange(result.selection?.id ?? '', option._select_uuid);
                   }}
                   onClear={() => {
-                    props.onChange(props.source?._select_uuid ?? '', '');
+                    props.onChange(result.selection?.id ?? '', '');
                   }}
                   selectedId={result.result?.source?.id}
                   options={{
@@ -809,12 +835,15 @@ function DisplayOperationResult(props: {
                 <DisplayOperationResult
                   source={result.result.source}
                   results={result.result.results}
-                  onChange={(path, value) =>
-                    props.onChange(
-                      props.source?._select_uuid ? `${props.source?._select_uuid}_${path}` : path,
-                      value
-                    )
-                  }
+                  onChange={(path, value) => {
+                    let selectionUUID = result.selection?.id ?? '';
+                    let resultUUID = result.result?.source?._select_uuid ?? '';
+
+                    let newPath = path;
+                    if (resultUUID) newPath = `${resultUUID}_${newPath}`;
+                    if (selectionUUID) newPath = `${selectionUUID}_${newPath}`;
+                    props.onChange(newPath, value);
+                  }}
                 />
               )}
             </Stack>

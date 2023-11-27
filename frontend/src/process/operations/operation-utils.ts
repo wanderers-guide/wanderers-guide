@@ -206,7 +206,7 @@ async function getAbilityBlockList(
   return abilityBlocks.map((ab) => {
     return {
       ...ab,
-      _select_uuid: `${operationUUID}~${ab.id}`,
+      _select_uuid: `${ab.id}`,
       _content_type: 'ability-block' as ContentType,
     };
   });
@@ -250,7 +250,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
   return spells.map((spell) => {
     return {
       ...spell,
-      _select_uuid: `${operationUUID}~${spell.id}`,
+      _select_uuid: `${spell.id}`,
       _content_type: 'spell' as ContentType,
     };
   });
@@ -270,7 +270,7 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
   return languages.map((language) => {
     return {
       ...language,
-      _select_uuid: `${operationUUID}~${language.id}`,
+      _select_uuid: `${language.id}`,
       _content_type: 'language' as ContentType,
     };
   });

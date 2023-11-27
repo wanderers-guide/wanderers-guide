@@ -196,8 +196,8 @@ export function resetVariables() {
 export function setVariable(name: string, value: any) {
   let variable = variables[name];
   if(!variable) throwError(`Invalid variable name: ${name}`);
-  if (isVariableNum(variable) && _.isNumber(value)) {
-    variable.value = value;
+  if (isVariableNum(variable) && _.isNumber(+value)) {
+    variable.value = parseInt(value);
   } else if (isVariableStr(variable) && _.isString(value)) {
     variable.value = value;
   } else if (isVariableBool(variable) && _.isBoolean(value)) {
@@ -222,15 +222,18 @@ export function setVariable(name: string, value: any) {
 export function adjVariable(name: string, amount: any) {
   let variable = variables[name];
   if (!variable) throwError(`Invalid variable name: ${name}`);
-  if (isVariableNum(variable) && _.isNumber(amount)) {
-    variable.value += amount;
+  if (isVariableNum(variable) && _.isNumber(+amount)) {
+    variable.value += parseInt(amount);
   } else if (isVariableStr(variable) && _.isString(amount)) {
     variable.value += amount;
   } else if (isVariableBool(variable) && _.isBoolean(amount)) {
     variable.value = variable.value && amount;
-  } else if (isVariableAttr(variable) && _.isNumber(amount)) {
+  } else if (isVariableAttr(variable) && _.isNumber(+amount)) {
+    amount = parseInt(amount);
     if (amount !== 0 && amount !== 1 && amount !== -1) {
-      throwError(`Invalid variable adjustment amount for attribute: ${amount} (must be 0, 1, or -1)`);
+      throwError(
+        `Invalid variable adjustment amount for attribute: ${amount} (must be 0, 1, or -1)`
+      );
     }
     // Add boosts or flaws, use partial if it's a boost and value is 4+
     if (variable.value.value >= 4 && amount === 1) {

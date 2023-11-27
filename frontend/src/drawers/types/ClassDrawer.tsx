@@ -26,7 +26,7 @@ import {
   Table,
   Accordion,
 } from '@mantine/core';
-import { runOperations } from '@operations/operation-runner';
+import { OperationResult, runOperations } from '@operations/operation-runner';
 import {
   IconBadges,
   IconBadgesFilled,
@@ -250,7 +250,11 @@ export function ClassDrawerContent(props: {
   );
 }
 
-export function ClassInitialOverview(props: { class_: Class; mode: 'READ' | 'READ/WRITE' }) {
+export function ClassInitialOverview(props: {
+  class_: Class;
+  mode: 'READ' | 'READ/WRITE';
+  operationResults?: OperationResult[];
+}) {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
 
@@ -261,7 +265,7 @@ export function ClassInitialOverview(props: { class_: Class; mode: 'READ' | 'REA
   const attributes = getStatBlockDisplay(
     getAllAttributeVariables().map((v) => v.name),
     classOperations,
-    MODE
+    MODE, props.operationResults
   );
   const keyAttribute =
     attributes.length > 0
@@ -271,28 +275,28 @@ export function ClassInitialOverview(props: { class_: Class; mode: 'READ' | 'REA
           operation: null,
         };
 
-  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE);
+  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE, props.operationResults);
 
-  const perception = getStatDisplay('PERCEPTION', classOperations, MODE);
+  const perception = getStatDisplay('PERCEPTION', classOperations, MODE, props.operationResults);
   const skills = getStatBlockDisplay(
     getAllSkillVariables().map((v) => v.name),
     classOperations,
-    MODE
+    MODE, props.operationResults
   );
   const saves = getStatBlockDisplay(
     getAllSaveVariables().map((v) => v.name),
     classOperations,
-    MODE
+    MODE, props.operationResults
   );
-  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE);
-  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE);
-  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE);
-  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE);
-  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE);
-  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE);
-  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE);
-  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE);
-  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE);
+  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE, props.operationResults);
+  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE, props.operationResults);
+  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE, props.operationResults);
+  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE, props.operationResults);
+  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE, props.operationResults);
+  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, props.operationResults);
+  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, props.operationResults);
+  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, props.operationResults);
+  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE, props.operationResults);
 
   return (
     <>

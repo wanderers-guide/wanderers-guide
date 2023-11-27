@@ -2,7 +2,6 @@ import { AbilityBlock, Character, ContentPackage, ContentSource, Item } from '@t
 import { getRootSelection, setSelections } from './selection-tree';
 import { Operation } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
-import { Box } from '@mantine/core';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -53,10 +52,7 @@ async function executeOperations(
     - Run conditionals background
     - Run conditionals items
 */
-export async function executeCharacterOperations(
-  character: Character,
-  content: ContentPackage
-) {
+export async function executeCharacterOperations(character: Character, content: ContentPackage) {
   defineSelectionTree(character);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
@@ -80,14 +76,18 @@ export async function executeCharacterOperations(
   const operationsPassthrough = async (options?: OperationOptions) => {
     let contentSourceResults: { baseSource: ContentSource; baseResults: OperationResult[] }[] = [];
     for (const source of content.sources ?? []) {
-      contentSourceResults.push({
-        baseSource: source,
-        baseResults: await executeOperations(
-          `content-source-${source.id}`,
-          source.operations ?? [],
-          options
-        ),
-      });
+      const results = await executeOperations(
+        `content-source-${source.id}`,
+        source.operations ?? [],
+        options
+      );
+
+      if (results.length > 0) {
+        contentSourceResults.push({
+          baseSource: source,
+          baseResults: results,
+        });
+      }
     }
 
     let characterResults = await executeOperations(
@@ -104,13 +104,15 @@ export async function executeCharacterOperations(
     let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     for (const feature of classFeatures) {
       if (feature.level === undefined || feature.level <= character.level) {
+        const results = await executeOperations(
+          `class-feature-${feature.id}`,
+          feature.operations ?? [],
+          options
+        );
+
         classFeatureResults.push({
           baseSource: feature,
-          baseResults: await executeOperations(
-            `class-feature-${feature.id}`,
-            feature.operations ?? [],
-            options
-          ),
+          baseResults: results,
         });
       }
     }
@@ -156,11 +158,9 @@ export async function executeCharacterOperations(
   // Conditional round //
   const conditionalResults = await operationsPassthrough({ doOnlyConditionals: true });
 
-
-
   console.log(results);
   console.log(conditionalResults);
-  
+
   return {
     results,
     conditionalResults,

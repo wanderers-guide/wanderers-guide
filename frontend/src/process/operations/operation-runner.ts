@@ -88,6 +88,7 @@ export type OperationOptions = {
 
 export type OperationResult = {
   selection?: {
+    id: string;
     title?: string;
     description?: string;
     options: ObjectWithUUID[];
@@ -137,7 +138,8 @@ export async function runOperations(
     } else if (operation.type === 'removeSpell') {
       return await runRemoveSpell(operation);
     } else if (operation.type === 'select') {
-      return await runSelect(selectionNode, operation, options);
+      const subNode = selectionNode?.children[operation.id];
+      return await runSelect(subNode, operation, options);
     }
     return null;
   };
@@ -222,14 +224,9 @@ async function runSelect(
     }
   }
 
-    console.log('runSelect', {
-      title: operation.data.title,
-      description: operation.data.description,
-      options: optionList,
-    });
-
   return {
     selection: {
+      id: operation.id,
       title: operation.data.title,
       description: operation.data.description,
       options: optionList,

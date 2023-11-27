@@ -10,15 +10,32 @@ import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing
 import { isAttribute, isProficiencyType, maxProficiencyType, proficiencyTypeToLabel, variableToLabel } from './variable-utils';
 import _ from 'lodash';
 import { listToLabel } from '@utils/strings';
+import { SelectContentButton } from '@common/select/SelectContent';
+import { OperationResult } from '@operations/operation-runner';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { characterState } from '@atoms/characterAtoms';
+import { Character } from '@typing/content';
 
+type CharacterState = [Character, SetterOrUpdater<Character | null>];
 
-export function getStatBlockDisplay(variableNames: string[], operations: Operation[], mode: 'READ' | 'READ/WRITE') {
-
+export function getStatBlockDisplay(
+  variableNames: string[],
+  operations: Operation[],
+  mode: 'READ' | 'READ/WRITE',
+  operationResults?: OperationResult[],
+  characterState?: CharacterState,
+) {
   let output: { ui: ReactNode; operation: OperationSelect | null }[] = [];
   const foundSet: Set<string> = new Set();
 
-  for(const variableName of variableNames){
-    const {ui, operation} = getStatDisplay(variableName, operations, mode);
+  for (const variableName of variableNames) {
+    const { ui, operation } = getStatDisplay(
+      variableName,
+      operations,
+      mode,
+      operationResults,
+      characterState
+    );
     if (ui && !foundSet.has(ui.toString())) {
       output.push({ ui, operation });
       foundSet.add(ui.toString());
@@ -39,7 +56,9 @@ export function getStatBlockDisplay(variableNames: string[], operations: Operati
 export function getStatDisplay(
   variableName: string,
   operations: Operation[],
-  mode: 'READ' | 'READ/WRITE'
+  mode: 'READ' | 'READ/WRITE',
+  operationResults?: OperationResult[],
+  characterState?: CharacterState,
 ): { ui: ReactNode; operation: OperationSelect | null } {
   const variable = getVariable(variableName);
   if (!variable) return { ui: null, operation: null };
@@ -120,7 +139,7 @@ export function getStatDisplay(
   }
 
   return {
-    ui: getDisplay(bestValue, bestOperation, variable, mode),
+    ui: getDisplay(bestValue, bestOperation, variable, mode, operationResults, characterState),
     operation: bestOperation,
   };
 }
@@ -129,16 +148,39 @@ function getDisplay(
   value: string | number | boolean | AttributeValue | null,
   operation: OperationSelect | null,
   variable: Variable,
-  mode: 'READ' | 'READ/WRITE'
+  mode: 'READ' | 'READ/WRITE',
+  operationResults?: OperationResult[],
+  characterState?: CharacterState,
 ): ReactNode {
   if (value === null) return null;
+
+  const result = operation?.id ? operationResults?.find((r) => r?.selection?.id === operation?.id) : null;
 
   // Handle attributes
   if (isAttribute(value) || (_.isNumber(value) && variable.type === 'attr')) {
     if (operation) {
       if (mode === 'READ/WRITE') {
-        // TODO:
-        return null;
+        return (
+          <SelectContentButton
+            type={'ability-block'}
+            onClick={(option) => {
+              //props.onChange(props.source?._select_uuid ?? '', option._select_uuid);
+              updateCharacter(characterState, operation.id, option._select_uuid);
+            }}
+            onClear={() => {
+              //props.onChange(props.source?._select_uuid ?? '', '');
+            }}
+            selectedId={result?.result?.source?.id}
+            options={{
+              overrideOptions: result?.selection?.options,
+              overrideLabel: result?.selection?.title || 'Select an Option',
+              abilityBlockType:
+                (result?.selection?.options ?? []).length > 0
+                  ? result?.selection?.options[0].type
+                  : undefined,
+            }}
+          />
+        );
       } else {
         const attrs = getVarList(operation, 'attr');
         return <>{listToLabel(attrs, 'or')}</>;
@@ -215,4 +257,25 @@ function getVarList(operation: OperationSelect, type: VariableType): string[] {
   }
 
   return labels.sort();
+}
+
+function updateCharacter(characterState: CharacterState | undefined, path: string, value: string) {
+  if (!characterState) return;
+  const [character, setCharacter] = characterState;
+  setCharacter((prev) => {
+    if (!prev) return prev;
+    const newSelections = { ...prev.operation_data?.selections };
+    if (!value) {
+      delete newSelections[path];
+    } else {
+      newSelections[path] = value;
+    }
+    return {
+      ...prev,
+      operation_data: {
+        ...prev.operation_data,
+        selections: newSelections,
+      },
+    };
+  });
 }
