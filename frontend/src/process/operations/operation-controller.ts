@@ -2,6 +2,7 @@ import { AbilityBlock, Character, ContentPackage, ContentSource, Item } from '@t
 import { getRootSelection, setSelections } from './selection-tree';
 import { Operation } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
+import { addVariable, resetVariables } from '@variables/variable-manager';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -53,6 +54,7 @@ async function executeOperations(
     - Run conditionals items
 */
 export async function executeCharacterOperations(character: Character, content: ContentPackage) {
+  resetVariables();
   defineSelectionTree(character);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
@@ -153,6 +155,13 @@ export async function executeCharacterOperations(character: Character, content: 
 
   // Value creation round //
   await operationsPassthrough({ doOnlyValueCreation: true });
+  // define values for any weapons or lores
+  for (const value of Object.values(character?.operation_data?.selections ?? {})) {
+    if(value.startsWith('SKILL_LORE_') || value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
+      addVariable('prof', value, 'U');
+    }
+  }
+
   // Non-conditional round //
   const results = await operationsPassthrough();
   // Conditional round //

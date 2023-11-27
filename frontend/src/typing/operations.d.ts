@@ -189,7 +189,8 @@ interface OperationSelectOptionAdjValue extends OperationSelectOptionBase {
 export type OperationSelectFilters =
   | OperationSelectFiltersAbilityBlock
   | OperationSelectFiltersSpell
-  | OperationSelectFiltersLanguage;
+  | OperationSelectFiltersLanguage
+  | OperationSelectFiltersAdjValue;
 
 interface OperationSelectFiltersBase {
   readonly id: string;
@@ -221,4 +222,10 @@ interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
   readonly type: 'LANGUAGE';
   rarity?: Rarity;
   core?: boolean;
+}
+
+interface OperationSelectFiltersAdjValue extends OperationSelectFiltersBase {
+  readonly type: 'ADJ_VALUE';
+  group: 'ATTRIBUTE' | 'SKILL';
+  value: number | string | boolean | AttributeValue | ExtendedProficiencyType;
 }

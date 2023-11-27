@@ -191,6 +191,7 @@ function getDisplay(
                   (result?.selection?.options ?? []).length > 0
                     ? result?.selection?.options[0].type
                     : undefined,
+                skillAdjustment: result?.selection?.skillAdjustment,
               }}
             />
           </Box>
@@ -234,6 +235,7 @@ function getDisplay(
                   (result?.selection?.options ?? []).length > 0
                     ? result?.selection?.options[0].type
                     : undefined,
+                skillAdjustment: result?.selection?.skillAdjustment,
               }}
             />
           </Box>
@@ -282,6 +284,7 @@ function getDisplay(
                 (result?.selection?.options ?? []).length > 0
                   ? result?.selection?.options[0].type
                   : undefined,
+              skillAdjustment: result?.selection?.skillAdjustment,
             }}
           />
         </Box>

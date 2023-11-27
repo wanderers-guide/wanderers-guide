@@ -26,7 +26,7 @@ import {
 } from './operation-utils';
 import { e } from 'mathjs';
 import { maxProficiencyType } from '@variables/variable-utils';
-import { Proficiency, ProficiencyType } from '@typing/variables';
+import { ExtendedProficiencyType, Proficiency, ProficiencyType } from '@typing/variables';
 import { ReactNode } from 'react';
 import { fetchContentById } from '@content/content-store';
 
@@ -92,6 +92,7 @@ export type OperationResult = {
     title?: string;
     description?: string;
     options: ObjectWithUUID[];
+    skillAdjustment?: ExtendedProficiencyType;
   };
   result?: {
     source?: ObjectWithUUID;
@@ -175,44 +176,14 @@ async function runSelect(
 
   if (selectionNode && selectionNode.value) {
     const selectedOption = optionList.find((option) => option._select_uuid === selectionNode.value);
-    if (!selectedOption) {
+    if (selectedOption) {
+      updateVariables(operation, selectedOption);
+    } else {
       console.error('Selected option not found', selectionNode);
       throwError(`Selected option "${selectionNode.value}" not found`);
       return null;
     }
     selected = selectedOption;
-    console.log('Selected option', selectedOption)
-
-    if (operation.data.optionType === 'ABILITY_BLOCK') {
-      if (selectedOption.type === 'feat') {
-        adjVariable('FEAT_IDS', `${selectedOption.id}`);
-        adjVariable('FEAT_NAMES', selectedOption.name);
-      } else if (selectedOption.type === 'class-feature') {
-        adjVariable('CLASS_FEATURE_IDS', `${selectedOption.id}`);
-        adjVariable('CLASS_FEATURE_NAMES', selectedOption.name);
-      } else if (selectedOption.type === 'sense') {
-        adjVariable('SENSE_IDS', `${selectedOption.id}`);
-        adjVariable('SENSE_NAMES', selectedOption.name);
-      } else if (selectedOption.type === 'heritage') {
-        adjVariable('HERITAGE_IDS', `${selectedOption.id}`);
-        adjVariable('HERITAGE_NAMES', selectedOption.name);
-      } else if (selectedOption.type === 'physical-feature') {
-        adjVariable('PHYSICAL_FEATURE_IDS', `${selectedOption.id}`);
-        adjVariable('PHYSICAL_FEATURE_NAMES', selectedOption.name);
-      } else {
-        throwError(`Invalid ability block type: ${selectedOption.type}`);
-      }
-    } else if (operation.data.optionType === 'LANGUAGE') {
-      adjVariable('LANGUAGE_IDS', `${selectedOption.id}`);
-      adjVariable('LANGUAGE_NAMES', selectedOption.name);
-    } else if (operation.data.optionType === 'SPELL') {
-      adjVariable('SPELL_IDS', `${selectedOption.id}`);
-      adjVariable('SPELL_NAMES', selectedOption.name);
-    } else if (operation.data.optionType === 'ADJ_VALUE') {
-      adjVariable(selectedOption.variable, selectedOption.value);
-    } else if (operation.data.optionType === 'CUSTOM') {
-      // Doesn't inherently do anything, just runs its operations
-    }
 
     // Run the operations of the selected option
     if (selectedOption.operations) {
@@ -224,17 +195,70 @@ async function runSelect(
     }
   }
 
+  // Check if all options are skill proficiencies, aka making this a skill increase
+  let foundSkills: string[] = [];
+  for (const option of optionList) {
+    if (option.variable) {
+      const variable = getVariable(option.variable);
+      if (variable?.type === 'prof' && variable.name.startsWith('SKILL_')) {
+        foundSkills.push(variable.name);
+      }
+    }
+  }
+  console.log(optionList[0]);
+  const skillAdjustment =
+    optionList.length > 0 && foundSkills.length === optionList.length
+      ? optionList[0]?.value
+      : undefined;
+
   return {
     selection: {
       id: operation.id,
       title: operation.data.title,
       description: operation.data.description,
       options: optionList,
+      skillAdjustment,
     },
-    result: selected ? {
-      source: selected,
-      results,
-    } : undefined,
+    result: selected
+      ? {
+          source: selected,
+          results,
+        }
+      : undefined,
+  };
+}
+
+async function updateVariables(operation: OperationSelect, selectedOption: ObjectWithUUID) {
+  if (operation.data.optionType === 'ABILITY_BLOCK') {
+    if (selectedOption.type === 'feat') {
+      adjVariable('FEAT_IDS', `${selectedOption.id}`);
+      adjVariable('FEAT_NAMES', selectedOption.name);
+    } else if (selectedOption.type === 'class-feature') {
+      adjVariable('CLASS_FEATURE_IDS', `${selectedOption.id}`);
+      adjVariable('CLASS_FEATURE_NAMES', selectedOption.name);
+    } else if (selectedOption.type === 'sense') {
+      adjVariable('SENSE_IDS', `${selectedOption.id}`);
+      adjVariable('SENSE_NAMES', selectedOption.name);
+    } else if (selectedOption.type === 'heritage') {
+      adjVariable('HERITAGE_IDS', `${selectedOption.id}`);
+      adjVariable('HERITAGE_NAMES', selectedOption.name);
+    } else if (selectedOption.type === 'physical-feature') {
+      adjVariable('PHYSICAL_FEATURE_IDS', `${selectedOption.id}`);
+      adjVariable('PHYSICAL_FEATURE_NAMES', selectedOption.name);
+    } else {
+      throwError(`Invalid ability block type: ${selectedOption.type}`);
+    }
+  } else if (operation.data.optionType === 'LANGUAGE') {
+    adjVariable('LANGUAGE_IDS', `${selectedOption.id}`);
+    adjVariable('LANGUAGE_NAMES', selectedOption.name);
+  } else if (operation.data.optionType === 'SPELL') {
+    adjVariable('SPELL_IDS', `${selectedOption.id}`);
+    adjVariable('SPELL_NAMES', selectedOption.name);
+  } else if (operation.data.optionType === 'ADJ_VALUE') {
+    console.log('Adj value', selectedOption);
+    adjVariable(selectedOption.variable, selectedOption.value);
+  } else if (operation.data.optionType === 'CUSTOM') {
+    // Doesn't inherently do anything, just runs its operations
   }
 }
 
@@ -287,7 +311,11 @@ async function runGiveAbilityBlock(
 
   let results: OperationResult[] = [];
   if (abilityBlock.operations) {
-    results = await runOperations(selectionNode?.children[operation.id], abilityBlock.operations, options);
+    results = await runOperations(
+      selectionNode?.children[operation.id],
+      abilityBlock.operations,
+      options
+    );
   }
 
   return {
@@ -532,7 +560,7 @@ async function runConditional(
 
   return {
     result: {
-      source: undefined,// use the parent source
+      source: undefined, // use the parent source
       results,
     },
   };

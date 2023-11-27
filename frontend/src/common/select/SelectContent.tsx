@@ -49,6 +49,7 @@ import {
   usePagination,
 } from '@mantine/hooks';
 import {
+  IconArrowNarrowRight,
   IconChevronDown,
   IconChevronsLeft,
   IconChevronsRight,
@@ -65,9 +66,17 @@ import { useRecoilState } from 'recoil';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { isActionCost } from '@content/content-utils';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
-import { compactLabels } from '@variables/variable-utils';
-import { getAllAttributeVariables } from '@variables/variable-manager';
+import {
+  compactLabels,
+  isProficiencyType,
+  maxProficiencyType,
+  nextProficiencyType,
+  prevProficiencyType,
+  proficiencyTypeToLabel,
+} from '@variables/variable-utils';
+import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
 import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
+import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/variables';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -78,6 +87,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
     overrideOptions?: T[];
     overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
+    skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
   };
 }) {
@@ -122,6 +132,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
               overrideLabel: props.options?.overrideLabel,
               abilityBlockType: props.options?.abilityBlockType,
               groupBySource: props.options?.groupBySource,
+              skillAdjustment: props.options?.skillAdjustment,
               // @ts-ignore
               selectedId: selected?.id,
             }
@@ -154,6 +165,7 @@ export function selectContent<T = Record<string, any>>(
     overrideOptions?: Record<string, any>[];
     overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
+    skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
     selectedId?: number;
   }
@@ -182,6 +194,7 @@ export function SelectContentModal({
   options?: {
     overrideOptions?: Record<string, any>[];
     abilityBlockType?: AbilityBlockType;
+    skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
     selectedId?: number;
   };
@@ -344,6 +357,7 @@ export function SelectContentModal({
         <SelectionOptions
           type={innerProps.type}
           abilityBlockType={innerProps.options?.abilityBlockType}
+          skillAdjustment={innerProps.options?.skillAdjustment}
           sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
           selectedId={innerProps.options?.selectedId}
           overrideOptions={innerProps.options?.overrideOptions}
@@ -404,6 +418,7 @@ function ContentSourceOption(props: {
 function SelectionOptions(props: {
   searchQuery: string;
   type: ContentType;
+  skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   sourceId?: number | 'all';
   onClick: (option: Record<string, any>) => void;
@@ -465,6 +480,7 @@ function SelectionOptions(props: {
     <SelectionOptionsInner
       options={filteredOptions}
       type={props.type}
+      skillAdjustment={props.skillAdjustment}
       abilityBlockType={props.abilityBlockType}
       isLoading={isFetching || !options}
       onClick={props.onClick}
@@ -476,6 +492,7 @@ function SelectionOptions(props: {
 export function SelectionOptionsInner(props: {
   options: Record<string, any>[];
   type: ContentType;
+  skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   isLoading: boolean;
   onClick: (option: Record<string, any>) => void;
@@ -526,6 +543,7 @@ export function SelectionOptionsInner(props: {
               activePage * NUM_PER_PAGE
             )}
             type={props.type}
+            skillAdjustment={props.skillAdjustment}
             abilityBlockType={props.abilityBlockType}
             onClick={props.onClick}
             selectedId={props.selectedId}
@@ -552,6 +570,7 @@ export function SelectionOptionsInner(props: {
 function SelectionOptionsRoot(props: {
   options: Record<string, any>[];
   type: ContentType;
+  skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
@@ -786,8 +805,60 @@ function SelectionOptionsRoot(props: {
     );
   }
 
-  console.log(props.options, `${props.type} (${props.abilityBlockType}) TODO`);
+  // Skill increase with lore support
+  const isSkillIncreaseWithLore =
+    props.skillAdjustment && props.options.find((o) => o.variable === 'SKILL_LORE____');
+  if (isSkillIncreaseWithLore) {
+    const addNewLore = (option: AbilityBlock) => {
+      openContextModal({
+        modal: 'addNewLore',
+        title: <Title order={3}>Add New Lore</Title>,
+        innerProps: {
+          onConfirm: (loreName) => {
+            props.onClick({
+              ...option,
+              _select_uuid: `SKILL_LORE_${loreName}`,
+            });
+          },
+        },
+      });
+    };
 
+    return (
+      <>
+        {props.options
+          .filter((o) => o.variable !== 'SKILL_LORE____')
+          .map((option, index) => (
+            <GenericSelectionOption
+              key={index}
+              option={option as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === option.id}
+              skillAdjustment={props.skillAdjustment}
+              includeDelete={props.includeDelete}
+              onDelete={props.onDelete}
+            />
+          ))}
+        <GenericSelectionOption
+          option={
+            {
+              ...isSkillIncreaseWithLore,
+              name: `Add New Lore`,
+            } as AbilityBlock
+          }
+          onClick={(option) => {
+            addNewLore(option);
+          }}
+          selected={false}
+          skillAdjustment={props.skillAdjustment}
+          includeDelete={props.includeDelete}
+          onDelete={props.onDelete}
+        />
+      </>
+    );
+  }
+
+  console.log(props.options, `${props.type} (${props.abilityBlockType}) TODO`);
   // Generic ability block. Probably used for variables.
   return (
     <>
@@ -797,6 +868,7 @@ function SelectionOptionsRoot(props: {
           option={option as AbilityBlock}
           onClick={props.onClick}
           selected={props.selectedId === option.id}
+          skillAdjustment={props.skillAdjustment}
           includeDelete={props.includeDelete}
           onDelete={props.onDelete}
         />
@@ -809,23 +881,65 @@ export function GenericSelectionOption(props: {
   option: AbilityBlock;
   onClick: (option: AbilityBlock) => void;
   selected?: boolean;
+  skillAdjustment?: ExtendedProficiencyType;
   includeDelete?: boolean;
   onDelete?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
 
+  // @ts-ignore
+  const variable = getVariable(props.option.variable);
+
+  let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value?.value;
+  console.log('currentProf', currentProf);
+  let nextProf =
+    props.skillAdjustment === '1'
+      ? nextProficiencyType(currentProf ?? 'U')
+      : props.skillAdjustment === '-1'
+      ? prevProficiencyType(currentProf ?? 'U')
+      : props.skillAdjustment;
+
+  // If selected already, show the previous data to reflect the change
+  if (props.selected && currentProf) {
+    console.log('selected', currentProf, nextProf, props.skillAdjustment);
+    nextProf = currentProf;
+    currentProf =
+      props.skillAdjustment === '1'
+        ? prevProficiencyType(currentProf)
+        : props.skillAdjustment === '-1'
+        ? nextProficiencyType(currentProf)
+        : props.skillAdjustment;
+  }
+
+  const alreadyProficient =
+    !props.selected &&
+    (currentProf === props.skillAdjustment ||
+      (isProficiencyType(props.skillAdjustment) &&
+        maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
+
+  const disabled = alreadyProficient;
+
+  console.log(currentProf, nextProf, props.skillAdjustment);
+
   return (
     <Group
       ref={ref}
       p='sm'
       style={{
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        backgroundColor: disabled
+          ? theme.colors.dark[8]
+          : hovered || props.selected
+          ? theme.colors.dark[6]
+          : 'transparent',
         position: 'relative',
       }}
-      onClick={() => props.onClick(props.option)}
+      onClick={() => {
+        if (disabled) return;
+        props.onClick(props.option);
+      }}
       justify='space-between'
     >
       <Group wrap='nowrap' gap={5}>
@@ -833,24 +947,54 @@ export function GenericSelectionOption(props: {
           <Text fz='sm'>{props.option.name}</Text>
         </Box>
       </Group>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.option.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
-      )}
+      <Group wrap='nowrap' gap={5}>
+        {props.skillAdjustment && variable && (
+          <Badge
+            variant='dot'
+            size='xs'
+            styles={{
+              root: {
+                // @ts-ignore
+                '--badge-dot-size': 0,
+                textTransform: 'initial',
+              },
+            }}
+            c='gray.6'
+          >
+            <Group gap={2} wrap='nowrap'>
+              {alreadyProficient ? (
+                <>{proficiencyTypeToLabel(currentProf ?? 'U')}</>
+              ) : (
+                <>
+                  {proficiencyTypeToLabel(currentProf ?? 'U')}
+                  <IconArrowNarrowRight size='0.8rem' />
+                  {proficiencyTypeToLabel(nextProf ?? 'U')}
+                </>
+              )}
+            </Group>
+          </Badge>
+        )}
+
+        {props.includeDelete && (
+          <ActionIcon
+            size='compact-xs'
+            variant='subtle'
+            style={{
+              position: 'absolute',
+              top: 13,
+              right: 15,
+            }}
+            onClick={(e) => {
+              if (disabled) return;
+              e.stopPropagation();
+              props.onDelete?.(props.option.id);
+            }}
+            aria-label='Delete'
+          >
+            <IconTrash size='1rem' />
+          </ActionIcon>
+        )}
+      </Group>
     </Group>
   );
 }
@@ -1474,7 +1618,7 @@ export function ClassSelectionOption(props: {
               }}
               c='gray.6'
             >
-              {keyAttribute.ui ? compactLabels(keyAttribute.ui as string) : 'Varies'}
+              {keyAttribute.ui ?? 'Varies'}
             </Badge>
           </Group>
         </div>

@@ -27,7 +27,7 @@ import {
   Table,
   Accordion,
 } from '@mantine/core';
-import { OperationResult, runOperations } from '@operations/operation-runner';
+import { OperationResult } from '@operations/operation-runner';
 import {
   IconBadges,
   IconBadgesFilled,

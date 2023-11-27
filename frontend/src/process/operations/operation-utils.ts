@@ -26,8 +26,10 @@ import {
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
   Operation,
+  OperationSelectFiltersAdjValue,
 } from '@typing/operations';
-import { getVariable } from '@variables/variable-manager';
+import { Variable } from '@typing/variables';
+import { getAllAttributeVariables, getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
 import _, { filter } from 'lodash';
 
@@ -163,6 +165,8 @@ export async function determineFilteredSelectionList(
     return await getSpellList(operationUUID, filters);
   } else if (filters.type === 'LANGUAGE') {
     return await getLanguageList(operationUUID, filters);
+  } else if (filters.type === 'ADJ_VALUE') {
+    return await getAdjValueList(operationUUID, filters);
   }
   return [];
 }
@@ -272,6 +276,28 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
       ...language,
       _select_uuid: `${language.id}`,
       _content_type: 'language' as ContentType,
+    };
+  });
+}
+
+async function getAdjValueList(operationUUID: string, filters: OperationSelectFiltersAdjValue) {
+  let variables: Variable[] = [];
+
+  if(filters.group === 'SKILL'){
+    variables = getAllSkillVariables();
+  }
+  if (filters.group === 'ATTRIBUTE') {
+    variables = getAllAttributeVariables();
+  }
+
+  return variables.map((variable) => {
+    return {
+      _select_uuid: `${variable.name}`,
+      _content_type: 'ability-block' as ContentType,
+      id: `${variable.name}`,
+      name: variable ? variableToLabel(variable) : 'Unknown Value',
+      value: filters.value,
+      variable: variable.name,
     };
   });
 }

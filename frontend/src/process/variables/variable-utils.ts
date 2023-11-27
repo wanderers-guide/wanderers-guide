@@ -4,6 +4,7 @@ import { isBoolean, isNumber, isString } from 'lodash';
 import {
   Attribute,
   AttributeValue,
+  ExtendedProficiencyType,
   Proficiency,
   ProficiencyType,
   Variable,
@@ -71,16 +72,21 @@ export function newVariable(type: VariableType, name: string, defaultValue?: any
 }
 
 export function variableToLabel(variable: Variable) {
+  return variableNameToLabel(variable.name);
+}
+
+export function variableNameToLabel(variableName: string) {
   const OVERRIDE_CHANGES = {
-    fort: 'Fortitude',
-    str: 'Strength',
-    dex: 'Dexterity',
-    con: 'Constitution',
-    int: 'Intelligence',
-    wis: 'Wisdom',
-    cha: 'Charisma',
-    spell_: 'Spellcasting',
-    dc: 'DC',
+    'fort ': 'Fortitude ',
+    'str ': 'Strength ',
+    'dex ': 'Dexterity ',
+    'con ': 'Constitution ',
+    'int ': 'Intelligence ',
+    'wis ': 'Wisdom ',
+    'cha ': 'Charisma ',
+    ' dc': ' DC',
+    ' hp': ' HP',
+    'hp ': 'HP ',
     'Simple Weapons': 'simple weapons',
     'Martial Weapons': 'martial weapons',
     'Advanced Weapons': 'advanced weapons',
@@ -93,9 +99,9 @@ export function variableToLabel(variable: Variable) {
   };
   const REMOVAL_CHANGES = ['skill_', 'save_', 'attribute_', 'speed_'];
 
-  let label = variable.name.trim().toLowerCase();
+  let label = variableName.trim().toLowerCase();
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
-    label = label.replace(key, value);
+    label = ` ${label} `.replace(key, value);
   }
   for (const value of REMOVAL_CHANGES) {
     label = label.replace(value, '');
@@ -107,7 +113,20 @@ export function variableToLabel(variable: Variable) {
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
     label = label.replace(key, value);
   }
-  return label;
+
+  // Lore switch
+  if(label.startsWith('Lore ')) {
+    label = label.replace('Lore ', '');
+    label = `${label} Lore`;
+  }
+
+  return label.trim();
+}
+
+export function labelToVariable(label: string) {
+  let cleanedString = label.trim().toUpperCase().replace(/[^a-zA-Z\s]/g, '');
+  cleanedString = cleanedString.replace(/\s+/g, '_');
+  return cleanedString;
 }
 
 export function compactLabels(text: string) {
@@ -143,6 +162,36 @@ export function maxProficiencyType(
   return convertToNum(profType1) > convertToNum(profType2) ? profType1 : profType2;
 }
 
+export function proficiencyTypeToModifier(profType: ProficiencyType) {
+  if (profType === 'U') return 0;
+  if (profType === 'T') return 2;
+  if (profType === 'E') return 4;
+  if (profType === 'M') return 6;
+  if (profType === 'L') return 8;
+  throwError(`Invalid proficiency type: ${profType}`);
+  return 0;
+}
+
+export function nextProficiencyType(profType: ProficiencyType): ProficiencyType | null {
+  if (profType === 'U') return 'T';
+  if (profType === 'T') return 'E';
+  if (profType === 'E') return 'M';
+  if (profType === 'M') return 'L';
+  if (profType === 'L') return null;
+  throwError(`Invalid proficiency type: ${profType}`);
+  return 'U';
+}
+
+export function prevProficiencyType(profType: ProficiencyType): ProficiencyType | null {
+  if (profType === 'U') return null;
+  if (profType === 'T') return 'U';
+  if (profType === 'E') return 'T';
+  if (profType === 'M') return 'E';
+  if (profType === 'L') return 'M';
+  throwError(`Invalid proficiency type: ${profType}`);
+  return 'U';
+}
+
 export function proficiencyTypeToLabel(type: ProficiencyType) {
   if (type === 'U') return 'Untrained';
   if (type === 'T') return 'Trained';
@@ -164,6 +213,9 @@ export function isProficiency(value: Proficiency | any): value is Proficiency {
 }
 export function isProficiencyType(value?: string): value is ProficiencyType {
   return ['U', 'T', 'E', 'M', 'L'].includes(value ?? '');
+}
+export function isExtendedProficiencyType(value?: string): value is ExtendedProficiencyType {
+  return ['U', 'T', 'E', 'M', 'L', '1', '-1'].includes(value ?? '');
 }
 export function isListStr(value?: string[]): value is string[] {
   return Array.isArray(value) && value.every((v) => isString(v));

@@ -1,18 +1,22 @@
 import { OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
 import { useState } from 'react';
-import { Variable, VariableType } from '@typing/variables';
+import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
 import { NumberInput, SegmentedControl, TextInput } from '@mantine/core';
+import { getVariable } from '@variables/variable-manager';
 
 export function AdjValOperation(props: {
   variable: string;
+  value: string | number | boolean | AttributeValue | ProficiencyType;
   onSelect: (variable: string) => void;
   onValueChange: (value: number | string | boolean) => void;
   onRemove: () => void;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
-  const [variableData, setVariableData] = useState<Variable>();
-  const [value, setValue] = useState<string | number | boolean>('');
+  const [variableData, setVariableData] = useState<Variable | undefined>(
+    getVariable(props.variable) ?? undefined
+  );
+  const [value, setValue] = useState<string | number | boolean | AttributeValue>(props.value);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Adjust Value'>
@@ -43,6 +47,9 @@ export function AdjustValueInput(props: {
   variableType: VariableType;
   value: any;
   onChange: (value: number | string | boolean) => void;
+  options?: {
+    profExtended?: boolean;
+  };
 }) {
   if (props.variableType === 'attr' || props.variableType === 'num') {
     return (
@@ -78,20 +85,39 @@ export function AdjustValueInput(props: {
       />
     );
   } else if (props.variableType === 'prof') {
-    return (
-      <SegmentedControl
-        size='xs'
-        value={props.value || undefined}
-        onChange={props.onChange}
-        data={[
-          { label: 'U', value: 'U' },
-          { label: 'T', value: 'T' },
-          { label: 'E', value: 'E' },
-          { label: 'M', value: 'M' },
-          { label: 'L', value: 'L' },
-        ]}
-      />
-    );
+    if (props.options?.profExtended) {
+      return (
+        <SegmentedControl
+          size='xs'
+          value={props.value || undefined}
+          onChange={props.onChange}
+          data={[
+            { label: 'U', value: 'U' },
+            { label: 'T', value: 'T' },
+            { label: 'E', value: 'E' },
+            { label: 'M', value: 'M' },
+            { label: 'L', value: 'L' },
+            { label: '1', value: '1' },
+            { label: '-1', value: '-1' },
+          ]}
+        />
+      );
+    } else {
+      return (
+        <SegmentedControl
+          size='xs'
+          value={props.value || undefined}
+          onChange={props.onChange}
+          data={[
+            { label: 'U', value: 'U' },
+            { label: 'T', value: 'T' },
+            { label: 'E', value: 'E' },
+            { label: 'M', value: 'M' },
+            { label: 'L', value: 'L' },
+          ]}
+        />
+      );
+    }
   }
   return null;
 }

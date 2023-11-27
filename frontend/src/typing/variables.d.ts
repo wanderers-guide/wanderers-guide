@@ -4,6 +4,7 @@ export interface Proficiency {
   value: ProficiencyType;
 }
 export type ProficiencyType = "U" | "T" | "E" | "M" | "L";
+export type ExtendedProficiencyType = ProficiencyType | '1' | '-1';
 
 export interface Attribute {
   readonly type: "attribute";

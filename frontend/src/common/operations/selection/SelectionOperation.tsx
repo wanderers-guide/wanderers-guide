@@ -16,6 +16,7 @@ import {
   OperationGiveLanguage,
   OperationSelectOptionAdjValue,
   OperationAdjValue,
+  OperationSelectFiltersAdjValue,
 } from '@typing/operations';
 import {
   ActionIcon,
@@ -38,7 +39,7 @@ import { createDefaultOperation } from '@operations/operation-utils';
 import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { setOption } from 'showdown';
 import VariableSelect from '@common/VariableSelect';
-import { VariableType } from '@typing/variables';
+import { AttributeValue, VariableType } from '@typing/variables';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { getVariable } from '@variables/variable-manager';
 
@@ -119,7 +120,9 @@ export function SelectionOperation(props: {
             <Divider
               label={
                 <>
-                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE'].includes(optionType ?? '') && (
+                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE'].includes(
+                    optionType ?? ''
+                  ) && (
                     <SegmentedControl
                       size='xs'
                       value={modeType}
@@ -186,6 +189,15 @@ function SelectionFiltered(props: {
       <SelectionFilteredLanguage
         optionType={props.optionType}
         filters={props.filters as OperationSelectFiltersLanguage}
+        onChange={props.onChange}
+      />
+    );
+  }
+  if (props.optionType === 'ADJ_VALUE') {
+    return (
+      <SelectionFilteredAdjValue
+        optionType={props.optionType}
+        filters={props.filters as OperationSelectFiltersAdjValue}
         onChange={props.onChange}
       />
     );
@@ -395,6 +407,57 @@ function SelectionFilteredLanguage(props: {
             { label: 'Core Only', value: 'CORE' },
             { label: 'Non-Core Only', value: 'NON-CORE' },
           ]}
+        />
+      </Box>
+    </Stack>
+  );
+}
+
+function SelectionFilteredAdjValue(props: {
+  optionType: OperationSelectOptionType;
+  filters?: OperationSelectFiltersAdjValue;
+  onChange: (filters: OperationSelectFiltersAdjValue) => void;
+}) {
+  const [group, setGroup] = useState<string | undefined>(props.filters?.group ?? undefined);
+  const [value, setValue] = useState<string | number | boolean | AttributeValue | undefined>(
+    props.filters?.value ?? undefined
+  );
+
+  useDidUpdate(() => {
+    props.onChange({
+      id: props.filters?.id ?? crypto.randomUUID(),
+      type: 'ADJ_VALUE',
+      group: (group ?? 'SKILL') as 'ATTRIBUTE' | 'SKILL',
+      value: value ?? '',
+    });
+  }, [group, value]);
+
+  return (
+    <Stack gap={10}>
+      <Box>
+        <SegmentedControl
+          size='xs'
+          value={group}
+          onChange={(value) => {
+            setGroup(value);
+          }}
+          data={[
+            { label: 'Skill', value: 'SKILL' },
+            { label: 'Attribute', value: 'ATTRIBUTE' },
+          ]}
+        />
+      </Box>
+
+      <Box>
+        <AdjustValueInput
+          variableType={group === 'SKILL' ? 'prof' : 'attr'}
+          value={value}
+          onChange={(value) => {
+            setValue(value);
+          }}
+          options={{
+            profExtended: true,
+          }}
         />
       </Box>
     </Stack>
@@ -765,7 +828,9 @@ function SelectionPredefinedAdjValue(props: {
   onChange: (options: OperationSelectOptionAdjValue[]) => void;
 }) {
   const [variableType, setVariableType] = useState<VariableType>(
-    (props.options ?? []).length > 0 ? getVariable(props.options![0].operation.data.variable)?.type ?? 'prof' : 'prof'
+    (props.options ?? []).length > 0
+      ? getVariable(props.options![0].operation.data.variable)?.type ?? 'prof'
+      : 'prof'
   );
   const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);
   const [adjustment, setAdjustment] = useState<string | number | boolean | undefined>(

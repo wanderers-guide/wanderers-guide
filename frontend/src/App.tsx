@@ -24,12 +24,14 @@ import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExten
 import { convertContentLink } from '@drawers/drawer-utils';
 import { drawerState } from '@atoms/navAtoms';
 import { ContentFeedbackModal } from '@modals/ContentFeedbackModal';
+import { AddNewLoreModal } from '@modals/AddNewLoreModal';
 
 const modals = {
   selectContent: SelectContentModal,
   selectImage: SelectImageModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
   contentFeedback: ContentFeedbackModal,
+  addNewLore: AddNewLoreModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {

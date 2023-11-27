@@ -1,18 +1,22 @@
 import { OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
 import { useState } from 'react';
-import { Variable, VariableType } from '@typing/variables';
+import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
 import { JsonInput, NumberInput, SegmentedControl, TextInput } from '@mantine/core';
+import { getVariable } from '@variables/variable-manager';
 
 export function SetValOperation(props: {
   variable: string;
+  value: string | number | boolean | AttributeValue | ProficiencyType;
   onSelect: (variable: string) => void;
   onValueChange: (value: number | string | boolean) => void;
   onRemove: () => void;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
-  const [variableData, setVariableData] = useState<Variable>();
-  const [value, setValue] = useState<string | number | boolean>('');
+    const [variableData, setVariableData] = useState<Variable | undefined>(
+      getVariable(props.variable) ?? undefined
+    );
+  const [value, setValue] = useState<string | number | boolean | AttributeValue>(props.value);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Set Value'>

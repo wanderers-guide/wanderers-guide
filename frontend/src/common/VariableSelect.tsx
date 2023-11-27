@@ -14,12 +14,14 @@ export default function VariableSelect(props: { value: string; variableType?: Va
         const variable = value.toUpperCase().replace(/\s/g, '_');
         props.onChange(value, getVariables()[variable]);
       }}
-      data={Object.keys(getVariables()).filter((variable) => {
-        if (props.variableType) {
-          return getVariables()[variable].type === props.variableType;
-        }
-        return true;
-      })}
+      data={Object.keys(getVariables())
+        .filter((variable) => !variable.endsWith('____'))
+        .filter((variable) => {
+          if (props.variableType) {
+            return getVariables()[variable].type === props.variableType;
+          }
+          return true;
+        })}
     />
   );
 }

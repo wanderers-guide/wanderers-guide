@@ -12,6 +12,9 @@ import {
   newVariable,
   isListStr,
   isVariableListStr,
+  isExtendedProficiencyType,
+  nextProficiencyType,
+  prevProficiencyType,
 } from './variable-utils';
 import _ from "lodash";
 import { throwError } from "@utils/notifications";
@@ -45,16 +48,10 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SKILL_STEALTH: newVariable('prof', 'SKILL_STEALTH'),
   SKILL_SURVIVAL: newVariable('prof', 'SKILL_SURVIVAL'),
   SKILL_THIEVERY: newVariable('prof', 'SKILL_THIEVERY'),
+  SKILL_LORE____: newVariable('prof', 'SKILL_LORE____'),
 
-  SPELL_ATTACK_ARCANE: newVariable('prof', 'SPELL_ATTACK_ARCANE'),
-  SPELL_ATTACK_DIVINE: newVariable('prof', 'SPELL_ATTACK_DIVINE'),
-  SPELL_ATTACK_OCCULT: newVariable('prof', 'SPELL_ATTACK_OCCULT'),
-  SPELL_ATTACK_PRIMAL: newVariable('prof', 'SPELL_ATTACK_PRIMAL'),
-
-  SPELL_DC_ARCANE: newVariable('prof', 'SPELL_DC_ARCANE'),
-  SPELL_DC_DIVINE: newVariable('prof', 'SPELL_DC_DIVINE'),
-  SPELL_DC_OCCULT: newVariable('prof', 'SPELL_DC_OCCULT'),
-  SPELL_DC_PRIMAL: newVariable('prof', 'SPELL_DC_PRIMAL'),
+  SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'),
+  SPELL_DC: newVariable('prof', 'SPELL_DC'),
 
   LIGHT_ARMOR: newVariable('prof', 'LIGHT_ARMOR'),
   MEDIUM_ARMOR: newVariable('prof', 'MEDIUM_ARMOR'),
@@ -131,7 +128,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // RANGED_ATTACKS_DMG_DICE: newVariable("str", "RANGED_ATTACKS_DMG_DICE"),
   // RANGED_ATTACKS_DMG_BONUS: newVariable("num", "RANGED_ATTACKS_DMG_BONUS"),
 
-  // WEAPON_XXX: newVariable("str", "WEAPON_XXX"),
+  // WEAPON____: newVariable("str", "WEAPON____"),
+  // WEAPON_GROUP____: newVariable("str", "WEAPON_GROUP____"),
 
   // RESISTANCES: newVariable("str", "RESISTANCES"),
   // WEAKNESSES: newVariable("str", "WEAKNESSES"),
@@ -248,8 +246,18 @@ export function adjVariable(name: string, amount: any) {
     }
   } else if (isVariableListStr(variable) && _.isString(amount)) {
     variable.value = _.uniq([...variable.value, amount]);
-  } else if (isVariableProf(variable) && isProficiencyType(amount)) {
-    variable.value.value = maxProficiencyType(variable.value.value, amount);
+  } else if (isVariableProf(variable)) {
+    if (isProficiencyType(amount)) {
+      variable.value.value = maxProficiencyType(variable.value.value, amount);
+    } else if (isExtendedProficiencyType(amount)) {
+      if (amount === '1') {
+        variable.value.value = nextProficiencyType(variable.value.value) ?? variable.value.value;
+      } else if (amount === '-1') {
+        variable.value.value = prevProficiencyType(variable.value.value) ?? variable.value.value;
+      } else {
+        throwError(`Invalid adjust amount for prof: ${name}, ${amount}`);
+      }
+    }
   } else {
     throwError(`Invalid adjust amount for variable: ${name}, ${amount}`);
   }

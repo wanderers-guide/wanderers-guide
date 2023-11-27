@@ -349,6 +349,7 @@ export function OperationDisplay(props: {
       return (
         <AdjValOperation
           variable={opAdjValue.data.variable}
+          value={opAdjValue.data.value}
           onSelect={(variable) => {
             opAdjValue.data.variable = variable;
             props.onChange(_.cloneDeep(opAdjValue));
@@ -366,6 +367,7 @@ export function OperationDisplay(props: {
         // TODO: make it number | string | boolean | AttributeValue | ProficiencyType
         <SetValOperation
           variable={opSetValue.data.variable}
+          value={opSetValue.data.value}
           onSelect={(variable) => {
             opSetValue.data.variable = variable;
             props.onChange(_.cloneDeep(opSetValue));
