@@ -6,7 +6,7 @@ import type { ContentSource } from '../_shared/content';
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
     let { id, foundry_id, group, homebrew, published } = body as {
-      id?: number;
+      id?: number | number[];
       foundry_id?: string;
       group?: string;
       homebrew?: boolean;
@@ -26,7 +26,7 @@ serve(async (req: Request) => {
     }
 
     const data =
-      id === undefined && foundry_id === undefined
+      (id === undefined || Array.isArray(id)) && foundry_id === undefined
         ? results
         : results.length > 0
         ? results[0]

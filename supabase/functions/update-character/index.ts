@@ -5,13 +5,14 @@ import type { Character } from "../_shared/content";
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id, name, level, details, content_sources } = body as Character;
+    let { id, name, level, details, content_sources, operation_data } = body as Character;
 
     const status = await updateData(client, 'character', id, {
       name,
       level,
       details,
       content_sources,
+      operation_data,
     });
 
     if (status === 'SUCCESS') {

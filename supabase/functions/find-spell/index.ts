@@ -6,7 +6,7 @@ import type { Spell } from "../_shared/content";
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
     let { id, content_sources, traits } = body as {
-      id?: number;
+      id?: number | number[];
       content_sources?: number[];
       traits?: number[];
     };
@@ -17,7 +17,8 @@ serve(async (req: Request) => {
       { column: 'traits', value: traits, options: { arrayContains: true } },
     ]);
 
-    const data = id === undefined ? results : results.length > 0 ? results[0] : null;
+    const data =
+      id === undefined || Array.isArray(id) ? results : results.length > 0 ? results[0] : null;
     return {
       status: 'success',
       data,
