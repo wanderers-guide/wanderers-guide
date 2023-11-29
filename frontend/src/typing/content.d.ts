@@ -156,6 +156,7 @@ interface Class {
   rarity: Rarity;
   description: string;
   operations: Operation[] | undefined;
+  skill_training_base: number;
   trait_id: number;
   artwork_url: string;
   content_source_id: number;

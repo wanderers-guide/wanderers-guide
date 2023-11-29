@@ -27,6 +27,10 @@ import {
   Table,
   Accordion,
 } from '@mantine/core';
+import {
+  addedClassSkillTrainings,
+  getExtendedClassOperations,
+} from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import {
   IconBadges,
@@ -43,9 +47,9 @@ import {
   IconVocabulary,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Class } from '@typing/content';
+import { AbilityBlock, Character, Class } from '@typing/content';
 import { DrawerType } from '@typing/index';
-import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
+import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import {
   getAllAttributeVariables,
   getAllSaveVariables,
@@ -55,7 +59,7 @@ import { compactLabels } from '@variables/variable-utils';
 import _ from 'lodash';
 import { get } from 'lodash';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export function ClassDrawerTitle(props: { data: { id: number } }) {
   const id = props.data.id;
@@ -261,56 +265,8 @@ export function ClassInitialOverview(props: {
   const charState = useRecoilState(characterState);
 
   // Reading thru operations to get display UI
-  const classOperations = props.class_.operations ?? [];
   const MODE = props.mode;
-  const writeDetails =
-    MODE === 'READ/WRITE'
-      ? {
-          operationResults: props.operationResults ?? [],
-          characterState: charState,
-          primarySource: 'class',
-        }
-      : undefined;
-
-
-  const attributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
-    classOperations,
-    MODE,
-    writeDetails
-  );
-  const keyAttribute =
-    attributes.length > 0
-      ? attributes[0]
-      : {
-          ui: null,
-          operation: null,
-        };
-
-  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE, writeDetails);
-
-  const perception = getStatDisplay('PERCEPTION', classOperations, MODE, writeDetails);
-  const skills = getStatBlockDisplay(
-    getAllSkillVariables().map((v) => v.name),
-    classOperations,
-    MODE,
-    writeDetails
-  );
-  const saves = getStatBlockDisplay(
-    getAllSaveVariables().map((v) => v.name),
-    classOperations,
-    MODE,
-    writeDetails
-  );
-  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE, writeDetails);
-  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE, writeDetails);
-  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE, writeDetails);
-  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE, writeDetails);
-  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE, writeDetails);
-  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, writeDetails);
-  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, writeDetails);
-  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, writeDetails);
-  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE, writeDetails);
+  const display = convertClassOperationsIntoUI(props.class_, props.mode, props.operationResults ?? [], charState);
 
   return (
     <>
@@ -397,8 +353,13 @@ export function ClassInitialOverview(props: {
           <Text c='gray.5' ta='center'>
             Key Attribute
           </Text>
-          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
-            {keyAttribute.ui ?? 'Varies'}
+          <Text
+            c='gray.4'
+            fw={700}
+            ta='center'
+            style={{ display: 'flex', justifyContent: 'center' }}
+          >
+            {display.keyAttribute.ui ?? 'Varies'}
           </Text>
         </Paper>
         <Paper
@@ -441,7 +402,7 @@ export function ClassInitialOverview(props: {
             Hit Points
           </Text>
           <Text c='gray.4' fw={700} ta='center'>
-            {classHp.ui ?? 'Varies'}
+            {display.classHp.ui ?? 'Varies'}
           </Text>
         </Paper>
       </Group>
@@ -457,7 +418,7 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {perception.ui}
+          {display.perception.ui}
         </IndentedText>
       </Box>
       <Box>
@@ -471,14 +432,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        {skills.map((skill, index) => (
+        {display.skills.map((skill, index) => (
           <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {skill.ui}
           </IndentedText>
         ))}
-        {/* <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'> TODO: Add this
-          Trained in a number of additional skills equal to 3 plus your Intelligence modifier
-        </IndentedText> */}
+        {display.additionalSkillTrainings.map((record, index) => (
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+            {record.ui}
+          </IndentedText>
+        ))}
       </Box>
       <Box>
         <Divider
@@ -491,7 +454,7 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        {saves.map((save, index) => (
+        {display.saves.map((save, index) => (
           <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {save.ui}
           </IndentedText>
@@ -509,16 +472,16 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {simpleWeapons.ui}
+          {display.simpleWeapons.ui}
         </IndentedText>
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {martialWeapons.ui}
+          {display.martialWeapons.ui}
         </IndentedText>
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {advancedWeapons.ui}
+          {display.advancedWeapons.ui}
         </IndentedText>
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {unarmedAttacks.ui}
+          {display.unarmedAttacks.ui}
         </IndentedText>
       </Box>
       <Box>
@@ -533,16 +496,16 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {lightArmor.ui}
+          {display.lightArmor.ui}
         </IndentedText>
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {mediumArmor.ui}
+          {display.mediumArmor.ui}
         </IndentedText>
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {heavyArmor.ui}
+          {display.heavyArmor.ui}
         </IndentedText>
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {unarmoredDefense.ui}
+          {display.unarmoredDefense.ui}
         </IndentedText>
       </Box>
       <Box>
@@ -557,9 +520,110 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-          {classDC.ui}
+          {display.classDC.ui}
         </IndentedText>
       </Box>
     </>
   );
+}
+
+export function convertClassOperationsIntoUI(
+  class_: Class,
+  mode: 'READ' | 'READ/WRITE',
+  operationResults: OperationResult[],
+  charState: [Character | null, SetterOrUpdater<Character | null>]
+) {
+
+  const classOperations = class_.operations ?? [];
+  const MODE = mode;
+  const writeDetails =
+    MODE === 'READ/WRITE'
+      ? {
+          operationResults: operationResults,
+          characterState: charState,
+          primarySource: 'class',
+        }
+      : undefined;
+
+  const attributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const keyAttribute =
+    attributes.length > 0
+      ? attributes[0]
+      : {
+          ui: null,
+          operation: null,
+        };
+
+  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE, writeDetails);
+
+  const perception = getStatDisplay('PERCEPTION', classOperations, MODE, writeDetails);
+  const skills = getStatBlockDisplay(
+    getAllSkillVariables().map((v) => v.name),
+    classOperations,
+    MODE,
+    writeDetails
+  );
+
+  let additionalSkillTrainings = [];
+  if (MODE === 'READ') {
+    additionalSkillTrainings = [
+      {
+        ui: (
+          <>
+            Trained in a number of additional skills equal to {class_.skill_training_base} plus your
+            Intelligence modifier
+          </>
+        ),
+        operation: null,
+      },
+    ];
+  } else if (MODE === 'READ/WRITE') {
+    const skillTrainingOps = addedClassSkillTrainings(class_);
+    for (const op of skillTrainingOps) {
+      const result = getDisplay('T', op, undefined, 'READ/WRITE', writeDetails);
+      additionalSkillTrainings.push({
+        ui: result,
+        operation: op,
+      });
+    }
+  }
+
+  const saves = getStatBlockDisplay(
+    getAllSaveVariables().map((v) => v.name),
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE, writeDetails);
+  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE, writeDetails);
+  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE, writeDetails);
+  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE, writeDetails);
+  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE, writeDetails);
+  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, writeDetails);
+  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, writeDetails);
+  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, writeDetails);
+  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE, writeDetails);
+
+  return {
+    keyAttribute,
+    classHp,
+    perception,
+    skills,
+    additionalSkillTrainings,
+    saves,
+    simpleWeapons,
+    martialWeapons,
+    advancedWeapons,
+    unarmedAttacks,
+    lightArmor,
+    mediumArmor,
+    heavyArmor,
+    unarmoredDefense,
+    classDC,
+  };
 }

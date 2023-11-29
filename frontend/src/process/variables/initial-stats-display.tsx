@@ -7,7 +7,7 @@ import {
 import { ReactNode } from 'react';
 import { getVariable } from './variable-manager';
 import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
-import { isAttribute, isProficiencyType, maxProficiencyType, proficiencyTypeToLabel, variableToLabel } from './variable-utils';
+import { isAttribute, isProficiencyType, maxProficiencyType, proficiencyTypeToLabel, variableNameToLabel, variableToLabel } from './variable-utils';
 import _ from 'lodash';
 import { listToLabel } from '@utils/strings';
 import { SelectContentButton } from '@common/select/SelectContent';
@@ -144,10 +144,10 @@ export function getStatDisplay(
   };
 }
 
-function getDisplay(
+export function getDisplay(
   value: string | number | boolean | AttributeValue | null,
   operation: OperationSelect | null,
-  variable: Variable,
+  variable: Variable | undefined,
   mode: 'READ' | 'READ/WRITE',
   writeDetails?: {
     operationResults: OperationResult[],
@@ -162,7 +162,7 @@ function getDisplay(
     : null;
 
   // Handle attributes
-  if (isAttribute(value) || (_.isNumber(+value) && variable.type === 'attr')) {
+  if (isAttribute(value) || (_.isNumber(+value) && variable?.type === 'attr')) {
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (
@@ -201,7 +201,7 @@ function getDisplay(
         return <>{listToLabel(attrs, 'or')}</>;
       }
     } else {
-      return <>{variableToLabel(variable)}</>;
+      return <>{variableNameToLabel(variable?.name ?? '')}</>;
     }
   }
 
@@ -251,12 +251,12 @@ function getDisplay(
       }
     } else {
       // Display as `Expert in Fortitude`
-      return `${proficiencyTypeToLabel(value)} in ${variableToLabel(variable)}`;
+      return `${proficiencyTypeToLabel(value)} in ${variableNameToLabel(variable?.name ?? '')}`;
     }
   }
 
   // Handle numbers
-  if (variable.type === 'num') {
+  if (variable?.type === 'num') {
     if (operation) {
       return (
         <Box py={5}>

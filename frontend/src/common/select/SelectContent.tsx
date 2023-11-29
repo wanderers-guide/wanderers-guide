@@ -115,8 +115,9 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
 
   return (
-    <Button.Group>
+    <Button.Group className='selection-choice-base'>
       <Button
+        className={selected ? 'selection-choice-selected' : 'selection-choice-unselected'}
         variant={selected ? 'filled' : 'light'}
         size='compact-sm'
         radius='xl'
@@ -932,7 +933,7 @@ export function GenericSelectionOption(props: {
         backgroundColor: disabled
           ? theme.colors.dark[8]
           : hovered || props.selected
-          ? theme.colors.dark[6]
+          ? theme.colors.dark[8]
           : 'transparent',
         position: 'relative',
       }}

@@ -1,8 +1,9 @@
-import { AbilityBlock, Character, ContentPackage, ContentSource, Item } from '@typing/content';
+import { AbilityBlock, Character, Class, ContentPackage, ContentSource, Item } from '@typing/content';
 import { getRootSelection, setSelections } from './selection-tree';
-import { Operation } from '@typing/operations';
+import { Operation, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
-import { addVariable, resetVariables } from '@variables/variable-manager';
+import { addVariable, getVariable, resetVariables } from '@variables/variable-manager';
+import { isAttributeValue } from '@variables/variable-utils';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -100,7 +101,7 @@ export async function executeCharacterOperations(character: Character, content: 
 
     let classResults: OperationResult[] = [];
     if (class_) {
-      classResults = await executeOperations('class', class_.operations ?? [], options);
+      classResults = await executeOperations('class', getExtendedClassOperations(class_), options);
     }
 
     let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
@@ -174,4 +175,44 @@ export async function executeCharacterOperations(character: Character, content: 
     results,
     conditionalResults,
   };
+}
+
+
+export function getExtendedClassOperations(class_: Class) {
+
+  let classOperations = [...class_.operations ?? []];
+
+  classOperations.push(...addedClassSkillTrainings(class_));
+
+  return classOperations;
+}
+
+export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
+  
+  let operations: OperationSelect[] = [];
+
+  // Operations for adding skill trainings equal to Int attribute modifier
+  const baseTrainings = class_.skill_training_base;
+  const intVariableValue = getVariable('ATTRIBUTE_INT')?.value;
+  const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
+  for (let i = 0; i < baseTrainings + intValue; i++) {
+    operations.push({
+      id: `720d2fe6-f042-4353-8313-1293375b1301-${i}`,
+      type: 'select',
+      data: {
+        title: 'Select a Skill to be Trained',
+        modeType: 'FILTERED',
+        optionType: 'ADJ_VALUE',
+        optionsPredefined: [],
+        optionsFilters: {
+          id: `f8703468-ab35-4f84-8dc7-7c48556258e3-${i}`,
+          type: 'ADJ_VALUE',
+          group: 'SKILL',
+          value: 'T',
+        },
+      },
+    });
+  }
+
+  return operations;
 }

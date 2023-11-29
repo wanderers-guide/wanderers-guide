@@ -23,8 +23,8 @@ import {
   ContentSource,
 } from '@typing/content';
 import classes from '@css/FaqSimple.module.css';
-import { useElementSize, useHover, useInterval } from '@mantine/hooks';
-import { useEffect, useState } from 'react';
+import { useElementSize, useHover, useInterval, useMergedRef, useTimeout } from '@mantine/hooks';
+import { useEffect, useRef, useState } from 'react';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
 import { characterState } from '@atoms/characterAtoms';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -35,9 +35,14 @@ import { executeCharacterOperations } from '@operations/operation-controller';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { IconPuzzle } from '@tabler/icons-react';
 import { OperationResult } from '@operations/operation-runner';
-import { ClassInitialOverview } from '@drawers/types/ClassDrawer';
+import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
 import { fetchContentPackage } from '@content/content-store';
 import { ObjectWithUUID } from '@operations/operation-utils';
+import { OperationSelect } from '@typing/operations';
+import { getChoiceCounts } from '@operations/choice-count-tracker';
+import useRefresh from '@utils/use-refresh';
+import { set } from 'lodash';
+import _ from 'lodash';
 
 export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -587,14 +592,33 @@ function LevelSection(props: {
   content: ContentPackage;
   operationResults: any;
 }) {
+  const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const mergedRef = useMergedRef(ref, choiceCountRef);
 
-  const selectionsToDo = 3;
-  const selectionsTotal = 6;
+  const [choiceCounts, setChoiceCounts] = useState<{ current: number; max: number }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (
+          newChoiceCounts.current !== choiceCounts.current ||
+          newChoiceCounts.max !== choiceCounts.max
+        )
+          setChoiceCounts(newChoiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
 
   return (
     <Accordion.Item
-      ref={ref}
+      ref={mergedRef}
       value={`${props.level}`}
       style={{
         backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
@@ -614,14 +638,24 @@ function LevelSection(props: {
               `Level ${props.level}`
             )}
           </Text>
-          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-            <Text fz='sm' c='gray.5' span>
-              {selectionsToDo}
-            </Text>
-            <Text fz='sm' c='gray.5' span>
-              /{selectionsTotal}
-            </Text>
-          </Badge>
+          {choiceCounts.max > 0 && (
+            <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+              <Text
+                fz='sm'
+                c={
+                  choiceCounts.current === choiceCounts.max
+                    ? 'gray.5'
+                    : theme.colors[theme.primaryColor][5]
+                }
+                span
+              >
+                {choiceCounts.current}
+              </Text>
+              <Text fz='sm' c='gray.5' span>
+                /{choiceCounts.max}
+              </Text>
+            </Badge>
+          )}
         </Group>
       </Accordion.Control>
       <Accordion.Panel>
@@ -639,7 +673,6 @@ function LevelSection(props: {
 }
 
 function InitialStatsLevelSection(props: { content: ContentPackage; operationResults: any }) {
-  console.log(props.operationResults);
 
   const [character, setCharacter] = useRecoilState(characterState);
 
@@ -655,6 +688,110 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   const heritage = props.content.abilityBlocks.find(
     (ab) => ab.id === character?.details?.heritage?.id && ab.type === 'heritage'
   );
+
+  // Choice count tracking
+  const classChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [classChoiceCounts, setClassChoiceCounts] = useState<{ current: number; max: number }>({
+    current: 0,
+    max: 0,
+  });
+
+  const backgroundChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [backgroundChoiceCounts, setBackgroundChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  const ancestryChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [ancestryChoiceCounts, setAncestryChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  const itemsChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [itemsChoiceCounts, setItemsChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  const booksChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [booksChoiceCounts, setBooksChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  const customChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [customChoiceCounts, setCustomChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (classChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(classChoiceCountRef.current);
+        if (!_.isEqual(choiceCounts, classChoiceCounts)) setClassChoiceCounts(choiceCounts);
+      }
+      if (backgroundChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(backgroundChoiceCountRef.current);
+        if (
+          choiceCounts.current !== backgroundChoiceCounts.current ||
+          choiceCounts.max !== backgroundChoiceCounts.max
+        )
+          setBackgroundChoiceCounts(choiceCounts);
+      }
+      if (ancestryChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(ancestryChoiceCountRef.current);
+        if (
+          choiceCounts.current !== ancestryChoiceCounts.current ||
+          choiceCounts.max !== ancestryChoiceCounts.max
+        )
+          setAncestryChoiceCounts(choiceCounts);
+      }
+      if (itemsChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(itemsChoiceCountRef.current);
+        if (
+          choiceCounts.current !== itemsChoiceCounts.current ||
+          choiceCounts.max !== itemsChoiceCounts.max
+        )
+          setItemsChoiceCounts(choiceCounts);
+      }
+      if (booksChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(booksChoiceCountRef.current);
+        if (
+          choiceCounts.current !== booksChoiceCounts.current ||
+          choiceCounts.max !== booksChoiceCounts.max
+        )
+          setBooksChoiceCounts(choiceCounts);
+      }
+      if (customChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(customChoiceCountRef.current);
+        if (
+          choiceCounts.current !== customChoiceCounts.current ||
+          choiceCounts.max !== customChoiceCounts.max
+        )
+          setCustomChoiceCounts(choiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  //
 
   const saveSelectionChange = (path: string, value: string) => {
     setCharacter((prev) => {
@@ -677,6 +814,39 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
 
   if (!props.operationResults) return null;
 
+  // Only display the operation results that aren't already displayed in the class overview
+  let classOperationResults = props.operationResults?.results?.classResults ?? [];
+  const classInitialOverviewDisplay = class_
+    ? convertClassOperationsIntoUI(
+        class_,
+        'READ/WRITE',
+        props.operationResults?.results?.classResults ?? [],
+        [character, setCharacter]
+      )
+    : null;
+  if (classInitialOverviewDisplay) {
+    // Filter out operation results that are already displayed in the class overview
+    let displayRecords: {
+      ui: React.ReactNode;
+      operation: OperationSelect | null;
+    }[] = [];
+    for (const value of Object.values(classInitialOverviewDisplay)) {
+      if (Array.isArray(value)) {
+        displayRecords = [...displayRecords, ...value];
+      } else {
+        displayRecords.push(value);
+      }
+    }
+
+    // Filter operation results
+    classOperationResults = classOperationResults.filter((result: OperationResult) => {
+      return !displayRecords.find(
+        (record) =>
+          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+      );
+    });
+  }
+
   return (
     <>
       <Divider />
@@ -689,9 +859,16 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
       >
         <Accordion.Item value='ancestry'>
           <Accordion.Control disabled={!ancestry} icon={getIconFromContentType('ancestry', '1rem')}>
-            Ancestry
+            <Group gap={5}>
+              <Box>Ancestry</Box>
+              {ancestryChoiceCounts.max - ancestryChoiceCounts.current > 0 && (
+                <Badge variant='light'>
+                  {ancestryChoiceCounts.max - ancestryChoiceCounts.current}
+                </Badge>
+              )}
+            </Group>
           </Accordion.Control>
-          <Accordion.Panel>
+          <Accordion.Panel ref={ancestryChoiceCountRef}>
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.ancestryResults}
@@ -706,9 +883,16 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             disabled={!background}
             icon={getIconFromContentType('background', '1rem')}
           >
-            Background
+            <Group gap={5}>
+              <Box>Background</Box>
+              {backgroundChoiceCounts.max - backgroundChoiceCounts.current > 0 && (
+                <Badge variant='light'>
+                  {backgroundChoiceCounts.max - backgroundChoiceCounts.current}
+                </Badge>
+              )}
+            </Group>
           </Accordion.Control>
-          <Accordion.Panel>
+          <Accordion.Panel ref={backgroundChoiceCountRef}>
             <DisplayOperationResult
               source={undefined}
               results={props.operationResults.results.backgroundResults}
@@ -720,33 +904,49 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
         </Accordion.Item>
         <Accordion.Item value='class'>
           <Accordion.Control disabled={!class_} icon={getIconFromContentType('class', '1rem')}>
-            Class
+            <Group gap={5}>
+              <Box>Class</Box>
+              {classChoiceCounts.max - classChoiceCounts.current > 0 && (
+                <Badge variant='light'>{classChoiceCounts.max - classChoiceCounts.current}</Badge>
+              )}
+            </Group>
           </Accordion.Control>
-          <Accordion.Panel>
-            {class_ && (
-              <ClassInitialOverview
-                class_={class_}
-                mode='READ/WRITE'
-                operationResults={props.operationResults.results.classResults}
-              />
-            )}
+          <Accordion.Panel ref={classChoiceCountRef}>
+            <Stack>
+              <Box>
+                {class_ && (
+                  <ClassInitialOverview
+                    class_={class_}
+                    mode='READ/WRITE'
+                    operationResults={props.operationResults.results.classResults}
+                  />
+                )}
+              </Box>
 
-            <DisplayOperationResult
-              source={undefined}
-              results={props.operationResults.results.classResults}
-              onChange={(path, value) => {
-                console.log(`Path: ${path}`, `Value: ${value}`);
-                saveSelectionChange(`class_${path}`, value);
-              }}
-            />
+              <Box>
+                <DisplayOperationResult
+                  source={undefined}
+                  results={classOperationResults}
+                  onChange={(path, value) => {
+                    console.log(`Path: ${path}`, `Value: ${value}`);
+                    saveSelectionChange(`class_${path}`, value);
+                  }}
+                />
+              </Box>
+            </Stack>
           </Accordion.Panel>
         </Accordion.Item>
         {props.operationResults.results.contentSourceResults.length > 0 && (
           <Accordion.Item value='books'>
             <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
-              Books
+              <Group gap={5}>
+                <Box>Books</Box>
+                {booksChoiceCounts.max - booksChoiceCounts.current > 0 && (
+                  <Badge variant='light'>{booksChoiceCounts.max - booksChoiceCounts.current}</Badge>
+                )}
+              </Group>
             </Accordion.Control>
-            <Accordion.Panel>
+            <Accordion.Panel ref={booksChoiceCountRef}>
               {props.operationResults.results.contentSourceResults.map((s: any, index: number) => (
                 <DisplayOperationResult
                   key={index}
@@ -763,15 +963,29 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
         {props.operationResults.results.itemResults.length > 0 && (
           <Accordion.Item value='items'>
             <Accordion.Control icon={getIconFromContentType('item', '1rem')}>
-              Items
+              <Group gap={5}>
+                <Box>Items</Box>
+                {itemsChoiceCounts.max - itemsChoiceCounts.current > 0 && (
+                  <Badge variant='light'>{itemsChoiceCounts.max - itemsChoiceCounts.current}</Badge>
+                )}
+              </Group>
             </Accordion.Control>
-            <Accordion.Panel></Accordion.Panel>
+            <Accordion.Panel ref={itemsChoiceCountRef}></Accordion.Panel>
           </Accordion.Item>
         )}
         {props.operationResults.results.characterResults.length > 0 && (
           <Accordion.Item value='custom'>
-            <Accordion.Control icon={<IconPuzzle size='1rem' />}>Custom</Accordion.Control>
-            <Accordion.Panel>
+            <Accordion.Control icon={<IconPuzzle size='1rem' />}>
+              <Group gap={5}>
+                <Box>Custom</Box>
+                {customChoiceCounts.max - customChoiceCounts.current > 0 && (
+                  <Badge variant='light'>
+                    {customChoiceCounts.max - customChoiceCounts.current}
+                  </Badge>
+                )}
+              </Group>
+            </Accordion.Control>
+            <Accordion.Panel ref={customChoiceCountRef}>
               <DisplayOperationResult
                 source={undefined}
                 results={props.operationResults.results.characterResults}

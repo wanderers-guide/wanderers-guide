@@ -96,6 +96,7 @@ export function variableNameToLabel(variableName: string) {
     'Heavy Armor': 'heavy armor',
     'Unarmored Defense': 'unarmored defense',
     'Class DC': 'class DC',
+    'Class Dc': 'class DC',
   };
   const REMOVAL_CHANGES = ['skill_', 'save_', 'attribute_', 'speed_'];
 
