@@ -67,6 +67,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CLASS_DC: newVariable('prof', 'CLASS_DC'),
   LEVEL: newVariable('num', 'LEVEL'),
   SIZE: newVariable('str', 'SIZE'),
+  CORE_LANGUAGE_NAMES: newVariable('list-str', 'CORE_LANGUAGE_NAMES'),
   //FOCUS_POINTS: newVariable('num', 'FOCUS_POINTS'),
 
   MAX_HEALTH_ANCESTRY: newVariable('num', 'MAX_HEALTH_ANCESTRY'),

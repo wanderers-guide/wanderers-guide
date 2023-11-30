@@ -1,4 +1,12 @@
-import { AbilityBlock, Character, Class, ContentPackage, ContentSource, Item } from '@typing/content';
+import {
+  AbilityBlock,
+  Ancestry,
+  Character,
+  Class,
+  ContentPackage,
+  ContentSource,
+  Item,
+} from '@typing/content';
 import { getRootSelection, setSelections } from './selection-tree';
 import { Operation, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
@@ -158,7 +166,11 @@ export async function executeCharacterOperations(character: Character, content: 
   await operationsPassthrough({ doOnlyValueCreation: true });
   // define values for any weapons or lores
   for (const value of Object.values(character?.operation_data?.selections ?? {})) {
-    if(value.startsWith('SKILL_LORE_') || value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
+    if (
+      value.startsWith('SKILL_LORE_') ||
+      value.startsWith('WEAPON_') ||
+      value.startsWith('WEAPON_GROUP_')
+    ) {
       addVariable('prof', value, 'U');
     }
   }
@@ -177,10 +189,8 @@ export async function executeCharacterOperations(character: Character, content: 
   };
 }
 
-
 export function getExtendedClassOperations(class_: Class) {
-
-  let classOperations = [...class_.operations ?? []];
+  let classOperations = [...(class_.operations ?? [])];
 
   classOperations.push(...addedClassSkillTrainings(class_));
 
@@ -188,7 +198,6 @@ export function getExtendedClassOperations(class_: Class) {
 }
 
 export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
-  
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier
@@ -196,6 +205,43 @@ export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
   const intVariableValue = getVariable('ATTRIBUTE_INT')?.value;
   const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
   for (let i = 0; i < baseTrainings + intValue; i++) {
+    operations.push({
+      id: `720d2fe6-f042-4353-8313-1293375b1301-${i}`,
+      type: 'select',
+      data: {
+        title: 'Select a Skill to be Trained',
+        modeType: 'FILTERED',
+        optionType: 'ADJ_VALUE',
+        optionsPredefined: [],
+        optionsFilters: {
+          id: `f8703468-ab35-4f84-8dc7-7c48556258e3-${i}`,
+          type: 'ADJ_VALUE',
+          group: 'SKILL',
+          value: 'T',
+        },
+      },
+    });
+  }
+
+  return operations;
+}
+
+export function getExtendedAncestryOperations(ancestry: Ancestry) {
+  let ancestryOperations = [...(ancestry.operations ?? [])];
+
+  ancestryOperations.push(...addedAncestryLanguages(ancestry));
+
+  return ancestryOperations;
+}
+
+export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
+  let operations: OperationSelect[] = [];
+
+  // Operations for adding skill trainings equal to Int attribute modifier
+  const intVariableValue = getVariable('ATTRIBUTE_INT')?.value;
+  const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
+  if (intValue <= 0) return operations;
+  for (let i = 0; i < intValue; i++) {
     operations.push({
       id: `720d2fe6-f042-4353-8313-1293375b1301-${i}`,
       type: 'select',

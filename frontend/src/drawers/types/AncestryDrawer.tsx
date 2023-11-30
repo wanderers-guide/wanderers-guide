@@ -1,11 +1,13 @@
+import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { FeatSelectionOption, HeritageSelectionOption } from '@common/select/SelectContent';
+import { FeatSelectionOption } from '@common/select/SelectContent';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { getIconFromContentType } from '@content/content-utils';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Title,
@@ -26,29 +28,41 @@ import {
   Table,
   Accordion,
 } from '@mantine/core';
+import { addedAncestryLanguages } from '@operations/operation-controller';
+import { OperationResult } from '@operations/operation-runner';
 import {
   IconBadges,
   IconBadgesFilled,
+  IconChevronsDown,
+  IconChevronsUp,
   IconEye,
   IconEyeFilled,
   IconHeart,
   IconHeartHandshake,
   IconHelpCircle,
+  IconLanguage,
   IconShield,
   IconShieldCheckeredFilled,
   IconShieldFilled,
+  IconSquareRoundedChevronDownFilled,
+  IconSquareRoundedChevronUpFilled,
   IconSword,
   IconVocabulary,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Ancestry, Class } from '@typing/content';
+import { AbilityBlock, Character, Ancestry, Language } from '@typing/content';
 import { DrawerType } from '@typing/index';
-import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
-import { getAllAttributeVariables, getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
+import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
+import {
+  getAllAttributeVariables,
+  getAllSaveVariables,
+  getAllSkillVariables,
+} from '@variables/variable-manager';
+import { compactLabels } from '@variables/variable-utils';
 import _ from 'lodash';
 import { get } from 'lodash';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export function AncestryDrawerTitle(props: { data: { id: number } }) {
   const id = props.data.id;
@@ -93,9 +107,11 @@ export function AncestryDrawerContent(props: {
       const [_key, { id }] = queryKey;
       const ancestry = await fetchContentById<Ancestry>('ancestry', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      const languages = await fetchContentAll<Language>('language');
       return {
         ancestry,
         abilityBlocks,
+        languages,
       };
     },
   });
@@ -111,6 +127,14 @@ export function AncestryDrawerContent(props: {
     ),
     'level'
   );
+  const physicalFeatures = (data?.abilityBlocks ?? []).filter(
+    (block) =>
+      block.type === 'physical-feature' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
+  );
+  const senses = (data?.abilityBlocks ?? []).filter(
+    (block) => block.type === 'sense' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
+  );
+  const languages = (data?.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
 
   const featSections = Object.keys(feats).map((level) => (
     <Accordion.Item key={level} value={level}>
@@ -159,24 +183,17 @@ export function AncestryDrawerContent(props: {
 
   return (
     <Stack>
-      <AncestryInitialOverview ancestry={data.ancestry} mode='READ' />
+      <AncestryInitialOverview
+        ancestry={data.ancestry}
+        mode='READ'
+        physicalFeatures={physicalFeatures}
+        senses={senses}
+        heritages={heritages}
+        languages={languages}
+      />
       <Box>
         <Title order={3}>Heritages</Title>
-
-        {heritages.map((heritage, index) => (
-          <HeritageSelectionOption
-            key={index}
-            heritage={heritage}
-            onClick={() => {
-              props.onMetadataChange?.();
-              openDrawer({
-                type: 'heritage',
-                data: { id: heritage.id },
-                extra: { addToHistory: true },
-              });
-            }}
-          />
-        ))}
+        <Divider />
       </Box>
 
       <Box>
@@ -199,24 +216,31 @@ export function AncestryDrawerContent(props: {
   );
 }
 
-export function AncestryInitialOverview(props: { ancestry: Ancestry; mode: 'READ' | 'READ/WRITE' }) {
+export function AncestryInitialOverview(props: {
+  ancestry: Ancestry;
+  physicalFeatures: AbilityBlock[];
+  senses: AbilityBlock[];
+  heritages: AbilityBlock[];
+  languages: Language[];
+  mode: 'READ' | 'READ/WRITE';
+  operationResults?: OperationResult[];
+}) {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
+  const charState = useRecoilState(characterState);
 
   // Reading thru operations to get display UI
-  const ancestryOperations = props.ancestry.operations ?? [];
   const MODE = props.mode;
-
-  const attributes = getAllAttributeVariables().map((v) =>
-    getStatDisplay(v.name, ancestryOperations, MODE)
+  const display = convertAncestryOperationsIntoUI(
+    props.ancestry,
+    props.physicalFeatures,
+    props.senses,
+    props.heritages,
+    props.languages,
+    props.mode,
+    props.operationResults ?? [],
+    charState
   );
-  console.log(attributes);
-
-  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', ancestryOperations, MODE);
-  const size = getStatDisplay('SIZE', ancestryOperations, MODE);
-  const speed = getStatDisplay('SPEED', ancestryOperations, MODE);
-
-
 
   return (
     <>
@@ -296,15 +320,15 @@ export function AncestryInitialOverview(props: { ancestry: Ancestry; mode: 'READ
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
               <Text fz='xs'>
-                At 1st level, your class gives you an attribute boost in the key attribute.
+                You increase your maximum number of HP by this number at 1st level.
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
           <Text c='gray.5' ta='center'>
-            Key Attribute
+            Hit Points
           </Text>
           <Text c='gray.4' fw={700} ta='center'>
-            {/* {props.ancestry.key_attribute} */}
+            {display.ancestryHp.ui ?? 'Varies'}
           </Text>
         </Paper>
         <Paper
@@ -338,17 +362,70 @@ export function AncestryInitialOverview(props: { ancestry: Ancestry; mode: 'READ
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
               <Text fz='xs'>
-                You increase your maximum number of HP by this number at 1st level and every level
-                thereafter.
+                This tells you the physical size of members of your ancestry. Medium corresponds
+                roughly to the height and weight of a human adult, and Small is roughly half that.
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
           <Text c='gray.5' ta='center'>
-            Hit Points
+            Size
           </Text>
-          {/* <Text c='gray.4' fw={700} ta='center'>
-            {props.ancestry.hp}
-          </Text> */}
+          <Text
+            c='gray.4'
+            fw={700}
+            ta='center'
+            style={{ display: 'flex', justifyContent: 'center' }}
+          >
+            {display.size.ui ?? 'Varies'}
+          </Text>
+        </Paper>
+        <Paper
+          shadow='xs'
+          p='sm'
+          radius='md'
+          style={{ backgroundColor: theme.colors.dark[8], position: 'relative' }}
+        >
+          <HoverCard
+            shadow='md'
+            openDelay={250}
+            width={200}
+            zIndex={1000}
+            position='top'
+            withinPortal
+          >
+            <HoverCard.Target>
+              <ActionIcon
+                variant='subtle'
+                aria-label='Help'
+                radius='xl'
+                size='sm'
+                style={{
+                  position: 'absolute',
+                  top: 5,
+                  right: 5,
+                }}
+              >
+                <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+              </ActionIcon>
+            </HoverCard.Target>
+            <HoverCard.Dropdown py={5} px={10}>
+              <Text fz='xs'>
+                This is your base speed, it determines how far you can move each time you spend an
+                action (such as Stride) to do so.
+              </Text>
+            </HoverCard.Dropdown>
+          </HoverCard>
+          <Text c='gray.5' ta='center'>
+            Speed
+          </Text>
+          <Text
+            c='gray.4'
+            fw={700}
+            ta='center'
+            style={{ display: 'flex', justifyContent: 'center' }}
+          >
+            {display.speed.ui ?? 'Varies'}
+          </Text>
         </Paper>
       </Group>
       <Box>
@@ -356,72 +433,192 @@ export function AncestryInitialOverview(props: { ancestry: Ancestry; mode: 'READ
           px='xs'
           label={
             <Group gap={5}>
-              <IconEyeFilled size='0.8rem' />
-              <Box>Perception</Box>
+              <IconChevronsUp size='0.8rem' />
+              <Box>Attribute Boosts</Box>
             </Group>
           }
           labelPosition='left'
         />
-        <IndentedText px='xs' c='gray.5' fz='sm'>
-          {/* {perception.ui} */}
-        </IndentedText>
+        {display.attributes.map((attribute, index) => (
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+            {attribute.ui}
+          </IndentedText>
+        ))}
       </Box>
       <Box>
         <Divider
           px='xs'
           label={
             <Group gap={5}>
-              <IconBadgesFilled size='0.8rem' />
-              <Box>Skills</Box>
+              <IconChevronsDown size='0.8rem' />
+              <Box>Attribute Flaws</Box>
             </Group>
           }
           labelPosition='left'
         />
-        {/* {languages.map((language, index) => (
-          <IndentedText key={index} px='xs' c='gray.5' fz='sm'>
+        {display.attributes.map((skill, index) => (
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+            {skill.ui}
+          </IndentedText>
+        ))}
+      </Box>
+      <Box>
+        <Divider
+          px='xs'
+          label={
+            <Group gap={5}>
+              {getIconFromContentType('language', '0.8rem')}
+              <Box>Languages</Box>
+            </Group>
+          }
+          labelPosition='left'
+        />
+        {display.languages.map((language, index) => (
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {language.ui}
           </IndentedText>
-        ))} */}
-        {/* <IndentedText px='xs' c='gray.5' fz='sm'> TODO: Add this
-          Trained in a number of additional skills equal to 3 plus your Intelligence modifier
-        </IndentedText> */}
+        ))}
+        {display.additionalLanguages.map((record, index) => (
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+            {record.ui}
+          </IndentedText>
+        ))}
       </Box>
-      <Box>
-        <Divider
-          px='xs'
-          label={
-            <Group gap={5}>
-              <IconSword size='0.8rem' />
-              <Box>Attacks</Box>
-            </Group>
-          }
-          labelPosition='left'
-        />
-      </Box>
-      <Box>
-        <Divider
-          px='xs'
-          label={
-            <Group gap={5}>
-              <IconShieldCheckeredFilled size='0.8rem' />
-              <Box>Defenses</Box>
-            </Group>
-          }
-          labelPosition='left'
-        />
-      </Box>
-      <Box>
-        <Divider
-          px='xs'
-          label={
-            <Group gap={5}>
-              <IconVocabulary size='0.8rem' />
-              <Box>Class DC</Box>
-            </Group>
-          }
-          labelPosition='left'
-        />
-      </Box>
+      {(display.senses.length > 0 || display.physicalFeatures.length) && (
+        <Box>
+          <Divider
+            px='xs'
+            label={
+              <Group gap={5}>
+                {getIconFromContentType('ability-block', '0.8rem')}
+                <Box>Special Abilities</Box>
+              </Group>
+            }
+            labelPosition='left'
+          />
+          {display.senses.map((sense, index) => (
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+              {sense.ui}
+            </IndentedText>
+          ))}
+          {display.physicalFeatures.map((physicalFeature, index) => (
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+              {physicalFeature.ui}
+            </IndentedText>
+          ))}
+        </Box>
+      )}
     </>
   );
+}
+
+export function convertAncestryOperationsIntoUI(
+  ancestry: Ancestry,
+  allPhysicalFeatures: AbilityBlock[],
+  allSenses: AbilityBlock[],
+  allHeritages: AbilityBlock[],
+  allLanguages: Language[],
+  mode: 'READ' | 'READ/WRITE',
+  operationResults: OperationResult[],
+  charState: [Character | null, SetterOrUpdater<Character | null>]
+) {
+  const ancestryOperations = ancestry.operations ?? [];
+  const MODE = mode;
+  const writeDetails =
+    MODE === 'READ/WRITE'
+      ? {
+          operationResults: operationResults,
+          characterState: charState,
+          primarySource: 'ancestry',
+        }
+      : undefined;
+
+  const attributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    ancestryOperations,
+    MODE,
+    writeDetails
+  );
+
+  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', ancestryOperations, MODE, writeDetails);
+
+  const size = getStatDisplay('SIZE', ancestryOperations, MODE, writeDetails);
+  const speed = getStatDisplay('SPEED', ancestryOperations, MODE, writeDetails);
+
+  const coreLanguages = getStatDisplay('CORE_LANGUAGE_NAMES', ancestryOperations, MODE, writeDetails);
+  console.log(coreLanguages);
+  let additionalLanguages = [];
+  if (MODE === 'READ') {
+    additionalLanguages = [
+      {
+        ui: (
+          <>
+            Additional languages equal to your Intelligence modifier (if it's positive). Choose from{' '}
+            {[].join(', ')}, and any other languages to which you have access (such as the languages
+            prevalent in your region).
+          </>
+        ),
+        operation: null,
+      },
+    ];
+  } else if (MODE === 'READ/WRITE') {
+    const languageOps = addedAncestryLanguages(ancestry);
+    for (const op of languageOps) {
+      const result = getDisplay('T', op, undefined, 'READ/WRITE', writeDetails);
+      additionalLanguages.push({
+        ui: result,
+        operation: op,
+      });
+    }
+  }
+
+  const languages = [];
+  for (const op of ancestryOperations) {
+    if (op.type === 'giveLanguage') {
+      const lang = allLanguages.find((l) => l.id === op.data.languageId);
+      if (lang) {
+        languages.push({
+          ui: <>{lang.name}</>,
+          operation: null,
+        });
+      }
+    }
+  }
+
+  const physicalFeatures = [];
+  for (const op of ancestryOperations) {
+    if (op.type === 'giveAbilityBlock') {
+      const feature = allPhysicalFeatures.find((l) => l.id === op.data.abilityBlockId);
+      if (feature) {
+        physicalFeatures.push({
+          ui: <>{feature.name}</>,
+          operation: null,
+        });
+      }
+    }
+  }
+
+  const senses = [];
+  for (const op of ancestryOperations) {
+    if (op.type === 'giveAbilityBlock') {
+      const sense = allSenses.find((l) => l.id === op.data.abilityBlockId);
+      if (sense) {
+        senses.push({
+          ui: <>{sense.name}</>,
+          operation: null,
+        });
+      }
+    }
+  }
+
+  return {
+    attributes,
+    ancestryHp,
+    size,
+    speed,
+    physicalFeatures,
+    senses,
+    languages,
+    additionalLanguages,
+  };
 }
