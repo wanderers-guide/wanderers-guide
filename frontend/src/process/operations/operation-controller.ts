@@ -12,6 +12,7 @@ import { Operation, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
 import { addVariable, getVariable, resetVariables } from '@variables/variable-manager';
 import { isAttributeValue } from '@variables/variable-utils';
+import _ from 'lodash';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -29,8 +30,9 @@ async function executeOperations(
   operations: Operation[],
   options?: OperationOptions
 ) {
+
   const selectionNode = getRootSelection().children[primarySource];
-  const results = await runOperations(selectionNode, operations, options);
+  const results = await runOperations(selectionNode, operations, _.cloneDeep(options));
 
   return results;
 }
@@ -109,7 +111,11 @@ export async function executeCharacterOperations(character: Character, content: 
 
     let classResults: OperationResult[] = [];
     if (class_) {
-      classResults = await executeOperations('class', getExtendedClassOperations(class_), options);
+      classResults = await executeOperations(
+        'class',
+        getExtendedClassOperations(class_),
+        options
+      );
     }
 
     let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
@@ -130,12 +136,20 @@ export async function executeCharacterOperations(character: Character, content: 
 
     let ancestryResults: OperationResult[] = [];
     if (ancestry) {
-      ancestryResults = await executeOperations('ancestry', ancestry.operations ?? [], options);
+      ancestryResults = await executeOperations(
+        'ancestry',
+        getExtendedAncestryOperations(ancestry),
+        options
+      );
     }
 
     let heritageResults: OperationResult[] = [];
     if (heritage) {
-      heritageResults = await executeOperations('heritage', heritage.operations ?? [], options);
+      heritageResults = await executeOperations(
+        'heritage',
+        heritage.operations ?? [],
+        options
+      );
     }
 
     let backgroundResults: OperationResult[] = [];
@@ -178,15 +192,28 @@ export async function executeCharacterOperations(character: Character, content: 
   // Non-conditional round //
   const results = await operationsPassthrough();
   // Conditional round //
-  const conditionalResults = await operationsPassthrough({ doOnlyConditionals: true });
+  const conditionalResults = await operationsPassthrough({
+    doOnlyConditionals: true,
+    onlyConditionalsWhitelist: [
+      ...(class_ ? addedClassSkillTrainings(class_) : []).map((op) => op.id),
+      ...(ancestry ? addedAncestryLanguages(ancestry) : []).map((op) => op.id),
+    ],
+  });
 
-  console.log(results);
-  console.log(conditionalResults);
+  return mergeOperationResults(results, conditionalResults) as typeof results;
+}
 
-  return {
-    results,
-    conditionalResults,
-  };
+function mergeOperationResults(normal: Record<string, any>, conditional: Record<string, any>) {
+  const merged = _.cloneDeep(normal);
+  for (const [key, value] of Object.entries(conditional)) {
+    if (merged[key]) {
+      merged[key].push(...value);
+    } else {
+      merged[key] = value;
+    }
+    merged[key] = merged[key].filter((v: any) => v);
+  }
+  return merged;
 }
 
 export function getExtendedClassOperations(class_: Class) {

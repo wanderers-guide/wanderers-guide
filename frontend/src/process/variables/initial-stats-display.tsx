@@ -38,15 +38,26 @@ export function getStatBlockDisplay(
     onlyNegatives?: boolean;
   }
 ) {
-  let output: { ui: ReactNode; operation: OperationSelect | null }[] = [];
+  let output: {
+    ui: ReactNode;
+    operation: OperationSelect | null;
+    variable?: Variable;
+    uuid?: string;
+    bestValue?: string | number | boolean | AttributeValue | null;
+  }[] = [];
   const foundSet: Set<string> = new Set();
 
   for (const variableName of variableNames) {
-    const { ui, operation } = getStatDisplay(variableName, operations, mode, writeDetails, options);
-    let uniqueValue = variableName;
-    console.log(ui);
+    const { ui, operation, bestValue, variable, uuid } = getStatDisplay(
+      variableName,
+      operations,
+      mode,
+      writeDetails,
+      options
+    );
+    let uniqueValue = uuid ?? variableName;
     if (ui && !foundSet.has(uniqueValue)) {
-      output.push({ ui, operation });
+      output.push({ ui, operation, bestValue, variable, uuid });
       foundSet.add(uniqueValue);
     }
   }
@@ -73,7 +84,13 @@ export function getStatDisplay(
   options?: {
     onlyNegatives?: boolean;
   }
-): { ui: ReactNode; operation: OperationSelect | null } {
+): {
+  ui: ReactNode;
+  operation: OperationSelect | null;
+  uuid?: string;
+  variable?: Variable;
+  bestValue?: string | number | boolean | AttributeValue | null;
+} {
   const variable = getVariable(variableName);
   if (!variable) return { ui: null, operation: null };
 
@@ -120,6 +137,7 @@ export function getStatDisplay(
     return false;
   };
 
+  let uuid = variableName;
   for (const operation of operations) {
     if (operation.type === 'adjValue' || operation.type === 'setValue') {
       if (operation.data.variable === variableName) {
@@ -127,6 +145,19 @@ export function getStatDisplay(
       }
     } else if (operation.type === 'select') {
       if (operation.data.optionType === 'ADJ_VALUE') {
+        // // If the variable is an attribute and we're selecting any attribute, add it
+        if (
+          operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+          operation.data.optionsFilters?.group === 'ATTRIBUTE' &&
+          variable.type === 'attr'
+        ) {
+          if (!bestValue) {
+            const changed = setBestValue(operation.data.optionsFilters.value);
+            if (changed) bestOperation = operation;
+            uuid = 'ATTRIBUTE-FREE';
+          }
+        }
+
         // Check all the options in the select
         for (const option of (operation.data.optionsPredefined ??
           []) as OperationSelectOptionAdjValue[]) {
@@ -135,15 +166,11 @@ export function getStatDisplay(
             if (changed) bestOperation = operation;
           }
         }
-
-        // If the variable is an attribute and we're selecting any attribute, add it
-        if (
-          operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
-          operation.data.optionsFilters?.group === 'ATTRIBUTE' &&
-          variable.type === 'attr'
-        ) {
-          const changed = setBestValue(operation.data.optionsFilters.value);
-          if (changed) bestOperation = operation;
+        if ((operation.data.optionsPredefined ?? []).length > 0) {
+          uuid = ((operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[])
+            .map((o) => o.operation.data.variable)
+            .sort()
+            .join('_');
         }
       } else if (operation.data.optionType === 'CUSTOM') {
         // Check all operations in all the options in the select
@@ -158,6 +185,7 @@ export function getStatDisplay(
             }
           }
         }
+        // uuid TODO
       }
     }
   }
@@ -183,6 +211,9 @@ export function getStatDisplay(
   return {
     ui: getDisplay(bestValue, bestOperation, variable, mode, writeDetails),
     operation: bestOperation,
+    variable,
+    bestValue,
+    uuid,
   };
 }
 
@@ -419,6 +450,7 @@ function getVarList(operation: OperationSelect, type: VariableType): string[] {
 function updateCharacter(characterState: CharacterState | undefined, path: string, value: string) {
   if (!characterState) return;
   const [character, setCharacter] = characterState;
+  console.log('updateCharacter', path, value)
   setCharacter((prev) => {
     if (!prev) return prev;
     const newSelections = { ...prev.operation_data?.selections };

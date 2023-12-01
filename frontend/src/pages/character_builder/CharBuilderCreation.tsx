@@ -96,10 +96,13 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
 
   const [operationResults, setOperationResults] = useState<any>();
 
+  const executingOperations = useRef(false);
   useEffect(() => {
-    if (!character) return;
+    if (!character || executingOperations.current) return;
+    executingOperations.current = true;
     executeCharacterOperations(character, props.content).then((results) => {
       setOperationResults(results);
+      executingOperations.current = false;
     });
   }, [character]);
 
@@ -817,12 +820,12 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   if (!props.operationResults) return null;
 
   // Only display the operation results that aren't already displayed in the class overview
-  let classOperationResults = props.operationResults?.results?.classResults ?? [];
+  let classOperationResults = props.operationResults?.classResults ?? [];
   const classInitialOverviewDisplay = class_
     ? convertClassOperationsIntoUI(
         class_,
         'READ/WRITE',
-        props.operationResults?.results?.classResults ?? [],
+        props.operationResults?.classResults ?? [],
         [character, setCharacter]
       )
     : null;
@@ -839,6 +842,8 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
         displayRecords.push(value);
       }
     }
+
+    console.log(classOperationResults, displayRecords);
 
     // Filter operation results
     classOperationResults = classOperationResults.filter((result: OperationResult) => {
@@ -858,7 +863,8 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   const heritages = (props.content.abilityBlocks ?? []).filter(
     (block) => block.type === 'heritage' && block.traits?.includes(ancestry?.trait_id ?? -1)
   );
-  let ancestryOperationResults = props.operationResults?.results?.ancestryResults ?? [];
+  let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
+  console.log(ancestryOperationResults);
   const ancestryInitialOverviewDisplay = ancestry
     ? convertAncestryOperationsIntoUI(
         ancestry,
@@ -866,7 +872,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
         senses,
         languages,
         'READ/WRITE',
-        props.operationResults?.results?.ancestryResults ?? [],
+        props.operationResults?.ancestryResults ?? [],
         [character, setCharacter],
         openDrawer,
       )
@@ -926,7 +932,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
                     languages={languages}
                     heritages={heritages}
                     mode='READ/WRITE'
-                    operationResults={props.operationResults.results.ancestryResults}
+                    operationResults={props.operationResults.ancestryResults}
                   />
                 )}
               </Box>
@@ -960,7 +966,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
           <Accordion.Panel ref={backgroundChoiceCountRef}>
             <DisplayOperationResult
               source={undefined}
-              results={props.operationResults.results.backgroundResults}
+              results={props.operationResults.backgroundResults}
               onChange={(path, value) => {
                 console.log(path, value);
               }}
@@ -983,7 +989,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
                   <ClassInitialOverview
                     class_={class_}
                     mode='READ/WRITE'
-                    operationResults={props.operationResults.results.classResults}
+                    operationResults={props.operationResults.classResults}
                   />
                 )}
               </Box>
@@ -1000,7 +1006,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
-        {props.operationResults.results.contentSourceResults.length > 0 && (
+        {props.operationResults.contentSourceResults.length > 0 && (
           <Accordion.Item value='books'>
             <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
               <Group gap={5}>
@@ -1011,7 +1017,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
               </Group>
             </Accordion.Control>
             <Accordion.Panel ref={booksChoiceCountRef}>
-              {props.operationResults.results.contentSourceResults.map((s: any, index: number) => (
+              {props.operationResults.contentSourceResults.map((s: any, index: number) => (
                 <DisplayOperationResult
                   key={index}
                   source={s.baseSource}
@@ -1024,7 +1030,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             </Accordion.Panel>
           </Accordion.Item>
         )}
-        {props.operationResults.results.itemResults.length > 0 && (
+        {props.operationResults.itemResults.length > 0 && (
           <Accordion.Item value='items'>
             <Accordion.Control icon={getIconFromContentType('item', '1rem')}>
               <Group gap={5}>
@@ -1037,7 +1043,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             <Accordion.Panel ref={itemsChoiceCountRef}></Accordion.Panel>
           </Accordion.Item>
         )}
-        {props.operationResults.results.characterResults.length > 0 && (
+        {props.operationResults.characterResults.length > 0 && (
           <Accordion.Item value='custom'>
             <Accordion.Control icon={<IconPuzzle size='1rem' />}>
               <Group gap={5}>
@@ -1052,7 +1058,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             <Accordion.Panel ref={customChoiceCountRef}>
               <DisplayOperationResult
                 source={undefined}
-                results={props.operationResults.results.characterResults}
+                results={props.operationResults.characterResults}
                 onChange={(path, value) => {
                   console.log(path, value);
                 }}

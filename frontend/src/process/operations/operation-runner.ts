@@ -84,6 +84,7 @@ export type OperationOptions = {
   doOnlyValueCreation?: boolean;
   doConditionals?: boolean;
   doOnlyConditionals?: boolean;
+  onlyConditionalsWhitelist?: string[];
 };
 
 export type OperationResult = {
@@ -117,7 +118,12 @@ export async function runOperations(
       if (operation.type === 'conditional') {
         return await runConditional(selectionNode, operation, options);
       }
-      return null;
+
+      if(options.onlyConditionalsWhitelist?.includes(operation.id)) {
+        // Continue to run the operation
+      } else {
+        return null;
+      }
     }
 
     if (options?.doConditionals && operation.type === 'conditional') {
@@ -140,7 +146,9 @@ export async function runOperations(
       return await runRemoveSpell(operation);
     } else if (operation.type === 'select') {
       const subNode = selectionNode?.children[operation.id];
-      return await runSelect(subNode, operation, options);
+      const r = await runSelect(subNode, operation, options);
+      console.log(r)
+      return r;
     }
     return null;
   };
@@ -162,6 +170,8 @@ async function runSelect(
 ): Promise<OperationResult> {
   let optionList: ObjectWithUUID[] = [];
 
+  console.log(operation, 'wdwddw');
+
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
     optionList = await determineFilteredSelectionList(operation.id, operation.data.optionsFilters);
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
@@ -170,6 +180,8 @@ async function runSelect(
       operation.data.optionsPredefined
     );
   }
+
+  console.log(operation.data.title, optionList);
 
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
@@ -331,6 +343,7 @@ async function runGiveAbilityBlock(
 
 async function runGiveLanguage(operation: OperationGiveLanguage): Promise<OperationResult> {
   const language = await fetchContentById<Language>('language', operation.data.languageId);
+  console.log(language, operation.data.languageId, operation, 'wdwdwddddwd');
   if (!language) {
     throwError('Language not found');
     return null;

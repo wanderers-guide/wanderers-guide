@@ -57,6 +57,7 @@ import {
   getAllAttributeVariables,
   getAllSaveVariables,
   getAllSkillVariables,
+  getVariable,
 } from '@variables/variable-manager';
 import { compactLabels } from '@variables/variable-utils';
 import _ from 'lodash';
@@ -592,8 +593,6 @@ export function convertAncestryOperationsIntoUI(
     { onlyNegatives: true }
   );
 
-  console.log(flawAttributes);
-
   const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', ancestryOperations, MODE, writeDetails);
 
   const size = getStatDisplay('SIZE', ancestryOperations, MODE, writeDetails);
@@ -625,6 +624,7 @@ export function convertAncestryOperationsIntoUI(
   } else if (MODE === 'READ/WRITE') {
     const languageOps = addedAncestryLanguages(ancestry);
     for (const op of languageOps) {
+      console.log(op);
       const result = getDisplay('T', op, undefined, 'READ/WRITE', writeDetails);
       additionalLanguages.push({
         ui: result,
@@ -710,8 +710,6 @@ export function convertAncestryOperationsIntoUI(
       }
     }
   }
-
-  console.log(senses, allSenses);
 
   return {
     boostAttributes,

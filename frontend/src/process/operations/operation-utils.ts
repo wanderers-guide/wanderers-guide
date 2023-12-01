@@ -271,6 +271,8 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
     //languages = languages.filter((language) => language.core === filters.core);
   }
 
+  console.log(languages, filters)
+
   return languages.map((language) => {
     return {
       ...language,

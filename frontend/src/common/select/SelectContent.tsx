@@ -453,14 +453,15 @@ function SelectionOptions(props: {
     options = options.filter((option) => option.content_source_id === props.sourceId);
   }
 
-  console.log(props.overrideOptions);
-
   // Filter by ability block type
   if (props.abilityBlockType) {
     options = options.filter((option) => option.type === props.abilityBlockType);
+  } else {
+    // An ability block type is required for ability blocks
+    if (props.type === 'ability-block' && (!props.overrideOptions || props.overrideOptions.length === 0)) {
+      options = [];
+    }
   }
-
-  console.log(props.overrideOptions);
 
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
@@ -469,7 +470,6 @@ function SelectionOptions(props: {
     search.current.addIndex('name');
     search.current.addIndex('description');
     search.current.addDocuments(options);
-    console.log('search', options);
   }, [data]);
   let filteredOptions = props.searchQuery
     ? (search.current.search(props.searchQuery) as Record<string, any>[])
@@ -906,7 +906,6 @@ export function GenericSelectionOption(props: {
   const variable = getVariable(props.option.variable);
 
   let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value?.value;
-  console.log('currentProf', currentProf);
   let nextProf =
     props.skillAdjustment === '1'
       ? nextProficiencyType(currentProf ?? 'U')
@@ -916,7 +915,6 @@ export function GenericSelectionOption(props: {
 
   // If selected already, show the previous data to reflect the change
   if (props.selected && currentProf) {
-    console.log('selected', currentProf, nextProf, props.skillAdjustment);
     nextProf = currentProf;
     currentProf =
       props.skillAdjustment === '1'
@@ -928,13 +926,12 @@ export function GenericSelectionOption(props: {
 
   const alreadyProficient =
     !props.selected &&
+    currentProf &&
     (currentProf === props.skillAdjustment ||
       (isProficiencyType(props.skillAdjustment) &&
         maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
 
   const disabled = alreadyProficient;
-
-  console.log(currentProf, nextProf, props.skillAdjustment);
 
   return (
     <Group
