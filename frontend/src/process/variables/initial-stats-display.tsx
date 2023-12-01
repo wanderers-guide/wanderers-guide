@@ -450,7 +450,6 @@ function getVarList(operation: OperationSelect, type: VariableType): string[] {
 function updateCharacter(characterState: CharacterState | undefined, path: string, value: string) {
   if (!characterState) return;
   const [character, setCharacter] = characterState;
-  console.log('updateCharacter', path, value)
   setCharacter((prev) => {
     if (!prev) return prev;
     const newSelections = { ...prev.operation_data?.selections };

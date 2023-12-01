@@ -73,8 +73,6 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
     );
   }
 
-  console.log(spell.heightened)
-
   const CR = [];
   const cast = spell?.cast ?? '';
   if (cast && !isActionCost(cast)) {
@@ -175,7 +173,6 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
   }
 
   const heightened = spell.heightened;
-  console.log(heightened)
 
   return (
     <Box>

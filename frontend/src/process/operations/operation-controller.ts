@@ -200,6 +200,7 @@ export async function executeCharacterOperations(character: Character, content: 
     ],
   });
 
+  console.log(mergeOperationResults(results, conditionalResults));
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }
 

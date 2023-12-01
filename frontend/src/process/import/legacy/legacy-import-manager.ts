@@ -47,8 +47,6 @@ export async function importContent(type: ContentType, abilityBlockType?: Abilit
     for (const trait of traits) {
       const foundTrait = await fetchTraitByName(trait.name);
 
-      console.log(foundTrait);
-
       if (foundTrait) {
         // Update description and importance
         const result = await makeRequest<Trait>('create-trait', {

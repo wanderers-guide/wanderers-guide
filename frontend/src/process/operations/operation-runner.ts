@@ -146,9 +146,7 @@ export async function runOperations(
       return await runRemoveSpell(operation);
     } else if (operation.type === 'select') {
       const subNode = selectionNode?.children[operation.id];
-      const r = await runSelect(subNode, operation, options);
-      console.log(r)
-      return r;
+      return await runSelect(subNode, operation, options);
     }
     return null;
   };
@@ -170,8 +168,6 @@ async function runSelect(
 ): Promise<OperationResult> {
   let optionList: ObjectWithUUID[] = [];
 
-  console.log(operation, 'wdwddw');
-
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
     optionList = await determineFilteredSelectionList(operation.id, operation.data.optionsFilters);
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
@@ -180,8 +176,6 @@ async function runSelect(
       operation.data.optionsPredefined
     );
   }
-
-  console.log(operation.data.title, optionList);
 
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
@@ -217,7 +211,6 @@ async function runSelect(
       }
     }
   }
-  console.log(optionList[0]);
   const skillAdjustment =
     optionList.length > 0 && foundSkills.length === optionList.length
       ? optionList[0]?.value
@@ -267,7 +260,6 @@ async function updateVariables(operation: OperationSelect, selectedOption: Objec
     adjVariable('SPELL_IDS', `${selectedOption.id}`);
     adjVariable('SPELL_NAMES', selectedOption.name);
   } else if (operation.data.optionType === 'ADJ_VALUE') {
-    console.log('Adj value', selectedOption);
     adjVariable(selectedOption.variable, selectedOption.value);
   } else if (operation.data.optionType === 'CUSTOM') {
     // Doesn't inherently do anything, just runs its operations
@@ -343,7 +335,6 @@ async function runGiveAbilityBlock(
 
 async function runGiveLanguage(operation: OperationGiveLanguage): Promise<OperationResult> {
   const language = await fetchContentById<Language>('language', operation.data.languageId);
-  console.log(language, operation.data.languageId, operation, 'wdwdwddddwd');
   if (!language) {
     throwError('Language not found');
     return null;

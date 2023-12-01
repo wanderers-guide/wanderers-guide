@@ -128,8 +128,6 @@ export function OperationSection(props: {
   const [operations, setOperations] = useState<Operation[]>(props.value ?? []);
   const selectRef = useRef<HTMLInputElement>(null);
 
-  console.log(operations);
-
   useDidUpdate(() => {
     setOperations(props.value ?? []);
   }, [props.value]);

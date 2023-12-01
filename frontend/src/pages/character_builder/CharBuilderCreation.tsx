@@ -843,8 +843,6 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
       }
     }
 
-    console.log(classOperationResults, displayRecords);
-
     // Filter operation results
     classOperationResults = classOperationResults.filter((result: OperationResult) => {
       return !displayRecords.find(
@@ -864,7 +862,6 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
     (block) => block.type === 'heritage' && block.traits?.includes(ancestry?.trait_id ?? -1)
   );
   let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
-  console.log(ancestryOperationResults);
   const ancestryInitialOverviewDisplay = ancestry
     ? convertAncestryOperationsIntoUI(
         ancestry,

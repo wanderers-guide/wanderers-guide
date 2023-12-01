@@ -19,7 +19,6 @@ function downloadObjectAsJson(object: Record<string, any>, fileName: string) {
   downloadAnchorNode.setAttribute('href', dataStr);
   downloadAnchorNode.setAttribute('download', fileName + '.json');
   document.body.appendChild(downloadAnchorNode); // required for firefox
-  console.log('got here')
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
 }

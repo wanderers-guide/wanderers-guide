@@ -126,7 +126,6 @@ export default function CharacterBuilderPage() {
   const [debouncedCharacter] = useDebouncedValue(character, 200);
   useDidUpdate(() => {
     if (!debouncedCharacter) return;
-    console.log(debouncedCharacter);
     mutateCharacter({
       level: debouncedCharacter.level,
       name: debouncedCharacter.name,
@@ -149,7 +148,6 @@ export default function CharacterBuilderPage() {
         id: characterId,
         ...data,
       });
-      console.log(response);
       return response ? response.status === 'success' : false;
     },
     {
@@ -158,8 +156,6 @@ export default function CharacterBuilderPage() {
       },
     }
   );
-
-  console.log(character, resultCharacter, !isLoading);
 
   return (
     <Center>

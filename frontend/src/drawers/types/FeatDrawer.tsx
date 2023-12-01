@@ -80,8 +80,6 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
     feat.requirements ||
     feat.access;
 
-    console.log(feat.description);
-
   return (
     <Box>
       {feat.meta_data?.image_url && (
