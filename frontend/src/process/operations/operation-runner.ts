@@ -287,8 +287,7 @@ async function runGiveAbilityBlock(
     operation.data.abilityBlockId
   );
   if (!abilityBlock) {
-    console.log(abilityBlock);
-    throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    //throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
     return null;
   }
 
@@ -362,7 +361,7 @@ async function runRemoveAbilityBlock(
     operation.data.abilityBlockId
   );
   if (!abilityBlock) {
-    throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    //throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
     return null;
   }
 

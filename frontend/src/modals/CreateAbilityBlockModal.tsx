@@ -37,6 +37,7 @@ import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
 import { fetchContentById, fetchTraits } from '@content/content-store';
+import useRefresh from '@utils/use-refresh';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -47,6 +48,8 @@ export function CreateAbilityBlockModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+
+  const [displayDescription, refreshDisplayDescription] = useRefresh();
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
@@ -72,6 +75,7 @@ export function CreateAbilityBlockModal(props: {
       form.reset();
       setTraits(await fetchTraits(abilityBlock.traits));
       setMetaData(abilityBlock.meta_data ?? {});
+      refreshDisplayDescription();
 
       return abilityBlock;
     },
@@ -109,7 +113,7 @@ export function CreateAbilityBlockModal(props: {
     } satisfies AbilityBlock,
 
     validate: {
-      level: (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level'),
+      level: props.type === 'feat' ? (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level') : undefined,
       rarity: (value) =>
         ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
     },
@@ -174,13 +178,15 @@ export function CreateAbilityBlockModal(props: {
                 <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
               </Group>
 
-              <Select
-                label='Level'
-                required
-                data={Array.from({ length: 20 }, (_, i) => (i + 1).toString())}
-                w={70}
-                {...form.getInputProps('level')}
-              />
+              {props.type === 'feat' && (
+                <Select
+                  label='Level'
+                  required
+                  data={Array.from({ length: 20 }, (_, i) => (i + 1).toString())}
+                  w={70}
+                  {...form.getInputProps('level')}
+                />
+              )}
             </Group>
 
             <Group wrap='nowrap' align='flex-start'>
@@ -319,7 +325,7 @@ export function CreateAbilityBlockModal(props: {
               </Stack>
             </Collapse>
 
-            {(description || form.values.description) && (
+            {displayDescription && (
               <RichTextInput
                 label='Description'
                 required

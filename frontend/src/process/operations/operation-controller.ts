@@ -243,18 +243,17 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
   if (intValue <= 0) return operations;
   for (let i = 0; i < intValue; i++) {
     operations.push({
-      id: `720d2fe6-f042-4353-8313-1293375b1301-${i}`,
+      id: `957ee14b-c6dc-44eb-881b-e99a1b4e5118-${i}`,
       type: 'select',
       data: {
-        title: 'Select a Skill to be Trained',
+        title: 'Select a Language',
         modeType: 'FILTERED',
-        optionType: 'ADJ_VALUE',
+        optionType: 'LANGUAGE',
         optionsPredefined: [],
         optionsFilters: {
-          id: `f8703468-ab35-4f84-8dc7-7c48556258e3-${i}`,
-          type: 'ADJ_VALUE',
-          group: 'SKILL',
-          value: 'T',
+          id: `688aa1e3-226d-424b-b762-2b3c2bec36c1-${i}`,
+          type: 'LANGUAGE',
+          core: true,
         },
       },
     });

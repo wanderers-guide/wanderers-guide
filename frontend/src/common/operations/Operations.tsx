@@ -310,8 +310,8 @@ export function OperationDisplay(props: {
         <GiveLanguageOperation
           selectedId={opGiveLanguage.data.languageId}
           onSelect={(option) => {
-            opGiveSpell.data.spellId = option.id;
-            props.onChange(_.cloneDeep(opGiveSpell));
+            opGiveLanguage.data.languageId = option.id;
+            props.onChange(_.cloneDeep(opGiveLanguage));
           }}
           onRemove={props.onRemove}
         />

@@ -43,6 +43,8 @@ import { getChoiceCounts } from '@operations/choice-count-tracker';
 import useRefresh from '@utils/use-refresh';
 import { set } from 'lodash';
 import _ from 'lodash';
+import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
+import { drawerState } from '@atoms/navAtoms';
 
 export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -673,8 +675,8 @@ function LevelSection(props: {
 }
 
 function InitialStatsLevelSection(props: { content: ContentPackage; operationResults: any }) {
-
   const [character, setCharacter] = useRecoilState(characterState);
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const class_ = props.content.classes.find(
     (class_) => class_.id === character?.details?.class?.id
@@ -847,6 +849,51 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
     });
   }
 
+  // Only display the operation results that aren't already displayed in the ancestry overview
+  const physicalFeatures = (props.content.abilityBlocks ?? []).filter(
+    (block) => block.type === 'physical-feature'
+  );
+  const senses = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'sense');
+  const languages = (props.content.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
+  const heritages = (props.content.abilityBlocks ?? []).filter(
+    (block) => block.type === 'heritage' && block.traits?.includes(ancestry?.trait_id ?? -1)
+  );
+  let ancestryOperationResults = props.operationResults?.results?.ancestryResults ?? [];
+  const ancestryInitialOverviewDisplay = ancestry
+    ? convertAncestryOperationsIntoUI(
+        ancestry,
+        physicalFeatures,
+        senses,
+        languages,
+        'READ/WRITE',
+        props.operationResults?.results?.ancestryResults ?? [],
+        [character, setCharacter],
+        openDrawer,
+      )
+    : null;
+  if (ancestryInitialOverviewDisplay) {
+    // Filter out operation results that are already displayed in the ancestry overview
+    let displayRecords: {
+      ui: React.ReactNode;
+      operation: OperationSelect | null;
+    }[] = [];
+    for (const value of Object.values(ancestryInitialOverviewDisplay)) {
+      if (Array.isArray(value)) {
+        displayRecords = [...displayRecords, ...value];
+      } else {
+        displayRecords.push(value);
+      }
+    }
+
+    // Filter operation results
+    ancestryOperationResults = ancestryOperationResults.filter((result: OperationResult) => {
+      return !displayRecords.find(
+        (record) =>
+          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+      );
+    });
+  }
+
   return (
     <>
       <Divider />
@@ -869,13 +916,31 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
             </Group>
           </Accordion.Control>
           <Accordion.Panel ref={ancestryChoiceCountRef}>
-            <DisplayOperationResult
-              source={undefined}
-              results={props.operationResults.results.ancestryResults}
-              onChange={(path, value) => {
-                console.log(path, value);
-              }}
-            />
+            <Stack>
+              <Box>
+                {ancestry && (
+                  <AncestryInitialOverview
+                    ancestry={ancestry}
+                    physicalFeatures={physicalFeatures}
+                    senses={senses}
+                    languages={languages}
+                    heritages={heritages}
+                    mode='READ/WRITE'
+                    operationResults={props.operationResults.results.ancestryResults}
+                  />
+                )}
+              </Box>
+
+              <Box>
+                <DisplayOperationResult
+                  source={undefined}
+                  results={ancestryOperationResults}
+                  onChange={(path, value) => {
+                    saveSelectionChange(`ancestry_${path}`, value);
+                  }}
+                />
+              </Box>
+            </Stack>
           </Accordion.Panel>
         </Accordion.Item>
         <Accordion.Item value='background'>
@@ -928,7 +993,6 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
                   source={undefined}
                   results={classOperationResults}
                   onChange={(path, value) => {
-                    console.log(`Path: ${path}`, `Value: ${value}`);
                     saveSelectionChange(`class_${path}`, value);
                   }}
                 />

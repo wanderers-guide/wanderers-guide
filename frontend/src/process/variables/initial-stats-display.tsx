@@ -4,12 +4,19 @@ import {
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
 } from '@typing/operations';
-import { ReactNode } from 'react';
-import { getVariable } from './variable-manager';
+import { ReactElement, ReactNode } from 'react';
+import { getAllAttributeVariables, getVariable } from './variable-manager';
 import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
-import { isAttribute, isProficiencyType, maxProficiencyType, proficiencyTypeToLabel, variableNameToLabel, variableToLabel } from './variable-utils';
+import {
+  isAttribute,
+  isProficiencyType,
+  maxProficiencyType,
+  proficiencyTypeToLabel,
+  variableNameToLabel,
+  variableToLabel,
+} from './variable-utils';
 import _ from 'lodash';
-import { listToLabel } from '@utils/strings';
+import { listToLabel, toLabel } from '@utils/strings';
 import { SelectContentButton } from '@common/select/SelectContent';
 import { OperationResult } from '@operations/operation-runner';
 import { SetterOrUpdater } from 'recoil';
@@ -26,21 +33,25 @@ export function getStatBlockDisplay(
     operationResults: OperationResult[];
     characterState: CharacterState;
     primarySource: string;
+  },
+  options?: {
+    onlyNegatives?: boolean;
   }
 ) {
   let output: { ui: ReactNode; operation: OperationSelect | null }[] = [];
   const foundSet: Set<string> = new Set();
 
   for (const variableName of variableNames) {
-    const { ui, operation } = getStatDisplay(variableName, operations, mode, writeDetails);
-    if (ui && !foundSet.has(ui.toString())) {
+    const { ui, operation } = getStatDisplay(variableName, operations, mode, writeDetails, options);
+    let uniqueValue = variableName;
+    console.log(ui);
+    if (ui && !foundSet.has(uniqueValue)) {
       output.push({ ui, operation });
-      foundSet.add(ui.toString());
+      foundSet.add(uniqueValue);
     }
   }
   return output;
 }
-
 
 /**
  * Gives a UI display for the given variable. If the variable is a selection and in READ/WRITE mode,
@@ -58,6 +69,9 @@ export function getStatDisplay(
     operationResults: OperationResult[];
     characterState: CharacterState;
     primarySource: string;
+  },
+  options?: {
+    onlyNegatives?: boolean;
   }
 ): { ui: ReactNode; operation: OperationSelect | null } {
   const variable = getVariable(variableName);
@@ -121,6 +135,16 @@ export function getStatDisplay(
             if (changed) bestOperation = operation;
           }
         }
+
+        // If the variable is an attribute and we're selecting any attribute, add it
+        if (
+          operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+          operation.data.optionsFilters?.group === 'ATTRIBUTE' &&
+          variable.type === 'attr'
+        ) {
+          const changed = setBestValue(operation.data.optionsFilters.value);
+          if (changed) bestOperation = operation;
+        }
       } else if (operation.data.optionType === 'CUSTOM') {
         // Check all operations in all the options in the select
         for (const option of (operation.data.optionsPredefined ??
@@ -138,6 +162,24 @@ export function getStatDisplay(
     }
   }
 
+  if (_.isNumber(bestValue)) {
+    if (options?.onlyNegatives) {
+      if (bestValue >= 0) {
+        return {
+          ui: null,
+          operation: null,
+        };
+      }
+    } else {
+      if (bestValue < 0) {
+        return {
+          ui: null,
+          operation: null,
+        };
+      }
+    }
+  }
+
   return {
     ui: getDisplay(bestValue, bestOperation, variable, mode, writeDetails),
     operation: bestOperation,
@@ -150,9 +192,9 @@ export function getDisplay(
   variable: Variable | undefined,
   mode: 'READ' | 'READ/WRITE',
   writeDetails?: {
-    operationResults: OperationResult[],
-    characterState: CharacterState,
-    primarySource: string,
+    operationResults: OperationResult[];
+    characterState: CharacterState;
+    primarySource: string;
   }
 ): ReactNode {
   if (value === null) return null;
@@ -187,11 +229,6 @@ export function getDisplay(
               options={{
                 overrideOptions: result?.selection?.options,
                 overrideLabel: result?.selection?.title || 'Select an Option',
-                abilityBlockType:
-                  (result?.selection?.options ?? []).length > 0
-                    ? result?.selection?.options[0].type
-                    : undefined,
-                skillAdjustment: result?.selection?.skillAdjustment,
               }}
             />
           </Box>
@@ -294,17 +331,54 @@ export function getDisplay(
     }
   }
 
+  // Handle strings
+  if (variable?.type === 'str' || variable?.type === 'list-str') {
+    if (operation) {
+      return (
+        <Box py={5}>
+          <SelectContentButton
+            type={'ability-block'}
+            onClick={(option) => {
+              updateCharacter(
+                writeDetails?.characterState,
+                `${writeDetails?.primarySource}_${operation.id}`,
+                option._select_uuid
+              );
+            }}
+            onClear={() => {
+              updateCharacter(
+                writeDetails?.characterState,
+                `${writeDetails?.primarySource}_${operation.id}`,
+                ''
+              );
+            }}
+            selectedId={result?.result?.source?.id}
+            options={{
+              overrideOptions: result?.selection?.options,
+              overrideLabel: result?.selection?.title || 'Select an Option',
+              abilityBlockType:
+                (result?.selection?.options ?? []).length > 0
+                  ? result?.selection?.options[0].type
+                  : undefined,
+              skillAdjustment: result?.selection?.skillAdjustment,
+            }}
+          />
+        </Box>
+      );
+    } else {
+      return <>{toLabel(value as string)}</>;
+    }
+  }
+
   return null;
 }
 
-
 /**
  * Gets a list of all the variables that are being changed by this select operation.
- * @param operation 
+ * @param operation
  * @returns - List of labels of variables
  */
 function getVarList(operation: OperationSelect, type: VariableType): string[] {
-
   const labels: string[] = [];
 
   if (operation.data.optionType === 'ADJ_VALUE') {
@@ -314,6 +388,16 @@ function getVarList(operation: OperationSelect, type: VariableType): string[] {
       if (variable && variable.type === type) {
         labels.push(variableToLabel(variable));
       }
+    }
+    if (
+      operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
+      operation.data.optionsFilters?.group === 'ATTRIBUTE' &&
+      type === 'attr'
+    ) {
+      // for (const variable of getAllAttributeVariables()) {
+      //   labels.push(variableToLabel(variable));
+      // }
+      labels.push('Free');
     }
   } else if (operation.data.optionType === 'CUSTOM') {
     for (const option of (operation.data.optionsPredefined ??

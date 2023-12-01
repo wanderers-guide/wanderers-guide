@@ -123,7 +123,9 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
   const res = await fetch(jsonUrl);
   const json = (await res.json()) as Record<string, any>;
 
-  const foundryId = (json.system?.source?.value || json.system?.details?.source?.value) as string;
+  const foundryId = (json.system?.publication?.title ||
+    json.system?.source?.value ||
+    json.system?.details?.source?.value) as string;
   const source = await findContentSource(undefined, foundryId);
   if (!source) {
     // Increase missing source count

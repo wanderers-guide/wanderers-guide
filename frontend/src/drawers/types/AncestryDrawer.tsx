@@ -4,7 +4,7 @@ import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { FeatSelectionOption } from '@common/select/SelectContent';
+import { FeatSelectionOption, HeritageSelectionOption } from '@common/select/SelectContent';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
@@ -128,12 +128,9 @@ export function AncestryDrawerContent(props: {
     'level'
   );
   const physicalFeatures = (data?.abilityBlocks ?? []).filter(
-    (block) =>
-      block.type === 'physical-feature' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
+    (block) => block.type === 'physical-feature'
   );
-  const senses = (data?.abilityBlocks ?? []).filter(
-    (block) => block.type === 'sense' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
-  );
+  const senses = (data?.abilityBlocks ?? []).filter((block) => block.type === 'sense');
   const languages = (data?.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
 
   const featSections = Object.keys(feats).map((level) => (
@@ -193,7 +190,45 @@ export function AncestryDrawerContent(props: {
       />
       <Box>
         <Title order={3}>Heritages</Title>
-        <Divider />
+        <Accordion
+          variant='separated'
+          // Save opened state in drawer metadata (so it persists when opening links and going back)
+          defaultValue={getMetadataOpenedDict().heritages_opened}
+          onChange={(value) => {
+            props.onMetadataChange?.({
+              heritages_opened: value ?? '',
+            });
+          }}
+        >
+          <Accordion.Item value={'heritages'}>
+            <Accordion.Control>View Options</Accordion.Control>
+            <Accordion.Panel
+              styles={{
+                content: {
+                  padding: 0,
+                },
+              }}
+            >
+              <Stack gap={0}>
+                <Divider color='dark.6' />
+                {heritages.map((heritage, index) => (
+                  <HeritageSelectionOption
+                    key={index}
+                    heritage={heritage}
+                    onClick={() => {
+                      props.onMetadataChange?.();
+                      openDrawer({
+                        type: 'heritage',
+                        data: { id: heritage.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
       </Box>
 
       <Box>
@@ -228,6 +263,7 @@ export function AncestryInitialOverview(props: {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
   const charState = useRecoilState(characterState);
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // Reading thru operations to get display UI
   const MODE = props.mode;
@@ -235,11 +271,11 @@ export function AncestryInitialOverview(props: {
     props.ancestry,
     props.physicalFeatures,
     props.senses,
-    props.heritages,
     props.languages,
     props.mode,
     props.operationResults ?? [],
-    charState
+    charState,
+    openDrawer
   );
 
   return (
@@ -428,40 +464,44 @@ export function AncestryInitialOverview(props: {
           </Text>
         </Paper>
       </Group>
-      <Box>
-        <Divider
-          px='xs'
-          label={
-            <Group gap={5}>
-              <IconChevronsUp size='0.8rem' />
-              <Box>Attribute Boosts</Box>
-            </Group>
-          }
-          labelPosition='left'
-        />
-        {display.attributes.map((attribute, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-            {attribute.ui}
-          </IndentedText>
-        ))}
-      </Box>
-      <Box>
-        <Divider
-          px='xs'
-          label={
-            <Group gap={5}>
-              <IconChevronsDown size='0.8rem' />
-              <Box>Attribute Flaws</Box>
-            </Group>
-          }
-          labelPosition='left'
-        />
-        {display.attributes.map((skill, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
-            {skill.ui}
-          </IndentedText>
-        ))}
-      </Box>
+      {display.boostAttributes.length > 0 && (
+        <Box>
+          <Divider
+            px='xs'
+            label={
+              <Group gap={5}>
+                <IconChevronsUp size='0.8rem' />
+                <Box>Attribute Boosts</Box>
+              </Group>
+            }
+            labelPosition='left'
+          />
+          {display.boostAttributes.map((attribute, index) => (
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+              {attribute.ui}
+            </IndentedText>
+          ))}
+        </Box>
+      )}
+      {display.flawAttributes.length > 0 && (
+        <Box>
+          <Divider
+            px='xs'
+            label={
+              <Group gap={5}>
+                <IconChevronsDown size='0.8rem' />
+                <Box>Attribute Flaws</Box>
+              </Group>
+            }
+            labelPosition='left'
+          />
+          {display.flawAttributes.map((skill, index) => (
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+              {skill.ui}
+            </IndentedText>
+          ))}
+        </Box>
+      )}
       <Box>
         <Divider
           px='xs'
@@ -516,11 +556,15 @@ export function convertAncestryOperationsIntoUI(
   ancestry: Ancestry,
   allPhysicalFeatures: AbilityBlock[],
   allSenses: AbilityBlock[],
-  allHeritages: AbilityBlock[],
   allLanguages: Language[],
   mode: 'READ' | 'READ/WRITE',
   operationResults: OperationResult[],
-  charState: [Character | null, SetterOrUpdater<Character | null>]
+  charState: [Character | null, SetterOrUpdater<Character | null>],
+  openDrawer: SetterOrUpdater<{
+    type: DrawerType;
+    data: any;
+    extra?: any;
+  } | null>
 ) {
   const ancestryOperations = ancestry.operations ?? [];
   const MODE = mode;
@@ -533,20 +577,37 @@ export function convertAncestryOperationsIntoUI(
         }
       : undefined;
 
-  const attributes = getStatBlockDisplay(
+  const boostAttributes = getStatBlockDisplay(
     getAllAttributeVariables().map((v) => v.name),
     ancestryOperations,
     MODE,
     writeDetails
   );
 
+  const flawAttributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    ancestryOperations,
+    MODE,
+    writeDetails,
+    { onlyNegatives: true }
+  );
+
+  console.log(flawAttributes);
+
   const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', ancestryOperations, MODE, writeDetails);
 
   const size = getStatDisplay('SIZE', ancestryOperations, MODE, writeDetails);
   const speed = getStatDisplay('SPEED', ancestryOperations, MODE, writeDetails);
 
-  const coreLanguages = getStatDisplay('CORE_LANGUAGE_NAMES', ancestryOperations, MODE, writeDetails);
-  console.log(coreLanguages);
+  let coreLanguages = [];
+  for (const op of ancestryOperations) {
+    if (op.type === 'setValue') {
+      try {
+        coreLanguages = JSON.parse(op.data.value as string);
+      } catch (e) {}
+    }
+  }
+
   let additionalLanguages = [];
   if (MODE === 'READ') {
     additionalLanguages = [
@@ -554,8 +615,8 @@ export function convertAncestryOperationsIntoUI(
         ui: (
           <>
             Additional languages equal to your Intelligence modifier (if it's positive). Choose from{' '}
-            {[].join(', ')}, and any other languages to which you have access (such as the languages
-            prevalent in your region).
+            {coreLanguages.join(', ')}, and any other languages to which you have access (such as
+            the languages prevalent in your region).
           </>
         ),
         operation: null,
@@ -578,7 +639,20 @@ export function convertAncestryOperationsIntoUI(
       const lang = allLanguages.find((l) => l.id === op.data.languageId);
       if (lang) {
         languages.push({
-          ui: <>{lang.name}</>,
+          ui: (
+            <Anchor
+              fz='sm'
+              onClick={() => {
+                openDrawer({
+                  type: 'language',
+                  data: { id: lang.id },
+                  extra: { addToHistory: true },
+                });
+              }}
+            >
+              {lang.name}
+            </Anchor>
+          ),
           operation: null,
         });
       }
@@ -591,7 +665,20 @@ export function convertAncestryOperationsIntoUI(
       const feature = allPhysicalFeatures.find((l) => l.id === op.data.abilityBlockId);
       if (feature) {
         physicalFeatures.push({
-          ui: <>{feature.name}</>,
+          ui: (
+            <Anchor
+              fz='sm'
+              onClick={() => {
+                openDrawer({
+                  type: 'physical-feature',
+                  data: { id: feature.id },
+                  extra: { addToHistory: true },
+                });
+              }}
+            >
+              {feature.name}
+            </Anchor>
+          ),
           operation: null,
         });
       }
@@ -604,15 +691,31 @@ export function convertAncestryOperationsIntoUI(
       const sense = allSenses.find((l) => l.id === op.data.abilityBlockId);
       if (sense) {
         senses.push({
-          ui: <>{sense.name}</>,
+          ui: (
+            <Anchor
+              fz='sm'
+              onClick={() => {
+                openDrawer({
+                  type: 'sense',
+                  data: { id: sense.id },
+                  extra: { addToHistory: true },
+                });
+              }}
+            >
+              {sense.name}
+            </Anchor>
+          ),
           operation: null,
         });
       }
     }
   }
 
+  console.log(senses, allSenses);
+
   return {
-    attributes,
+    boostAttributes,
+    flawAttributes,
     ancestryHp,
     size,
     speed,

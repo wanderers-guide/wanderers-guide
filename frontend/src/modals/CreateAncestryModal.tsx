@@ -26,7 +26,7 @@ import {
 } from '@mantine/core';
 import _, { set } from 'lodash';
 import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, Class, Rarity, Spell, Trait } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, Ancestry, Rarity, Spell, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
@@ -42,10 +42,10 @@ import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
 import { fetchContentById } from '@content/content-store';
 
-export function CreateClassModal(props: {
+export function CreateAncestryModal(props: {
   opened: boolean;
   editId?: number;
-  onComplete: (class_: Class) => void;
+  onComplete: (ancestry: Ancestry) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
@@ -54,21 +54,21 @@ export function CreateClassModal(props: {
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-class-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-ancestry-${props.editId}`, { editId: props.editId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { editId }] = queryKey;
 
-      const class_ = await fetchContentById<Class>('class', editId);
-      if (!class_) return null;
+      const ancestry = await fetchContentById<Ancestry>('ancestry', editId);
+      if (!ancestry) return null;
 
       form.setInitialValues({
-        ...class_,
+        ...ancestry,
       });
       form.reset();
 
-      return class_;
+      return ancestry;
     },
     enabled: props.editId !== undefined && props.editId !== -1,
     refetchOnWindowFocus: false,
@@ -84,13 +84,12 @@ export function CreateClassModal(props: {
       name: '',
       rarity: 'COMMON' as Rarity,
       description: '',
-      skill_training_base: 0,
       operations: [] as Operation[] | undefined,
       trait_id: -1,
       artwork_url: '',
       content_source_id: -1,
       version: '1.0',
-    } satisfies Class,
+    } satisfies Ancestry,
 
     validate: {
       rarity: (value) =>
@@ -122,7 +121,7 @@ export function CreateClassModal(props: {
       title={
         <Title order={3}>
           {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
-          {' Class'}
+          {' Ancestry'}
         </Title>
       }
       styles={{
@@ -156,14 +155,6 @@ export function CreateClassModal(props: {
                 {...form.getInputProps('rarity')}
               />
             </Group>
-
-            <NumberInput
-              label='Skill Training Base'
-              placeholder='Number + Int mod skills to be trained in'
-              min={0}
-              max={9}
-              {...form.getInputProps('skill_training_base')}
-            />
 
             <TextInput
               defaultValue={form.values.artwork_url ?? ''}

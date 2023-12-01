@@ -202,6 +202,9 @@ export function setVariable(name: string, value: any) {
   } else if (isVariableBool(variable) && _.isBoolean(value)) {
     variable.value = value;
   } else if (isVariableListStr(variable) && isListStr(value)) {
+    if (_.isString(value)) {
+      value = JSON.parse(value);
+    }
     variable.value = _.uniq(value);
   } else if (isVariableAttr(variable) && isAttributeValue(value)) {
     variable.value.value = value.value;

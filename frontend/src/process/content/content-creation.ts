@@ -1,4 +1,4 @@
-import { AbilityBlock, Background, Class, ContentSource, Creature, Item, Spell } from '@typing/content';
+import { AbilityBlock, Ancestry, Background, Class, ContentSource, Creature, Item, Spell } from '@typing/content';
 import _ from 'lodash';
 import { makeRequest } from '@requests/request-manager';
 
@@ -49,4 +49,11 @@ export async function upsertClass(class_: Class) {
     ...class_,
   });
   return result ? (result === true ? class_ : result) : null;
+}
+
+export async function upsertAncestry(ancestry: Ancestry) {
+  const result = await makeRequest<Ancestry | true>('create-ancestry', {
+    ...ancestry,
+  });
+  return result ? (result === true ? ancestry : result) : null;
 }

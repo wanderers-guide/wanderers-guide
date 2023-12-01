@@ -59,11 +59,12 @@ import { IconEdit, IconPlus, IconSearch } from '@tabler/icons-react';
 import * as JsSearch from 'js-search';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
-import { upsertAbilityBlock, upsertClass, upsertContentSource, upsertSpell } from '@content/content-creation';
+import { upsertAbilityBlock, upsertAncestry, upsertClass, upsertContentSource, upsertSpell } from '@content/content-creation';
 import { showNotification } from '@mantine/notifications';
 import { CreateSpellModal } from './CreateSpellModal';
 import { CreateClassModal } from './CreateClassModal';
 import { fetchContentPackage } from '@content/content-store';
+import { CreateAncestryModal } from './CreateAncestryModal';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -799,6 +800,28 @@ function ContentList<T extends { name: string, level?: number, rank?: number, ty
             }
 
             //clearContent('class', class_.id);
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'ancestry' && openedId && (
+        <CreateAncestryModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (ancestry) => {
+            const result = await upsertAncestry(ancestry);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated ancestry.`,
+                autoClose: 3000,
+              });
+            }
+
+            //clearContent('ancestry', ancestry.id);
             handleReset();
           }}
           onCancel={() => handleReset()}

@@ -429,14 +429,17 @@ function SelectionOptions(props: {
   const { data, isFetching } = useQuery({
     queryKey: [
       `select-content-options-${props.type}`,
-      { sourceId: props.sourceId, abilityBlockType: props.abilityBlockType },
+      { sourceId: props.sourceId },
     ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { sourceId, abilityBlockType }] = queryKey;
+      const [_key, { sourceId }] = queryKey;
       return (
-        (await fetchContentAll(props.type, sourceId === 'all' ? undefined : [sourceId])) ?? null
+        (await fetchContentAll(
+          props.type,
+          sourceId === 'all' || !sourceId ? undefined : [sourceId]
+        )) ?? null
       );
     },
     refetchOnMount: true,
@@ -449,6 +452,15 @@ function SelectionOptions(props: {
   if (props.sourceId !== undefined && props.sourceId !== 'all') {
     options = options.filter((option) => option.content_source_id === props.sourceId);
   }
+
+  console.log(props.overrideOptions);
+
+  // Filter by ability block type
+  if (props.abilityBlockType) {
+    options = options.filter((option) => option.type === props.abilityBlockType);
+  }
+
+  console.log(props.overrideOptions);
 
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
@@ -666,6 +678,7 @@ function SelectionOptionsRoot(props: {
               heritage={heritage as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === heritage.id}
+              includeDetails={true}
               includeDelete={props.includeDelete}
               onDelete={props.onDelete}
             />
@@ -1279,6 +1292,7 @@ export function HeritageSelectionOption(props: {
   heritage: AbilityBlock;
   onClick: (heritage: AbilityBlock) => void;
   selected?: boolean;
+  includeDetails?: boolean;
   includeDelete?: boolean;
   onDelete?: (id: number) => void;
 }) {
@@ -1316,23 +1330,27 @@ export function HeritageSelectionOption(props: {
             rarity={props.heritage.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeDelete) && (
+          <Box w={props.includeDelete ? 80 : 50}></Box>
+        )}
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeDelete ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'class-feature', data: { id: props.heritage.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails && (
+        <Button
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: props.includeDelete ? 40 : 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openDrawer({ type: 'heritage', data: { id: props.heritage.id } });
+          }}
+        >
+          Details
+        </Button>
+      )}
       {props.includeDelete && (
         <ActionIcon
           size='compact-xs'

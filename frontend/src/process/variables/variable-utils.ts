@@ -218,7 +218,10 @@ export function isProficiencyType(value?: string): value is ProficiencyType {
 export function isExtendedProficiencyType(value?: string): value is ExtendedProficiencyType {
   return ['U', 'T', 'E', 'M', 'L', '1', '-1'].includes(value ?? '');
 }
-export function isListStr(value?: string[]): value is string[] {
+export function isListStr(value?: string[] | string): value is string[] {
+  if(_.isString(value)) {
+    value = JSON.parse(value);
+  }
   return Array.isArray(value) && value.every((v) => isString(v));
 }
 
