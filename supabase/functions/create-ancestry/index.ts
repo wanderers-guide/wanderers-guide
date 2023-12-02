@@ -1,20 +1,12 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import { connect, fetchData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
 import type { Ancestry, Trait } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let {
-      id,
-      name,
-      rarity,
-      description,
-      operations,
-      artwork_url,
-      content_source_id,
-      version,
-    } = body as Ancestry;
+    let { id, name, rarity, description, operations, artwork_url, content_source_id, version } =
+      body as Ancestry;
 
     let trait_id: number | undefined = undefined;
     if (!id || id === -1) {
@@ -26,6 +18,9 @@ serve(async (req: Request) => {
           name,
           description: `This indicates content from the ${name.toLowerCase()} ancestry.`,
           content_source_id,
+          meta_data: {
+            ancestry_trait: true,
+          },
         }
       );
       if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
@@ -37,6 +32,21 @@ serve(async (req: Request) => {
           message: 'Trait could not be created.',
         };
       }
+    }
+
+    if (name && trait_id === undefined && id && id !== -1) {
+      const ancestries = await fetchData<Ancestry>(client, 'ancestry', [
+        { column: 'id', value: id },
+      ]);
+      const ancestry = ancestries[0];
+
+      name = name.trim();
+      // Update the trait name & description
+      await upsertData<Trait>(client, 'trait', {
+        id: ancestry.trait_id,
+        name: name,
+        description: `This indicates content from the ${name.toLowerCase()} ancestry.`,
+      });
     }
 
     const { procedure, result } = await upsertData<Ancestry>(client, 'ancestry', {

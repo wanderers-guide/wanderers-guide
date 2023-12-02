@@ -4,12 +4,21 @@ import {
   Background,
   Class,
   ContentSource,
+  ContentType,
   Creature,
   Item,
   Spell,
 } from '@typing/content';
 import _ from 'lodash';
 import { makeRequest } from '@requests/request-manager';
+
+export async function deleteContentSource(type: ContentType, id: number) {
+  const result = await makeRequest('delete-content', {
+    id: id,
+    type: type,
+  });
+  return result;
+}
 
 export async function upsertContentSource(contentSource: ContentSource) {
   const result = await makeRequest<ContentSource | true>('create-content-source', {

@@ -204,6 +204,7 @@ export async function insertData<T = Record<string, any>>(
       uuid: uniqueId(
         data.name as string,
         type ? type : tableName,
+        (data.level ?? data.rank ?? 0) as number,
         data.content_source_id as number
       ),
     };

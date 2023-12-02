@@ -60,6 +60,7 @@ import * as JsSearch from 'js-search';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import {
+  deleteContentSource,
   upsertAbilityBlock,
   upsertAncestry,
   upsertBackground,
@@ -70,9 +71,10 @@ import {
 import { showNotification } from '@mantine/notifications';
 import { CreateSpellModal } from './CreateSpellModal';
 import { CreateClassModal } from './CreateClassModal';
-import { fetchContentPackage } from '@content/content-store';
+import { fetchContentPackage, resetContentStore } from '@content/content-store';
 import { CreateAncestryModal } from './CreateAncestryModal';
 import { CreateBackgroundModal } from './CreateBackgroundModal';
+import useRefresh from '@utils/use-refresh';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -88,7 +90,7 @@ export function CreateContentSourceModal(props: {
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
       const content = await fetchContentPackage([props.sourceId], true);
-      const source = content.sources![0];
+      const source = content.sources?.find((i) => i.id === props.sourceId);
       if (!source) return null;
 
       form.setInitialValues({
@@ -658,38 +660,51 @@ function ContentList<
   const queryClient = useQueryClient();
   const [openedId, setOpenedId] = useState<number | undefined>();
 
-  let content = props.content;
-  if (props.abilityBlockType) {
-    content = content.filter((item) => item.type === props.abilityBlockType);
-  }
-
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
   const search = useRef(new JsSearch.Search('id'));
   useEffect(() => {
     if (!props.content) return;
+    initJsSearch();
+  }, [props.content]);
+
+  const initJsSearch = () => {
+    search.current = new JsSearch.Search('id');
     search.current.addIndex('name');
     search.current.addIndex('description');
-    search.current.addDocuments(content);
-  }, [props.content]);
-  content = searchQuery ? (search.current.search(searchQuery) as T[]) : content;
+    search.current.addDocuments(props.content);
+  };
 
-  // Sort by level/rank then name
-  content = content.sort((a, b) => {
-    if (a.level !== undefined && b.level !== undefined) {
-      if (a.level !== b.level) {
-        return a.level - b.level;
-      }
-    } else if (a.rank !== undefined && b.rank !== undefined) {
-      if (a.rank !== b.rank) {
-        return a.rank - b.rank;
-      }
+  const getContent = () => {
+    let content = props.content;
+    if (props.abilityBlockType) {
+      content = content.filter((item) => item.type === props.abilityBlockType);
     }
-    return a.name.localeCompare(b.name);
-  });
+    content = searchQuery ? (search.current.search(searchQuery) as T[]) : content;
+
+    // Sort by level/rank then name
+    content = content.sort((a, b) => {
+      if (a.level !== undefined && b.level !== undefined) {
+        if (a.level !== b.level) {
+          return a.level - b.level;
+        }
+      } else if (a.rank !== undefined && b.rank !== undefined) {
+        if (a.rank !== b.rank) {
+          return a.rank - b.rank;
+        }
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    return content;
+  };
 
   const handleReset = () => {
     setOpenedId(undefined);
-    queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
+    initJsSearch();
+    resetContentStore();
+    setTimeout(() => {
+      queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
+    }, 1000);
   };
 
   return (
@@ -700,7 +715,7 @@ function ContentList<
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search ${pluralize(
-              (props.abilityBlockType ?? props.type).toLowerCase()
+              (props.abilityBlockType ?? props.type).replace('-', ' ').toLowerCase()
             )}`}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
@@ -724,16 +739,90 @@ function ContentList<
         <Center>
           <Stack w='100%'>
             <SelectionOptionsInner
-              options={content}
+              options={getContent()}
               type={props.type}
               abilityBlockType={props.abilityBlockType}
               isLoading={false}
               onClick={(item) => setOpenedId(item.id)}
               h={500}
-              includeDelete
-              onDelete={(itemId) => {
-                // TODO: Delete item
+              includeOptions
+              onCopy={async (itemId) => {
+                console.log('copy', itemId);
+                if (props.type === 'ability-block') {
+                  const item = (props.content as unknown as AbilityBlock[]).find(
+                    (i) => i.id === itemId
+                  );
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    const result = await upsertAbilityBlock(newItem);
+                  }
+                } else if (props.type === 'spell') {
+                  const item = (props.content as unknown as Spell[]).find((i) => i.id === itemId);
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    upsertSpell(newItem);
+                  }
+                } else if (props.type === 'class') {
+                  const item = (props.content as unknown as Class[]).find((i) => i.id === itemId);
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    upsertClass(newItem);
+                  }
+                } else if (props.type === 'ancestry') {
+                  const item = (props.content as unknown as Ancestry[]).find(
+                    (i) => i.id === itemId
+                  );
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    upsertAncestry(newItem);
+                  }
+                } else if (props.type === 'background') {
+                  const item = (props.content as unknown as Background[]).find(
+                    (i) => i.id === itemId
+                  );
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    upsertBackground(newItem);
+                  }
+                } else if (props.type === 'item') {
+                  const item = (props.content as unknown as Item[]).find((i) => i.id === itemId);
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    //upsertItem(newItem);
+                  }
+                } else if (props.type === 'trait') {
+                  const item = (props.content as unknown as Trait[]).find((i) => i.id === itemId);
+                  if (item) {
+                    const newItem = _.cloneDeep(item);
+                    newItem.id = -1;
+                    newItem.name = `(Copy) ${item.name}`;
+                    newItem.content_source_id = props.sourceId;
+                    //upsertTrait(newItem);
+                  }
+                }
 
+                handleReset();
+              }}
+              onDelete={async (itemId) => {
+                const response = await deleteContentSource(props.type, itemId);
                 handleReset();
               }}
             />

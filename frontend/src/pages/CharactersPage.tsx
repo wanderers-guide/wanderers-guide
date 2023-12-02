@@ -362,7 +362,7 @@ async function deleteCharacter(character: Character) {
 
   const result = await makeRequest('delete-content', {
     id: character.id,
-    tableName: 'character',
+    type: 'character',
   });
 
   hideNotification(`delete-character-${character.id}`);

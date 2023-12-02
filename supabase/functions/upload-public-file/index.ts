@@ -36,7 +36,7 @@ serve(async (req: Request) => {
 
     // const convertedImg = toArrayBuffer(await sharp(decode(data)).resize(512, 512).webp().toBuffer());
 
-    const path = `${user.id}/${uniqueId(data, '', 0)}.${type}`;
+    const path = `${user.id}/${uniqueId(data, '', 0, 0)}.${type}`;
     const { data: uploadResult, error } = await client.storage
       .from(category)
       .upload(path, decode(data), {

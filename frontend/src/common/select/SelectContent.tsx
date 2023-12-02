@@ -23,6 +23,8 @@ import {
   MantineColor,
   BackgroundImage,
   Indicator,
+  Menu,
+  rem,
 } from '@mantine/core';
 import {
   AbilityBlock,
@@ -53,6 +55,8 @@ import {
   IconChevronDown,
   IconChevronsLeft,
   IconChevronsRight,
+  IconCopy,
+  IconDots,
   IconSearch,
   IconTrash,
   IconX,
@@ -510,8 +514,9 @@ export function SelectionOptionsInner(props: {
   isLoading: boolean;
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
   h?: number;
 }) {
   const NUM_PER_PAGE = 20;
@@ -560,8 +565,9 @@ export function SelectionOptionsInner(props: {
             abilityBlockType={props.abilityBlockType}
             onClick={props.onClick}
             selectedId={props.selectedId}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         )}
       </ScrollArea>
@@ -587,8 +593,9 @@ function SelectionOptionsRoot(props: {
   abilityBlockType?: AbilityBlockType;
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   // Render appropriate options based on type
   if (props.type === 'ability-block') {
@@ -603,8 +610,9 @@ function SelectionOptionsRoot(props: {
               selected={props.selectedId === feat.id}
               displayLevel={true}
               includeDetails={true}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         </>
@@ -618,8 +626,9 @@ function SelectionOptionsRoot(props: {
               action={action as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === action.id}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         </>
@@ -633,8 +642,9 @@ function SelectionOptionsRoot(props: {
               classFeature={classFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === classFeature.id}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         </>
@@ -648,8 +658,9 @@ function SelectionOptionsRoot(props: {
               sense={sense as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === sense.id}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         </>
@@ -663,8 +674,9 @@ function SelectionOptionsRoot(props: {
               physicalFeature={physicalFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === physicalFeature.id}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         </>
@@ -679,8 +691,9 @@ function SelectionOptionsRoot(props: {
               onClick={props.onClick}
               selected={props.selectedId === heritage.id}
               includeDetails={true}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         </>
@@ -697,8 +710,9 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === class_.id}
             hasSelected={props.selectedId !== undefined}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -714,8 +728,9 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === background.id}
             hasSelected={props.selectedId !== undefined}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -731,8 +746,9 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === ancestry.id}
             hasSelected={props.selectedId !== undefined}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -747,8 +763,9 @@ function SelectionOptionsRoot(props: {
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -763,8 +780,9 @@ function SelectionOptionsRoot(props: {
             spell={spell as Spell}
             onClick={props.onClick}
             selected={props.selectedId === spell.id}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -779,8 +797,9 @@ function SelectionOptionsRoot(props: {
             trait={trait as Trait}
             onClick={props.onClick}
             selected={props.selectedId === trait.id}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -795,8 +814,9 @@ function SelectionOptionsRoot(props: {
             language={language as Language}
             onClick={props.onClick}
             selected={props.selectedId === language.id}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -811,8 +831,9 @@ function SelectionOptionsRoot(props: {
             creature={creature as Creature}
             onClick={props.onClick}
             selected={props.selectedId === creature.id}
-            includeDelete={props.includeDelete}
+            includeOptions={props.includeOptions}
             onDelete={props.onDelete}
+            onCopy={props.onCopy}
           />
         ))}
       </>
@@ -849,8 +870,9 @@ function SelectionOptionsRoot(props: {
               onClick={props.onClick}
               selected={props.selectedId === option.id}
               skillAdjustment={props.skillAdjustment}
-              includeDelete={props.includeDelete}
+              includeOptions={props.includeOptions}
               onDelete={props.onDelete}
+              onCopy={props.onCopy}
             />
           ))}
         <GenericSelectionOption
@@ -865,8 +887,9 @@ function SelectionOptionsRoot(props: {
           }}
           selected={false}
           skillAdjustment={props.skillAdjustment}
-          includeDelete={props.includeDelete}
+          includeOptions={props.includeOptions}
           onDelete={props.onDelete}
+          onCopy={props.onCopy}
         />
       </>
     );
@@ -883,8 +906,9 @@ function SelectionOptionsRoot(props: {
           onClick={props.onClick}
           selected={props.selectedId === option.id}
           skillAdjustment={props.skillAdjustment}
-          includeDelete={props.includeDelete}
+          includeOptions={props.includeOptions}
           onDelete={props.onDelete}
+          onCopy={props.onCopy}
         />
       ))}
     </>
@@ -900,8 +924,9 @@ export function GenericSelectionOption(props: {
   onClick: (option: GenericAbilityBlock) => void;
   selected?: boolean;
   skillAdjustment?: ExtendedProficiencyType;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -999,7 +1024,7 @@ export function GenericSelectionOption(props: {
             style={{
               position: 'absolute',
               top: 12,
-              right: props.includeDelete ? 40 : 10,
+              right: props.includeOptions ? 40 : 10,
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -1010,24 +1035,63 @@ export function GenericSelectionOption(props: {
           </Button>
         )}
 
-        {props.includeDelete && (
-          <ActionIcon
-            size='compact-xs'
-            variant='subtle'
-            style={{
-              position: 'absolute',
-              top: 13,
-              right: 15,
-            }}
-            onClick={(e) => {
-              if (disabled) return;
-              e.stopPropagation();
-              props.onDelete?.(props.option.id);
-            }}
-            aria-label='Delete'
-          >
-            <IconTrash size='1rem' />
-          </ActionIcon>
+        {props.includeOptions && (
+          <Menu shadow='md' width={200}>
+            <Menu.Target>
+              <ActionIcon
+                size='sm'
+                variant='subtle'
+                radius='xl'
+                style={{
+                  position: 'absolute',
+                  top: 13,
+                  right: 15,
+                }}
+                aria-label='Options'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <IconDots size='1rem' />
+              </ActionIcon>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Label>Options</Menu.Label>
+              <Menu.Item
+                leftSection={
+                  <IconCopy
+                    style={{ width: rem(14), height: rem(14) }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.onCopy?.(props.option.id);
+                    }}
+                  />
+                }
+              >
+                Duplicate
+              </Menu.Item>
+
+              <Menu.Divider />
+
+              <Menu.Label>Danger zone</Menu.Label>
+              <Menu.Item
+                color='red'
+                leftSection={
+                  <IconTrash
+                    style={{ width: rem(14), height: rem(14) }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.onDelete?.(props.option.id);
+                    }}
+                  />
+                }
+              >
+                Delete
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         )}
       </Group>
     </Group>
@@ -1040,8 +1104,9 @@ export function FeatSelectionOption(props: {
   selected?: boolean;
   displayLevel?: boolean;
   includeDetails?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1092,8 +1157,8 @@ export function FeatSelectionOption(props: {
             rarity={props.feat.rarity}
           />
         </Box>
-        {(props.includeDetails || props.includeDelete) && (
-          <Box w={props.includeDelete ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeOptions) && (
+          <Box w={props.includeOptions ? 80 : 50}></Box>
         )}
       </Group>
       {props.includeDetails && (
@@ -1103,7 +1168,7 @@ export function FeatSelectionOption(props: {
           style={{
             position: 'absolute',
             top: 12,
-            right: props.includeDelete ? 40 : 10,
+            right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -1113,23 +1178,55 @@ export function FeatSelectionOption(props: {
           Details
         </Button>
       )}
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.feat.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.feat.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.feat.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1139,8 +1236,9 @@ export function ActionSelectionOption(props: {
   action: AbilityBlock;
   onClick: (action: AbilityBlock) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1177,7 +1275,7 @@ export function ActionSelectionOption(props: {
             skill={props.action.meta_data?.skill}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1185,7 +1283,7 @@ export function ActionSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1194,23 +1292,55 @@ export function ActionSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.action.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.action.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.action.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1220,8 +1350,9 @@ export function ClassFeatureSelectionOption(props: {
   classFeature: AbilityBlock;
   onClick: (classFeature: AbilityBlock) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1270,7 +1401,7 @@ export function ClassFeatureSelectionOption(props: {
             rarity={props.classFeature.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1278,7 +1409,7 @@ export function ClassFeatureSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1287,23 +1418,55 @@ export function ClassFeatureSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.classFeature.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.classFeature.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.classFeature.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1314,8 +1477,9 @@ export function HeritageSelectionOption(props: {
   onClick: (heritage: AbilityBlock) => void;
   selected?: boolean;
   includeDetails?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1351,8 +1515,8 @@ export function HeritageSelectionOption(props: {
             rarity={props.heritage.rarity}
           />
         </Box>
-        {(props.includeDetails || props.includeDelete) && (
-          <Box w={props.includeDelete ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeOptions) && (
+          <Box w={props.includeOptions ? 80 : 50}></Box>
         )}
       </Group>
       {props.includeDetails && (
@@ -1362,7 +1526,7 @@ export function HeritageSelectionOption(props: {
           style={{
             position: 'absolute',
             top: 12,
-            right: props.includeDelete ? 40 : 10,
+            right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -1372,23 +1536,55 @@ export function HeritageSelectionOption(props: {
           Details
         </Button>
       )}
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.heritage.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.heritage.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.heritage.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1398,8 +1594,9 @@ export function PhysicalFeatureSelectionOption(props: {
   physicalFeature: AbilityBlock;
   onClick: (physicalFeature: AbilityBlock) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1435,7 +1632,7 @@ export function PhysicalFeatureSelectionOption(props: {
             rarity={props.physicalFeature.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1443,7 +1640,7 @@ export function PhysicalFeatureSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1452,23 +1649,55 @@ export function PhysicalFeatureSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.physicalFeature.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.physicalFeature.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.physicalFeature.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1478,8 +1707,9 @@ export function SenseSelectionOption(props: {
   sense: AbilityBlock;
   onClick: (sense: AbilityBlock) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1515,7 +1745,7 @@ export function SenseSelectionOption(props: {
             rarity={props.sense.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1523,7 +1753,7 @@ export function SenseSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1532,23 +1762,55 @@ export function SenseSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.sense.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.sense.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.sense.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1559,8 +1821,9 @@ export function ClassSelectionOption(props: {
   onClick: (class_: Class) => void;
   selected?: boolean;
   hasSelected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1667,7 +1930,7 @@ export function ClassSelectionOption(props: {
         <Box>
           <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1675,7 +1938,7 @@ export function ClassSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1684,23 +1947,55 @@ export function ClassSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 22,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.class_.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.class_.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.class_.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1711,14 +2006,33 @@ export function AncestrySelectionOption(props: {
   onClick: (ancestry: Ancestry) => void;
   selected?: boolean;
   hasSelected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', props.ancestry.operations ?? [], 'READ');
+  const ancestryHp = getStatDisplay(
+    'MAX_HEALTH_CLASS_PER_LEVEL',
+    props.ancestry.operations ?? [],
+    'READ'
+  );
+  const attributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    props.ancestry.operations ?? [],
+    'READ'
+  );
+
+  const flawAttributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    props.ancestry.operations ?? [],
+    'READ',
+    undefined,
+    { onlyNegatives: true }
+  );
+  console.log(flawAttributes);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -1795,8 +2109,29 @@ export function AncestrySelectionOption(props: {
               }}
               c='gray.6'
             >
-              ANY, STR/DEX
+              +
+              {attributes.flatMap((attribute, index) =>
+                index < attributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
+              )}
             </Badge>
+            {flawAttributes.length > 0 && (
+              <Badge
+                variant='dot'
+                size='xs'
+                styles={{
+                  root: {
+                    // @ts-ignore
+                    '--badge-dot-size': 0,
+                  },
+                }}
+                c='gray.6'
+              >
+                -
+                {flawAttributes.flatMap((attribute, index) =>
+                  index < flawAttributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
+                )}
+              </Badge>
+            )}
           </Group>
         </div>
       </Group>
@@ -1809,7 +2144,7 @@ export function AncestrySelectionOption(props: {
             rarity={props.ancestry.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1817,7 +2152,7 @@ export function AncestrySelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1826,23 +2161,55 @@ export function AncestrySelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 22,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.ancestry.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.ancestry.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.ancestry.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1853,8 +2220,9 @@ export function BackgroundSelectionOption(props: {
   onClick: (background: Background) => void;
   selected?: boolean;
   hasSelected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -1939,7 +2307,7 @@ export function BackgroundSelectionOption(props: {
             rarity={props.background.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -1947,7 +2315,7 @@ export function BackgroundSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -1956,23 +2324,55 @@ export function BackgroundSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 22,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.background.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.background.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.background.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -1982,8 +2382,9 @@ export function ItemSelectionOption(props: {
   item: Item;
   onClick: (item: Item) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2029,7 +2430,7 @@ export function ItemSelectionOption(props: {
             rarity={props.item.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -2037,7 +2438,7 @@ export function ItemSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -2046,23 +2447,55 @@ export function ItemSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.item.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.item.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.item.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -2072,8 +2505,9 @@ export function SpellSelectionOption(props: {
   spell: Spell;
   onClick: (spell: Spell) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2124,7 +2558,7 @@ export function SpellSelectionOption(props: {
             rarity={props.spell.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -2132,7 +2566,7 @@ export function SpellSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -2141,23 +2575,55 @@ export function SpellSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.spell.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.spell.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.spell.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -2167,8 +2633,9 @@ export function TraitSelectionOption(props: {
   trait: Trait;
   onClick: (trait: Trait) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2208,7 +2675,7 @@ export function TraitSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -2217,23 +2684,55 @@ export function TraitSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.trait.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.trait.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.trait.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -2243,8 +2742,9 @@ export function LanguageSelectionOption(props: {
   language: Language;
   onClick: (language: Language) => void;
   selected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2277,7 +2777,7 @@ export function LanguageSelectionOption(props: {
             rarity={props.language.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -2285,7 +2785,7 @@ export function LanguageSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 12,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -2294,23 +2794,55 @@ export function LanguageSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 13,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.language.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.language.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.language.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );
@@ -2321,8 +2853,9 @@ export function CreatureSelectionOption(props: {
   onClick: (creature: Creature) => void;
   selected?: boolean;
   hasSelected?: boolean;
-  includeDelete?: boolean;
+  includeOptions?: boolean;
   onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2427,7 +2960,7 @@ export function CreatureSelectionOption(props: {
             rarity={props.creature.rarity}
           />
         </Box>
-        <Box w={props.includeDelete ? 80 : 50}></Box>
+        <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
         size='compact-xs'
@@ -2435,7 +2968,7 @@ export function CreatureSelectionOption(props: {
         style={{
           position: 'absolute',
           top: 20,
-          right: props.includeDelete ? 40 : 10,
+          right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -2444,23 +2977,55 @@ export function CreatureSelectionOption(props: {
       >
         Details
       </Button>
-      {props.includeDelete && (
-        <ActionIcon
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 22,
-            right: 15,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            props.onDelete?.(props.creature.id);
-          }}
-          aria-label='Delete'
-        >
-          <IconTrash size='1rem' />
-        </ActionIcon>
+      {props.includeOptions && (
+        <Menu shadow='md' width={200}>
+          <Menu.Target>
+            <ActionIcon
+              size='sm'
+              variant='subtle'
+              radius='xl'
+              style={{
+                position: 'absolute',
+                top: 13,
+                right: 15,
+              }}
+              aria-label='Options'
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              <IconDots size='1rem' />
+            </ActionIcon>
+          </Menu.Target>
+
+          <Menu.Dropdown>
+            <Menu.Label>Options</Menu.Label>
+            <Menu.Item
+              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onCopy?.(props.creature.id);
+              }}
+            >
+              Duplicate
+            </Menu.Item>
+
+            <Menu.Divider />
+
+            <Menu.Label>Danger zone</Menu.Label>
+            <Menu.Item
+              color='red'
+              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onDelete?.(props.creature.id);
+              }}
+            >
+              Delete
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       )}
     </Group>
   );

@@ -1,9 +1,6 @@
-
-
-export function uniqueId(name: string, type: string, content_source_id: number) {
-  return cyrb53(`${name.trim()}_${type.trim()}_${content_source_id}`.toLowerCase());
+export function uniqueId(name: string, type: string, level: number, content_source_id: number) {
+  return cyrb53(`${name.trim()}_${type.trim()}_${level}_${content_source_id}`.toLowerCase());
 }
-
 
 /*
     cyrb53 (c) 2018 bryc (github.com/bryc)
@@ -26,7 +23,6 @@ const cyrb53 = (str: string, seed = 0) => {
 
   return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 };
-
 
 export function toArrayBuffer(buffer: Buffer) {
   const arrayBuffer = new ArrayBuffer(buffer.length);

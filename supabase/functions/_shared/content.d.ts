@@ -1,5 +1,4 @@
-
-import { Operation } from "./operations";
+import { Operation } from './operations';
 
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'UNIQUE';
 type Size = 'TINY' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'HUGE' | 'GARGANTUAN';
@@ -26,7 +25,7 @@ type ContentType =
   | 'language'
   | 'content-source';
 
-
+// All requests follow JSend specification (https://github.com/omniti-labs/jsend) //
 type JSendResponse = JSendResponseSuccess | JSendResponseFail | JSendResponseError;
 interface JSendResponseSuccess {
   status: 'success';
@@ -48,7 +47,13 @@ interface Trait {
   created_at: string;
   name: string;
   description: string;
-  meta_data: Record<string, any>; // TODO
+  meta_data?: {
+    important?: boolean;
+    creature_trait?: boolean;
+    unselectable?: boolean;
+    class_trait?: boolean;
+    ancestry_trait?: boolean;
+  };
   content_source_id: number;
 }
 

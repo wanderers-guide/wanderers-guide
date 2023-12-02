@@ -150,7 +150,7 @@ export async function fetchContent<T = Record<string, any>>(
   }
 }
 
-export async function resetContentStore() {
+export function resetContentStore() {
   contentStore.clear();
   idStore = emptyIdStore();
 }

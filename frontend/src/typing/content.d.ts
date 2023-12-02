@@ -57,6 +57,8 @@ interface Trait {
     important?: boolean;
     creature_trait?: boolean;
     unselectable?: boolean;
+    class_trait?: boolean;
+    ancestry_trait?: boolean;
   };
   content_source_id: number;
 }

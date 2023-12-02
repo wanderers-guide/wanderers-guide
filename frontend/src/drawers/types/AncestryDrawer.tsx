@@ -582,7 +582,8 @@ export function convertAncestryOperationsIntoUI(
     getAllAttributeVariables().map((v) => v.name),
     ancestryOperations,
     MODE,
-    writeDetails
+    writeDetails,
+    { fullNames: true }
   );
 
   const flawAttributes = getStatBlockDisplay(
@@ -590,7 +591,7 @@ export function convertAncestryOperationsIntoUI(
     ancestryOperations,
     MODE,
     writeDetails,
-    { onlyNegatives: true }
+    { onlyNegatives: true, fullNames: true }
   );
 
   const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', ancestryOperations, MODE, writeDetails);

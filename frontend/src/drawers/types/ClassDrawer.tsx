@@ -266,7 +266,12 @@ export function ClassInitialOverview(props: {
 
   // Reading thru operations to get display UI
   const MODE = props.mode;
-  const display = convertClassOperationsIntoUI(props.class_, props.mode, props.operationResults ?? [], charState);
+  const display = convertClassOperationsIntoUI(
+    props.class_,
+    props.mode,
+    props.operationResults ?? [],
+    charState
+  );
 
   return (
     <>
@@ -533,7 +538,6 @@ export function convertClassOperationsIntoUI(
   operationResults: OperationResult[],
   charState: [Character | null, SetterOrUpdater<Character | null>]
 ) {
-
   const classOperations = class_.operations ?? [];
   const MODE = mode;
   const writeDetails =
@@ -549,7 +553,8 @@ export function convertClassOperationsIntoUI(
     getAllAttributeVariables().map((v) => v.name),
     classOperations,
     MODE,
-    writeDetails
+    writeDetails,
+    { fullNames: true }
   );
   const keyAttribute =
     attributes.length > 0

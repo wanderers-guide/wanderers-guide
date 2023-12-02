@@ -1,6 +1,6 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import { connect, fetchData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
 import type { Class, Trait } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -27,6 +27,9 @@ serve(async (req: Request) => {
           name,
           description: `This indicates content from the ${name.toLowerCase()} class.`,
           content_source_id,
+          meta_data: {
+            class_trait: true,
+          },
         }
       );
       if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
@@ -38,6 +41,19 @@ serve(async (req: Request) => {
           message: 'Trait could not be created.',
         };
       }
+    }
+
+    if (name && trait_id === undefined && id && id !== -1) {
+      const classes = await fetchData<Class>(client, 'class', [{ column: 'id', value: id }]);
+      const class_ = classes[0];
+
+      name = name.trim();
+      // Update the trait name & description
+      await upsertData<Trait>(client, 'trait', {
+        id: class_.trait_id,
+        name: name,
+        description: `This indicates content from the ${name.toLowerCase()} class.`,
+      });
     }
 
     const { procedure, result } = await upsertData<Class>(client, 'class', {

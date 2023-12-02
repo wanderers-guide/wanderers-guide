@@ -8,6 +8,7 @@ import { ReactElement, ReactNode } from 'react';
 import { getAllAttributeVariables, getVariable } from './variable-manager';
 import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
 import {
+  compactLabels,
   isAttribute,
   isProficiencyType,
   maxProficiencyType,
@@ -36,6 +37,7 @@ export function getStatBlockDisplay(
   },
   options?: {
     onlyNegatives?: boolean;
+    fullNames?: boolean;
   }
 ) {
   let output: {
@@ -83,6 +85,7 @@ export function getStatDisplay(
   },
   options?: {
     onlyNegatives?: boolean;
+    fullNames?: boolean;
   }
 ): {
   ui: ReactNode;
@@ -209,7 +212,7 @@ export function getStatDisplay(
   }
 
   return {
-    ui: getDisplay(bestValue, bestOperation, variable, mode, writeDetails),
+    ui: getDisplay(bestValue, bestOperation, variable, mode, writeDetails, options),
     operation: bestOperation,
     variable,
     bestValue,
@@ -226,6 +229,10 @@ export function getDisplay(
     operationResults: OperationResult[];
     characterState: CharacterState;
     primarySource: string;
+  },
+  options?: {
+    onlyNegatives?: boolean;
+    fullNames?: boolean;
   }
 ): ReactNode {
   if (value === null) return null;
@@ -266,10 +273,18 @@ export function getDisplay(
         );
       } else {
         const attrs = getVarList(operation, 'attr');
-        return <>{listToLabel(attrs, 'or')}</>;
+        return (
+          <>
+            {listToLabel(
+              attrs.map((a) => (options?.fullNames ? a : compactLabels(a))),
+              'or'
+            )}
+          </>
+        );
       }
     } else {
-      return <>{variableNameToLabel(variable?.name ?? '')}</>;
+      const name = variableNameToLabel(variable?.name ?? '');
+      return <>{options?.fullNames ? name : compactLabels(name)}</>;
     }
   }
 
