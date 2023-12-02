@@ -113,7 +113,10 @@ export function CreateAbilityBlockModal(props: {
     } satisfies AbilityBlock,
 
     validate: {
-      level: props.type === 'feat' ? (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level') : undefined,
+      level:
+        props.type === 'feat' || props.type === 'class-feature'
+          ? (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level')
+          : undefined,
       rarity: (value) =>
         ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
     },
@@ -178,7 +181,7 @@ export function CreateAbilityBlockModal(props: {
                 <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
               </Group>
 
-              {props.type === 'feat' && (
+              {(props.type === 'feat' || props.type === 'class-feature') && (
                 <Select
                   label='Level'
                   required

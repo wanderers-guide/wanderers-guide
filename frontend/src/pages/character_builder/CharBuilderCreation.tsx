@@ -43,7 +43,10 @@ import { getChoiceCounts } from '@operations/choice-count-tracker';
 import useRefresh from '@utils/use-refresh';
 import { set } from 'lodash';
 import _ from 'lodash';
-import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
+import {
+  AncestryInitialOverview,
+  convertAncestryOperationsIntoUI,
+} from '@drawers/types/AncestryDrawer';
 import { drawerState } from '@atoms/navAtoms';
 
 export default function CharBuilderCreation(props: { pageHeight: number }) {
@@ -599,6 +602,7 @@ function LevelSection(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const [character, setCharacter] = useRecoilState(characterState);
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMergedRef(ref, choiceCountRef);
 
@@ -620,6 +624,27 @@ function LevelSection(props: {
     }, 2500);
     return () => clearInterval(intervalId);
   }, []);
+
+  console.log(props.operationResults);
+
+  const saveSelectionChange = (path: string, value: string) => {
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      const newSelections = { ...prev.operation_data?.selections };
+      if (!value) {
+        delete newSelections[path];
+      } else {
+        newSelections[path] = `${value}`;
+      }
+      return {
+        ...prev,
+        operation_data: {
+          ...prev.operation_data,
+          selections: newSelections,
+        },
+      };
+    });
+  };
 
   return (
     <Accordion.Item
@@ -670,7 +695,20 @@ function LevelSection(props: {
             operationResults={props.operationResults}
           />
         ) : (
-          <></>
+          <Box>
+            {props.operationResults?.classFeatureResults.map(
+              (r: any) =>
+                r.baseSource.level === props.level && (
+                  <DisplayOperationResult
+                    source={r.baseSource}
+                    results={r.baseResults}
+                    onChange={(path, value) => {
+                      saveSelectionChange(`class-feature-${r.baseSource.id}_${path}`, value);
+                    }}
+                  />
+                )
+            )}
+          </Box>
         )}
       </Accordion.Panel>
     </Accordion.Item>
@@ -805,7 +843,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
       if (!value) {
         delete newSelections[path];
       } else {
-        newSelections[path] = value;
+        newSelections[path] = `${value}`;
       }
       return {
         ...prev,
@@ -871,7 +909,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
         'READ/WRITE',
         props.operationResults?.ancestryResults ?? [],
         [character, setCharacter],
-        openDrawer,
+        openDrawer
       )
     : null;
   if (ancestryInitialOverviewDisplay) {
@@ -965,7 +1003,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
               source={undefined}
               results={props.operationResults.backgroundResults}
               onChange={(path, value) => {
-                console.log(path, value);
+                saveSelectionChange(`background_${path}`, value);
               }}
             />
           </Accordion.Panel>
@@ -1020,7 +1058,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
                   source={s.baseSource}
                   results={s.baseResults}
                   onChange={(path, value) => {
-                    console.log(path, value);
+                    saveSelectionChange(`content-source-${s.baseSource.id}_${path}`, value);
                   }}
                 />
               ))}
@@ -1057,7 +1095,7 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
                 source={undefined}
                 results={props.operationResults.characterResults}
                 onChange={(path, value) => {
-                  console.log(path, value);
+                  saveSelectionChange(`character_${path}`, value);
                 }}
               />
             </Accordion.Panel>

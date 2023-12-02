@@ -456,7 +456,7 @@ function updateCharacter(characterState: CharacterState | undefined, path: strin
     if (!value) {
       delete newSelections[path];
     } else {
-      newSelections[path] = value;
+      newSelections[path] = `${value}`;
     }
     return {
       ...prev,

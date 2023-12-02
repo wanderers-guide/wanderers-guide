@@ -30,9 +30,11 @@ async function executeOperations(
   operations: Operation[],
   options?: OperationOptions
 ) {
-
   const selectionNode = getRootSelection().children[primarySource];
-  const results = await runOperations(selectionNode, operations, _.cloneDeep(options));
+  let results = await runOperations(selectionNode, operations, _.cloneDeep(options));
+
+  // Make it so you can only select boosts that haven't been selected (or given) yet
+  results = limitBoostOptions(operations, results);
 
   return results;
 }
@@ -111,11 +113,7 @@ export async function executeCharacterOperations(character: Character, content: 
 
     let classResults: OperationResult[] = [];
     if (class_) {
-      classResults = await executeOperations(
-        'class',
-        getExtendedClassOperations(class_),
-        options
-      );
+      classResults = await executeOperations('class', getExtendedClassOperations(class_), options);
     }
 
     let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
@@ -141,15 +139,12 @@ export async function executeCharacterOperations(character: Character, content: 
         getExtendedAncestryOperations(ancestry),
         options
       );
+      console.log(ancestryResults, getExtendedAncestryOperations(ancestry));
     }
 
     let heritageResults: OperationResult[] = [];
     if (heritage) {
-      heritageResults = await executeOperations(
-        'heritage',
-        heritage.operations ?? [],
-        options
-      );
+      heritageResults = await executeOperations('heritage', heritage.operations ?? [], options);
     }
 
     let backgroundResults: OperationResult[] = [];
@@ -200,7 +195,6 @@ export async function executeCharacterOperations(character: Character, content: 
     ],
   });
 
-  console.log(mergeOperationResults(results, conditionalResults));
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }
 
@@ -215,6 +209,55 @@ function mergeOperationResults(normal: Record<string, any>, conditional: Record<
     merged[key] = merged[key].filter((v: any) => v);
   }
   return merged;
+}
+
+function limitBoostOptions(
+  operations: Operation[],
+  operationResults: OperationResult[]
+): OperationResult[] {
+  operationResults = _.cloneDeep(operationResults);
+  const unselectedOptions: string[] = [];
+
+  console.log(operations, operationResults);
+
+  // Pull from all selections already made
+  for (const opR of operationResults) {
+    const selectedOption = opR?.result?.source?.variable;
+    const amount = opR?.result?.source?.value;
+    if (selectedOption && +amount === 1 && selectedOption.startsWith('ATTRIBUTE_')) {
+      unselectedOptions.push(selectedOption);
+    }
+  }
+
+  // Pull from all hardset attribute boosts
+  for (const op of operations) {
+    if (op.type === 'adjValue') {
+      // setValue isn't a boost
+      if (+op.data.value === 1) {
+        // Must be +1 to be a boost
+        unselectedOptions.push(op.data.variable);
+      }
+    }
+  }
+
+  // Limit all boosts to only be selectable if they haven't been given yet
+  for (const opR of operationResults) {
+    if (opR?.selection?.options) {
+      opR.selection.options = opR.selection.options.filter((option) => {
+        if (
+          unselectedOptions.includes(option.variable) &&
+          +option.value === 1 &&
+          opR?.result?.source?.variable !== option.variable
+        ) {
+          return false;
+        }
+        return true;
+      });
+    }
+  }
+  console.log(unselectedOptions);
+
+  return operationResults;
 }
 
 export function getExtendedClassOperations(class_: Class) {
