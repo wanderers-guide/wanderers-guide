@@ -69,7 +69,7 @@ export default function RichTextInput(props: RichTextInputProps) {
           },
         }}
       >
-        <RichTextEditor.Toolbar>
+        <RichTextEditor.Toolbar style={{ gap: 8 }}>
           <RichTextEditor.ControlsGroup>
             <ActionSymbolControl />
           </RichTextEditor.ControlsGroup>
@@ -86,7 +86,7 @@ export default function RichTextInput(props: RichTextInputProps) {
           </RichTextEditor.ControlsGroup>
 
           <RichTextEditor.ControlsGroup>
-            {/* <RichTextEditor.Blockquote /> */}
+            <RichTextEditor.Blockquote />
             <RichTextEditor.Hr />
             <RichTextEditor.BulletList />
             <RichTextEditor.OrderedList />

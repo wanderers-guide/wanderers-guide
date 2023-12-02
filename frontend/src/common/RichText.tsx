@@ -19,7 +19,7 @@ export default function RichText(props: RichTextProps) {
   // Convert action symbol text of abbr to code markdown (then convert it back)
   // This is a hack to get around the fact that markdown doesn't really support abbr
   const regex = /<abbr[^>]*class="action-symbol"[^>]*>(\d+)<\/abbr>/gm;
-  const convertedChildren = props.children.replace(regex, '`action_symbol_$1`');
+  const convertedChildren = props.children?.replace(regex, '`action_symbol_$1`');
 
   return (
     <Markdown

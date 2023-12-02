@@ -26,6 +26,7 @@ import { ClassFeatureDrawerContent, ClassFeatureDrawerTitle } from './types/Clas
 import { PrevMetadata } from './drawer-utils';
 import { AncestryDrawerContent, AncestryDrawerTitle } from './types/AncestryDrawer';
 import { LanguageDrawerContent, LanguageDrawerTitle } from './types/LanguageDrawer';
+import { BackgroundDrawerTitle, BackgroundDrawerContent } from './types/BackgroundDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -197,6 +198,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'class' && <ClassDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'class-feature' && <ClassFeatureDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'ancestry' && <AncestryDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'background' && <BackgroundDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'language' && <LanguageDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'heritage' && <ActionDrawerTitle data={_drawer.data} />} {/* TODO */}
       {_drawer?.type === 'sense' && <ActionDrawerTitle data={_drawer.data} />} {/* TODO */}
@@ -221,6 +223,9 @@ function DrawerContent(props: {
       {_drawer?.type === 'class-feature' && <ClassFeatureDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'ancestry' && (
         <AncestryDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
+      )}
+      {_drawer?.type === 'background' && (
+        <BackgroundDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
       )}
       {_drawer?.type === 'language' && <LanguageDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'heritage' && <ActionDrawerContent data={_drawer.data} />} {/* TODO */}

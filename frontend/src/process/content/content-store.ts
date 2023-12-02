@@ -51,12 +51,12 @@ function emptyIdStore() {
 }
 
 function getStoredIds(type: ContentType, data: Record<string, any>) {
-  if(!data.id) return null;
-  if(Array.isArray(data.id)) {
+  if (!data.id) return null;
+  if (Array.isArray(data.id)) {
     const results = data.id
       .map((id) => idStore.get(type)?.get(parseInt(id)))
       .filter((result) => result);
-    if(results.length !== data.id.length) return null;
+    if (results.length !== data.id.length) return null;
     return results;
   } else {
     const id = parseInt(data.id);
@@ -68,8 +68,8 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
   if (!data.id) return true;
   if (Array.isArray(data.id)) {
     if (!Array.isArray(value)) return 'Value is not an array';
-    for(const v of value) {
-      if(!v.id) return 'Value is not an array of objects with ids';
+    for (const v of value) {
+      if (!v.id) return 'Value is not an array of objects with ids';
       idStore.get(type)?.set(v.id, v);
     }
   } else {
@@ -83,7 +83,7 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 //                      Fetching                     //
 ///////////////////////////////////////////////////////
 
-let defaultSources: number[] | undefined = undefined;// undefined means all sources
+let defaultSources: number[] | undefined = undefined; // undefined means all sources
 export function defineDefaultSources(sources?: number[]) {
   defaultSources = sources;
 }
@@ -111,7 +111,7 @@ export async function fetchContentAll<T = Record<string, any>>(
 export async function fetchContent<T = Record<string, any>>(
   type: ContentType,
   data: Record<string, any>,
-  dontStore?: boolean,
+  dontStore?: boolean
 ) {
   const FETCH_REQUEST_MAP: Record<ContentType, RequestType> = {
     'ability-block': 'find-ability-block',
@@ -125,7 +125,6 @@ export async function fetchContent<T = Record<string, any>>(
     spell: 'find-spell',
     trait: 'find-trait',
   };
-
 
   const storedIds = getStoredIds(type, data);
   const storedFetch = getStoredFetch(type, data);
@@ -145,7 +144,7 @@ export async function fetchContent<T = Record<string, any>>(
     if (result && !dontStore) {
       setStoredFetch(type, data, result);
       const added = setStoredIds(type, data, result);
-      if(added !== true) console.error('Failed to add to id store', added, data, result);
+      if (added !== true) console.error('Failed to add to id store', added, data, result);
     }
     return result;
   }
@@ -170,7 +169,7 @@ export async function fetchContentSources(options?: {
     group: options?.group,
     homebrew: options?.homebrew,
     published: options?.published,
-    id: options?.ids === 'all' ? undefined : (options?.ids ?? defaultSources),
+    id: options?.ids === 'all' ? undefined : options?.ids ?? defaultSources,
   });
   if (!sources) {
     return [];
@@ -214,15 +213,18 @@ export async function fetchAllPrereqs(name: string) {
     prerequisites: [name],
   });
 }
-export async function fetchTraitByName(name: string, sources?: number[]) {
+export async function fetchTraitByName(name?: string, sources?: number[], id?: number) {
   return await fetchContent<Trait>('trait', {
+    id,
     name,
     content_sources: sources,
   });
 }
 export async function fetchTraits(ids?: number[]) {
-  if(!ids || ids.length === 0) return [];
-  return (await fetchContent<Trait[]>('trait', {
-    id: ids,
-  })) ?? [];
+  if (!ids || ids.length === 0) return [];
+  return (
+    (await fetchContent<Trait[]>('trait', {
+      id: ids,
+    })) ?? []
+  );
 }

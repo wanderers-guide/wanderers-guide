@@ -29,7 +29,11 @@ import {
   OperationSelectFiltersAdjValue,
 } from '@typing/operations';
 import { Variable } from '@typing/variables';
-import { getAllAttributeVariables, getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import {
+  getAllAttributeVariables,
+  getAllSkillVariables,
+  getVariable,
+} from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
 import _, { filter } from 'lodash';
 
@@ -177,6 +181,10 @@ async function getAbilityBlockList(
 ) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
+  if (filters.abilityBlockType !== undefined) {
+    abilityBlocks = abilityBlocks.filter((ab) => ab.type === filters.abilityBlockType);
+  }
+
   if (filters.level.min !== undefined) {
     abilityBlocks = abilityBlocks.filter(
       (ab) => ab.level !== undefined && ab.level >= filters.level.min!
@@ -188,7 +196,12 @@ async function getAbilityBlockList(
     );
   }
   if (filters.traits !== undefined) {
-    const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
+    const traits = await Promise.all(
+      filters.traits.map((trait) =>
+        // If it's a number, it's a trait id, otherwise it's a trait name
+        _.isNumber(trait) ? fetchTraitByName(undefined, undefined, trait) : fetchTraitByName(trait)
+      )
+    );
     const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
 
     // Filter out ability blocks that don't have all the traits
@@ -283,7 +296,7 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
 async function getAdjValueList(operationUUID: string, filters: OperationSelectFiltersAdjValue) {
   let variables: Variable[] = [];
 
-  if(filters.group === 'SKILL'){
+  if (filters.group === 'SKILL') {
     variables = getAllSkillVariables();
   }
   if (filters.group === 'ATTRIBUTE') {
@@ -330,7 +343,9 @@ async function getAbilityBlockPredefinedList(options: OperationSelectOptionAbili
   const result = [];
   for (const abilityBlock of abilityBlocks) {
     if (abilityBlock) {
-      const option = options.find((option) => option.operation.data.abilityBlockId === abilityBlock.id);
+      const option = options.find(
+        (option) => option.operation.data.abilityBlockId === abilityBlock.id
+      );
       result.push({
         ...abilityBlock,
         _select_uuid: option!.id,

@@ -118,7 +118,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
     <Button.Group className='selection-choice-base'>
       <Button
         className={selected ? 'selection-choice-selected' : 'selection-choice-unselected'}
-        variant={selected ? 'filled' : 'light'}
+        variant={selected ? 'light' : 'filled'}
         size='compact-sm'
         radius='xl'
         onClick={() => {
@@ -144,7 +144,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
       </Button>
       {selected && (
         <Button
-          variant='filled'
+          variant='light'
           size='compact-sm'
           radius='xl'
           onClick={() => {
@@ -427,10 +427,7 @@ function SelectionOptions(props: {
   overrideOptions?: Record<string, any>[];
 }) {
   const { data, isFetching } = useQuery({
-    queryKey: [
-      `select-content-options-${props.type}`,
-      { sourceId: props.sourceId },
-    ],
+    queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
@@ -458,7 +455,10 @@ function SelectionOptions(props: {
     options = options.filter((option) => option.type === props.abilityBlockType);
   } else {
     // An ability block type is required for ability blocks
-    if (props.type === 'ability-block' && (!props.overrideOptions || props.overrideOptions.length === 0)) {
+    if (
+      props.type === 'ability-block' &&
+      (!props.overrideOptions || props.overrideOptions.length === 0)
+    ) {
       options = [];
     }
   }
@@ -845,7 +845,7 @@ function SelectionOptionsRoot(props: {
           .map((option, index) => (
             <GenericSelectionOption
               key={index}
-              option={option as AbilityBlock}
+              option={option as GenericAbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === option.id}
               skillAdjustment={props.skillAdjustment}
@@ -858,7 +858,7 @@ function SelectionOptionsRoot(props: {
             {
               ...isSkillIncreaseWithLore,
               name: `Add New Lore`,
-            } as AbilityBlock
+            } as GenericAbilityBlock
           }
           onClick={(option) => {
             addNewLore(option);
@@ -879,7 +879,7 @@ function SelectionOptionsRoot(props: {
       {props.options.map((option, index) => (
         <GenericSelectionOption
           key={index}
-          option={option as AbilityBlock}
+          option={option as GenericAbilityBlock}
           onClick={props.onClick}
           selected={props.selectedId === option.id}
           skillAdjustment={props.skillAdjustment}
@@ -891,9 +891,13 @@ function SelectionOptionsRoot(props: {
   );
 }
 
+interface GenericAbilityBlock extends AbilityBlock {
+  _content_type?: ContentType;
+  _select_uuid?: string;
+}
 export function GenericSelectionOption(props: {
-  option: AbilityBlock;
-  onClick: (option: AbilityBlock) => void;
+  option: GenericAbilityBlock;
+  onClick: (option: GenericAbilityBlock) => void;
   selected?: boolean;
   skillAdjustment?: ExtendedProficiencyType;
   includeDelete?: boolean;
@@ -901,6 +905,7 @@ export function GenericSelectionOption(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // @ts-ignore
   const variable = getVariable(props.option.variable);
@@ -933,6 +938,8 @@ export function GenericSelectionOption(props: {
 
   const disabled = alreadyProficient;
 
+  console.log(props.option);
+
   return (
     <Group
       ref={ref}
@@ -943,7 +950,7 @@ export function GenericSelectionOption(props: {
         backgroundColor: disabled
           ? theme.colors.dark[8]
           : hovered || props.selected
-          ? theme.colors.dark[8]
+          ? theme.colors.dark[6]
           : 'transparent',
         position: 'relative',
       }}
@@ -984,6 +991,23 @@ export function GenericSelectionOption(props: {
               )}
             </Group>
           </Badge>
+        )}
+        {props.option._content_type === 'language' && (
+          <Button
+            size='compact-xs'
+            variant='subtle'
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: props.includeDelete ? 40 : 10,
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawer({ type: 'language', data: { id: props.option.id } });
+            }}
+          >
+            Details
+          </Button>
         )}
 
         {props.includeDelete && (

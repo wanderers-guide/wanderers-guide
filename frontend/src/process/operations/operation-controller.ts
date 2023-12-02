@@ -143,8 +143,12 @@ export async function executeCharacterOperations(character: Character, content: 
     }
 
     let heritageResults: OperationResult[] = [];
-    if (heritage) {
-      heritageResults = await executeOperations('heritage', heritage.operations ?? [], options);
+    if (ancestry) {
+      heritageResults = await executeOperations(
+        'heritage',
+        getExtendedHeritageOperations(ancestry, heritage),
+        options
+      );
     }
 
     let backgroundResults: OperationResult[] = [];
@@ -195,11 +199,13 @@ export async function executeCharacterOperations(character: Character, content: 
     ],
   });
 
+  console.log(results, conditionalResults, mergeOperationResults(results, conditionalResults));
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }
 
-function mergeOperationResults(normal: Record<string, any>, conditional: Record<string, any>) {
+function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {
   const merged = _.cloneDeep(normal);
+  // Merge simple arrays
   for (const [key, value] of Object.entries(conditional)) {
     if (merged[key]) {
       merged[key].push(...value);
@@ -208,6 +214,29 @@ function mergeOperationResults(normal: Record<string, any>, conditional: Record<
     }
     merged[key] = merged[key].filter((v: any) => v);
   }
+
+  // Merge arrays of results (like class features)
+  for (const [key, value] of Object.entries(merged)) {
+    const newValue: any[] = [];
+    let found = false;
+    for (const v of value) {
+      if (v.baseSource && Array.isArray(v.baseResults)) {
+        found = true;
+        const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
+        if (duplicate) {
+          v.baseResults.push(...duplicate.baseResults);
+          v.baseResults = _.uniq(v.baseResults);
+        }
+        if (!newValue.find((v2) => v2.baseSource?.id === v.baseSource?.id)) {
+          newValue.push(v);
+        }
+      }
+    }
+    if (found) {
+      merged[key] = newValue;
+    }
+  }
+
   return merged;
 }
 
@@ -329,6 +358,35 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
       },
     });
   }
+
+  return operations;
+}
+
+export function getExtendedHeritageOperations(ancestry: Ancestry, heritage?: AbilityBlock) {
+  return [...addedAncestryHeritage(ancestry), ...(heritage?.operations ?? [])];
+}
+
+export function addedAncestryHeritage(ancestry: Ancestry): OperationSelect[] {
+  let operations: OperationSelect[] = [];
+
+  // Operation for selecting a heritage
+  operations.push({
+    id: '3fd6a268-771b-49fc-93ed-9b53695d1a29',
+    type: 'select',
+    data: {
+      title: 'Select a Heritage',
+      modeType: 'FILTERED',
+      optionType: 'ABILITY_BLOCK',
+      optionsPredefined: [],
+      optionsFilters: {
+        id: 'c8dc1601-4c97-4838-9bd5-31d0e6b87286',
+        type: 'ABILITY_BLOCK',
+        level: {},
+        traits: [ancestry.trait_id],
+        abilityBlockType: 'heritage',
+      },
+    },
+  });
 
   return operations;
 }

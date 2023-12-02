@@ -211,6 +211,7 @@ function SelectionFilteredAbilityBlock(props: {
   filters?: OperationSelectFiltersAbilityBlock;
   onChange: (filters: OperationSelectFiltersAbilityBlock) => void;
 }) {
+  const [type, setType] = useState<AbilityBlockType | undefined>(props.filters?.abilityBlockType);
   const [minLevel, setMinLevel] = useState<number | undefined>(
     props.filters?.level.min ?? undefined
   );
@@ -228,11 +229,27 @@ function SelectionFilteredAbilityBlock(props: {
         max: maxLevel,
       },
       traits: traits,
+      abilityBlockType: type,
     });
-  }, [minLevel, maxLevel, traits]);
+  }, [minLevel, maxLevel, traits, type]);
 
   return (
     <Stack gap={10}>
+      <Select
+        data={
+          [
+            { label: 'Action', value: 'action' },
+            { label: 'Feat', value: 'feat' },
+            { label: 'Physical Feature', value: 'physical-feature' },
+            { label: 'Sense', value: 'sense' },
+            { label: 'Class Feature', value: 'class-feature' },
+            { label: 'Heritage', value: 'heritage' },
+          ] satisfies { label: string; value: AbilityBlockType }[]
+        }
+        value={type}
+        onChange={(value) => setType(value ? (value as AbilityBlockType) : undefined)}
+      />
+
       <Box>
         <Text c='gray.4' fz='xs'>
           Levels

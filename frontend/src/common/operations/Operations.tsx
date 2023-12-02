@@ -42,6 +42,8 @@ import { SelectionOperation } from './selection/SelectionOperation';
 import { GiveLanguageOperation } from './language/GiveLanguageOperation';
 import { GiveSenseOperation } from './ability_block/GiveSenseOperation';
 import { GivePhysicalFeatureOperation } from './ability_block/GivePhysicalFeatureOperation';
+import { addVariable, resetVariables } from '@variables/variable-manager';
+import { GiveHeritageOperation } from './ability_block/GiveHeritageOperation';
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -130,6 +132,14 @@ export function OperationSection(props: {
 
   useDidUpdate(() => {
     setOperations(props.value ?? []);
+
+    // Reset variable store
+    resetVariables();
+    for (let op of props.value ?? []) {
+      if (op.type === 'createValue') {
+        addVariable(op.data.type, op.data.variable, op.data.value);
+      }
+    }
   }, [props.value]);
 
   useDidUpdate(() => {
@@ -152,6 +162,7 @@ export function OperationSection(props: {
             { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
             { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
             { value: 'giveAbilityBlock:::physical-feature', label: 'Give Physical Feature' },
+            { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
             { value: 'giveSpell', label: 'Give Spell' },
             { value: 'giveLanguage', label: 'Give Language' },
             { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
@@ -279,6 +290,17 @@ export function OperationDisplay(props: {
         case 'physical-feature':
           return (
             <GivePhysicalFeatureOperation
+              selectedId={opGiveAbilBlock.data.abilityBlockId}
+              onSelect={(option) => {
+                opGiveAbilBlock.data.abilityBlockId = option.id;
+                props.onChange(_.cloneDeep(opGiveAbilBlock));
+              }}
+              onRemove={props.onRemove}
+            />
+          );
+        case 'heritage':
+          return (
+            <GiveHeritageOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;

@@ -270,7 +270,8 @@ type Background = {
   name: string;
   rarity: Rarity;
   description: string;
-  operations?: Operation[];
+  artwork_url: string;
+  operations: Operation[] | undefined;
   content_source_id: number;
   version: string;
 };

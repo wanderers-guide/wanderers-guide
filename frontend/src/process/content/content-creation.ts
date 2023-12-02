@@ -1,4 +1,13 @@
-import { AbilityBlock, Ancestry, Background, Class, ContentSource, Creature, Item, Spell } from '@typing/content';
+import {
+  AbilityBlock,
+  Ancestry,
+  Background,
+  Class,
+  ContentSource,
+  Creature,
+  Item,
+  Spell,
+} from '@typing/content';
 import _ from 'lodash';
 import { makeRequest } from '@requests/request-manager';
 

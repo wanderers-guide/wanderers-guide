@@ -1,5 +1,4 @@
-
-import { Variable, VariableType, AttributeValue, ProficiencyType } from "./variables";
+import { Variable, VariableType, AttributeValue, ProficiencyType } from './variables';
 import { AbilityBlockType, Rarity } from './content';
 
 export type Operation =
@@ -15,18 +14,17 @@ export type Operation =
   | OperationGiveSpell
   | OperationRemoveSpell;
 export type OperationType =
-  | "adjValue"
-  | "setValue"
-  | "createValue"
-  | "giveAbilityBlock"
-  | "removeAbilityBlock"
-  | "giveLanguage"
-  | "removeLanguage"
-  | "conditional"
-  | "select"
-  | "giveSpell"
-  | "removeSpell";
-
+  | 'adjValue'
+  | 'setValue'
+  | 'createValue'
+  | 'giveAbilityBlock'
+  | 'removeAbilityBlock'
+  | 'giveLanguage'
+  | 'removeLanguage'
+  | 'conditional'
+  | 'select'
+  | 'giveSpell'
+  | 'removeSpell';
 
 interface OperationBase {
   readonly id: string;
@@ -35,7 +33,7 @@ interface OperationBase {
 }
 
 export interface OperationAdjValue extends OperationBase {
-  readonly type: "adjValue";
+  readonly type: 'adjValue';
   data: {
     variable: string;
     value: number | string | boolean;
@@ -43,7 +41,7 @@ export interface OperationAdjValue extends OperationBase {
 }
 
 export interface OperationSetValue extends OperationBase {
-  readonly type: "setValue";
+  readonly type: 'setValue';
   data: {
     variable: string;
     value: number | string | boolean | AttributeValue | ProficiencyType;
@@ -51,7 +49,7 @@ export interface OperationSetValue extends OperationBase {
 }
 
 export interface OperationCreateValue extends OperationBase {
-  readonly type: "createValue";
+  readonly type: 'createValue';
   data: {
     variable: string;
     type: VariableType;
@@ -91,17 +89,23 @@ export type ConditionCheckData = {
   value: string;
 };
 
-export type ConditionOperator = '' | 'INCLUDES' | 'EQUALS' | 'NOT_EQUALS' | 'LESS_THAN' | 'GREATER_THAN';
+export type ConditionOperator =
+  | ''
+  | 'INCLUDES'
+  | 'EQUALS'
+  | 'NOT_EQUALS'
+  | 'LESS_THAN'
+  | 'GREATER_THAN';
 
 export interface OperationGiveSpell extends OperationBase {
-  readonly type: "giveSpell";
+  readonly type: 'giveSpell';
   data: {
     spellId: number;
   };
 }
 
 export interface OperationRemoveSpell extends OperationBase {
-  readonly type: "removeSpell";
+  readonly type: 'removeSpell';
   data: {
     spellId: number;
   };
@@ -125,7 +129,7 @@ export interface OperationSelect extends OperationBase {
   readonly type: 'select';
   data: {
     title?: string;
-    description?: string;// Not used
+    description?: string; // Not used
     modeType: 'PREDEFINED' | 'FILTERED';
     optionType: OperationSelectOptionType;
     optionsPredefined?: OperationSelectOption[];
@@ -156,19 +160,19 @@ interface OperationSelectOptionBase {
 }
 
 interface OperationSelectOptionCustom extends OperationSelectOptionBase {
-  readonly type: "CUSTOM";
+  readonly type: 'CUSTOM';
   title: string;
   description: string;
   operations?: Operation[];
 }
 
 interface OperationSelectOptionAbilityBlock extends OperationSelectOptionBase {
-  readonly type: "ABILITY_BLOCK";
+  readonly type: 'ABILITY_BLOCK';
   operation: OperationGiveAbilityBlock;
 }
 
 interface OperationSelectOptionSpell extends OperationSelectOptionBase {
-  readonly type: "SPELL";
+  readonly type: 'SPELL';
   operation: OperationGiveSpell;
 }
 
@@ -181,7 +185,6 @@ interface OperationSelectOptionAdjValue extends OperationSelectOptionBase {
   readonly type: 'ADJ_VALUE';
   operation: OperationAdjValue;
 }
-
 
 /**
  * OperationSelectFilter
@@ -202,9 +205,9 @@ interface OperationSelectFiltersAbilityBlock extends OperationSelectFiltersBase 
   level: {
     min?: number;
     max?: number;
-  },
-  traits?: string[];
-  // TODO: add more filters
+  };
+  traits?: string[] | number[];
+  abilityBlockType?: AbilityBlockType;
 }
 
 interface OperationSelectFiltersSpell extends OperationSelectFiltersBase {

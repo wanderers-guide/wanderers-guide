@@ -11,10 +11,12 @@ import {
   SegmentedControl,
   Stack,
   Text,
+  Title,
   UnstyledButton,
   useMantineTheme,
 } from '@mantine/core';
 import {
+  AbilityBlock,
   Ancestry,
   Background,
   Character,
@@ -33,7 +35,7 @@ import D20Loader from '@assets/images/D20Loader';
 import { getIconFromContentType } from '@content/content-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
-import { IconPuzzle } from '@tabler/icons-react';
+import { IconLeaf, IconPuzzle } from '@tabler/icons-react';
 import { OperationResult } from '@operations/operation-runner';
 import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
 import { fetchContentPackage } from '@content/content-store';
@@ -48,6 +50,11 @@ import {
   convertAncestryOperationsIntoUI,
 } from '@drawers/types/AncestryDrawer';
 import { drawerState } from '@atoms/navAtoms';
+import {
+  BackgroundInitialOverview,
+  convertBackgroundOperationsIntoUI,
+} from '@drawers/types/BackgroundDrawer';
+import RichText from '@common/RichText';
 
 export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -601,6 +608,7 @@ function LevelSection(props: {
   operationResults: any;
 }) {
   const theme = useMantineTheme();
+  const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
   const { hovered, ref } = useHover();
   const [character, setCharacter] = useRecoilState(characterState);
   const choiceCountRef = useRef<HTMLDivElement>(null);
@@ -624,8 +632,6 @@ function LevelSection(props: {
     }, 2500);
     return () => clearInterval(intervalId);
   }, []);
-
-  console.log(props.operationResults);
 
   const saveSelectionChange = (path: string, value: string) => {
     setCharacter((prev) => {
@@ -693,29 +699,184 @@ function LevelSection(props: {
           <InitialStatsLevelSection
             content={props.content}
             operationResults={props.operationResults}
+            onSaveChanges={(path, value) => {
+              saveSelectionChange(path, value);
+            }}
           />
         ) : (
-          <Box>
+          <Accordion
+            variant='separated'
+            value={subSectionValue}
+            onChange={setSubSectionValue}
+            styles={{
+              label: { paddingTop: 5, paddingBottom: 5 },
+            }}
+          >
+            {props.level === 1 && (
+              <HeritageAccordianItem
+                id={`heritage`}
+                results={props.operationResults?.heritageResults ?? []}
+                onSaveChanges={(path, value) => {
+                  saveSelectionChange(path, value);
+                }}
+                opened={subSectionValue === `heritage`}
+              />
+            )}
             {props.operationResults?.classFeatureResults.map(
-              (r: any) =>
+              (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
                 r.baseSource.level === props.level && (
-                  <DisplayOperationResult
-                    source={r.baseSource}
+                  <ClassFeatureAccordianItem
+                    key={index}
+                    id={`${index}`}
+                    feature={r.baseSource}
                     results={r.baseResults}
-                    onChange={(path, value) => {
-                      saveSelectionChange(`class-feature-${r.baseSource.id}_${path}`, value);
+                    onSaveChanges={(path, value) => {
+                      saveSelectionChange(path, value);
                     }}
+                    opened={subSectionValue === `${index}`}
                   />
                 )
             )}
-          </Box>
+          </Accordion>
         )}
       </Accordion.Panel>
     </Accordion.Item>
   );
 }
 
-function InitialStatsLevelSection(props: { content: ContentPackage; operationResults: any }) {
+function ClassFeatureAccordianItem(props: {
+  id: string;
+  feature: AbilityBlock;
+  results: OperationResult[];
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const { hovered, ref } = useHover();
+
+  const featureChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [featureChoiceCounts, setFeatureChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (featureChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
+        if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <Accordion.Item
+      value={props.id}
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control>
+        <Group gap={5}>
+          <Box>{props.feature.name}</Box>
+          {featureChoiceCounts.max - featureChoiceCounts.current > 0 && (
+            <Badge variant='filled'>{featureChoiceCounts.max - featureChoiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={featureChoiceCountRef}>
+        <Stack gap={5}>
+          <RichText ta='justify'>{props.feature.description}</RichText>
+          <DisplayOperationResult
+            source={undefined}
+            results={props.results}
+            onChange={(path, value) => {
+              props.onSaveChanges(`class-feature-${props.feature.id}_${path}`, value);
+            }}
+          />
+        </Stack>
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function HeritageAccordianItem(props: {
+  id: string;
+  results: OperationResult[];
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const { hovered, ref } = useHover();
+
+  const featureChoiceCountRef = useRef<HTMLDivElement>(null);
+  const [featureChoiceCounts, setFeatureChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (featureChoiceCountRef.current) {
+        const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
+        if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <Accordion.Item
+      value={props.id}
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control icon={<IconLeaf size='1rem' />}>
+        <Group gap={5}>
+          <Box>Heritage</Box>
+          {featureChoiceCounts.max - featureChoiceCounts.current > 0 && (
+            <Badge variant='filled'>{featureChoiceCounts.max - featureChoiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={featureChoiceCountRef}>
+        <Stack gap={5}>
+          <RichText ta='justify'>
+            You select a heritage at 1st level to reflect abilities passed down to you from your
+            ancestors or common among those of your ancestry in the environment where you were born
+            or grew up. You have only one heritage and can’t change it later. A heritage is not the
+            same as a culture or ethnicity, though some cultures or ethnicities might have more or
+            fewer members from a particular heritage.
+          </RichText>
+          <DisplayOperationResult
+            source={undefined}
+            results={props.results}
+            onChange={(path, value) => {
+              props.onSaveChanges(`heritage_${path}`, value);
+            }}
+          />
+        </Stack>
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function InitialStatsLevelSection(props: {
+  content: ContentPackage;
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+}) {
+  const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
   const [character, setCharacter] = useRecoilState(characterState);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -728,55 +889,95 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   const background = props.content.backgrounds.find(
     (background) => background.id === character?.details?.background?.id
   );
-  const heritage = props.content.abilityBlocks.find(
-    (ab) => ab.id === character?.details?.heritage?.id && ab.type === 'heritage'
+  // const heritage = props.content.abilityBlocks.find(
+  //   (ab) => ab.id === character?.details?.heritage?.id && ab.type === 'heritage'
+  // );
+
+  if (!props.operationResults) return null;
+
+  return (
+    <>
+      <Accordion
+        variant='separated'
+        value={subSectionValue}
+        onChange={setSubSectionValue}
+        styles={{
+          label: { paddingTop: 5, paddingBottom: 5 },
+        }}
+      >
+        <AncestryAccordianItem
+          ancestry={ancestry}
+          content={props.content}
+          operationResults={props.operationResults}
+          onSaveChanges={(path, value) => {
+            props.onSaveChanges(path, value);
+          }}
+          opened={subSectionValue === 'ancestry'}
+        />
+
+        <BackgroundAccordianItem
+          background={background}
+          operationResults={props.operationResults}
+          onSaveChanges={(path, value) => {
+            props.onSaveChanges(path, value);
+          }}
+          opened={subSectionValue === 'background'}
+        />
+
+        <ClassAccordianItem
+          class_={class_}
+          operationResults={props.operationResults}
+          onSaveChanges={(path, value) => {
+            props.onSaveChanges(path, value);
+          }}
+          opened={subSectionValue === 'class'}
+        />
+
+        {props.operationResults.contentSourceResults.length > 0 && (
+          <BooksAccordianItem
+            operationResults={props.operationResults}
+            onSaveChanges={(path, value) => {
+              props.onSaveChanges(path, value);
+            }}
+            opened={subSectionValue === 'books'}
+          />
+        )}
+        {props.operationResults.itemResults.length > 0 && (
+          <ItemsAccordianItem
+            operationResults={props.operationResults}
+            onSaveChanges={(path, value) => {
+              props.onSaveChanges(path, value);
+            }}
+            opened={subSectionValue === 'items'}
+          />
+        )}
+        {props.operationResults.characterResults.length > 0 && (
+          <CustomAccordianItem
+            operationResults={props.operationResults}
+            onSaveChanges={(path, value) => {
+              props.onSaveChanges(path, value);
+            }}
+            opened={subSectionValue === 'custom'}
+          />
+        )}
+      </Accordion>
+    </>
   );
+}
 
-  // Choice count tracking
-  const classChoiceCountRef = useRef<HTMLDivElement>(null);
-  const [classChoiceCounts, setClassChoiceCounts] = useState<{ current: number; max: number }>({
-    current: 0,
-    max: 0,
-  });
+function AncestryAccordianItem(props: {
+  ancestry?: Ancestry;
+  content: ContentPackage;
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const { hovered, ref } = useHover();
 
-  const backgroundChoiceCountRef = useRef<HTMLDivElement>(null);
-  const [backgroundChoiceCounts, setBackgroundChoiceCounts] = useState<{
-    current: number;
-    max: number;
-  }>({
-    current: 0,
-    max: 0,
-  });
-
-  const ancestryChoiceCountRef = useRef<HTMLDivElement>(null);
-  const [ancestryChoiceCounts, setAncestryChoiceCounts] = useState<{
-    current: number;
-    max: number;
-  }>({
-    current: 0,
-    max: 0,
-  });
-
-  const itemsChoiceCountRef = useRef<HTMLDivElement>(null);
-  const [itemsChoiceCounts, setItemsChoiceCounts] = useState<{
-    current: number;
-    max: number;
-  }>({
-    current: 0,
-    max: 0,
-  });
-
-  const booksChoiceCountRef = useRef<HTMLDivElement>(null);
-  const [booksChoiceCounts, setBooksChoiceCounts] = useState<{
-    current: number;
-    max: number;
-  }>({
-    current: 0,
-    max: 0,
-  });
-
-  const customChoiceCountRef = useRef<HTMLDivElement>(null);
-  const [customChoiceCounts, setCustomChoiceCounts] = useState<{
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const [choiceCounts, setChoiceCounts] = useState<{
     current: number;
     max: number;
   }>({
@@ -786,109 +987,13 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (classChoiceCountRef.current) {
-        const choiceCounts = getChoiceCounts(classChoiceCountRef.current);
-        if (!_.isEqual(choiceCounts, classChoiceCounts)) setClassChoiceCounts(choiceCounts);
-      }
-      if (backgroundChoiceCountRef.current) {
-        const choiceCounts = getChoiceCounts(backgroundChoiceCountRef.current);
-        if (
-          choiceCounts.current !== backgroundChoiceCounts.current ||
-          choiceCounts.max !== backgroundChoiceCounts.max
-        )
-          setBackgroundChoiceCounts(choiceCounts);
-      }
-      if (ancestryChoiceCountRef.current) {
-        const choiceCounts = getChoiceCounts(ancestryChoiceCountRef.current);
-        if (
-          choiceCounts.current !== ancestryChoiceCounts.current ||
-          choiceCounts.max !== ancestryChoiceCounts.max
-        )
-          setAncestryChoiceCounts(choiceCounts);
-      }
-      if (itemsChoiceCountRef.current) {
-        const choiceCounts = getChoiceCounts(itemsChoiceCountRef.current);
-        if (
-          choiceCounts.current !== itemsChoiceCounts.current ||
-          choiceCounts.max !== itemsChoiceCounts.max
-        )
-          setItemsChoiceCounts(choiceCounts);
-      }
-      if (booksChoiceCountRef.current) {
-        const choiceCounts = getChoiceCounts(booksChoiceCountRef.current);
-        if (
-          choiceCounts.current !== booksChoiceCounts.current ||
-          choiceCounts.max !== booksChoiceCounts.max
-        )
-          setBooksChoiceCounts(choiceCounts);
-      }
-      if (customChoiceCountRef.current) {
-        const choiceCounts = getChoiceCounts(customChoiceCountRef.current);
-        if (
-          choiceCounts.current !== customChoiceCounts.current ||
-          choiceCounts.max !== customChoiceCounts.max
-        )
-          setCustomChoiceCounts(choiceCounts);
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, 2500);
     return () => clearInterval(intervalId);
   }, []);
-
-  //
-
-  const saveSelectionChange = (path: string, value: string) => {
-    setCharacter((prev) => {
-      if (!prev) return prev;
-      const newSelections = { ...prev.operation_data?.selections };
-      if (!value) {
-        delete newSelections[path];
-      } else {
-        newSelections[path] = `${value}`;
-      }
-      return {
-        ...prev,
-        operation_data: {
-          ...prev.operation_data,
-          selections: newSelections,
-        },
-      };
-    });
-  };
-
-  if (!props.operationResults) return null;
-
-  // Only display the operation results that aren't already displayed in the class overview
-  let classOperationResults = props.operationResults?.classResults ?? [];
-  const classInitialOverviewDisplay = class_
-    ? convertClassOperationsIntoUI(
-        class_,
-        'READ/WRITE',
-        props.operationResults?.classResults ?? [],
-        [character, setCharacter]
-      )
-    : null;
-  if (classInitialOverviewDisplay) {
-    // Filter out operation results that are already displayed in the class overview
-    let displayRecords: {
-      ui: React.ReactNode;
-      operation: OperationSelect | null;
-    }[] = [];
-    for (const value of Object.values(classInitialOverviewDisplay)) {
-      if (Array.isArray(value)) {
-        displayRecords = [...displayRecords, ...value];
-      } else {
-        displayRecords.push(value);
-      }
-    }
-
-    // Filter operation results
-    classOperationResults = classOperationResults.filter((result: OperationResult) => {
-      return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
-      );
-    });
-  }
 
   // Only display the operation results that aren't already displayed in the ancestry overview
   const physicalFeatures = (props.content.abilityBlocks ?? []).filter(
@@ -897,12 +1002,12 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   const senses = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'sense');
   const languages = (props.content.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
   const heritages = (props.content.abilityBlocks ?? []).filter(
-    (block) => block.type === 'heritage' && block.traits?.includes(ancestry?.trait_id ?? -1)
+    (block) => block.type === 'heritage' && block.traits?.includes(props.ancestry?.trait_id ?? -1)
   );
   let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
-  const ancestryInitialOverviewDisplay = ancestry
+  const ancestryInitialOverviewDisplay = props.ancestry
     ? convertAncestryOperationsIntoUI(
-        ancestry,
+        props.ancestry,
         physicalFeatures,
         senses,
         languages,
@@ -936,175 +1041,447 @@ function InitialStatsLevelSection(props: { content: ContentPackage; operationRes
   }
 
   return (
-    <>
-      <Divider />
-      <Accordion
-        variant='contained'
-        defaultValue=''
-        styles={{
-          label: { paddingTop: 5, paddingBottom: 5 },
-        }}
+    <Accordion.Item
+      value='ancestry'
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control
+        disabled={!props.ancestry}
+        icon={getIconFromContentType('ancestry', '1rem')}
       >
-        <Accordion.Item value='ancestry'>
-          <Accordion.Control disabled={!ancestry} icon={getIconFromContentType('ancestry', '1rem')}>
-            <Group gap={5}>
-              <Box>Ancestry</Box>
-              {ancestryChoiceCounts.max - ancestryChoiceCounts.current > 0 && (
-                <Badge variant='light'>
-                  {ancestryChoiceCounts.max - ancestryChoiceCounts.current}
-                </Badge>
-              )}
-            </Group>
-          </Accordion.Control>
-          <Accordion.Panel ref={ancestryChoiceCountRef}>
-            <Stack>
-              <Box>
-                {ancestry && (
-                  <AncestryInitialOverview
-                    ancestry={ancestry}
-                    physicalFeatures={physicalFeatures}
-                    senses={senses}
-                    languages={languages}
-                    heritages={heritages}
-                    mode='READ/WRITE'
-                    operationResults={props.operationResults.ancestryResults}
-                  />
-                )}
-              </Box>
+        <Group gap={5}>
+          <Box>Ancestry</Box>
+          {choiceCounts.max - choiceCounts.current > 0 && (
+            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={choiceCountRef}>
+        <Stack gap={5}>
+          <Box>
+            {props.ancestry && (
+              <AncestryInitialOverview
+                ancestry={props.ancestry}
+                physicalFeatures={physicalFeatures}
+                senses={senses}
+                languages={languages}
+                heritages={heritages}
+                mode='READ/WRITE'
+                operationResults={props.operationResults.ancestryResults}
+              />
+            )}
+          </Box>
 
-              <Box>
-                <DisplayOperationResult
-                  source={undefined}
-                  results={ancestryOperationResults}
-                  onChange={(path, value) => {
-                    saveSelectionChange(`ancestry_${path}`, value);
-                  }}
-                />
-              </Box>
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-        <Accordion.Item value='background'>
-          <Accordion.Control
-            disabled={!background}
-            icon={getIconFromContentType('background', '1rem')}
-          >
-            <Group gap={5}>
-              <Box>Background</Box>
-              {backgroundChoiceCounts.max - backgroundChoiceCounts.current > 0 && (
-                <Badge variant='light'>
-                  {backgroundChoiceCounts.max - backgroundChoiceCounts.current}
-                </Badge>
-              )}
-            </Group>
-          </Accordion.Control>
-          <Accordion.Panel ref={backgroundChoiceCountRef}>
+          <Box>
             <DisplayOperationResult
               source={undefined}
-              results={props.operationResults.backgroundResults}
+              results={ancestryOperationResults}
               onChange={(path, value) => {
-                saveSelectionChange(`background_${path}`, value);
+                props.onSaveChanges(`ancestry_${path}`, value);
               }}
             />
-          </Accordion.Panel>
-        </Accordion.Item>
-        <Accordion.Item value='class'>
-          <Accordion.Control disabled={!class_} icon={getIconFromContentType('class', '1rem')}>
-            <Group gap={5}>
-              <Box>Class</Box>
-              {classChoiceCounts.max - classChoiceCounts.current > 0 && (
-                <Badge variant='light'>{classChoiceCounts.max - classChoiceCounts.current}</Badge>
-              )}
-            </Group>
-          </Accordion.Control>
-          <Accordion.Panel ref={classChoiceCountRef}>
-            <Stack>
-              <Box>
-                {class_ && (
-                  <ClassInitialOverview
-                    class_={class_}
-                    mode='READ/WRITE'
-                    operationResults={props.operationResults.classResults}
-                  />
-                )}
-              </Box>
-
-              <Box>
-                <DisplayOperationResult
-                  source={undefined}
-                  results={classOperationResults}
-                  onChange={(path, value) => {
-                    saveSelectionChange(`class_${path}`, value);
-                  }}
-                />
-              </Box>
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-        {props.operationResults.contentSourceResults.length > 0 && (
-          <Accordion.Item value='books'>
-            <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
-              <Group gap={5}>
-                <Box>Books</Box>
-                {booksChoiceCounts.max - booksChoiceCounts.current > 0 && (
-                  <Badge variant='light'>{booksChoiceCounts.max - booksChoiceCounts.current}</Badge>
-                )}
-              </Group>
-            </Accordion.Control>
-            <Accordion.Panel ref={booksChoiceCountRef}>
-              {props.operationResults.contentSourceResults.map((s: any, index: number) => (
-                <DisplayOperationResult
-                  key={index}
-                  source={s.baseSource}
-                  results={s.baseResults}
-                  onChange={(path, value) => {
-                    saveSelectionChange(`content-source-${s.baseSource.id}_${path}`, value);
-                  }}
-                />
-              ))}
-            </Accordion.Panel>
-          </Accordion.Item>
-        )}
-        {props.operationResults.itemResults.length > 0 && (
-          <Accordion.Item value='items'>
-            <Accordion.Control icon={getIconFromContentType('item', '1rem')}>
-              <Group gap={5}>
-                <Box>Items</Box>
-                {itemsChoiceCounts.max - itemsChoiceCounts.current > 0 && (
-                  <Badge variant='light'>{itemsChoiceCounts.max - itemsChoiceCounts.current}</Badge>
-                )}
-              </Group>
-            </Accordion.Control>
-            <Accordion.Panel ref={itemsChoiceCountRef}></Accordion.Panel>
-          </Accordion.Item>
-        )}
-        {props.operationResults.characterResults.length > 0 && (
-          <Accordion.Item value='custom'>
-            <Accordion.Control icon={<IconPuzzle size='1rem' />}>
-              <Group gap={5}>
-                <Box>Custom</Box>
-                {customChoiceCounts.max - customChoiceCounts.current > 0 && (
-                  <Badge variant='light'>
-                    {customChoiceCounts.max - customChoiceCounts.current}
-                  </Badge>
-                )}
-              </Group>
-            </Accordion.Control>
-            <Accordion.Panel ref={customChoiceCountRef}>
-              <DisplayOperationResult
-                source={undefined}
-                results={props.operationResults.characterResults}
-                onChange={(path, value) => {
-                  saveSelectionChange(`character_${path}`, value);
-                }}
-              />
-            </Accordion.Panel>
-          </Accordion.Item>
-        )}
-      </Accordion>
-    </>
+          </Box>
+        </Stack>
+      </Accordion.Panel>
+    </Accordion.Item>
   );
 }
+
+function BackgroundAccordianItem(props: {
+  background?: Background;
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const { hovered, ref } = useHover();
+
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Only display the operation results that aren't already displayed in the background overview
+  let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
+  const backgroundInitialOverviewDisplay = props.background
+    ? convertBackgroundOperationsIntoUI(
+        props.background,
+        'READ/WRITE',
+        props.operationResults?.backgroundResults ?? [],
+        [character, setCharacter],
+        openDrawer
+      )
+    : null;
+  if (backgroundInitialOverviewDisplay) {
+    // Filter out operation results that are already displayed in the background overview
+    let displayRecords: {
+      ui: React.ReactNode;
+      operation: OperationSelect | null;
+    }[] = [];
+    for (const value of Object.values(backgroundInitialOverviewDisplay)) {
+      if (Array.isArray(value)) {
+        displayRecords = [...displayRecords, ...value];
+      } else {
+        displayRecords.push(value);
+      }
+    }
+
+    // Filter operation results
+    backgroundOperationResults = backgroundOperationResults.filter((result: OperationResult) => {
+      return !displayRecords.find(
+        (record) =>
+          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+      );
+    });
+  }
+
+  return (
+    <Accordion.Item
+      value='background'
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control
+        disabled={!props.background}
+        icon={getIconFromContentType('background', '1rem')}
+      >
+        <Group gap={5}>
+          <Box>Background</Box>
+          {choiceCounts.max - choiceCounts.current > 0 && (
+            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={choiceCountRef}>
+        <Stack gap={5}>
+          <Box>
+            {props.background && (
+              <BackgroundInitialOverview
+                background={props.background}
+                mode='READ/WRITE'
+                operationResults={props.operationResults.backgroundResults}
+              />
+            )}
+          </Box>
+
+          <Box>
+            <DisplayOperationResult
+              source={undefined}
+              results={backgroundOperationResults}
+              onChange={(path, value) => {
+                props.onSaveChanges(`background_${path}`, value);
+              }}
+            />
+          </Box>
+        </Stack>
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function ClassAccordianItem(props: {
+  class_?: Class;
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const { hovered, ref } = useHover();
+
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Only display the operation results that aren't already displayed in the class overview
+  let classOperationResults = props.operationResults?.classResults ?? [];
+  const classInitialOverviewDisplay = props.class_
+    ? convertClassOperationsIntoUI(
+        props.class_,
+        'READ/WRITE',
+        props.operationResults?.classResults ?? [],
+        [character, setCharacter]
+      )
+    : null;
+  if (classInitialOverviewDisplay) {
+    // Filter out operation results that are already displayed in the class overview
+    let displayRecords: {
+      ui: React.ReactNode;
+      operation: OperationSelect | null;
+    }[] = [];
+    for (const value of Object.values(classInitialOverviewDisplay)) {
+      if (Array.isArray(value)) {
+        displayRecords = [...displayRecords, ...value];
+      } else {
+        displayRecords.push(value);
+      }
+    }
+
+    // Filter operation results
+    classOperationResults = classOperationResults.filter((result: OperationResult) => {
+      return !displayRecords.find(
+        (record) =>
+          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+      );
+    });
+  }
+
+  return (
+    <Accordion.Item
+      value='class'
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control disabled={!props.class_} icon={getIconFromContentType('class', '1rem')}>
+        <Group gap={5}>
+          <Box>Class</Box>
+          {choiceCounts.max - choiceCounts.current > 0 && (
+            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={choiceCountRef}>
+        <Stack gap={5}>
+          <Box>
+            {props.class_ && (
+              <ClassInitialOverview
+                class_={props.class_}
+                mode='READ/WRITE'
+                operationResults={props.operationResults.classResults}
+              />
+            )}
+          </Box>
+
+          <Box>
+            <DisplayOperationResult
+              source={undefined}
+              results={classOperationResults}
+              onChange={(path, value) => {
+                props.onSaveChanges(`class_${path}`, value);
+              }}
+            />
+          </Box>
+        </Stack>
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function BooksAccordianItem(props: {
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const { hovered, ref } = useHover();
+
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <Accordion.Item
+      value='books'
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
+        <Group gap={5}>
+          <Box>Books</Box>
+          {choiceCounts.max - choiceCounts.current > 0 && (
+            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={choiceCountRef}>
+        {props.operationResults.contentSourceResults.map((s: any, index: number) => (
+          <DisplayOperationResult
+            key={index}
+            source={s.baseSource}
+            results={s.baseResults}
+            onChange={(path, value) => {
+              props.onSaveChanges(`content-source-${s.baseSource.id}_${path}`, value);
+            }}
+          />
+        ))}
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function ItemsAccordianItem(props: {
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const { hovered, ref } = useHover();
+
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <Accordion.Item
+      value='items'
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control icon={getIconFromContentType('item', '1rem')}>
+        <Group gap={5}>
+          <Box>Items</Box>
+          {choiceCounts.max - choiceCounts.current > 0 && (
+            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={choiceCountRef}>
+        {/* {props.operationResults.itemResults.map((s: any, index: number) => (
+          <DisplayOperationResult
+            key={index}
+            source={s.baseSource}
+            results={s.baseResults}
+            onChange={(path, value) => {
+              props.onSaveChanges(`item-${s.baseSource.id}_${path}`, value);
+            }}
+          />
+        ))} */}
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+function CustomAccordianItem(props: {
+  operationResults: any;
+  onSaveChanges: (path: string, value: string) => void;
+  opened: boolean;
+}) {
+  const { hovered, ref } = useHover();
+
+  const choiceCountRef = useRef<HTMLDivElement>(null);
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
+    current: 0,
+    max: 0,
+  });
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (choiceCountRef.current) {
+        const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
+        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+      }
+    }, 2500);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <Accordion.Item
+      value='custom'
+      ref={ref}
+      style={{
+        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+      }}
+      mt={3}
+    >
+      <Accordion.Control icon={<IconPuzzle size='1rem' />}>
+        <Group gap={5}>
+          <Box>Custom</Box>
+          {choiceCounts.max - choiceCounts.current > 0 && (
+            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+          )}
+        </Group>
+      </Accordion.Control>
+      <Accordion.Panel ref={choiceCountRef}>
+        <DisplayOperationResult
+          source={undefined}
+          results={props.operationResults.characterResults}
+          onChange={(path, value) => {
+            props.onSaveChanges(`character_${path}`, value);
+          }}
+        />
+      </Accordion.Panel>
+    </Accordion.Item>
+  );
+}
+
+//////////////////////////////////////////
 
 function DisplayOperationResult(props: {
   source?: ObjectWithUUID;
