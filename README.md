@@ -1,7 +1,5 @@
 ![Wanderer's Guide](https://wanderersguide.app/images/logo.png "Wanderer's Guide logo")
 
-# Wanderers Guide monorepo
-
 ## Quick links
 
 - [Legacy App Repo](https://github.com/wanderers-guide/wanderers-guide)
