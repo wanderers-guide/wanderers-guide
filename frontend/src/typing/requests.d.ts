@@ -29,7 +29,7 @@ export type RequestType =
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 
-
+// All requests follow JSend specification (https://github.com/omniti-labs/jsend) //
 export type JSendResponse = JSendResponseSuccess | JSendResponseFail | JSendResponseError;
 interface JSendResponseSuccess {
   status: 'success';
@@ -45,4 +45,3 @@ interface JSendResponseError {
   data?: NonNullable<any>;
   code?: number;
 }
-

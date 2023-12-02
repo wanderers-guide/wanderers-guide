@@ -30,56 +30,6 @@ import { ExtendedProficiencyType, Proficiency, ProficiencyType } from '@typing/v
 import { ReactNode } from 'react';
 import { fetchContentById } from '@content/content-store';
 
-/*
-
-    Operation Selections:
-
-    We only need metadata for the select operator.!!
-    Needs to save that we had a selection somewhere, needs to support nested selects.
-
-    ## Key -> Value
-    The key doesn't use index anywhere, which is good - it means that metadata won't ever be applies out of sync.
-
-    - Primary Source ID (ex. ancestry-hertiage). Anywhere we start to execute operations needs to have a unique primary source ID.
-    - Select operation UUID. Can be multiple, separated by "_"
-
-    ex.
-    - background_<UUID>
-    - ancestry-heritage_<UUID>_<UUID>_<UUID>
-      algo.
-        Ancestry heritage has an operation runner with that unique primary source ID.
-        Check the operations for a select with the first UUID. If no option is selected
-
-
-  */
-
-// setSelections([
-//   {
-//     key: 'ancestry-heritage_1_34_67',
-//     value: 9,
-//   },
-//   {
-//     key: 'ancestry-heritage_1',
-//     value: 1,
-//   },
-//   {
-//     key: 'ancestry-heritage_2_45',
-//     value: 13,
-//   },
-//   {
-//     key: 'ancestry-heritage_1_45',
-//     value: 10,
-//   },
-//   {
-//     key: 'ancestry-heritage_1_45_3',
-//     value: 8,
-//   },
-//   {
-//     key: 'ancestry-heritage',
-//     value: 22,
-//   },
-// ]);
-
 export type OperationOptions = {
   doOnlyValueCreation?: boolean;
   doConditionals?: boolean;
@@ -119,7 +69,7 @@ export async function runOperations(
         return await runConditional(selectionNode, operation, options);
       }
 
-      if(options.onlyConditionalsWhitelist?.includes(operation.id)) {
+      if (options.onlyConditionalsWhitelist?.includes(operation.id)) {
         // Continue to run the operation
       } else {
         return null;

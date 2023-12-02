@@ -42,29 +42,15 @@ async function executeOperations(
 /*
     Algo:
 
-    - Run value creation for content_source
-    - Run value creation for character
-    - Run value creation for class
-      - Class features
-    - Run value creation for ancestry
-      - Heritage
-    - Run value creation for background
-    - Run value creation for items
+    - Run variable creation only for everything
 
-    (skip value creation for these)
-    - Run content_source
-    - Run character
-    - Run class
-    - Run ancestry
-    - Run background
-    - Run items
+    - Run "normal" round for everything
 
-    - Run conditionals content_source
-    - Run conditionals character
-    - Run conditionals class
-    - Run conditionals ancestry
-    - Run conditionals background
-    - Run conditionals items
+    - Run conditionals only (and sub-operations of conditionals) for everything
+        - The extra class skill trainings and ancestry languages are based on Int mod,
+          which makes them almost like a conidtional, they need to be run here as well.
+        - If in the future, we add a way to execute a list of operations X times, where
+          X is based on a value of a variable, those would also need to be run here.
 */
 export async function executeCharacterOperations(character: Character, content: ContentPackage) {
   resetVariables();
