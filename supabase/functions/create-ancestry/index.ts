@@ -1,7 +1,7 @@
 // @ts-ignore
 import { serve } from 'std/server';
 import { connect, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
-import type { Class, Trait } from '../_shared/content';
+import type { Ancestry, Trait } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -11,21 +11,20 @@ serve(async (req: Request) => {
       rarity,
       description,
       operations,
-      skill_training_base,
       artwork_url,
       content_source_id,
       version,
-    } = body as Class;
+    } = body as Ancestry;
 
     let trait_id: number | undefined = undefined;
     if (!id || id === -1) {
-      // Is a new class, so we need to create a new trait
+      // Is a new ancestry, so we need to create a new trait
       const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
         client,
         'trait',
         {
           name,
-          description: `This indicates content from the ${name.toLowerCase()} class.`,
+          description: `This indicates content from the ${name.toLowerCase()} ancestry.`,
           content_source_id,
         }
       );
@@ -40,13 +39,12 @@ serve(async (req: Request) => {
       }
     }
 
-    const { procedure, result } = await upsertData<Class>(client, 'class', {
+    const { procedure, result } = await upsertData<Ancestry>(client, 'ancestry', {
       id,
       name,
       rarity,
       description,
       operations,
-      skill_training_base,
       trait_id,
       artwork_url,
       content_source_id,

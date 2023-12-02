@@ -140,9 +140,8 @@ interface Class {
   name: string;
   rarity: Rarity;
   description: string;
-  operations: Operation[];
-  key_attribute: string;
-  hp: number;
+  operations: Operation[] | undefined;
+  skill_training_base: number;
   trait_id: number;
   artwork_url: string;
   content_source_id: number;
@@ -222,15 +221,11 @@ interface Ancestry {
   name: string;
   rarity: Rarity;
   description: string;
-  hp: number;
-  size: Size;
-  speed: number;
   trait_id: number;
-  traits_other: number[];
   artwork_url: string;
   content_source_id: number;
   version: string;
-  operations: Operation[];
+  operations: Operation[] | undefined;
 }
 
 type Background = {
