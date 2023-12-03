@@ -229,6 +229,6 @@ interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
 
 interface OperationSelectFiltersAdjValue extends OperationSelectFiltersBase {
   readonly type: 'ADJ_VALUE';
-  group: 'ATTRIBUTE' | 'SKILL';
+  group: 'ATTRIBUTE' | 'SKILL' | 'ADD-LORE';
   value: number | string | boolean | AttributeValue | ExtendedProficiencyType;
 }

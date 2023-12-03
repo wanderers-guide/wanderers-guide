@@ -25,6 +25,7 @@ import {
   Indicator,
   Menu,
   rem,
+  ThemeIcon,
 } from '@mantine/core';
 import {
   AbilityBlock,
@@ -52,14 +53,18 @@ import {
 } from '@mantine/hooks';
 import {
   IconArrowNarrowRight,
+  IconCheck,
   IconChevronDown,
   IconChevronsLeft,
   IconChevronsRight,
+  IconCircleDotFilled,
   IconCopy,
   IconDots,
+  IconQuestionMark,
   IconSearch,
   IconTrash,
   IconX,
+  IconZoomCheck,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActionSymbol } from '@common/Actions';
@@ -81,6 +86,7 @@ import {
 import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
 import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
 import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/variables';
+import { meetsPrerequisites } from '@variables/prereq-detection';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -483,11 +489,11 @@ function SelectionOptions(props: {
   filteredOptions = filteredOptions.sort((a, b) => {
     if (a.level !== undefined && b.level !== undefined) {
       if (a.level !== b.level) {
-        return a.level - b.level;
+        return b.level - a.level;
       }
     } else if (a.rank !== undefined && b.rank !== undefined) {
       if (a.rank !== b.rank) {
-        return a.rank - b.rank;
+        return b.rank - a.rank;
       }
     }
     return a.name.localeCompare(b.name);
@@ -604,7 +610,7 @@ function SelectionOptionsRoot(props: {
         <>
           {props.options.map((feat, index) => (
             <FeatSelectionOption
-              key={index}
+              key={'feat-' + index}
               feat={feat as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === feat.id}
@@ -622,7 +628,7 @@ function SelectionOptionsRoot(props: {
         <>
           {props.options.map((action, index) => (
             <ActionSelectionOption
-              key={index}
+              key={'action-' + index}
               action={action as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === action.id}
@@ -638,7 +644,7 @@ function SelectionOptionsRoot(props: {
         <>
           {props.options.map((classFeature, index) => (
             <ClassFeatureSelectionOption
-              key={index}
+              key={'class-feature-' + index}
               classFeature={classFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === classFeature.id}
@@ -654,7 +660,7 @@ function SelectionOptionsRoot(props: {
         <>
           {props.options.map((sense, index) => (
             <SenseSelectionOption
-              key={index}
+              key={'sense-' + index}
               sense={sense as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === sense.id}
@@ -670,7 +676,7 @@ function SelectionOptionsRoot(props: {
         <>
           {props.options.map((physicalFeature, index) => (
             <PhysicalFeatureSelectionOption
-              key={index}
+              key={'physical-feature-' + index}
               physicalFeature={physicalFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === physicalFeature.id}
@@ -686,7 +692,7 @@ function SelectionOptionsRoot(props: {
         <>
           {props.options.map((heritage, index) => (
             <HeritageSelectionOption
-              key={index}
+              key={'heritage-' + index}
               heritage={heritage as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === heritage.id}
@@ -705,7 +711,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((class_, index) => (
           <ClassSelectionOption
-            key={index}
+            key={'class-' + index}
             class_={class_ as Class}
             onClick={props.onClick}
             selected={props.selectedId === class_.id}
@@ -723,7 +729,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((background, index) => (
           <BackgroundSelectionOption
-            key={index}
+            key={'background-' + index}
             background={background as Background}
             onClick={props.onClick}
             selected={props.selectedId === background.id}
@@ -741,7 +747,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((ancestry, index) => (
           <AncestrySelectionOption
-            key={index}
+            key={'ancestry-' + index}
             ancestry={ancestry as Ancestry}
             onClick={props.onClick}
             selected={props.selectedId === ancestry.id}
@@ -759,7 +765,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((item, index) => (
           <ItemSelectionOption
-            key={index}
+            key={'item-' + index}
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
@@ -776,7 +782,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((spell, index) => (
           <SpellSelectionOption
-            key={index}
+            key={'spell-' + index}
             spell={spell as Spell}
             onClick={props.onClick}
             selected={props.selectedId === spell.id}
@@ -793,7 +799,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((trait, index) => (
           <TraitSelectionOption
-            key={index}
+            key={'trait-' + index}
             trait={trait as Trait}
             onClick={props.onClick}
             selected={props.selectedId === trait.id}
@@ -810,7 +816,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((language, index) => (
           <LanguageSelectionOption
-            key={index}
+            key={'language-' + index}
             language={language as Language}
             onClick={props.onClick}
             selected={props.selectedId === language.id}
@@ -827,7 +833,7 @@ function SelectionOptionsRoot(props: {
       <>
         {props.options.map((creature, index) => (
           <CreatureSelectionOption
-            key={index}
+            key={'creature-' + index}
             creature={creature as Creature}
             onClick={props.onClick}
             selected={props.selectedId === creature.id}
@@ -859,13 +865,23 @@ function SelectionOptionsRoot(props: {
       });
     };
 
+    // If the only options are lores, it's adding a new lore. Just shortcut to that.
+    if (
+      props.options.filter((o) => o.variable.startsWith('SKILL_LORE_')).length ===
+      props.options.length
+    ) {
+      modals.closeAll();
+      addNewLore(isSkillIncreaseWithLore as AbilityBlock);
+      return null;
+    }
+
     return (
       <>
         {props.options
           .filter((o) => o.variable !== 'SKILL_LORE____')
           .map((option, index) => (
             <GenericSelectionOption
-              key={index}
+              key={'generic-' + index}
               option={option as GenericAbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === option.id}
@@ -901,7 +917,7 @@ function SelectionOptionsRoot(props: {
     <>
       {props.options.map((option, index) => (
         <GenericSelectionOption
-          key={index}
+          key={'generic-' + index}
           option={option as GenericAbilityBlock}
           onClick={props.onClick}
           selected={props.selectedId === option.id}
@@ -918,6 +934,8 @@ function SelectionOptionsRoot(props: {
 interface GenericAbilityBlock extends AbilityBlock {
   _content_type?: ContentType;
   _select_uuid?: string;
+  _is_core?: boolean;
+  _source_level?: number;
 }
 export function GenericSelectionOption(props: {
   option: GenericAbilityBlock;
@@ -934,6 +952,8 @@ export function GenericSelectionOption(props: {
 
   // @ts-ignore
   const variable = getVariable(props.option.variable);
+
+  console.log(props.option);
 
   let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value?.value;
   let nextProf =
@@ -954,6 +974,15 @@ export function GenericSelectionOption(props: {
         : props.skillAdjustment;
   }
 
+  let limitedByLevel = false;
+  if (props.skillAdjustment === '1') {
+    if (nextProf && nextProf === 'M' && (props.option._source_level ?? 1) < 7) {
+      limitedByLevel = true;
+    } else if (nextProf && nextProf === 'L' && (props.option._source_level ?? 1) < 15) {
+      limitedByLevel = true;
+    }
+  }
+
   const alreadyProficient =
     !props.selected &&
     currentProf &&
@@ -961,7 +990,7 @@ export function GenericSelectionOption(props: {
       (isProficiencyType(props.skillAdjustment) &&
         maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
 
-  const disabled = alreadyProficient;
+  const disabled = alreadyProficient || limitedByLevel;
 
   console.log(props.option);
 
@@ -989,6 +1018,11 @@ export function GenericSelectionOption(props: {
         <Box pl={8}>
           <Text fz='sm'>{props.option.name}</Text>
         </Box>
+        {props.option._is_core && (
+          <ThemeIcon variant='light' size='xs' radius='xl'>
+            <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />
+          </ThemeIcon>
+        )}
       </Group>
       <Group wrap='nowrap' gap={5}>
         {props.skillAdjustment && variable && (
@@ -1112,6 +1146,8 @@ export function FeatSelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  const prereqMet = meetsPrerequisites(props.feat.prerequisites);
+
   return (
     <Group
       ref={ref}
@@ -1147,6 +1183,30 @@ export function FeatSelectionOption(props: {
         <Box>
           <ActionSymbol cost={props.feat.actions} />
         </Box>
+        {prereqMet.result && (
+          <>
+            {prereqMet.result === 'FULLY' && (
+              <ThemeIcon variant='light' size='xs' radius='xl'>
+                <IconCheck style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+            )}
+            {prereqMet.result === 'PARTIALLY' && (
+              <ThemeIcon variant='light' size='xs' radius='xl'>
+                <IconZoomCheck style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+            )}
+            {prereqMet.result === 'UNKNOWN' && (
+              <ThemeIcon variant='light' size='xs' radius='xl' color='yellow'>
+                <IconQuestionMark style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+            )}
+            {prereqMet.result === 'NOT' && (
+              <ThemeIcon variant='light' size='xs' radius='xl' color='red'>
+                <IconX style={{ width: '70%', height: '70%' }} />
+              </ThemeIcon>
+            )}
+          </>
+        )}
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
@@ -2014,11 +2074,7 @@ export function AncestrySelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const ancestryHp = getStatDisplay(
-    'MAX_HEALTH_CLASS_PER_LEVEL',
-    props.ancestry.operations ?? [],
-    'READ'
-  );
+  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', props.ancestry.operations ?? [], 'READ');
   const attributes = getStatBlockDisplay(
     getAllAttributeVariables().map((v) => v.name),
     props.ancestry.operations ?? [],
@@ -2032,7 +2088,6 @@ export function AncestrySelectionOption(props: {
     undefined,
     { onlyNegatives: true }
   );
-  console.log(flawAttributes);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -2243,6 +2298,12 @@ export function BackgroundSelectionOption(props: {
       onConfirm: () => props.onClick(props.background),
     });
 
+  const attributes = getStatBlockDisplay(
+    getAllAttributeVariables().map((v) => v.name),
+    props.background.operations ?? [],
+    'READ'
+  );
+
   return (
     <Group
       ref={ref}
@@ -2269,32 +2330,22 @@ export function BackgroundSelectionOption(props: {
           </Text>
 
           <Group gap={5}>
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              ANY
-            </Badge>
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              ANY
-            </Badge>
+            {attributes.map((attribute, index) => (
+              <Badge
+                key={index}
+                variant='dot'
+                size='xs'
+                styles={{
+                  root: {
+                    // @ts-ignore
+                    '--badge-dot-size': 0,
+                  },
+                }}
+                c='gray.6'
+              >
+                {attribute.ui}
+              </Badge>
+            ))}
           </Group>
         </div>
       </Group>

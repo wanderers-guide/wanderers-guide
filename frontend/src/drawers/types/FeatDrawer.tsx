@@ -5,10 +5,26 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchAllPrereqs, fetchContentById } from '@content/content-store';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Anchor } from '@mantine/core';
+import {
+  Title,
+  Text,
+  Image,
+  Loader,
+  Group,
+  Divider,
+  Stack,
+  Box,
+  Flex,
+  Anchor,
+  useMantineTheme,
+  ThemeIcon,
+} from '@mantine/core';
+import { IconCheck, IconZoomCheck, IconX, IconQuestionMark } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { listToLabel } from '@utils/strings';
+import { meetsPrerequisites } from '@variables/prereq-detection';
+import { ReactNode } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function FeatDrawerTitle(props: { data: { id: number } }) {
@@ -47,6 +63,7 @@ const DISPLAY_PREREQUS = true;
 
 export function FeatDrawerContent(props: { data: { id: number } }) {
   const id = props.data.id;
+  const theme = useMantineTheme();
 
   const { data: feat } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
@@ -71,6 +88,76 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
       />
     );
   }
+
+  const prereqMet = DISPLAY_PREREQUS && meetsPrerequisites(feat.prerequisites);
+  const prereqUI: ReactNode[] = [];
+  if (prereqMet && prereqMet.meetMap.size > 0) {
+    for (const [prereq, met] of prereqMet.meetMap.entries()) {
+      if (!met) {
+        prereqUI.push(<>{prereq}</>);
+      } else if (met === 'FULLY') {
+        prereqUI.push(
+          <>
+            <Text
+              style={{
+                textDecoration: 'underline',
+                textDecorationColor: theme.colors[theme.primaryColor][4],
+              }}
+              span
+            >
+              {prereq}
+            </Text>
+          </>
+        );
+      } else if (met === 'PARTIALLY') {
+        prereqUI.push(
+          <>
+            <Text
+              style={{
+                textDecoration: 'underline',
+                textDecorationColor: theme.colors[theme.primaryColor][2],
+              }}
+              span
+            >
+              {prereq}
+            </Text>
+          </>
+        );
+      } else if (met === 'NOT') {
+        prereqUI.push(
+          <>
+            <Text
+              style={{
+                textDecoration: 'underline',
+                textDecorationColor: theme.colors.red[4],
+              }}
+              span
+            >
+              {prereq}
+            </Text>
+          </>
+        );
+      } else if (met === 'UNKNOWN') {
+        prereqUI.push(
+          <>
+            <Text
+              style={{
+                textDecoration: 'underline',
+                textDecorationColor: theme.colors.yellow[2],
+              }}
+              span
+            >
+              {prereq}
+            </Text>
+          </>
+        );
+      }
+    }
+  } else {
+    prereqUI.push(...(feat.prerequisites ?? []).map((prereq) => <>{prereq}</>));
+  }
+
+  console.log(prereqUI, feat.prerequisites);
 
   const hasTopSection =
     (feat.prerequisites && feat.prerequisites.length > 0) ||
@@ -100,12 +187,14 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
         <Box pb={2}>
           <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
         </Box>
-        {DISPLAY_PREREQUS && feat.prerequisites && feat.prerequisites.length > 0 && (
+        {DISPLAY_PREREQUS && prereqUI && prereqUI.length > 0 && (
           <IndentedText ta='justify'>
             <Text fw={600} c='gray.5' span>
               Prerequisites
             </Text>{' '}
-            {feat.prerequisites.join(', ')}
+            {prereqUI.flatMap((node, index) =>
+              index < prereqUI.length - 1 ? [node, '; '] : [node]
+            )}
           </IndentedText>
         )}
         {feat.frequency && (
@@ -159,17 +248,13 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
           </Text>
         )}
 
-        {DISPLAY_PREREQUS && (
-          <PrerequisiteForSection name={feat.name} />
-        )}
+        {DISPLAY_PREREQUS && <PrerequisiteForSection name={feat.name} />}
       </Box>
     </Box>
   );
 }
 
-
 export function PrerequisiteForSection(props: { name: string }) {
-
   const { data } = useQuery({
     queryKey: [`find-prereqs-for-${props.name}`, { name: props.name }],
     queryFn: async ({ queryKey }) => {
@@ -182,7 +267,9 @@ export function PrerequisiteForSection(props: { name: string }) {
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  if(!data || data.length === 0) { return null; }
+  if (!data || data.length === 0) {
+    return null;
+  }
 
   const options = data.sort((a, b) => {
     if (a.level === undefined || b.level === undefined) {
@@ -220,5 +307,4 @@ export function PrerequisiteForSection(props: { name: string }) {
       </IndentedText>
     </Box>
   );
-
 }

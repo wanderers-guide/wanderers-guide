@@ -1,5 +1,4 @@
-
-import { Variable, VariableType } from "@typing/variables";
+import { Variable, VariableType } from '@typing/variables';
 import {
   isAttributeValue,
   isProficiencyType,
@@ -16,11 +15,13 @@ import {
   nextProficiencyType,
   prevProficiencyType,
 } from './variable-utils';
-import _ from "lodash";
-import { throwError } from "@utils/notifications";
-import { re } from "mathjs";
+import _ from 'lodash';
+import { throwError } from '@utils/notifications';
+import { re } from 'mathjs';
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
+  PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
+
   ATTRIBUTE_STR: newVariable('attr', 'ATTRIBUTE_STR'),
   ATTRIBUTE_DEX: newVariable('attr', 'ATTRIBUTE_DEX'),
   ATTRIBUTE_CON: newVariable('attr', 'ATTRIBUTE_CON'),
@@ -162,11 +163,7 @@ export function getVariable(name: string): Variable | null {
  * @param defaultValue - optional, default value of the variable
  * @returns - the variable that was added
  */
-export function addVariable(
-  type: VariableType,
-  name: string,
-  defaultValue?: any
-) {
+export function addVariable(type: VariableType, name: string, defaultValue?: any) {
   const variable = newVariable(type, name, defaultValue);
   variables[variable.name] = variable;
   return _.cloneDeep(variable);
@@ -194,7 +191,7 @@ export function resetVariables() {
  */
 export function setVariable(name: string, value: any) {
   let variable = variables[name];
-  if(!variable) throwError(`Invalid variable name: ${name}`);
+  if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(+value)) {
     variable.value = parseInt(value);
   } else if (isVariableStr(variable) && _.isString(value)) {

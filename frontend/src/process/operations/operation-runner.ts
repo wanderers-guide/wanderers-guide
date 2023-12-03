@@ -18,7 +18,7 @@ import {
 import { addVariable, adjVariable, getVariable, setVariable } from '@variables/variable-manager';
 import _ from 'lodash';
 import { SelectionTreeNode } from './selection-tree';
-import { throwError } from '@utils/notifications';
+import { displayError, throwError } from '@utils/notifications';
 import {
   ObjectWithUUID,
   determineFilteredSelectionList,
@@ -135,8 +135,7 @@ async function runSelect(
     if (selectedOption) {
       updateVariables(operation, selectedOption);
     } else {
-      console.error('Selected option not found', selectionNode);
-      throwError(`Selected option "${selectionNode.value}" not found`);
+      displayError(`Selected option "${selectionNode.value}" not found`);
       return null;
     }
     selected = selectedOption;
@@ -241,7 +240,7 @@ async function runGiveAbilityBlock(
     operation.data.abilityBlockId
   );
   if (!abilityBlock) {
-    //throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
     return null;
   }
 
@@ -286,7 +285,7 @@ async function runGiveAbilityBlock(
 async function runGiveLanguage(operation: OperationGiveLanguage): Promise<OperationResult> {
   const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
-    throwError('Language not found');
+    displayError('Language not found');
     return null;
   }
 
@@ -298,7 +297,7 @@ async function runGiveLanguage(operation: OperationGiveLanguage): Promise<Operat
 async function runGiveSpell(operation: OperationGiveSpell): Promise<OperationResult> {
   const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
-    throwError('Spell not found');
+    displayError('Spell not found');
     return null;
   }
 
@@ -315,7 +314,7 @@ async function runRemoveAbilityBlock(
     operation.data.abilityBlockId
   );
   if (!abilityBlock) {
-    //throwError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
     return null;
   }
 
@@ -375,7 +374,7 @@ async function runRemoveAbilityBlock(
 async function runRemoveLanguage(operation: OperationRemoveLanguage): Promise<OperationResult> {
   const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
-    throwError('Language not found');
+    displayError('Language not found');
     return null;
   }
 
@@ -397,7 +396,7 @@ async function runRemoveLanguage(operation: OperationRemoveLanguage): Promise<Op
 async function runRemoveSpell(operation: OperationRemoveSpell): Promise<OperationResult> {
   const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
-    throwError('Spell not found');
+    displayError('Spell not found');
     return null;
   }
 

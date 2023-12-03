@@ -281,7 +281,13 @@ export function CreateContentSourceModal(props: {
           </Center>
         </form>
         <Center style={{ flex: 1 }}>
-          <Tabs w='100%' variant='outline' defaultValue='feats' orientation='vertical'>
+          <Tabs
+            w='100%'
+            variant='outline'
+            defaultValue='feats'
+            orientation='vertical'
+            keepMounted={false}
+          >
             <Tabs.List>
               <Tabs.Tab
                 value='actions'
@@ -670,15 +676,16 @@ function ContentList<
   const initJsSearch = () => {
     search.current = new JsSearch.Search('id');
     search.current.addIndex('name');
-    search.current.addIndex('description');
-    search.current.addDocuments(props.content);
+    //search.current.addIndex('description');
+    search.current.addDocuments(_.cloneDeep(getContent()));
   };
 
   const getContent = () => {
-    let content = props.content;
+    let content = _.cloneDeep(props.content);
     if (props.abilityBlockType) {
       content = content.filter((item) => item.type === props.abilityBlockType);
     }
+    console.log(props.abilityBlockType);
     content = searchQuery ? (search.current.search(searchQuery) as T[]) : content;
 
     // Sort by level/rank then name

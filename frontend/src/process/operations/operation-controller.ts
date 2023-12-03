@@ -10,9 +10,10 @@ import {
 import { getRootSelection, setSelections } from './selection-tree';
 import { Operation, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
-import { addVariable, getVariable, resetVariables } from '@variables/variable-manager';
+import { addVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
 import { isAttributeValue } from '@variables/variable-utils';
 import _ from 'lodash';
+import { hashData } from '@utils/numbers';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -55,6 +56,8 @@ async function executeOperations(
 export async function executeCharacterOperations(character: Character, content: ContentPackage) {
   resetVariables();
   defineSelectionTree(character);
+  setVariable('PAGE_CONTEXT', 'CHARACTER-BUILDER');
+  setVariable('LEVEL', character.level);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
@@ -125,16 +128,25 @@ export async function executeCharacterOperations(character: Character, content: 
         getExtendedAncestryOperations(ancestry),
         options
       );
-      console.log(ancestryResults, getExtendedAncestryOperations(ancestry));
     }
 
-    let heritageResults: OperationResult[] = [];
+    // Ancestry heritage and feats
+    let ancestrySectionResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     if (ancestry) {
-      heritageResults = await executeOperations(
-        'heritage',
-        getExtendedHeritageOperations(ancestry, heritage),
-        options
-      );
+      for (const section of getAncestrySections(ancestry)) {
+        if (section.level === undefined || section.level <= character.level) {
+          const results = await executeOperations(
+            `ancestry-section-${section.id}`,
+            section.operations ?? [],
+            options
+          );
+
+          ancestrySectionResults.push({
+            baseSource: section,
+            baseResults: results,
+          });
+        }
+      }
     }
 
     let backgroundResults: OperationResult[] = [];
@@ -155,7 +167,7 @@ export async function executeCharacterOperations(character: Character, content: 
       classResults,
       classFeatureResults,
       ancestryResults,
-      heritageResults,
+      ancestrySectionResults,
       backgroundResults,
       itemResults,
     };
@@ -185,7 +197,6 @@ export async function executeCharacterOperations(character: Character, content: 
     ],
   });
 
-  console.log(results, conditionalResults, mergeOperationResults(results, conditionalResults));
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }
 
@@ -233,8 +244,6 @@ function limitBoostOptions(
   operationResults = _.cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
 
-  console.log(operations, operationResults);
-
   // Pull from all selections already made
   for (const opR of operationResults) {
     const selectedOption = opR?.result?.source?.variable;
@@ -270,7 +279,6 @@ function limitBoostOptions(
       });
     }
   }
-  console.log(unselectedOptions);
 
   return operationResults;
 }
@@ -348,31 +356,79 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
   return operations;
 }
 
-export function getExtendedHeritageOperations(ancestry: Ancestry, heritage?: AbilityBlock) {
-  return [...addedAncestryHeritage(ancestry), ...(heritage?.operations ?? [])];
-}
-
-export function addedAncestryHeritage(ancestry: Ancestry): OperationSelect[] {
-  let operations: OperationSelect[] = [];
-
-  // Operation for selecting a heritage
-  operations.push({
-    id: '3fd6a268-771b-49fc-93ed-9b53695d1a29',
-    type: 'select',
-    data: {
-      title: 'Select a Heritage',
-      modeType: 'FILTERED',
-      optionType: 'ABILITY_BLOCK',
-      optionsPredefined: [],
-      optionsFilters: {
-        id: 'c8dc1601-4c97-4838-9bd5-31d0e6b87286',
-        type: 'ABILITY_BLOCK',
-        level: {},
-        traits: [ancestry.trait_id],
-        abilityBlockType: 'heritage',
+export function getAncestrySections(ancestry: Ancestry): AbilityBlock[] {
+  const heritage: AbilityBlock = {
+    id: hashData({ name: 'heritage' }),
+    created_at: '',
+    operations: [
+      {
+        id: '3fd6a268-771b-49fc-93ed-9b53695d1a29',
+        type: 'select',
+        data: {
+          title: 'Select a Heritage',
+          modeType: 'FILTERED',
+          optionType: 'ABILITY_BLOCK',
+          optionsPredefined: [],
+          optionsFilters: {
+            id: 'c8dc1601-4c97-4838-9bd5-31d0e6b87286',
+            type: 'ABILITY_BLOCK',
+            level: {},
+            traits: [ancestry.trait_id],
+            abilityBlockType: 'heritage',
+          },
+        },
       },
-    },
-  });
+    ],
+    name: 'Heritage',
+    actions: null,
+    level: 1,
+    rarity: 'COMMON',
+    description: `You select a heritage to reflect abilities passed down to you from your ancestors or
+    common among those of your ancestry in the environment where you were raised.`,
+    type: 'heritage',
+    content_source_id: -1,
+  };
 
-  return operations;
+  const getAncestryFeat = (index: number, level: number): AbilityBlock => {
+    return {
+      id: hashData({ name: `ancestry-feat-${index}` }),
+      created_at: '',
+      operations: [
+        {
+          id: `9f26290c-a2db-4c45-9b34-5053e60c106d-${index}`,
+          type: 'select',
+          data: {
+            title: 'Select a Feat',
+            modeType: 'FILTERED',
+            optionType: 'ABILITY_BLOCK',
+            optionsPredefined: [],
+            optionsFilters: {
+              id: `31634b70-4ea4-447f-9743-817509d601df-${index}`,
+              type: 'ABILITY_BLOCK',
+              level: {
+                max: level,
+              },
+              traits: [ancestry.trait_id],
+              abilityBlockType: 'feat',
+            },
+          },
+        },
+      ],
+      name: `${ancestry.name} Feat`,
+      actions: null,
+      level: level,
+      rarity: 'COMMON',
+      description: `You gain an ancestry feat.`,
+      type: 'class-feature',
+      content_source_id: -1,
+    };
+  };
+
+  const sections = [heritage];
+  const featArray = [1, 5, 9, 13, 17];
+  for (let i = 0; i < featArray.length; i++) {
+    sections.push(getAncestryFeat(i, featArray[i]));
+  }
+
+  return sections;
 }

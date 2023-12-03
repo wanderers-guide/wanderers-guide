@@ -192,7 +192,7 @@ async function getAbilityBlockList(
   }
   if (filters.level.max !== undefined) {
     abilityBlocks = abilityBlocks.filter(
-      (ab) => ab.level !== undefined && ab.level >= filters.level.max!
+      (ab) => ab.level !== undefined && ab.level <= filters.level.max!
     );
   }
   if (filters.traits !== undefined) {
@@ -280,8 +280,12 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
     languages = languages.filter((language) => language.rarity === filters.rarity);
   }
   if (filters.core) {
-    // TODO: Implement core filter
-    //languages = languages.filter((language) => language.core === filters.core);
+    // Sort by core first
+    const coreLangs = (getVariable('CORE_LANGUAGE_NAMES')?.value ?? []) as string[];
+    languages = languages.map((language) => ({
+      ...language,
+      _is_core: coreLangs.includes(language.name),
+    }));
   }
 
   return languages.map((language) => {
@@ -298,6 +302,11 @@ async function getAdjValueList(operationUUID: string, filters: OperationSelectFi
 
   if (filters.group === 'SKILL') {
     variables = getAllSkillVariables();
+  }
+  if (filters.group === 'ADD-LORE') {
+    variables = getAllSkillVariables().filter((variable) =>
+      variable.name.startsWith('SKILL_LORE_')
+    );
   }
   if (filters.group === 'ATTRIBUTE') {
     variables = getAllAttributeVariables();

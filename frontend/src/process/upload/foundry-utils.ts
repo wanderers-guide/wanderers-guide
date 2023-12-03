@@ -1,43 +1,38 @@
-import { ActionCost, ContentSource, Rarity, Size, Trait } from "@typing/content";
-import _ from "lodash";
-import { makeRequest } from "@requests/request-manager";
+import { ActionCost, ContentSource, Rarity, Size, Trait } from '@typing/content';
+import _ from 'lodash';
+import { makeRequest } from '@requests/request-manager';
 import * as math from 'mathjs';
 import { fetchContentSources, fetchTraitByName } from '@content/content-store';
 
-export function convertToActionCost(
-  actionType: string,
-  actionValue?: number
-): ActionCost {
-  if (actionType === "action") {
+export function convertToActionCost(actionType: string, actionValue?: number): ActionCost {
+  if (actionType === 'action') {
     if (actionValue === 1) {
-      return "ONE-ACTION";
+      return 'ONE-ACTION';
     } else if (actionValue === 2) {
-      return "TWO-ACTIONS";
+      return 'TWO-ACTIONS';
     } else if (actionValue === 3) {
-      return "THREE-ACTIONS";
+      return 'THREE-ACTIONS';
     }
-  } else if (actionType === "reaction") {
-    return "REACTION";
-  } else if (actionType === "free") {
-    return "FREE-ACTION";
+  } else if (actionType === 'reaction') {
+    return 'REACTION';
+  } else if (actionType === 'free') {
+    return 'FREE-ACTION';
   }
   return null;
 }
 
-
 export function convertToRarity(value?: string): Rarity {
-  if (value === "common") {
-    return "COMMON";
-  } else if (value === "uncommon") {
-    return "UNCOMMON";
-  } else if (value === "rare") {
-    return "RARE";
-  } else if (value === "unique") {
-    return "UNIQUE";
+  if (value === 'common') {
+    return 'COMMON';
+  } else if (value === 'uncommon') {
+    return 'UNCOMMON';
+  } else if (value === 'rare') {
+    return 'RARE';
+  } else if (value === 'unique') {
+    return 'UNIQUE';
   }
-  return "COMMON";
+  return 'COMMON';
 }
-
 
 export function convertToSize(value?: string): Size {
   switch (value) {
@@ -58,13 +53,15 @@ export function convertToSize(value?: string): Size {
   }
 }
 
-
 export async function getTraitIds(traitNames: string[], source: ContentSource) {
   const sources = await fetchContentSources();
 
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
-    let trait = await fetchTraitByName(traitName, sources.map(s => s.id));
+    let trait = await fetchTraitByName(
+      traitName,
+      sources.map((s) => s.id)
+    );
     if (!trait) {
       await createTrait(_.startCase(traitName), '', source.id);
       trait = await fetchTraitByName(
@@ -93,7 +90,6 @@ async function createTrait(
   });
 }
 
-
 export async function findContentSource(id?: number, foundry_id?: string) {
   return await makeRequest<ContentSource>('find-content-source', {
     id,
@@ -101,11 +97,10 @@ export async function findContentSource(id?: number, foundry_id?: string) {
   });
 }
 
-
 export function extractFromDescription(description?: string) {
   if (!description)
     return {
-      description: "",
+      description: '',
     };
 
   const pattern =
@@ -114,15 +109,15 @@ export function extractFromDescription(description?: string) {
   const output: Record<string, string | Record<string, string>[]> = {};
   let match;
   while ((match = pattern.exec(description)) !== null) {
-    const label = match[1].trim().toLowerCase().replace(/\s/g, "_");
+    const label = match[1].trim().toLowerCase().replace(/\s/g, '_');
     const heightenedAmount = (match[2] ?? '').trim();
     const text = match[3].trim();
 
-    if(label.startsWith('heightened')) {
-      if(!output.heightened) {
+    if (label.startsWith('heightened')) {
+      if (!output.heightened) {
         output.heightened = [];
       }
-      if(!_.isString(output.heightened)) {
+      if (!_.isString(output.heightened)) {
         output.heightened.push({
           amount: heightenedAmount,
           text: text,
@@ -133,19 +128,26 @@ export function extractFromDescription(description?: string) {
     }
   }
 
-  output.description = description.replace(pattern, "");
+  output.description = description.replace(pattern, '');
 
   return output as Record<string, string>;
 }
 
-export const EQUIPMENT_TYPES = ['equipment', 'weapon', 'armor', 'kit', 'consumable', 'backpack', 'treasure'];
-
+export const EQUIPMENT_TYPES = [
+  'equipment',
+  'weapon',
+  'armor',
+  'kit',
+  'consumable',
+  'backpack',
+  'treasure',
+];
 
 //// Foundry Content Linking Parsing & Removal ////
 // - Maybe save some of this data instead of deleting it all
 export function stripFoundryLinking(text: string, level?: number) {
   text = text.replace(/@actor\.level/g, '1');
-  if(level) {
+  if (level) {
     text = text.replace(/@item\.level/g, `${level}`);
   }
 
@@ -171,7 +173,12 @@ function stripDamageLinks(text: string) {
     const diceType = match[2];
     const damageType = match[3];
 
-    const result = math.evaluate(formula);
+    let result = formula;
+    try {
+      result = math.evaluate(formula);
+    } catch (e) {
+      console.warn(e, formula);
+    }
 
     newText = newText.replace(match[0], `${result}d${diceType} ${damageType}`);
   }
@@ -193,14 +200,15 @@ function stripMathLinks(text: string) {
     let result = formula;
     try {
       result = math.evaluate(formula);
-    } catch (e) {}
+    } catch (e) {
+      console.warn(e, formula);
+    }
 
     newText = newText.replace(match[0], `${result} ${words}`);
   }
 
   return newText;
 }
-
 
 function stripCheckLinks(text: string, basic: boolean) {
   const regex = basic
@@ -219,7 +227,6 @@ function stripCheckLinks(text: string, basic: boolean) {
   return newText;
 }
 
-
 function stripDistanceLinks(text: string) {
   const regex = /@Template\[type:([^\]]+)\|distance:([^\]]+)\]/gm;
 
@@ -234,7 +241,6 @@ function stripDistanceLinks(text: string) {
 
   return newText;
 }
-
 
 function stripCompendiumLinks(text: string) {
   const regex = /@UUID\[Compendium\.([^\]]+)\]/gm;

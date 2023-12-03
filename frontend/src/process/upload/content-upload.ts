@@ -618,12 +618,19 @@ async function uploadBackground(
 
   const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
 
+  // Format background description
+  let description = toMarkdown(descValues.description) ?? '';
+  description = description.trim().replace(/\*/g, ''); // remove bolding
+  description = description.replace(/^([\s\S]*?)(\n\n|$)/, '> _$1_\n\n');
+  // Now it's formatted in a clean way!
+
   const background = {
     id: -1,
     created_at: '',
     name: toText(json.name) ?? '',
     rarity: convertToRarity(json.system?.traits?.rarity),
-    description: toMarkdown(descValues.description) ?? '',
+    description: description,
+    artwork_url: '',
     operations: [],
     content_source_id: source.id,
     version: '1.0',

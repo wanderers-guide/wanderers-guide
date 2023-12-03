@@ -16,6 +16,7 @@ import {
   VariableStr,
   VariableType,
 } from 'src/typing/variables';
+import { getVariables } from './variable-manager';
 
 export function newVariable(type: VariableType, name: string, defaultValue?: any): Variable {
   if (type === 'attr') {
@@ -116,7 +117,7 @@ export function variableNameToLabel(variableName: string) {
   }
 
   // Lore switch
-  if(label.startsWith('Lore ')) {
+  if (label.startsWith('Lore ')) {
     label = label.replace('Lore ', '');
     label = `${label} Lore`;
   }
@@ -125,7 +126,10 @@ export function variableNameToLabel(variableName: string) {
 }
 
 export function labelToVariable(label: string) {
-  let cleanedString = label.trim().toUpperCase().replace(/[^a-zA-Z\s]/g, '');
+  let cleanedString = label
+    .trim()
+    .toUpperCase()
+    .replace(/[^a-zA-Z\s]/g, '');
   cleanedString = cleanedString.replace(/\s+/g, '_');
   return cleanedString;
 }
@@ -203,6 +207,24 @@ export function proficiencyTypeToLabel(type: ProficiencyType) {
   return '';
 }
 
+export function labelToProficiencyType(label: string): ProficiencyType | null {
+  const type = label.trim().toUpperCase();
+  if (type === 'UNTRAINED') return 'U';
+  if (type === 'TRAINED') return 'T';
+  if (type === 'EXPERT') return 'E';
+  if (type === 'MASTER') return 'M';
+  if (type === 'LEGENDARY') return 'L';
+  return null;
+}
+
+export function findVariable<T = Variable>(type: VariableType, label: string): T | null {
+  const VAR_FORMATTED = labelToVariable(label);
+  const variable = Object.values(getVariables()).find(
+    (variable) => variable.type === type && variable.name.endsWith(`_${VAR_FORMATTED}`)
+  );
+  return (variable ?? null) as T | null;
+}
+
 export function isAttribute(value: Attribute | any): value is Attribute {
   return (value as Attribute).type === 'attribute';
 }
@@ -219,7 +241,7 @@ export function isExtendedProficiencyType(value?: string): value is ExtendedProf
   return ['U', 'T', 'E', 'M', 'L', '1', '-1'].includes(value ?? '');
 }
 export function isListStr(value?: string[] | string): value is string[] {
-  if(_.isString(value)) {
+  if (_.isString(value)) {
     value = JSON.parse(value);
   }
   return Array.isArray(value) && value.every((v) => isString(v));

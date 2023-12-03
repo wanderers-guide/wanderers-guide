@@ -13,7 +13,7 @@ serve(async (req: Request) => {
     } = body as {
       collection: string;
       nResults?: number;
-      maxDistance?: number;// from 0.0 - 1.0, 1.0 being the furthest
+      maxDistance?: number; // from 0.0 - 1.0, 1.0 being the furthest
       query?: string;
       where?: Record<string, string | number | boolean>;
     };
@@ -32,10 +32,10 @@ serve(async (req: Request) => {
         query: query,
       }),
     });
-    if(!res.ok) {
+    if (!res.ok) {
       return {
         status: 'error',
-        message: 'Failed to query collection',
+        message: `Failed to query collection: ${res.statusText}`,
       };
     }
     const results = await res.json();
@@ -45,8 +45,8 @@ serve(async (req: Request) => {
       distance: number;
     }[] = [];
 
-    for(let i = 0; i < results.ids.length; i++) {
-      for(let c = 0; c < results.ids[i].length; c++) {
+    for (let i = 0; i < results.ids.length; i++) {
+      for (let c = 0; c < results.ids[i].length; c++) {
         const metadata = results.metadatas[i][c];
         const distance = results.distances[i][c];
 

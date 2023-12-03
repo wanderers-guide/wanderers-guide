@@ -56,7 +56,7 @@ serve(async (req: Request) => {
     if (!res.ok) {
       return {
         status: 'error',
-        message: 'Failed to add to collection',
+        message: `Failed to add to collection: ${res.statusText}`,
       };
     }
 

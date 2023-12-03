@@ -218,7 +218,7 @@ function SelectionFilteredAbilityBlock(props: {
   const [maxLevel, setMaxLevel] = useState<number | undefined>(
     props.filters?.level.max ?? undefined
   );
-  const [traits, setTraits] = useState<string[]>(props.filters?.traits ?? []);
+  const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
 
   useDidUpdate(() => {
     props.onChange({
@@ -444,7 +444,7 @@ function SelectionFilteredAdjValue(props: {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
       type: 'ADJ_VALUE',
-      group: (group ?? 'SKILL') as 'ATTRIBUTE' | 'SKILL',
+      group: (group ?? 'SKILL') as 'ATTRIBUTE' | 'SKILL' | 'ADD-LORE',
       value: value ?? '',
     });
   }, [group, value]);
@@ -460,22 +460,25 @@ function SelectionFilteredAdjValue(props: {
           }}
           data={[
             { label: 'Skill', value: 'SKILL' },
+            { label: 'Add Lore', value: 'ADD-LORE' },
             { label: 'Attribute', value: 'ATTRIBUTE' },
           ]}
         />
       </Box>
 
       <Box>
-        <AdjustValueInput
-          variableType={group === 'SKILL' ? 'prof' : 'attr'}
-          value={value}
-          onChange={(value) => {
-            setValue(value);
-          }}
-          options={{
-            profExtended: true,
-          }}
-        />
+        {group && (
+          <AdjustValueInput
+            variableType={group === 'ATTRIBUTE' ? 'attr' : 'prof'}
+            value={value}
+            onChange={(value) => {
+              setValue(value);
+            }}
+            options={{
+              profExtended: true,
+            }}
+          />
+        )}
       </Box>
     </Stack>
   );

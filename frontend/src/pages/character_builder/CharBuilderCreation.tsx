@@ -56,6 +56,9 @@ import {
 } from '@drawers/types/BackgroundDrawer';
 import RichText from '@common/RichText';
 
+// Determines how often to check for choice counts
+const CHOICE_COUNT_INTERVAL = 2500;
+
 export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
@@ -629,7 +632,7 @@ function LevelSection(props: {
         )
           setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -683,6 +686,7 @@ function LevelSection(props: {
                     ? 'gray.5'
                     : theme.colors[theme.primaryColor][5]
                 }
+                fw={choiceCounts.current === choiceCounts.max ? undefined : 600}
                 span
               >
                 {choiceCounts.current}
@@ -712,28 +716,33 @@ function LevelSection(props: {
               label: { paddingTop: 5, paddingBottom: 5 },
             }}
           >
-            {props.level === 1 && (
-              <HeritageAccordianItem
-                id={`heritage`}
-                results={props.operationResults?.heritageResults ?? []}
-                onSaveChanges={(path, value) => {
-                  saveSelectionChange(path, value);
-                }}
-                opened={subSectionValue === `heritage`}
-              />
+            {props.operationResults?.ancestrySectionResults.map(
+              (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
+                r.baseSource.level === props.level && (
+                  <AncestrySectionAccordianItem
+                    key={index}
+                    id={`ancestry-section-${index}`}
+                    section={r.baseSource}
+                    results={r.baseResults}
+                    onSaveChanges={(path, value) => {
+                      saveSelectionChange(path, value);
+                    }}
+                    opened={subSectionValue === `ancestry-section-${index}`}
+                  />
+                )
             )}
             {props.operationResults?.classFeatureResults.map(
               (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
                 r.baseSource.level === props.level && (
                   <ClassFeatureAccordianItem
                     key={index}
-                    id={`${index}`}
+                    id={`class-feature-${index}`}
                     feature={r.baseSource}
                     results={r.baseResults}
                     onSaveChanges={(path, value) => {
                       saveSelectionChange(path, value);
                     }}
-                    opened={subSectionValue === `${index}`}
+                    opened={subSectionValue === `class-feature-${index}`}
                   />
                 )
             )}
@@ -768,7 +777,7 @@ function ClassFeatureAccordianItem(props: {
         const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
         if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -794,6 +803,7 @@ function ClassFeatureAccordianItem(props: {
           <RichText ta='justify'>{props.feature.description}</RichText>
           <DisplayOperationResult
             source={undefined}
+            level={props.feature.level}
             results={props.results}
             onChange={(path, value) => {
               props.onSaveChanges(`class-feature-${props.feature.id}_${path}`, value);
@@ -805,8 +815,9 @@ function ClassFeatureAccordianItem(props: {
   );
 }
 
-function HeritageAccordianItem(props: {
+function AncestrySectionAccordianItem(props: {
   id: string;
+  section: AbilityBlock;
   results: OperationResult[];
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
@@ -828,7 +839,7 @@ function HeritageAccordianItem(props: {
         const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
         if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -841,9 +852,9 @@ function HeritageAccordianItem(props: {
       }}
       mt={3}
     >
-      <Accordion.Control icon={<IconLeaf size='1rem' />}>
+      <Accordion.Control>
         <Group gap={5}>
-          <Box>Heritage</Box>
+          <Box>{props.section.name}</Box>
           {featureChoiceCounts.max - featureChoiceCounts.current > 0 && (
             <Badge variant='filled'>{featureChoiceCounts.max - featureChoiceCounts.current}</Badge>
           )}
@@ -851,15 +862,13 @@ function HeritageAccordianItem(props: {
       </Accordion.Control>
       <Accordion.Panel ref={featureChoiceCountRef}>
         <Stack gap={5}>
-          <RichText ta='justify'>
-            You select a heritage to reflect abilities passed down to you from your ancestors or
-            common among those of your ancestry in the environment where you were raised.
-          </RichText>
+          <RichText ta='justify'>{props.section.description}</RichText>
           <DisplayOperationResult
             source={undefined}
+            level={props.section.level}
             results={props.results}
             onChange={(path, value) => {
-              props.onSaveChanges(`heritage_${path}`, value);
+              props.onSaveChanges(`ancestry-section-${props.section.id}_${path}`, value);
             }}
           />
         </Stack>
@@ -988,7 +997,7 @@ function AncestryAccordianItem(props: {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
         if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -1076,6 +1085,7 @@ function AncestryAccordianItem(props: {
           <Box>
             <DisplayOperationResult
               source={undefined}
+              level={1}
               results={ancestryOperationResults}
               onChange={(path, value) => {
                 props.onSaveChanges(`ancestry_${path}`, value);
@@ -1113,7 +1123,7 @@ function BackgroundAccordianItem(props: {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
         if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -1186,6 +1196,7 @@ function BackgroundAccordianItem(props: {
           <Box>
             <DisplayOperationResult
               source={undefined}
+              level={1}
               results={backgroundOperationResults}
               onChange={(path, value) => {
                 props.onSaveChanges(`background_${path}`, value);
@@ -1223,7 +1234,7 @@ function ClassAccordianItem(props: {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
         if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -1292,6 +1303,7 @@ function ClassAccordianItem(props: {
           <Box>
             <DisplayOperationResult
               source={undefined}
+              level={1}
               results={classOperationResults}
               onChange={(path, value) => {
                 props.onSaveChanges(`class_${path}`, value);
@@ -1311,6 +1323,8 @@ function BooksAccordianItem(props: {
 }) {
   const { hovered, ref } = useHover();
 
+  const character = useRecoilValue(characterState);
+
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const [choiceCounts, setChoiceCounts] = useState<{
     current: number;
@@ -1326,7 +1340,7 @@ function BooksAccordianItem(props: {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
         if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -1352,6 +1366,7 @@ function BooksAccordianItem(props: {
           <DisplayOperationResult
             key={index}
             source={s.baseSource}
+            level={character?.level ?? 1}
             results={s.baseResults}
             onChange={(path, value) => {
               props.onSaveChanges(`content-source-${s.baseSource.id}_${path}`, value);
@@ -1385,7 +1400,7 @@ function ItemsAccordianItem(props: {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
         if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -1411,6 +1426,7 @@ function ItemsAccordianItem(props: {
           <DisplayOperationResult
             key={index}
             source={s.baseSource}
+            level={s.baseSource.level}
             results={s.baseResults}
             onChange={(path, value) => {
               props.onSaveChanges(`item-${s.baseSource.id}_${path}`, value);
@@ -1429,6 +1445,8 @@ function CustomAccordianItem(props: {
 }) {
   const { hovered, ref } = useHover();
 
+  const character = useRecoilValue(characterState);
+
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const [choiceCounts, setChoiceCounts] = useState<{
     current: number;
@@ -1444,7 +1462,7 @@ function CustomAccordianItem(props: {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
         if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
-    }, 2500);
+    }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -1468,6 +1486,7 @@ function CustomAccordianItem(props: {
       <Accordion.Panel ref={choiceCountRef}>
         <DisplayOperationResult
           source={undefined}
+          level={character?.level ?? 1}
           results={props.operationResults.characterResults}
           onChange={(path, value) => {
             props.onSaveChanges(`character_${path}`, value);
@@ -1482,6 +1501,7 @@ function CustomAccordianItem(props: {
 
 function DisplayOperationResult(props: {
   source?: ObjectWithUUID;
+  level?: number;
   results: OperationResult[];
   onChange: (path: string, value: string) => void;
 }) {
@@ -1515,7 +1535,10 @@ function DisplayOperationResult(props: {
                   }}
                   selectedId={result.result?.source?.id}
                   options={{
-                    overrideOptions: result?.selection?.options,
+                    overrideOptions: result?.selection?.options.map((option) => ({
+                      ...option,
+                      _source_level: props.level,
+                    })),
                     overrideLabel: result?.selection?.title || 'Select an Option',
                     abilityBlockType:
                       (result?.selection?.options ?? []).length > 0
@@ -1528,6 +1551,7 @@ function DisplayOperationResult(props: {
               {result?.result?.results && result.result.results.length > 0 && (
                 <DisplayOperationResult
                   source={result.result.source}
+                  level={props.level}
                   results={result.result.results}
                   onChange={(path, value) => {
                     let selectionUUID = result.selection?.id ?? '';
