@@ -1,6 +1,7 @@
 import { VariableProf } from '@typing/variables';
 import { findVariable, labelToProficiencyType, maxProficiencyType } from './variable-utils';
 import { getVariable } from './variable-manager';
+import _ from 'lodash';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
 export function meetsPrerequisites(prereqs?: string[]): {
@@ -54,6 +55,9 @@ function meetPreq(prereq: string): PrereqMet {
   result = checkForProf(prereq);
   if (result) return result;
 
+  result = checkForFeat(prereq);
+  if (result) return result;
+
   return 'UNKNOWN';
 }
 
@@ -78,4 +82,12 @@ function checkForProf(prereq: string): PrereqMet {
   return maxProficiencyType(variable.value.value, profType) === variable.value.value
     ? 'FULLY'
     : 'NOT';
+}
+
+function checkForFeat(prereq: string): PrereqMet {
+  // TODO: check for if feat actually exists
+  // For now, we'll just check if the way it's written is inline with how feats are written
+  if (_.startCase(prereq.toLowerCase()) !== prereq) return null;
+
+  return (getVariable('FEAT_NAMES')!.value as string[]).includes(prereq) ? 'FULLY' : 'NOT';
 }

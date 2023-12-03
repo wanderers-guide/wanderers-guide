@@ -157,8 +157,6 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
     prereqUI.push(...(feat.prerequisites ?? []).map((prereq) => <>{prereq}</>));
   }
 
-  console.log(prereqUI, feat.prerequisites);
-
   const hasTopSection =
     (feat.prerequisites && feat.prerequisites.length > 0) ||
     feat.frequency ||

@@ -1,9 +1,13 @@
 import { Box, Divider, Text, useMantineTheme } from '@mantine/core';
 
-export default function ResultWrapper(props: { label: string; disabled?: boolean; children: React.ReactNode }) {
+export default function ResultWrapper(props: {
+  label: string;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   const theme = useMantineTheme();
 
-  if(props.disabled) return (<>{props.children}</>);
+  if (props.disabled) return <>{props.children}</>;
 
   return (
     <>
@@ -23,7 +27,7 @@ export default function ResultWrapper(props: { label: string; disabled?: boolean
           style={{
             position: 'absolute',
             top: -11,
-            backgroundColor: theme.colors.dark[6],
+            backgroundColor: theme.colors.dark[7],
           }}
         >
           {props.label}

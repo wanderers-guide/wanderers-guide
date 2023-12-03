@@ -228,3 +228,10 @@ export async function fetchTraits(ids?: number[]) {
     })) ?? []
   );
 }
+export async function fetchAbilityBlockByName(name?: string, sources?: number[], id?: number) {
+  return await fetchContent<AbilityBlock>('ability-block', {
+    id,
+    name,
+    content_sources: sources,
+  });
+}
