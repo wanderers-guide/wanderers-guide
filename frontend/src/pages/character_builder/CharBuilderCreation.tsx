@@ -55,7 +55,7 @@ import {
   convertBackgroundOperationsIntoUI,
 } from '@drawers/types/BackgroundDrawer';
 import RichText from '@common/RichText';
-import { VariableProf } from '@typing/variables';
+import { VariableListStr, VariableProf } from '@typing/variables';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { displayFinalProfValue } from '@variables/variable-display';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
@@ -324,31 +324,64 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap={5}>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'SAVE_FORT' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Fortitude</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Fortitude
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Text c='gray.0'>{displayFinalProfValue('SAVE_FORT')}</Text>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('SAVE_FORT')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'SAVE_REFLEX' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Reflex</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Reflex
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Text c='gray.0'>{displayFinalProfValue('SAVE_REFLEX')}</Text>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('SAVE_REFLEX')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'SAVE_WILL' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Will</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Will
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Text c='gray.0'>{displayFinalProfValue('SAVE_WILL')}</Text>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('SAVE_WILL')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
                     </Stack>
@@ -362,69 +395,167 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap={5}>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'SIMPLE_WEAPONS' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Fortitude</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Simple Weapons
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'MARTIAL_WEAPONS' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Reflex</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Martial Weapons
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'ADVANCED_WEAPONS' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Will</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Advanced Weapons
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value}
+                          </Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'UNARMED_ATTACKS' },
+                          });
+                        }}
+                      >
+                        <Box>
+                          <Text c='gray.0' fz='sm'>
+                            Unarmed Attacks
+                          </Text>
+                        </Box>
+                        <Group>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('UNARMED_ATTACKS')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'saving-throws'}>
+                <Accordion.Item className={classes.item} value={'defenses'}>
                   <Accordion.Control>
                     <Text c='white' fz='sm'>
-                      Saving Throws
+                      Defenses
                     </Text>
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap={5}>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'LIGHT_ARMOR' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Fortitude</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Light Armor
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('LIGHT_ARMOR')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'MEDIUM_ARMOR' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Reflex</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Medium Armor
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('MEDIUM_ARMOR')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'HEAVY_ARMOR' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Will</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Heavy Armor
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('HEAVY_ARMOR')?.value}
+                          </Badge>
+                        </Group>
+                      </StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'UNARMORED_DEFENSE' },
+                          });
+                        }}
+                      >
+                        <Box>
+                          <Text c='gray.0' fz='sm'>
+                            Unarmored Defense
+                          </Text>
+                        </Box>
+                        <Group>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
                     </Stack>
@@ -438,31 +569,44 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap={5}>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'SPELL_ATTACK' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Fortitude</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Spell Attack
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Text c='gray.0'>{displayFinalProfValue('SPELL_ATTACK')}</Text>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('SPELL_ATTACK')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
-                      <StatButton>
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: 'SPELL_DC' },
+                          });
+                        }}
+                      >
                         <Box>
-                          <Text fz='sm'>Reflex</Text>
+                          <Text c='gray.0' fz='sm'>
+                            Spell DC
+                          </Text>
                         </Box>
                         <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Will</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
+                          <Text c='gray.0'>{displayFinalProfValue('SPELL_DC')}</Text>
+                          <Badge variant='default'>
+                            {getVariable<VariableProf>('SPELL_DC')?.value}
+                          </Badge>
                         </Group>
                       </StatButton>
                     </Stack>
@@ -476,33 +620,27 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap={5}>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Fortitude</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Reflex</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Will</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
+                      {(getVariable<VariableListStr>('LANGUAGE_IDS')?.value ?? []).map(
+                        (languageId, index) => (
+                          <StatButton
+                            key={index}
+                            onClick={() => {
+                              openDrawer({ type: 'language', data: { id: parseInt(languageId) } });
+                            }}
+                          >
+                            <Box>
+                              <Text c='gray.0' fz='sm'>
+                                {
+                                  props.content.languages.find(
+                                    (lang) => lang.id === parseInt(languageId)
+                                  )?.name
+                                }
+                              </Text>
+                            </Box>
+                            <Group></Group>
+                          </StatButton>
+                        )
+                      )}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
@@ -513,35 +651,7 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                     </Text>
                   </Accordion.Control>
                   <Accordion.Panel>
-                    <Stack gap={5}>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Fortitude</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Reflex</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Will</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                    </Stack>
+                    <Stack gap={5}></Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
               </Accordion>

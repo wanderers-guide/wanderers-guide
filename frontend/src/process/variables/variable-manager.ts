@@ -231,6 +231,7 @@ function addVariableHistory(
   from: VariableValue | null,
   source: string
 ) {
+  if (from === to) return;
   if (!variableHistory[name]) {
     variableHistory[name] = [];
   }
