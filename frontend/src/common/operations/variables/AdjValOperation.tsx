@@ -1,13 +1,19 @@
 import { OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
 import { useState } from 'react';
-import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
+import {
+  AttributeValue,
+  ProficiencyType,
+  Variable,
+  VariableType,
+  VariableValue,
+} from '@typing/variables';
 import { NumberInput, SegmentedControl, TextInput } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 
 export function AdjValOperation(props: {
   variable: string;
-  value: string | number | boolean | AttributeValue | ProficiencyType;
+  value: VariableValue;
   onSelect: (variable: string) => void;
   onValueChange: (value: number | string | boolean) => void;
   onRemove: () => void;
@@ -16,7 +22,7 @@ export function AdjValOperation(props: {
   const [variableData, setVariableData] = useState<Variable | undefined>(
     getVariable(props.variable) ?? undefined
   );
-  const [value, setValue] = useState<string | number | boolean | AttributeValue>(props.value);
+  const [value, setValue] = useState<VariableValue>(props.value);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Adjust Value'>

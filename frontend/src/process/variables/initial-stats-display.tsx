@@ -9,7 +9,7 @@ import { getAllAttributeVariables, getVariable } from './variable-manager';
 import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
 import {
   compactLabels,
-  isAttribute,
+  isAttributeValue,
   isProficiencyType,
   maxProficiencyType,
   proficiencyTypeToLabel,
@@ -242,7 +242,7 @@ export function getDisplay(
     : null;
 
   // Handle attributes
-  if (isAttribute(value) || (_.isNumber(+value) && variable?.type === 'attr')) {
+  if (isAttributeValue(value) || (_.isNumber(+value) && variable?.type === 'attr')) {
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (

@@ -106,7 +106,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   // Fill in selected content
   useEffect(() => {
     (async () => {
-      if (!props.selectedId) return;
+      if (!props.selectedId || !_.isNumber(props.selectedId)) return;
       const content = await fetchContentById<T>(props.type, props.selectedId);
       if (content) {
         setSelected(content);
@@ -953,9 +953,7 @@ export function GenericSelectionOption(props: {
   // @ts-ignore
   const variable = getVariable(props.option.variable);
 
-  console.log(props.option);
-
-  let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value?.value;
+  let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value;
   let nextProf =
     props.skillAdjustment === '1'
       ? nextProficiencyType(currentProf ?? 'U')
@@ -991,8 +989,6 @@ export function GenericSelectionOption(props: {
         maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
 
   const disabled = alreadyProficient || limitedByLevel;
-
-  console.log(props.option);
 
   return (
     <Group

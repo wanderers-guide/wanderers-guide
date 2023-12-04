@@ -17,6 +17,7 @@ import { createDefaultOperation } from '@operations/operation-utils';
 import { AbilityBlockType, Spell } from '@typing/content';
 import {
   Operation,
+  OperationAddBonusToValue,
   OperationAdjValue,
   OperationConditional,
   OperationCreateValue,
@@ -44,6 +45,7 @@ import { GiveSenseOperation } from './ability_block/GiveSenseOperation';
 import { GivePhysicalFeatureOperation } from './ability_block/GivePhysicalFeatureOperation';
 import { addVariable, resetVariables } from '@variables/variable-manager';
 import { GiveHeritageOperation } from './ability_block/GiveHeritageOperation';
+import { AddBonusToValOperation } from './variables/AddBonusToValOperation';
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -156,7 +158,7 @@ export function OperationSection(props: {
           size='xs'
           placeholder='Add Operation'
           data={[
-            { value: 'select', label: 'Selection' }, // TODO
+            { value: 'select', label: 'Selection' },
             { value: 'conditional', label: 'Conditional' },
             { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
             { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
@@ -167,8 +169,9 @@ export function OperationSection(props: {
             { value: 'giveLanguage', label: 'Give Language' },
             { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'adjValue', label: 'Adjust Value' },
-            { value: 'setValue', label: 'Set Value' },
+            { value: 'addBonusToValue', label: 'Add Bonus to Value' },
             { value: 'createValue', label: 'Create Value' },
+            { value: 'setValue', label: 'Override Value' },
             { value: 'RESO', label: 'RESO' }, // TODO
           ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
           searchValue={''}
@@ -384,7 +387,7 @@ export function OperationDisplay(props: {
     case 'setValue':
       let opSetValue = props.operation as OperationSetValue;
       return (
-        // TODO: make it number | string | boolean | AttributeValue | ProficiencyType
+        // TODO: make it VariableValue
         <SetValOperation
           variable={opSetValue.data.variable}
           value={opSetValue.data.value}
@@ -417,6 +420,27 @@ export function OperationDisplay(props: {
           onValueChange={(value) => {
             opCreateValue.data.value = value;
             props.onChange(_.cloneDeep(opCreateValue));
+          }}
+          onRemove={props.onRemove}
+        />
+      );
+    case 'addBonusToValue':
+      let opAddBonusToValue = props.operation as OperationAddBonusToValue;
+      return (
+        <AddBonusToValOperation
+          variable={opAddBonusToValue.data.variable}
+          bonusValue={opAddBonusToValue.data.value}
+          bonusType={opAddBonusToValue.data.type}
+          text={opAddBonusToValue.data.text}
+          onSelect={(variable) => {
+            opAddBonusToValue.data.variable = variable;
+            props.onChange(_.cloneDeep(opAddBonusToValue));
+          }}
+          onValueChange={(data) => {
+            opAddBonusToValue.data.value = data.bonusValue;
+            opAddBonusToValue.data.type = data.bonusType;
+            opAddBonusToValue.data.text = data.text;
+            props.onChange(_.cloneDeep(opAddBonusToValue));
           }}
           onRemove={props.onRemove}
         />

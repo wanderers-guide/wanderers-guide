@@ -7,7 +7,14 @@ export type ImageOption = {
   source_url?: string;
 };
 
-export type DrawerType = ContentType | AbilityBlockType | 'character';
+export type DrawerType =
+  | ContentType
+  | AbilityBlockType
+  | 'character'
+  | 'stat-prof'
+  | 'stat-attributes'
+  | 'stat-hp'
+  | 'stat-resist-weak';
 
 export type UploadResult = {
   success: boolean;

@@ -27,6 +27,7 @@ import {
   OperationSelectOptionCustom,
   Operation,
   OperationSelectFiltersAdjValue,
+  OperationAddBonusToValue,
 } from '@typing/operations';
 import { Variable } from '@typing/variables';
 import {
@@ -56,6 +57,17 @@ export const createDefaultOperation = (type: OperationType) => {
         value: 0,
       },
     } satisfies OperationAdjValue;
+  } else if (type === 'addBonusToValue') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        variable: '',
+        value: undefined,
+        type: undefined,
+        text: '',
+      },
+    } satisfies OperationAddBonusToValue;
   } else if (type === 'setValue') {
     return {
       id: crypto.randomUUID(),

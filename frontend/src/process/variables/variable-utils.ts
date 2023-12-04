@@ -2,11 +2,10 @@ import { throwError } from '@utils/notifications';
 import _ from 'lodash';
 import { isBoolean, isNumber, isString } from 'lodash';
 import {
-  Attribute,
   AttributeValue,
   ExtendedProficiencyType,
-  Proficiency,
   ProficiencyType,
+  ProficiencyValue,
   Variable,
   VariableAttr,
   VariableBool,
@@ -15,16 +14,20 @@ import {
   VariableProf,
   VariableStr,
   VariableType,
+  VariableValue,
 } from 'src/typing/variables';
 import { getVariables } from './variable-manager';
 
-export function newVariable(type: VariableType, name: string, defaultValue?: any): Variable {
+export function newVariable(
+  type: VariableType,
+  name: string,
+  defaultValue?: VariableValue
+): Variable {
   if (type === 'attr') {
     return {
       name,
       type,
       value: {
-        type: 'attribute',
         value: isAttributeValue(defaultValue) ? defaultValue.value : 0,
         partial: isAttributeValue(defaultValue) ? defaultValue.partial : false,
       },
@@ -55,10 +58,8 @@ export function newVariable(type: VariableType, name: string, defaultValue?: any
     return {
       name,
       type,
-      value: {
-        type: 'proficiency',
-        value: isProficiencyType(defaultValue) ? defaultValue : 'U',
-      },
+      value: isProficiencyValue(defaultValue) ? defaultValue.value : 'U',
+      attribute: isProficiencyValue(defaultValue) ? defaultValue.attribute : undefined,
     } satisfies VariableProf;
   }
   if (type === 'list-str') {
@@ -225,22 +226,32 @@ export function findVariable<T = Variable>(type: VariableType, label: string): T
   return (variable ?? null) as T | null;
 }
 
-export function isAttribute(value: Attribute | any): value is Attribute {
-  return (value as Attribute).type === 'attribute';
+export function getProficiencyValue(profType: ProficiencyType) {
+  if (profType === 'U') return 0;
+  if (profType === 'T') return 2;
+  if (profType === 'E') return 4;
+  if (profType === 'M') return 6;
+  if (profType === 'L') return 8;
+  throwError(`Invalid proficiency type: ${profType}`);
+  return 0;
+}
+
+export function isProficiencyValue(value: any): value is ProficiencyValue {
+  return (
+    isProficiencyType(value?.value) &&
+    (isString(value?.attribute) || value?.attribute === undefined)
+  );
 }
 export function isAttributeValue(value: any): value is AttributeValue {
   return isNumber(value?.value) && isBoolean(value?.partial);
 }
-export function isProficiency(value: Proficiency | any): value is Proficiency {
-  return (value as Proficiency).type === 'proficiency';
-}
-export function isProficiencyType(value?: string): value is ProficiencyType {
+export function isProficiencyType(value?: any): value is ProficiencyType {
   return ['U', 'T', 'E', 'M', 'L'].includes(value ?? '');
 }
 export function isExtendedProficiencyType(value?: string): value is ExtendedProficiencyType {
   return ['U', 'T', 'E', 'M', 'L', '1', '-1'].includes(value ?? '');
 }
-export function isListStr(value?: string[] | string): value is string[] {
+export function isListStr(value?: any): value is string[] {
   if (_.isString(value)) {
     value = JSON.parse(value);
   }

@@ -3,6 +3,7 @@ import { AbilityBlockType, Rarity } from './content';
 
 export type Operation =
   | OperationAdjValue
+  | OperationAddBonusToValue
   | OperationSetValue
   | OperationCreateValue
   | OperationGiveAbilityBlock
@@ -15,6 +16,7 @@ export type Operation =
   | OperationRemoveSpell;
 export type OperationType =
   | 'adjValue'
+  | 'addBonusToValue'
   | 'setValue'
   | 'createValue'
   | 'giveAbilityBlock'
@@ -40,11 +42,21 @@ export interface OperationAdjValue extends OperationBase {
   };
 }
 
+export interface OperationAddBonusToValue extends OperationBase {
+  readonly type: 'addBonusToValue';
+  data: {
+    variable: string;
+    value?: number;
+    type?: string;
+    text: string;
+  };
+}
+
 export interface OperationSetValue extends OperationBase {
   readonly type: 'setValue';
   data: {
     variable: string;
-    value: number | string | boolean | AttributeValue | ProficiencyType;
+    value: VariableValue;
   };
 }
 
@@ -53,7 +65,7 @@ export interface OperationCreateValue extends OperationBase {
   data: {
     variable: string;
     type: VariableType;
-    value: number | string | boolean | AttributeValue | ProficiencyType;
+    value: VariableValue;
   };
 }
 

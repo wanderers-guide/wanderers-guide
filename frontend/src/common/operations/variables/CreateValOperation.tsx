@@ -1,5 +1,11 @@
 import { OperationWrapper } from '../Operations';
-import { AttributeValue, ProficiencyType, VariableType } from '@typing/variables';
+import {
+  AttributeValue,
+  ProficiencyType,
+  ProficiencyValue,
+  VariableType,
+  VariableValue,
+} from '@typing/variables';
 import { JsonInput, NumberInput, SegmentedControl, Select, TextInput } from '@mantine/core';
 
 export function CreateValOperation(props: {
@@ -7,8 +13,8 @@ export function CreateValOperation(props: {
   onNameChange: (variable: string) => void;
   variableType: VariableType;
   onTypeChange: (variable: VariableType) => void;
-  value: string | number | boolean | AttributeValue | ProficiencyType;
-  onValueChange: (value: string | number | boolean | AttributeValue | ProficiencyType) => void;
+  value: VariableValue;
+  onValueChange: (value: VariableValue) => void;
   onRemove: () => void;
 }) {
   return (
@@ -73,15 +79,15 @@ export function CreateValOperation(props: {
 
 function CreateValueInput(props: {
   variableType: VariableType;
-  value: any;
-  onChange: (value: number | string | boolean) => void;
+  value: VariableValue;
+  onChange: (value: VariableValue) => void;
 }) {
   if (props.variableType === 'attr' || props.variableType === 'num') {
     return (
       <NumberInput
         size='xs'
         placeholder='Number'
-        value={props.value}
+        value={props.value as number}
         onChange={(value) => props.onChange(parseInt(`${value}`))}
         allowDecimal={false}
       />
@@ -90,7 +96,7 @@ function CreateValueInput(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={props.value || undefined}
+        value={props.value ? 'TRUE' : 'FALSE'}
         onChange={props.onChange}
         defaultValue='TRUE'
         data={[
@@ -104,7 +110,7 @@ function CreateValueInput(props: {
       <TextInput
         size='xs'
         placeholder='Text'
-        value={props.value}
+        value={props.value as string}
         onChange={(event) => props.onChange(event.target.value.toLowerCase())}
       />
     );
@@ -112,7 +118,7 @@ function CreateValueInput(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={props.value || undefined}
+        value={(props.value as ProficiencyValue)?.value || undefined}
         onChange={props.onChange}
         data={[
           { label: 'U', value: 'U' },
@@ -127,7 +133,7 @@ function CreateValueInput(props: {
     return (
       <JsonInput
         size='xs'
-        value={props.value}
+        value={props.value as string}
         onChange={props.onChange}
         placeholder='Array contents as JSON'
         validationError={undefined}

@@ -27,6 +27,7 @@ import { PrevMetadata } from './drawer-utils';
 import { AncestryDrawerContent, AncestryDrawerTitle } from './types/AncestryDrawer';
 import { LanguageDrawerContent, LanguageDrawerTitle } from './types/LanguageDrawer';
 import { BackgroundDrawerTitle, BackgroundDrawerContent } from './types/BackgroundDrawer';
+import { StatProfDrawerContent, StatProfDrawerTitle } from './types/StatProfDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -204,6 +205,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'sense' && <ActionDrawerTitle data={_drawer.data} />} {/* TODO */}
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}{' '}
       {/* TODO */}
+      {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -232,6 +234,7 @@ function DrawerContent(props: {
       {_drawer?.type === 'sense' && <ActionDrawerContent data={_drawer.data} />} {/* TODO */}
       {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={_drawer.data} />}{' '}
       {/* TODO */}
+      {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={_drawer.data} />}
     </>
   );
 }

@@ -107,20 +107,21 @@ export default function CharacterBuilderPage() {
       if (resultCharacter) {
         // Make sure we sync the enabled content sources
         defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+      } else {
+        // Character not found, redirect to characters
+        window.location.href = '/characters';
       }
 
       return resultCharacter;
     },
     refetchOnWindowFocus: false,
   });
-  
-  
+
   useEffect(() => {
     if (!resultCharacter) return;
     // Update character nav state
     setCharacter(resultCharacter);
   }, [resultCharacter]);
-
 
   // Update character in db when state changed
   const [debouncedCharacter] = useDebouncedValue(character, 200);

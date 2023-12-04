@@ -1,4 +1,10 @@
-import { Variable, VariableType } from '@typing/variables';
+import {
+  Variable,
+  VariableAttr,
+  VariableProf,
+  VariableType,
+  VariableValue,
+} from '@typing/variables';
 import {
   isAttributeValue,
   isProficiencyType,
@@ -17,7 +23,6 @@ import {
 } from './variable-utils';
 import _ from 'lodash';
 import { throwError } from '@utils/notifications';
-import { re } from 'mathjs';
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
   PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
@@ -29,30 +34,51 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   ATTRIBUTE_WIS: newVariable('attr', 'ATTRIBUTE_WIS'),
   ATTRIBUTE_CHA: newVariable('attr', 'ATTRIBUTE_CHA'),
 
-  SAVE_FORT: newVariable('prof', 'SAVE_FORT'),
-  SAVE_REFLEX: newVariable('prof', 'SAVE_REFLEX'),
-  SAVE_WILL: newVariable('prof', 'SAVE_WILL'),
+  SAVE_FORT: newVariable('prof', 'SAVE_FORT', { value: 'U', attribute: 'ATTRIBUTE_CON' }),
+  SAVE_REFLEX: newVariable('prof', 'SAVE_REFLEX', { value: 'U', attribute: 'ATTRIBUTE_DEX' }),
+  SAVE_WILL: newVariable('prof', 'SAVE_WILL', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
 
-  SKILL_ACROBATICS: newVariable('prof', 'SKILL_ACROBATICS'),
-  SKILL_ARCANA: newVariable('prof', 'SKILL_ARCANA'),
-  SKILL_ATHLETICS: newVariable('prof', 'SKILL_ATHLETICS'),
-  SKILL_CRAFTING: newVariable('prof', 'SKILL_CRAFTING'),
-  SKILL_DECEPTION: newVariable('prof', 'SKILL_DECEPTION'),
-  SKILL_DIPLOMACY: newVariable('prof', 'SKILL_DIPLOMACY'),
-  SKILL_INTIMIDATION: newVariable('prof', 'SKILL_INTIMIDATION'),
-  SKILL_MEDICINE: newVariable('prof', 'SKILL_MEDICINE'),
-  SKILL_NATURE: newVariable('prof', 'SKILL_NATURE'),
-  SKILL_OCCULTISM: newVariable('prof', 'SKILL_OCCULTISM'),
-  SKILL_PERFORMANCE: newVariable('prof', 'SKILL_PERFORMANCE'),
-  SKILL_RELIGION: newVariable('prof', 'SKILL_RELIGION'),
-  SKILL_SOCIETY: newVariable('prof', 'SKILL_SOCIETY'),
-  SKILL_STEALTH: newVariable('prof', 'SKILL_STEALTH'),
-  SKILL_SURVIVAL: newVariable('prof', 'SKILL_SURVIVAL'),
-  SKILL_THIEVERY: newVariable('prof', 'SKILL_THIEVERY'),
-  SKILL_LORE____: newVariable('prof', 'SKILL_LORE____'),
+  SKILL_ACROBATICS: newVariable('prof', 'SKILL_ACROBATICS', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_DEX',
+  }),
+  SKILL_ARCANA: newVariable('prof', 'SKILL_ARCANA', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
+  SKILL_ATHLETICS: newVariable('prof', 'SKILL_ATHLETICS', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_STR',
+  }),
+  SKILL_CRAFTING: newVariable('prof', 'SKILL_CRAFTING', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
+  SKILL_DECEPTION: newVariable('prof', 'SKILL_DECEPTION', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_CHA',
+  }),
+  SKILL_DIPLOMACY: newVariable('prof', 'SKILL_DIPLOMACY', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_CHA',
+  }),
+  SKILL_INTIMIDATION: newVariable('prof', 'SKILL_INTIMIDATION', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_CHA',
+  }),
+  SKILL_MEDICINE: newVariable('prof', 'SKILL_MEDICINE', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  SKILL_NATURE: newVariable('prof', 'SKILL_NATURE', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  SKILL_OCCULTISM: newVariable('prof', 'SKILL_OCCULTISM', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_INT',
+  }),
+  SKILL_PERFORMANCE: newVariable('prof', 'SKILL_PERFORMANCE', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_CHA',
+  }),
+  SKILL_RELIGION: newVariable('prof', 'SKILL_RELIGION', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  SKILL_SOCIETY: newVariable('prof', 'SKILL_SOCIETY', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
+  SKILL_STEALTH: newVariable('prof', 'SKILL_STEALTH', { value: 'U', attribute: 'ATTRIBUTE_DEX' }),
+  SKILL_SURVIVAL: newVariable('prof', 'SKILL_SURVIVAL', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  SKILL_THIEVERY: newVariable('prof', 'SKILL_THIEVERY', { value: 'U', attribute: 'ATTRIBUTE_DEX' }),
+  SKILL_LORE____: newVariable('prof', 'SKILL_LORE____', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
 
-  SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'),
-  SPELL_DC: newVariable('prof', 'SPELL_DC'),
+  SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'), // TODO: add attribute
+  SPELL_DC: newVariable('prof', 'SPELL_DC'), // TODO: add attribute
 
   LIGHT_ARMOR: newVariable('prof', 'LIGHT_ARMOR'),
   MEDIUM_ARMOR: newVariable('prof', 'MEDIUM_ARMOR'),
@@ -64,8 +90,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   ADVANCED_WEAPONS: newVariable('prof', 'ADVANCED_WEAPONS'),
   UNARMED_ATTACKS: newVariable('prof', 'UNARMED_ATTACKS'),
 
-  PERCEPTION: newVariable('prof', 'PERCEPTION'),
-  CLASS_DC: newVariable('prof', 'CLASS_DC'),
+  PERCEPTION: newVariable('prof', 'PERCEPTION', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  CLASS_DC: newVariable('prof', 'CLASS_DC'), // TODO: add attribute
   LEVEL: newVariable('num', 'LEVEL'),
   SIZE: newVariable('str', 'SIZE'),
   CORE_LANGUAGE_NAMES: newVariable('list-str', 'CORE_LANGUAGE_NAMES'),
@@ -138,6 +164,18 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 };
 
 let variables = _.cloneDeep(DEFAULT_VARIABLES);
+let variableBonuses: Record<
+  string,
+  { value?: number; type?: string; text: string; source: string; timestamp: number }[]
+> = {};
+let variableHistory: Record<
+  string,
+  { to: VariableValue; from: VariableValue | null; source: string; timestamp: number }[]
+> = {};
+
+// 2_status_
+// +2 status bonus
+// Map<string, { value?: number, type: string, text: string }[]>
 
 /**
  * Gets all variables
@@ -152,8 +190,51 @@ export function getVariables() {
  * @param name - name of the variable to get
  * @returns - the variable
  */
-export function getVariable(name: string): Variable | null {
-  return _.cloneDeep(variables[name]);
+export function getVariable<T = Variable>(name: string): T | null {
+  return _.cloneDeep(variables[name]) as T | null;
+}
+
+/**
+ * Gets the bonuses for a variable
+ * @param name - name of the variable to get
+ * @returns - the bonus array
+ */
+export function getVariableBonuses(name: string) {
+  return _.cloneDeep(variableBonuses[name]) ?? [];
+}
+
+export function addVariableBonus(
+  name: string,
+  value: number | undefined,
+  type: string | undefined,
+  text: string,
+  source: string
+) {
+  if (!variableBonuses[name]) {
+    variableBonuses[name] = [];
+  }
+  variableBonuses[name].push({ value, type, text, source, timestamp: Date.now() });
+}
+
+/**
+ * Gets the history for a variable
+ * @param name - name of the variable to get
+ * @returns - the bonus array
+ */
+export function getVariableHistory(name: string) {
+  return _.cloneDeep(variableHistory[name]) ?? [];
+}
+
+function addVariableHistory(
+  name: string,
+  to: VariableValue,
+  from: VariableValue | null,
+  source: string
+) {
+  if (!variableHistory[name]) {
+    variableHistory[name] = [];
+  }
+  variableHistory[name].push({ to, from, source, timestamp: Date.now() });
 }
 
 /**
@@ -163,9 +244,18 @@ export function getVariable(name: string): Variable | null {
  * @param defaultValue - optional, default value of the variable
  * @returns - the variable that was added
  */
-export function addVariable(type: VariableType, name: string, defaultValue?: any) {
+export function addVariable(
+  type: VariableType,
+  name: string,
+  defaultValue?: VariableValue,
+  source?: string
+) {
   const variable = newVariable(type, name, defaultValue);
   variables[variable.name] = variable;
+
+  // Add to history
+  addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
+
   return _.cloneDeep(variable);
 }
 
@@ -182,18 +272,22 @@ export function removeVariable(name: string) {
  */
 export function resetVariables() {
   variables = _.cloneDeep(DEFAULT_VARIABLES);
+  variableBonuses = {};
+  variableHistory = {};
 }
 
 /**
  * Sets a variable to a given value
  * @param name - name of the variable to set
- * @param value - can be a number, string, boolean, AttributeValue, or ProficiencyType
+ * @param value - VariableValue
  */
-export function setVariable(name: string, value: any) {
+export function setVariable(name: string, value: VariableValue, source?: string) {
   let variable = variables[name];
+  const oldValue = _.cloneDeep(variable.value);
+
   if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(+value)) {
-    variable.value = parseInt(value);
+    variable.value = parseInt(`${value}`);
   } else if (isVariableStr(variable) && _.isString(value)) {
     variable.value = value;
   } else if (isVariableBool(variable) && _.isBoolean(value)) {
@@ -202,15 +296,18 @@ export function setVariable(name: string, value: any) {
     if (_.isString(value)) {
       value = JSON.parse(value);
     }
-    variable.value = _.uniq(value);
+    variable.value = _.uniq(value as string[]);
   } else if (isVariableAttr(variable) && isAttributeValue(value)) {
     variable.value.value = value.value;
     variable.value.partial = value.partial;
   } else if (isVariableProf(variable) && isProficiencyType(value)) {
-    variable.value.value = value;
+    variable.value = value;
   } else {
     throwError(`Invalid value for variable: ${name}, ${value}`);
   }
+
+  // Add to history
+  addVariableHistory(variable.name, variable.value, oldValue, source ?? 'Updated');
 }
 
 /**
@@ -218,8 +315,10 @@ export function setVariable(name: string, value: any) {
  * @param name - name of the variable to adjust
  * @param amount - can be a number, string, or boolean
  */
-export function adjVariable(name: string, amount: any) {
+export function adjVariable(name: string, amount: any, source?: string) {
   let variable = variables[name];
+  const oldValue = _.cloneDeep(variable.value);
+
   if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(+amount)) {
     variable.value += parseInt(amount);
@@ -249,12 +348,12 @@ export function adjVariable(name: string, amount: any) {
     variable.value = _.uniq([...variable.value, amount]);
   } else if (isVariableProf(variable)) {
     if (isProficiencyType(amount)) {
-      variable.value.value = maxProficiencyType(variable.value.value, amount);
+      variable.value = maxProficiencyType(variable.value, amount);
     } else if (isExtendedProficiencyType(amount)) {
       if (amount === '1') {
-        variable.value.value = nextProficiencyType(variable.value.value) ?? variable.value.value;
+        variable.value = nextProficiencyType(variable.value) ?? variable.value;
       } else if (amount === '-1') {
-        variable.value.value = prevProficiencyType(variable.value.value) ?? variable.value.value;
+        variable.value = prevProficiencyType(variable.value) ?? variable.value;
       } else {
         throwError(`Invalid adjust amount for prof: ${name}, ${amount}`);
       }
@@ -262,34 +361,37 @@ export function adjVariable(name: string, amount: any) {
   } else {
     throwError(`Invalid adjust amount for variable: ${name}, ${amount}`);
   }
+
+  // Add to history
+  addVariableHistory(variable.name, variable.value, oldValue, source ?? 'Adjusted');
 }
 
-export function getAllSkillVariables(): Variable[] {
+export function getAllSkillVariables(): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
     if (variable.name.startsWith('SKILL_')) {
       variables.push(variable);
     }
   }
-  return variables;
+  return variables as VariableProf[];
 }
 
-export function getAllSaveVariables(): Variable[] {
+export function getAllSaveVariables(): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
     if (variable.name.startsWith('SAVE_')) {
       variables.push(variable);
     }
   }
-  return variables;
+  return variables as VariableProf[];
 }
 
-export function getAllAttributeVariables(): Variable[] {
+export function getAllAttributeVariables(): VariableAttr[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
     if (variable.name.startsWith('ATTRIBUTE_')) {
       variables.push(variable);
     }
   }
-  return variables;
+  return variables as VariableAttr[];
 }

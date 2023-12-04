@@ -55,6 +55,10 @@ import {
   convertBackgroundOperationsIntoUI,
 } from '@drawers/types/BackgroundDrawer';
 import RichText from '@common/RichText';
+import { VariableProf } from '@typing/variables';
+import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import { displayFinalProfValue } from '@variables/variable-display';
+import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -103,6 +107,7 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
 export function CharBuilderCreationInner(props: { content: ContentPackage; pageHeight: number }) {
   const { ref, height } = useElementSize();
 
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
@@ -230,26 +235,34 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                   <Text c='gray.0'>67</Text>
                 </Box>
               </StatButton>
-              <StatButton>
+              <StatButton
+                onClick={() => {
+                  openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC' } });
+                }}
+              >
                 <Box>
                   <Text c='gray.0' fz='sm'>
                     Class DC
                   </Text>
                 </Box>
                 <Group>
-                  <Text c='gray.0'>14</Text>
-                  <Badge variant='default'>U</Badge>
+                  <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
+                  <Badge variant='default'>{getVariable<VariableProf>('CLASS_DC')?.value}</Badge>
                 </Group>
               </StatButton>
-              <StatButton>
+              <StatButton
+                onClick={() => {
+                  openDrawer({ type: 'stat-prof', data: { variableName: 'PERCEPTION' } });
+                }}
+              >
                 <Box>
                   <Text c='gray.0' fz='sm'>
                     Perception
                   </Text>
                 </Box>
                 <Group>
-                  <Text c='gray.0'>+4</Text>
-                  <Badge variant='default'>E</Badge>
+                  <Text c='gray.0'>{displayFinalProfValue('PERCEPTION')}</Text>
+                  <Badge variant='default'>{getVariable<VariableProf>('PERCEPTION')?.value}</Badge>
                 </Group>
               </StatButton>
               <Accordion
@@ -277,24 +290,29 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
                   </Accordion.Control>
                   <Accordion.Panel>
                     <Stack gap={5}>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Acrobatics</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton>
-                        <Box>
-                          <Text fz='sm'>Arcana</Text>
-                        </Box>
-                        <Group>
-                          <Text>+4</Text>
-                          <Badge variant='default'>E</Badge>
-                        </Group>
-                      </StatButton>
+                      {getAllSkillVariables()
+                        .filter((skill) => skill.name !== 'SKILL_LORE____')
+                        .map((skill, index) => (
+                          <StatButton
+                            key={index}
+                            onClick={() => {
+                              openDrawer({
+                                type: 'stat-prof',
+                                data: { variableName: skill.name },
+                              });
+                            }}
+                          >
+                            <Box>
+                              <Text c='gray.0' fz='sm'>
+                                {variableToLabel(skill)}
+                              </Text>
+                            </Box>
+                            <Group>
+                              <Text c='gray.0'>{displayFinalProfValue(skill.name)}</Text>
+                              <Badge variant='default'>{skill.value}</Badge>
+                            </Group>
+                          </StatButton>
+                        ))}
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>

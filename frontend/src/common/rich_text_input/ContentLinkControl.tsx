@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  Menu,
-  ScrollArea,
-  Box,
-  Title,
-} from '@mantine/core';
+import { Menu, ScrollArea, Box, Title } from '@mantine/core';
 import { useDisclosure, useWindowEvent } from '@mantine/hooks';
 import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
@@ -40,12 +35,7 @@ export default function ContentLinkControl() {
     handleClose();
     newUrl === ''
       ? editor?.chain().focus().extendMarkRange('link').unsetLink().run()
-      : editor
-          ?.chain()
-          .focus()
-          .extendMarkRange('link')
-          .setLink({ href: newUrl, rel: 'tag' })
-          .run();
+      : editor?.chain().focus().extendMarkRange('link').setLink({ href: newUrl, rel: 'tag' }).run();
   };
 
   useWindowEvent('edit-link', handleOpen, false);
@@ -87,7 +77,15 @@ export default function ContentLinkControl() {
   const selectedContentName = content?.name ?? '';
 
   return (
-    <Menu shadow='md' position='top' width={180} withinPortal withArrow opened={opened} onClose={handleClose}>
+    <Menu
+      shadow='md'
+      position='top'
+      width={180}
+      withinPortal
+      withArrow
+      opened={opened}
+      onClose={handleClose}
+    >
       <Menu.Target>
         <RichTextEditor.Control
           onClick={handleOpen}

@@ -29,10 +29,11 @@ function defineSelectionTree(character: Character) {
 async function executeOperations(
   primarySource: string,
   operations: Operation[],
-  options?: OperationOptions
+  options?: OperationOptions,
+  sourceLabel?: string
 ) {
   const selectionNode = getRootSelection().children[primarySource];
-  let results = await runOperations(selectionNode, operations, _.cloneDeep(options));
+  let results = await runOperations(selectionNode, operations, _.cloneDeep(options), sourceLabel);
 
   // Make it so you can only select boosts that haven't been selected (or given) yet
   results = limitBoostOptions(operations, results);
@@ -65,6 +66,7 @@ export async function executeCharacterOperations(character: Character, content: 
   const heritage = content.abilityBlocks.find(
     (ab) => ab.id === character.details?.heritage?.id && ab.type === 'heritage'
   );
+  console.log('heritage', heritage);
 
   const classFeatures = content.abilityBlocks
     .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
@@ -83,7 +85,8 @@ export async function executeCharacterOperations(character: Character, content: 
       const results = await executeOperations(
         `content-source-${source.id}`,
         source.operations ?? [],
-        options
+        options,
+        source.name
       );
 
       if (results.length > 0) {
@@ -97,21 +100,29 @@ export async function executeCharacterOperations(character: Character, content: 
     let characterResults = await executeOperations(
       'character',
       character.custom_operations ?? [],
-      options
+      options,
+      'Custom'
     );
 
     let classResults: OperationResult[] = [];
     if (class_) {
-      classResults = await executeOperations('class', getExtendedClassOperations(class_), options);
+      classResults = await executeOperations(
+        'class',
+        getExtendedClassOperations(class_),
+        options,
+        class_.name
+      );
     }
 
     let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     for (const feature of classFeatures) {
       if (feature.level === undefined || feature.level <= character.level) {
+        console.log(`${feature.name} (Lvl. ${feature.level})`);
         const results = await executeOperations(
           `class-feature-${feature.id}`,
           feature.operations ?? [],
-          options
+          options,
+          `${feature.name} (Lvl. ${feature.level})`
         );
 
         classFeatureResults.push({
@@ -126,7 +137,8 @@ export async function executeCharacterOperations(character: Character, content: 
       ancestryResults = await executeOperations(
         'ancestry',
         getExtendedAncestryOperations(ancestry),
-        options
+        options,
+        ancestry.name
       );
     }
 
@@ -138,7 +150,8 @@ export async function executeCharacterOperations(character: Character, content: 
           const results = await executeOperations(
             `ancestry-section-${section.id}`,
             section.operations ?? [],
-            options
+            options,
+            `${section.name} (Lvl. ${section.level})`
           );
 
           ancestrySectionResults.push({
@@ -154,7 +167,8 @@ export async function executeCharacterOperations(character: Character, content: 
       backgroundResults = await executeOperations(
         'background',
         background.operations ?? [],
-        options
+        options,
+        background.name
       );
     }
 
@@ -177,12 +191,10 @@ export async function executeCharacterOperations(character: Character, content: 
   await operationsPassthrough({ doOnlyValueCreation: true });
   // define values for any weapons or lores
   for (const value of Object.values(character?.operation_data?.selections ?? {})) {
-    if (
-      value.startsWith('SKILL_LORE_') ||
-      value.startsWith('WEAPON_') ||
-      value.startsWith('WEAPON_GROUP_')
-    ) {
-      addVariable('prof', value, 'U');
+    if (value.startsWith('SKILL_LORE_')) {
+      addVariable('prof', value, { value: 'U', attribute: 'ATTRIBUTE_INT' });
+    } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
+      addVariable('prof', value);
     }
   }
 

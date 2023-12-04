@@ -1,6 +1,4 @@
-import { ActionCost } from "@typing/content";
-import { e } from "mathjs";
-
+import { ActionCost } from '@typing/content';
 
 export function convertCastToActionCost(cast: string): ActionCost | string {
   if (cast === '1') {
@@ -31,4 +29,3 @@ export function convertCastToActionCost(cast: string): ActionCost | string {
     return cast;
   }
 }
-
