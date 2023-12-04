@@ -82,10 +82,21 @@ function CreateValueInput(props: {
   value: VariableValue;
   onChange: (value: VariableValue) => void;
 }) {
-  if (props.variableType === 'attr' || props.variableType === 'num') {
+  if (props.variableType === 'num') {
     return (
       <NumberInput
         size='xs'
+        placeholder='Number'
+        value={props.value as number}
+        onChange={(value) => props.onChange(parseInt(`${value}`))}
+        allowDecimal={false}
+      />
+    );
+  } else if (props.variableType === 'attr') {
+    return (
+      <NumberInput
+        size='xs'
+        prefix={(props.value as number) >= 0 ? '+' : undefined}
         placeholder='Number'
         value={props.value as number}
         onChange={(value) => props.onChange(parseInt(`${value}`))}

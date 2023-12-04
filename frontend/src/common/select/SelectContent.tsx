@@ -82,6 +82,7 @@ import {
   nextProficiencyType,
   prevProficiencyType,
   proficiencyTypeToLabel,
+  variableNameToLabel,
 } from '@variables/variable-utils';
 import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
 import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
@@ -106,16 +107,23 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   // Fill in selected content
   useEffect(() => {
     (async () => {
-      if (!props.selectedId || !_.isNumber(props.selectedId)) return;
-      const content = await fetchContentById<T>(props.type, props.selectedId);
-      if (content) {
-        setSelected(content);
-      } else if (props.options?.overrideOptions) {
+      if (!props.selectedId) return;
+      if (_.isNumber(props.selectedId)) {
+        const content = await fetchContentById<T>(props.type, props.selectedId);
+        if (content) {
+          setSelected(content);
+          return;
+        }
+      }
+      if (props.options?.overrideOptions) {
         const option = props.options.overrideOptions.find(
           // @ts-ignore
           (option) => option.id === props.selectedId
         );
-        if (option) setSelected(option);
+        if (option) {
+          setSelected(option);
+          return;
+        }
       }
     })();
   }, [props.selectedId, props.type]);
@@ -1011,9 +1019,24 @@ export function GenericSelectionOption(props: {
       justify='space-between'
     >
       <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.option.name}</Text>
-        </Box>
+        <Group pl={8} wrap='nowrap' gap={5}>
+          <Text fz='sm'>{props.option.name}</Text>{' '}
+          {/* {props.skillAdjustment && variable && (variable as VariableProf).attribute && (
+            <Badge
+              variant='dot'
+              size='xs'
+              styles={{
+                root: {
+                  // @ts-ignore
+                  '--badge-dot-size': 0,
+                },
+              }}
+              c='gray.6'
+            >
+              {compactLabels(variableNameToLabel((variable as VariableProf).attribute!))}
+            </Badge>
+          )} */}
+        </Group>
         {props.option._is_core && (
           <ThemeIcon variant='light' size='xs' radius='xl'>
             <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />

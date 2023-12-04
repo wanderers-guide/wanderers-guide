@@ -23,7 +23,7 @@ export function displayFinalProfValue(variableName: string, isDC: boolean = fals
       )}
       {parts.hasConditionals ? (
         <Text
-          c='guide.6'
+          c='guide.5'
           style={{
             position: 'absolute',
             top: -6,
@@ -126,4 +126,25 @@ export function getBonusText(bonus: {
   }
 
   return '';
+}
+
+export function getHealthValueParts() {
+  const ancestryHp = getVariable<VariableNum>('MAX_HEALTH_ANCESTRY')!.value;
+  const classHp = getVariable<VariableNum>('MAX_HEALTH_CLASS_PER_LEVEL')!.value;
+  const bonusHp = getVariable<VariableNum>('MAX_HEALTH_BONUS')!.value;
+  const conMod = getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value;
+  const level = getVariable<VariableNum>('LEVEL')!.value;
+
+  return {
+    level,
+    ancestryHp,
+    classHp,
+    bonusHp,
+    conMod,
+  };
+}
+
+export function displayFinalHealthValue() {
+  const { level, ancestryHp, classHp, bonusHp, conMod } = getHealthValueParts();
+  return <span>{ancestryHp + bonusHp + (classHp + conMod) * level}</span>;
 }

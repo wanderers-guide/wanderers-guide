@@ -13,6 +13,7 @@ import {
   Text,
   Title,
   UnstyledButton,
+  VisuallyHidden,
   useMantineTheme,
 } from '@mantine/core';
 import {
@@ -55,9 +56,9 @@ import {
   convertBackgroundOperationsIntoUI,
 } from '@drawers/types/BackgroundDrawer';
 import RichText from '@common/RichText';
-import { VariableListStr, VariableProf } from '@typing/variables';
+import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
-import { displayFinalProfValue } from '@variables/variable-display';
+import { displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
 
 // Determines how often to check for choice counts
@@ -66,6 +67,7 @@ const CHOICE_COUNT_INTERVAL = 2500;
 export default function CharBuilderCreation(props: { pageHeight: number }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
+  const [doneLoading, setDoneLoading] = useState(false);
 
   const { data: content, isFetching } = useQuery({
     queryKey: [`find-content-${character?.id}`],
@@ -79,32 +81,51 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
 
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 20);
+  const interval = useInterval(() => setPercentage((p) => p + 2), 30);
   useEffect(() => {
     interval.start();
     return interval.stop;
   }, []);
 
+  const loader = (
+    <Box
+      style={{
+        width: '100%',
+        height: '300px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} />
+    </Box>
+  );
+
   if (isFetching || !content) {
-    return (
-      <Box
-        style={{
-          width: '100%',
-          height: '300px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} />
-      </Box>
-    );
+    return loader;
   } else {
-    return <CharBuilderCreationInner content={content} pageHeight={props.pageHeight} />;
+    return (
+      <>
+        <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
+        <div style={{ display: doneLoading ? undefined : 'none' }}>
+          <CharBuilderCreationInner
+            content={content}
+            pageHeight={props.pageHeight}
+            onFinishLoading={() => {
+              setDoneLoading(true);
+            }}
+          />
+        </div>
+      </>
+    );
   }
 }
 
-export function CharBuilderCreationInner(props: { content: ContentPackage; pageHeight: number }) {
+export function CharBuilderCreationInner(props: {
+  content: ContentPackage;
+  pageHeight: number;
+  onFinishLoading?: () => void;
+}) {
   const { ref, height } = useElementSize();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -123,6 +144,12 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
       executingOperations.current = false;
     });
   }, [character]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      props.onFinishLoading?.();
+    }, CHOICE_COUNT_INTERVAL + 500);
+  }, []);
 
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map(
     (level) => {
@@ -214,25 +241,60 @@ export function CharBuilderCreationInner(props: { content: ContentPackage; pageH
           <ScrollArea h={props.pageHeight - height - 20} pr={12}>
             <Stack gap={5}>
               <Box>
-                <Button variant='default' size='lg' fullWidth>
+                <Button
+                  variant='default'
+                  size='lg'
+                  fullWidth
+                  onClick={() => {
+                    openDrawer({ type: 'stat-attributes', data: {} });
+                  }}
+                >
                   <Group>
-                    <AttributeModPart attribute='Str' value={-1} marked={false} />
-                    <AttributeModPart attribute='Dex' value={0} marked={false} />
-                    <AttributeModPart attribute='Con' value={3} marked={false} />
-                    <AttributeModPart attribute='Int' value={4} marked={true} />
-                    <AttributeModPart attribute='Wis' value={3} marked={false} />
-                    <AttributeModPart attribute='Cha' value={3} marked={false} />
+                    <AttributeModPart
+                      attribute='Str'
+                      value={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.value}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.partial}
+                    />
+                    <AttributeModPart
+                      attribute='Dex'
+                      value={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.value}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.partial}
+                    />
+                    <AttributeModPart
+                      attribute='Con'
+                      value={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.partial}
+                    />
+                    <AttributeModPart
+                      attribute='Int'
+                      value={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.value}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.partial}
+                    />
+                    <AttributeModPart
+                      attribute='Wis'
+                      value={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.value}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.partial}
+                    />
+                    <AttributeModPart
+                      attribute='Cha'
+                      value={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.value}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.partial}
+                    />
                   </Group>
                 </Button>
               </Box>
-              <StatButton>
+              <StatButton
+                onClick={() => {
+                  openDrawer({ type: 'stat-hp', data: {} });
+                }}
+              >
                 <Box>
                   <Text c='gray.0' fz='sm'>
                     Hit Points
                   </Text>
                 </Box>
                 <Box>
-                  <Text c='gray.0'>67</Text>
+                  <Text c='gray.0'>{displayFinalHealthValue()}</Text>
                 </Box>
               </StatButton>
               <StatButton

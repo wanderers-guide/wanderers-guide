@@ -49,6 +49,7 @@ import {
   variableNameToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
+import _ from 'lodash';
 
 export function StatProfDrawerTitle(props: { data: { variableName: string } }) {
   const variable = getVariable<VariableProf>(props.data.variableName);
@@ -59,7 +60,7 @@ export function StatProfDrawerTitle(props: { data: { variableName: string } }) {
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{variableToLabel(variable)}</Title>
+              <Title order={3}>{_.startCase(variableToLabel(variable))}</Title>
             </Box>
           </Group>
           <Box>
@@ -110,155 +111,157 @@ export function StatProfDrawerContent(props: { data: { variableName: string } })
 
   return (
     <Box>
-      <Accordion variant='separated' defaultValue='Apples'>
-        <Accordion.Item value='breakdown'>
-          <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
-          <Accordion.Panel>
-            <Group gap={8} wrap='nowrap' align='center'>
-              {displayFinalProfValue(variable.name)} ={' '}
-              <HoverCard
-                shadow='md'
-                openDelay={250}
-                width={230}
-                position='bottom'
-                zIndex={10000}
-                withArrow
-              >
-                <HoverCard.Target>
-                  <Kbd style={{ cursor: 'pointer' }}>{parts.profValue}</Kbd>
-                </HoverCard.Target>
-                <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='xs'>
-                    You're {proficiencyTypeToLabel(variable.value).toLowerCase()} in this
-                    proficiency, resulting in a {sign(getProficiencyValue(variable.value))} bonus.
-                  </Text>
-                </HoverCard.Dropdown>
-              </HoverCard>
-              +
-              <HoverCard
-                shadow='md'
-                openDelay={250}
-                width={230}
-                position='bottom'
-                zIndex={10000}
-                withArrow
-              >
-                <HoverCard.Target>
-                  <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
-                </HoverCard.Target>
-                <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.0' size='xs'>
-                    {variable.value === 'U' ? (
-                      <>
-                        Because you're {proficiencyTypeToLabel(variable.value).toLowerCase()} in
-                        this proficiency, you don't add your level.
-                      </>
-                    ) : (
-                      <>
-                        Because you're {proficiencyTypeToLabel(variable.value).toLowerCase()} in
-                        this proficiency, you add your level.
-                      </>
-                    )}
-                  </Text>
-                </HoverCard.Dropdown>
-              </HoverCard>
-              {parts.attributeMod && (
-                <>
-                  +
-                  <HoverCard
-                    shadow='md'
-                    openDelay={250}
-                    width={230}
-                    position='bottom'
-                    zIndex={10000}
-                    withArrow
-                  >
-                    <HoverCard.Target>
-                      <Kbd style={{ cursor: 'pointer' }}>{parts.attributeMod}</Kbd>
-                    </HoverCard.Target>
-                    <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
-                        This proficiency is associated with the{' '}
-                        {variableNameToLabel(variable.attribute ?? '')} attribute, so you add your{' '}
-                        {variableNameToLabel(variable.attribute ?? '')} modifier.
-                      </Text>
-                    </HoverCard.Dropdown>
-                  </HoverCard>
-                </>
-              )}
-              {[...parts.breakdown.bonuses.entries()].map(([key, bonus], index) => (
-                <>
-                  +
-                  <HoverCard
-                    shadow='md'
-                    openDelay={250}
-                    width={230}
-                    position='bottom'
-                    zIndex={10000}
-                    withArrow
-                  >
-                    <HoverCard.Target>
-                      <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
-                    </HoverCard.Target>
-                    <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
-                        Your {key} bonus. Use the highest from the following:
-                        <Divider pb={5} />
-                        <List size='xs'>
-                          {bonus.composition.map((item, i) => (
-                            <List.Item key={i}>
-                              {sign(item.amount)}{' '}
-                              <Text c='dimmed' span>
-                                {'['}from {item.source}
-                                {']'}
-                              </Text>
-                            </List.Item>
-                          ))}
-                        </List>
-                      </Text>
-                    </HoverCard.Dropdown>
-                  </HoverCard>
-                </>
-              ))}
-              {parts.hasConditionals && (
-                <>
-                  +
-                  <HoverCard
-                    shadow='md'
-                    openDelay={250}
-                    width={230}
-                    position='bottom'
-                    zIndex={10000}
-                    withArrow
-                  >
-                    <HoverCard.Target>
-                      <Kbd style={{ cursor: 'pointer' }} c='guide.6'>
-                        *
-                      </Kbd>
-                    </HoverCard.Target>
-                    <HoverCard.Dropdown py={5} px={10}>
-                      <Text c='gray.0' size='xs'>
-                        You have conditional bonuses! These will only apply situationally:
-                        <Divider pb={5} />
-                        <List size='xs'>
-                          {parts.breakdown.conditionals.map((item, i) => (
-                            <List.Item key={i}>
-                              {item.text}{' '}
-                              <Text c='dimmed' span>
-                                {'['}from {item.source}
-                                {']'}
-                              </Text>
-                            </List.Item>
-                          ))}
-                        </List>
-                      </Text>
-                    </HoverCard.Dropdown>
-                  </HoverCard>
-                </>
-              )}
-            </Group>
-          </Accordion.Panel>
-        </Accordion.Item>
+      <Accordion variant='separated' defaultValue=''>
+        {variable.attribute && (
+          <Accordion.Item value='breakdown'>
+            <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
+            <Accordion.Panel>
+              <Group gap={8} wrap='nowrap' align='center'>
+                {displayFinalProfValue(variable.name)} ={' '}
+                <HoverCard
+                  shadow='md'
+                  openDelay={250}
+                  width={230}
+                  position='bottom'
+                  zIndex={10000}
+                  withArrow
+                >
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>{parts.profValue}</Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      You're {proficiencyTypeToLabel(variable.value).toLowerCase()} in this
+                      proficiency, resulting in a {sign(getProficiencyValue(variable.value))} bonus.
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+                +
+                <HoverCard
+                  shadow='md'
+                  openDelay={250}
+                  width={230}
+                  position='bottom'
+                  zIndex={10000}
+                  withArrow
+                >
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>{parts.level}</Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      {variable.value === 'U' ? (
+                        <>
+                          Because you're {proficiencyTypeToLabel(variable.value).toLowerCase()} in
+                          this proficiency, you don't add your level.
+                        </>
+                      ) : (
+                        <>
+                          Because you're {proficiencyTypeToLabel(variable.value).toLowerCase()} in
+                          this proficiency, you add your level.
+                        </>
+                      )}
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+                {parts.attributeMod && (
+                  <>
+                    +
+                    <HoverCard
+                      shadow='md'
+                      openDelay={250}
+                      width={230}
+                      position='bottom'
+                      zIndex={10000}
+                      withArrow
+                    >
+                      <HoverCard.Target>
+                        <Kbd style={{ cursor: 'pointer' }}>{parts.attributeMod}</Kbd>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown py={5} px={10}>
+                        <Text c='gray.0' size='xs'>
+                          This proficiency is associated with the{' '}
+                          {variableNameToLabel(variable.attribute ?? '')} attribute, so you add your{' '}
+                          {variableNameToLabel(variable.attribute ?? '')} modifier.
+                        </Text>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                  </>
+                )}
+                {[...parts.breakdown.bonuses.entries()].map(([key, bonus], index) => (
+                  <>
+                    +
+                    <HoverCard
+                      shadow='md'
+                      openDelay={250}
+                      width={230}
+                      position='bottom'
+                      zIndex={10000}
+                      withArrow
+                    >
+                      <HoverCard.Target>
+                        <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown py={5} px={10}>
+                        <Text c='gray.0' size='xs'>
+                          Your {key} bonus. Use the highest from the following:
+                          <Divider pb={5} />
+                          <List size='xs'>
+                            {bonus.composition.map((item, i) => (
+                              <List.Item key={i}>
+                                {sign(item.amount)}{' '}
+                                <Text c='dimmed' span>
+                                  {'['}from {item.source}
+                                  {']'}
+                                </Text>
+                              </List.Item>
+                            ))}
+                          </List>
+                        </Text>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                  </>
+                ))}
+                {parts.hasConditionals && (
+                  <>
+                    +
+                    <HoverCard
+                      shadow='md'
+                      openDelay={250}
+                      width={230}
+                      position='bottom'
+                      zIndex={10000}
+                      withArrow
+                    >
+                      <HoverCard.Target>
+                        <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                          *
+                        </Kbd>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown py={5} px={10}>
+                        <Text c='gray.0' size='xs'>
+                          You have conditional bonuses! These will only apply situationally:
+                          <Divider pb={5} />
+                          <List size='xs'>
+                            {parts.breakdown.conditionals.map((item, i) => (
+                              <List.Item key={i}>
+                                {item.text}{' '}
+                                <Text c='dimmed' span>
+                                  {'['}from {item.source}
+                                  {']'}
+                                </Text>
+                              </List.Item>
+                            ))}
+                          </List>
+                        </Text>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                  </>
+                )}
+              </Group>
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
         <Accordion.Item value='timeline'>
           <Accordion.Control icon={<IconTimeline size='1rem' />}>Timeline</Accordion.Control>
           <Accordion.Panel>

@@ -28,6 +28,8 @@ import { AncestryDrawerContent, AncestryDrawerTitle } from './types/AncestryDraw
 import { LanguageDrawerContent, LanguageDrawerTitle } from './types/LanguageDrawer';
 import { BackgroundDrawerTitle, BackgroundDrawerContent } from './types/BackgroundDrawer';
 import { StatProfDrawerContent, StatProfDrawerTitle } from './types/StatProfDrawer';
+import { StatAttrDrawerContent, StatAttrDrawerTitle } from './types/StatAttrDrawer';
+import { StatHealthDrawerContent, StatHealthDrawerTitle } from './types/StatHealthDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -152,39 +154,42 @@ export default function DrawerBase() {
         </Box>
       </ScrollArea>
 
-      {_drawer && !['character'].includes(_drawer.type) && (
-        <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
-          <HoverCard.Target>
-            <ActionIcon
-              variant='subtle'
-              aria-label='Help and Feedback'
-              radius='xl'
-              color='dark.3'
-              style={{
-                position: 'absolute',
-                bottom: 5,
-                right: 5,
-              }}
-              onClick={() => {
-                handleDrawerClose();
-                openContextModal({
-                  modal: 'contentFeedback',
-                  title: <Title order={3}>Content Details</Title>,
-                  innerProps: {
-                    type: convertToContentType(_drawer.type as ContentType | AbilityBlockType),
-                    data: _drawer.data,
-                  },
-                });
-              }}
-            >
-              <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
-            </ActionIcon>
-          </HoverCard.Target>
-          <HoverCard.Dropdown py={0} px={10}>
-            <Text size='sm'>Something wrong?</Text>
-          </HoverCard.Dropdown>
-        </HoverCard>
-      )}
+      {_drawer &&
+        !['character', 'stat-prof', 'stat-attributes', 'stat-hp', 'stat-resist-weak'].includes(
+          _drawer.type
+        ) && (
+          <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
+            <HoverCard.Target>
+              <ActionIcon
+                variant='subtle'
+                aria-label='Help and Feedback'
+                radius='xl'
+                color='dark.3'
+                style={{
+                  position: 'absolute',
+                  bottom: 5,
+                  right: 5,
+                }}
+                onClick={() => {
+                  handleDrawerClose();
+                  openContextModal({
+                    modal: 'contentFeedback',
+                    title: <Title order={3}>Content Details</Title>,
+                    innerProps: {
+                      type: convertToContentType(_drawer.type as ContentType | AbilityBlockType),
+                      data: _drawer.data,
+                    },
+                  });
+                }}
+              >
+                <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon>
+            </HoverCard.Target>
+            <HoverCard.Dropdown py={0} px={10}>
+              <Text size='sm'>Something wrong?</Text>
+            </HoverCard.Dropdown>
+          </HoverCard>
+        )}
     </Drawer>
   );
 }
@@ -206,6 +211,8 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}{' '}
       {/* TODO */}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'stat-attributes' && <StatAttrDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -235,6 +242,8 @@ function DrawerContent(props: {
       {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={_drawer.data} />}{' '}
       {/* TODO */}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'stat-attributes' && <StatAttrDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
     </>
   );
 }

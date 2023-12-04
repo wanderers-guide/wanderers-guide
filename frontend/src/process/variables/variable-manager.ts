@@ -235,7 +235,12 @@ function addVariableHistory(
   if (!variableHistory[name]) {
     variableHistory[name] = [];
   }
-  variableHistory[name].push({ to, from, source, timestamp: Date.now() });
+  variableHistory[name].push({
+    to: _.cloneDeep(to),
+    from: _.cloneDeep(from),
+    source,
+    timestamp: Date.now(),
+  });
 }
 
 /**

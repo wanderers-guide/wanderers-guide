@@ -60,7 +60,6 @@ function getShadesFromColor(color: string) {
 }
 
 export default function App() {
-
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [session, setSession] = useRecoilState(sessionState);
@@ -101,7 +100,18 @@ export default function App() {
   }, [activeCharacer]);
 
   // Update primary color when sheet_theme changes
-  const [theme, setTheme] = useState<any>();
+  const [theme, setTheme] = useState<any>(
+    createTheme({
+      colors: {
+        // @ts-ignore
+        guide: getShadesFromColor(GUIDE_BLUE),
+      },
+      primaryColor: 'guide',
+      defaultRadius: 'md',
+      fontFamily: 'Montserrat, sans-serif',
+      fontFamilyMonospace: 'Ubuntu Mono, monospace',
+    })
+  );
   useEffect(() => {
     if (prevCharacer?.details?.sheet_theme === activeCharacer?.details?.sheet_theme) return;
     console.log('Updating color theme...');
@@ -124,7 +134,6 @@ export default function App() {
   const [searchParams] = useSearchParams();
   useEffect(() => {
     (async () => {
-
       // If we have the `open=link_feat_3435` query param, open that content link
       const openValue = searchParams.get('open');
       if (openValue) {
@@ -137,7 +146,6 @@ export default function App() {
         }
         removeQueryParam('open');
       }
-      
     })();
   }, [location]);
 

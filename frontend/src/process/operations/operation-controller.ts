@@ -117,7 +117,6 @@ export async function executeCharacterOperations(character: Character, content: 
     let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     for (const feature of classFeatures) {
       if (feature.level === undefined || feature.level <= character.level) {
-        console.log(`${feature.name} (Lvl. ${feature.level})`);
         const results = await executeOperations(
           `class-feature-${feature.id}`,
           feature.operations ?? [],
