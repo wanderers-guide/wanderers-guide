@@ -1,5 +1,4 @@
-
-import { Variable, AttributeValue, ProficiencyType } from "./variables";
+import { Variable, AttributeValue, ProficiencyType } from './variables';
 
 export type Operation =
   | OperationAdjValue
@@ -12,16 +11,15 @@ export type Operation =
   | OperationGiveSpell
   | OperationRemoveSpell;
 export type OperationType =
-  | "adjValue"
-  | "setValue"
-  | "createValue"
-  | "giveAbilityBlock"
-  | "removeAbilityBlock"
-  | "conditional"
-  | "select"
-  | "giveSpell"
-  | "removeSpell";
-
+  | 'adjValue'
+  | 'setValue'
+  | 'createValue'
+  | 'giveAbilityBlock'
+  | 'removeAbilityBlock'
+  | 'conditional'
+  | 'select'
+  | 'giveSpell'
+  | 'removeSpell';
 
 interface OperationBase {
   readonly id: string;
@@ -30,7 +28,7 @@ interface OperationBase {
 }
 
 export interface OperationAdjValue extends OperationBase {
-  readonly type: "adjValue";
+  readonly type: 'adjValue';
   data: {
     variable: string;
     value: number | string | boolean;
@@ -38,37 +36,37 @@ export interface OperationAdjValue extends OperationBase {
 }
 
 export interface OperationSetValue extends OperationBase {
-  readonly type: "setValue";
+  readonly type: 'setValue';
   data: {
     variable: string;
-    value: number | string | boolean | AttributeValue | ProficiencyType;
+    value: VariableValue;
   };
 }
 
 export interface OperationCreateValue extends OperationBase {
-  readonly type: "createValue";
+  readonly type: 'createValue';
   data: {
     variable: string;
-    value: number | string | boolean | AttributeValue | ProficiencyType;
+    value: VariableValue;
   };
 }
 
 export interface OperationGiveAbilityBlock extends OperationBase {
-  readonly type: "giveAbilityBlock";
+  readonly type: 'giveAbilityBlock';
   data: {
     abilityBlockId: number;
   };
 }
 
 export interface OperationRemoveAbilityBlock extends OperationBase {
-  readonly type: "removeAbilityBlock";
+  readonly type: 'removeAbilityBlock';
   data: {
     abilityBlockId: number;
   };
 }
 
 export interface OperationConditional extends OperationBase {
-  readonly type: "conditional";
+  readonly type: 'conditional';
   data: {
     condition: {}; // TODO
     trueOperation?: Operation;
@@ -77,21 +75,21 @@ export interface OperationConditional extends OperationBase {
 }
 
 export interface OperationGiveSpell extends OperationBase {
-  readonly type: "giveSpell";
+  readonly type: 'giveSpell';
   data: {
     spellId: number;
   };
 }
 
 export interface OperationRemoveSpell extends OperationBase {
-  readonly type: "removeSpell";
+  readonly type: 'removeSpell';
   data: {
     spellId: number;
   };
 }
 
 export interface OperationSelect extends OperationBase {
-  readonly type: "select";
+  readonly type: 'select';
   data: {
     title: string;
     description: string;
@@ -111,46 +109,45 @@ export type OperationSelectOption =
   | OperationSelectOptionLanguage
   | OperationSelectOptionProficiency;
 export type OperationSelectOptionType =
-  | "CUSTOM"
-  | "ABILITY_BLOCK"
-  | "SPELL"
-  | "ATTRIBUTE"
-  | "LANGUAGE"
-  | "PROFICIENCY";
-
+  | 'CUSTOM'
+  | 'ABILITY_BLOCK'
+  | 'SPELL'
+  | 'ATTRIBUTE'
+  | 'LANGUAGE'
+  | 'PROFICIENCY';
 
 interface OperationSelectOptionBase {
   readonly type: OperationSelectOptionType;
 }
 
 interface OperationSelectOptionCustom extends OperationSelectOptionBase {
-  readonly type: "CUSTOM";
+  readonly type: 'CUSTOM';
   title: string;
   description: string;
   operations: Operation[];
 }
 
 interface OperationSelectOptionAbilityBlock extends OperationSelectOptionBase {
-  readonly type: "ABILITY_BLOCK";
+  readonly type: 'ABILITY_BLOCK';
   operation: OperationGiveAbilityBlock;
 }
 
 interface OperationSelectOptionSpell extends OperationSelectOptionBase {
-  readonly type: "SPELL";
+  readonly type: 'SPELL';
   operation: OperationGiveSpell;
 }
 
 interface OperationSelectOptionAttribute extends OperationSelectOptionBase {
-  readonly type: "ATTRIBUTE";
+  readonly type: 'ATTRIBUTE';
   operation: OperationAdjValue;
 }
 
 interface OperationSelectOptionLanguage extends OperationSelectOptionBase {
-  readonly type: "LANGUAGE";
+  readonly type: 'LANGUAGE';
   //operation: OperationSetValue; TODO
 }
 
 interface OperationSelectOptionProficiency extends OperationSelectOptionBase {
-  readonly type: "PROFICIENCY";
+  readonly type: 'PROFICIENCY';
   operation: OperationAdjValue;
 }
