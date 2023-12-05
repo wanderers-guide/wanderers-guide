@@ -63,10 +63,6 @@ export async function executeCharacterOperations(character: Character, content: 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
   const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
-  const heritage = content.abilityBlocks.find(
-    (ab) => ab.id === character.details?.heritage?.id && ab.type === 'heritage'
-  );
-  console.log('heritage', heritage);
 
   const classFeatures = content.abilityBlocks
     .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
@@ -268,7 +264,8 @@ function limitBoostOptions(
   for (const op of operations) {
     if (op.type === 'adjValue') {
       // setValue isn't a boost
-      if (+op.data.value === 1) {
+      // @ts-ignore
+      if (+op.data?.value?.value === 1) {
         // Must be +1 to be a boost
         unselectedOptions.push(op.data.variable);
       }
@@ -281,7 +278,7 @@ function limitBoostOptions(
       opR.selection.options = opR.selection.options.filter((option) => {
         if (
           unselectedOptions.includes(option.variable) &&
-          +option.value === 1 &&
+          +option.value?.value === 1 &&
           opR?.result?.source?.variable !== option.variable
         ) {
           return false;
@@ -322,7 +319,7 @@ export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
           id: `f8703468-ab35-4f84-8dc7-7c48556258e3-${i}`,
           type: 'ADJ_VALUE',
           group: 'SKILL',
-          value: 'T',
+          value: { value: 'T' },
         },
       },
     });

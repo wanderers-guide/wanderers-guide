@@ -79,7 +79,9 @@ function checkForProf(prereq: string): PrereqMet {
     return 'UNKNOWN';
   }
 
-  return maxProficiencyType(variable.value, profType) === variable.value ? 'FULLY' : 'NOT';
+  return maxProficiencyType(variable.value.value, profType) === variable.value.value
+    ? 'FULLY'
+    : 'NOT';
 }
 
 function checkForFeat(prereq: string): PrereqMet {

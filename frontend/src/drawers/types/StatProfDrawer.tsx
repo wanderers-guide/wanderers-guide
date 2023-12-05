@@ -43,15 +43,16 @@ import {
 } from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
-  getProficiencyValue,
+  getProficiencyTypeValue,
   isProficiencyType,
+  isProficiencyValue,
   proficiencyTypeToLabel,
   variableNameToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
 import _ from 'lodash';
 
-export function StatProfDrawerTitle(props: { data: { variableName: string } }) {
+export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?: boolean } }) {
   const variable = getVariable<VariableProf>(props.data.variableName);
 
   return (
@@ -64,7 +65,7 @@ export function StatProfDrawerTitle(props: { data: { variableName: string } }) {
             </Box>
           </Group>
           <Box>
-            <Badge>{proficiencyTypeToLabel(variable.value)}</Badge>
+            <Badge>{proficiencyTypeToLabel(variable.value.value)}</Badge>
           </Box>
         </Group>
       )}
@@ -72,7 +73,7 @@ export function StatProfDrawerTitle(props: { data: { variableName: string } }) {
   );
 }
 
-export function StatProfDrawerContent(props: { data: { variableName: string } }) {
+export function StatProfDrawerContent(props: { data: { variableName: string; isDC?: boolean } }) {
   const variable = getVariable<VariableProf>(props.data.variableName);
   if (!variable) return null;
 
@@ -90,8 +91,10 @@ export function StatProfDrawerContent(props: { data: { variableName: string } })
     timestamp: number;
   }[] = [];
   for (const hist of history) {
-    const from = isProficiencyType(hist.from) ? proficiencyTypeToLabel(hist.from) : hist.from;
-    const to = isProficiencyType(hist.to) ? proficiencyTypeToLabel(hist.to) : hist.to;
+    const from = isProficiencyValue(hist.from)
+      ? proficiencyTypeToLabel(hist.from.value)
+      : hist.from;
+    const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
     timeline.push({
       type: 'ADJUSTMENT',
       title: `${from} → ${to}`,
@@ -112,12 +115,13 @@ export function StatProfDrawerContent(props: { data: { variableName: string } })
   return (
     <Box>
       <Accordion variant='separated' defaultValue=''>
-        {variable.attribute && (
+        {variable.value.attribute && (
           <Accordion.Item value='breakdown'>
             <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
             <Accordion.Panel>
               <Group gap={8} wrap='nowrap' align='center'>
-                {displayFinalProfValue(variable.name)} ={' '}
+                {displayFinalProfValue(variable.name, props.data.isDC)} ={' '}
+                {props.data.isDC && <>10 + </>}
                 <HoverCard
                   shadow='md'
                   openDelay={250}
@@ -131,8 +135,9 @@ export function StatProfDrawerContent(props: { data: { variableName: string } })
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      You're {proficiencyTypeToLabel(variable.value).toLowerCase()} in this
-                      proficiency, resulting in a {sign(getProficiencyValue(variable.value))} bonus.
+                      You're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                      proficiency, resulting in a{' '}
+                      {sign(getProficiencyTypeValue(variable.value.value))} bonus.
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>
@@ -150,15 +155,17 @@ export function StatProfDrawerContent(props: { data: { variableName: string } })
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      {variable.value === 'U' ? (
+                      {variable.value.value === 'U' ? (
                         <>
-                          Because you're {proficiencyTypeToLabel(variable.value).toLowerCase()} in
-                          this proficiency, you don't add your level.
+                          Because you're{' '}
+                          {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                          proficiency, you don't add your level.
                         </>
                       ) : (
                         <>
-                          Because you're {proficiencyTypeToLabel(variable.value).toLowerCase()} in
-                          this proficiency, you add your level.
+                          Because you're{' '}
+                          {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                          proficiency, you add your level.
                         </>
                       )}
                     </Text>
@@ -181,8 +188,8 @@ export function StatProfDrawerContent(props: { data: { variableName: string } })
                       <HoverCard.Dropdown py={5} px={10}>
                         <Text c='gray.0' size='xs'>
                           This proficiency is associated with the{' '}
-                          {variableNameToLabel(variable.attribute ?? '')} attribute, so you add your{' '}
-                          {variableNameToLabel(variable.attribute ?? '')} modifier.
+                          {variableNameToLabel(variable.value.attribute ?? '')} attribute, so you
+                          add your {variableNameToLabel(variable.value.attribute ?? '')} modifier.
                         </Text>
                       </HoverCard.Dropdown>
                     </HoverCard>

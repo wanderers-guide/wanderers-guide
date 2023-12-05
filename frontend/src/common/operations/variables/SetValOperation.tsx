@@ -11,6 +11,7 @@ import {
 } from '@typing/variables';
 import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
+import { useDidUpdate } from '@mantine/hooks';
 
 export function SetValOperation(props: {
   variable: string;
@@ -24,6 +25,12 @@ export function SetValOperation(props: {
     getVariable(props.variable) ?? undefined
   );
   const [value, setValue] = useState<VariableValue>(props.value);
+
+  useDidUpdate(() => {
+    setVariableName(props.variable);
+    setVariableData(getVariable(props.variable) ?? undefined);
+    setValue(props.value);
+  }, [props.value, props.variable]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Set Value'>

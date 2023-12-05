@@ -2,7 +2,7 @@ import { VariableAttr, VariableNum, VariableProf } from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text } from '@mantine/core';
-import { getProficiencyValue } from './variable-utils';
+import { getProficiencyTypeValue } from './variable-utils';
 
 export function displayFinalProfValue(variableName: string, isDC: boolean = false) {
   const variable = getVariable<VariableProf>(variableName);
@@ -43,9 +43,10 @@ export function getProfValueParts(variableName: string) {
   const breakdown = getProfBreakdown(variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
 
-  const level = variable.value !== 'U' ? getVariable<VariableNum>('LEVEL')?.value ?? 0 : 0;
-  const profValue = getProficiencyValue(variable.value);
-  const attributeMod = getVariable<VariableAttr>(variable.attribute ?? '')?.value.value ?? null;
+  const level = variable.value.value !== 'U' ? getVariable<VariableNum>('LEVEL')?.value ?? 0 : 0;
+  const profValue = getProficiencyTypeValue(variable.value.value);
+  const attributeMod =
+    getVariable<VariableAttr>(variable.value.attribute ?? '')?.value.value ?? null;
   const totalBonusValue = Array.from(breakdown.bonuses.values()).reduce(
     (acc, bonus) => acc + bonus.value,
     0

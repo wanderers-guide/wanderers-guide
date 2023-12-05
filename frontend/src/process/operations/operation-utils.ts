@@ -1,4 +1,5 @@
 import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
+import { GenericData } from '@drawers/types/GenericDrawer';
 import { Content } from '@tiptap/react';
 import { AbilityBlock, ContentType, Language, Spell } from '@typing/content';
 import {
@@ -418,6 +419,7 @@ async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[
 }
 
 async function getAdjValuePredefinedList(options: OperationSelectOptionAdjValue[]) {
+  console.log(options);
   return options.map((option) => {
     const variable = getVariable(option.operation.data.variable);
     return {
@@ -436,6 +438,11 @@ async function getCustomPredefinedList(options: OperationSelectOptionCustom[]) {
     return {
       _select_uuid: option.id,
       _content_type: 'ability-block' as ContentType,
+      _custom_select: {
+        title: option.title,
+        description: option.description,
+        operations: option.operations,
+      } satisfies GenericData,
       id: option.id,
       name: option.title,
       title: option.title,

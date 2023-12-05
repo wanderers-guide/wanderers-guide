@@ -2,11 +2,34 @@ import { queryByName } from '@ai/vector-db/vector-manager';
 import { drawerState } from '@atoms/navAtoms';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { getIconFromContentType } from '@content/content-utils';
-import { Loader, Text, MantineTheme, rem, useMantineTheme, Center, ActionIcon, Tooltip, HoverCard } from '@mantine/core';
+import {
+  Loader,
+  Text,
+  MantineTheme,
+  rem,
+  useMantineTheme,
+  Center,
+  ActionIcon,
+  Tooltip,
+  HoverCard,
+} from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, isActionsGroup } from '@mantine/spotlight';
 import { makeRequest } from '@requests/request-manager';
-import { IconAdjustments, IconAdjustmentsFilled, IconArchive, IconBrandDiscord, IconBrandPatreon, IconDashboard, IconFileText, IconHome, IconLayoutDashboard, IconSearch, IconUser, IconUsers } from '@tabler/icons-react';
+import {
+  IconAdjustments,
+  IconAdjustmentsFilled,
+  IconArchive,
+  IconBrandDiscord,
+  IconBrandPatreon,
+  IconDashboard,
+  IconFileText,
+  IconHome,
+  IconLayoutDashboard,
+  IconSearch,
+  IconUser,
+  IconUsers,
+} from '@tabler/icons-react';
 import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
@@ -44,7 +67,6 @@ export default function SearchSpotlight() {
     }
   }, [query]);
 
-
   const defaultActions = {
     group: 'Pages',
     actions: [
@@ -53,9 +75,7 @@ export default function SearchSpotlight() {
         label: 'Characters',
         description: 'View and edit your characters',
         onClick: () => navigate(`/characters`),
-        leftSection: (
-          <IconUsers style={{ width: rem(24), height: rem(24) }} stroke={1.5} />
-        ),
+        leftSection: <IconUsers style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
         keywords: ['page'],
       },
       {
@@ -266,15 +286,12 @@ async function queryResults(
 async function fetchCharacters(
   query: string,
   navigate: NavigateFunction,
-  theme: MantineTheme,
+  theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
-  const characters = await makeRequest<Character[]>(
-    'find-character',
-    {}
-  );
+  const characters = await makeRequest<Character[]>('find-character', {});
   return (characters ?? []).map((character) => {
     const level = character.level;
-    const heritage = character.details?.heritage?.name ?? '';
+    const heritage = ''; //character.details?.heritage?.name ?? '';
     const ancestry = character.details?.ancestry?.name ?? '';
     //const background = character.details?.background?.name ?? '';
     const class_ = character.details?.class?.name ?? '';

@@ -220,9 +220,9 @@ export function OperationSection(props: {
                 });
               });
             }}
-            onRemove={() => {
+            onRemove={(id) => {
               setOperations((prev) => {
-                return prev.filter((p_op) => p_op.id !== op.id);
+                return prev.filter((p_op) => p_op.id !== id);
               });
             }}
           />
@@ -240,7 +240,7 @@ export function OperationSection(props: {
 export function OperationDisplay(props: {
   operation: Operation;
   onChange: (op: Operation) => void;
-  onRemove: () => void;
+  onRemove: (id: string) => void;
 }) {
   switch (props.operation.type) {
     case 'giveAbilityBlock':
@@ -254,7 +254,7 @@ export function OperationDisplay(props: {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
                 props.onChange(_.cloneDeep(opGiveAbilBlock));
               }}
-              onRemove={props.onRemove}
+              onRemove={() => props.onRemove(props.operation.id)}
             />
           );
         case 'action':
@@ -265,7 +265,7 @@ export function OperationDisplay(props: {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
                 props.onChange(_.cloneDeep(opGiveAbilBlock));
               }}
-              onRemove={props.onRemove}
+              onRemove={() => props.onRemove(props.operation.id)}
             />
           );
         case 'class-feature':
@@ -276,7 +276,7 @@ export function OperationDisplay(props: {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
                 props.onChange(_.cloneDeep(opGiveAbilBlock));
               }}
-              onRemove={props.onRemove}
+              onRemove={() => props.onRemove(props.operation.id)}
             />
           );
         case 'sense':
@@ -287,7 +287,7 @@ export function OperationDisplay(props: {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
                 props.onChange(_.cloneDeep(opGiveAbilBlock));
               }}
-              onRemove={props.onRemove}
+              onRemove={() => props.onRemove(props.operation.id)}
             />
           );
         case 'physical-feature':
@@ -298,7 +298,7 @@ export function OperationDisplay(props: {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
                 props.onChange(_.cloneDeep(opGiveAbilBlock));
               }}
-              onRemove={props.onRemove}
+              onRemove={() => props.onRemove(props.operation.id)}
             />
           );
         case 'heritage':
@@ -309,7 +309,7 @@ export function OperationDisplay(props: {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
                 props.onChange(_.cloneDeep(opGiveAbilBlock));
               }}
-              onRemove={props.onRemove}
+              onRemove={() => props.onRemove(props.operation.id)}
             />
           );
         default:
@@ -324,7 +324,7 @@ export function OperationDisplay(props: {
             opGiveSpell.data.spellId = option.id;
             props.onChange(_.cloneDeep(opGiveSpell));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'giveLanguage':
@@ -336,7 +336,7 @@ export function OperationDisplay(props: {
             opGiveLanguage.data.languageId = option.id;
             props.onChange(_.cloneDeep(opGiveLanguage));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'conditional':
@@ -352,7 +352,7 @@ export function OperationDisplay(props: {
             opConditional.data.falseOperations = falseOperations;
             props.onChange(_.cloneDeep(opConditional));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'select':
@@ -364,7 +364,7 @@ export function OperationDisplay(props: {
             opSelection.data = data;
             props.onChange(_.cloneDeep(opSelection));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'adjValue':
@@ -381,7 +381,7 @@ export function OperationDisplay(props: {
             opAdjValue.data.value = value;
             props.onChange(_.cloneDeep(opAdjValue));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'setValue':
@@ -399,7 +399,7 @@ export function OperationDisplay(props: {
             opSetValue.data.value = value;
             props.onChange(_.cloneDeep(opSetValue));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'createValue':
@@ -421,7 +421,7 @@ export function OperationDisplay(props: {
             opCreateValue.data.value = value;
             props.onChange(_.cloneDeep(opCreateValue));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     case 'addBonusToValue':
@@ -442,7 +442,7 @@ export function OperationDisplay(props: {
             opAddBonusToValue.data.text = data.text;
             props.onChange(_.cloneDeep(opAddBonusToValue));
           }}
-          onRemove={props.onRemove}
+          onRemove={() => props.onRemove(props.operation.id)}
         />
       );
     default:

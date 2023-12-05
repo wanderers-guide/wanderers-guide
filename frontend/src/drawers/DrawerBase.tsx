@@ -30,6 +30,7 @@ import { BackgroundDrawerTitle, BackgroundDrawerContent } from './types/Backgrou
 import { StatProfDrawerContent, StatProfDrawerTitle } from './types/StatProfDrawer';
 import { StatAttrDrawerContent, StatAttrDrawerTitle } from './types/StatAttrDrawer';
 import { StatHealthDrawerContent, StatHealthDrawerTitle } from './types/StatHealthDrawer';
+import { GenericDrawerContent, GenericDrawerTitle } from './types/GenericDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -198,6 +199,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
   const _drawer = useRecoilValue(drawerState);
   return (
     <div ref={ref}>
+      {_drawer?.type === 'generic' && <GenericDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerTitle data={_drawer.data} />}
@@ -223,6 +225,7 @@ function DrawerContent(props: {
   const _drawer = useRecoilValue(drawerState);
   return (
     <>
+      {_drawer?.type === 'generic' && <GenericDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}

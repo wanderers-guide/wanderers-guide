@@ -20,6 +20,8 @@ import {
   isExtendedProficiencyType,
   nextProficiencyType,
   prevProficiencyType,
+  isProficiencyValue,
+  isExtendedProficiencyValue,
 } from './variable-utils';
 import _ from 'lodash';
 import { throwError } from '@utils/notifications';
@@ -284,6 +286,9 @@ export function resetVariables() {
  */
 export function setVariable(name: string, value: VariableValue, source?: string) {
   let variable = variables[name];
+  if (!variable) {
+    throwError(`Invalid variable name: ${name}`);
+  }
   const oldValue = _.cloneDeep(variable.value);
 
   if (!variable) throwError(`Invalid variable name: ${name}`);
@@ -301,8 +306,13 @@ export function setVariable(name: string, value: VariableValue, source?: string)
   } else if (isVariableAttr(variable) && isAttributeValue(value)) {
     variable.value.value = value.value;
     variable.value.partial = value.partial;
-  } else if (isVariableProf(variable) && isProficiencyType(value)) {
-    variable.value = value;
+  } else if (isVariableProf(variable) && isProficiencyValue(value)) {
+    if (isProficiencyType(value.value)) {
+      variable.value.value = value.value;
+    }
+    if (value.attribute) {
+      variable.value.attribute = value.attribute;
+    }
   } else {
     throwError(`Invalid value for variable: ${name}, ${value}`);
   }
@@ -314,53 +324,70 @@ export function setVariable(name: string, value: VariableValue, source?: string)
 /**
  * Adjusts a variable by a given amount
  * @param name - name of the variable to adjust
- * @param amount - can be a number, string, or boolean
+ * @param amount - new value to adjust by
  */
-export function adjVariable(name: string, amount: any, source?: string) {
+export function adjVariable(name: string, amount: VariableValue, source?: string) {
   let variable = variables[name];
+  if (!variable) {
+    throwError(`Invalid variable name: ${name}`);
+  }
   const oldValue = _.cloneDeep(variable.value);
 
   if (!variable) throwError(`Invalid variable name: ${name}`);
-  if (isVariableNum(variable) && _.isNumber(+amount)) {
-    variable.value += parseInt(amount);
+  if (isVariableProf(variable)) {
+    if (isProficiencyValue(amount) || isExtendedProficiencyValue(amount)) {
+      const { value, attribute } = amount;
+      console.log('isVariableProf', variable);
+      if (isProficiencyType(value)) {
+        variable.value.value = maxProficiencyType(variable.value.value, value);
+      } else if (isExtendedProficiencyType(value)) {
+        if (value === '1') {
+          variable.value.value = nextProficiencyType(variable.value.value) ?? variable.value.value;
+        } else if (value === '-1') {
+          variable.value.value = prevProficiencyType(variable.value.value) ?? variable.value.value;
+        } else {
+          throwError(`Invalid adjust amount for extended prof: ${name}, ${JSON.stringify(amount)}`);
+        }
+      }
+      if (attribute) {
+        variable.value.attribute = attribute;
+      }
+    } else {
+      throwError(`Invalid adjust amount for prof: ${name}, ${JSON.stringify(amount)}`);
+    }
+  } else if (isVariableAttr(variable) && isAttributeValue(amount)) {
+    if (_.isNumber(+amount.value)) {
+      const value = parseInt(`${amount.value}`);
+      if (value !== 0 && value !== 1 && value !== -1) {
+        throwError(
+          `Invalid variable adjustment amount for attribute: ${value} (must be 0, 1, or -1)`
+        );
+      }
+      // Add boosts or flaws, use partial if it's a boost and value is 4+
+      if (variable.value.value >= 4 && value === 1) {
+        if (variable.value.partial) {
+          variable.value.value += 1;
+          variable.value.partial = false;
+        } else {
+          variable.value.partial = true;
+        }
+      } else {
+        variable.value.value += value;
+      }
+    }
+    if (amount.partial) {
+      variable.value.partial = amount.partial;
+    }
+  } else if (isVariableNum(variable) && _.isNumber(+amount)) {
+    variable.value += parseInt(`${amount}`);
   } else if (isVariableStr(variable) && _.isString(amount)) {
     variable.value += amount;
   } else if (isVariableBool(variable) && _.isBoolean(amount)) {
     variable.value = variable.value && amount;
-  } else if (isVariableAttr(variable) && _.isNumber(+amount)) {
-    amount = parseInt(amount);
-    if (amount !== 0 && amount !== 1 && amount !== -1) {
-      throwError(
-        `Invalid variable adjustment amount for attribute: ${amount} (must be 0, 1, or -1)`
-      );
-    }
-    // Add boosts or flaws, use partial if it's a boost and value is 4+
-    if (variable.value.value >= 4 && amount === 1) {
-      if (variable.value.partial) {
-        variable.value.value += 1;
-        variable.value.partial = false;
-      } else {
-        variable.value.partial = true;
-      }
-    } else {
-      variable.value.value += amount;
-    }
   } else if (isVariableListStr(variable) && _.isString(amount)) {
     variable.value = _.uniq([...variable.value, amount]);
-  } else if (isVariableProf(variable)) {
-    if (isProficiencyType(amount)) {
-      variable.value = maxProficiencyType(variable.value, amount);
-    } else if (isExtendedProficiencyType(amount)) {
-      if (amount === '1') {
-        variable.value = nextProficiencyType(variable.value) ?? variable.value;
-      } else if (amount === '-1') {
-        variable.value = prevProficiencyType(variable.value) ?? variable.value;
-      } else {
-        throwError(`Invalid adjust amount for prof: ${name}, ${amount}`);
-      }
-    }
   } else {
-    throwError(`Invalid adjust amount for variable: ${name}, ${amount}`);
+    throwError(`Invalid adjust amount for variable: ${name}, ${JSON.stringify(amount)}`);
   }
 
   // Add to history

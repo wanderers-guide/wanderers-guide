@@ -2,7 +2,8 @@ export type ProficiencyType = 'U' | 'T' | 'E' | 'M' | 'L';
 export type ExtendedProficiencyType = ProficiencyType | '1' | '-1';
 
 export type ProficiencyValue = { value: ProficiencyType; attribute?: string };
-export type AttributeValue = { value: number; partial: boolean };
+export type ExtendedProficiencyValue = { value: ExtendedProficiencyType; attribute?: string };
+export type AttributeValue = { value: number; partial?: boolean };
 
 export type Variable =
   | VariableNum
@@ -44,8 +45,7 @@ export interface VariableBool extends VariableBase {
 
 export interface VariableProf extends VariableBase {
   readonly type: 'prof';
-  value: ProficiencyType;
-  attribute?: string; // associated attribute
+  value: ProficiencyValue;
 }
 
 export interface VariableAttr extends VariableBase {

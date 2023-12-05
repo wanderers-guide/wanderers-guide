@@ -6,11 +6,17 @@ import {
 } from '@typing/operations';
 import { ReactElement, ReactNode } from 'react';
 import { getAllAttributeVariables, getVariable } from './variable-manager';
-import { AttributeValue, ProficiencyType, Variable, VariableType } from '@typing/variables';
+import {
+  AttributeValue,
+  ProficiencyValue,
+  Variable,
+  VariableType,
+  VariableValue,
+} from '@typing/variables';
 import {
   compactLabels,
   isAttributeValue,
-  isProficiencyType,
+  isProficiencyValue,
   maxProficiencyType,
   proficiencyTypeToLabel,
   variableNameToLabel,
@@ -45,7 +51,7 @@ export function getStatBlockDisplay(
     operation: OperationSelect | null;
     variable?: Variable;
     uuid?: string;
-    bestValue?: string | number | boolean | AttributeValue | null;
+    bestValue?: VariableValue | null;
   }[] = [];
   const foundSet: Set<string> = new Set();
 
@@ -92,15 +98,15 @@ export function getStatDisplay(
   operation: OperationSelect | null;
   uuid?: string;
   variable?: Variable;
-  bestValue?: string | number | boolean | AttributeValue | null;
+  bestValue?: VariableValue | null;
 } {
   const variable = getVariable(variableName);
   if (!variable) return { ui: null, operation: null };
 
   let bestOperation: Operation | null = null;
-  let bestValue: string | number | boolean | AttributeValue | null = null;
+  let bestValue: VariableValue | null = null;
 
-  const setBestValue = (value: string | number | boolean | AttributeValue) => {
+  const setBestValue = (value: VariableValue) => {
     if (bestValue === null) {
       bestValue = value;
       return true;
@@ -119,7 +125,10 @@ export function getStatDisplay(
         return true;
       }
     } else if (variable.type === 'prof') {
-      bestValue = maxProficiencyType(bestValue as ProficiencyType, value as ProficiencyType);
+      bestValue = maxProficiencyType(
+        (bestValue as ProficiencyValue).value,
+        (value as ProficiencyValue).value
+      );
       if (bestValue === value) return true;
     } else if (variable.type === 'attr') {
       const bestValueAttr = bestValue as AttributeValue;
@@ -155,6 +164,7 @@ export function getStatDisplay(
           variable.type === 'attr'
         ) {
           if (!bestValue) {
+            // @ts-ignore
             const changed = setBestValue(operation.data.optionsFilters.value);
             if (changed) bestOperation = operation;
             uuid = 'ATTRIBUTE-FREE';
@@ -193,16 +203,18 @@ export function getStatDisplay(
     }
   }
 
-  if (_.isNumber(bestValue)) {
+  // @ts-ignore
+  const bestValueNum = isAttributeValue(bestValue) ? bestValue.value : bestValue;
+  if (_.isNumber(bestValueNum)) {
     if (options?.onlyNegatives) {
-      if (bestValue >= 0) {
+      if (bestValueNum >= 0) {
         return {
           ui: null,
           operation: null,
         };
       }
     } else {
-      if (bestValue < 0) {
+      if (bestValueNum < 0) {
         return {
           ui: null,
           operation: null,
@@ -221,7 +233,7 @@ export function getStatDisplay(
 }
 
 export function getDisplay(
-  value: string | number | boolean | AttributeValue | null,
+  value: VariableValue | null,
   operation: OperationSelect | null,
   variable: Variable | undefined,
   mode: 'READ' | 'READ/WRITE',
@@ -289,7 +301,7 @@ export function getDisplay(
   }
 
   // Handle profs
-  if (_.isString(value) && isProficiencyType(value)) {
+  if (_.isString(value) && isProficiencyValue(value)) {
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (
@@ -328,13 +340,16 @@ export function getDisplay(
         const profs = getVarList(operation, 'prof');
         return (
           <>
-            {proficiencyTypeToLabel(value)} in your choice of {listToLabel(profs, 'or')}
+            {proficiencyTypeToLabel((value as ProficiencyValue).value)} in your choice of{' '}
+            {listToLabel(profs, 'or')}
           </>
         );
       }
     } else {
       // Display as `Expert in Fortitude`
-      return `${proficiencyTypeToLabel(value)} in ${variableNameToLabel(variable?.name ?? '')}`;
+      return `${proficiencyTypeToLabel((value as ProficiencyValue).value)} in ${variableNameToLabel(
+        variable?.name ?? ''
+      )}`;
     }
   }
 

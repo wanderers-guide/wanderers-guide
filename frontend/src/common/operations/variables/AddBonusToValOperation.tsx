@@ -20,6 +20,7 @@ import {
 } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 import { set } from 'lodash';
+import { useDidUpdate } from '@mantine/hooks';
 
 export function AddBonusToValOperation(props: {
   variable: string;
@@ -37,6 +38,14 @@ export function AddBonusToValOperation(props: {
   const [value, setValue] = useState(props.bonusValue);
   const [type, setType] = useState(props.bonusType);
   const [text, setText] = useState(props.text);
+
+  useDidUpdate(() => {
+    setVariableName(props.variable);
+    setVariableData(getVariable(props.variable) ?? undefined);
+    setValue(props.bonusValue);
+    setType(props.bonusType);
+    setText(props.text);
+  }, [props.variable, props.bonusValue, props.bonusType, props.text]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Add Bonus to Value'>

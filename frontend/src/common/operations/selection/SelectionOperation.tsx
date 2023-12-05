@@ -1,6 +1,6 @@
 import { SelectContentButton } from '@common/select/SelectContent';
 import { AbilityBlock, AbilityBlockType, Language, Rarity, Spell } from '@typing/content';
-import { OperationWrapper } from '../Operations';
+import { OperationSection, OperationWrapper } from '../Operations';
 import {
   OperationSelectOptionType,
   OperationSelectOption,
@@ -17,12 +17,18 @@ import {
   OperationSelectOptionAdjValue,
   OperationAdjValue,
   OperationSelectFiltersAdjValue,
+  OperationSelectOptionCustom,
 } from '@typing/operations';
 import {
   ActionIcon,
+  Anchor,
+  Badge,
   Box,
+  Button,
+  Collapse,
   Divider,
   Group,
+  HoverCard,
   NumberInput,
   SegmentedControl,
   Select,
@@ -31,17 +37,27 @@ import {
   Text,
   TextInput,
   Tooltip,
+  useMantineTheme,
 } from '@mantine/core';
 import { useState } from 'react';
-import { useDidUpdate } from '@mantine/hooks';
+import { useDidUpdate, useDisclosure } from '@mantine/hooks';
 import { isString, set } from 'lodash';
 import { createDefaultOperation } from '@operations/operation-utils';
 import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { setOption } from 'showdown';
 import VariableSelect from '@common/VariableSelect';
-import { AttributeValue, VariableType, VariableValue } from '@typing/variables';
+import {
+  AttributeValue,
+  ExtendedProficiencyValue,
+  VariableType,
+  VariableValue,
+} from '@typing/variables';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { getVariable } from '@variables/variable-manager';
+import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { toHTML } from '@content/content-utils';
+import useRefresh from '@utils/use-refresh';
+import { JSONContent } from '@tiptap/react';
 
 export function SelectionOperation(props: {
   data: {
@@ -85,6 +101,14 @@ export function SelectionOperation(props: {
       optionsFilters: filters,
     });
   }, [title, modeType, optionType, filters, options]);
+
+  useDidUpdate(() => {
+    setOptionType(props.data.optionType);
+    setTitle(props.data.title);
+    setModeType(props.data.modeType);
+    setFilters(props.data.optionsFilters);
+    setOptions(props.data.optionsPredefined);
+  }, [props.data]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Selection'>
@@ -436,7 +460,9 @@ function SelectionFilteredAdjValue(props: {
   onChange: (filters: OperationSelectFiltersAdjValue) => void;
 }) {
   const [group, setGroup] = useState<string | undefined>(props.filters?.group ?? undefined);
-  const [value, setValue] = useState<VariableValue | undefined>(props.filters?.value ?? undefined);
+  const [value, setValue] = useState<VariableValue | ExtendedProficiencyValue | undefined>(
+    props.filters?.value ?? undefined
+  );
 
   useDidUpdate(() => {
     props.onChange({
@@ -520,6 +546,15 @@ function SelectionPredefined(props: {
       <SelectionPredefinedAdjValue
         optionType={props.optionType}
         options={props.options as OperationSelectOptionAdjValue[]}
+        onChange={props.onChange}
+      />
+    );
+  }
+  if (props.optionType === 'CUSTOM') {
+    return (
+      <SelectionPredefinedCustom
+        optionType={props.optionType}
+        options={props.options as OperationSelectOptionCustom[]}
         onChange={props.onChange}
       />
     );
@@ -980,6 +1015,203 @@ function SelectionPredefinedAdjValue(props: {
           )}
         </Group>
       ))}
+    </Stack>
+  );
+}
+
+function SelectionPredefinedCustom(props: {
+  optionType: OperationSelectOptionType;
+  options?: OperationSelectOptionCustom[];
+  onChange: (options: OperationSelectOptionCustom[]) => void;
+}) {
+  const [options, setOptions] = useState<OperationSelectOptionCustom[]>(props.options ?? []);
+
+  useDidUpdate(() => {
+    props.onChange(options);
+  }, [options]);
+
+  const optionsForUI =
+    options.length === 0
+      ? ([
+          {
+            id: crypto.randomUUID(),
+            type: 'CUSTOM',
+            title: '',
+            description: '',
+            operations: [],
+          },
+        ] satisfies OperationSelectOptionCustom[])
+      : options;
+
+  return (
+    <Stack gap={10}>
+      {optionsForUI.map((option, index) => (
+        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+          <SelectionPredefinedCustomOption
+            option={option}
+            onChange={(newOption) => {
+              setOptions((prev) => {
+                const ops = [...prev].filter((op) => op.id !== option.id);
+                ops.push(newOption);
+                return ops;
+              });
+            }}
+          />
+          {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
+            <Tooltip label='Remove Option' position='right' withArrow withinPortal>
+              <ActionIcon
+                style={{
+                  position: 'absolute',
+                  top: -5,
+                  left: -40,
+                }}
+                size='sm'
+                variant='subtle'
+                color='gray'
+                onClick={() => {
+                  setOptions((prev) => {
+                    const ops = [...prev].filter((op) => op.id !== option.id);
+                    return ops;
+                  });
+                }}
+              >
+                <IconCircleMinus size='0.9rem' />
+              </ActionIcon>
+            </Tooltip>
+          )}
+          {optionsForUI[optionsForUI.length - 1].id === option.id && (
+            <Tooltip label='Add Option' position='right' withArrow withinPortal>
+              <ActionIcon
+                style={{
+                  position: 'absolute',
+                  top: 18,
+                  left: -40,
+                }}
+                size='sm'
+                variant='subtle'
+                color='gray'
+                onClick={() => {
+                  setOptions((prev) => {
+                    const ops = [...optionsForUI];
+                    ops.push({
+                      id: crypto.randomUUID(),
+                      type: 'CUSTOM',
+                      title: '',
+                      description: '',
+                      operations: [],
+                    });
+                    return ops;
+                  });
+                }}
+              >
+                <IconCirclePlus size='0.9rem' />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      ))}
+    </Stack>
+  );
+}
+
+function SelectionPredefinedCustomOption(props: {
+  option: OperationSelectOptionCustom;
+  onChange: (option: OperationSelectOptionCustom) => void;
+}) {
+  const [displayDescription, refreshDisplayDescription] = useRefresh();
+  const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
+  const [description, setDescription] = useState<JSONContent>();
+  const theme = useMantineTheme();
+
+  return (
+    <Stack>
+      <TextInput
+        label='Name'
+        required
+        value={props.option.title}
+        onChange={(event) => {
+          props.onChange({
+            ...props.option,
+            title: event.target.value,
+          });
+        }}
+      />
+      {displayDescription && (
+        <RichTextInput
+          label='Description'
+          required
+          value={description ?? toHTML(props.option.description)}
+          onChange={(text, json) => {
+            setDescription(json);
+            props.onChange({
+              ...props.option,
+              description: text,
+            });
+          }}
+        />
+      )}
+
+      <Divider
+        my='xs'
+        label={
+          <Group gap={3} wrap='nowrap'>
+            <Button
+              variant={openedOperations ? 'light' : 'subtle'}
+              size='compact-sm'
+              color='gray.6'
+            >
+              Operations
+            </Button>
+            {props.option.operations && props.option.operations.length > 0 && (
+              <Badge variant='light' color={theme.primaryColor} size='xs'>
+                {props.option.operations.length}
+              </Badge>
+            )}
+          </Group>
+        }
+        labelPosition='left'
+        onClick={toggleOperations}
+      />
+      <Collapse in={openedOperations}>
+        <Stack gap={10}>
+          <OperationSection
+            title={
+              <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
+                <HoverCard.Target>
+                  <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
+                    How to Use Operations
+                  </Anchor>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <Text size='sm'>
+                    Operations are used to make changes to a character. They can give feats, spells,
+                    and more, as well as change stats, skills, and other values.
+                  </Text>
+                  <Text size='sm'>
+                    Use conditionals to apply operations only when certain conditions are met and
+                    selections whenever a choice needs to be made.
+                  </Text>
+                  <Text size='xs' fs='italic'>
+                    For more help, see{' '}
+                    <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
+                      our Discord server
+                    </Anchor>
+                    .
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            }
+            value={props.option.operations}
+            onChange={(operations) => {
+              props.onChange({
+                ...props.option,
+                operations: operations,
+              });
+            }}
+          />
+          <Divider />
+        </Stack>
+      </Collapse>
     </Stack>
   );
 }

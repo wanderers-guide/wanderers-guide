@@ -10,6 +10,7 @@ export type ImageOption = {
 export type DrawerType =
   | ContentType
   | AbilityBlockType
+  | 'generic'
   | 'character'
   | 'stat-prof'
   | 'stat-attributes'

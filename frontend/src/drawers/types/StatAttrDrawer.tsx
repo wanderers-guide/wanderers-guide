@@ -51,7 +51,7 @@ import {
 } from '@variables/variable-manager';
 import {
   compactLabels,
-  getProficiencyValue,
+  getProficiencyTypeValue,
   isProficiencyType,
   proficiencyTypeToLabel,
   variableNameToLabel,

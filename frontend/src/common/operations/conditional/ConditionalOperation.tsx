@@ -36,6 +36,7 @@ export default function ConditionalOperation(props: {
 }) {
   const getDefaultCondition = (): ConditionCheckData => {
     return {
+      id: crypto.randomUUID(),
       name: '',
       data: undefined,
       operator: '',
@@ -61,6 +62,7 @@ export default function ConditionalOperation(props: {
           {checks.map((check, index) => (
             <ConditionalCheck
               key={index}
+              id={check.id}
               defaultName={check.name}
               defaultData={check.data}
               defaultOperator={check.operator}
@@ -78,9 +80,9 @@ export default function ConditionalOperation(props: {
                   return [...prev, getDefaultCondition()];
                 });
               }}
-              onRemove={() => {
+              onRemove={(id) => {
                 setChecks((prev) => {
-                  return prev.filter((_, i) => i !== index);
+                  return prev.filter((p_op) => p_op.id !== id);
                 });
               }}
             />
@@ -159,6 +161,7 @@ export default function ConditionalOperation(props: {
 }
 
 export function ConditionalCheck(props: {
+  id: string;
   defaultName: string;
   defaultData?: Variable;
   defaultOperator: ConditionOperator;
@@ -167,7 +170,7 @@ export function ConditionalCheck(props: {
   includeAnd?: boolean;
   includeAdd?: boolean;
   onAdd?: () => void;
-  onRemove?: () => void;
+  onRemove?: (id: string) => void;
 }) {
   const [variableName, setVariableName] = useState(props.defaultName);
   const [variableData, setVariableData] = useState<Variable | undefined>(props.defaultData);
@@ -177,6 +180,7 @@ export function ConditionalCheck(props: {
 
   useEffect(() => {
     props.onChange({
+      id: props.id,
       name: variableName,
       data: variableData,
       operator: operator,
@@ -247,7 +251,7 @@ export function ConditionalCheck(props: {
                 size='sm'
                 variant='subtle'
                 color='gray'
-                onClick={props.onRemove}
+                onClick={() => props.onRemove?.(props.id)}
               >
                 <IconCircleMinus size='0.9rem' />
               </ActionIcon>

@@ -1,4 +1,11 @@
-import { Variable, VariableType, AttributeValue, ProficiencyType } from './variables';
+import {
+  Variable,
+  VariableType,
+  AttributeValue,
+  ProficiencyType,
+  ExtendedProficiencyValue,
+  VariableValue,
+} from './variables';
 import { AbilityBlockType, Rarity } from './content';
 
 export type Operation =
@@ -95,6 +102,7 @@ export interface OperationConditional extends OperationBase {
 }
 
 export type ConditionCheckData = {
+  id: string;
   name: string;
   data?: Variable;
   operator: ConditionOperator;
@@ -242,5 +250,5 @@ interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
 interface OperationSelectFiltersAdjValue extends OperationSelectFiltersBase {
   readonly type: 'ADJ_VALUE';
   group: 'ATTRIBUTE' | 'SKILL' | 'ADD-LORE';
-  value: number | string | boolean | AttributeValue | ExtendedProficiencyType;
+  value: VariableValue | ExtendedProficiencyValue;
 }

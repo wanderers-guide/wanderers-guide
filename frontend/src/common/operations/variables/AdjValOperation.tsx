@@ -3,6 +3,7 @@ import VariableSelect from '@common/VariableSelect';
 import { useState } from 'react';
 import {
   AttributeValue,
+  ExtendedProficiencyValue,
   ProficiencyType,
   ProficiencyValue,
   Variable,
@@ -11,6 +12,8 @@ import {
 } from '@typing/variables';
 import { Box, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
+import _ from 'lodash';
+import { useDidUpdate } from '@mantine/hooks';
 
 export function AdjValOperation(props: {
   variable: string;
@@ -24,6 +27,12 @@ export function AdjValOperation(props: {
     getVariable(props.variable) ?? undefined
   );
   const [value, setValue] = useState<VariableValue>(props.value);
+
+  useDidUpdate(() => {
+    setVariableName(props.variable);
+    setVariableData(getVariable(props.variable) ?? undefined);
+    setValue(props.value);
+  }, [props.value, props.variable]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Adjust Value'>
@@ -52,7 +61,7 @@ export function AdjValOperation(props: {
 
 export function AdjustValueInput(props: {
   variableType: VariableType;
-  value: VariableValue;
+  value: VariableValue | ExtendedProficiencyValue;
   onChange: (value: VariableValue) => void;
   options?: {
     profExtended?: boolean;
@@ -137,7 +146,8 @@ export function AdjustValueInput(props: {
             size='xs'
             value={value.value}
             onChange={(val) =>
-              props.onChange({ value: val, attribute: value.attribute } as ProficiencyValue)
+              // @ts-ignore
+              props.onChange({ value: val, attribute: value.attribute } as ExtendedProficiencyValue)
             }
             data={[
               { label: 'U', value: 'U' },

@@ -625,7 +625,7 @@ export function convertAncestryOperationsIntoUI(
   } else if (MODE === 'READ/WRITE') {
     const languageOps = addedAncestryLanguages(ancestry);
     for (const op of languageOps) {
-      const result = getDisplay('T', op, undefined, 'READ/WRITE', writeDetails);
+      const result = getDisplay({ value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
       additionalLanguages.push({
         ui: result,
         operation: op,

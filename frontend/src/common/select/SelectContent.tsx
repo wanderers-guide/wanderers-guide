@@ -86,8 +86,14 @@ import {
 } from '@variables/variable-utils';
 import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
 import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
-import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/variables';
+import {
+  ExtendedProficiencyType,
+  ProficiencyType,
+  ProficiencyValue,
+  VariableProf,
+} from '@typing/variables';
 import { meetsPrerequisites } from '@variables/prereq-detection';
+import { GenericData } from '@drawers/types/GenericDrawer';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -942,6 +948,7 @@ function SelectionOptionsRoot(props: {
 interface GenericAbilityBlock extends AbilityBlock {
   _content_type?: ContentType;
   _select_uuid?: string;
+  _custom_select?: GenericData;
   _is_core?: boolean;
   _source_level?: number;
 }
@@ -961,7 +968,7 @@ export function GenericSelectionOption(props: {
   // @ts-ignore
   const variable = getVariable(props.option.variable);
 
-  let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value;
+  let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value.value;
   let nextProf =
     props.skillAdjustment === '1'
       ? nextProficiencyType(currentProf ?? 'U')
@@ -1082,6 +1089,23 @@ export function GenericSelectionOption(props: {
             onClick={(e) => {
               e.stopPropagation();
               openDrawer({ type: 'language', data: { id: props.option.id } });
+            }}
+          >
+            Details
+          </Button>
+        )}
+        {props.option._custom_select && (
+          <Button
+            size='compact-xs'
+            variant='subtle'
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: props.includeOptions ? 40 : 10,
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawer({ type: 'generic', data: props.option._custom_select });
             }}
           >
             Details

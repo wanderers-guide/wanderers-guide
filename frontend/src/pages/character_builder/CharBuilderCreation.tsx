@@ -253,32 +253,32 @@ export function CharBuilderCreationInner(props: {
                     <AttributeModPart
                       attribute='Str'
                       value={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.partial}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.partial ?? false}
                     />
                     <AttributeModPart
                       attribute='Dex'
                       value={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.partial}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.partial ?? false}
                     />
                     <AttributeModPart
                       attribute='Con'
                       value={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.partial}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.partial ?? false}
                     />
                     <AttributeModPart
                       attribute='Int'
                       value={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.partial}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.partial ?? false}
                     />
                     <AttributeModPart
                       attribute='Wis'
                       value={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.partial}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.partial ?? false}
                     />
                     <AttributeModPart
                       attribute='Cha'
                       value={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.partial}
+                      marked={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.partial ?? false}
                     />
                   </Group>
                 </Button>
@@ -299,7 +299,7 @@ export function CharBuilderCreationInner(props: {
               </StatButton>
               <StatButton
                 onClick={() => {
-                  openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC' } });
+                  openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC', isDC: true } });
                 }}
               >
                 <Box>
@@ -309,7 +309,9 @@ export function CharBuilderCreationInner(props: {
                 </Box>
                 <Group>
                   <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
-                  <Badge variant='default'>{getVariable<VariableProf>('CLASS_DC')?.value}</Badge>
+                  <Badge variant='default'>
+                    {getVariable<VariableProf>('CLASS_DC')?.value.value}
+                  </Badge>
                 </Group>
               </StatButton>
               <StatButton
@@ -324,7 +326,9 @@ export function CharBuilderCreationInner(props: {
                 </Box>
                 <Group>
                   <Text c='gray.0'>{displayFinalProfValue('PERCEPTION')}</Text>
-                  <Badge variant='default'>{getVariable<VariableProf>('PERCEPTION')?.value}</Badge>
+                  <Badge variant='default'>
+                    {getVariable<VariableProf>('PERCEPTION')?.value.value}
+                  </Badge>
                 </Group>
               </StatButton>
               <Accordion
@@ -371,7 +375,7 @@ export function CharBuilderCreationInner(props: {
                             </Box>
                             <Group>
                               <Text c='gray.0'>{displayFinalProfValue(skill.name)}</Text>
-                              <Badge variant='default'>{skill.value}</Badge>
+                              <Badge variant='default'>{skill?.value.value}</Badge>
                             </Group>
                           </StatButton>
                         ))}
@@ -402,7 +406,7 @@ export function CharBuilderCreationInner(props: {
                         <Group>
                           <Text c='gray.0'>{displayFinalProfValue('SAVE_FORT')}</Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SAVE_FORT')?.value}
+                            {getVariable<VariableProf>('SAVE_FORT')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -422,7 +426,7 @@ export function CharBuilderCreationInner(props: {
                         <Group>
                           <Text c='gray.0'>{displayFinalProfValue('SAVE_REFLEX')}</Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SAVE_REFLEX')?.value}
+                            {getVariable<VariableProf>('SAVE_REFLEX')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -442,7 +446,7 @@ export function CharBuilderCreationInner(props: {
                         <Group>
                           <Text c='gray.0'>{displayFinalProfValue('SAVE_WILL')}</Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SAVE_WILL')?.value}
+                            {getVariable<VariableProf>('SAVE_WILL')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -472,7 +476,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value}
+                            {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -491,7 +495,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value}
+                            {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -510,7 +514,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value}
+                            {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -529,7 +533,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('UNARMED_ATTACKS')?.value}
+                            {getVariable<VariableProf>('UNARMED_ATTACKS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -559,7 +563,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('LIGHT_ARMOR')?.value}
+                            {getVariable<VariableProf>('LIGHT_ARMOR')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -578,7 +582,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('MEDIUM_ARMOR')?.value}
+                            {getVariable<VariableProf>('MEDIUM_ARMOR')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -597,7 +601,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('HEAVY_ARMOR')?.value}
+                            {getVariable<VariableProf>('HEAVY_ARMOR')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -616,7 +620,7 @@ export function CharBuilderCreationInner(props: {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value}
+                            {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -647,7 +651,7 @@ export function CharBuilderCreationInner(props: {
                         <Group>
                           <Text c='gray.0'>{displayFinalProfValue('SPELL_ATTACK')}</Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SPELL_ATTACK')?.value}
+                            {getVariable<VariableProf>('SPELL_ATTACK')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -667,7 +671,7 @@ export function CharBuilderCreationInner(props: {
                         <Group>
                           <Text c='gray.0'>{displayFinalProfValue('SPELL_DC')}</Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SPELL_DC')?.value}
+                            {getVariable<VariableProf>('SPELL_DC')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>

@@ -4,6 +4,7 @@ import { isBoolean, isNumber, isString } from 'lodash';
 import {
   AttributeValue,
   ExtendedProficiencyType,
+  ExtendedProficiencyValue,
   ProficiencyType,
   ProficiencyValue,
   Variable,
@@ -58,8 +59,10 @@ export function newVariable(
     return {
       name,
       type,
-      value: isProficiencyValue(defaultValue) ? defaultValue.value : 'U',
-      attribute: isProficiencyValue(defaultValue) ? defaultValue.attribute : undefined,
+      value: {
+        value: isProficiencyValue(defaultValue) ? defaultValue.value : 'U',
+        attribute: isProficiencyValue(defaultValue) ? defaultValue.attribute : undefined,
+      },
     } satisfies VariableProf;
   }
   if (type === 'list-str') {
@@ -226,7 +229,7 @@ export function findVariable<T = Variable>(type: VariableType, label: string): T
   return (variable ?? null) as T | null;
 }
 
-export function getProficiencyValue(profType: ProficiencyType) {
+export function getProficiencyTypeValue(profType: ProficiencyType) {
   if (profType === 'U') return 0;
   if (profType === 'T') return 2;
   if (profType === 'E') return 4;
@@ -242,8 +245,14 @@ export function isProficiencyValue(value: any): value is ProficiencyValue {
     (isString(value?.attribute) || value?.attribute === undefined)
   );
 }
+export function isExtendedProficiencyValue(value: any): value is ExtendedProficiencyValue {
+  return (
+    isExtendedProficiencyType(value?.value) &&
+    (isString(value?.attribute) || value?.attribute === undefined)
+  );
+}
 export function isAttributeValue(value: any): value is AttributeValue {
-  return isNumber(value?.value) && isBoolean(value?.partial);
+  return isNumber(value?.value) && (isBoolean(value?.partial) || value?.partial === undefined);
 }
 export function isProficiencyType(value?: any): value is ProficiencyType {
   return ['U', 'T', 'E', 'M', 'L'].includes(value ?? '');
