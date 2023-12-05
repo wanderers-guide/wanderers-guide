@@ -7,6 +7,7 @@ import {
   VariableValue,
 } from '@typing/variables';
 import { JsonInput, NumberInput, SegmentedControl, Select, TextInput } from '@mantine/core';
+import { SetValueInput } from './SetValOperation';
 
 export function CreateValOperation(props: {
   variable: string;
@@ -66,7 +67,7 @@ export function CreateValOperation(props: {
           props.onNameChange(variable);
         }}
       />
-      <CreateValueInput
+      <SetValueInput
         variableType={props.variableType}
         value={props.value}
         onChange={(value) => {
@@ -75,84 +76,4 @@ export function CreateValOperation(props: {
       />
     </OperationWrapper>
   );
-}
-
-function CreateValueInput(props: {
-  variableType: VariableType;
-  value: VariableValue;
-  onChange: (value: VariableValue) => void;
-}) {
-  if (props.variableType === 'num') {
-    return (
-      <NumberInput
-        size='xs'
-        placeholder='Number'
-        value={props.value as number}
-        onChange={(value) => props.onChange(parseInt(`${value}`))}
-        allowDecimal={false}
-      />
-    );
-  } else if (props.variableType === 'attr') {
-    return (
-      <NumberInput
-        size='xs'
-        prefix={(props.value as number) >= 0 ? '+' : undefined}
-        placeholder='Number'
-        value={props.value as number}
-        onChange={(value) => props.onChange(parseInt(`${value}`))}
-        allowDecimal={false}
-      />
-    );
-  } else if (props.variableType === 'bool') {
-    return (
-      <SegmentedControl
-        size='xs'
-        value={props.value ? 'TRUE' : 'FALSE'}
-        onChange={props.onChange}
-        defaultValue='TRUE'
-        data={[
-          { label: 'True', value: 'TRUE' },
-          { label: 'False', value: 'FALSE' },
-        ]}
-      />
-    );
-  } else if (props.variableType === 'str') {
-    return (
-      <TextInput
-        size='xs'
-        placeholder='Text'
-        value={props.value as string}
-        onChange={(event) => props.onChange(event.target.value.toLowerCase())}
-      />
-    );
-  } else if (props.variableType === 'prof') {
-    return (
-      <SegmentedControl
-        size='xs'
-        value={(props.value as ProficiencyValue)?.value || undefined}
-        onChange={props.onChange}
-        data={[
-          { label: 'U', value: 'U' },
-          { label: 'T', value: 'T' },
-          { label: 'E', value: 'E' },
-          { label: 'M', value: 'M' },
-          { label: 'L', value: 'L' },
-        ]}
-      />
-    );
-  } else if (props.variableType === 'list-str') {
-    return (
-      <JsonInput
-        size='xs'
-        value={props.value as string}
-        onChange={props.onChange}
-        placeholder='Array contents as JSON'
-        validationError={undefined}
-        formatOnBlur
-        autosize
-        minRows={4}
-      />
-    );
-  }
-  return null;
 }

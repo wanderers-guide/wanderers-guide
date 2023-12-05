@@ -4,18 +4,19 @@ import { useState } from 'react';
 import {
   AttributeValue,
   ProficiencyType,
+  ProficiencyValue,
   Variable,
   VariableType,
   VariableValue,
 } from '@typing/variables';
-import { JsonInput, NumberInput, SegmentedControl, TextInput } from '@mantine/core';
+import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 
 export function SetValOperation(props: {
   variable: string;
   value: VariableValue;
   onSelect: (variable: string) => void;
-  onValueChange: (value: number | string | boolean) => void;
+  onValueChange: (value: VariableValue) => void;
   onRemove: () => void;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
@@ -49,26 +50,61 @@ export function SetValOperation(props: {
   );
 }
 
-function SetValueInput(props: {
+export function SetValueInput(props: {
   variableType: VariableType;
-  value: any;
-  onChange: (value: number | string | boolean) => void;
+  value: VariableValue;
+  onChange: (value: VariableValue) => void;
 }) {
-  if (props.variableType === 'attr' || props.variableType === 'num') {
+  if (props.variableType === 'attr') {
+    const value = props.value as AttributeValue;
+    return (
+      <>
+        <NumberInput
+          size='xs'
+          placeholder='Number'
+          value={value.value}
+          onChange={(val) =>
+            props.onChange({ value: parseInt(`${val}`), partial: value.partial } as AttributeValue)
+          }
+          allowDecimal={false}
+        />
+        <Box>
+          <Text fz={10}>Is Partial</Text>
+          <SegmentedControl
+            size='xs'
+            value={value.partial ? 'TRUE' : 'FALSE'}
+            onChange={(val) =>
+              props.onChange({
+                value: value.value,
+                partial: val === 'TRUE' ? true : false,
+              } as AttributeValue)
+            }
+            defaultValue='FALSE'
+            data={[
+              { label: 'True', value: 'TRUE' },
+              { label: 'False', value: 'FALSE' },
+            ]}
+          />
+        </Box>
+      </>
+    );
+  } else if (props.variableType === 'num') {
+    const value = props.value as number;
     return (
       <NumberInput
         size='xs'
         placeholder='Number'
-        value={props.value}
+        value={value}
         onChange={(value) => props.onChange(parseInt(`${value}`))}
         allowDecimal={false}
       />
     );
   } else if (props.variableType === 'bool') {
+    const value = props.value as boolean;
     return (
       <SegmentedControl
         size='xs'
-        value={props.value || undefined}
+        value={value ? 'TRUE' : 'FALSE'}
         onChange={props.onChange}
         defaultValue='TRUE'
         data={[
@@ -78,34 +114,51 @@ function SetValueInput(props: {
       />
     );
   } else if (props.variableType === 'str') {
+    const value = props.value as string;
     return (
       <TextInput
         size='xs'
         placeholder='Text'
-        value={props.value}
+        value={value}
         onChange={(event) => props.onChange(event.target.value.toLowerCase())}
       />
     );
   } else if (props.variableType === 'prof') {
+    const value = props.value as ProficiencyValue;
     return (
-      <SegmentedControl
-        size='xs'
-        value={props.value || undefined}
-        onChange={props.onChange}
-        data={[
-          { label: 'U', value: 'U' },
-          { label: 'T', value: 'T' },
-          { label: 'E', value: 'E' },
-          { label: 'M', value: 'M' },
-          { label: 'L', value: 'L' },
-        ]}
-      />
+      <>
+        <SegmentedControl
+          size='xs'
+          value={value.value}
+          onChange={(val) =>
+            props.onChange({ value: val, attribute: value.attribute } as ProficiencyValue)
+          }
+          data={[
+            { label: 'U', value: 'U' },
+            { label: 'T', value: 'T' },
+            { label: 'E', value: 'E' },
+            { label: 'M', value: 'M' },
+            { label: 'L', value: 'L' },
+          ]}
+        />
+        <VariableSelect
+          value={value.attribute ?? ''}
+          onChange={(val, variable) =>
+            props.onChange({
+              value: value.value,
+              attribute: variable?.name,
+            } as ProficiencyValue)
+          }
+          variableType='attr'
+        />
+      </>
     );
   } else if (props.variableType === 'list-str') {
+    const value = props.value as string;
     return (
       <JsonInput
         size='xs'
-        value={props.value}
+        value={value}
         onChange={props.onChange}
         placeholder='Array contents as JSON'
         validationError={undefined}

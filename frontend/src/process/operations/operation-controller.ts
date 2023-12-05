@@ -114,23 +114,6 @@ export async function executeCharacterOperations(character: Character, content: 
       );
     }
 
-    let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
-    for (const feature of classFeatures) {
-      if (feature.level === undefined || feature.level <= character.level) {
-        const results = await executeOperations(
-          `class-feature-${feature.id}`,
-          feature.operations ?? [],
-          options,
-          `${feature.name} (Lvl. ${feature.level})`
-        );
-
-        classFeatureResults.push({
-          baseSource: feature,
-          baseResults: results,
-        });
-      }
-    }
-
     let ancestryResults: OperationResult[] = [];
     if (ancestry) {
       ancestryResults = await executeOperations(
@@ -138,6 +121,16 @@ export async function executeCharacterOperations(character: Character, content: 
         getExtendedAncestryOperations(ancestry),
         options,
         ancestry.name
+      );
+    }
+
+    let backgroundResults: OperationResult[] = [];
+    if (background) {
+      backgroundResults = await executeOperations(
+        'background',
+        background.operations ?? [],
+        options,
+        background.name
       );
     }
 
@@ -161,14 +154,21 @@ export async function executeCharacterOperations(character: Character, content: 
       }
     }
 
-    let backgroundResults: OperationResult[] = [];
-    if (background) {
-      backgroundResults = await executeOperations(
-        'background',
-        background.operations ?? [],
-        options,
-        background.name
-      );
+    let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
+    for (const feature of classFeatures) {
+      if (feature.level === undefined || feature.level <= character.level) {
+        const results = await executeOperations(
+          `class-feature-${feature.id}`,
+          feature.operations ?? [],
+          options,
+          `${feature.name} (Lvl. ${feature.level})`
+        );
+
+        classFeatureResults.push({
+          baseSource: feature,
+          baseResults: results,
+        });
+      }
     }
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];

@@ -225,12 +225,7 @@ export function getVariableHistory(name: string) {
   return _.cloneDeep(variableHistory[name]) ?? [];
 }
 
-function addVariableHistory(
-  name: string,
-  to: VariableValue,
-  from: VariableValue | null,
-  source: string
-) {
+function addVariableHistory(name: string, to: VariableValue, from: VariableValue, source: string) {
   if (from === to) return;
   if (!variableHistory[name]) {
     variableHistory[name] = [];
@@ -260,7 +255,7 @@ export function addVariable(
   variables[variable.name] = variable;
 
   // Add to history
-  addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
+  //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
 
   return _.cloneDeep(variable);
 }

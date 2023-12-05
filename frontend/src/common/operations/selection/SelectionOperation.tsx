@@ -39,7 +39,7 @@ import { createDefaultOperation } from '@operations/operation-utils';
 import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { setOption } from 'showdown';
 import VariableSelect from '@common/VariableSelect';
-import { AttributeValue, VariableType } from '@typing/variables';
+import { AttributeValue, VariableType, VariableValue } from '@typing/variables';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { getVariable } from '@variables/variable-manager';
 
@@ -436,9 +436,7 @@ function SelectionFilteredAdjValue(props: {
   onChange: (filters: OperationSelectFiltersAdjValue) => void;
 }) {
   const [group, setGroup] = useState<string | undefined>(props.filters?.group ?? undefined);
-  const [value, setValue] = useState<string | number | boolean | AttributeValue | undefined>(
-    props.filters?.value ?? undefined
-  );
+  const [value, setValue] = useState<VariableValue | undefined>(props.filters?.value ?? undefined);
 
   useDidUpdate(() => {
     props.onChange({
@@ -470,7 +468,7 @@ function SelectionFilteredAdjValue(props: {
         {group && (
           <AdjustValueInput
             variableType={group === 'ATTRIBUTE' ? 'attr' : 'prof'}
-            value={value}
+            value={value ?? ''}
             onChange={(value) => {
               setValue(value);
             }}
@@ -853,7 +851,7 @@ function SelectionPredefinedAdjValue(props: {
       : 'prof'
   );
   const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);
-  const [adjustment, setAdjustment] = useState<string | number | boolean | undefined>(
+  const [adjustment, setAdjustment] = useState<VariableValue | undefined>(
     (props.options ?? []).length > 0 ? props.options![0].operation.data.value : undefined
   );
 
@@ -900,7 +898,7 @@ function SelectionPredefinedAdjValue(props: {
         />
         <AdjustValueInput
           variableType={variableType}
-          value={adjustment}
+          value={adjustment ?? ''}
           onChange={(value) => {
             setAdjustment(value);
           }}

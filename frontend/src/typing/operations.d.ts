@@ -38,7 +38,7 @@ export interface OperationAdjValue extends OperationBase {
   readonly type: 'adjValue';
   data: {
     variable: string;
-    value: number | string | boolean;
+    value: VariableValue;
   };
 }
 
