@@ -186,87 +186,90 @@ export function CharBuilderCreationInner(props: {
       )}
       <Box style={{ flexBasis: isMobile ? '100%' : '65%' }}>
         {isMobile && (
-          <Group justify='space-between' align='flex-start' wrap='nowrap'>
-            <CharacterInfo
-              character={character}
-              hideImage
-              onClickAncestry={() => {
-                selectContent<Ancestry>(
-                  'ancestry',
-                  (option) => {
-                    setCharacter((prev) => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        details: {
-                          ...prev.details,
-                          ancestry: option,
-                        },
-                      };
-                    });
-                  },
-                  {
-                    groupBySource: true,
-                    selectedId: character?.details?.ancestry?.id,
-                  }
-                );
-              }}
-              onClickBackground={() => {
-                selectContent<Background>(
-                  'background',
-                  (option) => {
-                    setCharacter((prev) => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        details: {
-                          ...prev.details,
-                          background: option,
-                        },
-                      };
-                    });
-                  },
-                  {
-                    groupBySource: true,
-                    selectedId: character?.details?.background?.id,
-                  }
-                );
-              }}
-              onClickClass={() => {
-                selectContent<Class>(
-                  'class',
-                  (option) => {
-                    setCharacter((prev) => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        details: {
-                          ...prev.details,
-                          class: option,
-                        },
-                      };
-                    });
-                  },
-                  {
-                    groupBySource: true,
-                    selectedId: character?.details?.class?.id,
-                  }
-                );
-              }}
-            />
-            <Button
-              leftSection={<IconId size={14} />}
-              variant='outline'
-              size='xs'
-              mt='sm'
-              mr='md'
-              onClick={() => {
-                setStatPanelOpened((prev) => !prev);
-              }}
-            >
-              Stats
-            </Button>
-          </Group>
+          <>
+            <Group justify='space-between' align='flex-start' wrap='nowrap'>
+              <CharacterInfo
+                character={character}
+                hideImage
+                onClickAncestry={() => {
+                  selectContent<Ancestry>(
+                    'ancestry',
+                    (option) => {
+                      setCharacter((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          details: {
+                            ...prev.details,
+                            ancestry: option,
+                          },
+                        };
+                      });
+                    },
+                    {
+                      groupBySource: true,
+                      selectedId: character?.details?.ancestry?.id,
+                    }
+                  );
+                }}
+                onClickBackground={() => {
+                  selectContent<Background>(
+                    'background',
+                    (option) => {
+                      setCharacter((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          details: {
+                            ...prev.details,
+                            background: option,
+                          },
+                        };
+                      });
+                    },
+                    {
+                      groupBySource: true,
+                      selectedId: character?.details?.background?.id,
+                    }
+                  );
+                }}
+                onClickClass={() => {
+                  selectContent<Class>(
+                    'class',
+                    (option) => {
+                      setCharacter((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          details: {
+                            ...prev.details,
+                            class: option,
+                          },
+                        };
+                      });
+                    },
+                    {
+                      groupBySource: true,
+                      selectedId: character?.details?.class?.id,
+                    }
+                  );
+                }}
+              />
+              <Button
+                leftSection={<IconId size={14} />}
+                variant='outline'
+                size='xs'
+                mt='sm'
+                mr='md'
+                onClick={() => {
+                  setStatPanelOpened((prev) => !prev);
+                }}
+              >
+                Stats
+              </Button>
+            </Group>
+            <Divider pb={5} />
+          </>
         )}
         <ScrollArea h={props.pageHeight} pr={12}>
           <Accordion
