@@ -612,7 +612,7 @@ export function convertClassOperationsIntoUI(
   const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, writeDetails);
   const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, writeDetails);
   const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, writeDetails);
-  const classDC = getStatDisplay('CLASS_DC', classOperations, MODE, writeDetails);
+  const classDC = getStatDisplay('CLASS_DC', classOperations, 'READ', writeDetails);
 
   return {
     keyAttribute,

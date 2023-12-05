@@ -685,7 +685,6 @@ function ContentList<
     if (props.abilityBlockType) {
       content = content.filter((item) => item.type === props.abilityBlockType);
     }
-    console.log(props.abilityBlockType);
     content = searchQuery ? (search.current.search(searchQuery) as T[]) : content;
 
     // Sort by level/rank then name
@@ -754,7 +753,6 @@ function ContentList<
               h={500}
               includeOptions
               onCopy={async (itemId) => {
-                console.log('copy', itemId);
                 if (props.type === 'ability-block') {
                   const item = (props.content as unknown as AbilityBlock[]).find(
                     (i) => i.id === itemId

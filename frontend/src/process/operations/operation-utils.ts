@@ -419,7 +419,6 @@ async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[
 }
 
 async function getAdjValuePredefinedList(options: OperationSelectOptionAdjValue[]) {
-  console.log(options);
   return options.map((option) => {
     const variable = getVariable(option.operation.data.variable);
     return {

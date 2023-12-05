@@ -254,7 +254,7 @@ function limitBoostOptions(
   // Pull from all selections already made
   for (const opR of operationResults) {
     const selectedOption = opR?.result?.source?.variable;
-    const amount = opR?.result?.source?.value;
+    const amount = opR?.result?.source?.value?.value;
     if (selectedOption && +amount === 1 && selectedOption.startsWith('ATTRIBUTE_')) {
       unselectedOptions.push(selectedOption);
     }

@@ -138,8 +138,6 @@ async function runSelect(
     );
   }
 
-  console.log(optionList);
-
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
 
@@ -178,8 +176,6 @@ async function runSelect(
     optionList.length > 0 && foundSkills.length === optionList.length
       ? optionList[0]?.value?.value
       : undefined;
-
-  console.log(optionList, foundSkills, optionList[0]?.value);
 
   return {
     selection: {
@@ -229,14 +225,6 @@ async function updateVariables(
     adjVariable('SPELL_IDS', `${selectedOption.id}`, sourceLabel);
     adjVariable('SPELL_NAMES', selectedOption.name, sourceLabel);
   } else if (operation.data.optionType === 'ADJ_VALUE') {
-    /* This is a bit of a hack, it converts profs that are just the type (which prob 
-      shouldn't be a thing) to a ProficiencyValue which is required for adjVariable
-    */
-    // let value = selectedOption.value;
-    // if (isProficiencyType(value)) {
-    //   value = { value: value } satisfies ProficiencyValue;
-    // }
-    console.log(selectedOption.value);
     adjVariable(selectedOption.variable, selectedOption.value, sourceLabel);
   } else if (operation.data.optionType === 'CUSTOM') {
     // Doesn't inherently do anything, just runs its operations
@@ -247,7 +235,6 @@ async function runAdjValue(
   operation: OperationAdjValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  console.log(operation.data);
   adjVariable(operation.data.variable, operation.data.value, sourceLabel);
   return null;
 }

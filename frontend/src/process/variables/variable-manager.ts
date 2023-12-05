@@ -337,7 +337,6 @@ export function adjVariable(name: string, amount: VariableValue, source?: string
   if (isVariableProf(variable)) {
     if (isProficiencyValue(amount) || isExtendedProficiencyValue(amount)) {
       const { value, attribute } = amount;
-      console.log('isVariableProf', variable);
       if (isProficiencyType(value)) {
         variable.value.value = maxProficiencyType(variable.value.value, value);
       } else if (isExtendedProficiencyType(value)) {

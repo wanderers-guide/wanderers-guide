@@ -107,7 +107,6 @@ export function getStatDisplay(
   let bestValue: VariableValue | null = null;
 
   const setBestValue = (value: VariableValue) => {
-    console.log('setBestValue', value);
     if (bestValue === null) {
       bestValue = value;
       return true;
@@ -183,14 +182,16 @@ export function getStatDisplay(
           }
         }
         if ((operation.data.optionsPredefined ?? []).length > 0) {
-          uuid = ((operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[])
-            .map((o) => o.operation.data.variable)
-            .sort()
-            .join('_');
+          const opts = (
+            (operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[]
+          ).map((o) => o.operation.data.variable);
+          if (opts.some((v) => v === variableName)) {
+            uuid = opts.sort().join('_');
+          }
         }
       } else if (operation.data.optionType === 'CUSTOM') {
         // Check all operations in all the options in the select
-        const variableNames = [];
+        let found = false;
         for (const option of (operation.data.optionsPredefined ??
           []) as OperationSelectOptionCustom[]) {
           for (const subop of option.operations ?? []) {
@@ -198,12 +199,19 @@ export function getStatDisplay(
               if (subop.data.variable === variableName) {
                 const changed = setBestValue(subop.data.value);
                 if (changed) bestOperation = operation;
-                variableNames.push(subop.data.variable);
+                found = true;
               }
             }
           }
         }
-        uuid = variableNames.sort().join('_');
+        if (found) {
+          const variableNames = [];
+          for (const option of (operation.data.optionsPredefined ??
+            []) as OperationSelectOptionCustom[]) {
+            variableNames.push(option.id);
+          }
+          uuid = variableNames.sort().join('_');
+        }
       }
     }
   }
@@ -344,12 +352,18 @@ export function getDisplay(
       } else {
         // Display as `Trained in your choice of Acrobatics or Athletics`
         const profs = getVarList(operation, 'prof');
-        return (
-          <>
-            {proficiencyTypeToLabel((value as ProficiencyValue).value)} in your choice of{' '}
-            {listToLabel(profs, 'or')}
-          </>
-        );
+
+        // If all the profs are the same, display as `Trained in Acrobatics`
+        if (profs.every((p) => p === profs[0])) {
+          return `${proficiencyTypeToLabel((value as ProficiencyValue).value)} in ${profs[0]}`;
+        } else {
+          return (
+            <>
+              {proficiencyTypeToLabel((value as ProficiencyValue).value)} in your choice of{' '}
+              {listToLabel(profs, 'or')}
+            </>
+          );
+        }
       }
     } else {
       // Display as `Expert in Fortitude`
