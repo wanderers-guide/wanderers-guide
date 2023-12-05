@@ -23,6 +23,7 @@ export const CharacterInfo = React.forwardRef(
       onClickAncestry?: () => void;
       onClickBackground?: () => void;
       onClickClass?: () => void;
+      hideImage?: boolean;
     },
     ref: React.LegacyRef<HTMLDivElement>
   ) => {
@@ -35,17 +36,19 @@ export const CharacterInfo = React.forwardRef(
     return (
       <div ref={ref} style={{ width: 260 }}>
         <Group wrap='nowrap' align='flex-start' gap={0}>
-          <Avatar
-            src={props.character?.details?.image_url}
-            alt='Character Portrait'
-            size={84}
-            radius={84}
-            mt={10}
-            mx={10}
-            variant='transparent'
-            color='dark.3'
-            bg={theme.colors.dark[6]}
-          />
+          {!props.hideImage && (
+            <Avatar
+              src={props.character?.details?.image_url}
+              alt='Character Portrait'
+              size={84}
+              radius={84}
+              mt={10}
+              mx={10}
+              variant='transparent'
+              color='dark.3'
+              bg={theme.colors.dark[6]}
+            />
+          )}
           <div style={{ flex: 1 }}>
             <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
               <HoverCard.Target>

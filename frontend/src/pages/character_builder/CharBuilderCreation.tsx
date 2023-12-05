@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Divider,
+  Drawer,
   Group,
   Indicator,
   ScrollArea,
@@ -36,7 +37,7 @@ import D20Loader from '@assets/images/D20Loader';
 import { getIconFromContentType } from '@content/content-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
-import { IconLeaf, IconPuzzle } from '@tabler/icons-react';
+import { IconId, IconLeaf, IconPuzzle } from '@tabler/icons-react';
 import { OperationResult } from '@operations/operation-runner';
 import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
 import { fetchContentPackage } from '@content/content-store';
@@ -60,6 +61,7 @@ import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
+import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -126,11 +128,10 @@ export function CharBuilderCreationInner(props: {
   pageHeight: number;
   onFinishLoading?: () => void;
 }) {
-  const { ref, height } = useElementSize();
+  const isMobile = isCharacterBuilderMobile();
+  const [statPanelOpened, setStatPanelOpened] = useState(false);
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
-
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
   const [operationResults, setOperationResults] = useState<any>();
@@ -167,12 +168,28 @@ export function CharBuilderCreationInner(props: {
 
   return (
     <Group gap={0}>
-      <Box style={{ flexBasis: '35%' }}>
-        <Stack gap={5}>
-          <Box pb={5}>
+      {isMobile ? (
+        <Drawer
+          opened={statPanelOpened}
+          onClose={() => {
+            setStatPanelOpened(false);
+          }}
+          title={<Title order={3}>Character Stats</Title>}
+          size='xs'
+        >
+          <CharacterStatSidebar content={props.content} pageHeight={window.innerHeight - 80} />
+        </Drawer>
+      ) : (
+        <Box style={{ flexBasis: '35%' }}>
+          <CharacterStatSidebar content={props.content} pageHeight={props.pageHeight} />
+        </Box>
+      )}
+      <Box style={{ flexBasis: isMobile ? '100%' : '65%' }}>
+        {isMobile && (
+          <Group justify='space-between' align='flex-start' wrap='nowrap'>
             <CharacterInfo
-              ref={ref}
               character={character}
+              hideImage
               onClickAncestry={() => {
                 selectContent<Ancestry>(
                   'ancestry',
@@ -237,495 +254,20 @@ export function CharBuilderCreationInner(props: {
                 );
               }}
             />
-          </Box>
-          <ScrollArea h={props.pageHeight - height - 20} pr={12}>
-            <Stack gap={5}>
-              <Box>
-                <Button
-                  variant='default'
-                  size='lg'
-                  fullWidth
-                  onClick={() => {
-                    openDrawer({ type: 'stat-attributes', data: {} });
-                  }}
-                >
-                  <Group>
-                    <AttributeModPart
-                      attribute='Str'
-                      value={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.partial ?? false}
-                    />
-                    <AttributeModPart
-                      attribute='Dex'
-                      value={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.partial ?? false}
-                    />
-                    <AttributeModPart
-                      attribute='Con'
-                      value={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.partial ?? false}
-                    />
-                    <AttributeModPart
-                      attribute='Int'
-                      value={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.partial ?? false}
-                    />
-                    <AttributeModPart
-                      attribute='Wis'
-                      value={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.partial ?? false}
-                    />
-                    <AttributeModPart
-                      attribute='Cha'
-                      value={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.value}
-                      marked={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.partial ?? false}
-                    />
-                  </Group>
-                </Button>
-              </Box>
-              <StatButton
-                onClick={() => {
-                  openDrawer({ type: 'stat-hp', data: {} });
-                }}
-              >
-                <Box>
-                  <Text c='gray.0' fz='sm'>
-                    Hit Points
-                  </Text>
-                </Box>
-                <Box>
-                  <Text c='gray.0'>{displayFinalHealthValue()}</Text>
-                </Box>
-              </StatButton>
-              <StatButton
-                onClick={() => {
-                  openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC', isDC: true } });
-                }}
-              >
-                <Box>
-                  <Text c='gray.0' fz='sm'>
-                    Class DC
-                  </Text>
-                </Box>
-                <Group>
-                  <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
-                  <Badge variant='default'>
-                    {getVariable<VariableProf>('CLASS_DC')?.value.value}
-                  </Badge>
-                </Group>
-              </StatButton>
-              <StatButton
-                onClick={() => {
-                  openDrawer({ type: 'stat-prof', data: { variableName: 'PERCEPTION' } });
-                }}
-              >
-                <Box>
-                  <Text c='gray.0' fz='sm'>
-                    Perception
-                  </Text>
-                </Box>
-                <Group>
-                  <Text c='gray.0'>{displayFinalProfValue('PERCEPTION')}</Text>
-                  <Badge variant='default'>
-                    {getVariable<VariableProf>('PERCEPTION')?.value.value}
-                  </Badge>
-                </Group>
-              </StatButton>
-              <Accordion
-                variant='separated'
-                styles={{
-                  label: {
-                    paddingTop: 5,
-                    paddingBottom: 5,
-                  },
-                  control: {
-                    paddingLeft: 13,
-                    paddingRight: 13,
-                  },
-                  item: {
-                    marginTop: 0,
-                    marginBottom: 5,
-                  },
-                }}
-              >
-                <Accordion.Item className={classes.item} value={'skills'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Skills
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      {getAllSkillVariables()
-                        .filter((skill) => skill.name !== 'SKILL_LORE____')
-                        .map((skill, index) => (
-                          <StatButton
-                            key={index}
-                            onClick={() => {
-                              openDrawer({
-                                type: 'stat-prof',
-                                data: { variableName: skill.name },
-                              });
-                            }}
-                          >
-                            <Box>
-                              <Text c='gray.0' fz='sm'>
-                                {variableToLabel(skill)}
-                              </Text>
-                            </Box>
-                            <Group>
-                              <Text c='gray.0'>{displayFinalProfValue(skill.name)}</Text>
-                              <Badge variant='default'>{skill?.value.value}</Badge>
-                            </Group>
-                          </StatButton>
-                        ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'saves'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Saves
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'SAVE_FORT' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Fortitude
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SAVE_FORT')}</Text>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('SAVE_FORT')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'SAVE_REFLEX' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Reflex
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SAVE_REFLEX')}</Text>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('SAVE_REFLEX')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'SAVE_WILL' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Will
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SAVE_WILL')}</Text>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('SAVE_WILL')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'attacks'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Attacks
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'SIMPLE_WEAPONS' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Simple Weapons
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'MARTIAL_WEAPONS' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Martial Weapons
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'ADVANCED_WEAPONS' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Advanced Weapons
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'UNARMED_ATTACKS' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Unarmed Attacks
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('UNARMED_ATTACKS')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'defenses'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Defenses
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'LIGHT_ARMOR' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Light Armor
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('LIGHT_ARMOR')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'MEDIUM_ARMOR' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Medium Armor
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('MEDIUM_ARMOR')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'HEAVY_ARMOR' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Heavy Armor
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('HEAVY_ARMOR')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'UNARMORED_DEFENSE' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Unarmored Defense
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'spellcasting'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Spellcasting
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'SPELL_ATTACK' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Spell Attack
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SPELL_ATTACK')}</Text>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('SPELL_ATTACK')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                      <StatButton
-                        onClick={() => {
-                          openDrawer({
-                            type: 'stat-prof',
-                            data: { variableName: 'SPELL_DC' },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            Spell DC
-                          </Text>
-                        </Box>
-                        <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SPELL_DC')}</Text>
-                          <Badge variant='default'>
-                            {getVariable<VariableProf>('SPELL_DC')?.value.value}
-                          </Badge>
-                        </Group>
-                      </StatButton>
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'languages'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Languages
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      {(getVariable<VariableListStr>('LANGUAGE_IDS')?.value ?? []).map(
-                        (languageId, index) => (
-                          <StatButton
-                            key={index}
-                            onClick={() => {
-                              openDrawer({ type: 'language', data: { id: parseInt(languageId) } });
-                            }}
-                          >
-                            <Box>
-                              <Text c='gray.0' fz='sm'>
-                                {
-                                  props.content.languages.find(
-                                    (lang) => lang.id === parseInt(languageId)
-                                  )?.name
-                                }
-                              </Text>
-                            </Box>
-                            <Group></Group>
-                          </StatButton>
-                        )
-                      )}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-                <Accordion.Item className={classes.item} value={'resist-weaks'}>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      Resist & Weaks
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}></Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              </Accordion>
-            </Stack>
-          </ScrollArea>
-        </Stack>
-      </Box>
-      <Box style={{ flexBasis: '65%' }}>
+            <Button
+              leftSection={<IconId size={14} />}
+              variant='outline'
+              size='xs'
+              mt='sm'
+              mr='md'
+              onClick={() => {
+                setStatPanelOpened((prev) => !prev);
+              }}
+            >
+              Stats
+            </Button>
+          </Group>
+        )}
         <ScrollArea h={props.pageHeight} pr={12}>
           <Accordion
             value={levelItemValue}
@@ -751,6 +293,569 @@ export function CharBuilderCreationInner(props: {
         </ScrollArea>
       </Box>
     </Group>
+  );
+}
+
+function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: number }) {
+  const { ref, height } = useElementSize();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <Stack gap={5}>
+      <Box pb={5}>
+        <CharacterInfo
+          ref={ref}
+          character={character}
+          onClickAncestry={() => {
+            selectContent<Ancestry>(
+              'ancestry',
+              (option) => {
+                setCharacter((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    details: {
+                      ...prev.details,
+                      ancestry: option,
+                    },
+                  };
+                });
+              },
+              {
+                groupBySource: true,
+                selectedId: character?.details?.ancestry?.id,
+              }
+            );
+          }}
+          onClickBackground={() => {
+            selectContent<Background>(
+              'background',
+              (option) => {
+                setCharacter((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    details: {
+                      ...prev.details,
+                      background: option,
+                    },
+                  };
+                });
+              },
+              {
+                groupBySource: true,
+                selectedId: character?.details?.background?.id,
+              }
+            );
+          }}
+          onClickClass={() => {
+            selectContent<Class>(
+              'class',
+              (option) => {
+                setCharacter((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    details: {
+                      ...prev.details,
+                      class: option,
+                    },
+                  };
+                });
+              },
+              {
+                groupBySource: true,
+                selectedId: character?.details?.class?.id,
+              }
+            );
+          }}
+        />
+      </Box>
+      <ScrollArea h={props.pageHeight - height - 20} pr={12}>
+        <Stack gap={5}>
+          <Box>
+            <Button
+              variant='default'
+              size='lg'
+              fullWidth
+              onClick={() => {
+                openDrawer({ type: 'stat-attributes', data: {} });
+              }}
+            >
+              <Group>
+                <AttributeModPart
+                  attribute='Str'
+                  value={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.value}
+                  marked={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.partial ?? false}
+                />
+                <AttributeModPart
+                  attribute='Dex'
+                  value={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.value}
+                  marked={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.partial ?? false}
+                />
+                <AttributeModPart
+                  attribute='Con'
+                  value={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value}
+                  marked={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.partial ?? false}
+                />
+                <AttributeModPart
+                  attribute='Int'
+                  value={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.value}
+                  marked={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.partial ?? false}
+                />
+                <AttributeModPart
+                  attribute='Wis'
+                  value={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.value}
+                  marked={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.partial ?? false}
+                />
+                <AttributeModPart
+                  attribute='Cha'
+                  value={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.value}
+                  marked={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.partial ?? false}
+                />
+              </Group>
+            </Button>
+          </Box>
+          <StatButton
+            onClick={() => {
+              openDrawer({ type: 'stat-hp', data: {} });
+            }}
+          >
+            <Box>
+              <Text c='gray.0' fz='sm'>
+                Hit Points
+              </Text>
+            </Box>
+            <Box>
+              <Text c='gray.0'>{displayFinalHealthValue()}</Text>
+            </Box>
+          </StatButton>
+          <StatButton
+            onClick={() => {
+              openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC', isDC: true } });
+            }}
+          >
+            <Box>
+              <Text c='gray.0' fz='sm'>
+                Class DC
+              </Text>
+            </Box>
+            <Group>
+              <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
+              <Badge variant='default'>{getVariable<VariableProf>('CLASS_DC')?.value.value}</Badge>
+            </Group>
+          </StatButton>
+          <StatButton
+            onClick={() => {
+              openDrawer({ type: 'stat-prof', data: { variableName: 'PERCEPTION' } });
+            }}
+          >
+            <Box>
+              <Text c='gray.0' fz='sm'>
+                Perception
+              </Text>
+            </Box>
+            <Group>
+              <Text c='gray.0'>{displayFinalProfValue('PERCEPTION')}</Text>
+              <Badge variant='default'>
+                {getVariable<VariableProf>('PERCEPTION')?.value.value}
+              </Badge>
+            </Group>
+          </StatButton>
+          <Accordion
+            variant='separated'
+            styles={{
+              label: {
+                paddingTop: 5,
+                paddingBottom: 5,
+              },
+              control: {
+                paddingLeft: 13,
+                paddingRight: 13,
+              },
+              item: {
+                marginTop: 0,
+                marginBottom: 5,
+              },
+            }}
+          >
+            <Accordion.Item className={classes.item} value={'skills'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Skills
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}>
+                  {getAllSkillVariables()
+                    .filter((skill) => skill.name !== 'SKILL_LORE____')
+                    .map((skill, index) => (
+                      <StatButton
+                        key={index}
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { variableName: skill.name },
+                          });
+                        }}
+                      >
+                        <Box>
+                          <Text c='gray.0' fz='sm'>
+                            {variableToLabel(skill)}
+                          </Text>
+                        </Box>
+                        <Group>
+                          <Text c='gray.0'>{displayFinalProfValue(skill.name)}</Text>
+                          <Badge variant='default'>{skill?.value.value}</Badge>
+                        </Group>
+                      </StatButton>
+                    ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item className={classes.item} value={'saves'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Saves
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'SAVE_FORT' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Fortitude
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Text c='gray.0'>{displayFinalProfValue('SAVE_FORT')}</Text>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('SAVE_FORT')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'SAVE_REFLEX' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Reflex
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Text c='gray.0'>{displayFinalProfValue('SAVE_REFLEX')}</Text>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('SAVE_REFLEX')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'SAVE_WILL' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Will
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Text c='gray.0'>{displayFinalProfValue('SAVE_WILL')}</Text>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('SAVE_WILL')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item className={classes.item} value={'attacks'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Attacks
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'SIMPLE_WEAPONS' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Simple Weapons
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'MARTIAL_WEAPONS' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Martial Weapons
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'ADVANCED_WEAPONS' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Advanced Weapons
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'UNARMED_ATTACKS' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Unarmed Attacks
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('UNARMED_ATTACKS')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item className={classes.item} value={'defenses'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Defenses
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'LIGHT_ARMOR' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Light Armor
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('LIGHT_ARMOR')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'MEDIUM_ARMOR' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Medium Armor
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('MEDIUM_ARMOR')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'HEAVY_ARMOR' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Heavy Armor
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('HEAVY_ARMOR')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'UNARMORED_DEFENSE' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Unarmored Defense
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item className={classes.item} value={'spellcasting'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Spellcasting
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'SPELL_ATTACK' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Spell Attack
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Text c='gray.0'>{displayFinalProfValue('SPELL_ATTACK')}</Text>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('SPELL_ATTACK')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                  <StatButton
+                    onClick={() => {
+                      openDrawer({
+                        type: 'stat-prof',
+                        data: { variableName: 'SPELL_DC' },
+                      });
+                    }}
+                  >
+                    <Box>
+                      <Text c='gray.0' fz='sm'>
+                        Spell DC
+                      </Text>
+                    </Box>
+                    <Group>
+                      <Text c='gray.0'>{displayFinalProfValue('SPELL_DC')}</Text>
+                      <Badge variant='default'>
+                        {getVariable<VariableProf>('SPELL_DC')?.value.value}
+                      </Badge>
+                    </Group>
+                  </StatButton>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item className={classes.item} value={'languages'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Languages
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}>
+                  {(getVariable<VariableListStr>('LANGUAGE_IDS')?.value ?? []).map(
+                    (languageId, index) => (
+                      <StatButton
+                        key={index}
+                        onClick={() => {
+                          openDrawer({ type: 'language', data: { id: parseInt(languageId) } });
+                        }}
+                      >
+                        <Box>
+                          <Text c='gray.0' fz='sm'>
+                            {
+                              props.content.languages.find(
+                                (lang) => lang.id === parseInt(languageId)
+                              )?.name
+                            }
+                          </Text>
+                        </Box>
+                        <Group></Group>
+                      </StatButton>
+                    )
+                  )}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+            <Accordion.Item className={classes.item} value={'resist-weaks'}>
+              <Accordion.Control>
+                <Text c='white' fz='sm'>
+                  Resist & Weaks
+                </Text>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={5}></Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        </Stack>
+      </ScrollArea>
+    </Stack>
   );
 }
 

@@ -66,6 +66,7 @@ import { isPlayable } from '@utils/character';
 import { JSendResponse } from '@typing/requests';
 import _ from 'lodash';
 import { defineDefaultSources } from '@content/content-store';
+import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 
 export default function CharacterBuilderPage() {
   setPageTitle(`Builder`);
@@ -162,52 +163,50 @@ export default function CharacterBuilderPage() {
     <Center>
       <Box maw={800} w='100%'>
         <Stack style={{ position: 'relative' }}>
-          <ActionIcon
-            variant='filled'
-            color='gray'
-            aria-label='Next Page'
-            radius='xl'
-            size='xl'
-            style={{
-              position: 'absolute',
-              top: '45%',
-              right: -70,
-              visibility: active === 2 ? 'hidden' : 'visible',
-            }}
-            onClick={() => handleStepChange(active + 1)}
-            hidden={active === 3}
-          >
-            <IconArrowRight style={{ width: '70%', height: '70%' }} stroke={2} />
-          </ActionIcon>
-          <ActionIcon
-            variant='filled'
-            color='gray'
-            aria-label='Previous Page'
-            radius='xl'
-            size='xl'
-            style={{
-              position: 'absolute',
-              top: '45%',
-              left: -70,
-              visibility: active === 0 ? 'hidden' : 'visible',
-            }}
-            onClick={() => handleStepChange(active - 1)}
-          >
-            <IconArrowLeft style={{ width: '70%', height: '70%' }} stroke={2} />
-          </ActionIcon>
-          {/* <Group justify='space-between'>
-            <Group>
-              <Avatar size='md' radius='xl' />
-              <Text c='gray.0' fz='md'>
-                Unknown Wanderer
-              </Text>
-            </Group>
-            <Button variant='subtle' color='gray' size='compact-md' radius='xl'>
-              View Character Stats
-            </Button>
-          </Group> */}
+          {!isCharacterBuilderMobile() && (
+            <>
+              <ActionIcon
+                variant='filled'
+                color='gray'
+                aria-label='Next Page'
+                radius='xl'
+                size='xl'
+                style={{
+                  position: 'absolute',
+                  top: '45%',
+                  right: -70,
+                  visibility: active === 2 ? 'hidden' : 'visible',
+                }}
+                onClick={() => handleStepChange(active + 1)}
+                hidden={active === 3}
+              >
+                <IconArrowRight style={{ width: '70%', height: '70%' }} stroke={2} />
+              </ActionIcon>
+              <ActionIcon
+                variant='filled'
+                color='gray'
+                aria-label='Previous Page'
+                radius='xl'
+                size='xl'
+                style={{
+                  position: 'absolute',
+                  top: '45%',
+                  left: -70,
+                  visibility: active === 0 ? 'hidden' : 'visible',
+                }}
+                onClick={() => handleStepChange(active - 1)}
+              >
+                <IconArrowLeft style={{ width: '70%', height: '70%' }} stroke={2} />
+              </ActionIcon>
+            </>
+          )}
           <BlurBox blur={10} p='sm'>
-            <Stepper active={active} onStepClick={setActive} iconSize={32}>
+            <Stepper
+              active={active}
+              onStepClick={setActive}
+              iconSize={32}
+              size={isCharacterBuilderMobile() ? 'xs' : undefined}
+            >
               <Stepper.Step
                 label='Home'
                 allowStepSelect={true}

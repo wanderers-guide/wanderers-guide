@@ -127,10 +127,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
   return (
     <Stack gap={topGap}>
-      <Group justify='center' ref={ref}>
+      <Group justify='center' ref={ref} wrap='nowrap'>
         <Stack>
           <Box>
-            <Group align='flex-end'>
+            <Group align='flex-end' wrap='nowrap'>
               <UnstyledButton
                 onClick={() => {
                   openContextModal({
@@ -309,7 +309,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           </Box>
         </Stack>
       </Group>
-      <Group gap={10} align='flex-start' h={props.pageHeight - height - topGap}>
+      <Group gap={10} align='flex-start' wrap='nowrap' h={props.pageHeight - height - topGap}>
         <Box style={{ flexBasis: '65%' }} h='100%'>
           <Paper
             shadow='sm'

@@ -107,6 +107,7 @@ export function getStatDisplay(
   let bestValue: VariableValue | null = null;
 
   const setBestValue = (value: VariableValue) => {
+    console.log('setBestValue', value);
     if (bestValue === null) {
       bestValue = value;
       return true;
@@ -125,10 +126,12 @@ export function getStatDisplay(
         return true;
       }
     } else if (variable.type === 'prof') {
-      bestValue = maxProficiencyType(
-        (bestValue as ProficiencyValue).value,
-        (value as ProficiencyValue).value
-      );
+      bestValue = {
+        value: maxProficiencyType(
+          (bestValue as ProficiencyValue).value,
+          (value as ProficiencyValue).value
+        ),
+      };
       if (bestValue === value) return true;
     } else if (variable.type === 'attr') {
       const bestValueAttr = bestValue as AttributeValue;
@@ -187,6 +190,7 @@ export function getStatDisplay(
         }
       } else if (operation.data.optionType === 'CUSTOM') {
         // Check all operations in all the options in the select
+        const variableNames = [];
         for (const option of (operation.data.optionsPredefined ??
           []) as OperationSelectOptionCustom[]) {
           for (const subop of option.operations ?? []) {
@@ -194,11 +198,12 @@ export function getStatDisplay(
               if (subop.data.variable === variableName) {
                 const changed = setBestValue(subop.data.value);
                 if (changed) bestOperation = operation;
+                variableNames.push(subop.data.variable);
               }
             }
           }
         }
-        // uuid TODO
+        uuid = variableNames.sort().join('_');
       }
     }
   }
@@ -254,7 +259,8 @@ export function getDisplay(
     : null;
 
   // Handle attributes
-  if (isAttributeValue(value) || (_.isNumber(+value) && variable?.type === 'attr')) {
+  if (isAttributeValue(value)) {
+    // || (_.isNumber(+value) && variable?.type === 'attr')
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (
@@ -301,7 +307,7 @@ export function getDisplay(
   }
 
   // Handle profs
-  if (_.isString(value) && isProficiencyValue(value)) {
+  if (isProficiencyValue(value)) {
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (
