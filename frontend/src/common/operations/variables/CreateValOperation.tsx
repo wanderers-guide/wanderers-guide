@@ -8,6 +8,7 @@ import {
 } from '@typing/variables';
 import { JsonInput, NumberInput, SegmentedControl, Select, TextInput } from '@mantine/core';
 import { SetValueInput } from './SetValOperation';
+import { labelToVariable } from '@variables/variable-utils';
 
 export function CreateValOperation(props: {
   variable: string;
@@ -62,9 +63,8 @@ export function CreateValOperation(props: {
         placeholder='Value Name'
         w={190}
         value={props.variable}
-        onChange={(value) => {
-          const variable = value.target.value.toUpperCase().replace(/\s/g, '_');
-          props.onNameChange(variable);
+        onChange={(e) => {
+          props.onNameChange(labelToVariable(e.target.value));
         }}
       />
       <SetValueInput

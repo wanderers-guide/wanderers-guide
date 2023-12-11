@@ -40,8 +40,8 @@ export const CharacterInfo = React.forwardRef(
             <Avatar
               src={props.character?.details?.image_url}
               alt='Character Portrait'
-              size={84}
-              radius={84}
+              size={75}
+              radius={75}
               mt={10}
               mx={10}
               variant='transparent'
@@ -80,7 +80,7 @@ export const CharacterInfo = React.forwardRef(
                     {props.character?.details?.ancestry?.name ?? 'Select Ancestry'}
                   </Button>
                 ) : (
-                  <Group wrap='nowrap' gap={10} mt={3}>
+                  <Group wrap='nowrap' gap={10}>
                     <IconTree stroke={1.5} size='1rem' className={classes.icon} />
                     <Text fz='xs' c='gray.3'>
                       {props.character?.details?.ancestry?.name ? (
@@ -106,7 +106,7 @@ export const CharacterInfo = React.forwardRef(
                     {props.character?.details?.background?.name ?? 'Select Background'}
                   </Button>
                 ) : (
-                  <Group wrap='nowrap' gap={10} mt={3}>
+                  <Group wrap='nowrap' gap={10}>
                     <IconWindow stroke={1.5} size='1rem' className={classes.icon} />
                     <Text fz='xs' c='gray.3'>
                       {props.character?.details?.background?.name ?? 'Missing Background'}
@@ -125,7 +125,7 @@ export const CharacterInfo = React.forwardRef(
                     {props.character?.details?.class?.name ?? 'Select Class'}
                   </Button>
                 ) : (
-                  <Group wrap='nowrap' gap={10} mt={3}>
+                  <Group wrap='nowrap' gap={10}>
                     <IconVocabulary stroke={1.5} size='1rem' className={classes.icon} />
                     <Text fz='xs' c='gray.3'>
                       {props.character?.details?.class?.name ?? 'Missing Class'}

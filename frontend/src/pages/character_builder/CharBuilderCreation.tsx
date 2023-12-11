@@ -42,7 +42,7 @@ import { OperationResult } from '@operations/operation-runner';
 import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
 import { fetchContentPackage } from '@content/content-store';
 import { ObjectWithUUID } from '@operations/operation-utils';
-import { OperationSelect } from '@typing/operations';
+import { OperationResultPackage, OperationSelect } from '@typing/operations';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import useRefresh from '@utils/use-refresh';
 import { set } from 'lodash';
@@ -134,7 +134,7 @@ export function CharBuilderCreationInner(props: {
   const [character, setCharacter] = useRecoilState(characterState);
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const [operationResults, setOperationResults] = useState<any>();
+  const [operationResults, setOperationResults] = useState<OperationResultPackage>();
 
   const executingOperations = useRef(false);
   useEffect(() => {
@@ -881,7 +881,7 @@ function AttributeModPart(props: { attribute: string; value: number; marked: boo
   );
 }
 
-function StatButton(props: { children: React.ReactNode; onClick?: () => void }) {
+export function StatButton(props: { children: React.ReactNode; onClick?: () => void }) {
   return (
     <Box>
       <Button
@@ -1021,7 +1021,7 @@ function LevelSection(props: {
             {props.operationResults?.ancestrySectionResults.map(
               (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
                 r.baseSource.level === props.level && (
-                  <AncestrySectionAccordianItem
+                  <AncestrySectionAccordionItem
                     key={index}
                     id={`ancestry-section-${index}`}
                     section={r.baseSource}
@@ -1036,7 +1036,7 @@ function LevelSection(props: {
             {props.operationResults?.classFeatureResults.map(
               (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
                 r.baseSource.level === props.level && (
-                  <ClassFeatureAccordianItem
+                  <ClassFeatureAccordionItem
                     key={index}
                     id={`class-feature-${index}`}
                     feature={r.baseSource}
@@ -1055,7 +1055,7 @@ function LevelSection(props: {
   );
 }
 
-function ClassFeatureAccordianItem(props: {
+function ClassFeatureAccordionItem(props: {
   id: string;
   feature: AbilityBlock;
   results: OperationResult[];
@@ -1117,7 +1117,7 @@ function ClassFeatureAccordianItem(props: {
   );
 }
 
-function AncestrySectionAccordianItem(props: {
+function AncestrySectionAccordionItem(props: {
   id: string;
   section: AbilityBlock;
   results: OperationResult[];
@@ -1213,7 +1213,7 @@ function InitialStatsLevelSection(props: {
           label: { paddingTop: 5, paddingBottom: 5 },
         }}
       >
-        <AncestryAccordianItem
+        <AncestryAccordionItem
           ancestry={ancestry}
           content={props.content}
           operationResults={props.operationResults}
@@ -1223,7 +1223,7 @@ function InitialStatsLevelSection(props: {
           opened={subSectionValue === 'ancestry'}
         />
 
-        <BackgroundAccordianItem
+        <BackgroundAccordionItem
           background={background}
           operationResults={props.operationResults}
           onSaveChanges={(path, value) => {
@@ -1232,7 +1232,7 @@ function InitialStatsLevelSection(props: {
           opened={subSectionValue === 'background'}
         />
 
-        <ClassAccordianItem
+        <ClassAccordionItem
           class_={class_}
           operationResults={props.operationResults}
           onSaveChanges={(path, value) => {
@@ -1242,7 +1242,7 @@ function InitialStatsLevelSection(props: {
         />
 
         {props.operationResults.contentSourceResults.length > 0 && (
-          <BooksAccordianItem
+          <BooksAccordionItem
             operationResults={props.operationResults}
             onSaveChanges={(path, value) => {
               props.onSaveChanges(path, value);
@@ -1251,7 +1251,7 @@ function InitialStatsLevelSection(props: {
           />
         )}
         {props.operationResults.itemResults.length > 0 && (
-          <ItemsAccordianItem
+          <ItemsAccordionItem
             operationResults={props.operationResults}
             onSaveChanges={(path, value) => {
               props.onSaveChanges(path, value);
@@ -1260,7 +1260,7 @@ function InitialStatsLevelSection(props: {
           />
         )}
         {props.operationResults.characterResults.length > 0 && (
-          <CustomAccordianItem
+          <CustomAccordionItem
             operationResults={props.operationResults}
             onSaveChanges={(path, value) => {
               props.onSaveChanges(path, value);
@@ -1273,7 +1273,7 @@ function InitialStatsLevelSection(props: {
   );
 }
 
-function AncestryAccordianItem(props: {
+function AncestryAccordionItem(props: {
   ancestry?: Ancestry;
   content: ContentPackage;
   operationResults: any;
@@ -1400,7 +1400,7 @@ function AncestryAccordianItem(props: {
   );
 }
 
-function BackgroundAccordianItem(props: {
+function BackgroundAccordionItem(props: {
   background?: Background;
   operationResults: any;
   onSaveChanges: (path: string, value: string) => void;
@@ -1511,7 +1511,7 @@ function BackgroundAccordianItem(props: {
   );
 }
 
-function ClassAccordianItem(props: {
+function ClassAccordionItem(props: {
   class_?: Class;
   operationResults: any;
   onSaveChanges: (path: string, value: string) => void;
@@ -1618,7 +1618,7 @@ function ClassAccordianItem(props: {
   );
 }
 
-function BooksAccordianItem(props: {
+function BooksAccordionItem(props: {
   operationResults: any;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
@@ -1680,7 +1680,7 @@ function BooksAccordianItem(props: {
   );
 }
 
-function ItemsAccordianItem(props: {
+function ItemsAccordionItem(props: {
   operationResults: any;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
@@ -1740,7 +1740,7 @@ function ItemsAccordianItem(props: {
   );
 }
 
-function CustomAccordianItem(props: {
+function CustomAccordionItem(props: {
   operationResults: any;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;

@@ -27,8 +27,6 @@ import _ from 'lodash';
 import { throwError } from '@utils/notifications';
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
-  PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
-
   ATTRIBUTE_STR: newVariable('attr', 'ATTRIBUTE_STR'),
   ATTRIBUTE_DEX: newVariable('attr', 'ATTRIBUTE_DEX'),
   ATTRIBUTE_CON: newVariable('attr', 'ATTRIBUTE_CON'),
@@ -163,6 +161,15 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   // RESISTANCES: newVariable("str", "RESISTANCES"),
   // WEAKNESSES: newVariable("str", "WEAKNESSES"),
+
+  PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
+  PRIMARY_BUILDER_TABS: newVariable('list-str', 'PRIMARY_BUILDER_TABS', [
+    'skills-actions',
+    'inventory',
+    'feats-features',
+    'details',
+    'notes',
+  ]),
 };
 
 let variables = _.cloneDeep(DEFAULT_VARIABLES);
@@ -396,7 +403,7 @@ export function adjVariable(name: string, amount: VariableValue, source?: string
 export function getAllSkillVariables(): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
-    if (variable.name.startsWith('SKILL_')) {
+    if (variable.name.startsWith('SKILL_') && variable.type === 'prof') {
       variables.push(variable);
     }
   }
@@ -406,7 +413,7 @@ export function getAllSkillVariables(): VariableProf[] {
 export function getAllSaveVariables(): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
-    if (variable.name.startsWith('SAVE_')) {
+    if (variable.name.startsWith('SAVE_') && variable.type === 'prof') {
       variables.push(variable);
     }
   }
@@ -416,9 +423,29 @@ export function getAllSaveVariables(): VariableProf[] {
 export function getAllAttributeVariables(): VariableAttr[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
-    if (variable.name.startsWith('ATTRIBUTE_')) {
+    if (variable.name.startsWith('ATTRIBUTE_') && variable.type === 'attr') {
       variables.push(variable);
     }
   }
   return variables as VariableAttr[];
+}
+
+export function getAllWeaponVariables(): VariableProf[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('WEAPON_') && variable.type === 'prof') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableProf[];
+}
+
+export function getAllArmorVariables(): VariableProf[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('ARMOR_') && variable.type === 'prof') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableProf[];
 }

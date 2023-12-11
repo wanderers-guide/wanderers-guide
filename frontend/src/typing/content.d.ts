@@ -206,7 +206,14 @@ interface Character {
   stamina_current: number;
   resolve_current: number;
   inventory: Record<string, any>; // TODO
-  notes: Record<string, any>; // TODO
+  notes?: {
+    pages: {
+      name: string;
+      icon: string;
+      color: string;
+      contents: JSONContent;
+    }[];
+  };
   details?: {
     image_url?: string;
     background_image_url?: string;
@@ -216,6 +223,22 @@ interface Character {
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;
+    info?: {
+      appearance?: string;
+      personality?: string;
+      alignment?: string;
+      beliefs?: string;
+      age?: string;
+      height?: string;
+      weight?: string;
+      gender?: string;
+      pronouns?: string;
+      faction?: string;
+      ethnicity?: string;
+      nationality?: string;
+      birthplace?: string;
+      organized_play_id?: string;
+    };
   };
   roll_history?: Record<string, any>; // TODO
   custom_operations?: Operation[];

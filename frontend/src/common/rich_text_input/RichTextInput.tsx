@@ -14,12 +14,14 @@ import { drawerState } from '@atoms/navAtoms';
 import { toMarkdown } from '@content/content-utils';
 import { ActionSymbol } from './ActionSymbolExtension';
 import ActionSymbolControl from './ActionSymbolControl';
+import Placeholder from '@tiptap/extension-placeholder';
 
 interface RichTextInputProps {
   label?: string;
   required?: boolean;
   value?: string | JSONContent;
   onChange?: (text: string, json: JSONContent) => void;
+  placeholder?: string;
 }
 
 export default function RichTextInput(props: RichTextInputProps) {
@@ -36,6 +38,7 @@ export default function RichTextInput(props: RichTextInputProps) {
       SubScript,
       Highlight,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Placeholder.configure({ placeholder: props.placeholder }),
     ],
     content: props.value ?? '',
     onUpdate({ editor }) {
@@ -66,6 +69,8 @@ export default function RichTextInput(props: RichTextInputProps) {
           },
           content: {
             backgroundColor: theme.colors.dark[6],
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
           },
         }}
       >

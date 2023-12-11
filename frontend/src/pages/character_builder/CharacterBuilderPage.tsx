@@ -54,7 +54,7 @@ import { LinksGroup } from '@common/LinksGroup';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, ContentSource } from '@typing/content';
 import { makeRequest } from '@requests/request-manager';
-import { useLoaderData } from 'react-router-dom';
+import { useLoaderData, useNavigate } from 'react-router-dom';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import CharBuilderHome from './CharBuilderHome';
@@ -73,6 +73,7 @@ export default function CharacterBuilderPage() {
 
   const theme = useMantineTheme();
   const [active, setActive] = useState(0);
+  const navigate = useNavigate();
 
   const { characterId } = useLoaderData() as {
     characterId: number;
@@ -86,8 +87,14 @@ export default function CharacterBuilderPage() {
     setActive(nextStep);
   };
 
+  useEffect(() => {
+    if (active === 2) {
+      navigate(`/sheet/${characterId}`);
+    }
+  }, [active]);
+
   const stepIconStyle = { width: rem(18), height: rem(18) };
-  const pageHeight = 500;
+  const pageHeight = 550;
 
   const queryClient = useQueryClient();
 

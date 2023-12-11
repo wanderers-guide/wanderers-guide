@@ -8,7 +8,7 @@ import {
   Item,
 } from '@typing/content';
 import { getRootSelection, setSelections } from './selection-tree';
-import { Operation, OperationSelect } from '@typing/operations';
+import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
 import { addVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
 import { isAttributeValue } from '@variables/variable-utils';
@@ -54,7 +54,10 @@ async function executeOperations(
         - If in the future, we add a way to execute a list of operations X times, where
           X is based on a value of a variable, those would also need to be run here.
 */
-export async function executeCharacterOperations(character: Character, content: ContentPackage) {
+export async function executeCharacterOperations(
+  character: Character,
+  content: ContentPackage
+): Promise<OperationResultPackage> {
   resetVariables();
   defineSelectionTree(character);
   setVariable('PAGE_CONTEXT', 'CHARACTER-BUILDER');

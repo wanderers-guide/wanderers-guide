@@ -25,13 +25,17 @@ import { convertContentLink } from '@drawers/drawer-utils';
 import { drawerState } from '@atoms/navAtoms';
 import { ContentFeedbackModal } from '@modals/ContentFeedbackModal';
 import { AddNewLoreModal } from '@modals/AddNewLoreModal';
+import { SelectIconModal } from '@modals/SelectIconModal';
+import { UpdateNotePageModal } from '@modals/UpdateNotePageModal';
 
 const modals = {
   selectContent: SelectContentModal,
   selectImage: SelectImageModal,
+  selectIcon: SelectIconModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
   contentFeedback: ContentFeedbackModal,
   addNewLore: AddNewLoreModal,
+  updateNotePage: UpdateNotePageModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {
@@ -189,7 +193,7 @@ export default function App() {
               size='xs'
               c='dimmed'
               style={{
-                position: 'absolute',
+                position: 'fixed',
                 bottom: 6,
                 right: 10,
               }}

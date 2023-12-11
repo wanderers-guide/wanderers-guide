@@ -8,6 +8,29 @@ import {
 } from './variables';
 import { AbilityBlockType, Rarity } from './content';
 
+export type OperationResultPackage = {
+  contentSourceResults: {
+    baseSource: ContentSource;
+    baseResults: OperationResult[];
+  }[];
+  characterResults: OperationResult[];
+  classResults: OperationResult[];
+  classFeatureResults: {
+    baseSource: AbilityBlock;
+    baseResults: OperationResult[];
+  }[];
+  ancestryResults: OperationResult[];
+  ancestrySectionResults: {
+    baseSource: AbilityBlock;
+    baseResults: OperationResult[];
+  }[];
+  backgroundResults: OperationResult[];
+  itemResults: {
+    baseSource: Item;
+    baseResults: OperationResult[];
+  }[];
+};
+
 export type Operation =
   | OperationAdjValue
   | OperationAddBonusToValue
