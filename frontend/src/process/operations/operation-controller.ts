@@ -50,17 +50,18 @@ async function executeOperations(
 
     - Run conditionals only (and sub-operations of conditionals) for everything
         - The extra class skill trainings and ancestry languages are based on Int mod,
-          which makes them almost like a conidtional, they need to be run here as well.
-        - If in the future, we add a way to execute a list of operations X times, where
+          which makes them almost like a conditional, they need to be run here as well.
+        - If, in the future, we add a way to execute a list of operations X times, where
           X is based on a value of a variable, those would also need to be run here.
 */
 export async function executeCharacterOperations(
   character: Character,
-  content: ContentPackage
+  content: ContentPackage,
+  context: string
 ): Promise<OperationResultPackage> {
   resetVariables();
   defineSelectionTree(character);
-  setVariable('PAGE_CONTEXT', 'CHARACTER-BUILDER');
+  setVariable('PAGE_CONTEXT', context);
   setVariable('LEVEL', character.level);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
@@ -196,8 +197,9 @@ export async function executeCharacterOperations(
     }
   }
 
-  // Non-conditional round //
+  // Normal round //
   const results = await operationsPassthrough();
+
   // Conditional round //
   const conditionalResults = await operationsPassthrough({
     doOnlyConditionals: true,

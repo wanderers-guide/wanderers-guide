@@ -1,10 +1,9 @@
-import _ from "lodash";
+import _, { maxBy } from 'lodash';
 
 export function sign(num: number | string): string {
   num = _.isString(num) ? parseInt(num) : num;
   return num < 0 ? `${num}` : `+${num}`;
 }
-
 
 export function hashData(data: Record<string, any>): number {
   return cyrb53(JSON.stringify(data));

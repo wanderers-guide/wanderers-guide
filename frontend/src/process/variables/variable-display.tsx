@@ -1,7 +1,7 @@
 import { VariableAttr, VariableNum, VariableProf } from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
-import { Box, Text } from '@mantine/core';
+import { Box, Text, TextProps } from '@mantine/core';
 import { getProficiencyTypeValue } from './variable-utils';
 
 export function displayFinalProfValue(variableName: string, isDC: boolean = false) {
@@ -145,7 +145,27 @@ export function getHealthValueParts() {
   };
 }
 
-export function displayFinalHealthValue() {
+export function getFinalHealthValue() {
   const { level, ancestryHp, classHp, bonusHp, conMod } = getHealthValueParts();
-  return <span>{ancestryHp + bonusHp + (classHp + conMod) * level}</span>;
+  return ancestryHp + bonusHp + (classHp + conMod) * level;
+}
+
+export function displayFinalHealthValue() {
+  return <span>{getFinalHealthValue()}</span>;
+}
+
+export function displayAttributeValue(attributeName: string, textProps?: TextProps) {
+  const attribute = getVariable<VariableAttr>(attributeName);
+  if (!attribute) return null;
+  return (
+    <Text {...textProps}>
+      <Text {...textProps} span>
+        {attribute.value.value < 0 ? '-' : '+'}
+      </Text>
+
+      <Text {...textProps} td={attribute.value.partial ? 'underline' : undefined} span>
+        {Math.abs(attribute.value.value)}
+      </Text>
+    </Text>
+  );
 }

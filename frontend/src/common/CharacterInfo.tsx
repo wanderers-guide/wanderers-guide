@@ -24,6 +24,8 @@ export const CharacterInfo = React.forwardRef(
       onClickBackground?: () => void;
       onClickClass?: () => void;
       hideImage?: boolean;
+      color?: string;
+      nameCutOff?: number;
     },
     ref: React.LegacyRef<HTMLDivElement>
   ) => {
@@ -58,7 +60,7 @@ export const CharacterInfo = React.forwardRef(
                   fw={500}
                   className={classes.name}
                 >
-                  {_.truncate(props.character?.name, { length: 18 })}
+                  {_.truncate(props.character?.name, { length: props.nameCutOff ?? 18 })}
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown py={5} px={10}>
@@ -73,9 +75,11 @@ export const CharacterInfo = React.forwardRef(
                 {props.onClickAncestry ? (
                   <Button
                     variant={hasAncestry ? 'subtle' : 'light'}
+                    color={props.color}
                     size='compact-xs'
                     leftSection={<IconTree size='0.9rem' />}
                     onClick={props.onClickAncestry}
+                    fw={400}
                   >
                     {props.character?.details?.ancestry?.name ?? 'Select Ancestry'}
                   </Button>
@@ -100,8 +104,10 @@ export const CharacterInfo = React.forwardRef(
                   <Button
                     variant={hasBackground ? 'subtle' : 'light'}
                     size='compact-xs'
+                    color={props.color}
                     leftSection={<IconWindow size='0.9rem' />}
                     onClick={props.onClickBackground}
+                    fw={400}
                   >
                     {props.character?.details?.background?.name ?? 'Select Background'}
                   </Button>
@@ -119,8 +125,10 @@ export const CharacterInfo = React.forwardRef(
                   <Button
                     variant={hasClass ? 'subtle' : 'light'}
                     size='compact-xs'
+                    color={props.color}
                     leftSection={<IconVocabulary size='0.9rem' />}
                     onClick={props.onClickClass}
+                    fw={400}
                   >
                     {props.character?.details?.class?.name ?? 'Select Class'}
                   </Button>

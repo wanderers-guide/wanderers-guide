@@ -59,7 +59,11 @@ import {
 import RichText from '@common/RichText';
 import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
-import { displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
+import {
+  displayAttributeValue,
+  displayFinalHealthValue,
+  displayFinalProfValue,
+} from '@variables/variable-display';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 
@@ -114,6 +118,7 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
             content={content}
             pageHeight={props.pageHeight}
             onFinishLoading={() => {
+              interval.stop();
               setDoneLoading(true);
             }}
           />
@@ -140,7 +145,7 @@ export function CharBuilderCreationInner(props: {
   useEffect(() => {
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
-    executeCharacterOperations(character, props.content).then((results) => {
+    executeCharacterOperations(character, props.content, 'CHARACTER-BUILDER').then((results) => {
       setOperationResults(results);
       executingOperations.current = false;
     });
@@ -387,36 +392,12 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               }}
             >
               <Group>
-                <AttributeModPart
-                  attribute='Str'
-                  value={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.value}
-                  marked={getVariable<VariableAttr>('ATTRIBUTE_STR')!.value.partial ?? false}
-                />
-                <AttributeModPart
-                  attribute='Dex'
-                  value={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.value}
-                  marked={getVariable<VariableAttr>('ATTRIBUTE_DEX')!.value.partial ?? false}
-                />
-                <AttributeModPart
-                  attribute='Con'
-                  value={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value}
-                  marked={getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.partial ?? false}
-                />
-                <AttributeModPart
-                  attribute='Int'
-                  value={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.value}
-                  marked={getVariable<VariableAttr>('ATTRIBUTE_INT')!.value.partial ?? false}
-                />
-                <AttributeModPart
-                  attribute='Wis'
-                  value={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.value}
-                  marked={getVariable<VariableAttr>('ATTRIBUTE_WIS')!.value.partial ?? false}
-                />
-                <AttributeModPart
-                  attribute='Cha'
-                  value={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.value}
-                  marked={getVariable<VariableAttr>('ATTRIBUTE_CHA')!.value.partial ?? false}
-                />
+                <AttributeModPart attribute='Str' variableName='ATTRIBUTE_STR' />
+                <AttributeModPart attribute='Dex' variableName='ATTRIBUTE_DEX' />
+                <AttributeModPart attribute='Con' variableName='ATTRIBUTE_CON' />
+                <AttributeModPart attribute='Int' variableName='ATTRIBUTE_INT' />
+                <AttributeModPart attribute='Wis' variableName='ATTRIBUTE_WIS' />
+                <AttributeModPart attribute='Cha' variableName='ATTRIBUTE_CHA' />
               </Group>
             </Button>
           </Box>
@@ -862,20 +843,14 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
   );
 }
 
-function AttributeModPart(props: { attribute: string; value: number; marked: boolean }) {
+function AttributeModPart(props: { attribute: string; variableName: string }) {
   return (
     <Box>
       <Text c='gray.0' ta='center' fz={11}>
         {props.attribute}
       </Text>
       <Text c='gray.0' ta='center'>
-        <Text c='gray.0' span>
-          {props.value < 0 ? '-' : '+'}
-        </Text>
-
-        <Text c='gray.0' td={props.marked ? 'underline' : undefined} span>
-          {Math.abs(props.value)}
-        </Text>
+        {displayAttributeValue(props.variableName, { c: 'gray.0', ta: 'center' })}
       </Text>
     </Box>
   );

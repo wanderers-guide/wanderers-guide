@@ -29,6 +29,7 @@ import {
   Divider,
   Textarea,
   SimpleGrid,
+  RingProgress,
 } from '@mantine/core';
 import BlurBox from '@common/BlurBox';
 import {
@@ -70,6 +71,10 @@ import {
   IconSearch,
   IconPlus,
   IconExternalLink,
+  IconStarFilled,
+  IconStar,
+  IconRosette,
+  IconRosetteFilled,
 } from '@tabler/icons-react';
 import { LinksGroup } from '@common/LinksGroup';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -95,16 +100,22 @@ import { defineDefaultSources, fetchContentPackage } from '@content/content-stor
 import { isCharacterSheetMobile } from '@utils/screen-sizes';
 import {
   getAllArmorVariables,
+  getAllAttributeVariables,
+  getAllSaveVariables,
   getAllSkillVariables,
   getAllWeaponVariables,
   getVariable,
   getVariables,
 } from '@variables/variable-manager';
-import { VariableListStr, VariableProf } from '@typing/variables';
+import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
 import { toLabel } from '@utils/strings';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
-import { displayFinalProfValue } from '@variables/variable-display';
+import {
+  displayAttributeValue,
+  displayFinalProfValue,
+  getFinalHealthValue,
+} from '@variables/variable-display';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TraitsDisplay from '@common/TraitsDisplay';
@@ -116,6 +127,20 @@ import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { GUIDE_BLUE } from '@constants/data';
 import classes from '@css/FaqSimple.module.css';
 import { CharacterInfo } from '@common/CharacterInfo';
+import ClickEditText from '@common/ClickEditText';
+import TokenSelect from '@common/TokenSelect';
+import ConditionPill from '@common/ConditionPill';
+import * as math from 'mathjs';
+import { interpolateHealth } from '@utils/colors';
+import BlurButton from '@common/BlurButton';
+import ArmorIcon from '@assets/images/ArmorIcon';
+import ShieldIcon from '@assets/images/ShieldIcon';
+import PerceptionIcon from '@assets/images/PerceptionIcon';
+import SpeedIcon from '@assets/images/SpeedIcon';
+import ClassDcIcon from '@assets/images/FancyBoxIcon';
+import CircleIcon from '@assets/images/CircleIcon';
+import BoxIcon from '@assets/images/BoxIcon';
+import HeroPointIcon from '@assets/images/HeroPointIcon';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -170,6 +195,7 @@ export default function CharacterSheetPage(props: {}) {
             content={content}
             characterId={characterId}
             onFinishLoading={() => {
+              interval.stop();
               setDoneLoading(true);
             }}
           />
@@ -221,7 +247,7 @@ function CharacterSheetInner(props: {
   useEffect(() => {
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
-    executeCharacterOperations(character, props.content).then((results) => {
+    executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
       setOperationResults(results);
       executingOperations.current = false;
       props.onFinishLoading?.();
@@ -280,11 +306,11 @@ function CharacterSheetInner(props: {
         <Stack gap='xs' style={{ position: 'relative' }}>
           <SimpleGrid cols={3} spacing='xs' verticalSpacing='xs'>
             <CharacterInfoSection />
-            <CharacterInfoSection />
-            <CharacterInfoSection />
-            <CharacterInfoSection />
-            <CharacterInfoSection />
-            <CharacterInfoSection />
+            <HealthSection />
+            <ConditionSection />
+            <AttributeSection />
+            <ArmorSection />
+            <SpeedSection />
           </SimpleGrid>
           <SectionPanels content={props.content} />
         </Stack>
@@ -296,9 +322,9 @@ function CharacterSheetInner(props: {
 function CharacterInfoSection() {
   const navigate = useNavigate();
   const theme = useMantineTheme();
-  const [character, setCharacter] = useRecoilState(characterState);
 
-  const { hovered: hoveredEdit, ref: refEdit } = useHover<HTMLAnchorElement>();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
 
   return (
     <BlurBox blur={10}>
@@ -312,27 +338,520 @@ function CharacterInfoSection() {
           position: 'relative',
         }}
       >
-        <CharacterInfo character={character} />
+        <Stack gap={2}>
+          <CharacterInfo
+            character={character}
+            color='gray.5'
+            nameCutOff={20}
+            onClickAncestry={() => {
+              openDrawer({ type: 'ancestry', data: { id: character?.details?.ancestry?.id } });
+            }}
+            onClickBackground={() => {
+              openDrawer({ type: 'background', data: { id: character?.details?.background?.id } });
+            }}
+            onClickClass={() => {
+              openDrawer({ type: 'class', data: { id: character?.details?.class?.id } });
+            }}
+          />
+          {/* <Group wrap='nowrap' align='flex-end' justify='flex-end' gap={0}>
+            <Group w={150} gap={10} wrap='nowrap'>
+              <Text fz='sm' fw={600} c='gray.5'>
+                Lvl. 20
+              </Text>
+              <NumberInput
+                variant='filled'
+                w={80}
+                size='xs'
+                radius='lg'
+                placeholder='Exp.'
+                hideControls
+                allowNegative={false}
+                styles={{
+                  input: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  },
+                }}
+              />
+            </Group>
+            <Group w={130} gap={5} wrap='nowrap'>
+              <BlurButton
+                size='xs'
+                fullWidth
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigate(`/builder/${character?.id}`);
+                }}
+                href={`/builder/${character?.id}`}
+              >
+                Edit
+              </BlurButton>
+              <BlurButton size='xs' fullWidth onClick={(e) => {}}>
+                Rest
+              </BlurButton>
+            </Group>
+          </Group> */}
+        </Stack>
       </Box>
-      <Group gap='xs' pb='xs' px='xs'>
-        <Button
-          size='xs'
-          variant='light'
-          color='gray'
-          radius='xl'
-          ref={refEdit}
-          style={{ flex: 1, backgroundColor: hoveredEdit ? 'rgba(0, 0, 0, 0.1)' : undefined }}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            navigate(`/builder/${character?.id}`);
-          }}
-          component='a'
-          href={`/builder/${character?.id}`}
-        >
-          {'Edit'}
-        </Button>
-      </Group>
+    </BlurBox>
+  );
+}
+
+function HealthSection() {
+  const navigate = useNavigate();
+  const theme = useMantineTheme();
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  const maxHealth = getFinalHealthValue();
+  let currentHealth = character?.hp_current;
+  if (currentHealth === undefined || currentHealth < 0) {
+    currentHealth = maxHealth;
+  }
+
+  let tempHealth = character?.hp_temp;
+  if (tempHealth === undefined || tempHealth < 0) {
+    tempHealth = 0;
+  }
+
+  return (
+    <BlurBox blur={10}>
+      <Box
+        pt='xs'
+        pb={5}
+        px='xs'
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <Group justify='space-between' style={{ flexDirection: 'column' }} h='100%' gap={0}>
+          <Group wrap='nowrap' justify='space-between' align='flex-start' w='100%' gap={0} grow>
+            <Box>
+              <Text ta='center' fz='md' fw={500} c='gray.0'>
+                Hit Points
+              </Text>
+              <Group wrap='nowrap' justify='center' align='center' gap={10}>
+                <ClickEditText
+                  color={interpolateHealth(currentHealth / maxHealth)}
+                  size='xl'
+                  value={`${currentHealth}`}
+                  height={50}
+                  width={50}
+                  placeholder='HP'
+                  onChange={(value) => {
+                    let result = -1;
+                    try {
+                      result = math.evaluate(value);
+                    } catch (e) {
+                      result = parseInt(value);
+                    }
+                    if (isNaN(result)) result = 0;
+                    result = Math.floor(result);
+                    if (result < 0) result = 0;
+                    if (result > maxHealth) result = maxHealth;
+
+                    // TODO: Update conditions
+
+                    setCharacter((c) => {
+                      if (!c) return c;
+                      return {
+                        ...c,
+                        hp_current: result,
+                      };
+                    });
+                  }}
+                />
+                <Box>
+                  <Text size='md' c='gray.4'>
+                    /
+                  </Text>
+                </Box>
+                <Box>
+                  <Text size='lg' c='gray.3'>
+                    {maxHealth}
+                  </Text>
+                </Box>
+              </Group>
+            </Box>
+
+            <Box>
+              <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                Temp. HP
+              </Text>
+              <ClickEditText
+                color={tempHealth ? `blue` : `gray.5`}
+                size='xl'
+                value={tempHealth ? `${tempHealth}` : `—`}
+                height={50}
+                width={50}
+                placeholder='HP'
+                onChange={(value) => {
+                  let result = -1;
+                  try {
+                    result = math.evaluate(value);
+                  } catch (e) {
+                    result = parseInt(value);
+                  }
+                  if (isNaN(result)) result = 0;
+                  result = Math.floor(result);
+                  if (result < 0) result = 0;
+
+                  setCharacter((c) => {
+                    if (!c) return c;
+                    return {
+                      ...c,
+                      hp_temp: result,
+                    };
+                  });
+                }}
+              />
+            </Box>
+          </Group>
+          <Button variant='subtle' color='gray.5' size='compact-sm' fw={400}>
+            Resistances & Weaknesses
+          </Button>
+        </Group>
+      </Box>
+    </BlurBox>
+  );
+}
+
+function ConditionSection() {
+  const navigate = useNavigate();
+  const theme = useMantineTheme();
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <BlurBox blur={10}>
+      <Box
+        pt='xs'
+        pb={5}
+        px='xs'
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <Group align='flex-start' grow>
+          <Box>
+            <Group wrap='nowrap' gap={5} justify='center'>
+              <Text ta='center' fz='md' fw={500} c='gray.0'>
+                Conditions
+              </Text>
+              <ActionIcon
+                variant='light'
+                aria-label='Add Condition'
+                size='xs'
+                radius='xl'
+                color='gray'
+              >
+                <IconPlus size='1rem' stroke={1.5} />
+              </ActionIcon>
+            </Group>
+            <ScrollArea h={70}>
+              <Group gap={5} justify='center'>
+                <ConditionPill text='Frightened' amount={4} />
+                <ConditionPill text='Frightened' amount={4} />
+                <ConditionPill text='Frightened' amount={4} />
+                <ConditionPill text='Frightened' amount={4} />
+                <ConditionPill text='Frightened' amount={4} />
+              </Group>
+            </ScrollArea>
+          </Box>
+          <Box w={80} style={{ position: 'relative' }}>
+            <Box
+              style={{
+                position: 'absolute',
+                top: 20,
+                left: '50%',
+                transform: 'translate(-50%, 0px)',
+              }}
+            >
+              <HeroPointIcon size={80} color='#dee2e625' />
+            </Box>
+            <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={20}>
+              <Text ta='center' fz='md' fw={500} c='gray.0'>
+                Hero Points
+              </Text>
+              <Group justify='center'>
+                <TokenSelect
+                  count={3}
+                  size='md'
+                  emptySymbol={
+                    <ActionIcon variant='transparent' aria-label='Hero Point Empty' size='xs'>
+                      <IconRosette size='1rem' />
+                    </ActionIcon>
+                  }
+                  fullSymbol={
+                    <ActionIcon variant='transparent' aria-label='Hero Point Full' size='xs'>
+                      <IconRosetteFilled size='1rem' />
+                    </ActionIcon>
+                  }
+                />
+              </Group>
+            </Group>
+          </Box>
+        </Group>
+      </Box>
+    </BlurBox>
+  );
+}
+
+function AttributeSection() {
+  const navigate = useNavigate();
+  const theme = useMantineTheme();
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <BlurBox blur={10}>
+      <Box
+        pt='xs'
+        pb={5}
+        px='xs'
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <SimpleGrid cols={2} spacing='sm' verticalSpacing='sm'>
+          {getAllAttributeVariables().map((attribute, index) => (
+            <Button.Group key={index}>
+              <BlurButton size='compact-xs' fw={400}>
+                {variableToLabel(attribute)}
+              </BlurButton>
+              <Button radius='xl' variant='light' color='dark.5' size='compact-xs' w={35}>
+                {displayAttributeValue(attribute.name, { c: 'gray.0', ta: 'center', fz: 'xs' })}
+              </Button>
+            </Button.Group>
+          ))}
+        </SimpleGrid>
+      </Box>
+    </BlurBox>
+  );
+}
+
+function ArmorSection() {
+  const navigate = useNavigate();
+  const theme = useMantineTheme();
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <BlurBox blur={10}>
+      <Box
+        pt='xs'
+        pb={5}
+        px='xs'
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <Group wrap='nowrap' gap={5} justify='space-between'>
+          <Group wrap='nowrap' gap={0} justify='center'>
+            <Box style={{ position: 'relative' }}>
+              <ArmorIcon size={85} color={'#dee2e625'} />
+              <Stack
+                gap={0}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em'>
+                  25
+                  {/* {displayFinalProfValue('AC', true)} */}
+                </Text>
+                <Text ta='center' c='gray.5' fz='xs'>
+                  AC
+                </Text>
+              </Stack>
+            </Box>
+            <Box style={{ position: 'relative' }}>
+              <ShieldIcon size={85} color='#dee2e625' />
+              <Stack
+                gap={0}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em' pr={5}>
+                  +2
+                </Text>
+                <Text ta='center' fz={8} style={{ whiteSpace: 'nowrap' }}>
+                  Hardness 5
+                </Text>
+                <Center>
+                  <RingProgress
+                    size={30}
+                    thickness={3}
+                    sections={[{ value: 40, color: 'guide' }]}
+                    label={
+                      <Text fz={8} ta='center' style={{ pointerEvents: 'none' }}>
+                        HP
+                      </Text>
+                    }
+                  />
+                </Center>
+              </Stack>
+            </Box>
+          </Group>
+          <Stack gap='sm'>
+            {getAllSaveVariables().map((save, index) => (
+              <Button.Group key={index}>
+                <BlurButton size='compact-xs' fw={400}>
+                  {variableToLabel(save)}
+                </BlurButton>
+                <Button
+                  radius='xl'
+                  variant='light'
+                  color='dark.5'
+                  size='compact-xs'
+                  w={50}
+                  style={{ position: 'relative' }}
+                >
+                  <Text c='gray.0' fz='xs' pr={15}>
+                    {displayFinalProfValue(save.name)}
+                  </Text>
+                  <Badge
+                    size='xs'
+                    variant='light'
+                    color='dark.0'
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '80%',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  >
+                    {save?.value.value}
+                  </Badge>
+                </Button>
+              </Button.Group>
+            ))}
+          </Stack>
+        </Group>
+      </Box>
+    </BlurBox>
+  );
+}
+
+function SpeedSection() {
+  const navigate = useNavigate();
+  const theme = useMantineTheme();
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <BlurBox blur={10}>
+      <Box
+        pt='xs'
+        pb={5}
+        px='xs'
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <Group wrap='nowrap' gap={5} align='flex-start' grow>
+          <Box style={{ position: 'relative' }}>
+            <Box
+              style={{
+                position: 'absolute',
+                top: '55%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <PerceptionIcon size={80} color='#dee2e625' />
+            </Box>
+            <Stack gap={10}>
+              <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                Perception
+              </Text>
+              <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
+                {displayFinalProfValue('PERCEPTION')}
+              </Text>
+              <Text fz='xs' c='gray.5' ta='center'>
+                Normal Vision
+              </Text>
+            </Stack>
+          </Box>
+          <Box style={{ position: 'relative' }}>
+            <Box
+              style={{
+                position: 'absolute',
+                top: '60%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <SpeedIcon size={75} color='#dee2e625' />
+            </Box>
+            <Stack gap={10}>
+              <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                Speed
+              </Text>
+              <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
+                {25}
+                <Text fz='xs' c='gray.3' span>
+                  {' '}
+                  ft.
+                </Text>
+              </Text>
+              <Text fz='xs' c='gray.5' ta='center'>
+                And Others
+              </Text>
+            </Stack>
+          </Box>
+          <Box style={{ position: 'relative' }}>
+            <Box
+              style={{
+                position: 'absolute',
+                top: '85%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              <BoxIcon size={50} color='#dee2e625' />
+            </Box>
+            <Stack gap={10}>
+              <Text ta='center' fz='sm' fw={500} c='gray.0'>
+                Class DC
+              </Text>
+              <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
+                {displayFinalProfValue('CLASS_DC', true)}
+              </Text>
+              {/* <Text fz='xs' c='gray.5' ta='center'>
+                And Others
+              </Text> */}
+            </Stack>
+          </Box>
+        </Group>
+      </Box>
     </BlurBox>
   );
 }
@@ -520,7 +1039,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
   const [actionSectionValue, setActionSectionValue] = useState<string | null>(null);
 
   return (
-    <Group gap={10} align='flex-start'>
+    <Group gap={10} align='flex-start' style={{ height: props.panelHeight }}>
       <Box style={{ flexBasis: 'calc(30% - 10px)' }} h='100%'>
         {/* <Paper
           shadow='sm'
@@ -542,7 +1061,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
               },
             }}
           />
-          <ScrollArea h={props.panelHeight}>
+          <ScrollArea h={props.panelHeight - 50}>
             <Stack gap={5}>
               {getAllSkillVariables()
                 .filter((skill) => skill.name !== 'SKILL_LORE____')
@@ -693,7 +1212,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
               </ActionIcon>
             </Group>
           </Group>
-          <ScrollArea h={props.panelHeight}>
+          <ScrollArea h={props.panelHeight - 50}>
             <Accordion
               value={actionSectionValue}
               onChange={setActionSectionValue}
@@ -925,7 +1444,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
         }}
       >
         <Stack gap={10}>
-          <Title order={3}>Information</Title>
+          <Title order={4}>Information</Title>
           <ScrollArea h={props.panelHeight - 60}>
             <Box w={280}>
               <Stack gap={5}>
@@ -1215,7 +1734,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
         }}
       >
         <Stack gap={10}>
-          <Title order={3}>Languages</Title>
+          <Title order={4}>Languages</Title>
           <ScrollArea h={props.panelHeight - 60}>
             <Box w={280}>
               <Pill.Group>
@@ -1249,7 +1768,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
         }}
       >
         <Stack gap={10}>
-          <Title order={3}>Proficiencies</Title>
+          <Title order={4}>Proficiencies</Title>
           <ScrollArea h={props.panelHeight - 60}>
             <Box w={280}>
               <Accordion
@@ -1494,6 +2013,26 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
+                <StatButton
+                  onClick={() => {
+                    openDrawer({
+                      type: 'stat-prof',
+                      data: { variableName: 'CLASS_DC', isDC: true },
+                    });
+                  }}
+                >
+                  <Box>
+                    <Text c='gray.0' fz='sm'>
+                      Class DC
+                    </Text>
+                  </Box>
+                  <Group>
+                    <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
+                    <Badge variant='default'>
+                      {getVariable<VariableProf>('CLASS_DC')?.value.value}
+                    </Badge>
+                  </Group>
+                </StatButton>
                 {weaponProfs.length > 0 && (
                   <Accordion.Item className={classes.item} value={'weapons'}>
                     <Accordion.Control>

@@ -1,4 +1,4 @@
-import { AbilityBlock, Character, Language, Spell } from '@typing/content';
+import { AbilityBlock, Language, Spell } from '@typing/content';
 import {
   ConditionCheckData,
   Operation,
@@ -14,7 +14,6 @@ import {
   OperationRemoveSpell,
   OperationSelect,
   OperationSetValue,
-  OperationType,
 } from '@typing/operations';
 import {
   addVariable,
@@ -31,10 +30,8 @@ import {
   determineFilteredSelectionList,
   determinePredefinedSelectionList,
 } from './operation-utils';
-import { e } from 'mathjs';
-import { isProficiencyType, maxProficiencyType } from '@variables/variable-utils';
-import { ExtendedProficiencyType, ProficiencyType, ProficiencyValue } from '@typing/variables';
-import { ReactNode } from 'react';
+import { maxProficiencyType } from '@variables/variable-utils';
+import { ExtendedProficiencyType, ProficiencyType } from '@typing/variables';
 import { fetchContentById } from '@content/content-store';
 
 export type OperationOptions = {
