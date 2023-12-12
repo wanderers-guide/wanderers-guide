@@ -17,8 +17,8 @@ export default function TokenSelect(props: {
       fullSymbol={props.fullSymbol}
       value={value}
       onChange={(v) => {
-        if (v === 1 && value === 1) {
-          setValue(0);
+        if (v === value) {
+          setValue(v - 1);
         } else {
           setValue(v);
         }

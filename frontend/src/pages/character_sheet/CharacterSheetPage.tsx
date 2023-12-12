@@ -75,6 +75,8 @@ import {
   IconStar,
   IconRosette,
   IconRosetteFilled,
+  IconJewishStar,
+  IconJewishStarFilled,
 } from '@tabler/icons-react';
 import { LinksGroup } from '@common/LinksGroup';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -511,7 +513,7 @@ function HealthSection() {
               />
             </Box>
           </Group>
-          <Button variant='subtle' color='gray.5' size='compact-sm' fw={400}>
+          <Button variant='subtle' color='gray.5' size='compact-xs' fw={400}>
             Resistances & Weaknesses
           </Button>
         </Group>
@@ -587,12 +589,12 @@ function ConditionSection() {
                   size='md'
                   emptySymbol={
                     <ActionIcon variant='transparent' aria-label='Hero Point Empty' size='xs'>
-                      <IconRosette size='1rem' />
+                      <IconJewishStar size='1rem' />
                     </ActionIcon>
                   }
                   fullSymbol={
                     <ActionIcon variant='transparent' aria-label='Hero Point Full' size='xs'>
-                      <IconRosetteFilled size='1rem' />
+                      <IconJewishStarFilled size='1rem' />
                     </ActionIcon>
                   }
                 />
