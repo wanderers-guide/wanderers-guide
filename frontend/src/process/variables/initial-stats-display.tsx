@@ -112,7 +112,7 @@ export function getStatDisplay(
       return true;
     }
     if (variable.type === 'num') {
-      if (value > bestValue) {
+      if (value >= bestValue) {
         bestValue = value;
         return true;
       }
@@ -135,7 +135,7 @@ export function getStatDisplay(
     } else if (variable.type === 'attr') {
       const bestValueAttr = bestValue as AttributeValue;
       const operationValueAttr = value as AttributeValue;
-      if (operationValueAttr.value > bestValueAttr.value) {
+      if (operationValueAttr.value >= bestValueAttr.value) {
         bestValue = value;
         return true;
       } else if (operationValueAttr.value === bestValueAttr.value) {
@@ -168,8 +168,10 @@ export function getStatDisplay(
           if (!bestValue) {
             // @ts-ignore
             const changed = setBestValue(operation.data.optionsFilters.value);
-            if (changed) bestOperation = operation;
-            uuid = 'ATTRIBUTE-FREE';
+            if (changed) {
+              bestOperation = operation;
+              uuid = 'ATTRIBUTE-FREE';
+            }
           }
         }
 
@@ -178,15 +180,14 @@ export function getStatDisplay(
           []) as OperationSelectOptionAdjValue[]) {
           if (option.operation.data.variable === variableName) {
             const changed = setBestValue(option.operation.data.value);
-            if (changed) bestOperation = operation;
-          }
-        }
-        if ((operation.data.optionsPredefined ?? []).length > 0) {
-          const opts = (
-            (operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[]
-          ).map((o) => o.operation.data.variable);
-          if (opts.some((v) => v === variableName)) {
-            uuid = opts.sort().join('_');
+            if (changed) {
+              bestOperation = operation;
+
+              const opts = (
+                (operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[]
+              ).map((o) => o.operation.data.variable);
+              uuid = opts.sort().join('_');
+            }
           }
         }
       } else if (operation.data.optionType === 'CUSTOM') {
@@ -265,6 +266,8 @@ export function getDisplay(
   const result = operation?.id
     ? writeDetails?.operationResults.find((r) => r?.selection?.id === operation?.id)
     : null;
+
+  console.log('result', result);
 
   // Handle attributes
   if (isAttributeValue(value)) {

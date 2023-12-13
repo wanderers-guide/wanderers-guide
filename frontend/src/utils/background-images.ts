@@ -1,5 +1,5 @@
-import { ImageOption } from "@typing/index";
-import _ from "lodash";
+import { ImageOption } from '@typing/index';
+import _ from 'lodash';
 
 // TODO: Move this to the db?
 const imageStore: Record<string, ImageOption[]> = {
@@ -442,12 +442,10 @@ const imageStore: Record<string, ImageOption[]> = {
   patterns: [
     {
       name: 'Dark Fabric',
-      url: 'https://i.imgur.com/aNhV7pR.png',
+      url: 'https://i.imgur.com/9RYFhrJ.png',
     },
   ],
 };
-
-
 
 export function getBackgroundImageStore() {
   return _.cloneDeep(imageStore);
@@ -495,7 +493,6 @@ function getDefaultBackgroundImage() {
   return _.cloneDeep(imageStore.ai_generated[0]);
 }
 
-
 async function isImageValid(src: string) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -512,9 +509,8 @@ async function isImageValid(src: string) {
 
     // Set a timeout to handle cases where the image takes too long to load.
     setTimeout(() => {
-      img.src = ""; // Abort the image loading
+      img.src = ''; // Abort the image loading
       resolve(false);
     }, 2500);
   });
 }
-

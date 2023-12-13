@@ -270,6 +270,8 @@ export function convertBackgroundOperationsIntoUI(
     writeDetails
   );
 
+  console.log(attributes);
+
   return {
     attributes,
   };
