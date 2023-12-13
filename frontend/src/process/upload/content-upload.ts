@@ -201,6 +201,7 @@ async function uploadAction(
   }
 
   const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const description = await performAutoContentLinking(descValues.description);
 
   // Classify the skill for skill actions
   // - Kinda an overkill to do this just for the actions
@@ -222,7 +223,7 @@ async function uploadAction(
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(descValues.description) ?? '',
+    description: toMarkdown(description) ?? '',
     special: toMarkdown(descValues.special),
     type: 'action',
     meta_data: {
@@ -319,6 +320,7 @@ async function uploadClassFeature(
   }
 
   const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const description = await performAutoContentLinking(descValues.description);
 
   const action = {
     id: -1,
@@ -331,7 +333,7 @@ async function uploadClassFeature(
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(descValues.description) ?? '',
+    description: toMarkdown(description) ?? '',
     special: toMarkdown(descValues.special),
     type: 'class-feature',
     meta_data: {
@@ -372,6 +374,7 @@ async function uploadSpell(
   const descValues = extractFromDescription(
     stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
   );
+  const description = await performAutoContentLinking(descValues.description);
 
   const spell = {
     id: -1,
@@ -392,7 +395,7 @@ async function uploadSpell(
       (json.system?.area && `${json.system?.area?.value}-foot ${json.system?.area?.type}`),
     targets: json.system?.target?.value,
     duration: json.system?.duration?.value,
-    description: toMarkdown(descValues.description) ?? '',
+    description: toMarkdown(description) ?? '',
     heightened: {
       text: descValues.heightened as unknown as {
         amount: string;
@@ -443,6 +446,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
   const descValues = extractFromDescription(
     stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
   );
+  const description = await performAutoContentLinking(descValues.description);
 
   const item = {
     id: -1,
@@ -458,7 +462,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
     size: convertToSize(json.system?.size?.value),
     craft_requirements: toText(descValues?.craft_requirements),
     usage: json.system?.usage?.value,
-    description: toMarkdown(descValues.description) ?? '',
+    description: toMarkdown(description) ?? '',
     meta_data: {
       base_item: json.system?.baseItem,
       category: json.system?.category,
@@ -562,6 +566,7 @@ async function uploadHeritage(
   }
 
   const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const description = await performAutoContentLinking(descValues.description);
 
   const heritage = {
     id: -1,
@@ -572,7 +577,7 @@ async function uploadHeritage(
     rarity: convertToRarity(json.system?.traits?.rarity),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(descValues.description) ?? '',
+    description: toMarkdown(description) ?? '',
     special: toMarkdown(descValues.special) ?? '',
     type: 'heritage',
     meta_data: {
@@ -618,9 +623,10 @@ async function uploadBackground(
   }
 
   const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  let description = await performAutoContentLinking(descValues.description);
 
   // Format background description
-  let description = toMarkdown(descValues.description) ?? '';
+  description = toMarkdown(description) ?? '';
   description = description.trim().replace(/\*/g, ''); // remove bolding
   description = description.replace(/^([\s\S]*?)(\n\n|$)/, '> _$1_\n\n');
   // Now it's formatted in a clean way!

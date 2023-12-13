@@ -14,6 +14,8 @@ import { Rarity } from '@typing/content';
 import _ from 'lodash';
 import RichText from './RichText';
 import { fetchTraits } from '@content/content-store';
+import { drawerState } from '@atoms/navAtoms';
+import { useRecoilState } from 'recoil';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -24,6 +26,7 @@ export default function TraitsDisplay(props: {
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: traits } = useQuery({
     queryKey: [`find-traits-${props.traitIds.join('_')}`, {}],
@@ -72,6 +75,15 @@ export default function TraitsDisplay(props: {
                   color: theme.colors.dark[1],
                   cursor: props.interactable ? 'pointer' : undefined,
                 },
+              }}
+              onClick={() => {
+                if (props.interactable) {
+                  openDrawer({
+                    type: 'trait',
+                    data: { id: trait.id },
+                    extra: { addToHistory: true },
+                  });
+                }
               }}
             >
               {trait.name}

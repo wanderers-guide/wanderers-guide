@@ -225,11 +225,13 @@ export async function insertData<T = Record<string, any>>(
   if (error) {
     if (error.code === '23505' && hasUUID) {
       // Duplicate UUID, delete the old one and try again
-      const { error } = await client.from(tableName).delete().eq('uuid', data.uuid);
-      if (error) {
-        throw error;
-      }
-      return insertData<T>(client, tableName, data, type, hasUUID);
+      /* NOTE: Disable overriding existing uploaded content for now */
+      // const { error } = await client.from(tableName).delete().eq('uuid', data.uuid);
+      // if (error) {
+      //   throw error;
+      // }
+      // return insertData<T>(client, tableName, data, type, hasUUID);
+      return null;
     } else {
       throw error;
     }

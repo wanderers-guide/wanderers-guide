@@ -31,6 +31,7 @@ import { StatProfDrawerContent, StatProfDrawerTitle } from './types/StatProfDraw
 import { StatAttrDrawerContent, StatAttrDrawerTitle } from './types/StatAttrDrawer';
 import { StatHealthDrawerContent, StatHealthDrawerTitle } from './types/StatHealthDrawer';
 import { GenericDrawerContent, GenericDrawerTitle } from './types/GenericDrawer';
+import { TraitDrawerTitle, TraitDrawerContent } from './types/TraitDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -215,6 +216,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-attributes' && <StatAttrDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'trait' && <TraitDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -247,6 +249,7 @@ function DrawerContent(props: {
       {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-attributes' && <StatAttrDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
     </>
   );
 }
