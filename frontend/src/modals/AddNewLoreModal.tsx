@@ -5,6 +5,7 @@ import _ from 'lodash';
 import { isValidImage } from '@utils/images';
 import { useState } from 'react';
 import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
+import { getHotkeyHandler } from '@mantine/hooks';
 
 export function AddNewLoreModal({
   context,
@@ -15,6 +16,11 @@ export function AddNewLoreModal({
 }>) {
   const [loreName, setLoreName] = useState('');
 
+  const handleSubmit = () => {
+    innerProps.onConfirm(labelToVariable(loreName));
+    context.closeModal(id);
+  };
+
   return (
     <Stack style={{ position: 'relative' }}>
       <Text>You become trained in the following lore of your choice.</Text>
@@ -23,6 +29,10 @@ export function AddNewLoreModal({
         onChange={async (e) => {
           setLoreName(e.target.value);
         }}
+        onKeyDown={getHotkeyHandler([
+          ['mod+Enter', handleSubmit],
+          ['Enter', handleSubmit],
+        ])}
       />
       {loreName && variableNameToLabel(labelToVariable(loreName)) !== loreName.trim() && (
         <Text>Resulting Name: {variableNameToLabel(labelToVariable(loreName))}</Text>
@@ -31,13 +41,7 @@ export function AddNewLoreModal({
         <Button variant='default' onClick={() => context.closeModal(id)}>
           Cancel
         </Button>
-        <Button
-          disabled={!loreName}
-          onClick={() => {
-            innerProps.onConfirm(labelToVariable(loreName));
-            context.closeModal(id);
-          }}
-        >
+        <Button disabled={!loreName} onClick={handleSubmit}>
           Train in Lore
         </Button>
       </Group>

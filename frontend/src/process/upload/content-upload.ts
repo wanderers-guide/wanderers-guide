@@ -126,8 +126,9 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
   const foundryId = (json.system?.publication?.title ||
     json.system?.source?.value ||
     json.system?.details?.source?.value) as string;
+  const remaster = json.system?.publication?.remaster;
   const source = await findContentSource(undefined, foundryId);
-  if (!source) {
+  if (!source || !remaster) {
     // Increase missing source count
     uploadStats.missingSources.set(foundryId, (uploadStats.missingSources.get(foundryId) ?? 0) + 1);
     return {

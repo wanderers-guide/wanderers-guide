@@ -1051,9 +1051,12 @@ function SelectionPredefinedCustom(props: {
             option={option}
             onChange={(newOption) => {
               setOptions((prev) => {
-                const ops = [...prev].filter((op) => op.id !== option.id);
-                ops.push(newOption);
-                return ops;
+                return prev.map((op) => {
+                  if (op.id === newOption.id) {
+                    return newOption;
+                  }
+                  return op;
+                });
               });
             }}
           />

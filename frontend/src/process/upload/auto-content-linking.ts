@@ -1,15 +1,17 @@
-import { detectPotentialContentLinks } from "@ai/open-ai-handler";
-import { queryByName } from "@ai/vector-db/vector-manager";
+import { detectPotentialContentLinks } from '@ai/open-ai-handler';
+import { queryByName } from '@ai/vector-db/vector-manager';
 
-const ENABLED = false;
+const ENABLED = true;
 
 /**
  * Finds potential content links and attempts to convert them to actual content links.
- * @param text 
- * @returns 
+ * @param text
+ * @returns
  */
 export async function performAutoContentLinking(text: string) {
-  if (!ENABLED) { return text; }
+  if (!ENABLED) {
+    return text;
+  }
 
   let detectedText = (await detectPotentialContentLinks(text)) ?? '';
 
@@ -31,14 +33,16 @@ export async function performAutoContentLinking(text: string) {
     });
 
     let potentialContent = potentialContentList.find(
-      (content) => `${content.name}`.trim().toLowerCase() === potentialContentName.trim().toLowerCase()
+      (content) =>
+        `${content.name}`.trim().toLowerCase() === potentialContentName.trim().toLowerCase()
     );
     if (!potentialContent && potentialContentList.length > 0) {
       potentialContent = potentialContentList[0];
     }
 
     if (potentialContent) {
-      const type = potentialContent._type === 'ability-block' ? potentialContent.type : potentialContent._type;
+      const type =
+        potentialContent._type === 'ability-block' ? potentialContent.type : potentialContent._type;
       detectedText = detectedText.replace(
         potentialLink,
         `<a href="link_${type}_${potentialContent.id}">${stripPotentialContentLinks(
@@ -50,7 +54,6 @@ export async function performAutoContentLinking(text: string) {
 
   return stripPotentialContentLinks(detectedText);
 }
-
 
 function stripPotentialContentLinks(text: string) {
   return text.replace(/[\[\]]/g, '');

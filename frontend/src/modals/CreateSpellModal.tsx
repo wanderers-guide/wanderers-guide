@@ -40,6 +40,7 @@ import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { toLabel } from '@utils/strings';
 import { fetchContentById, fetchTraits } from '@content/content-store';
+import useRefresh from '@utils/use-refresh';
 
 export function CreateSpellModal(props: {
   opened: boolean;
@@ -49,6 +50,8 @@ export function CreateSpellModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+
+  const [displayDescription, refreshDisplayDescription] = useRefresh();
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedHeightened, { toggle: toggleHeightened }] = useDisclosure(false);
@@ -71,6 +74,7 @@ export function CreateSpellModal(props: {
       form.reset();
       setTraits(await fetchTraits(spell.traits));
       setMetaData(spell.meta_data ?? {});
+      refreshDisplayDescription();
 
       return spell;
     },
@@ -371,7 +375,7 @@ export function CreateSpellModal(props: {
                 <Divider />
               </Stack>
             </Collapse>
-            {(description || form.values.description) && (
+            {displayDescription && (
               <RichTextInput
                 label='Description'
                 required

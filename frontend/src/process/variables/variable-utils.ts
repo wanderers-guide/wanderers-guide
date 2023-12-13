@@ -129,11 +129,11 @@ export function variableNameToLabel(variableName: string) {
   return label.trim();
 }
 
-export function labelToVariable(label: string) {
-  let cleanedString = label
-    .trim()
-    .toUpperCase()
-    .replace(/[^a-zA-Z\s]/g, '');
+export function labelToVariable(label: string, trim = true) {
+  if (trim) {
+    label = label.trim();
+  }
+  let cleanedString = label.toUpperCase().replace(/[^a-zA-Z_\s]/g, '');
   cleanedString = cleanedString.replace(/\s+/g, '_');
   return cleanedString;
 }
