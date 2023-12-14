@@ -117,6 +117,16 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SPEED_BURROW: newVariable('num', 'SPEED_BURROW'),
   SPEED_SWIM: newVariable('num', 'SPEED_SWIM'),
 
+  // Senses // use <NAME>-30 to indicate a range
+  SENSES_PRECISE: newVariable('list-str', 'SENSES_PRECISE', ['NORMAL_VISION']),
+  SENSES_IMPRECISE: newVariable('list-str', 'SENSES_IMPRECISE', ['HEARING']),
+  SENSES_VAGUE: newVariable('list-str', 'SENSES_VAGUE', ['SMELL']),
+
+  // Resistances, Weaknesses, and Immunities // use <NAME>-30 to indicate an amount, TODO: can include variable math
+  RESISTANCES: newVariable('list-str', 'RESISTANCES'),
+  WEAKNESSES: newVariable('list-str', 'WEAKNESSES'),
+  IMMUNITIES: newVariable('list-str', 'IMMUNITIES'),
+
   // List variables, just storing the names
   SENSE_NAMES: newVariable('list-str', 'SENSE_NAMES'),
   CLASS_NAMES: newVariable('list-str', 'CLASS_NAMES'),
@@ -183,9 +193,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   ARMOR_GROUP_PLATE: newVariable('prof', 'ARMOR_GROUP_PLATE'),
   // ARMOR_GROUP____: newVariable('prof', 'ARMOR_GROUP____'),
   // ARMOR____: newVariable('prof', 'ARMOR____'),
-
-  // RESISTANCES: newVariable("str", "RESISTANCES"),
-  // WEAKNESSES: newVariable("str", "WEAKNESSES"),
 
   PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
   PRIMARY_BUILDER_TABS: newVariable('list-str', 'PRIMARY_BUILDER_TABS', [

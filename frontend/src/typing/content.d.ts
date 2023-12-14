@@ -63,6 +63,15 @@ interface Trait {
   content_source_id: number;
 }
 
+interface Condition {
+  name: string;
+  description: string;
+  value?: number;
+  for_character: boolean;
+  for_object: boolean;
+  for_creature: boolean;
+}
+
 type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD';
 interface Item {
   id: number;

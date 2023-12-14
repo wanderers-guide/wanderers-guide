@@ -15,6 +15,7 @@ import { isAttributeValue } from '@variables/variable-utils';
 import _ from 'lodash';
 import { hashData } from '@utils/numbers';
 import { StoreID } from '@typing/variables';
+import { applyConditions } from '@variables/condition-handler';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
