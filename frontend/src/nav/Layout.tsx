@@ -1,4 +1,4 @@
-import { useDisclosure, useHeadroom } from "@mantine/hooks";
+import { useDisclosure, useHeadroom, useViewportSize } from '@mantine/hooks';
 import {
   AppShell,
   Avatar,
@@ -11,29 +11,49 @@ import {
   Text,
   rem,
   useMantineTheme,
-} from "@mantine/core";
+  Divider,
+} from '@mantine/core';
 import classes from '@css/Layout.module.css';
-import WanderersGuideLogo from "./WanderersGuideLogo";
-import { SearchBar } from "./Searchbar";
-import { useNavigate } from "react-router-dom";
-import { sessionState } from "@atoms/supabaseAtoms";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { IconChevronDown, IconHeart, IconStar, IconMessage, IconSettings, IconSwitchHorizontal, IconLogout, IconPlayerPause, IconTrash, IconCategory, IconLayersIntersect, IconSwords, IconUsers, IconSpeakerphone } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
-import { getIcon } from "@utils/images";
-import { userIconState } from "@atoms/navAtoms";
-import { supabase } from "../main";
+import WanderersGuideLogo from './WanderersGuideLogo';
+import { SearchBar } from './Searchbar';
+import { useNavigate } from 'react-router-dom';
+import { sessionState } from '@atoms/supabaseAtoms';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import {
+  IconChevronDown,
+  IconHeart,
+  IconStar,
+  IconMessage,
+  IconSettings,
+  IconSwitchHorizontal,
+  IconLogout,
+  IconPlayerPause,
+  IconTrash,
+  IconCategory,
+  IconLayersIntersect,
+  IconSwords,
+  IconUsers,
+  IconSpeakerphone,
+} from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { getIcon } from '@utils/images';
+import { userIconState } from '@atoms/navAtoms';
+import { supabase } from '../main';
+import BlurButton from '@common/BlurButton';
+import { LoginButton } from './LoginButton';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
   const pinned = useHeadroom({ fixedAt: 120 });
-  const [opened, { toggle }] = useDisclosure();
+  const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
 
   const [userIcon, setUserIcon] = useRecoilState(userIconState);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
-  
+
+  const { width } = useViewportSize();
+
   useEffect(() => {
     if (!session) return;
     if (userIcon) return;
@@ -73,33 +93,39 @@ export default function Layout(props: { children: React.ReactNode }) {
               justify='space-between'
               wrap='nowrap'
             >
-              <Group gap={0}>
-                <UnstyledButton className={classes.control}>About</UnstyledButton>
-                <UnstyledButton className={classes.control}>Community</UnstyledButton>
-                <UnstyledButton className={classes.control}>Support</UnstyledButton>
-                <UnstyledButton
-                  className={classes.control}
-                  onClick={() => {
-                    window.location.href = 'https://wanderersguide.app';
-                  }}
-                >
-                  Legacy Site
-                </UnstyledButton>
-              </Group>
+              {width >= 1050 ? (
+                <Group gap={0}>
+                  <UnstyledButton className={classes.control}>About</UnstyledButton>
+                  <UnstyledButton className={classes.control}>Community</UnstyledButton>
+                  <UnstyledButton
+                    className={classes.control}
+                    onClick={() => {
+                      window.location.href = 'https://www.patreon.com/wanderersguide';
+                    }}
+                  >
+                    Support
+                  </UnstyledButton>
+                  <UnstyledButton
+                    className={classes.control}
+                    onClick={() => {
+                      window.location.href = 'https://wanderersguide.app';
+                    }}
+                  >
+                    Legacy Site
+                  </UnstyledButton>
+                </Group>
+              ) : (
+                <Box></Box>
+              )}
               <Group>
                 <SearchBar />
 
                 {!session ? (
-                  <Button
-                    variant='filled'
-                    size='compact-lg'
-                    fz='sm'
+                  <LoginButton
                     onClick={() => {
                       navigate('/characters');
                     }}
-                  >
-                    Characters
-                  </Button>
+                  />
                 ) : (
                   <Menu
                     width={260}
@@ -200,9 +226,9 @@ export default function Layout(props: { children: React.ReactNode }) {
                           <IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                         }
                       >
-                        Account settings
+                        Account
                       </Menu.Item>
-                      <Menu.Item
+                      {/* <Menu.Item
                         leftSection={
                           <IconSwitchHorizontal
                             style={{ width: rem(16), height: rem(16) }}
@@ -211,7 +237,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         }
                       >
                         Change account
-                      </Menu.Item>
+                      </Menu.Item> */}
                       <Menu.Item
                         leftSection={
                           <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
@@ -242,10 +268,37 @@ export default function Layout(props: { children: React.ReactNode }) {
           backgroundColor: theme.colors.dark[8] + '75',
         }}
       >
-        <UnstyledButton className={classes.control}>Home</UnstyledButton>
-        <UnstyledButton className={classes.control}>Blog</UnstyledButton>
-        <UnstyledButton className={classes.control}>Contacts</UnstyledButton>
-        <UnstyledButton className={classes.control}>Support</UnstyledButton>
+        <UnstyledButton
+          className={classes.control}
+          onClick={() => {
+            navigate('/characters');
+            close();
+          }}
+        >
+          Characters
+        </UnstyledButton>
+        <UnstyledButton className={classes.control}>Campaigns</UnstyledButton>
+        <UnstyledButton className={classes.control}>Encounters</UnstyledButton>
+        <UnstyledButton
+          className={classes.control}
+          onClick={() => {
+            navigate('/admin');
+            close();
+          }}
+        >
+          Admin Panel
+        </UnstyledButton>
+        <Divider />
+        <UnstyledButton className={classes.control}>Account</UnstyledButton>
+        <UnstyledButton
+          className={classes.control}
+          onClick={async () => {
+            supabase.auth.signOut();
+            close();
+          }}
+        >
+          Logout
+        </UnstyledButton>
       </AppShell.Navbar>
 
       <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>

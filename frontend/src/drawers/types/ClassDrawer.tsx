@@ -139,20 +139,22 @@ export function ClassDrawerContent(props: {
       >
         <Stack gap={0}>
           <Divider color='dark.6' />
-          {feats[level].map((feat, index) => (
-            <FeatSelectionOption
-              key={index}
-              feat={feat}
-              onClick={() => {
-                props.onMetadataChange?.();
-                openDrawer({
-                  type: 'feat',
-                  data: { id: feat.id },
-                  extra: { addToHistory: true },
-                });
-              }}
-            />
-          ))}
+          {feats[level]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((feat, index) => (
+              <FeatSelectionOption
+                key={index}
+                feat={feat}
+                onClick={() => {
+                  props.onMetadataChange?.();
+                  openDrawer({
+                    type: 'feat',
+                    data: { id: feat.id },
+                    extra: { addToHistory: true },
+                  });
+                }}
+              />
+            ))}
         </Stack>
       </Accordion.Panel>
     </Accordion.Item>
