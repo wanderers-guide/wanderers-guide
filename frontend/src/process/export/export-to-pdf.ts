@@ -1,4 +1,4 @@
-import { fetchContentPackage } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { Character } from '@typing/content';
 import { VariableAttr, VariableNum, VariableProf, VariableStr } from '@typing/variables';
@@ -73,7 +73,8 @@ async function fillPDF(form: PDFForm, character: Character) {
   //
 
   // Get all content that the character uses
-  const content = await fetchContentPackage(character.content_sources?.enabled, true);
+  defineDefaultSources(character.content_sources?.enabled ?? []);
+  const content = await fetchContentPackage(undefined, true);
 
   // Execute all operations (to update the variables)
   await executeCharacterOperations(character, content, 'CHARACTER-BUILDER');

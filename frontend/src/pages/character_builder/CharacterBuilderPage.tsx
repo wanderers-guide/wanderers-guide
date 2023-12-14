@@ -185,7 +185,7 @@ export default function CharacterBuilderPage() {
                   visibility: active === 2 ? 'hidden' : 'visible',
                 }}
                 onClick={() => handleStepChange(active + 1)}
-                hidden={active === 3}
+                disabled={active === 1 && !isPlayable(character)}
               >
                 <IconArrowRight style={{ width: '70%', height: '70%' }} stroke={2} />
               </ActionIcon>

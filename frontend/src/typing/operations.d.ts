@@ -272,6 +272,6 @@ interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
 
 interface OperationSelectFiltersAdjValue extends OperationSelectFiltersBase {
   readonly type: 'ADJ_VALUE';
-  group: 'ATTRIBUTE' | 'SKILL' | 'ADD-LORE';
+  group: 'ATTRIBUTE' | 'SKILL' | 'ADD-LORE' | 'WEAPON-GROUP' | 'WEAPON' | 'ARMOR-GROUP' | 'ARMOR';
   value: VariableValue | ExtendedProficiencyValue;
 }

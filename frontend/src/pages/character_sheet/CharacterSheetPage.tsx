@@ -101,10 +101,12 @@ import _, { set } from 'lodash';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { isCharacterSheetMobile } from '@utils/screen-sizes';
 import {
+  getAllArmorGroupVariables,
   getAllArmorVariables,
   getAllAttributeVariables,
   getAllSaveVariables,
   getAllSkillVariables,
+  getAllWeaponGroupVariables,
   getAllWeaponVariables,
   getVariable,
   getVariables,
@@ -1431,8 +1433,11 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
     return lang;
   });
 
-  const weaponProfs = getAllWeaponVariables();
-  const armorProfs = getAllArmorVariables();
+  const weaponGroupProfs = getAllWeaponGroupVariables().filter((prof) => prof.value.value !== 'U');
+  const weaponProfs = getAllWeaponVariables().filter((prof) => prof.value.value !== 'U');
+
+  const armorGroupProfs = getAllArmorGroupVariables().filter((prof) => prof.value.value !== 'U');
+  const armorProfs = getAllArmorVariables().filter((prof) => prof.value.value !== 'U');
 
   return (
     <Group align='flex-start'>
@@ -2015,26 +2020,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                     </Stack>
                   </Accordion.Panel>
                 </Accordion.Item>
-                <StatButton
-                  onClick={() => {
-                    openDrawer({
-                      type: 'stat-prof',
-                      data: { variableName: 'CLASS_DC', isDC: true },
-                    });
-                  }}
-                >
-                  <Box>
-                    <Text c='gray.0' fz='sm'>
-                      Class DC
-                    </Text>
-                  </Box>
-                  <Group>
-                    <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
-                    <Badge variant='default'>
-                      {getVariable<VariableProf>('CLASS_DC')?.value.value}
-                    </Badge>
-                  </Group>
-                </StatButton>
+
                 {weaponProfs.length > 0 && (
                   <Accordion.Item className={classes.item} value={'weapons'}>
                     <Accordion.Control>
@@ -2068,6 +2054,40 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                     </Accordion.Panel>
                   </Accordion.Item>
                 )}
+                {weaponGroupProfs.length > 0 && (
+                  <Accordion.Item className={classes.item} value={'weapon-groups'}>
+                    <Accordion.Control>
+                      <Text c='white' fz='sm'>
+                        Weapon Groups
+                      </Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap={5}>
+                        {weaponGroupProfs.map((weapon, index) => (
+                          <StatButton
+                            key={index}
+                            onClick={() => {
+                              openDrawer({
+                                type: 'stat-prof',
+                                data: { variableName: weapon.name },
+                              });
+                            }}
+                          >
+                            <Box>
+                              <Text c='gray.0' fz='sm'>
+                                {variableToLabel(weapon)}
+                              </Text>
+                            </Box>
+                            <Group>
+                              <Badge variant='default'>{weapon.value.value}</Badge>
+                            </Group>
+                          </StatButton>
+                        ))}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
+
                 {armorProfs.length > 0 && (
                   <Accordion.Item className={classes.item} value={'armor'}>
                     <Accordion.Control>
@@ -2101,6 +2121,60 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                     </Accordion.Panel>
                   </Accordion.Item>
                 )}
+                {armorGroupProfs.length > 0 && (
+                  <Accordion.Item className={classes.item} value={'armor-groups'}>
+                    <Accordion.Control>
+                      <Text c='white' fz='sm'>
+                        Armor Groups
+                      </Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap={5}>
+                        {armorGroupProfs.map((armor, index) => (
+                          <StatButton
+                            key={index}
+                            onClick={() => {
+                              openDrawer({
+                                type: 'stat-prof',
+                                data: { variableName: armor.name },
+                              });
+                            }}
+                          >
+                            <Box>
+                              <Text c='gray.0' fz='sm'>
+                                {variableToLabel(armor)}
+                              </Text>
+                            </Box>
+                            <Group>
+                              <Badge variant='default'>{armor.value.value}</Badge>
+                            </Group>
+                          </StatButton>
+                        ))}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                )}
+
+                <StatButton
+                  onClick={() => {
+                    openDrawer({
+                      type: 'stat-prof',
+                      data: { variableName: 'CLASS_DC', isDC: true },
+                    });
+                  }}
+                >
+                  <Box>
+                    <Text c='gray.0' fz='sm'>
+                      Class DC
+                    </Text>
+                  </Box>
+                  <Group>
+                    <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
+                    <Badge variant='default'>
+                      {getVariable<VariableProf>('CLASS_DC')?.value.value}
+                    </Badge>
+                  </Group>
+                </StatButton>
               </Accordion>
             </Box>
           </ScrollArea>

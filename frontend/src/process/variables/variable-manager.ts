@@ -156,8 +156,31 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // RANGED_ATTACKS_DMG_DICE: newVariable("str", "RANGED_ATTACKS_DMG_DICE"),
   // RANGED_ATTACKS_DMG_BONUS: newVariable("num", "RANGED_ATTACKS_DMG_BONUS"),
 
-  // WEAPON____: newVariable("str", "WEAPON____"),
-  // WEAPON_GROUP____: newVariable("str", "WEAPON_GROUP____"),
+  WEAPON_GROUP_AXE: newVariable('prof', 'WEAPON_GROUP_AXE'),
+  WEAPON_GROUP_BOMB: newVariable('prof', 'WEAPON_GROUP_BOMB'),
+  WEAPON_GROUP_BOW: newVariable('prof', 'WEAPON_GROUP_BOW'),
+  WEAPON_GROUP_BRAWLING: newVariable('prof', 'WEAPON_GROUP_BRAWLING'),
+  WEAPON_GROUP_CLUB: newVariable('prof', 'WEAPON_GROUP_CLUB'),
+  WEAPON_GROUP_CROSSBOW: newVariable('prof', 'WEAPON_GROUP_CROSSBOW'),
+  WEAPON_GROUP_DART: newVariable('prof', 'WEAPON_GROUP_DART'),
+  WEAPON_GROUP_FLAIL: newVariable('prof', 'WEAPON_GROUP_FLAIL'),
+  WEAPON_GROUP_HAMMER: newVariable('prof', 'WEAPON_GROUP_HAMMER'),
+  WEAPON_GROUP_KNIFE: newVariable('prof', 'WEAPON_GROUP_KNIFE'),
+  WEAPON_GROUP_PICK: newVariable('prof', 'WEAPON_GROUP_PICK'),
+  WEAPON_GROUP_POLEARM: newVariable('prof', 'WEAPON_GROUP_POLEARM'),
+  WEAPON_GROUP_SHIELD: newVariable('prof', 'WEAPON_GROUP_SHIELD'),
+  WEAPON_GROUP_SLING: newVariable('prof', 'WEAPON_GROUP_SLING'),
+  WEAPON_GROUP_SPEAR: newVariable('prof', 'WEAPON_GROUP_SPEAR'),
+  WEAPON_GROUP_SWORD: newVariable('prof', 'WEAPON_GROUP_SWORD'),
+  // WEAPON_GROUP____: newVariable('prof', 'WEAPON_GROUP____'),
+  // WEAPON____: newVariable('prof', 'WEAPON____'),
+
+  ARMOR_GROUP_CHAIN: newVariable('prof', 'ARMOR_GROUP_CHAIN'),
+  ARMOR_GROUP_COMPOSITE: newVariable('prof', 'ARMOR_GROUP_COMPOSITE'),
+  ARMOR_GROUP_LEATHER: newVariable('prof', 'ARMOR_GROUP_LEATHER'),
+  ARMOR_GROUP_PLATE: newVariable('prof', 'ARMOR_GROUP_PLATE'),
+  // ARMOR_GROUP____: newVariable('prof', 'ARMOR_GROUP____'),
+  // ARMOR____: newVariable('prof', 'ARMOR____'),
 
   // RESISTANCES: newVariable("str", "RESISTANCES"),
   // WEAKNESSES: newVariable("str", "WEAKNESSES"),
@@ -430,10 +453,34 @@ export function getAllAttributeVariables(): VariableAttr[] {
   return variables as VariableAttr[];
 }
 
+export function getAllWeaponGroupVariables(): VariableProf[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('WEAPON_GROUP_') && variable.type === 'prof') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableProf[];
+}
+
+export function getAllArmorGroupVariables(): VariableProf[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables())) {
+    if (variable.name.startsWith('ARMOR_GROUP_') && variable.type === 'prof') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableProf[];
+}
+
 export function getAllWeaponVariables(): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
-    if (variable.name.startsWith('WEAPON_') && variable.type === 'prof') {
+    if (
+      variable.name.startsWith('WEAPON_') &&
+      !variable.name.startsWith('WEAPON_GROUP_') &&
+      variable.type === 'prof'
+    ) {
       variables.push(variable);
     }
   }
@@ -443,7 +490,11 @@ export function getAllWeaponVariables(): VariableProf[] {
 export function getAllArmorVariables(): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables())) {
-    if (variable.name.startsWith('ARMOR_') && variable.type === 'prof') {
+    if (
+      variable.name.startsWith('ARMOR_') &&
+      !variable.name.startsWith('ARMOR_GROUP_') &&
+      variable.type === 'prof'
+    ) {
       variables.push(variable);
     }
   }

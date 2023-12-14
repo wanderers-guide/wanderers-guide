@@ -531,7 +531,9 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='action'
-                content={data?.content.abilityBlocks ?? []}
+                content={(data?.content.abilityBlocks ?? []).filter(
+                  (item) => item.type === 'action'
+                )}
               />
             </Tabs.Panel>
 
@@ -540,7 +542,7 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='feat'
-                content={data?.content.abilityBlocks ?? []}
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'feat')}
               />
             </Tabs.Panel>
 
@@ -597,7 +599,9 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='heritage'
-                content={data?.content.abilityBlocks ?? []}
+                content={(data?.content.abilityBlocks ?? []).filter(
+                  (item) => item.type === 'heritage'
+                )}
               />
             </Tabs.Panel>
 
@@ -606,7 +610,9 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='sense'
-                content={data?.content.abilityBlocks ?? []}
+                content={(data?.content.abilityBlocks ?? []).filter(
+                  (item) => item.type === 'sense'
+                )}
               />
             </Tabs.Panel>
 
@@ -615,7 +621,9 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='physical-feature'
-                content={data?.content.abilityBlocks ?? []}
+                content={(data?.content.abilityBlocks ?? []).filter(
+                  (item) => item.type === 'physical-feature'
+                )}
               />
             </Tabs.Panel>
 
@@ -640,7 +648,9 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='class-feature'
-                content={data?.content.abilityBlocks ?? []}
+                content={(data?.content.abilityBlocks ?? []).filter(
+                  (item) => item.type === 'class-feature'
+                )}
               />
             </Tabs.Panel>
 
@@ -648,7 +658,9 @@ export function CreateContentSourceModal(props: {
                 <ContentList<AbilityBlock>
                   type='ability-block'
                   abilityBlockType='archetype'
-                  content={data?.content.abilityBlocks}
+                  content={(data?.content.abilityBlocks ?? []).filter(
+                  (item) => item.type === 'archetype'
+                )}
                 />
               </Tabs.Panel> */}
           </Tabs>
@@ -685,9 +697,6 @@ function ContentList<
 
   const getContent = () => {
     let content = _.cloneDeep(props.content);
-    if (props.abilityBlockType) {
-      content = content.filter((item) => item.type === props.abilityBlockType);
-    }
     content = searchQuery ? (search.current.search(searchQuery) as T[]) : content;
 
     // Sort by level/rank then name

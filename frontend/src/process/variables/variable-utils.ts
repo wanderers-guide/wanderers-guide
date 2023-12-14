@@ -103,7 +103,16 @@ export function variableNameToLabel(variableName: string) {
     'Class DC': 'class DC',
     'Class Dc': 'class DC',
   };
-  const REMOVAL_CHANGES = ['skill_', 'save_', 'attribute_', 'speed_'];
+  const REMOVAL_CHANGES = [
+    'skill_',
+    'save_',
+    'weapon_group_',
+    'weapon_',
+    'armor_group_',
+    'armor_',
+    'attribute_',
+    'speed_',
+  ];
 
   let label = variableName.trim().toLowerCase();
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {

@@ -1,7 +1,7 @@
 import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { Content } from '@tiptap/react';
-import { AbilityBlock, ContentType, Language, Spell } from '@typing/content';
+import { AbilityBlock, ContentType, Item, Language, Spell } from '@typing/content';
 import {
   OperationType,
   OperationGiveAbilityBlock,
@@ -30,13 +30,15 @@ import {
   OperationSelectFiltersAdjValue,
   OperationAddBonusToValue,
 } from '@typing/operations';
-import { Variable } from '@typing/variables';
+import { Variable, VariableProf } from '@typing/variables';
 import {
+  getAllArmorGroupVariables,
   getAllAttributeVariables,
   getAllSkillVariables,
+  getAllWeaponGroupVariables,
   getVariable,
 } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
+import { labelToVariable, variableToLabel } from '@variables/variable-utils';
 import _, { filter } from 'lodash';
 
 export const createDefaultOperation = (type: OperationType) => {
@@ -323,6 +325,34 @@ async function getAdjValueList(operationUUID: string, filters: OperationSelectFi
   }
   if (filters.group === 'ATTRIBUTE') {
     variables = getAllAttributeVariables();
+  }
+  if (filters.group === 'WEAPON-GROUP') {
+    variables = getAllWeaponGroupVariables();
+  }
+  if (filters.group === 'ARMOR-GROUP') {
+    variables = getAllArmorGroupVariables();
+  }
+  if (filters.group === 'WEAPON') {
+    const items = await fetchContentAll<Item>('item');
+    const weapons = items.filter((item) => item.group === 'WEAPON');
+    variables = weapons.map((w) => {
+      return {
+        name: `WEAPON_${labelToVariable(w.name)}`,
+        type: 'prof',
+        value: { value: 'U' },
+      } satisfies VariableProf;
+    });
+  }
+  if (filters.group === 'ARMOR') {
+    const items = await fetchContentAll<Item>('item');
+    const armor = items.filter((item) => item.group === 'ARMOR');
+    variables = armor.map((a) => {
+      return {
+        name: `ARMOR_${labelToVariable(a.name)}`,
+        type: 'prof',
+        value: { value: 'U' },
+      } satisfies VariableProf;
+    });
   }
 
   return variables.map((variable) => {

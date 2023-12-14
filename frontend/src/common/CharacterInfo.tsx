@@ -74,7 +74,7 @@ export const CharacterInfo = React.forwardRef(
               <Box>
                 {props.onClickAncestry ? (
                   <Button
-                    variant={hasAncestry ? 'subtle' : 'light'}
+                    variant={hasAncestry ? 'subtle' : 'filled'}
                     color={props.color}
                     size='compact-xs'
                     leftSection={<IconTree size='0.9rem' />}
@@ -102,7 +102,7 @@ export const CharacterInfo = React.forwardRef(
               <Box>
                 {props.onClickBackground ? (
                   <Button
-                    variant={hasBackground ? 'subtle' : 'light'}
+                    variant={hasBackground ? 'subtle' : 'filled'}
                     size='compact-xs'
                     color={props.color}
                     leftSection={<IconWindow size='0.9rem' />}
@@ -123,7 +123,7 @@ export const CharacterInfo = React.forwardRef(
               <Box>
                 {props.onClickClass ? (
                   <Button
-                    variant={hasClass ? 'subtle' : 'light'}
+                    variant={hasClass ? 'subtle' : 'filled'}
                     size='compact-xs'
                     color={props.color}
                     leftSection={<IconVocabulary size='0.9rem' />}

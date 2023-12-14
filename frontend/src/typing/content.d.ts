@@ -63,6 +63,7 @@ interface Trait {
   content_source_id: number;
 }
 
+type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD';
 interface Item {
   id: number;
   created_at: string;
@@ -73,7 +74,7 @@ interface Item {
   rarity: Rarity;
   traits?: number[];
   description: string;
-  group: string;
+  group: ItemGroup;
   hands?: string;
   size: Size;
   craft_requirements?: string;

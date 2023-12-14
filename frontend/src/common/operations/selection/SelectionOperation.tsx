@@ -468,7 +468,7 @@ function SelectionFilteredAdjValue(props: {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
       type: 'ADJ_VALUE',
-      group: (group ?? 'SKILL') as 'ATTRIBUTE' | 'SKILL' | 'ADD-LORE',
+      group: (group ?? 'SKILL') as OperationSelectFiltersAdjValue['group'],
       value: value ?? '',
     });
   }, [group, value]);
@@ -486,6 +486,10 @@ function SelectionFilteredAdjValue(props: {
             { label: 'Skill', value: 'SKILL' },
             { label: 'Add Lore', value: 'ADD-LORE' },
             { label: 'Attribute', value: 'ATTRIBUTE' },
+            { label: 'Weapon Group', value: 'WEAPON-GROUP' },
+            { label: 'Weapon', value: 'WEAPON' },
+            { label: 'Armor Group', value: 'ARMOR-GROUP' },
+            { label: 'Armor', value: 'ARMOR' },
           ]}
         />
       </Box>
@@ -499,7 +503,7 @@ function SelectionFilteredAdjValue(props: {
               setValue(value);
             }}
             options={{
-              profExtended: true,
+              profExtended: group === 'Skill' || group === 'ADD-LORE',
             }}
           />
         )}
