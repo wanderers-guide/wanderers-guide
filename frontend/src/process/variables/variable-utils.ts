@@ -171,6 +171,13 @@ export function maxProficiencyType(
   return convertToNum(profType1) > convertToNum(profType2) ? profType1 : profType2;
 }
 
+export function isProficiencyTypeGreaterOrEqual(
+  profType1: ProficiencyType,
+  profType2: ProficiencyType
+) {
+  return maxProficiencyType(profType1, profType2) === profType1;
+}
+
 export function proficiencyTypeToModifier(profType: ProficiencyType) {
   if (profType === 'U') return 0;
   if (profType === 'T') return 2;

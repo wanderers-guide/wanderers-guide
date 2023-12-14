@@ -1,4 +1,4 @@
-import { Character } from "@typing/content";
+import { Character } from '@typing/content';
 
 // Legacy WG .guidechar exports are version 3
 const VERSION = 4;
@@ -6,10 +6,13 @@ const VERSION = 4;
 export default function exportToJSON(character: Character) {
   const exportObject = {
     version: VERSION,
-    character
+    character,
   };
 
-  const fileName = character.name.trim().toLowerCase().replace(/([^a-z0-9]+)/gi, '-');
+  const fileName = character.name
+    .trim()
+    .toLowerCase()
+    .replace(/([^a-z0-9]+)/gi, '-');
   downloadObjectAsJson(exportObject, fileName);
 }
 

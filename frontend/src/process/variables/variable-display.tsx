@@ -4,23 +4,23 @@ import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
 import { getProficiencyTypeValue } from './variable-utils';
 
+export function getFinalProfValue(variableName: string, isDC: boolean = false) {
+  const parts = getProfValueParts(variableName)!;
+  return isDC
+    ? `${10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue}`
+    : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue);
+}
+
 export function displayFinalProfValue(variableName: string, isDC: boolean = false) {
   const variable = getVariable<VariableProf>(variableName);
   if (!variable) return null;
 
   const parts = getProfValueParts(variableName)!;
+  const value = getFinalProfValue(variableName, isDC);
 
   return (
     <span style={{ position: 'relative' }}>
-      {isDC ? (
-        <>
-          {10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue}
-        </>
-      ) : (
-        <>
-          {sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue)}
-        </>
-      )}
+      {<>{value}</>}
       {parts.hasConditionals ? (
         <Text
           c='guide.5'

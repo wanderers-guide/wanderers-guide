@@ -19,6 +19,7 @@ import {
   Loader,
   FileButton,
   VisuallyHidden,
+  LoadingOverlay,
 } from '@mantine/core';
 import { AbilityBlock, Character, ContentSource } from '@typing/content';
 import { OperationSection } from '@common/operations/Operations';
@@ -51,6 +52,7 @@ import { characterState } from '@atoms/characterAtoms';
 import exportToJSON from '@export/export-to-json';
 import importFromJSON from '@import/json/import-from-json';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
+import exportToPDF from '@export/export-to-pdf';
 
 export default function DashboardPage() {
   setPageTitle(`Characters`);
@@ -205,6 +207,8 @@ function CharacterCard(props: { character: Character }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [loading, setLoading] = useState(false);
+
   const { hovered: hoveredMain, ref: refMain } = useHover();
   const { hovered: hoveredEdit, ref: refEdit } = useHover<HTMLAnchorElement>();
   const { hovered: hoveredOptions, ref: refOptions } = useHover<HTMLButtonElement>();
@@ -230,6 +234,7 @@ function CharacterCard(props: { character: Character }) {
 
   return (
     <BlurBox blur={10}>
+      <LoadingOverlay visible={loading} />
       <Box
         pt='xs'
         pb={5}
@@ -316,14 +321,21 @@ function CharacterCard(props: { character: Character }) {
             </Menu.Item>
             <Menu.Item
               leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
-              onClick={() => {
-                exportToJSON(props.character);
+              onClick={async () => {
+                setLoading(true);
+                await exportToJSON(props.character);
+                setLoading(false);
               }}
             >
               Export to JSON
             </Menu.Item>
             <Menu.Item
               leftSection={<IconFileTypePdf style={{ width: rem(14), height: rem(14) }} />}
+              onClick={async () => {
+                setLoading(true);
+                await exportToPDF(props.character);
+                setLoading(false);
+              }}
             >
               Export to PDF
             </Menu.Item>
