@@ -289,7 +289,7 @@ export function PrerequisiteForSection(props: { name: string }) {
               <Anchor
                 onClick={() => {
                   openDrawer({
-                    type: 'class-feature',
+                    type: 'feat',
                     data: { id: feat.id },
                     extra: { addToHistory: true },
                   });
