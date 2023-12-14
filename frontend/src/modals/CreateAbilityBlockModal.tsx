@@ -69,7 +69,8 @@ export function CreateAbilityBlockModal(props: {
         ...abilityBlock,
         prerequisites: abilityBlock.prerequisites ?? [],
         traits: abilityBlock.traits ?? [],
-        level: abilityBlock.level,
+        // @ts-ignore
+        level: `${abilityBlock.level}`,
       });
       form.reset();
       setTraits(await fetchTraits(abilityBlock.traits));
