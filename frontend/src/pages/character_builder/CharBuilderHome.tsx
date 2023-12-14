@@ -287,7 +287,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 label='Level'
                 data={Array.from({ length: 20 }, (_, i) => (i + 1).toString())}
                 w={70}
-                value={character?.level.toString()}
+                value={`${character?.level}`}
                 onChange={(value) => {
                   const oldLevel = character?.level ?? 0;
                   const newLevel = parseInt(value ?? '1');

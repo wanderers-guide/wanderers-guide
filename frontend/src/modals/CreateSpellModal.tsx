@@ -87,7 +87,7 @@ export function CreateSpellModal(props: {
   const [metaData, setMetaData] = useState<Record<string, any>>({});
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
-  const form = useForm({
+  const form = useForm<Spell>({
     initialValues: {
       id: -1,
       created_at: '',
@@ -116,7 +116,7 @@ export function CreateSpellModal(props: {
       traits: [],
       content_source_id: -1,
       version: '1.0',
-    } satisfies Spell,
+    },
 
     validate: {
       rank: (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid rank'),
@@ -434,11 +434,11 @@ export function CreateSpellModal(props: {
                         value={option.amount}
                         onChange={(value) => {
                           if (!value) return;
-                          let ops = [...form.values.heightened.text];
+                          let ops = [...(form.values.heightened?.text ?? [])];
                           ops[index].amount = value;
                           form.setFieldValue('heightened', {
                             text: ops,
-                            data: form.values.heightened.data,
+                            data: form.values.heightened?.data ?? {},
                           });
                         }}
                       />
@@ -447,12 +447,12 @@ export function CreateSpellModal(props: {
                           mt={40}
                           mr={5}
                           onClick={() => {
-                            const ops = [...form.values.heightened.text].filter(
+                            const ops = [...(form.values.heightened?.text ?? [])].filter(
                               (op) => op.amount !== option.amount
                             );
                             form.setFieldValue('heightened', {
                               text: ops,
-                              data: form.values.heightened.data,
+                              data: form.values.heightened?.data ?? {},
                             });
                           }}
                         />
@@ -463,11 +463,11 @@ export function CreateSpellModal(props: {
                       required
                       value={toHTML(option.text)}
                       onChange={(text, json) => {
-                        let ops = [...form.values.heightened.text];
+                        let ops = [...(form.values.heightened?.text ?? [])];
                         ops[index].text = text;
                         form.setFieldValue('heightened', {
                           text: ops,
-                          data: form.values.heightened.data,
+                          data: form.values.heightened?.data ?? {},
                         });
                       }}
                     />
@@ -475,14 +475,14 @@ export function CreateSpellModal(props: {
                 ))}
                 <Button
                   onClick={() => {
-                    const ops = [...form.values.heightened.text];
+                    const ops = [...(form.values.heightened?.text ?? [])];
                     ops.push({
                       amount: '',
                       text: '',
                     });
                     form.setFieldValue('heightened', {
                       text: ops,
-                      data: form.values.heightened.data,
+                      data: form.values.heightened?.data ?? {},
                     });
                   }}
                   variant='light'

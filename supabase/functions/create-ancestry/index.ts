@@ -23,6 +23,7 @@ serve(async (req: Request) => {
           },
         }
       );
+      console.log(traitProcedure, traitResult);
       if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
         trait_id = (traitResult as Trait).id;
       }
@@ -46,6 +47,7 @@ serve(async (req: Request) => {
         id: ancestry.trait_id,
         name: name,
         description: `This indicates content from the ${name.toLowerCase()} ancestry.`,
+        content_source_id,
       });
     }
 

@@ -168,7 +168,7 @@ interface Class {
 interface AbilityBlock {
   id: number;
   created_at: string;
-  operations?: Operation[];
+  operations?: Operation[] | undefined;
   name: string;
   actions: ActionCost;
   level?: number;

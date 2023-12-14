@@ -221,6 +221,8 @@ export async function insertData<T = Record<string, any>>(
   // Delete forbidden keys
   delete data.id;
 
+  console.log('Inserting data', data);
+
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
     if (error.code === '23505' && hasUUID) {
@@ -291,11 +293,22 @@ export async function updateData(
     }
   }
 
+  // Recalculate UUID
+  if (data.name && data.content_source_id) {
+    data.uuid = uniqueId(
+      data.name as string,
+      data.type ? (data.type as string) : tableName,
+      (data.level ?? data.rank ?? 0) as number,
+      data.content_source_id as number
+    );
+  } else {
+    delete data.uuid;
+  }
+
   // Delete forbidden keys
   delete data.id;
   delete data.created_at;
   delete data.content_source_id;
-  delete data.uuid;
   delete data.user_id;
 
   const { error } = await client.from(tableName).update(data).eq('id', id);

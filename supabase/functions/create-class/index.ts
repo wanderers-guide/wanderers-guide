@@ -53,6 +53,7 @@ serve(async (req: Request) => {
         id: class_.trait_id,
         name: name,
         description: `This indicates content from the ${name.toLowerCase()} class.`,
+        content_source_id,
       });
     }
 

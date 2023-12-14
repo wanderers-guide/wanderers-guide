@@ -22,7 +22,7 @@ import {
 } from '@mantine/core';
 import _, { set } from 'lodash';
 import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, Rarity, Trait } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from '@mantine/form';
 import TraitsInput from '@common/TraitsInput';
@@ -62,6 +62,7 @@ export function CreateAbilityBlockModal(props: {
       const [_key, { editId }] = queryKey;
 
       const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', editId);
+      console.log(abilityBlock, props.type, editId);
       if (abilityBlock && abilityBlock.type !== props.type) return null;
       if (!abilityBlock) return null;
 
@@ -69,8 +70,7 @@ export function CreateAbilityBlockModal(props: {
         ...abilityBlock,
         prerequisites: abilityBlock.prerequisites ?? [],
         traits: abilityBlock.traits ?? [],
-        // @ts-ignore
-        level: abilityBlock.level.toString(),
+        level: abilityBlock.level,
       });
       form.reset();
       setTraits(await fetchTraits(abilityBlock.traits));
@@ -88,17 +88,17 @@ export function CreateAbilityBlockModal(props: {
   const [metaData, setMetaData] = useState<Record<string, any>>({});
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
-  const form = useForm({
+  const form = useForm<AbilityBlock>({
     initialValues: {
       id: -1,
       created_at: '',
       operations: [] as Operation[] | undefined,
       name: '',
-      actions: null,
+      actions: null as ActionCost,
       level: undefined as number | undefined,
-      rarity: 'COMMON',
+      rarity: 'COMMON' as Rarity,
       prerequisites: [] as string[],
-      frequency: '',
+      frequency: '' as string | undefined,
       cost: '',
       trigger: '',
       requirements: '',
@@ -110,7 +110,7 @@ export function CreateAbilityBlockModal(props: {
       traits: [] as number[],
       content_source_id: -1,
       version: '1.0',
-    } satisfies AbilityBlock,
+    },
 
     validate: {
       level:

@@ -77,7 +77,7 @@ export function CreateBackgroundModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
-  const form = useForm({
+  const form = useForm<Background>({
     initialValues: {
       id: -1,
       created_at: '',
@@ -88,7 +88,7 @@ export function CreateBackgroundModal(props: {
       artwork_url: '',
       content_source_id: -1,
       version: '1.0',
-    } satisfies Background,
+    },
 
     validate: {
       rarity: (value) =>

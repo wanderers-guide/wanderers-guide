@@ -77,7 +77,7 @@ export function CreateAncestryModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
-  const form = useForm({
+  const form = useForm<Ancestry>({
     initialValues: {
       id: -1,
       created_at: '',
@@ -89,7 +89,7 @@ export function CreateAncestryModal(props: {
       artwork_url: '',
       content_source_id: -1,
       version: '1.0',
-    } satisfies Ancestry,
+    },
 
     validate: {
       rarity: (value) =>
