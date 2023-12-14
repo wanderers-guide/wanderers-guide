@@ -8,6 +8,7 @@ import {
   Creature,
   Item,
   Spell,
+  Trait,
 } from '@typing/content';
 import _ from 'lodash';
 import { makeRequest } from '@requests/request-manager';
@@ -74,4 +75,11 @@ export async function upsertAncestry(ancestry: Ancestry) {
     ...ancestry,
   });
   return result ? (result === true ? ancestry : result) : null;
+}
+
+export async function upsertTrait(trait: Trait) {
+  const result = await makeRequest<Trait | true>('create-trait', {
+    ...trait,
+  });
+  return result ? (result === true ? trait : result) : null;
 }

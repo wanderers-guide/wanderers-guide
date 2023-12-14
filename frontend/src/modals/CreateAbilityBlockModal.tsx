@@ -62,7 +62,6 @@ export function CreateAbilityBlockModal(props: {
       const [_key, { editId }] = queryKey;
 
       const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', editId);
-      console.log(abilityBlock, props.type, editId);
       if (abilityBlock && abilityBlock.type !== props.type) return null;
       if (!abilityBlock) return null;
 

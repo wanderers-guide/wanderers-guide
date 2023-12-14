@@ -66,7 +66,9 @@ import {
   upsertBackground,
   upsertClass,
   upsertContentSource,
+  upsertItem,
   upsertSpell,
+  upsertTrait,
 } from '@content/content-creation';
 import { showNotification } from '@mantine/notifications';
 import { CreateSpellModal } from './CreateSpellModal';
@@ -75,6 +77,7 @@ import { fetchContentPackage, resetContentStore } from '@content/content-store';
 import { CreateAncestryModal } from './CreateAncestryModal';
 import { CreateBackgroundModal } from './CreateBackgroundModal';
 import useRefresh from '@utils/use-refresh';
+import { CreateTraitModal } from './CreateTraitModal';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -677,7 +680,7 @@ function ContentList<
     search.current = new JsSearch.Search('id');
     search.current.addIndex('name');
     //search.current.addIndex('description');
-    search.current.addDocuments(_.cloneDeep(getContent()));
+    search.current.addDocuments(_.cloneDeep(props.content));
   };
 
   const getContent = () => {
@@ -705,12 +708,16 @@ function ContentList<
   };
 
   const handleReset = () => {
-    setOpenedId(undefined);
-    initJsSearch();
-    resetContentStore();
+    const query = searchQuery;
+    setSearchQuery('');
     setTimeout(() => {
+      setOpenedId(undefined);
+      initJsSearch();
+      resetContentStore();
       queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
-    }, 1000);
+
+      setSearchQuery(query);
+    }, 500);
   };
 
   return (
@@ -811,7 +818,7 @@ function ContentList<
                     newItem.id = -1;
                     newItem.name = `(Copy) ${item.name}`;
                     newItem.content_source_id = props.sourceId;
-                    //upsertItem(newItem);
+                    upsertItem(newItem);
                   }
                 } else if (props.type === 'trait') {
                   const item = (props.content as unknown as Trait[]).find((i) => i.id === itemId);
@@ -820,7 +827,7 @@ function ContentList<
                     newItem.id = -1;
                     newItem.name = `(Copy) ${item.name}`;
                     newItem.content_source_id = props.sourceId;
-                    //upsertTrait(newItem);
+                    upsertTrait(newItem);
                   }
                 }
 
@@ -852,7 +859,6 @@ function ContentList<
               });
             }
 
-            //clearContent('ability-block', abilityBlock.id);
             handleReset();
           }}
           onCancel={() => handleReset()}
@@ -864,6 +870,7 @@ function ContentList<
           opened={!!openedId}
           editId={openedId}
           onComplete={async (spell) => {
+            spell.content_source_id = props.sourceId;
             const result = await upsertSpell(spell);
 
             if (result) {
@@ -874,7 +881,6 @@ function ContentList<
               });
             }
 
-            //clearContent('spell', spell.id);
             handleReset();
           }}
           onCancel={() => handleReset()}
@@ -886,6 +892,7 @@ function ContentList<
           opened={!!openedId}
           editId={openedId}
           onComplete={async (class_) => {
+            class_.content_source_id = props.sourceId;
             const result = await upsertClass(class_);
 
             if (result) {
@@ -896,7 +903,6 @@ function ContentList<
               });
             }
 
-            //clearContent('class', class_.id);
             handleReset();
           }}
           onCancel={() => handleReset()}
@@ -908,6 +914,7 @@ function ContentList<
           opened={!!openedId}
           editId={openedId}
           onComplete={async (ancestry) => {
+            ancestry.content_source_id = props.sourceId;
             const result = await upsertAncestry(ancestry);
 
             if (result) {
@@ -918,7 +925,6 @@ function ContentList<
               });
             }
 
-            //clearContent('ancestry', ancestry.id);
             handleReset();
           }}
           onCancel={() => handleReset()}
@@ -930,6 +936,7 @@ function ContentList<
           opened={!!openedId}
           editId={openedId}
           onComplete={async (background) => {
+            background.content_source_id = props.sourceId;
             const result = await upsertBackground(background);
 
             if (result) {
@@ -940,7 +947,28 @@ function ContentList<
               });
             }
 
-            //clearContent('background', background.id);
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'trait' && openedId && (
+        <CreateTraitModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (trait) => {
+            trait.content_source_id = props.sourceId;
+            const result = await upsertTrait(trait);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated trait.`,
+                autoClose: 3000,
+              });
+            }
+
             handleReset();
           }}
           onCancel={() => handleReset()}
