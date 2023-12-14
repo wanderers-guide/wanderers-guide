@@ -966,7 +966,7 @@ export function GenericSelectionOption(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // @ts-ignore
-  const variable = getVariable(props.option.variable);
+  const variable = getVariable('CHARACTER', props.option.variable);
 
   let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value.value;
   let nextProf =
@@ -1189,7 +1189,7 @@ export function FeatSelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const prereqMet = meetsPrerequisites(props.feat.prerequisites);
+  const prereqMet = meetsPrerequisites('CHARACTER', props.feat.prerequisites);
 
   return (
     <Group
@@ -1933,12 +1933,14 @@ export function ClassSelectionOption(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const classHp = getStatDisplay(
+    'CHARACTER',
     'MAX_HEALTH_CLASS_PER_LEVEL',
     props.class_.operations ?? [],
     'READ'
   );
   const attributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     props.class_.operations ?? [],
     'READ'
   );
@@ -2117,15 +2119,22 @@ export function AncestrySelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', props.ancestry.operations ?? [], 'READ');
+  const ancestryHp = getStatDisplay(
+    'CHARACTER',
+    'MAX_HEALTH_ANCESTRY',
+    props.ancestry.operations ?? [],
+    'READ'
+  );
   const attributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     props.ancestry.operations ?? [],
     'READ'
   );
 
   const flawAttributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     props.ancestry.operations ?? [],
     'READ',
     undefined,
@@ -2342,7 +2351,8 @@ export function BackgroundSelectionOption(props: {
     });
 
   const attributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     props.background.operations ?? [],
     'READ'
   );

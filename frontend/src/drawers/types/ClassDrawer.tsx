@@ -552,7 +552,8 @@ export function convertClassOperationsIntoUI(
       : undefined;
 
   const attributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     classOperations,
     MODE,
     writeDetails,
@@ -566,11 +567,18 @@ export function convertClassOperationsIntoUI(
           operation: null,
         };
 
-  const classHp = getStatDisplay('MAX_HEALTH_CLASS_PER_LEVEL', classOperations, MODE, writeDetails);
+  const classHp = getStatDisplay(
+    'CHARACTER',
+    'MAX_HEALTH_CLASS_PER_LEVEL',
+    classOperations,
+    MODE,
+    writeDetails
+  );
 
-  const perception = getStatDisplay('PERCEPTION', classOperations, MODE, writeDetails);
+  const perception = getStatDisplay('CHARACTER', 'PERCEPTION', classOperations, MODE, writeDetails);
   const skills = getStatBlockDisplay(
-    getAllSkillVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllSkillVariables('CHARACTER').map((v) => v.name),
     classOperations,
     MODE,
     writeDetails
@@ -592,7 +600,14 @@ export function convertClassOperationsIntoUI(
   } else if (MODE === 'READ/WRITE') {
     const skillTrainingOps = addedClassSkillTrainings(class_);
     for (const op of skillTrainingOps) {
-      const result = getDisplay({ value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
+      const result = getDisplay(
+        'CHARACTER',
+        { value: 'T' },
+        op,
+        undefined,
+        'READ/WRITE',
+        writeDetails
+      );
       additionalSkillTrainings.push({
         ui: result,
         operation: op,
@@ -601,20 +616,69 @@ export function convertClassOperationsIntoUI(
   }
 
   const saves = getStatBlockDisplay(
-    getAllSaveVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllSaveVariables('CHARACTER').map((v) => v.name),
     classOperations,
     MODE,
     writeDetails
   );
-  const simpleWeapons = getStatDisplay('SIMPLE_WEAPONS', classOperations, MODE, writeDetails);
-  const martialWeapons = getStatDisplay('MARTIAL_WEAPONS', classOperations, MODE, writeDetails);
-  const advancedWeapons = getStatDisplay('ADVANCED_WEAPONS', classOperations, MODE, writeDetails);
-  const unarmedAttacks = getStatDisplay('UNARMED_ATTACKS', classOperations, MODE, writeDetails);
-  const lightArmor = getStatDisplay('LIGHT_ARMOR', classOperations, MODE, writeDetails);
-  const mediumArmor = getStatDisplay('MEDIUM_ARMOR', classOperations, MODE, writeDetails);
-  const heavyArmor = getStatDisplay('HEAVY_ARMOR', classOperations, MODE, writeDetails);
-  const unarmoredDefense = getStatDisplay('UNARMORED_DEFENSE', classOperations, MODE, writeDetails);
-  const classDC = getStatDisplay('CLASS_DC', classOperations, 'READ', writeDetails);
+  const simpleWeapons = getStatDisplay(
+    'CHARACTER',
+    'SIMPLE_WEAPONS',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const martialWeapons = getStatDisplay(
+    'CHARACTER',
+    'MARTIAL_WEAPONS',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const advancedWeapons = getStatDisplay(
+    'CHARACTER',
+    'ADVANCED_WEAPONS',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const unarmedAttacks = getStatDisplay(
+    'CHARACTER',
+    'UNARMED_ATTACKS',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const lightArmor = getStatDisplay(
+    'CHARACTER',
+    'LIGHT_ARMOR',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const mediumArmor = getStatDisplay(
+    'CHARACTER',
+    'MEDIUM_ARMOR',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const heavyArmor = getStatDisplay(
+    'CHARACTER',
+    'HEAVY_ARMOR',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const unarmoredDefense = getStatDisplay(
+    'CHARACTER',
+    'UNARMORED_DEFENSE',
+    classOperations,
+    MODE,
+    writeDetails
+  );
+  const classDC = getStatDisplay('CHARACTER', 'CLASS_DC', classOperations, 'READ', writeDetails);
 
   return {
     keyAttribute,

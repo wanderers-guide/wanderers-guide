@@ -10,6 +10,7 @@ import {
   Variable,
   VariableAttr,
   VariableBool,
+  StoreID,
   VariableListStr,
   VariableNum,
   VariableProf,
@@ -237,9 +238,13 @@ export function labelToProficiencyType(label: string): ProficiencyType | null {
   return null;
 }
 
-export function findVariable<T = Variable>(type: VariableType, label: string): T | null {
+export function findVariable<T = Variable>(
+  id: StoreID,
+  type: VariableType,
+  label: string
+): T | null {
   const VAR_FORMATTED = labelToVariable(label);
-  const variable = Object.values(getVariables()).find(
+  const variable = Object.values(getVariables(id)).find(
     (variable) => variable.type === type && variable.name.endsWith(`_${VAR_FORMATTED}`)
   );
   return (variable ?? null) as T | null;

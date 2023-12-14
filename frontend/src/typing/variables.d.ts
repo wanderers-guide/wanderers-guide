@@ -5,6 +5,19 @@ export type ProficiencyValue = { value: ProficiencyType; attribute?: string };
 export type ExtendedProficiencyValue = { value: ExtendedProficiencyType; attribute?: string };
 export type AttributeValue = { value: number; partial?: boolean };
 
+export type StoreID = 'CHARACTER' | string;
+export type VariableStore = {
+  variables: Record<string, Variable>;
+  bonuses: Record<
+    string,
+    { value?: number; type?: string; text: string; source: string; timestamp: number }[]
+  >;
+  history: Record<
+    string,
+    { to: VariableValue; from: VariableValue | null; source: string; timestamp: number }[]
+  >;
+};
+
 export type Variable =
   | VariableNum
   | VariableStr

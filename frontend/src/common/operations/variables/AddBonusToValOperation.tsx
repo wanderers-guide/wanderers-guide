@@ -33,7 +33,7 @@ export function AddBonusToValOperation(props: {
 }) {
   const [variableName, setVariableName] = useState(props.variable);
   const [variableData, setVariableData] = useState<Variable | undefined>(
-    getVariable(props.variable) ?? undefined
+    getVariable('CHARACTER', props.variable) ?? undefined
   );
   const [value, setValue] = useState(props.bonusValue);
   const [type, setType] = useState(props.bonusType);
@@ -41,7 +41,7 @@ export function AddBonusToValOperation(props: {
 
   useDidUpdate(() => {
     setVariableName(props.variable);
-    setVariableData(getVariable(props.variable) ?? undefined);
+    setVariableData(getVariable('CHARACTER', props.variable) ?? undefined);
     setValue(props.bonusValue);
     setType(props.bonusType);
     setText(props.text);

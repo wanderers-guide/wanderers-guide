@@ -264,7 +264,8 @@ export function convertBackgroundOperationsIntoUI(
       : undefined;
 
   const attributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     backgroundOperations,
     MODE,
     writeDetails

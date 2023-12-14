@@ -77,7 +77,7 @@ export function StatHealthDrawerTitle(props: { data: {} }) {
 }
 
 export function StatHealthDrawerContent(props: { data: {} }) {
-  const parts = getHealthValueParts();
+  const parts = getHealthValueParts('CHARACTER');
 
   return (
     <Box>
@@ -86,7 +86,7 @@ export function StatHealthDrawerContent(props: { data: {} }) {
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
           <Accordion.Panel>
             <Group gap={8} wrap='nowrap' align='center'>
-              {displayFinalHealthValue()} ={' ('}
+              {displayFinalHealthValue('CHARACTER')} ={' ('}
               <HoverCard
                 shadow='md'
                 openDelay={250}

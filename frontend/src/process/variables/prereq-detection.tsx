@@ -1,15 +1,18 @@
-import { VariableProf } from '@typing/variables';
+import { StoreID, VariableProf } from '@typing/variables';
 import { findVariable, labelToProficiencyType, maxProficiencyType } from './variable-utils';
 import { getVariable } from './variable-manager';
 import _ from 'lodash';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
-export function meetsPrerequisites(prereqs?: string[]): {
+export function meetsPrerequisites(
+  id: StoreID,
+  prereqs?: string[]
+): {
   meetMap: Map<string, PrereqMet>;
   result: PrereqMet;
 } {
   const meetMap = new Map<string, PrereqMet>();
-  if (!prereqs || prereqs.length === 0 || getVariable('PAGE_CONTEXT')?.value === 'OUTSIDE') {
+  if (!prereqs || prereqs.length === 0 || getVariable(id, 'PAGE_CONTEXT')?.value === 'OUTSIDE') {
     return {
       meetMap: meetMap,
       result: null,
@@ -17,7 +20,7 @@ export function meetsPrerequisites(prereqs?: string[]): {
   }
 
   for (const prereq of prereqs) {
-    const result = meetPreq(prereq);
+    const result = meetPreq(id, prereq);
     if (result) {
       meetMap.set(prereq, result);
     }
@@ -49,19 +52,19 @@ function determineFinalResult(meetMap: Map<string, PrereqMet>): PrereqMet {
   return finalResult;
 }
 
-function meetPreq(prereq: string): PrereqMet {
+function meetPreq(id: StoreID, prereq: string): PrereqMet {
   let result: PrereqMet = null;
 
-  result = checkForProf(prereq);
+  result = checkForProf(id, prereq);
   if (result) return result;
 
-  result = checkForFeat(prereq);
+  result = checkForFeat(id, prereq);
   if (result) return result;
 
   return 'UNKNOWN';
 }
 
-function checkForProf(prereq: string): PrereqMet {
+function checkForProf(id: StoreID, prereq: string): PrereqMet {
   const regex = /^(untrained|trained|expert|master|legendary) in ([a-zA-Z]+)$/i;
 
   const match = prereq.match(regex);
@@ -74,7 +77,7 @@ function checkForProf(prereq: string): PrereqMet {
   if (!profType) {
     return 'UNKNOWN';
   }
-  const variable = findVariable<VariableProf>('prof', prof);
+  const variable = findVariable<VariableProf>(id, 'prof', prof);
   if (!variable) {
     return 'UNKNOWN';
   }
@@ -84,10 +87,10 @@ function checkForProf(prereq: string): PrereqMet {
     : 'NOT';
 }
 
-function checkForFeat(prereq: string): PrereqMet {
+function checkForFeat(id: StoreID, prereq: string): PrereqMet {
   // TODO: check for if feat actually exists
   // For now, we'll just check if the way it's written is inline with how feats are written
   if (_.startCase(prereq.toLowerCase()) !== prereq) return null;
 
-  return (getVariable('FEAT_NAMES')!.value as string[]).includes(prereq) ? 'FULLY' : 'NOT';
+  return (getVariable(id, 'FEAT_NAMES')!.value as string[]).includes(prereq) ? 'FULLY' : 'NOT';
 }

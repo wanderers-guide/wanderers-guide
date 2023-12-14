@@ -53,7 +53,7 @@ import {
 import _ from 'lodash';
 
 export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?: boolean } }) {
-  const variable = getVariable<VariableProf>(props.data.variableName);
+  const variable = getVariable<VariableProf>('CHARACTER', props.data.variableName);
 
   return (
     <>
@@ -74,15 +74,15 @@ export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?
 }
 
 export function StatProfDrawerContent(props: { data: { variableName: string; isDC?: boolean } }) {
-  const variable = getVariable<VariableProf>(props.data.variableName);
+  const variable = getVariable<VariableProf>('CHARACTER', props.data.variableName);
   if (!variable) return null;
 
   // Breakdown
-  const parts = getProfValueParts(variable.name)!;
+  const parts = getProfValueParts('CHARACTER', variable.name)!;
 
   // Timeline
-  const history = getVariableHistory(variable.name);
-  const bonuses = getVariableBonuses(variable.name);
+  const history = getVariableHistory('CHARACTER', variable.name);
+  const bonuses = getVariableBonuses('CHARACTER', variable.name);
 
   let timeline: {
     type: 'BONUS' | 'ADJUSTMENT';
@@ -120,7 +120,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
             <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
             <Accordion.Panel>
               <Group gap={8} wrap='nowrap' align='center'>
-                {displayFinalProfValue(variable.name, props.data.isDC)} ={' '}
+                {displayFinalProfValue('CHARACTER', variable.name, props.data.isDC)} ={' '}
                 {props.data.isDC && <>10 + </>}
                 <HoverCard
                   shadow='md'

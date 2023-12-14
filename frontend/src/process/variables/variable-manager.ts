@@ -1,7 +1,9 @@
 import {
   Variable,
   VariableAttr,
+  StoreID,
   VariableProf,
+  VariableStore,
   VariableType,
   VariableValue,
 } from '@typing/variables';
@@ -195,26 +197,39 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   ]),
 };
 
-let variables = _.cloneDeep(DEFAULT_VARIABLES);
-let variableBonuses: Record<
-  string,
-  { value?: number; type?: string; text: string; source: string; timestamp: number }[]
-> = {};
-let variableHistory: Record<
-  string,
-  { to: VariableValue; from: VariableValue | null; source: string; timestamp: number }[]
-> = {};
+const variableMap = new Map<string, VariableStore>();
+
+// let variables = _.cloneDeep(DEFAULT_VARIABLES);
+// let variableBonuses: Record<
+//   string,
+//   { value?: number; type?: string; text: string; source: string; timestamp: number }[]
+// > = {};
+// let variableHistory: Record<
+//   string,
+//   { to: VariableValue; from: VariableValue | null; source: string; timestamp: number }[]
+// > = {};
 
 // 2_status_
 // +2 status bonus
 // Map<string, { value?: number, type: string, text: string }[]>
 
+function getVariableStore(id: StoreID) {
+  if (!variableMap.has(id)) {
+    variableMap.set(id, {
+      variables: _.cloneDeep(DEFAULT_VARIABLES),
+      bonuses: {},
+      history: {},
+    });
+  }
+  return variableMap.get(id)!;
+}
+
 /**
  * Gets all variables
  * @returns - all variables
  */
-export function getVariables() {
-  return _.cloneDeep(variables);
+export function getVariables(id: StoreID) {
+  return getVariableStore(id).variables;
 }
 
 /**
@@ -222,8 +237,8 @@ export function getVariables() {
  * @param name - name of the variable to get
  * @returns - the variable
  */
-export function getVariable<T = Variable>(name: string): T | null {
-  return _.cloneDeep(variables[name]) as T | null;
+export function getVariable<T = Variable>(id: StoreID, name: string): T | null {
+  return _.cloneDeep(getVariables(id)[name]) as T | null;
 }
 
 /**
@@ -231,21 +246,22 @@ export function getVariable<T = Variable>(name: string): T | null {
  * @param name - name of the variable to get
  * @returns - the bonus array
  */
-export function getVariableBonuses(name: string) {
-  return _.cloneDeep(variableBonuses[name]) ?? [];
+export function getVariableBonuses(id: StoreID, name: string) {
+  return _.cloneDeep(getVariableStore(id).bonuses[name]) ?? [];
 }
 
 export function addVariableBonus(
+  id: StoreID,
   name: string,
   value: number | undefined,
   type: string | undefined,
   text: string,
   source: string
 ) {
-  if (!variableBonuses[name]) {
-    variableBonuses[name] = [];
+  if (!getVariableStore(id).bonuses[name]) {
+    getVariableStore(id).bonuses[name] = [];
   }
-  variableBonuses[name].push({ value, type, text, source, timestamp: Date.now() });
+  getVariableStore(id).bonuses[name].push({ value, type, text, source, timestamp: Date.now() });
 }
 
 /**
@@ -253,16 +269,22 @@ export function addVariableBonus(
  * @param name - name of the variable to get
  * @returns - the bonus array
  */
-export function getVariableHistory(name: string) {
-  return _.cloneDeep(variableHistory[name]) ?? [];
+export function getVariableHistory(id: StoreID, name: string) {
+  return _.cloneDeep(getVariableStore(id).history[name]) ?? [];
 }
 
-function addVariableHistory(name: string, to: VariableValue, from: VariableValue, source: string) {
+function addVariableHistory(
+  id: StoreID,
+  name: string,
+  to: VariableValue,
+  from: VariableValue,
+  source: string
+) {
   if (from === to) return;
-  if (!variableHistory[name]) {
-    variableHistory[name] = [];
+  if (!getVariableStore(id).history[name]) {
+    getVariableStore(id).history[name] = [];
   }
-  variableHistory[name].push({
+  getVariableStore(id).history[name].push({
     to: _.cloneDeep(to),
     from: _.cloneDeep(from),
     source,
@@ -278,13 +300,14 @@ function addVariableHistory(name: string, to: VariableValue, from: VariableValue
  * @returns - the variable that was added
  */
 export function addVariable(
+  id: StoreID,
   type: VariableType,
   name: string,
   defaultValue?: VariableValue,
   source?: string
 ) {
   const variable = newVariable(type, name, defaultValue);
-  variables[variable.name] = variable;
+  getVariables(id)[variable.name] = variable;
 
   // Add to history
   //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
@@ -296,17 +319,15 @@ export function addVariable(
  * Removes a variable
  * @param name - name of the variable to remove
  */
-export function removeVariable(name: string) {
-  delete variables[name];
+export function removeVariable(id: StoreID, name: string) {
+  delete getVariables(id)[name];
 }
 
 /**
  * Resets all variables to their default values
  */
 export function resetVariables() {
-  variables = _.cloneDeep(DEFAULT_VARIABLES);
-  variableBonuses = {};
-  variableHistory = {};
+  variableMap.clear();
 }
 
 /**
@@ -314,8 +335,8 @@ export function resetVariables() {
  * @param name - name of the variable to set
  * @param value - VariableValue
  */
-export function setVariable(name: string, value: VariableValue, source?: string) {
-  let variable = variables[name];
+export function setVariable(id: StoreID, name: string, value: VariableValue, source?: string) {
+  let variable = getVariables(id)[name];
   if (!variable) {
     throwError(`Invalid variable name: ${name}`);
   }
@@ -348,7 +369,7 @@ export function setVariable(name: string, value: VariableValue, source?: string)
   }
 
   // Add to history
-  addVariableHistory(variable.name, variable.value, oldValue, source ?? 'Updated');
+  addVariableHistory(id, variable.name, variable.value, oldValue, source ?? 'Updated');
 }
 
 /**
@@ -356,8 +377,8 @@ export function setVariable(name: string, value: VariableValue, source?: string)
  * @param name - name of the variable to adjust
  * @param amount - new value to adjust by
  */
-export function adjVariable(name: string, amount: VariableValue, source?: string) {
-  let variable = variables[name];
+export function adjVariable(id: StoreID, name: string, amount: VariableValue, source?: string) {
+  let variable = getVariables(id)[name];
   if (!variable) {
     throwError(`Invalid variable name: ${name}`);
   }
@@ -420,12 +441,12 @@ export function adjVariable(name: string, amount: VariableValue, source?: string
   }
 
   // Add to history
-  addVariableHistory(variable.name, variable.value, oldValue, source ?? 'Adjusted');
+  addVariableHistory(id, variable.name, variable.value, oldValue, source ?? 'Adjusted');
 }
 
-export function getAllSkillVariables(): VariableProf[] {
+export function getAllSkillVariables(id: StoreID): VariableProf[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (variable.name.startsWith('SKILL_') && variable.type === 'prof') {
       variables.push(variable);
     }
@@ -433,9 +454,9 @@ export function getAllSkillVariables(): VariableProf[] {
   return variables as VariableProf[];
 }
 
-export function getAllSaveVariables(): VariableProf[] {
+export function getAllSaveVariables(id: StoreID): VariableProf[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (variable.name.startsWith('SAVE_') && variable.type === 'prof') {
       variables.push(variable);
     }
@@ -443,9 +464,9 @@ export function getAllSaveVariables(): VariableProf[] {
   return variables as VariableProf[];
 }
 
-export function getAllAttributeVariables(): VariableAttr[] {
+export function getAllAttributeVariables(id: StoreID): VariableAttr[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (variable.name.startsWith('ATTRIBUTE_') && variable.type === 'attr') {
       variables.push(variable);
     }
@@ -453,9 +474,9 @@ export function getAllAttributeVariables(): VariableAttr[] {
   return variables as VariableAttr[];
 }
 
-export function getAllWeaponGroupVariables(): VariableProf[] {
+export function getAllWeaponGroupVariables(id: StoreID): VariableProf[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (variable.name.startsWith('WEAPON_GROUP_') && variable.type === 'prof') {
       variables.push(variable);
     }
@@ -463,9 +484,9 @@ export function getAllWeaponGroupVariables(): VariableProf[] {
   return variables as VariableProf[];
 }
 
-export function getAllArmorGroupVariables(): VariableProf[] {
+export function getAllArmorGroupVariables(id: StoreID): VariableProf[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (variable.name.startsWith('ARMOR_GROUP_') && variable.type === 'prof') {
       variables.push(variable);
     }
@@ -473,9 +494,9 @@ export function getAllArmorGroupVariables(): VariableProf[] {
   return variables as VariableProf[];
 }
 
-export function getAllWeaponVariables(): VariableProf[] {
+export function getAllWeaponVariables(id: StoreID): VariableProf[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (
       variable.name.startsWith('WEAPON_') &&
       !variable.name.startsWith('WEAPON_GROUP_') &&
@@ -487,9 +508,9 @@ export function getAllWeaponVariables(): VariableProf[] {
   return variables as VariableProf[];
 }
 
-export function getAllArmorVariables(): VariableProf[] {
+export function getAllArmorVariables(id: StoreID): VariableProf[] {
   const variables = [];
-  for (const variable of Object.values(getVariables())) {
+  for (const variable of Object.values(getVariables(id))) {
     if (
       variable.name.startsWith('ARMOR_') &&
       !variable.name.startsWith('ARMOR_GROUP_') &&

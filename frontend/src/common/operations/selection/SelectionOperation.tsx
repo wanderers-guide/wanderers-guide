@@ -886,7 +886,7 @@ function SelectionPredefinedAdjValue(props: {
 }) {
   const [variableType, setVariableType] = useState<VariableType>(
     (props.options ?? []).length > 0
-      ? getVariable(props.options![0].operation.data.variable)?.type ?? 'prof'
+      ? getVariable('CHARACTER', props.options![0].operation.data.variable)?.type ?? 'prof'
       : 'prof'
   );
   const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);

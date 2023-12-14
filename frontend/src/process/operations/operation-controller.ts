@@ -14,6 +14,7 @@ import { addVariable, getVariable, resetVariables, setVariable } from '@variable
 import { isAttributeValue } from '@variables/variable-utils';
 import _ from 'lodash';
 import { hashData } from '@utils/numbers';
+import { StoreID } from '@typing/variables';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -27,13 +28,20 @@ function defineSelectionTree(character: Character) {
 }
 
 async function executeOperations(
+  varId: StoreID,
   primarySource: string,
   operations: Operation[],
   options?: OperationOptions,
   sourceLabel?: string
 ) {
   const selectionNode = getRootSelection().children[primarySource];
-  let results = await runOperations(selectionNode, operations, _.cloneDeep(options), sourceLabel);
+  let results = await runOperations(
+    varId,
+    selectionNode,
+    operations,
+    _.cloneDeep(options),
+    sourceLabel
+  );
 
   // Make it so you can only select boosts that haven't been selected (or given) yet
   results = limitBoostOptions(operations, results);
@@ -61,8 +69,8 @@ export async function executeCharacterOperations(
 ): Promise<OperationResultPackage> {
   resetVariables();
   defineSelectionTree(character);
-  setVariable('PAGE_CONTEXT', context);
-  setVariable('LEVEL', character.level);
+  setVariable('CHARACTER', 'PAGE_CONTEXT', context);
+  setVariable('CHARACTER', 'LEVEL', character.level);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
@@ -83,6 +91,7 @@ export async function executeCharacterOperations(
     let contentSourceResults: { baseSource: ContentSource; baseResults: OperationResult[] }[] = [];
     for (const source of content.sources ?? []) {
       const results = await executeOperations(
+        'CHARACTER',
         `content-source-${source.id}`,
         source.operations ?? [],
         options,
@@ -98,6 +107,7 @@ export async function executeCharacterOperations(
     }
 
     let characterResults = await executeOperations(
+      'CHARACTER',
       'character',
       character.custom_operations ?? [],
       options,
@@ -107,6 +117,7 @@ export async function executeCharacterOperations(
     let classResults: OperationResult[] = [];
     if (class_) {
       classResults = await executeOperations(
+        'CHARACTER',
         'class',
         getExtendedClassOperations(class_),
         options,
@@ -117,6 +128,7 @@ export async function executeCharacterOperations(
     let ancestryResults: OperationResult[] = [];
     if (ancestry) {
       ancestryResults = await executeOperations(
+        'CHARACTER',
         'ancestry',
         getExtendedAncestryOperations(ancestry),
         options,
@@ -127,6 +139,7 @@ export async function executeCharacterOperations(
     let backgroundResults: OperationResult[] = [];
     if (background) {
       backgroundResults = await executeOperations(
+        'CHARACTER',
         'background',
         background.operations ?? [],
         options,
@@ -140,6 +153,7 @@ export async function executeCharacterOperations(
       for (const section of getAncestrySections(ancestry)) {
         if (section.level === undefined || section.level <= character.level) {
           const results = await executeOperations(
+            'CHARACTER',
             `ancestry-section-${section.id}`,
             section.operations ?? [],
             options,
@@ -158,6 +172,7 @@ export async function executeCharacterOperations(
     for (const feature of classFeatures) {
       if (feature.level === undefined || feature.level <= character.level) {
         const results = await executeOperations(
+          'CHARACTER',
           `class-feature-${feature.id}`,
           feature.operations ?? [],
           options,
@@ -191,9 +206,9 @@ export async function executeCharacterOperations(
   // define values for any weapons or lores
   for (const value of Object.values(character?.operation_data?.selections ?? {})) {
     if (value.startsWith('SKILL_LORE_')) {
-      addVariable('prof', value, { value: 'U', attribute: 'ATTRIBUTE_INT' });
+      addVariable('CHARACTER', 'prof', value, { value: 'U', attribute: 'ATTRIBUTE_INT' });
     } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
-      addVariable('prof', value);
+      addVariable('CHARACTER', 'prof', value);
     }
   }
 
@@ -309,7 +324,7 @@ export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
 
   // Operations for adding skill trainings equal to Int attribute modifier
   const baseTrainings = class_.skill_training_base;
-  const intVariableValue = getVariable('ATTRIBUTE_INT')?.value;
+  const intVariableValue = getVariable('CHARACTER', 'ATTRIBUTE_INT')?.value;
   const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
   for (let i = 0; i < baseTrainings + intValue; i++) {
     operations.push({
@@ -345,7 +360,7 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier
-  const intVariableValue = getVariable('ATTRIBUTE_INT')?.value;
+  const intVariableValue = getVariable('CHARACTER', 'ATTRIBUTE_INT')?.value;
   const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
   if (intValue <= 0) return operations;
   for (let i = 0; i < intValue; i++) {

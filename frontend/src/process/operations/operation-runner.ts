@@ -31,7 +31,7 @@ import {
   determinePredefinedSelectionList,
 } from './operation-utils';
 import { maxProficiencyType } from '@variables/variable-utils';
-import { ExtendedProficiencyType, ProficiencyType } from '@typing/variables';
+import { ExtendedProficiencyType, ProficiencyType, StoreID } from '@typing/variables';
 import { fetchContentById } from '@content/content-store';
 
 export type OperationOptions = {
@@ -56,6 +56,7 @@ export type OperationResult = {
 } | null;
 
 export async function runOperations(
+  varId: StoreID,
   selectionNode: SelectionTreeNode | undefined,
   operations: Operation[],
   options?: OperationOptions,
@@ -64,14 +65,14 @@ export async function runOperations(
   const runOp = async (operation: Operation): Promise<OperationResult> => {
     if (options?.doOnlyValueCreation) {
       if (operation.type === 'createValue') {
-        return await runCreateValue(operation, sourceLabel);
+        return await runCreateValue(varId, operation, sourceLabel);
       }
       return null;
     }
 
     if (options?.doOnlyConditionals) {
       if (operation.type === 'conditional') {
-        return await runConditional(selectionNode, operation, options, sourceLabel);
+        return await runConditional(varId, selectionNode, operation, options, sourceLabel);
       }
 
       if (options.onlyConditionalsWhitelist?.includes(operation.id)) {
@@ -82,28 +83,28 @@ export async function runOperations(
     }
 
     if (options?.doConditionals && operation.type === 'conditional') {
-      return await runConditional(selectionNode, operation, options, sourceLabel);
+      return await runConditional(varId, selectionNode, operation, options, sourceLabel);
     } else if (operation.type === 'adjValue') {
-      return await runAdjValue(operation, sourceLabel);
+      return await runAdjValue(varId, operation, sourceLabel);
     } else if (operation.type === 'setValue') {
-      return await runSetValue(operation, sourceLabel);
+      return await runSetValue(varId, operation, sourceLabel);
     } else if (operation.type === 'addBonusToValue') {
-      return await runAddBonusToValue(operation, sourceLabel);
+      return await runAddBonusToValue(varId, operation, sourceLabel);
     } else if (operation.type === 'giveAbilityBlock') {
-      return await runGiveAbilityBlock(selectionNode, operation, options, sourceLabel);
+      return await runGiveAbilityBlock(varId, selectionNode, operation, options, sourceLabel);
     } else if (operation.type === 'giveLanguage') {
-      return await runGiveLanguage(operation, sourceLabel);
+      return await runGiveLanguage(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpell') {
-      return await runGiveSpell(operation, sourceLabel);
+      return await runGiveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'removeAbilityBlock') {
-      return await runRemoveAbilityBlock(operation, sourceLabel);
+      return await runRemoveAbilityBlock(varId, operation, sourceLabel);
     } else if (operation.type === 'removeLanguage') {
-      return await runRemoveLanguage(operation, sourceLabel);
+      return await runRemoveLanguage(varId, operation, sourceLabel);
     } else if (operation.type === 'removeSpell') {
-      return await runRemoveSpell(operation, sourceLabel);
+      return await runRemoveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'select') {
       const subNode = selectionNode?.children[operation.id];
-      return await runSelect(subNode, operation, options, sourceLabel);
+      return await runSelect(varId, subNode, operation, options, sourceLabel);
     }
     return null;
   };
@@ -119,6 +120,7 @@ export async function runOperations(
 }
 
 async function runSelect(
+  varId: StoreID,
   selectionNode: SelectionTreeNode | undefined,
   operation: OperationSelect,
   options?: OperationOptions,
@@ -127,9 +129,14 @@ async function runSelect(
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
-    optionList = await determineFilteredSelectionList(operation.id, operation.data.optionsFilters);
+    optionList = await determineFilteredSelectionList(
+      'CHARACTER',
+      operation.id,
+      operation.data.optionsFilters
+    );
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
     optionList = await determinePredefinedSelectionList(
+      'CHARACTER',
       operation.data.optionType,
       operation.data.optionsPredefined
     );
@@ -141,7 +148,7 @@ async function runSelect(
   if (selectionNode && selectionNode.value) {
     const selectedOption = optionList.find((option) => option._select_uuid === selectionNode.value);
     if (selectedOption) {
-      updateVariables(operation, selectedOption, sourceLabel);
+      updateVariables(varId, operation, selectedOption, sourceLabel);
     } else {
       displayError(`Selected option "${selectionNode.value}" not found`);
       return null;
@@ -151,6 +158,7 @@ async function runSelect(
     // Run the operations of the selected option
     if (selectedOption.operations) {
       results = await runOperations(
+        varId,
         selectionNode.children[selectedOption._select_uuid],
         selectedOption.operations,
         options,
@@ -163,7 +171,7 @@ async function runSelect(
   let foundSkills: string[] = [];
   for (const option of optionList) {
     if (option.variable) {
-      const variable = getVariable(option.variable);
+      const variable = getVariable('CHARACTER', option.variable);
       if (variable?.type === 'prof' && variable.name.startsWith('SKILL_')) {
         foundSkills.push(variable.name);
       }
@@ -192,71 +200,83 @@ async function runSelect(
 }
 
 async function updateVariables(
+  varId: StoreID,
   operation: OperationSelect,
   selectedOption: ObjectWithUUID,
   sourceLabel?: string
 ) {
   if (operation.data.optionType === 'ABILITY_BLOCK') {
     if (selectedOption.type === 'feat') {
-      adjVariable('FEAT_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable('FEAT_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'FEAT_IDS', `${selectedOption.id}`, sourceLabel);
+      adjVariable(varId, 'FEAT_NAMES', selectedOption.name, sourceLabel);
     } else if (selectedOption.type === 'class-feature') {
-      adjVariable('CLASS_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable('CLASS_FEATURE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'CLASS_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
+      adjVariable(varId, 'CLASS_FEATURE_NAMES', selectedOption.name, sourceLabel);
     } else if (selectedOption.type === 'sense') {
-      adjVariable('SENSE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable('SENSE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'SENSE_IDS', `${selectedOption.id}`, sourceLabel);
+      adjVariable(varId, 'SENSE_NAMES', selectedOption.name, sourceLabel);
     } else if (selectedOption.type === 'heritage') {
-      adjVariable('HERITAGE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable('HERITAGE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'HERITAGE_IDS', `${selectedOption.id}`, sourceLabel);
+      adjVariable(varId, 'HERITAGE_NAMES', selectedOption.name, sourceLabel);
     } else if (selectedOption.type === 'physical-feature') {
-      adjVariable('PHYSICAL_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable('PHYSICAL_FEATURE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
+      adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', selectedOption.name, sourceLabel);
     } else {
       throwError(`Invalid ability block type: ${selectedOption.type}`);
     }
   } else if (operation.data.optionType === 'LANGUAGE') {
-    adjVariable('LANGUAGE_IDS', `${selectedOption.id}`, sourceLabel);
-    adjVariable('LANGUAGE_NAMES', selectedOption.name, sourceLabel);
+    adjVariable(varId, 'LANGUAGE_IDS', `${selectedOption.id}`, sourceLabel);
+    adjVariable(varId, 'LANGUAGE_NAMES', selectedOption.name, sourceLabel);
   } else if (operation.data.optionType === 'SPELL') {
-    adjVariable('SPELL_IDS', `${selectedOption.id}`, sourceLabel);
-    adjVariable('SPELL_NAMES', selectedOption.name, sourceLabel);
+    adjVariable(varId, 'SPELL_IDS', `${selectedOption.id}`, sourceLabel);
+    adjVariable(varId, 'SPELL_NAMES', selectedOption.name, sourceLabel);
   } else if (operation.data.optionType === 'ADJ_VALUE') {
-    adjVariable(selectedOption.variable, selectedOption.value, sourceLabel);
+    adjVariable(varId, selectedOption.variable, selectedOption.value, sourceLabel);
   } else if (operation.data.optionType === 'CUSTOM') {
     // Doesn't inherently do anything, just runs its operations
   }
 }
 
 async function runAdjValue(
+  varId: StoreID,
   operation: OperationAdjValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  adjVariable(operation.data.variable, operation.data.value, sourceLabel);
+  adjVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
   return null;
 }
 
 async function runSetValue(
+  varId: StoreID,
   operation: OperationSetValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  setVariable(operation.data.variable, operation.data.value, sourceLabel);
+  setVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
   return null;
 }
 
 async function runCreateValue(
+  varId: StoreID,
   operation: OperationCreateValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  addVariable(operation.data.type, operation.data.variable, operation.data.value, sourceLabel);
+  addVariable(
+    varId,
+    operation.data.type,
+    operation.data.variable,
+    operation.data.value,
+    sourceLabel
+  );
   return null;
 }
 
 async function runAddBonusToValue(
+  varId: StoreID,
   operation: OperationAddBonusToValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
   addVariableBonus(
+    varId,
     operation.data.variable,
     operation.data.value,
     operation.data.type,
@@ -267,6 +287,7 @@ async function runAddBonusToValue(
 }
 
 async function runGiveAbilityBlock(
+  varId: StoreID,
   selectionNode: SelectionTreeNode | undefined,
   operation: OperationGiveAbilityBlock,
   options?: OperationOptions,
@@ -282,25 +303,26 @@ async function runGiveAbilityBlock(
   }
 
   if (operation.data.type === 'feat') {
-    adjVariable('FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable('FEAT_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
+    adjVariable(varId, 'FEAT_NAMES', abilityBlock.name, sourceLabel);
   } else if (operation.data.type === 'class-feature') {
-    adjVariable('CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable('CLASS_FEATURE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
+    adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name, sourceLabel);
   } else if (operation.data.type === 'sense') {
-    adjVariable('SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable('SENSE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
+    adjVariable(varId, 'SENSE_NAMES', abilityBlock.name, sourceLabel);
   } else if (operation.data.type === 'heritage') {
-    adjVariable('HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable('HERITAGE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
+    adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name, sourceLabel);
   } else if (operation.data.type === 'physical-feature') {
-    adjVariable('PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable('PHYSICAL_FEATURE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
+    adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name, sourceLabel);
   }
 
   let results: OperationResult[] = [];
   if (abilityBlock.operations) {
     results = await runOperations(
+      varId,
       selectionNode?.children[operation.id],
       abilityBlock.operations,
       options,
@@ -323,6 +345,7 @@ async function runGiveAbilityBlock(
 }
 
 async function runGiveLanguage(
+  varId: StoreID,
   operation: OperationGiveLanguage,
   sourceLabel?: string
 ): Promise<OperationResult> {
@@ -332,12 +355,13 @@ async function runGiveLanguage(
     return null;
   }
 
-  adjVariable('LANGUAGE_IDS', `${language.id}`, sourceLabel);
-  adjVariable('LANGUAGE_NAMES', language.name, sourceLabel);
+  adjVariable(varId, 'LANGUAGE_IDS', `${language.id}`, sourceLabel);
+  adjVariable(varId, 'LANGUAGE_NAMES', language.name, sourceLabel);
   return null;
 }
 
 async function runGiveSpell(
+  varId: StoreID,
   operation: OperationGiveSpell,
   sourceLabel?: string
 ): Promise<OperationResult> {
@@ -347,12 +371,13 @@ async function runGiveSpell(
     return null;
   }
 
-  adjVariable('SPELL_IDS', `${spell.id}`, sourceLabel);
-  adjVariable('SPELL_NAMES', spell.name, sourceLabel);
+  adjVariable(varId, 'SPELL_IDS', `${spell.id}`, sourceLabel);
+  adjVariable(varId, 'SPELL_NAMES', spell.name, sourceLabel);
   return null;
 }
 
 async function runRemoveAbilityBlock(
+  varId: StoreID,
   operation: OperationRemoveAbilityBlock,
   sourceLabel?: string
 ): Promise<OperationResult> {
@@ -365,63 +390,73 @@ async function runRemoveAbilityBlock(
     return null;
   }
 
-  const getVariableList = (variableName: string) => {
-    return (getVariable(variableName)?.value ?? []) as string[];
+  const getVariableList = (varId: StoreID, variableName: string) => {
+    return (getVariable(varId, variableName)?.value ?? []) as string[];
   };
 
   if (operation.data.type === 'feat') {
     setVariable(
+      varId,
       'FEAT_IDS',
-      getVariableList('FEAT_IDS').filter((id) => id !== `${abilityBlock.id}`),
+      getVariableList(varId, 'FEAT_IDS').filter((id) => id !== `${abilityBlock.id}`),
       sourceLabel
     );
     setVariable(
+      varId,
       'FEAT_NAMES',
-      getVariableList('FEAT_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'FEAT_NAMES').filter((name) => name !== abilityBlock.name),
       sourceLabel
     );
   } else if (operation.data.type === 'class-feature') {
     setVariable(
+      varId,
       'CLASS_FEATURE_IDS',
-      getVariableList('CLASS_FEATURE_IDS').filter((id) => id !== `${abilityBlock.id}`),
+      getVariableList(varId, 'CLASS_FEATURE_IDS').filter((id) => id !== `${abilityBlock.id}`),
       sourceLabel
     );
     setVariable(
+      varId,
       'CLASS_FEATURE_NAMES',
-      getVariableList('CLASS_FEATURE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'CLASS_FEATURE_NAMES').filter((name) => name !== abilityBlock.name),
       sourceLabel
     );
   } else if (operation.data.type === 'sense') {
     setVariable(
+      varId,
       'SENSE_IDS',
-      getVariableList('SENSE_IDS').filter((id) => id !== `${abilityBlock.id}`),
+      getVariableList(varId, 'SENSE_IDS').filter((id) => id !== `${abilityBlock.id}`),
       sourceLabel
     );
     setVariable(
+      varId,
       'SENSE_NAMES',
-      getVariableList('SENSE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'SENSE_NAMES').filter((name) => name !== abilityBlock.name),
       sourceLabel
     );
   } else if (operation.data.type === 'heritage') {
     setVariable(
+      varId,
       'HERITAGE_IDS',
-      getVariableList('HERITAGE_IDS').filter((id) => id !== `${abilityBlock.id}`),
+      getVariableList(varId, 'HERITAGE_IDS').filter((id) => id !== `${abilityBlock.id}`),
       sourceLabel
     );
     setVariable(
+      varId,
       'HERITAGE_NAMES',
-      getVariableList('HERITAGE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'HERITAGE_NAMES').filter((name) => name !== abilityBlock.name),
       sourceLabel
     );
   } else if (operation.data.type === 'physical-feature') {
     setVariable(
+      varId,
       'PHYSICAL_FEATURE_IDS',
-      getVariableList('PHYSICAL_FEATURE_IDS').filter((id) => id !== `${abilityBlock.id}`),
+      getVariableList(varId, 'PHYSICAL_FEATURE_IDS').filter((id) => id !== `${abilityBlock.id}`),
       sourceLabel
     );
     setVariable(
+      varId,
       'PHYSICAL_FEATURE_NAMES',
-      getVariableList('PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name),
       sourceLabel
     );
   }
@@ -429,6 +464,7 @@ async function runRemoveAbilityBlock(
 }
 
 async function runRemoveLanguage(
+  varId: StoreID,
   operation: OperationRemoveLanguage,
   sourceLabel?: string
 ): Promise<OperationResult> {
@@ -439,15 +475,17 @@ async function runRemoveLanguage(
   }
 
   const getVariableList = (variableName: string) => {
-    return (getVariable(variableName)?.value ?? []) as string[];
+    return (getVariable(varId, variableName)?.value ?? []) as string[];
   };
 
   setVariable(
+    varId,
     'LANGUAGE_IDS',
     getVariableList('LANGUAGE_IDS').filter((id) => id !== `${language.id}`),
     sourceLabel
   );
   setVariable(
+    varId,
     'LANGUAGE_NAMES',
     getVariableList('LANGUAGE_NAMES').filter((name) => name !== language.name),
     sourceLabel
@@ -456,6 +494,7 @@ async function runRemoveLanguage(
 }
 
 async function runRemoveSpell(
+  varId: StoreID,
   operation: OperationRemoveSpell,
   sourceLabel?: string
 ): Promise<OperationResult> {
@@ -466,15 +505,17 @@ async function runRemoveSpell(
   }
 
   const getVariableList = (variableName: string) => {
-    return (getVariable(variableName)?.value ?? []) as string[];
+    return (getVariable(varId, variableName)?.value ?? []) as string[];
   };
 
   setVariable(
+    varId,
     'SPELL_IDS',
     getVariableList('SPELL_IDS').filter((id) => id !== `${spell.id}`),
     sourceLabel
   );
   setVariable(
+    varId,
     'SPELL_NAMES',
     getVariableList('SPELL_NAMES').filter((name) => name !== spell.name),
     sourceLabel
@@ -483,13 +524,14 @@ async function runRemoveSpell(
 }
 
 async function runConditional(
+  varId: StoreID,
   selectionNode: SelectionTreeNode | undefined,
   operation: OperationConditional,
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
   const makeCheck = (check: ConditionCheckData) => {
-    const variable = getVariable(check.name);
+    const variable = getVariable(varId, check.name);
     if (!variable) return false;
 
     if (variable.type === 'attr') {
@@ -566,6 +608,7 @@ async function runConditional(
   let results: OperationResult[] = [];
   if (isTrue) {
     results = await runOperations(
+      varId,
       selectionNode,
       operation.data.trueOperations ?? [],
       {
@@ -577,6 +620,7 @@ async function runConditional(
     );
   } else {
     results = await runOperations(
+      varId,
       selectionNode,
       operation.data.falseOperations ?? [],
       {

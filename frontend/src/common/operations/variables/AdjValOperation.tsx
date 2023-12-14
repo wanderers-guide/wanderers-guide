@@ -24,13 +24,13 @@ export function AdjValOperation(props: {
 }) {
   const [variableName, setVariableName] = useState(props.variable);
   const [variableData, setVariableData] = useState<Variable | undefined>(
-    getVariable(props.variable) ?? undefined
+    getVariable('CHARACTER', props.variable) ?? undefined
   );
   const [value, setValue] = useState<VariableValue>(props.value);
 
   useDidUpdate(() => {
     setVariableName(props.variable);
-    setVariableData(getVariable(props.variable) ?? undefined);
+    setVariableData(getVariable('CHARACTER', props.variable) ?? undefined);
     setValue(props.value);
   }, [props.value, props.variable]);
 

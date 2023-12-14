@@ -89,7 +89,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
     );
   }
 
-  const prereqMet = DISPLAY_PREREQUS && meetsPrerequisites(feat.prerequisites);
+  const prereqMet = DISPLAY_PREREQUS && meetsPrerequisites('CHARACTER', feat.prerequisites);
   const prereqUI: ReactNode[] = [];
   if (prereqMet && prereqMet.meetMap.size > 0) {
     for (const [prereq, met] of prereqMet.meetMap.entries()) {

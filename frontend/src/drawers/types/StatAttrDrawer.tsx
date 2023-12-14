@@ -75,7 +75,7 @@ export function StatAttrDrawerTitle(props: { data: {} }) {
 }
 
 export function StatAttrDrawerContent(props: { data: {} }) {
-  const attributes = getAllAttributeVariables();
+  const attributes = getAllAttributeVariables('CHARACTER');
   const theme = useMantineTheme();
 
   // Change structure to be an array by source
@@ -92,7 +92,7 @@ export function StatAttrDrawerContent(props: { data: {} }) {
   const sourceRecords: Record<string, (number | null | undefined)[]> = {};
 
   for (const attribute of attributes) {
-    const history = getVariableHistory(attribute.name);
+    const history = getVariableHistory('CHARACTER', attribute.name);
 
     for (const [index, record] of history.entries()) {
       if (!sourceRecords[record.source]) {

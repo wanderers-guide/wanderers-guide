@@ -139,7 +139,7 @@ export function OperationSection(props: {
     resetVariables();
     for (let op of props.value ?? []) {
       if (op.type === 'createValue') {
-        addVariable(op.data.type, op.data.variable, op.data.value);
+        addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value);
       }
     }
   }, [props.value]);

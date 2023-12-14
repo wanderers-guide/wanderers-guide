@@ -10,6 +10,7 @@ import {
   AttributeValue,
   ProficiencyValue,
   Variable,
+  StoreID,
   VariableType,
   VariableValue,
 } from '@typing/variables';
@@ -33,6 +34,7 @@ import { Box } from '@mantine/core';
 type CharacterState = [Character | null, SetterOrUpdater<Character | null>];
 
 export function getStatBlockDisplay(
+  id: StoreID,
   variableNames: string[],
   operations: Operation[],
   mode: 'READ' | 'READ/WRITE',
@@ -57,6 +59,7 @@ export function getStatBlockDisplay(
 
   for (const variableName of variableNames) {
     const { ui, operation, bestValue, variable, uuid } = getStatDisplay(
+      id,
       variableName,
       operations,
       mode,
@@ -81,6 +84,7 @@ export function getStatBlockDisplay(
  * @returns - {ui: ReactNode, operation?: Operation}
  */
 export function getStatDisplay(
+  id: StoreID,
   variableName: string,
   operations: Operation[],
   mode: 'READ' | 'READ/WRITE',
@@ -100,7 +104,7 @@ export function getStatDisplay(
   variable?: Variable;
   bestValue?: VariableValue | null;
 } {
-  const variable = getVariable(variableName);
+  const variable = getVariable(id, variableName);
   if (!variable) return { ui: null, operation: null };
 
   let bestOperation: Operation | null = null;
@@ -238,7 +242,7 @@ export function getStatDisplay(
   }
 
   return {
-    ui: getDisplay(bestValue, bestOperation, variable, mode, writeDetails, options),
+    ui: getDisplay(id, bestValue, bestOperation, variable, mode, writeDetails, options),
     operation: bestOperation,
     variable,
     bestValue,
@@ -247,6 +251,7 @@ export function getStatDisplay(
 }
 
 export function getDisplay(
+  id: StoreID,
   value: VariableValue | null,
   operation: OperationSelect | null,
   variable: Variable | undefined,
@@ -301,7 +306,7 @@ export function getDisplay(
           </Box>
         );
       } else {
-        const attrs = getVarList(operation, 'attr');
+        const attrs = getVarList(id, operation, 'attr');
         return (
           <>
             {listToLabel(
@@ -354,7 +359,7 @@ export function getDisplay(
         );
       } else {
         // Display as `Trained in your choice of Acrobatics or Athletics`
-        const profs = getVarList(operation, 'prof');
+        const profs = getVarList(id, operation, 'prof');
 
         // If all the profs are the same, display as `Trained in Acrobatics`
         if (profs.every((p) => p === profs[0])) {
@@ -462,13 +467,13 @@ export function getDisplay(
  * @param operation
  * @returns - List of labels of variables
  */
-function getVarList(operation: OperationSelect, type: VariableType): string[] {
+function getVarList(id: StoreID, operation: OperationSelect, type: VariableType): string[] {
   const labels: string[] = [];
 
   if (operation.data.optionType === 'ADJ_VALUE') {
     for (const option of (operation.data.optionsPredefined ??
       []) as OperationSelectOptionAdjValue[]) {
-      const variable = getVariable(option.operation.data.variable);
+      const variable = getVariable(id, option.operation.data.variable);
       if (variable && variable.type === type) {
         labels.push(variableToLabel(variable));
       }
@@ -488,7 +493,7 @@ function getVarList(operation: OperationSelect, type: VariableType): string[] {
       []) as OperationSelectOptionCustom[]) {
       for (const subop of option.operations ?? []) {
         if (subop.type === 'adjValue' || subop.type === 'setValue') {
-          const variable = getVariable(subop.data.variable);
+          const variable = getVariable(id, subop.data.variable);
           if (variable && variable.type === type) {
             labels.push(variableToLabel(variable));
           }

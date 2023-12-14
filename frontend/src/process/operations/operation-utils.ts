@@ -30,7 +30,7 @@ import {
   OperationSelectFiltersAdjValue,
   OperationAddBonusToValue,
 } from '@typing/operations';
-import { Variable, VariableProf } from '@typing/variables';
+import { Variable, StoreID, VariableProf } from '@typing/variables';
 import {
   getAllArmorGroupVariables,
   getAllAttributeVariables,
@@ -175,6 +175,7 @@ export interface ObjectWithUUID {
 }
 
 export async function determineFilteredSelectionList(
+  id: StoreID,
   operationUUID: string,
   filters: OperationSelectFilters
 ): Promise<ObjectWithUUID[]> {
@@ -183,9 +184,9 @@ export async function determineFilteredSelectionList(
   } else if (filters.type === 'SPELL') {
     return await getSpellList(operationUUID, filters);
   } else if (filters.type === 'LANGUAGE') {
-    return await getLanguageList(operationUUID, filters);
+    return await getLanguageList(id, operationUUID, filters);
   } else if (filters.type === 'ADJ_VALUE') {
-    return await getAdjValueList(operationUUID, filters);
+    return await getAdjValueList(id, operationUUID, filters);
   }
   return [];
 }
@@ -288,7 +289,11 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
   });
 }
 
-async function getLanguageList(operationUUID: string, filters: OperationSelectFiltersLanguage) {
+async function getLanguageList(
+  id: StoreID,
+  operationUUID: string,
+  filters: OperationSelectFiltersLanguage
+) {
   let languages = await fetchContentAll<Language>('language');
 
   if (filters.rarity) {
@@ -296,7 +301,7 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
   }
   if (filters.core) {
     // Sort by core first
-    const coreLangs = (getVariable('CORE_LANGUAGE_NAMES')?.value ?? []) as string[];
+    const coreLangs = (getVariable(id, 'CORE_LANGUAGE_NAMES')?.value ?? []) as string[];
     languages = languages.map((language) => ({
       ...language,
       _is_core: coreLangs.includes(language.name),
@@ -312,25 +317,29 @@ async function getLanguageList(operationUUID: string, filters: OperationSelectFi
   });
 }
 
-async function getAdjValueList(operationUUID: string, filters: OperationSelectFiltersAdjValue) {
+async function getAdjValueList(
+  id: StoreID,
+  operationUUID: string,
+  filters: OperationSelectFiltersAdjValue
+) {
   let variables: Variable[] = [];
 
   if (filters.group === 'SKILL') {
-    variables = getAllSkillVariables();
+    variables = getAllSkillVariables(id);
   }
   if (filters.group === 'ADD-LORE') {
-    variables = getAllSkillVariables().filter((variable) =>
+    variables = getAllSkillVariables(id).filter((variable) =>
       variable.name.startsWith('SKILL_LORE_')
     );
   }
   if (filters.group === 'ATTRIBUTE') {
-    variables = getAllAttributeVariables();
+    variables = getAllAttributeVariables(id);
   }
   if (filters.group === 'WEAPON-GROUP') {
-    variables = getAllWeaponGroupVariables();
+    variables = getAllWeaponGroupVariables(id);
   }
   if (filters.group === 'ARMOR-GROUP') {
-    variables = getAllArmorGroupVariables();
+    variables = getAllArmorGroupVariables(id);
   }
   if (filters.group === 'WEAPON') {
     const items = await fetchContentAll<Item>('item');
@@ -368,6 +377,7 @@ async function getAdjValueList(operationUUID: string, filters: OperationSelectFi
 }
 
 export async function determinePredefinedSelectionList(
+  id: StoreID,
   type: OperationSelectOptionType,
   options: OperationSelectOption[]
 ): Promise<ObjectWithUUID[]> {
@@ -378,7 +388,7 @@ export async function determinePredefinedSelectionList(
   } else if (type === 'LANGUAGE') {
     return await getLanguagePredefinedList(options as OperationSelectOptionLanguage[]);
   } else if (type === 'ADJ_VALUE') {
-    return await getAdjValuePredefinedList(options as OperationSelectOptionAdjValue[]);
+    return await getAdjValuePredefinedList(id, options as OperationSelectOptionAdjValue[]);
   } else if (type === 'CUSTOM') {
     return await getCustomPredefinedList(options as OperationSelectOptionCustom[]);
   }
@@ -448,9 +458,9 @@ async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[
   return result;
 }
 
-async function getAdjValuePredefinedList(options: OperationSelectOptionAdjValue[]) {
+async function getAdjValuePredefinedList(id: StoreID, options: OperationSelectOptionAdjValue[]) {
   return options.map((option) => {
-    const variable = getVariable(option.operation.data.variable);
+    const variable = getVariable(id, option.operation.data.variable);
     return {
       _select_uuid: option.operation.id,
       _content_type: 'ability-block' as ContentType,

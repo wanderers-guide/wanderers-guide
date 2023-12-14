@@ -579,7 +579,8 @@ export function convertAncestryOperationsIntoUI(
       : undefined;
 
   const boostAttributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     ancestryOperations,
     MODE,
     writeDetails,
@@ -587,17 +588,24 @@ export function convertAncestryOperationsIntoUI(
   );
 
   const flawAttributes = getStatBlockDisplay(
-    getAllAttributeVariables().map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     ancestryOperations,
     MODE,
     writeDetails,
     { onlyNegatives: true, fullNames: true }
   );
 
-  const ancestryHp = getStatDisplay('MAX_HEALTH_ANCESTRY', ancestryOperations, MODE, writeDetails);
+  const ancestryHp = getStatDisplay(
+    'CHARACTER',
+    'MAX_HEALTH_ANCESTRY',
+    ancestryOperations,
+    MODE,
+    writeDetails
+  );
 
-  const size = getStatDisplay('SIZE', ancestryOperations, MODE, writeDetails);
-  const speed = getStatDisplay('SPEED', ancestryOperations, MODE, writeDetails);
+  const size = getStatDisplay('CHARACTER', 'SIZE', ancestryOperations, MODE, writeDetails);
+  const speed = getStatDisplay('CHARACTER', 'SPEED', ancestryOperations, MODE, writeDetails);
 
   let coreLanguages = [];
   for (const op of ancestryOperations) {
@@ -625,7 +633,14 @@ export function convertAncestryOperationsIntoUI(
   } else if (MODE === 'READ/WRITE') {
     const languageOps = addedAncestryLanguages(ancestry);
     for (const op of languageOps) {
-      const result = getDisplay({ value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
+      const result = getDisplay(
+        'CHARACTER',
+        { value: 'T' },
+        op,
+        undefined,
+        'READ/WRITE',
+        writeDetails
+      );
       additionalLanguages.push({
         ui: result,
         operation: op,

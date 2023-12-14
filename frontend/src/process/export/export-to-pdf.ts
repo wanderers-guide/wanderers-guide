@@ -75,6 +75,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   // Get all content that the character uses
   defineDefaultSources(character.content_sources?.enabled ?? []);
   const content = await fetchContentPackage(undefined, true);
+  const STORE_ID = 'CHARACTER';
 
   // Execute all operations (to update the variables)
   await executeCharacterOperations(character, content, 'CHARACTER-BUILDER');
@@ -85,7 +86,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('Background').setText(character.details?.background?.name);
   form.getTextField('Class').setText(character.details?.class?.name);
   form.getTextField('Heritage and Traits').setText('TODO');
-  form.getTextField('Size').setText(getVariable<VariableStr>('SIZE')?.value);
+  form.getTextField('Size').setText(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value);
   form.getTextField('Background Notes').setText('TODO');
   form.getTextField('Class Notes').setText('TODO');
   form.getTextField('Temporary HP').setText(character.hp_temp + '');
@@ -109,8 +110,8 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   // Set partial (since it's a radio group, only one can be selected)
   let firstPartialIndex = -1;
-  for (let i = 0; i < getAllAttributeVariables().length; i++) {
-    const attr = getAllAttributeVariables()[i];
+  for (let i = 0; i < getAllAttributeVariables(STORE_ID).length; i++) {
+    const attr = getAllAttributeVariables(STORE_ID)[i];
     if (attr.value.partial) {
       firstPartialIndex = i;
       break;
@@ -122,16 +123,16 @@ async function fillPDF(form: PDFForm, character: Character) {
       .select(form.getRadioGroup('Strength').getOptions()[firstPartialIndex]);
   }
 
-  form.getTextField('AC').setText(getVariable<VariableNum>('AC')?.value + '');
+  form.getTextField('AC').setText(getVariable<VariableNum>(STORE_ID, 'AC')?.value + '');
   form.getTextField('SHIELD').setText('TODO');
   form.getTextField('Hardness Max HP').setText('TODO');
   form.getTextField('HP').setText('TODO');
   form.getTextField('MAX HP').setText('TODO'); // getFinalHealthValue()
 
   const profFillIn = (variableName: string, sheetId: string, profSheetId?: string) => {
-    const variable = getVariable<VariableProf>(variableName);
+    const variable = getVariable<VariableProf>(STORE_ID, variableName);
     if (variable?.value.attribute) {
-      form.getTextField(sheetId).setText(getFinalProfValue(variable?.name ?? ''));
+      form.getTextField(sheetId).setText(getFinalProfValue(STORE_ID, variable?.name ?? ''));
     }
     if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'T')) {
       form.getCheckBox((profSheetId ?? sheetId) + ' TRAINED').check();
@@ -176,7 +177,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   // Find first two lores
   let lore1 = '';
   let lore2 = '';
-  getAllSkillVariables().forEach((skill) => {
+  getAllSkillVariables(STORE_ID).forEach((skill) => {
     if (skill.name.startsWith('SKILL_LORE_') && skill.name !== 'SKILL_LORE____') {
       if (lore1 === '') {
         lore1 = skill.name;
@@ -197,11 +198,13 @@ async function fillPDF(form: PDFForm, character: Character) {
   // For save calcs
   form
     .getTextField('DEXTERITY')
-    .setText(getVariable<VariableAttr>('ATTRIBUTE_DEX')?.value.value + '');
+    .setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_DEX')?.value.value + '');
   form
     .getTextField('CONSTITUTION')
-    .setText(getVariable<VariableAttr>('ATTRIBUTE_CON')?.value.value + '');
-  form.getTextField('WISDOM').setText(getVariable<VariableAttr>('ATTRIBUTE_WIS')?.value.value + '');
+    .setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_CON')?.value.value + '');
+  form
+    .getTextField('WISDOM')
+    .setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_WIS')?.value.value + '');
 
   // Dying & Wounded
   // form.getRadioGroup('DYING 1')

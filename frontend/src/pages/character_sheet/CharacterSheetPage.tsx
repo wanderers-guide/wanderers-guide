@@ -408,7 +408,7 @@ function HealthSection() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
-  const maxHealth = getFinalHealthValue();
+  const maxHealth = getFinalHealthValue('CHARACTER');
   let currentHealth = character?.hp_current;
   if (currentHealth === undefined || currentHealth < 0) {
     currentHealth = maxHealth;
@@ -630,13 +630,17 @@ function AttributeSection() {
         h='100%'
       >
         <SimpleGrid cols={2} spacing='sm' verticalSpacing='sm'>
-          {getAllAttributeVariables().map((attribute, index) => (
+          {getAllAttributeVariables('CHARACTER').map((attribute, index) => (
             <Button.Group key={index}>
               <BlurButton size='compact-xs' fw={400}>
                 {variableToLabel(attribute)}
               </BlurButton>
               <Button radius='xl' variant='light' color='dark.5' size='compact-xs' w={35}>
-                {displayAttributeValue(attribute.name, { c: 'gray.0', ta: 'center', fz: 'xs' })}
+                {displayAttributeValue('CHARACTER', attribute.name, {
+                  c: 'gray.0',
+                  ta: 'center',
+                  fz: 'xs',
+                })}
               </Button>
             </Button.Group>
           ))}
@@ -721,7 +725,7 @@ function ArmorSection() {
             </Box>
           </Group>
           <Stack gap='sm'>
-            {getAllSaveVariables().map((save, index) => (
+            {getAllSaveVariables('CHARACTER').map((save, index) => (
               <Button.Group key={index}>
                 <BlurButton size='compact-xs' fw={400}>
                   {variableToLabel(save)}
@@ -735,7 +739,7 @@ function ArmorSection() {
                   style={{ position: 'relative' }}
                 >
                   <Text c='gray.0' fz='xs' pr={15}>
-                    {displayFinalProfValue(save.name)}
+                    {displayFinalProfValue('CHARACTER', save.name)}
                   </Text>
                   <Badge
                     size='xs'
@@ -797,7 +801,7 @@ function SpeedSection() {
                 Perception
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
-                {displayFinalProfValue('PERCEPTION')}
+                {displayFinalProfValue('CHARACTER', 'PERCEPTION')}
               </Text>
               <Text fz='xs' c='gray.5' ta='center'>
                 Normal Vision
@@ -847,7 +851,7 @@ function SpeedSection() {
                 Class DC
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
-                {displayFinalProfValue('CLASS_DC', true)}
+                {displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}
               </Text>
               {/* <Text fz='xs' c='gray.5' ta='center'>
                 And Others
@@ -878,7 +882,8 @@ function SectionPanels(props: { content: ContentPackage }) {
     'notes',
     'extras',
   ];
-  const primaryBuilderTabs = getVariable<VariableListStr>('PRIMARY_BUILDER_TABS')?.value ?? [];
+  const primaryBuilderTabs =
+    getVariable<VariableListStr>('CHARACTER', 'PRIMARY_BUILDER_TABS')?.value ?? [];
   const tabOptions = allBuilderTabs.filter((tab) => !primaryBuilderTabs.includes(tab));
   const openedTabOption = tabOptions.find((tab) => tab === activeTab);
   const getTabIcon = (tab: string) => {
@@ -1067,7 +1072,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
           />
           <ScrollArea h={props.panelHeight - 50}>
             <Stack gap={5}>
-              {getAllSkillVariables()
+              {getAllSkillVariables('CHARACTER')
                 .filter((skill) => skill.name !== 'SKILL_LORE____')
                 .filter(
                   (skill) =>
@@ -1095,7 +1100,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue(skill.name)}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
                       <Badge variant='default'>{skill?.value.value}</Badge>
                     </Group>
                   </StatButton>
@@ -1428,16 +1433,22 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
 
   const [character, setCharacter] = useRecoilState(characterState);
 
-  const languages = (getVariable<VariableListStr>('LANGUAGE_IDS')?.value ?? []).map((langId) => {
-    const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
-    return lang;
-  });
+  const languages = (getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map(
+    (langId) => {
+      const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
+      return lang;
+    }
+  );
 
-  const weaponGroupProfs = getAllWeaponGroupVariables().filter((prof) => prof.value.value !== 'U');
-  const weaponProfs = getAllWeaponVariables().filter((prof) => prof.value.value !== 'U');
+  const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter(
+    (prof) => prof.value.value !== 'U'
+  );
+  const weaponProfs = getAllWeaponVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
 
-  const armorGroupProfs = getAllArmorGroupVariables().filter((prof) => prof.value.value !== 'U');
-  const armorProfs = getAllArmorVariables().filter((prof) => prof.value.value !== 'U');
+  const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter(
+    (prof) => prof.value.value !== 'U'
+  );
+  const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
 
   return (
     <Group align='flex-start'>
@@ -1818,7 +1829,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1837,7 +1848,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1856,7 +1867,10 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value.value}
+                            {
+                              getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value
+                                .value
+                            }
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1875,7 +1889,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('UNARMED_ATTACKS')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1905,7 +1919,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('LIGHT_ARMOR')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1924,7 +1938,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('MEDIUM_ARMOR')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1943,7 +1957,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('HEAVY_ARMOR')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1962,7 +1976,10 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value.value}
+                            {
+                              getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value
+                                .value
+                            }
                           </Badge>
                         </Group>
                       </StatButton>
@@ -1991,9 +2008,11 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                           </Text>
                         </Box>
                         <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SPELL_ATTACK')}</Text>
+                          <Text c='gray.0'>
+                            {displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}
+                          </Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SPELL_ATTACK')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -2011,9 +2030,9 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                           </Text>
                         </Box>
                         <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('SPELL_DC')}</Text>
+                          <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
                           <Badge variant='default'>
-                            {getVariable<VariableProf>('SPELL_DC')?.value.value}
+                            {getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -2169,9 +2188,9 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                     </Text>
                   </Box>
                   <Group>
-                    <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
+                    <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
                     <Badge variant='default'>
-                      {getVariable<VariableProf>('CLASS_DC')?.value.value}
+                      {getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}
                     </Badge>
                   </Group>
                 </StatButton>

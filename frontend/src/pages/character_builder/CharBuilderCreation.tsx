@@ -412,7 +412,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               </Text>
             </Box>
             <Box>
-              <Text c='gray.0'>{displayFinalHealthValue()}</Text>
+              <Text c='gray.0'>{displayFinalHealthValue('CHARACTER')}</Text>
             </Box>
           </StatButton>
           <StatButton
@@ -426,8 +426,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               </Text>
             </Box>
             <Group>
-              <Text c='gray.0'>{displayFinalProfValue('CLASS_DC', true)}</Text>
-              <Badge variant='default'>{getVariable<VariableProf>('CLASS_DC')?.value.value}</Badge>
+              <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
+              <Badge variant='default'>
+                {getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}
+              </Badge>
             </Group>
           </StatButton>
           <StatButton
@@ -441,9 +443,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               </Text>
             </Box>
             <Group>
-              <Text c='gray.0'>{displayFinalProfValue('PERCEPTION')}</Text>
+              <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'PERCEPTION')}</Text>
               <Badge variant='default'>
-                {getVariable<VariableProf>('PERCEPTION')?.value.value}
+                {getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value.value}
               </Badge>
             </Group>
           </StatButton>
@@ -472,7 +474,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={5}>
-                  {getAllSkillVariables()
+                  {getAllSkillVariables('CHARACTER')
                     .filter((skill) => skill.name !== 'SKILL_LORE____')
                     .map((skill, index) => (
                       <StatButton
@@ -490,7 +492,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                           </Text>
                         </Box>
                         <Group>
-                          <Text c='gray.0'>{displayFinalProfValue(skill.name)}</Text>
+                          <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
                           <Badge variant='default'>{skill?.value.value}</Badge>
                         </Group>
                       </StatButton>
@@ -520,9 +522,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('SAVE_FORT')}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_FORT')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('SAVE_FORT')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'SAVE_FORT')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -540,9 +542,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('SAVE_REFLEX')}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_REFLEX')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('SAVE_REFLEX')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'SAVE_REFLEX')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -560,9 +562,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('SAVE_WILL')}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_WILL')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('SAVE_WILL')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'SAVE_WILL')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -592,7 +594,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('SIMPLE_WEAPONS')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -611,7 +613,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('MARTIAL_WEAPONS')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -630,7 +632,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('ADVANCED_WEAPONS')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -649,7 +651,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('UNARMED_ATTACKS')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -679,7 +681,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('LIGHT_ARMOR')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -698,7 +700,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('MEDIUM_ARMOR')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -717,7 +719,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('HEAVY_ARMOR')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -736,7 +738,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('UNARMORED_DEFENSE')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -765,9 +767,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('SPELL_ATTACK')}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('SPELL_ATTACK')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -785,9 +787,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('SPELL_DC')}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('SPELL_DC')?.value.value}
+                        {getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -802,7 +804,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={5}>
-                  {(getVariable<VariableListStr>('LANGUAGE_IDS')?.value ?? []).map(
+                  {(getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map(
                     (languageId, index) => (
                       <StatButton
                         key={index}
@@ -850,7 +852,7 @@ function AttributeModPart(props: { attribute: string; variableName: string }) {
         {props.attribute}
       </Text>
       <Text c='gray.0' ta='center'>
-        {displayAttributeValue(props.variableName, { c: 'gray.0', ta: 'center' })}
+        {displayAttributeValue('CHARACTER', props.variableName, { c: 'gray.0', ta: 'center' })}
       </Text>
     </Box>
   );

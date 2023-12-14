@@ -1,8 +1,12 @@
-import { Autocomplete } from "@mantine/core";
-import { Variable, VariableType } from "@typing/variables";
-import { getVariables } from "@variables/variable-manager";
+import { Autocomplete } from '@mantine/core';
+import { Variable, VariableType } from '@typing/variables';
+import { getVariables } from '@variables/variable-manager';
 
-export default function VariableSelect(props: { value: string; variableType?: VariableType; onChange: (value: string, variable?: Variable) => void }) {
+export default function VariableSelect(props: {
+  value: string;
+  variableType?: VariableType;
+  onChange: (value: string, variable?: Variable) => void;
+}) {
   return (
     <Autocomplete
       ff='Ubuntu Mono, monospace'
@@ -12,13 +16,13 @@ export default function VariableSelect(props: { value: string; variableType?: Va
       value={props.value}
       onChange={(value) => {
         const variable = value.toUpperCase().replace(/\s/g, '_');
-        props.onChange(value, getVariables()[variable]);
+        props.onChange(value, getVariables('CHARACTER')[variable]);
       }}
-      data={Object.keys(getVariables())
+      data={Object.keys(getVariables('CHARACTER'))
         .filter((variable) => !variable.endsWith('____'))
         .filter((variable) => {
           if (props.variableType) {
-            return getVariables()[variable].type === props.variableType;
+            return getVariables('CHARACTER')[variable].type === props.variableType;
           }
           return true;
         })}

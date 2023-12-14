@@ -1,22 +1,22 @@
-import { VariableAttr, VariableNum, VariableProf } from '@typing/variables';
+import { VariableAttr, StoreID, VariableNum, VariableProf } from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
 import { getProficiencyTypeValue } from './variable-utils';
 
-export function getFinalProfValue(variableName: string, isDC: boolean = false) {
-  const parts = getProfValueParts(variableName)!;
+export function getFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
+  const parts = getProfValueParts(id, variableName)!;
   return isDC
     ? `${10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue}`
     : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue);
 }
 
-export function displayFinalProfValue(variableName: string, isDC: boolean = false) {
-  const variable = getVariable<VariableProf>(variableName);
+export function displayFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
+  const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
 
-  const parts = getProfValueParts(variableName)!;
-  const value = getFinalProfValue(variableName, isDC);
+  const parts = getProfValueParts(id, variableName)!;
+  const value = getFinalProfValue(id, variableName, isDC);
 
   return (
     <span style={{ position: 'relative' }}>
@@ -37,16 +37,17 @@ export function displayFinalProfValue(variableName: string, isDC: boolean = fals
   );
 }
 
-export function getProfValueParts(variableName: string) {
-  const variable = getVariable<VariableProf>(variableName);
+export function getProfValueParts(id: StoreID, variableName: string) {
+  const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
-  const breakdown = getProfBreakdown(variableName);
+  const breakdown = getProfBreakdown(id, variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
 
-  const level = variable.value.value !== 'U' ? getVariable<VariableNum>('LEVEL')?.value ?? 0 : 0;
+  const level =
+    variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
   const profValue = getProficiencyTypeValue(variable.value.value);
   const attributeMod =
-    getVariable<VariableAttr>(variable.value.attribute ?? '')?.value.value ?? null;
+    getVariable<VariableAttr>(id, variable.value.attribute ?? '')?.value.value ?? null;
   const totalBonusValue = Array.from(breakdown.bonuses.values()).reduce(
     (acc, bonus) => acc + bonus.value,
     0
@@ -62,8 +63,8 @@ export function getProfValueParts(variableName: string) {
   };
 }
 
-function getProfBreakdown(variableName: string) {
-  const bonuses = getVariableBonuses(variableName);
+function getProfBreakdown(id: StoreID, variableName: string) {
+  const bonuses = getVariableBonuses(id, variableName);
 
   const bMap = new Map<
     string,
@@ -129,12 +130,12 @@ export function getBonusText(bonus: {
   return '';
 }
 
-export function getHealthValueParts() {
-  const ancestryHp = getVariable<VariableNum>('MAX_HEALTH_ANCESTRY')!.value;
-  const classHp = getVariable<VariableNum>('MAX_HEALTH_CLASS_PER_LEVEL')!.value;
-  const bonusHp = getVariable<VariableNum>('MAX_HEALTH_BONUS')!.value;
-  const conMod = getVariable<VariableAttr>('ATTRIBUTE_CON')!.value.value;
-  const level = getVariable<VariableNum>('LEVEL')!.value;
+export function getHealthValueParts(id: StoreID) {
+  const ancestryHp = getVariable<VariableNum>(id, 'MAX_HEALTH_ANCESTRY')!.value;
+  const classHp = getVariable<VariableNum>(id, 'MAX_HEALTH_CLASS_PER_LEVEL')!.value;
+  const bonusHp = getVariable<VariableNum>(id, 'MAX_HEALTH_BONUS')!.value;
+  const conMod = getVariable<VariableAttr>(id, 'ATTRIBUTE_CON')!.value.value;
+  const level = getVariable<VariableNum>(id, 'LEVEL')!.value;
 
   return {
     level,
@@ -145,17 +146,17 @@ export function getHealthValueParts() {
   };
 }
 
-export function getFinalHealthValue() {
-  const { level, ancestryHp, classHp, bonusHp, conMod } = getHealthValueParts();
+export function getFinalHealthValue(id: StoreID) {
+  const { level, ancestryHp, classHp, bonusHp, conMod } = getHealthValueParts(id);
   return ancestryHp + bonusHp + (classHp + conMod) * level;
 }
 
-export function displayFinalHealthValue() {
-  return <span>{getFinalHealthValue()}</span>;
+export function displayFinalHealthValue(id: StoreID) {
+  return <span>{getFinalHealthValue(id)}</span>;
 }
 
-export function displayAttributeValue(attributeName: string, textProps?: TextProps) {
-  const attribute = getVariable<VariableAttr>(attributeName);
+export function displayAttributeValue(id: StoreID, attributeName: string, textProps?: TextProps) {
+  const attribute = getVariable<VariableAttr>(id, attributeName);
   if (!attribute) return null;
   return (
     <Text {...textProps}>
