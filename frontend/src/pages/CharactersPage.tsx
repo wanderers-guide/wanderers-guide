@@ -53,6 +53,7 @@ import exportToJSON from '@export/export-to-json';
 import importFromJSON from '@import/json/import-from-json';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import exportToPDF from '@export/export-to-pdf';
+import BlurButton from '@common/BlurButton';
 
 export default function DashboardPage() {
   setPageTitle(`Characters`);
@@ -80,6 +81,16 @@ export default function DashboardPage() {
 
   const CHARACTER_LIMIT = 3;
 
+  const [loadingCreateCharacter, setLoadingCreateCharacter] = useState(false);
+  const handleCreateCharacter = async () => {
+    setLoadingCreateCharacter(true);
+    const character = await createCharacter();
+    if (character) {
+      navigate(`/builder/${character.id}`);
+    }
+    setLoadingCreateCharacter(false);
+  };
+
   return (
     <Center>
       <Box maw={875} w='100%'>
@@ -101,12 +112,7 @@ export default function DashboardPage() {
                   size='xl'
                   radius='xl'
                   aria-label='Create Character'
-                  onClick={async () => {
-                    const character = await createCharacter();
-                    if (character) {
-                      navigate(`/builder/${character.id}`);
-                    }
-                  }}
+                  onClick={handleCreateCharacter}
                 >
                   <IconUserPlus style={{ width: '70%', height: '70%' }} stroke={2.5} />
                 </ActionIcon>
@@ -185,9 +191,10 @@ export default function DashboardPage() {
           {isLoading && (
             <Loader
               size='lg'
+              type='bars'
               style={{
                 position: 'absolute',
-                top: '35%',
+                top: '30%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
               }}
@@ -196,6 +203,22 @@ export default function DashboardPage() {
           {(characters ?? []).map((character, index) => (
             <CharacterCard key={index} character={character} />
           ))}
+          {!isLoading && (characters ?? []).length === 0 && (
+            <BlurBox w={'100%'} h={200}>
+              <Stack mt={50} gap={10}>
+                <Text ta='center' c='gray.5' fs='italic'>
+                  No characters found, want to create one?
+                </Text>
+                <Center>
+                  <Box>
+                    <BlurButton loading={loadingCreateCharacter} onClick={handleCreateCharacter}>
+                      Create Character
+                    </BlurButton>
+                  </Box>
+                </Center>
+              </Stack>
+            </BlurBox>
+          )}
         </Group>
       </Box>
     </Center>

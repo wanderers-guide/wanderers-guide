@@ -36,7 +36,7 @@ export const CharacterInfo = React.forwardRef(
     const hasBackground = props.character?.details?.background?.name !== undefined;
 
     return (
-      <div ref={ref} style={{ width: 260 }}>
+      <div ref={ref} style={{ width: 240 }}>
         <Group wrap='nowrap' align='flex-start' gap={0}>
           {!props.hideImage && (
             <Avatar
@@ -45,7 +45,8 @@ export const CharacterInfo = React.forwardRef(
               size={75}
               radius={75}
               mt={10}
-              mx={10}
+              ml={5}
+              mr={10}
               variant='transparent'
               color='dark.3'
               bg={theme.colors.dark[6]}

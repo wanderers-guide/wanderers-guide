@@ -1,4 +1,4 @@
-import { useDisclosure, useHeadroom, useViewportSize } from '@mantine/hooks';
+import { useDebouncedState, useDisclosure, useHeadroom, useViewportSize } from '@mantine/hooks';
 import {
   AppShell,
   Avatar,
@@ -12,6 +12,7 @@ import {
   rem,
   useMantineTheme,
   Divider,
+  ScrollArea,
 } from '@mantine/core';
 import classes from '@css/Layout.module.css';
 import WanderersGuideLogo from './WanderersGuideLogo';
@@ -35,7 +36,7 @@ import {
   IconUsers,
   IconSpeakerphone,
 } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getIcon } from '@utils/images';
 import { userIconState } from '@atoms/navAtoms';
 import { supabase } from '../main';
@@ -44,7 +45,6 @@ import { LoginButton } from './LoginButton';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
-  const pinned = useHeadroom({ fixedAt: 120 });
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
@@ -61,6 +61,10 @@ export default function Layout(props: { children: React.ReactNode }) {
       setUserIcon(svg);
     });
   }, [session]);
+
+  // Scroll to hide header,
+  const [pinned, setPinned] = useState(true);
+  const SCROLL_PINNED_THRESHOLD = 20;
 
   return (
     <AppShell
@@ -301,9 +305,21 @@ export default function Layout(props: { children: React.ReactNode }) {
         </UnstyledButton>
       </AppShell.Navbar>
 
-      <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>
-        {props.children}
-      </AppShell.Main>
+      <ScrollArea
+        h={'100vh'}
+        type='auto'
+        onScrollPositionChange={(pos) => {
+          if (pos.y > SCROLL_PINNED_THRESHOLD) {
+            setPinned(false);
+          } else {
+            setPinned(true);
+          }
+        }}
+      >
+        <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>
+          {props.children}
+        </AppShell.Main>
+      </ScrollArea>
     </AppShell>
   );
 }

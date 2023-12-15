@@ -1,4 +1,4 @@
-import { Box, BoxComponentProps, useMantineTheme } from "@mantine/core";
+import { Box, BoxComponentProps, useMantineTheme } from '@mantine/core';
 
 interface BlurBoxProps extends BoxComponentProps {
   children: React.ReactNode;

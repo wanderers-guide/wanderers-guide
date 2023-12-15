@@ -1,4 +1,11 @@
-import { Anchor, BackgroundImage, MantineProvider, Text, createTheme } from '@mantine/core';
+import {
+  Anchor,
+  BackgroundImage,
+  MantineProvider,
+  ScrollArea,
+  Text,
+  createTheme,
+} from '@mantine/core';
 import Layout from './nav/Layout';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';

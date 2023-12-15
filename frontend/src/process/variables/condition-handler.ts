@@ -125,7 +125,6 @@ const CONDITIONS: Condition[] = [
     name: 'Fatigued',
     description: `You’re tired and can’t summon much energy. You take a –1 status penalty to AC and saving throws. You can’t use exploration activities performed while traveling, such as those on pages 438–439.
     You recover from fatigue after a full night’s rest.`,
-    value: 1,
     for_character: true,
     for_creature: true,
     for_object: false,
@@ -590,7 +589,7 @@ function applyCondition(id: StoreID, condition: Condition) {
   if (condition.name === 'Fatigued') {
     addVariableBonus(id, 'AC', -1, 'status', '', 'Fatigued');
     for (const save of getAllSaveVariables(id)) {
-      addVariableBonus(id, save.name, -2, 'status', '', 'Fatigued');
+      addVariableBonus(id, save.name, -1, 'status', '', 'Fatigued');
     }
     return;
   }

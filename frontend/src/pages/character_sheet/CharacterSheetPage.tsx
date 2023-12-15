@@ -91,7 +91,13 @@ import {
 } from '@typing/content';
 import { makeRequest } from '@requests/request-manager';
 import { useLoaderData, useNavigate } from 'react-router-dom';
-import { useDebouncedValue, useDidUpdate, useHover, useInterval } from '@mantine/hooks';
+import {
+  getHotkeyHandler,
+  useDebouncedValue,
+  useDidUpdate,
+  useHover,
+  useInterval,
+} from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
@@ -112,7 +118,7 @@ import {
   getVariable,
   getVariables,
 } from '@variables/variable-manager';
-import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
+import { VariableAttr, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { toLabel } from '@utils/strings';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
@@ -153,6 +159,7 @@ import {
   getAllConditions,
   getConditionByName,
 } from '@variables/condition-handler';
+import tinyInputClasses from '@css/TinyBlurInput.module.css';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -269,6 +276,32 @@ function confirmHealth(
       },
     };
   });
+  return result;
+}
+
+function confirmExperience(
+  exp: string,
+  character: Character,
+  setCharacter: SetterOrUpdater<Character | null>
+) {
+  let result = -1;
+  try {
+    result = math.evaluate(exp);
+  } catch (e) {
+    result = parseInt(exp);
+  }
+  if (isNaN(result)) result = 0;
+  result = Math.floor(result);
+  if (result < 0) result = 0;
+
+  setCharacter((c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      experience: result,
+    };
+  });
+  return result;
 }
 
 function CharacterSheetInner(props: {
@@ -403,6 +436,100 @@ function CharacterInfoSection() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
+  const expRef = useRef<HTMLInputElement>(null);
+  const [exp, setExp] = useState<string | undefined>();
+  useEffect(() => {
+    setExp(character?.experience ? `${character.experience}` : undefined);
+  }, [character]);
+
+  const handleExperienceSubmit = () => {
+    if (!character) return;
+    const finalExp = confirmExperience(exp ?? '0', character, setCharacter);
+    setExp(`${finalExp}`);
+    expRef.current?.blur();
+  };
+
+  const handleRest = () => {
+    const newCharacter = _.cloneDeep(character);
+    if (!newCharacter) return;
+
+    // Regen Health
+    const conMod = getVariable<VariableAttr>('CHARACTER', 'ATTRIBUTE_CON')?.value.value ?? 0;
+    const level = getVariable<VariableNum>('CHARACTER', 'LEVEL')!.value;
+    let regenAmount = level * (1 > conMod ? 1 : conMod);
+
+    const maxHealth = getFinalHealthValue('CHARACTER');
+    let currentHealth = character?.hp_current;
+    if (currentHealth === undefined || currentHealth < 0) {
+      currentHealth = maxHealth;
+    }
+    if (currentHealth + regenAmount > maxHealth) {
+      regenAmount = maxHealth - currentHealth;
+    }
+    newCharacter.hp_current = currentHealth + regenAmount;
+
+    // Regen Stamina and Resolve
+    if (true) {
+      const classHP = getVariable<VariableNum>('CHARACTER', 'MAX_HEALTH_CLASS_PER_LEVEL')!.value;
+      const newStamina = (Math.floor(classHP / 2) + conMod) * level;
+
+      let keyMod = 0;
+      const classDC = getVariable<VariableProf>('CHARACTER', 'CLASS_DC')!;
+      if (classDC.value.attribute) {
+        keyMod = getVariable<VariableAttr>('CHARACTER', classDC.value.attribute)?.value.value ?? 0;
+      }
+      const newResolve = keyMod;
+
+      newCharacter.stamina_current = newStamina;
+      newCharacter.resolve_current = newResolve;
+    }
+
+    // Reset Innate Spells
+    // TODO:
+
+    // Reset Focus Points
+    // TODO:
+
+    // Reset Spell Slots
+    // TODO:
+
+    // Remove Fatigued Condition
+    let newConditions = _.cloneDeep(character?.details?.conditions ?? []).filter(
+      (c) => c.name !== 'Fatigued'
+    );
+
+    // Remove Wounded condition if we're now at full health
+    const wounded = newConditions.find((c) => c.name === 'Wounded');
+    if (wounded && newCharacter.hp_current === maxHealth) {
+      newConditions = newConditions.filter((c) => c.name !== 'Wounded');
+    }
+
+    // Decrease Drained Condition
+    const drained = newConditions.find((c) => c.name === 'Drained');
+    if (drained) {
+      drained.value = drained.value! - 1;
+      if (drained.value! <= 0) {
+        newConditions = newConditions.filter((c) => c.name !== 'Drained');
+      }
+    }
+
+    // Decrease Doomed Condition
+    const doomed = newConditions.find((c) => c.name === 'Doomed');
+    if (doomed) {
+      doomed.value = doomed.value! - 1;
+      if (doomed.value! <= 0) {
+        newConditions = newConditions.filter((c) => c.name !== 'Doomed');
+      }
+    }
+    newCharacter.details = {
+      ...newCharacter.details,
+      conditions: newConditions,
+    };
+
+    // Update the character
+    setCharacter(newCharacter);
+  };
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -415,7 +542,7 @@ function CharacterInfoSection() {
           position: 'relative',
         }}
       >
-        <Stack gap={2}>
+        <Group gap={20} wrap='nowrap' align='flex-start'>
           <CharacterInfo
             character={character}
             color='gray.5'
@@ -430,45 +557,57 @@ function CharacterInfoSection() {
               openDrawer({ type: 'class', data: { id: character?.details?.class?.id } });
             }}
           />
-          {/* <Group wrap='nowrap' align='flex-end' justify='flex-end' gap={0}>
-            <Group w={150} gap={10} wrap='nowrap'>
-              <Text fz='sm' fw={600} c='gray.5'>
-                Lvl. 20
-              </Text>
-              <NumberInput
-                variant='filled'
-                w={80}
-                size='xs'
-                radius='lg'
-                placeholder='Exp.'
-                hideControls
-                allowNegative={false}
-                styles={{
-                  input: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                  },
-                }}
-              />
-            </Group>
-            <Group w={130} gap={5} wrap='nowrap'>
-              <BlurButton
-                size='xs'
-                fullWidth
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  navigate(`/builder/${character?.id}`);
-                }}
-                href={`/builder/${character?.id}`}
-              >
-                Edit
-              </BlurButton>
-              <BlurButton size='xs' fullWidth onClick={(e) => {}}>
-                Rest
-              </BlurButton>
-            </Group>
-          </Group> */}
-        </Stack>
+          <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
+            <Stack gap={5}>
+              <Box>
+                <BlurButton
+                  size='compact-xs'
+                  fw={500}
+                  fullWidth
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    navigate(`/builder/${character?.id}`);
+                  }}
+                  href={`/builder/${character?.id}`}
+                >
+                  Edit
+                </BlurButton>
+              </Box>
+              <Box>
+                <BlurButton size='compact-xs' fw={500} fullWidth onClick={handleRest}>
+                  Rest
+                </BlurButton>
+              </Box>
+            </Stack>
+            <Stack gap={0}>
+              <Box>
+                <Text fz='xs' ta='center' c='gray.3'>
+                  Lvl. 1
+                </Text>
+              </Box>
+              <Box>
+                <TextInput
+                  className={tinyInputClasses.input}
+                  ref={expRef}
+                  variant='filled'
+                  size='xs'
+                  radius='lg'
+                  placeholder='Exp.'
+                  value={exp}
+                  onChange={(e) => {
+                    setExp(e.currentTarget.value);
+                  }}
+                  onBlur={handleExperienceSubmit}
+                  onKeyDown={getHotkeyHandler([
+                    ['mod+Enter', handleExperienceSubmit],
+                    ['Enter', handleExperienceSubmit],
+                  ])}
+                />
+              </Box>
+            </Stack>
+          </Stack>
+        </Group>
       </Box>
     </BlurBox>
   );
@@ -676,15 +815,33 @@ function ConditionSection() {
                                   mr={15}
                                   onClick={() => {
                                     modals.closeAll();
+
+                                    let newConditions = _.cloneDeep(
+                                      character?.details?.conditions ?? []
+                                    );
+                                    // Remove condition
+                                    newConditions = newConditions.filter(
+                                      (c) => c.name !== condition.name
+                                    );
+                                    // Add wounded condition if we're removing dying
+                                    if (condition.name === 'Dying') {
+                                      const wounded = newConditions.find(
+                                        (c) => c.name === 'Wounded'
+                                      );
+                                      if (wounded) {
+                                        wounded.value = 1 + wounded.value!;
+                                      } else {
+                                        newConditions.push(getConditionByName('Wounded')!);
+                                      }
+                                    }
+
                                     setCharacter((c) => {
                                       if (!c) return c;
                                       return {
                                         ...c,
                                         details: {
                                           ...c.details,
-                                          conditions: c.details?.conditions?.filter(
-                                            (c) => c.name !== condition.name
-                                          ),
+                                          conditions: newConditions,
                                         },
                                       };
                                     });
@@ -746,24 +903,36 @@ function ConditionSection() {
                 transform: 'translate(-50%, 0px)',
               }}
             >
-              <HeroPointIcon size={80} color='#dee2e625' />
+              <HeroPointIcon size={75} color='#dee2e625' />
             </Box>
-            <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={20}>
+            <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={15}>
               <Text ta='center' fz='md' fw={500} c='gray.0' style={{ whiteSpace: 'nowrap' }}>
                 Hero Points
               </Text>
               <Group justify='center'>
                 <TokenSelect
                   count={3}
-                  size='md'
+                  size='xs'
                   emptySymbol={
-                    <ActionIcon variant='transparent' aria-label='Hero Point Empty' size='xs'>
-                      <IconJewishStar size='1rem' />
+                    <ActionIcon
+                      variant='transparent'
+                      color='gray.1'
+                      aria-label='Hero Point Empty'
+                      size='xs'
+                      style={{ opacity: 0.7 }}
+                    >
+                      <IconJewishStar size='0.8rem' />
                     </ActionIcon>
                   }
                   fullSymbol={
-                    <ActionIcon variant='transparent' aria-label='Hero Point Full' size='xs'>
-                      <IconJewishStarFilled size='1rem' />
+                    <ActionIcon
+                      variant='transparent'
+                      color='gray.1'
+                      aria-label='Hero Point Full'
+                      size='xs'
+                      style={{ opacity: 0.7 }}
+                    >
+                      <IconJewishStarFilled size='0.8rem' />
                     </ActionIcon>
                   }
                 />
@@ -783,6 +952,16 @@ function AttributeSection() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
+  // Ordered this way so it's in two columns of physical & mental
+  const attributes = [
+    'ATTRIBUTE_STR',
+    'ATTRIBUTE_INT',
+    'ATTRIBUTE_DEX',
+    'ATTRIBUTE_WIS',
+    'ATTRIBUTE_CON',
+    'ATTRIBUTE_CHA',
+  ];
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -796,13 +975,13 @@ function AttributeSection() {
       >
         <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
           <SimpleGrid cols={2} spacing='sm' verticalSpacing={8}>
-            {getAllAttributeVariables('CHARACTER').map((attribute, index) => (
+            {attributes.map((attribute, index) => (
               <Button.Group key={index}>
                 <BlurButton size='compact-xs' fw={400}>
-                  {variableToLabel(attribute)}
+                  {variableNameToLabel(attribute)}
                 </BlurButton>
                 <Button radius='xl' variant='light' color='dark.2' size='compact-xs' w={35}>
-                  {displayAttributeValue('CHARACTER', attribute.name, {
+                  {displayAttributeValue('CHARACTER', attribute, {
                     c: 'gray.0',
                     ta: 'center',
                     fz: 'xs',
