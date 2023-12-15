@@ -16,7 +16,7 @@ export default function BlurButton(props: BlurButtonProps) {
   return (
     <Button
       variant='light'
-      color='gray'
+      color='gray.2'
       radius='xl'
       ref={ref}
       style={{ flex: 1, backgroundColor: hovered ? 'rgba(0, 0, 0, 0.1)' : undefined }}

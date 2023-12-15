@@ -84,6 +84,7 @@ import {
   AbilityBlock,
   ActionCost,
   Character,
+  Condition,
   ContentPackage,
   ContentSource,
   Rarity,
@@ -92,7 +93,7 @@ import { makeRequest } from '@requests/request-manager';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { useDebouncedValue, useDidUpdate, useHover, useInterval } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { setPageTitle } from '@utils/document-change';
 import { isPlayable } from '@utils/character';
@@ -145,6 +146,13 @@ import ClassDcIcon from '@assets/images/FancyBoxIcon';
 import CircleIcon from '@assets/images/CircleIcon';
 import BoxIcon from '@assets/images/BoxIcon';
 import HeroPointIcon from '@assets/images/HeroPointIcon';
+import { selectContent } from '@common/select/SelectContent';
+import {
+  applyConditions,
+  compiledConditions,
+  getAllConditions,
+  getConditionByName,
+} from '@variables/condition-handler';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -209,6 +217,60 @@ export default function CharacterSheetPage(props: {}) {
   }
 }
 
+function confirmHealth(
+  hp: string,
+  character: Character,
+  setCharacter: SetterOrUpdater<Character | null>
+) {
+  const maxHealth = getFinalHealthValue('CHARACTER');
+
+  let result = -1;
+  try {
+    result = math.evaluate(hp);
+  } catch (e) {
+    result = parseInt(hp);
+  }
+  if (isNaN(result)) result = 0;
+  result = Math.floor(result);
+  if (result < 0) result = 0;
+  if (result > maxHealth) result = maxHealth;
+
+  if (result === character.hp_current) return;
+
+  let newConditions = _.cloneDeep(character.details?.conditions ?? []);
+  // Add dying condition
+  if (result === 0 && character.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {
+    const dying = getConditionByName('Dying')!;
+    const wounded = newConditions.find((c) => c.name === 'Wounded');
+    if (wounded) {
+      dying.value = 1 + wounded.value!;
+    }
+    newConditions.push(dying);
+  } else if (result > 0 && character.hp_current === 0) {
+    // Remove dying condition
+    newConditions = newConditions.filter((c) => c.name !== 'Dying');
+    // Increase wounded condition
+    const wounded = newConditions.find((c) => c.name === 'Wounded');
+    if (wounded) {
+      wounded.value = 1 + wounded.value!;
+    } else {
+      newConditions.push(getConditionByName('Wounded')!);
+    }
+  }
+
+  setCharacter((c) => {
+    if (!c) return c;
+    return {
+      ...c,
+      hp_current: result,
+      details: {
+        ...c.details,
+        conditions: newConditions,
+      },
+    };
+  });
+}
+
 function CharacterSheetInner(props: {
   content: ContentPackage;
   characterId: number;
@@ -252,6 +314,11 @@ function CharacterSheetInner(props: {
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
     executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
+      // Apply conditions after everything else
+      applyConditions('CHARACTER', character.details?.conditions ?? []);
+      // Because of the drained condition, let's confirm health
+      confirmHealth(`${character.hp_current}`, character, setCharacter);
+
       setOperationResults(results);
       executingOperations.current = false;
       props.onFinishLoading?.();
@@ -270,27 +337,33 @@ function CharacterSheetInner(props: {
   const [debouncedCharacter] = useDebouncedValue(character, 200);
   useDidUpdate(() => {
     if (!debouncedCharacter) return;
-    console.log(debouncedCharacter.notes);
     mutateCharacter({
-      level: debouncedCharacter.level,
       name: debouncedCharacter.name,
+      level: debouncedCharacter.level,
+      experience: debouncedCharacter.experience,
+      hp_current: debouncedCharacter.hp_current,
+      hp_temp: debouncedCharacter.hp_temp,
+      hero_points: debouncedCharacter.hero_points,
+      stamina_current: debouncedCharacter.stamina_current,
+      resolve_current: debouncedCharacter.resolve_current,
+      inventory: debouncedCharacter.inventory,
+      notes: debouncedCharacter.notes,
       details: debouncedCharacter.details,
+      roll_history: debouncedCharacter.roll_history,
+      custom_operations: debouncedCharacter.custom_operations,
+      meta_data: debouncedCharacter.meta_data,
+      options: debouncedCharacter.options,
+      variants: debouncedCharacter.variants,
       content_sources: debouncedCharacter.content_sources,
       operation_data: debouncedCharacter.operation_data,
-      notes: debouncedCharacter.notes,
+      spells: debouncedCharacter.spells,
+      companions: debouncedCharacter.companions,
     });
   }, [debouncedCharacter]);
 
   // Update character stats
   const { mutate: mutateCharacter } = useMutation(
-    async (data: {
-      name?: string;
-      level?: number;
-      details?: any;
-      content_sources?: any;
-      operation_data?: any;
-      notes?: any;
-    }) => {
+    async (data: Record<string, any>) => {
       const response = await makeRequest<JSendResponse>('update-character', {
         id: props.characterId,
         ...data,
@@ -444,29 +517,11 @@ function HealthSection() {
                   size='xl'
                   value={`${currentHealth}`}
                   height={50}
-                  width={50}
+                  miw={20}
                   placeholder='HP'
                   onChange={(value) => {
-                    let result = -1;
-                    try {
-                      result = math.evaluate(value);
-                    } catch (e) {
-                      result = parseInt(value);
-                    }
-                    if (isNaN(result)) result = 0;
-                    result = Math.floor(result);
-                    if (result < 0) result = 0;
-                    if (result > maxHealth) result = maxHealth;
-
-                    // TODO: Update conditions
-
-                    setCharacter((c) => {
-                      if (!c) return c;
-                      return {
-                        ...c,
-                        hp_current: result,
-                      };
-                    });
+                    if (!character) return;
+                    confirmHealth(value, character, setCharacter);
                   }}
                 />
                 <Box>
@@ -491,7 +546,7 @@ function HealthSection() {
                 size='xl'
                 value={tempHealth ? `${tempHealth}` : `—`}
                 height={50}
-                width={50}
+                miw={20}
                 placeholder='HP'
                 onChange={(value) => {
                   let result = -1;
@@ -544,8 +599,8 @@ function ConditionSection() {
         }}
         h='100%'
       >
-        <Group align='flex-start' grow>
-          <Box>
+        <Group align='flex-start' justify='space-between' gap={0}>
+          <Box w={200}>
             <Group wrap='nowrap' gap={5} justify='center'>
               <Text ta='center' fz='md' fw={500} c='gray.0'>
                 Conditions
@@ -556,21 +611,133 @@ function ConditionSection() {
                 size='xs'
                 radius='xl'
                 color='gray'
+                onClick={() => {
+                  selectContent(
+                    'ability-block',
+                    (option) => {
+                      if (!character) return;
+                      const condition = getConditionByName(option.name);
+                      if (!condition) return;
+                      const hasCondition = character.details?.conditions?.find(
+                        (c) => c.name === condition.name
+                      );
+                      if (hasCondition) return;
+                      setCharacter({
+                        ...character,
+                        details: {
+                          ...character.details,
+                          conditions: [...(character.details?.conditions ?? []), condition],
+                        },
+                      });
+                    },
+                    {
+                      overrideOptions: getAllConditions()
+                        .filter((condition) => condition.for_character)
+                        .map((condition, index) => ({
+                          id: index,
+                          name: condition.name,
+                          _custom_select: {
+                            title: condition.name,
+                            description: condition.description,
+                          },
+                        })),
+                      overrideLabel: 'Select a Condition',
+                      selectedId: -1,
+                    }
+                  );
+                }}
               >
                 <IconPlus size='1rem' stroke={1.5} />
               </ActionIcon>
             </Group>
             <ScrollArea h={70}>
               <Group gap={5} justify='center'>
-                <ConditionPill text='Frightened' amount={4} />
-                <ConditionPill text='Frightened' amount={4} />
-                <ConditionPill text='Frightened' amount={4} />
-                <ConditionPill text='Frightened' amount={4} />
-                <ConditionPill text='Frightened' amount={4} />
+                {compiledConditions(character?.details?.conditions ?? []).map(
+                  (condition, index) => (
+                    <ConditionPill
+                      key={index}
+                      text={condition.name}
+                      amount={condition.value}
+                      onClick={() => {
+                        openContextModal({
+                          modal: 'condition',
+                          title: (
+                            <Group justify='space-between'>
+                              <Title order={3}>{condition.name}</Title>
+                              {condition.source ? (
+                                <Text fs='italic' fz='sm' mr={15}>
+                                  From: <Text span>{condition.source}</Text>
+                                </Text>
+                              ) : (
+                                <Button
+                                  variant='light'
+                                  color='gray'
+                                  size='compact-xs'
+                                  mr={15}
+                                  onClick={() => {
+                                    modals.closeAll();
+                                    setCharacter((c) => {
+                                      if (!c) return c;
+                                      return {
+                                        ...c,
+                                        details: {
+                                          ...c.details,
+                                          conditions: c.details?.conditions?.filter(
+                                            (c) => c.name !== condition.name
+                                          ),
+                                        },
+                                      };
+                                    });
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </Group>
+                          ),
+                          innerProps: {
+                            condition: condition,
+                            onValueChange: (condition, value) => {
+                              setCharacter((c) => {
+                                if (!c) return c;
+                                return {
+                                  ...c,
+                                  details: {
+                                    ...c.details,
+                                    conditions: c.details?.conditions?.map((c) => {
+                                      if (c.name === condition.name) {
+                                        return {
+                                          ...c,
+                                          value: value,
+                                        };
+                                      } else {
+                                        return c;
+                                      }
+                                    }),
+                                  },
+                                };
+                              });
+                            },
+                          },
+                          styles: {
+                            title: {
+                              width: '100%',
+                            },
+                          },
+                        });
+                      }}
+                    />
+                  )
+                )}
+                {(character?.details?.conditions ?? []).length === 0 && (
+                  <Text c='gray.6' fz='xs' fs='italic'>
+                    None active
+                  </Text>
+                )}
               </Group>
             </ScrollArea>
           </Box>
-          <Box w={80} style={{ position: 'relative' }}>
+          <Box w={100} style={{ position: 'relative' }}>
             <Box
               style={{
                 position: 'absolute',
@@ -582,7 +749,7 @@ function ConditionSection() {
               <HeroPointIcon size={80} color='#dee2e625' />
             </Box>
             <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={20}>
-              <Text ta='center' fz='md' fw={500} c='gray.0'>
+              <Text ta='center' fz='md' fw={500} c='gray.0' style={{ whiteSpace: 'nowrap' }}>
                 Hero Points
               </Text>
               <Group justify='center'>
@@ -619,8 +786,6 @@ function AttributeSection() {
   return (
     <BlurBox blur={10}>
       <Box
-        pt='xs'
-        pb={5}
         px='xs'
         style={{
           borderTopLeftRadius: theme.radius.md,
@@ -629,22 +794,24 @@ function AttributeSection() {
         }}
         h='100%'
       >
-        <SimpleGrid cols={2} spacing='sm' verticalSpacing='sm'>
-          {getAllAttributeVariables('CHARACTER').map((attribute, index) => (
-            <Button.Group key={index}>
-              <BlurButton size='compact-xs' fw={400}>
-                {variableToLabel(attribute)}
-              </BlurButton>
-              <Button radius='xl' variant='light' color='dark.5' size='compact-xs' w={35}>
-                {displayAttributeValue('CHARACTER', attribute.name, {
-                  c: 'gray.0',
-                  ta: 'center',
-                  fz: 'xs',
-                })}
-              </Button>
-            </Button.Group>
-          ))}
-        </SimpleGrid>
+        <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
+          <SimpleGrid cols={2} spacing='sm' verticalSpacing={8}>
+            {getAllAttributeVariables('CHARACTER').map((attribute, index) => (
+              <Button.Group key={index}>
+                <BlurButton size='compact-xs' fw={400}>
+                  {variableToLabel(attribute)}
+                </BlurButton>
+                <Button radius='xl' variant='light' color='dark.2' size='compact-xs' w={35}>
+                  {displayAttributeValue('CHARACTER', attribute.name, {
+                    c: 'gray.0',
+                    ta: 'center',
+                    fz: 'xs',
+                  })}
+                </Button>
+              </Button.Group>
+            ))}
+          </SimpleGrid>
+        </Group>
       </Box>
     </BlurBox>
   );
@@ -724,7 +891,7 @@ function ArmorSection() {
               </Stack>
             </Box>
           </Group>
-          <Stack gap='sm'>
+          <Stack gap={8}>
             {getAllSaveVariables('CHARACTER').map((save, index) => (
               <Button.Group key={index}>
                 <BlurButton size='compact-xs' fw={400}>
@@ -733,7 +900,7 @@ function ArmorSection() {
                 <Button
                   radius='xl'
                   variant='light'
-                  color='dark.5'
+                  color='dark.2'
                   size='compact-xs'
                   w={50}
                   style={{ position: 'relative' }}
@@ -744,7 +911,7 @@ function ArmorSection() {
                   <Badge
                     size='xs'
                     variant='light'
-                    color='dark.0'
+                    color='gray.0'
                     style={{
                       position: 'absolute',
                       top: '50%',

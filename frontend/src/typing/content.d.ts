@@ -67,6 +67,7 @@ interface Condition {
   name: string;
   description: string;
   value?: number;
+  source?: string;
   for_character: boolean;
   for_object: boolean;
   for_creature: boolean;
@@ -249,6 +250,7 @@ interface Character {
       birthplace?: string;
       organized_play_id?: string;
     };
+    conditions?: Condition[];
   };
   roll_history?: Record<string, any>; // TODO
   custom_operations?: Operation[];

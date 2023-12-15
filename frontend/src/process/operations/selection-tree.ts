@@ -1,5 +1,4 @@
-import _ from "lodash";
-
+import _ from 'lodash';
 
 export interface SelectionTreeNode {
   value: string | null;
@@ -15,7 +14,7 @@ let selectionTree: SelectionTreeNode = { value: null, children: {} };
  *
  */
 export function setSelections(metadata: { key: string; value: string }[]) {
-  selectionTree = { value: null, children: {} };
+  resetSelections();
   for (const item of metadata) {
     addToSelectionTree(selectionTree, item.key, item.value);
   }
@@ -37,4 +36,8 @@ function addToSelectionTree(root: SelectionTreeNode, key: string, value: string)
 
 export function getRootSelection() {
   return _.cloneDeep(selectionTree);
+}
+
+export function resetSelections() {
+  selectionTree = { value: null, children: {} };
 }

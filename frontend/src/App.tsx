@@ -27,6 +27,7 @@ import { ContentFeedbackModal } from '@modals/ContentFeedbackModal';
 import { AddNewLoreModal } from '@modals/AddNewLoreModal';
 import { SelectIconModal } from '@modals/SelectIconModal';
 import { UpdateNotePageModal } from '@modals/UpdateNotePageModal';
+import { ConditionModal } from '@modals/ConditionModal';
 
 const modals = {
   selectContent: SelectContentModal,
@@ -36,6 +37,7 @@ const modals = {
   contentFeedback: ContentFeedbackModal,
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
+  condition: ConditionModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {

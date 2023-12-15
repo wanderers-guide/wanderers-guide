@@ -6,6 +6,7 @@ import {
   VariableStore,
   VariableType,
   VariableValue,
+  VariableNum,
 } from '@typing/variables';
 import {
   isAttributeValue,
@@ -93,7 +94,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   UNARMED_ATTACKS: newVariable('prof', 'UNARMED_ATTACKS'),
 
   PERCEPTION: newVariable('prof', 'PERCEPTION', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
-  CLASS_DC: newVariable('prof', 'CLASS_DC'), // TODO: add attribute
+  CLASS_DC: newVariable('prof', 'CLASS_DC'),
   LEVEL: newVariable('num', 'LEVEL'),
   SIZE: newVariable('str', 'SIZE'),
   CORE_LANGUAGE_NAMES: newVariable('list-str', 'CORE_LANGUAGE_NAMES'),
@@ -167,6 +168,20 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // RANGED_ATTACKS: newVariable("num", "RANGED_ATTACKS"),
   // RANGED_ATTACKS_DMG_DICE: newVariable("str", "RANGED_ATTACKS_DMG_DICE"),
   // RANGED_ATTACKS_DMG_BONUS: newVariable("num", "RANGED_ATTACKS_DMG_BONUS"),
+
+  ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
+  ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
+
+  DEX_ATTACK_ROLLS_BONUS: newVariable('num', 'DEX_ATTACK_ROLLS_BONUS'),
+  DEX_ATTACK_DAMAGE_BONUS: newVariable('num', 'DEX_ATTACK_DAMAGE_BONUS'),
+  STR_ATTACK_ROLLS_BONUS: newVariable('num', 'STR_ATTACK_ROLLS_BONUS'),
+  STR_ATTACK_DAMAGE_BONUS: newVariable('num', 'STR_ATTACK_DAMAGE_BONUS'),
+
+  RANGED_ATTACK_ROLLS_BONUS: newVariable('num', 'RANGED_ATTACK_ROLLS_BONUS'),
+  RANGED_ATTACK_DAMAGE_BONUS: newVariable('num', 'RANGED_ATTACK_DAMAGE_BONUS'),
+
+  MELEE_ATTACK_ROLLS_BONUS: newVariable('num', 'MELEE_ATTACK_ROLLS_BONUS'),
+  MELEE_ATTACK_DAMAGE_BONUS: newVariable('num', 'MELEE_ATTACK_DAMAGE_BONUS'),
 
   WEAPON_GROUP_AXE: newVariable('prof', 'WEAPON_GROUP_AXE'),
   WEAPON_GROUP_BOMB: newVariable('prof', 'WEAPON_GROUP_BOMB'),
@@ -527,4 +542,17 @@ export function getAllArmorVariables(id: StoreID): VariableProf[] {
     }
   }
   return variables as VariableProf[];
+}
+
+export function getAllSpeedVariables(id: StoreID): VariableNum[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables(id))) {
+    if (
+      (variable.name.startsWith('SPEED_') || variable.name === 'SPEED') &&
+      variable.type === 'num'
+    ) {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableNum[];
 }

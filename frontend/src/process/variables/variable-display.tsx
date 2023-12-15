@@ -7,8 +7,10 @@ import { getProficiencyTypeValue } from './variable-utils';
 export function getFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
   const parts = getProfValueParts(id, variableName)!;
   return isDC
-    ? `${10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue}`
-    : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.totalBonusValue);
+    ? `${
+        10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue
+      }`
+    : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue);
 }
 
 export function displayFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
@@ -37,41 +39,21 @@ export function displayFinalProfValue(id: StoreID, variableName: string, isDC: b
   );
 }
 
-export function getProfValueParts(id: StoreID, variableName: string) {
-  const variable = getVariable<VariableProf>(id, variableName);
-  if (!variable) return null;
-  const breakdown = getProfBreakdown(id, variableName);
-  const hasConditionals = breakdown.conditionals.length > 0;
-
-  const level =
-    variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
-  const profValue = getProficiencyTypeValue(variable.value.value);
-  const attributeMod =
-    getVariable<VariableAttr>(id, variable.value.attribute ?? '')?.value.value ?? null;
-  const totalBonusValue = Array.from(breakdown.bonuses.values()).reduce(
-    (acc, bonus) => acc + bonus.value,
-    0
-  );
-
-  return {
-    level,
-    profValue,
-    attributeMod,
-    totalBonusValue,
-    hasConditionals,
-    breakdown,
-  };
-}
-
-function getProfBreakdown(id: StoreID, variableName: string) {
+export function getFinalVariableValue(id: StoreID, variableName: string) {
+  const variable = getVariable(id, variableName);
   const bonuses = getVariableBonuses(id, variableName);
+
+  let value = 0;
+  if (variable?.type === 'num') {
+    value = variable.value;
+  } else if (variable?.type === 'attr') {
+    value = variable.value.value;
+  }
 
   const bMap = new Map<
     string,
     { value: number; composition: { amount: number; source: string }[] }
   >();
-  const conditionals: { text: string; source: string }[] = [];
-
   /*
     If there's no display text, we add the number and compare against type.
     If there's display text, we don't add the value.
@@ -80,16 +62,18 @@ function getProfBreakdown(id: StoreID, variableName: string) {
   */
   for (const bonus of bonuses) {
     if (bonus.text) {
-      conditionals.push({ text: bonus.text, source: bonus.source });
+      continue;
     } else {
-      const key = bonus.type ? bonus.type.trim().toLowerCase() : 'untyped';
+      const type = bonus.type ? bonus.type.trim().toLowerCase() : 'untyped';
+      const adj = (bonus.value ?? 0) >= 0 ? 'bonus' : 'penalty';
+      const key = `${type} ${adj}`;
       if (bMap.has(key)) {
         const bMapValue = bMap.get(key)!;
         bMap.set(key, {
           value:
             key === 'untyped'
               ? bMapValue.value + (bonus.value ?? 0)
-              : Math.max(bMapValue.value, bonus.value ?? 0),
+              : (adj === 'bonus' ? Math.max : Math.min)(bMapValue.value, bonus.value ?? 0),
           composition: [
             ...bMapValue.composition,
             { amount: bonus.value ?? 0, source: bonus.source },
@@ -104,7 +88,50 @@ function getProfBreakdown(id: StoreID, variableName: string) {
     }
   }
 
-  return { bonuses: bMap, conditionals };
+  const totalBonusValue = Array.from(bMap.values()).reduce((acc, bonus) => acc + bonus.value, 0);
+
+  return {
+    total: value + totalBonusValue,
+    bonus: totalBonusValue,
+    bmap: bMap,
+  };
+}
+
+export function getProfValueParts(id: StoreID, variableName: string) {
+  const variable = getVariable<VariableProf>(id, variableName);
+  if (!variable) return null;
+  const breakdown = getProfBreakdown(id, variableName);
+  const hasConditionals = breakdown.conditionals.length > 0;
+
+  const level =
+    variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
+  const profValue = getProficiencyTypeValue(variable.value.value);
+  const attributeMod = variable.value.attribute
+    ? getFinalVariableValue(id, variable.value.attribute).total
+    : null;
+
+  return {
+    level,
+    profValue,
+    attributeMod,
+    hasConditionals,
+    breakdown,
+  };
+}
+
+function getProfBreakdown(id: StoreID, variableName: string) {
+  const bonuses = getVariableBonuses(id, variableName);
+
+  const conditionals: { text: string; source: string }[] = [];
+  for (const bonus of bonuses) {
+    if (bonus.text) {
+      conditionals.push({ text: bonus.text, source: bonus.source });
+    }
+  }
+
+  const final = getFinalVariableValue(id, variableName);
+
+  return { bonuses: final.bmap, bonusValue: final.bonus, conditionals };
 }
 
 export function getBonusText(bonus: {
@@ -131,10 +158,10 @@ export function getBonusText(bonus: {
 }
 
 export function getHealthValueParts(id: StoreID) {
-  const ancestryHp = getVariable<VariableNum>(id, 'MAX_HEALTH_ANCESTRY')!.value;
-  const classHp = getVariable<VariableNum>(id, 'MAX_HEALTH_CLASS_PER_LEVEL')!.value;
-  const bonusHp = getVariable<VariableNum>(id, 'MAX_HEALTH_BONUS')!.value;
-  const conMod = getVariable<VariableAttr>(id, 'ATTRIBUTE_CON')!.value.value;
+  const ancestryHp = getFinalVariableValue(id, 'MAX_HEALTH_ANCESTRY').total;
+  const classHp = getFinalVariableValue(id, 'MAX_HEALTH_CLASS_PER_LEVEL').total;
+  const bonusHp = getFinalVariableValue(id, 'MAX_HEALTH_BONUS').total;
+  const conMod = getFinalVariableValue(id, 'ATTRIBUTE_CON').total;
   const level = getVariable<VariableNum>(id, 'LEVEL')!.value;
 
   return {

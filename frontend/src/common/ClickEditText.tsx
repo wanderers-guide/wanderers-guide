@@ -7,7 +7,7 @@ export default function ClickEditText(props: {
   size: MantineSize;
   value: string;
   height: number;
-  width: number;
+  miw: number;
   placeholder?: string;
   onChange: (value: string) => void;
 }) {
@@ -25,13 +25,21 @@ export default function ClickEditText(props: {
         h={props.height}
         align='center'
         justify='center'
-        style={{ visibility: editing ? 'hidden' : undefined, cursor: 'pointer' }}
-        onClick={() => {
-          setEditing(true);
-          setValue(props.value);
-        }}
+        style={{ visibility: editing ? 'hidden' : undefined }}
       >
-        <Text w='100%' c={props.color} size={props.size} ta='center'>
+        <Text
+          c={props.color}
+          size={props.size}
+          miw={props.miw}
+          ta='center'
+          style={{
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            setEditing(true);
+            setValue(props.value);
+          }}
+        >
           {props.value}
         </Text>
       </Group>
@@ -52,7 +60,7 @@ export default function ClickEditText(props: {
               input: {
                 textAlign: 'center',
                 height: props.height,
-                width: props.width,
+                width: 50,
               },
             }}
             style={{

@@ -7,7 +7,7 @@ import {
   ContentSource,
   Item,
 } from '@typing/content';
-import { getRootSelection, setSelections } from './selection-tree';
+import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
 import { addVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
@@ -15,7 +15,6 @@ import { isAttributeValue } from '@variables/variable-utils';
 import _ from 'lodash';
 import { hashData } from '@utils/numbers';
 import { StoreID } from '@typing/variables';
-import { applyConditions } from '@variables/condition-handler';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -25,6 +24,8 @@ function defineSelectionTree(character: Character) {
         value,
       }))
     );
+  } else {
+    resetSelections();
   }
 }
 

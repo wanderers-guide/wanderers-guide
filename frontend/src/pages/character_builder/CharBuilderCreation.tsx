@@ -276,7 +276,7 @@ export function CharBuilderCreationInner(props: {
             <Divider pb={5} />
           </>
         )}
-        <ScrollArea h={props.pageHeight} pr={12}>
+        <ScrollArea h={props.pageHeight} offsetScrollbars>
           <Accordion
             value={levelItemValue}
             onChange={setLevelItemValue}
@@ -380,7 +380,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           }}
         />
       </Box>
-      <ScrollArea h={props.pageHeight - height - 20} pr={12}>
+      <ScrollArea h={props.pageHeight - height - 20} offsetScrollbars>
         <Stack gap={5}>
           <Box>
             <Button

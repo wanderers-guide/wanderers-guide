@@ -1,11 +1,12 @@
 import { Condition } from '@typing/content';
-import { StoreID, VariableListStr, VariableNum } from '@typing/variables';
+import { StoreID, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import _ from 'lodash';
 import {
   addVariableBonus,
   adjVariable,
   getAllSaveVariables,
   getAllSkillVariables,
+  getAllSpeedVariables,
   getVariable,
 } from './variable-manager';
 
@@ -139,7 +140,7 @@ const CONDITIONS: Condition[] = [
   {
     name: 'Friendly',
     description: `This condition reflects a creature’s disposition toward a particular character, and only supernatural effects (like a spell) can impose this condition on a PC. A creature that is friendly to a character likes that character. It is likely to agree to Requests from that character as long as they are simple, safe, and don’t cost too much to fulfill. If the character (or one of their allies) uses hostile actions against the creature, the creature gains a worse attitude condition depending on the severity of the hostile action, as determined by the GM.`,
-    for_character: true,
+    for_character: false,
     for_creature: true,
     for_object: false,
   },
@@ -343,8 +344,12 @@ const CONDITIONS: Condition[] = [
   },
 ];
 
-export function getConditionByName(name: string): Condition | undefined {
-  return _.cloneDeep(CONDITIONS.find((condition) => condition.name === name));
+export function getConditionByName(name: string, addedSource?: string): Condition | undefined {
+  const foundCondition = _.cloneDeep(CONDITIONS.find((condition) => condition.name === name));
+  if (foundCondition) {
+    foundCondition.source = addedSource;
+  }
+  return foundCondition;
 }
 
 export function getAllConditions() {
@@ -352,58 +357,54 @@ export function getAllConditions() {
 }
 
 export function applyConditions(id: StoreID, conditions: Condition[]) {
-  convertConditions(conditions).forEach((condition) => {
+  compiledConditions(conditions).forEach((condition) => {
     applyCondition(id, condition);
   });
 }
 
 // Applies cascading and overriding conditions
-export function convertConditions(conditions: Condition[]): Condition[] {
+export function compiledConditions(conditions: Condition[]): Condition[] {
   let newConditions: Condition[] = [];
 
   const processConditions = () => {
-    for (const condition of conditions) {
+    for (const condition of [...conditions, ...newConditions]) {
       if (condition.name === 'Blinded') {
         newConditions = newConditions.filter((cond) => cond.name !== 'Dazzled');
       }
       if (condition.name === 'Confused') {
-        newConditions.push(getConditionByName('Off-guard')!);
+        newConditions.push(getConditionByName('Off-guard', 'Confused')!);
       }
       if (condition.name === 'Dying') {
-        newConditions.push(getConditionByName('Unconscious')!);
-        // From Unconscious,
-        newConditions.push(getConditionByName('Off-guard')!);
-        newConditions.push(getConditionByName('Blinded')!);
-        newConditions.push(getConditionByName('Prone')!);
+        newConditions.push(getConditionByName('Unconscious', 'Dying')!);
       }
       if (condition.name === 'Encumbered') {
-        newConditions.push(getConditionByName('Clumsy')!);
+        newConditions.push(getConditionByName('Clumsy', 'Encumbered')!);
       }
       if (condition.name === 'Grabbed') {
-        newConditions.push(getConditionByName('Off-guard')!);
-        newConditions.push(getConditionByName('Immobilized')!);
+        newConditions.push(getConditionByName('Off-guard', 'Grabbed')!);
+        newConditions.push(getConditionByName('Immobilized', 'Grabbed')!);
       }
       if (condition.name === 'Paralyzed') {
-        newConditions.push(getConditionByName('Off-guard')!);
+        newConditions.push(getConditionByName('Off-guard', 'Paralyzed')!);
       }
       if (condition.name === 'Prone') {
-        newConditions.push(getConditionByName('Off-guard')!);
+        newConditions.push(getConditionByName('Off-guard', 'Prone')!);
       }
       if (condition.name === 'Restrained') {
         newConditions = newConditions.filter((cond) => cond.name !== 'Grabbed');
-        newConditions.push(getConditionByName('Off-guard')!);
-        newConditions.push(getConditionByName('Immobilized')!);
+        newConditions.push(getConditionByName('Off-guard', 'Restrained')!);
+        newConditions.push(getConditionByName('Immobilized', 'Restrained')!);
       }
       if (condition.name === 'Stunned') {
         newConditions = newConditions.filter((cond) => cond.name !== 'Slowed');
       }
       if (condition.name === 'Unconscious') {
-        newConditions.push(getConditionByName('Off-guard')!);
-        newConditions.push(getConditionByName('Blinded')!);
-        newConditions.push(getConditionByName('Prone')!);
+        newConditions.push(getConditionByName('Off-guard', 'Unconscious')!);
+        newConditions.push(getConditionByName('Blinded', 'Unconscious')!);
+        newConditions.push(getConditionByName('Prone', 'Unconscious')!);
       }
       if (condition.name === 'Unnoticed') {
-        newConditions.push(getConditionByName('Undetected')!);
+        newConditions.push(getConditionByName('Undetected', 'Unnoticed')!);
       }
       newConditions.push(condition);
     }
@@ -413,7 +414,7 @@ export function convertConditions(conditions: Condition[]): Condition[] {
   processConditions();
 
   // Remove duplicates
-  return _.uniqWith(newConditions, _.isEqual);
+  return _.uniqWith(newConditions, _.isEqual).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function applyCondition(id: StoreID, condition: Condition) {
@@ -454,7 +455,15 @@ function applyCondition(id: StoreID, condition: Condition) {
     for (const skill of dexSkills) {
       addVariableBonus(id, skill.name, penalty, 'status', '', `Clumsy ${condition.value}`);
     }
-    // TODO: ranged attack rolls
+    addVariableBonus(
+      id,
+      'DEX_ATTACK_ROLLS_BONUS',
+      penalty,
+      'status',
+      '',
+      `Clumsy ${condition.value}`
+    );
+    // Wording says only checks, so don't add to damage rolls
     return;
   }
   if (condition.name === 'Concealed') {
@@ -506,7 +515,214 @@ function applyCondition(id: StoreID, condition: Condition) {
     return;
   }
   if (condition.name === 'Drained') {
-    // TODO
+    const penalty = -1 * (condition.value ?? 0);
+    const conSaves = getAllSaveVariables(id).filter(
+      (save) => save.value.attribute === 'ATTRIBUTE_CON'
+    );
+    for (const save of conSaves) {
+      addVariableBonus(id, save.name, penalty, 'status', '', `Drained ${condition.value}`);
+    }
+    const conSkills = getAllSkillVariables(id).filter(
+      (skill) => skill.value.attribute === 'ATTRIBUTE_CON'
+    );
+    for (const skill of conSkills) {
+      addVariableBonus(id, skill.name, penalty, 'status', '', `Drained ${condition.value}`);
+    }
+    const level = getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0;
+    addVariableBonus(
+      id,
+      'MAX_HEALTH_BONUS',
+      penalty * Math.max(level, 1),
+      'status',
+      '',
+      `Drained ${condition.value}`
+    );
+    return;
+  }
+  if (condition.name === 'Dying') {
+    return;
+  }
+  if (condition.name === 'Encumbered') {
+    for (const speed of getAllSpeedVariables(id)) {
+      addVariableBonus(id, speed.name, -10, undefined, '', `Encumbered`);
+    }
+    return;
+  }
+  if (condition.name === 'Enfeebled') {
+    const penalty = -1 * (condition.value ?? 0);
+    const strSaves = getAllSaveVariables(id).filter(
+      (save) => save.value.attribute === 'ATTRIBUTE_STR'
+    );
+    for (const save of strSaves) {
+      addVariableBonus(id, save.name, penalty, 'status', '', `Enfeebled ${condition.value}`);
+    }
+    const strSkills = getAllSkillVariables(id).filter(
+      (skill) => skill.value.attribute === 'ATTRIBUTE_STR'
+    );
+    for (const skill of strSkills) {
+      addVariableBonus(id, skill.name, penalty, 'status', '', `Enfeebled ${condition.value}`);
+    }
+    addVariableBonus(
+      id,
+      'STR_ATTACK_ROLLS_BONUS',
+      penalty,
+      'status',
+      '',
+      `Enfeebled ${condition.value}`
+    );
+    addVariableBonus(
+      id,
+      'STR_ATTACK_DAMAGE_BONUS',
+      penalty,
+      'status',
+      '',
+      `Enfeebled ${condition.value}`
+    );
+    return;
+  }
+  if (condition.name === 'Fascinated') {
+    addVariableBonus(id, 'PERCEPTION', -2, 'status', '', 'Fascinated');
+    for (const skill of getAllSkillVariables(id)) {
+      addVariableBonus(id, skill.name, -2, 'status', '', 'Fascinated');
+    }
+    return;
+  }
+  if (condition.name === 'Fatigued') {
+    addVariableBonus(id, 'AC', -1, 'status', '', 'Fatigued');
+    for (const save of getAllSaveVariables(id)) {
+      addVariableBonus(id, save.name, -2, 'status', '', 'Fatigued');
+    }
+    return;
+  }
+  if (condition.name === 'Fleeing') {
+    return;
+  }
+  if (condition.name === 'Friendly') {
+    return;
+  }
+  if (condition.name === 'Frightened') {
+    const penalty = -1 * (condition.value ?? 0);
+    for (const skill of getAllSkillVariables(id)) {
+      addVariableBonus(id, skill.name, penalty, 'status', '', `Frightened ${condition.value}`);
+    }
+    for (const save of getAllSaveVariables(id)) {
+      addVariableBonus(id, save.name, penalty, 'status', '', `Frightened ${condition.value}`);
+    }
+    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Frightened ${condition.value}`);
+    addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Frightened ${condition.value}`);
+    addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Frightened ${condition.value}`);
+    addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Frightened ${condition.value}`);
+    addVariableBonus(id, 'AC', penalty, 'status', '', `Frightened ${condition.value}`);
+    return;
+  }
+  if (condition.name === 'Grabbed') {
+    return;
+  }
+  if (condition.name === 'Helpful') {
+    return;
+  }
+  if (condition.name === 'Hidden') {
+    return;
+  }
+  if (condition.name === 'Hostile') {
+    return;
+  }
+  if (condition.name === 'Immobilized') {
+    return;
+  }
+  if (condition.name === 'Indifferent') {
+    return;
+  }
+  if (condition.name === 'Invisible') {
+    return;
+  }
+  if (condition.name === 'Observed') {
+    return;
+  }
+  if (condition.name === 'Off-guard') {
+    addVariableBonus(id, 'AC', -2, 'circumstance', '', 'Off-guard');
+    return;
+  }
+  if (condition.name === 'Paralyzed') {
+    return;
+  }
+  if (condition.name === 'Persistent Damage') {
+    return;
+  }
+  if (condition.name === 'Petrified') {
+    return;
+  }
+  if (condition.name === 'Prone') {
+    addVariableBonus(id, 'ATTACK_ROLLS_BONUS', -2, 'circumstance', '', 'Prone');
+    return;
+  }
+  if (condition.name === 'Quickened') {
+    return;
+  }
+  if (condition.name === 'Restrained') {
+    return;
+  }
+  if (condition.name === 'Sickened') {
+    const penalty = -1 * (condition.value ?? 0);
+    for (const skill of getAllSkillVariables(id)) {
+      addVariableBonus(id, skill.name, penalty, 'status', '', `Sickened ${condition.value}`);
+    }
+    for (const save of getAllSaveVariables(id)) {
+      addVariableBonus(id, save.name, penalty, 'status', '', `Sickened ${condition.value}`);
+    }
+    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Sickened ${condition.value}`);
+    addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Sickened ${condition.value}`);
+    addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Sickened ${condition.value}`);
+    addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Sickened ${condition.value}`);
+    addVariableBonus(id, 'AC', penalty, 'status', '', `Sickened ${condition.value}`);
+    return;
+  }
+  if (condition.name === 'Slowed') {
+    return;
+  }
+  if (condition.name === 'Stunned') {
+    return;
+  }
+  if (condition.name === 'Stupefied') {
+    const penalty = -1 * (condition.value ?? 0);
+    const attrs = ['ATTRIBUTE_INT', 'ATTRIBUTE_WIS', 'ATTRIBUTE_CHA'];
+    const saves = getAllSaveVariables(id).filter((save) =>
+      attrs.includes(save.value.attribute ?? '')
+    );
+    for (const save of saves) {
+      addVariableBonus(id, save.name, penalty, 'status', '', `Stupefied ${condition.value}`);
+    }
+    const skills = getAllSkillVariables(id).filter((skill) =>
+      attrs.includes(skill.value.attribute ?? '')
+    );
+    for (const skill of skills) {
+      addVariableBonus(id, skill.name, penalty, 'status', '', `Stupefied ${condition.value}`);
+    }
+    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Stupefied ${condition.value}`);
+    addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Stupefied ${condition.value}`);
+    addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Stupefied ${condition.value}`);
+    const classDC = getVariable<VariableProf>(id, 'CLASS_DC');
+    if (classDC && attrs.includes(classDC.value.attribute ?? '')) {
+      addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Stupefied ${condition.value}`);
+    }
+    return;
+  }
+  if (condition.name === 'Unconscious') {
+    addVariableBonus(id, 'AC', -4, 'status', '', `Unconscious`);
+    addVariableBonus(id, 'PERCEPTION', -4, 'status', '', `Unconscious`);
+    addVariableBonus(id, 'SAVE_REFLEX', -4, 'status', '', `Unconscious`);
+    return;
+  }
+  if (condition.name === 'Undetected') {
+    return;
+  }
+  if (condition.name === 'Unfriendly') {
+    return;
+  }
+  if (condition.name === 'Unnoticed') {
+    return;
+  }
+  if (condition.name === 'Wounded') {
     return;
   }
 }
