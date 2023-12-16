@@ -54,6 +54,7 @@ import importFromJSON from '@import/json/import-from-json';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import exportToPDF from '@export/export-to-pdf';
 import BlurButton from '@common/BlurButton';
+import { ICON_BG_COLOR_HOVER } from '@constants/data';
 
 export default function DashboardPage() {
   setPageTitle(`Characters`);
@@ -298,7 +299,7 @@ function CharacterCard(props: { character: Character }) {
           color='gray'
           radius='xl'
           ref={refEdit}
-          style={{ flex: 1, backgroundColor: hoveredEdit ? 'rgba(0, 0, 0, 0.1)' : undefined }}
+          style={{ flex: 1, backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined }}
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -318,7 +319,7 @@ function CharacterCard(props: { character: Character }) {
               radius='xl'
               aria-label='Options'
               ref={refOptions}
-              style={{ backgroundColor: hoveredOptions ? 'rgba(0, 0, 0, 0.1)' : undefined }}
+              style={{ backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined }}
             >
               <IconDots style={{ width: '60%', height: '60%' }} stroke={1.5} />
             </ActionIcon>

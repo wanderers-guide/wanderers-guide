@@ -157,7 +157,7 @@ export default function DrawerBase() {
       </ScrollArea>
 
       {_drawer &&
-        !['character', 'stat-prof', 'stat-attributes', 'stat-hp', 'stat-resist-weak'].includes(
+        !['character', 'stat-prof', 'stat-attr', 'stat-hp', 'stat-resist-weak'].includes(
           _drawer.type
         ) && (
           <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
@@ -214,7 +214,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}{' '}
       {/* TODO */}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
-      {_drawer?.type === 'stat-attributes' && <StatAttrDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'stat-attr' && <StatAttrDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerTitle data={_drawer.data} />}
     </div>
@@ -247,7 +247,7 @@ function DrawerContent(props: {
       {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={_drawer.data} />}{' '}
       {/* TODO */}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-attributes' && <StatAttrDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'stat-attr' && <StatAttrDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
     </>

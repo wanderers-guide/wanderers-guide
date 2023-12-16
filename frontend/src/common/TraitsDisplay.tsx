@@ -22,7 +22,7 @@ export default function TraitsDisplay(props: {
   interactable?: boolean;
   size?: MantineSize;
   rarity?: Rarity;
-  skill?: string;
+  skill?: string | string[];
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
@@ -129,23 +129,34 @@ export function RarityDisplay(props: {
   );
 }
 
-export function SkillDisplay(props: { skill: string; interactable?: boolean; size?: MantineSize }) {
+export function SkillDisplay(props: {
+  skill: string | string[];
+  interactable?: boolean;
+  size?: MantineSize;
+}) {
   const theme = useMantineTheme();
+  const skills = Array.isArray(props.skill) ? props.skill : [props.skill];
+
   return (
-    <Badge
-      size={props.size ?? 'md'}
-      variant='dot'
-      styles={{
-        root: {
-          // @ts-ignore
-          '--badge-dot-size': 0,
-          textTransform: 'initial',
-          color: theme.colors.dark[2],
-        },
-      }}
-    >
-      {_.startCase(props.skill.toLowerCase())}
-    </Badge>
+    <>
+      {skills.map((skill, index) => (
+        <Badge
+          key={index}
+          size={props.size ?? 'md'}
+          variant='dot'
+          styles={{
+            root: {
+              // @ts-ignore
+              '--badge-dot-size': 0,
+              textTransform: 'initial',
+              color: theme.colors.dark[2],
+            },
+          }}
+        >
+          {_.startCase(skill.toLowerCase())}
+        </Badge>
+      ))}
+    </>
   );
 }
 

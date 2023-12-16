@@ -1,3 +1,4 @@
+import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { Box, BoxComponentProps, Button, ButtonProps, useMantineTheme } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 
@@ -19,7 +20,7 @@ export default function BlurButton(props: BlurButtonProps) {
       color='gray.2'
       radius='xl'
       ref={ref}
-      style={{ flex: 1, backgroundColor: hovered ? 'rgba(0, 0, 0, 0.1)' : undefined }}
+      style={{ flex: 1, backgroundColor: hovered ? ICON_BG_COLOR_HOVER : undefined }}
       onClick={props.onClick}
       component='a'
       href={props.href}

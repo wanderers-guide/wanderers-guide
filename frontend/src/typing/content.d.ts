@@ -95,6 +95,14 @@ interface Item {
   version: string;
 }
 
+interface InventoryItem {
+  item: Item;
+  quantity: number;
+  is_formula: boolean;
+  is_container: boolean;
+  container_contents: InventoryItem[];
+}
+
 interface Spell {
   id: number;
   created_at: string;
@@ -120,7 +128,9 @@ interface Spell {
     }[];
     data: Record<string, any>; // TODO
   };
-  meta_data: Record<string, any>; // TODO
+  meta_data: {
+    unselectable?: boolean;
+  };
   content_source_id: number;
   version: string;
 }
@@ -194,7 +204,8 @@ interface AbilityBlock {
   special?: string;
   type: AbilityBlockType;
   meta_data?: {
-    skill?: string;
+    unselectable?: boolean;
+    skill?: string | string[];
     image_url?: string;
     // auto_adjustments?: Record<string, string>; TODO:
     foundry?: Record<string, any>;
@@ -216,7 +227,18 @@ interface Character {
   hero_points: number;
   stamina_current: number;
   resolve_current: number;
-  inventory: Record<string, any>; // TODO
+  inventory?: {
+    coins: {
+      cp: number;
+      sp: number;
+      gp: number;
+      pp: number;
+    };
+    unarmed_attacks: {
+      item: Item;
+    }[];
+    items: InventoryItem[];
+  };
   notes?: {
     pages: {
       name: string;

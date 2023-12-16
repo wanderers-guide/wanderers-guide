@@ -13,7 +13,7 @@ export type DrawerType =
   | 'generic'
   | 'character'
   | 'stat-prof'
-  | 'stat-attributes'
+  | 'stat-attr'
   | 'stat-hp'
   | 'stat-resist-weak';
 

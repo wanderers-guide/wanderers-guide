@@ -66,6 +66,7 @@ import {
 } from '@variables/variable-display';
 import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
+import { ICON_BG_COLOR_HOVER } from '@constants/data';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -388,7 +389,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               size='lg'
               fullWidth
               onClick={() => {
-                openDrawer({ type: 'stat-attributes', data: {} });
+                openDrawer({ type: 'stat-attr', data: {} });
               }}
             >
               <Group>
@@ -934,12 +935,27 @@ function LevelSection(props: {
     });
   };
 
+  if (
+    props.operationResults?.ancestrySectionResults.length === 0 &&
+    props.operationResults?.classFeatureResults.length === 0
+  ) {
+    if (props.level === 0) {
+      return (
+        <Text fz='sm' mt={10} ta='center' c='gray.5' fs='italic'>
+          Select an ancestry, background, and class to get started.
+        </Text>
+      );
+    } else {
+      return null;
+    }
+  }
+
   return (
     <Accordion.Item
       ref={mergedRef}
       value={`${props.level}`}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
     >
       <Accordion.Control>
@@ -1065,7 +1081,7 @@ function ClassFeatureAccordionItem(props: {
       value={props.id}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1127,7 +1143,7 @@ function AncestrySectionAccordionItem(props: {
       value={props.id}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1330,7 +1346,7 @@ function AncestryAccordionItem(props: {
       value='ancestry'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1445,7 +1461,7 @@ function BackgroundAccordionItem(props: {
       value='background'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1555,7 +1571,7 @@ function ClassAccordionItem(props: {
       value='class'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1628,7 +1644,7 @@ function BooksAccordionItem(props: {
       value='books'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1688,7 +1704,7 @@ function ItemsAccordionItem(props: {
       value='items'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1750,7 +1766,7 @@ function CustomAccordionItem(props: {
       value='custom'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >

@@ -105,8 +105,9 @@ import { setPageTitle } from '@utils/document-change';
 import { isPlayable } from '@utils/character';
 import { JSendResponse } from '@typing/requests';
 import _, { set } from 'lodash';
-import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
+import { defineDefaultSources, fetchContentAll, fetchContentPackage } from '@content/content-store';
 import { isCharacterSheetMobile } from '@utils/screen-sizes';
+import * as JsSearch from 'js-search';
 import {
   getAllArmorGroupVariables,
   getAllArmorVariables,
@@ -135,7 +136,7 @@ import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResultPackage } from '@typing/operations';
 import { Icon } from '@common/Icon';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { GUIDE_BLUE } from '@constants/data';
+import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER } from '@constants/data';
 import classes from '@css/FaqSimple.module.css';
 import { CharacterInfo } from '@common/CharacterInfo';
 import ClickEditText from '@common/ClickEditText';
@@ -152,7 +153,13 @@ import ClassDcIcon from '@assets/images/FancyBoxIcon';
 import CircleIcon from '@assets/images/CircleIcon';
 import BoxIcon from '@assets/images/BoxIcon';
 import HeroPointIcon from '@assets/images/HeroPointIcon';
-import { selectContent } from '@common/select/SelectContent';
+import {
+  ClassFeatureSelectionOption,
+  FeatSelectionOption,
+  HeritageSelectionOption,
+  PhysicalFeatureSelectionOption,
+  selectContent,
+} from '@common/select/SelectContent';
 import {
   applyConditions,
   compiledConditions,
@@ -160,6 +167,7 @@ import {
   getConditionByName,
 } from '@variables/condition-handler';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
+import { collectCharacterAbilityBlocks } from '@content/collect-content';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -903,7 +911,7 @@ function ConditionSection() {
                 transform: 'translate(-50%, 0px)',
               }}
             >
-              <HeroPointIcon size={75} color='#dee2e625' />
+              <HeroPointIcon size={75} color={ICON_BG_COLOR} />
             </Box>
             <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={15}>
               <Text ta='center' fz='md' fw={500} c='gray.0' style={{ whiteSpace: 'nowrap' }}>
@@ -962,6 +970,10 @@ function AttributeSection() {
     'ATTRIBUTE_CHA',
   ];
 
+  const handleAttributeOpen = (attribute: string) => {
+    openDrawer({ type: 'stat-attr', data: { attributeName: attribute } });
+  };
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -977,10 +989,25 @@ function AttributeSection() {
           <SimpleGrid cols={2} spacing='sm' verticalSpacing={8}>
             {attributes.map((attribute, index) => (
               <Button.Group key={index}>
-                <BlurButton size='compact-xs' fw={400}>
+                <BlurButton
+                  size='compact-xs'
+                  fw={400}
+                  onClick={() => {
+                    handleAttributeOpen(attribute);
+                  }}
+                >
                   {variableNameToLabel(attribute)}
                 </BlurButton>
-                <Button radius='xl' variant='light' color='dark.2' size='compact-xs' w={35}>
+                <Button
+                  radius='xl'
+                  variant='light'
+                  color='dark.2'
+                  size='compact-xs'
+                  w={35}
+                  onClick={() => {
+                    handleAttributeOpen(attribute);
+                  }}
+                >
                   {displayAttributeValue('CHARACTER', attribute, {
                     c: 'gray.0',
                     ta: 'center',
@@ -1003,6 +1030,16 @@ function ArmorSection() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
+  const { hovered: armorHovered, ref: armorRef } = useHover();
+  const { hovered: shieldHovered, ref: shieldRef } = useHover();
+
+  const handleSaveOpen = (save: VariableProf) => {
+    openDrawer({
+      type: 'stat-prof',
+      data: { variableName: save.name },
+    });
+  };
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -1018,8 +1055,14 @@ function ArmorSection() {
       >
         <Group wrap='nowrap' gap={5} justify='space-between'>
           <Group wrap='nowrap' gap={0} justify='center'>
-            <Box style={{ position: 'relative' }}>
-              <ArmorIcon size={85} color={'#dee2e625'} />
+            <Box
+              style={{ position: 'relative', cursor: 'pointer' }}
+              ref={armorRef}
+              onClick={() => {
+                //openDrawer({ type: 'armor' });
+              }}
+            >
+              <ArmorIcon size={85} color={armorHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
               <Stack
                 gap={0}
                 style={{
@@ -1038,8 +1081,14 @@ function ArmorSection() {
                 </Text>
               </Stack>
             </Box>
-            <Box style={{ position: 'relative' }}>
-              <ShieldIcon size={85} color='#dee2e625' />
+            <Box
+              style={{ position: 'relative', cursor: 'pointer' }}
+              ref={shieldRef}
+              onClick={() => {
+                //openDrawer({ type: 'shield' });
+              }}
+            >
+              <ShieldIcon size={85} color={shieldHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
               <Stack
                 gap={0}
                 style={{
@@ -1073,7 +1122,7 @@ function ArmorSection() {
           <Stack gap={8}>
             {getAllSaveVariables('CHARACTER').map((save, index) => (
               <Button.Group key={index}>
-                <BlurButton size='compact-xs' fw={400}>
+                <BlurButton size='compact-xs' fw={400} onClick={() => handleSaveOpen(save)}>
                   {variableToLabel(save)}
                 </BlurButton>
                 <Button
@@ -1083,6 +1132,7 @@ function ArmorSection() {
                   size='compact-xs'
                   w={50}
                   style={{ position: 'relative' }}
+                  onClick={() => handleSaveOpen(save)}
                 >
                   <Text c='gray.0' fz='xs' pr={15}>
                     {displayFinalProfValue('CHARACTER', save.name)}
@@ -1140,7 +1190,7 @@ function SpeedSection() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <PerceptionIcon size={80} color='#dee2e625' />
+              <PerceptionIcon size={80} color={ICON_BG_COLOR} />
             </Box>
             <Stack gap={10}>
               <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -1163,7 +1213,7 @@ function SpeedSection() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <SpeedIcon size={75} color='#dee2e625' />
+              <SpeedIcon size={75} color={ICON_BG_COLOR} />
             </Box>
             <Stack gap={10}>
               <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -1190,7 +1240,7 @@ function SpeedSection() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <BoxIcon size={50} color='#dee2e625' />
+              <BoxIcon size={50} color={ICON_BG_COLOR} />
             </Box>
             <Stack gap={10}>
               <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -1322,8 +1372,9 @@ function SectionPanels(props: { content: ContentPackage }) {
 
             <Menu.Dropdown>
               <Menu.Label>Other sections</Menu.Label>
-              {tabOptions.map((tab) => (
+              {tabOptions.map((tab, index) => (
                 <Menu.Item
+                  key={index}
                   leftSection={getTabIcon(tab)}
                   onClick={() => {
                     setActiveTab(tab);
@@ -1658,7 +1709,7 @@ function ActionAccordionItem(props: {
       ref={ref}
       value={props.id}
       style={{
-        backgroundColor: hovered && !props.opened ? 'rgba(0, 0, 0, 0.1)' : undefined,
+        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
     >
       <Accordion.Control>
@@ -1767,7 +1818,349 @@ function PanelSpells(props: { panelHeight: number }) {
 }
 
 function PanelFeatsFeatures(props: { panelHeight: number }) {
-  return null;
+  const theme = useMantineTheme();
+  const character = useRecoilValue(characterState);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [section, setSection] = useState('FEATS');
+
+  const { data: rawData } = useQuery({
+    queryKey: [`find-feats-and-features`],
+    queryFn: async () => {
+      if (!character) return null;
+
+      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      return collectCharacterAbilityBlocks(character, abilityBlocks);
+    },
+  });
+
+  // Filter options based on search query
+  const search = useRef(new JsSearch.Search('id'));
+  useEffect(() => {
+    if (!rawData) return;
+    search.current.addIndex('name');
+    search.current.addIndex('description');
+    search.current.addIndex('_group');
+    search.current.addDocuments([
+      ...rawData.ancestryFeats.map((feat) => ({ ...feat, _group: 'ancestryFeats' })),
+      ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
+      ...rawData.generalAndSkillFeats.map((feat) => ({
+        ...feat,
+        _group: 'generalAndSkillFeats',
+      })),
+      ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
+      ...rawData.classFeatures.map((feat) => ({ ...feat, _group: 'classFeatures' })),
+      ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
+      ...rawData.physicalFeatures.map((feat) => ({ ...feat, _group: 'physicalFeatures' })),
+    ]);
+  }, [rawData]);
+
+  const constructData = (data: Record<string, any>[]) => {
+    const classFeats = data.filter((feat) => feat._group === 'classFeats');
+    const ancestryFeats = data.filter((feat) => feat._group === 'ancestryFeats');
+    const generalAndSkillFeats = data.filter((feat) => feat._group === 'generalAndSkillFeats');
+    const otherFeats = data.filter((feat) => feat._group === 'otherFeats');
+    const classFeatures = data.filter((feat) => feat._group === 'classFeatures');
+    const heritages = data.filter((feat) => feat._group === 'heritages');
+    const physicalFeatures = data.filter((feat) => feat._group === 'physicalFeatures');
+
+    return {
+      classFeats,
+      ancestryFeats,
+      generalAndSkillFeats,
+      otherFeats,
+      classFeatures,
+      heritages,
+      physicalFeatures,
+    } as typeof rawData;
+  };
+
+  let data = searchQuery.trim()
+    ? constructData(search.current.search(searchQuery.trim()))
+    : rawData;
+
+  return (
+    <Box h='100%'>
+      <Stack gap={5}>
+        <Group>
+          <TextInput
+            style={{ flex: 1 }}
+            leftSection={<IconSearch size='0.9rem' />}
+            placeholder={`Search feats & features`}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              },
+            }}
+          />
+          <SegmentedControl
+            value={section}
+            onChange={setSection}
+            disabled={!!searchQuery.trim()}
+            data={[
+              { label: 'Feats', value: 'FEATS' },
+              { label: 'Features', value: 'FEATURES' },
+            ]}
+          />
+        </Group>
+        <ScrollArea h={props.panelHeight - 50}>
+          {data && (section === 'FEATS' || searchQuery.trim()) && (
+            <Accordion
+              variant='separated'
+              multiple
+              defaultValue={['class-feats', 'ancestry-feats', 'general-skill-feats', 'other-feats']}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {data.classFeats.length > 0 && (
+                <Accordion.Item value='class-feats'>
+                  <Accordion.Control>Class Feats</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.classFeats.map((feat, index) => (
+                        <FeatSelectionOption
+                          key={index}
+                          feat={feat}
+                          displayLevel
+                          onClick={() => {
+                            openDrawer({
+                              type: 'feat',
+                              data: { id: feat.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+              {data.ancestryFeats.length > 0 && (
+                <Accordion.Item value='ancestry-feats'>
+                  <Accordion.Control>Ancestry Feats</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.ancestryFeats.map((feat, index) => (
+                        <FeatSelectionOption
+                          key={index}
+                          feat={feat}
+                          displayLevel
+                          onClick={() => {
+                            openDrawer({
+                              type: 'feat',
+                              data: { id: feat.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+              {data.generalAndSkillFeats.length > 0 && (
+                <Accordion.Item value='general-skill-feats'>
+                  <Accordion.Control>General & Skill Feats</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.generalAndSkillFeats.map((feat, index) => (
+                        <FeatSelectionOption
+                          key={index}
+                          feat={feat}
+                          displayLevel
+                          onClick={() => {
+                            openDrawer({
+                              type: 'feat',
+                              data: { id: feat.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+              {data.otherFeats.length > 0 && (
+                <Accordion.Item value='other-feats'>
+                  <Accordion.Control>Other Feats</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.otherFeats.map((feat, index) => (
+                        <FeatSelectionOption
+                          key={index}
+                          feat={feat}
+                          displayLevel
+                          onClick={() => {
+                            openDrawer({
+                              type: 'feat',
+                              data: { id: feat.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+            </Accordion>
+          )}
+
+          {data && (section === 'FEATURES' || searchQuery.trim()) && (
+            <Accordion
+              variant='separated'
+              multiple
+              defaultValue={['class-features', 'heritages', 'ancestry-features']}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {data.classFeatures.length > 0 && (
+                <Accordion.Item value='class-features'>
+                  <Accordion.Control>Class Features</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.classFeatures.map((feature, index) => (
+                        <ClassFeatureSelectionOption
+                          key={index}
+                          classFeature={feature}
+                          onClick={() => {
+                            openDrawer({
+                              type: 'class-feature',
+                              data: { id: feature.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+              {data.heritages.length > 0 && (
+                <Accordion.Item value='heritages'>
+                  <Accordion.Control>Heritage</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.heritages.map((heritage, index) => (
+                        <HeritageSelectionOption
+                          key={index}
+                          heritage={heritage}
+                          onClick={() => {
+                            openDrawer({
+                              type: 'heritage',
+                              data: { id: heritage.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+              {data.physicalFeatures.length > 0 && (
+                <Accordion.Item value='ancestry-features'>
+                  <Accordion.Control>Ancestry Features</Accordion.Control>
+                  <Accordion.Panel
+                    styles={{
+                      content: {
+                        padding: 0,
+                      },
+                    }}
+                  >
+                    <Stack gap={0}>
+                      <Divider color='dark.6' />
+                      {data.physicalFeatures.map((feature, index) => (
+                        <PhysicalFeatureSelectionOption
+                          key={index}
+                          physicalFeature={feature}
+                          onClick={() => {
+                            openDrawer({
+                              type: 'physical-feature',
+                              data: { id: feature.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              )}
+            </Accordion>
+          )}
+        </ScrollArea>
+      </Stack>
+    </Box>
+  );
 }
 
 function PanelCompanions(props: { panelHeight: number }) {

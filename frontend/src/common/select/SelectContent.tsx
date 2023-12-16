@@ -1204,7 +1204,7 @@ export function FeatSelectionOption(props: {
       onClick={() => props.onClick(props.feat)}
       justify='space-between'
     >
-      {props.displayLevel && (
+      {props.displayLevel && !props.feat.meta_data?.unselectable && (
         <Text
           fz={10}
           c='dimmed'
@@ -1340,6 +1340,7 @@ export function ActionSelectionOption(props: {
   onClick: (action: AbilityBlock) => void;
   selected?: boolean;
   includeOptions?: boolean;
+  includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -1378,23 +1379,27 @@ export function ActionSelectionOption(props: {
             skill={props.action.meta_data?.skill}
           />
         </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeOptions) && (
+          <Box w={props.includeOptions ? 80 : 50}></Box>
+        )}
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'action', data: { id: props.action.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails && (
+        <Button
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: props.includeOptions ? 40 : 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openDrawer({ type: 'action', data: { id: props.action.id } });
+          }}
+        >
+          Details
+        </Button>
+      )}
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>
@@ -1454,6 +1459,7 @@ export function ClassFeatureSelectionOption(props: {
   onClick: (classFeature: AbilityBlock) => void;
   selected?: boolean;
   includeOptions?: boolean;
+  includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -1504,23 +1510,27 @@ export function ClassFeatureSelectionOption(props: {
             rarity={props.classFeature.rarity}
           />
         </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeOptions) && (
+          <Box w={props.includeOptions ? 80 : 50}></Box>
+        )}
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'class-feature', data: { id: props.classFeature.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails && (
+        <Button
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: props.includeOptions ? 40 : 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openDrawer({ type: 'class-feature', data: { id: props.classFeature.id } });
+          }}
+        >
+          Details
+        </Button>
+      )}
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>
