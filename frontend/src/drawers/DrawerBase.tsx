@@ -32,6 +32,7 @@ import { StatAttrDrawerContent, StatAttrDrawerTitle } from './types/StatAttrDraw
 import { StatHealthDrawerContent, StatHealthDrawerTitle } from './types/StatHealthDrawer';
 import { GenericDrawerContent, GenericDrawerTitle } from './types/GenericDrawer';
 import { TraitDrawerTitle, TraitDrawerContent } from './types/TraitDrawer';
+import { AddItemDrawerContent, AddItemDrawerTitle } from './types/AddItemDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -157,9 +158,15 @@ export default function DrawerBase() {
       </ScrollArea>
 
       {_drawer &&
-        !['character', 'stat-prof', 'stat-attr', 'stat-hp', 'stat-resist-weak'].includes(
-          _drawer.type
-        ) && (
+        ![
+          'character',
+          'stat-prof',
+          'stat-attr',
+          'stat-hp',
+          'stat-resist-weak',
+          'add-item',
+          'add-spell',
+        ].includes(_drawer.type) && (
           <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
             <HoverCard.Target>
               <ActionIcon
@@ -217,6 +224,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'add-item' && <AddItemDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -250,6 +258,7 @@ function DrawerContent(props: {
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'add-item' && <AddItemDrawerContent data={_drawer.data} />}
     </>
   );
 }

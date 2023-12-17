@@ -12,6 +12,8 @@ export type DrawerType =
   | AbilityBlockType
   | 'generic'
   | 'character'
+  | 'add-item'
+  | 'add-spell'
   | 'stat-prof'
   | 'stat-attr'
   | 'stat-hp'

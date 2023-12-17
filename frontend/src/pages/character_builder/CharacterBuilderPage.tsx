@@ -67,6 +67,7 @@ import { JSendResponse } from '@typing/requests';
 import _ from 'lodash';
 import { defineDefaultSources } from '@content/content-store';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
+import { saveCustomization } from '@content/customization-cache';
 
 export default function CharacterBuilderPage() {
   setPageTitle(`Builder`);
@@ -115,6 +116,12 @@ export default function CharacterBuilderPage() {
       if (resultCharacter) {
         // Make sure we sync the enabled content sources
         defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+
+        // Cache character customization for fast loading
+        saveCustomization({
+          background_image_url: resultCharacter.details?.background_image_url,
+          sheet_theme: resultCharacter.details?.sheet_theme,
+        });
       } else {
         // Character not found, redirect to characters
         window.location.href = '/characters';

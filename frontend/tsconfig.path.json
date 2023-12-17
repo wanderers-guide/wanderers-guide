@@ -19,6 +19,7 @@
       "@requests/*": ["src/request/*"],
       "@upload/*": ["src/process/upload/*"],
       "@content/*": ["src/process/content/*"],
+      "@items/*": ["src/process/items/*"],
       "@import/*": ["src/process/import/*"],
       "@export/*": ["src/process/export/*"],
       "@css/*": ["src/css/*"],

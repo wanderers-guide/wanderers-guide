@@ -78,7 +78,12 @@ interface Item {
   id: number;
   created_at: string;
   name: string;
-  price?: Record<string, any>;
+  price?: {
+    cp?: number;
+    sp?: number;
+    gp?: number;
+    pp?: number;
+  };
   bulk?: string;
   level: number;
   rarity: Rarity;
@@ -101,6 +106,18 @@ interface InventoryItem {
   is_formula: boolean;
   is_container: boolean;
   container_contents: InventoryItem[];
+}
+interface Inventory {
+  coins: {
+    cp: number;
+    sp: number;
+    gp: number;
+    pp: number;
+  };
+  unarmed_attacks: {
+    item: Item;
+  }[];
+  items: InventoryItem[];
 }
 
 interface Spell {
@@ -227,18 +244,7 @@ interface Character {
   hero_points: number;
   stamina_current: number;
   resolve_current: number;
-  inventory?: {
-    coins: {
-      cp: number;
-      sp: number;
-      gp: number;
-      pp: number;
-    };
-    unarmed_attacks: {
-      item: Item;
-    }[];
-    items: InventoryItem[];
-  };
+  inventory?: Inventory;
   notes?: {
     pages: {
       name: string;

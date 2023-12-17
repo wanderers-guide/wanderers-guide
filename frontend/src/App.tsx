@@ -35,6 +35,7 @@ import { AddNewLoreModal } from '@modals/AddNewLoreModal';
 import { SelectIconModal } from '@modals/SelectIconModal';
 import { UpdateNotePageModal } from '@modals/UpdateNotePageModal';
 import { ConditionModal } from '@modals/ConditionModal';
+import { getCachedCustomization } from '@content/customization-cache';
 
 const modals = {
   selectContent: SelectContentModal,
@@ -102,8 +103,12 @@ export default function App() {
         activeCharacer?.details?.background_image_url
       ) {
         if (!background?.url) {
-          // TODO: Use account default
-          setBackground(await getBackgroundImageFromURL());
+          // Use cached customization if available
+          const cache = getCachedCustomization();
+
+          // TODO: Use account default if no character default
+
+          setBackground(await getBackgroundImageFromURL(cache?.background_image_url ?? undefined));
         }
         return;
       }
@@ -117,7 +122,7 @@ export default function App() {
     createTheme({
       colors: {
         // @ts-ignore
-        guide: getShadesFromColor(GUIDE_BLUE),
+        guide: getShadesFromColor(getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
         dark: [
           '#C1C2C5',
           '#A6A7AB',
@@ -185,6 +190,8 @@ export default function App() {
       }
     })();
   }, [location]);
+
+  console.log(background);
 
   return (
     <MantineProvider theme={theme} defaultColorScheme='dark'>

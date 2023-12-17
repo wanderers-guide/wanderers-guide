@@ -87,6 +87,8 @@ import {
   Condition,
   ContentPackage,
   ContentSource,
+  InventoryItem,
+  Item,
   Rarity,
 } from '@typing/content';
 import { makeRequest } from '@requests/request-manager';
@@ -168,6 +170,12 @@ import {
 } from '@variables/condition-handler';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { collectCharacterAbilityBlocks } from '@content/collect-content';
+import CopperCoin from '@assets/images/currency/copper.png';
+import SilverCoin from '@assets/images/currency/silver.png';
+import GoldCoin from '@assets/images/currency/gold.png';
+import PlatinumCoin from '@assets/images/currency/platinum.png';
+import { saveCustomization } from '@content/customization-cache';
+import { BuyItemModal } from '@modals/BuyItemModal';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -338,6 +346,12 @@ function CharacterSheetInner(props: {
       if (resultCharacter) {
         // Make sure we sync the enabled content sources
         defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+
+        // Cache character customization for fast loading
+        saveCustomization({
+          background_image_url: resultCharacter.details?.background_image_url,
+          sheet_theme: resultCharacter.details?.sheet_theme,
+        });
       } else {
         // Character not found, redirect to characters
         window.location.href = '/characters';
@@ -1396,7 +1410,7 @@ function SectionPanels(props: { content: ContentPackage }) {
         </Tabs.Panel>
 
         <Tabs.Panel value='inventory'>
-          <PanelInventory panelHeight={panelHeight} />
+          <PanelInventory content={props.content} panelHeight={panelHeight} />
         </Tabs.Panel>
 
         <Tabs.Panel value='spells'>
@@ -1809,8 +1823,264 @@ function ActionSelectionOption(props: {
   );
 }
 
-function PanelInventory(props: { panelHeight: number }) {
-  return null;
+function PanelInventory(props: { content: ContentPackage; panelHeight: number }) {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
+
+  const getInventory = (character: Character | null) => {
+    // Default inventory
+    return _.cloneDeep(
+      character?.inventory ?? {
+        coins: {
+          cp: 0,
+          sp: 0,
+          gp: 0,
+          pp: 0,
+        },
+        unarmed_attacks: [],
+        items: [],
+      }
+    );
+  };
+  const inventory = getInventory(character);
+
+  const handleAddItem = (item: Item, is_formula: boolean) => {
+    if (!character) return;
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      const inventory = getInventory(prev);
+      return {
+        ...character,
+        inventory: {
+          ...inventory,
+          items: [
+            ...inventory.items,
+            {
+              item: _.cloneDeep(item),
+              quantity: 1,
+              is_formula: is_formula,
+              is_container: false,
+              container_contents: [],
+            },
+          ],
+        },
+      };
+    });
+  };
+
+  return (
+    <Box h='100%'>
+      <Stack gap={5}>
+        <Group>
+          <TextInput
+            style={{ flex: 1 }}
+            leftSection={<IconSearch size='0.9rem' />}
+            placeholder={`Search items`}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              },
+            }}
+          />
+          <Badge
+            variant='light'
+            color='gray'
+            size='lg'
+            styles={{
+              root: {
+                textTransform: 'initial',
+              },
+            }}
+          >
+            Bulk: 5/8
+          </Badge>
+          <CurrencySection character={character} />
+          <Button
+            color='dark.6'
+            radius='md'
+            fw={500}
+            rightSection={<IconPlus size='1.0rem' />}
+            onClick={() => {
+              openDrawer({
+                type: 'add-item',
+                data: {
+                  onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
+                    if (!character) return;
+                    if (type === 'BUY') {
+                      setConfirmBuyItem({ item });
+                    } else {
+                      handleAddItem(item, type === 'FORMULA');
+                    }
+                  },
+                },
+              });
+            }}
+          >
+            Add Item
+          </Button>
+        </Group>
+        <Accordion
+          variant='separated'
+          styles={{
+            label: {
+              paddingTop: 5,
+              paddingBottom: 5,
+            },
+            control: {
+              paddingLeft: 13,
+              paddingRight: 13,
+            },
+            item: {
+              marginTop: 0,
+              marginBottom: 5,
+            },
+          }}
+        >
+          {inventory.items.map((invItem, index) => (
+            <Box key={index}>
+              {invItem.is_container ? (
+                <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
+                  <Accordion.Control>
+                    <Text c='white' fz='sm'>
+                      {invItem.item.name}
+                    </Text>
+                  </Accordion.Control>
+                  <Accordion.Panel>
+                    <Stack gap={5}>
+                      {invItem?.container_contents.map((containedItem, index) => (
+                        <InvItemOption key={index} invItem={containedItem} onClick={() => {}} />
+                      ))}
+                    </Stack>
+                  </Accordion.Panel>
+                </Accordion.Item>
+              ) : (
+                <InvItemOption invItem={invItem} onClick={() => {}} />
+              )}
+            </Box>
+          ))}
+        </Accordion>
+      </Stack>
+      {confirmBuyItem && (
+        <BuyItemModal
+          open={!!confirmBuyItem}
+          inventory={inventory}
+          item={confirmBuyItem.item}
+          onConfirm={(coins) => {
+            if (!character) return;
+            handleAddItem(confirmBuyItem.item, false);
+
+            // Update coins
+            setCharacter({
+              ...character,
+              inventory: {
+                ...inventory,
+                coins: coins,
+              },
+            });
+          }}
+          onClose={() => setConfirmBuyItem(undefined)}
+        />
+      )}
+    </Box>
+  );
+}
+
+function CurrencySection(props: { character: Character | null; onClick?: () => void }) {
+  const pp = props.character?.inventory?.coins.pp ?? 0;
+  const gp = props.character?.inventory?.coins.gp ?? 0;
+  const sp = props.character?.inventory?.coins.sp ?? 0;
+  const cp = props.character?.inventory?.coins.cp ?? 0;
+
+  const displayAll = true; //!pp && !gp && !sp && !cp;
+
+  return (
+    <Group
+      gap={15}
+      wrap='nowrap'
+      justify='center'
+      miw={200}
+      style={{
+        cursor: 'pointer',
+      }}
+      onClick={props.onClick}
+    >
+      <CoinSection pp={pp} gp={gp} sp={sp} cp={cp} displayAll={displayAll} justify='center' />
+    </Group>
+  );
+}
+
+export function CoinSection(props: {
+  cp?: number;
+  sp?: number;
+  gp?: number;
+  pp?: number;
+  displayAll?: boolean;
+  justify?: 'flex-start' | 'center' | 'flex-end';
+}) {
+  const pp = props.pp ?? 0;
+  const gp = props.gp ?? 0;
+  const sp = props.sp ?? 0;
+  const cp = props.cp ?? 0;
+  return (
+    <Group gap={15} wrap='nowrap' justify={props.justify}>
+      {(pp || props.displayAll) && (
+        <Group wrap='nowrap' gap={5}>
+          <Text c='gray.4' fz='md' fw={600}>
+            {pp.toLocaleString()}
+          </Text>
+          <Avatar src={PlatinumCoin} alt='Platinum Coins' radius='xs' size='xs' />
+        </Group>
+      )}
+      {(gp || props.displayAll) && (
+        <Group wrap='nowrap' gap={5}>
+          <Text c='gray.4' fz='md' fw={600}>
+            {gp.toLocaleString()}
+          </Text>
+          <Avatar src={GoldCoin} alt='Gold Coins' radius='xs' size='xs' />
+        </Group>
+      )}
+      {(sp || props.displayAll) && (
+        <Group wrap='nowrap' gap={5}>
+          <Text c='gray.4' fz='md' fw={600}>
+            {sp.toLocaleString()}
+          </Text>
+          <Avatar src={SilverCoin} alt='Silver Coins' radius='xs' size='xs' />
+        </Group>
+      )}
+      {(cp || props.displayAll) && (
+        <Group wrap='nowrap' gap={5}>
+          <Text c='gray.4' fz='md' fw={600}>
+            {cp.toLocaleString()}
+          </Text>
+          <Avatar src={CopperCoin} alt='Copper Coins' radius='xs' size='xs' />
+        </Group>
+      )}
+    </Group>
+  );
+}
+
+function InvItemOption(props: {
+  invItem: InventoryItem;
+  onClick: (invItem: InventoryItem) => void;
+}) {
+  return (
+    <StatButton onClick={() => props.onClick(props.invItem)}>
+      <Box>
+        <Text c='gray.0' fz='sm'>
+          {props.invItem.item.name}
+        </Text>
+      </Box>
+      <Group>
+        <Badge variant='default'>
+          {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
+        </Badge>
+      </Group>
+    </StatButton>
+  );
 }
 
 function PanelSpells(props: { panelHeight: number }) {
@@ -1820,7 +2090,7 @@ function PanelSpells(props: { panelHeight: number }) {
 function PanelFeatsFeatures(props: { panelHeight: number }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [section, setSection] = useState('FEATS');
 
@@ -1875,7 +2145,7 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
     } as typeof rawData;
   };
 
-  let data = searchQuery.trim()
+  const data = searchQuery.trim()
     ? constructData(search.current.search(searchQuery.trim()))
     : rawData;
 

@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
 import { Group, Image } from '@mantine/core';
@@ -6,6 +5,7 @@ import LogoIcon from '@assets/images/LogoIcon';
 import { useRecoilValue } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { GUIDE_BLUE } from '@constants/data';
+import { getCachedCustomization } from '@content/customization-cache';
 
 export default function WanderersGuideLogo(props: { size: number }) {
   const navigate = useNavigate();
@@ -15,7 +15,11 @@ export default function WanderersGuideLogo(props: { size: number }) {
   return (
     <Group gap={5} wrap='nowrap'>
       <LogoIcon
-        color={activeCharacer?.details?.sheet_theme?.color || GUIDE_BLUE}
+        color={
+          activeCharacer?.details?.sheet_theme?.color ||
+          getCachedCustomization()?.sheet_theme?.color ||
+          GUIDE_BLUE
+        }
         size={props.size}
       />
       <Image
@@ -32,5 +36,4 @@ export default function WanderersGuideLogo(props: { size: number }) {
       />
     </Group>
   );
-
 }

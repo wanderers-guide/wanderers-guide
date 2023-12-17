@@ -26,6 +26,7 @@ import {
   Menu,
   rem,
   ThemeIcon,
+  Select,
 } from '@mantine/core';
 import {
   AbilityBlock,
@@ -94,6 +95,7 @@ import {
 } from '@typing/variables';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { GenericData } from '@drawers/types/GenericDrawer';
+import { BuyItemButton } from '@common/BuyItemButton';
 
 export function SelectContentButton<T = Record<string, any>>(props: {
   type: ContentType;
@@ -2496,9 +2498,12 @@ export function ItemSelectionOption(props: {
   item: Item;
   onClick: (item: Item) => void;
   selected?: boolean;
+  includeDetails?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
+  includeAdd?: boolean;
+  onAdd?: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2514,7 +2519,7 @@ export function ItemSelectionOption(props: {
         backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
         position: 'relative',
       }}
-      onClick={() => props.onClick(props.item)}
+      onClick={() => hovered && props.onClick(props.item)}
       justify='space-between'
     >
       <Text
@@ -2544,23 +2549,42 @@ export function ItemSelectionOption(props: {
             rarity={props.item.rarity}
           />
         </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeOptions || props.includeAdd) && (
+          <Box w={props.includeOptions ? 80 : 55}></Box>
+        )}
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'item', data: { id: props.item.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeAdd && (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: 10,
+          }}
+        >
+          <BuyItemButton
+            onBuy={() => props.onAdd?.(props.item, 'BUY')}
+            onGive={() => props.onAdd?.(props.item, 'GIVE')}
+            onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
+          />
+        </Box>
+      )}
+      {props.includeDetails && (
+        <Button
+          size='compact-xs'
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: props.includeOptions ? 40 : 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openDrawer({ type: 'item', data: { id: props.item.id } });
+          }}
+        >
+          Details
+        </Button>
+      )}
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>
