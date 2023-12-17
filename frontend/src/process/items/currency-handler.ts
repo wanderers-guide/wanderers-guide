@@ -33,3 +33,24 @@ export function purchase(
   // Return the new coin amounts after purchase
   return { cp: resultCp, sp: resultSp, gp: resultGp, pp: resultPp };
 }
+
+export function priceToString(price?: { cp?: number; sp?: number; gp?: number; pp?: number }) {
+  if (!price) {
+    return '—';
+  }
+
+  let priceString = '';
+  if (price.cp) {
+    priceString += price.cp.toLocaleString() + ' cp';
+  }
+  if (price.sp) {
+    priceString += (priceString ? ', ' : '') + price.sp.toLocaleString() + ' sp';
+  }
+  if (price.gp) {
+    priceString += (priceString ? ', ' : '') + price.gp.toLocaleString() + ' gp';
+  }
+  if (price.pp) {
+    priceString += (priceString ? ', ' : '') + price.pp.toLocaleString() + ' pp';
+  }
+  return priceString || '—';
+}

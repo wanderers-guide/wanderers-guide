@@ -30,6 +30,7 @@ import {
   Textarea,
   SimpleGrid,
   RingProgress,
+  Grid,
 } from '@mantine/core';
 import BlurBox from '@common/BlurBox';
 import {
@@ -176,6 +177,8 @@ import GoldCoin from '@assets/images/currency/gold.png';
 import PlatinumCoin from '@assets/images/currency/platinum.png';
 import { saveCustomization } from '@content/customization-cache';
 import { BuyItemModal } from '@modals/BuyItemModal';
+import { ItemIcon } from '@items/ItemIcon';
+import { priceToString } from '@items/currency-handler';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -1852,20 +1855,23 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
     setCharacter((prev) => {
       if (!prev) return prev;
       const inventory = getInventory(prev);
+
+      const newItems = [
+        ...inventory.items,
+        {
+          item: _.cloneDeep(item),
+          quantity: 1,
+          is_formula: is_formula,
+          is_container: false,
+          container_contents: [],
+        },
+      ].sort((a, b) => a.item.name.localeCompare(b.item.name));
+
       return {
         ...character,
         inventory: {
           ...inventory,
-          items: [
-            ...inventory.items,
-            {
-              item: _.cloneDeep(item),
-              quantity: 1,
-              is_formula: is_formula,
-              is_container: false,
-              container_contents: [],
-            },
-          ],
+          items: newItems,
         },
       };
     });
@@ -1923,46 +1929,50 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
             Add Item
           </Button>
         </Group>
-        <Accordion
-          variant='separated'
-          styles={{
-            label: {
-              paddingTop: 5,
-              paddingBottom: 5,
-            },
-            control: {
-              paddingLeft: 13,
-              paddingRight: 13,
-            },
-            item: {
-              marginTop: 0,
-              marginBottom: 5,
-            },
-          }}
-        >
-          {inventory.items.map((invItem, index) => (
-            <Box key={index}>
-              {invItem.is_container ? (
-                <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
-                  <Accordion.Control>
-                    <Text c='white' fz='sm'>
-                      {invItem.item.name}
-                    </Text>
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <Stack gap={5}>
-                      {invItem?.container_contents.map((containedItem, index) => (
-                        <InvItemOption key={index} invItem={containedItem} onClick={() => {}} />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              ) : (
-                <InvItemOption invItem={invItem} onClick={() => {}} />
-              )}
-            </Box>
-          ))}
-        </Accordion>
+        <ScrollArea h={props.panelHeight - 50}>
+          <Accordion
+            variant='separated'
+            styles={{
+              label: {
+                paddingTop: 5,
+                paddingBottom: 5,
+              },
+              control: {
+                paddingLeft: 13,
+                paddingRight: 13,
+              },
+              item: {
+                marginTop: 0,
+                marginBottom: 5,
+              },
+            }}
+          >
+            {inventory.items.map((invItem, index) => (
+              <Box key={index}>
+                {invItem.is_container ? (
+                  <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
+                    <Accordion.Control>
+                      <Text c='white' fz='sm'>
+                        {invItem.item.name}
+                      </Text>
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap={5}>
+                        {invItem?.container_contents.map((containedItem, index) => (
+                          <InvItemOption key={index} invItem={containedItem} onClick={() => {}} />
+                        ))}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                ) : (
+                  <Box mb={5}>
+                    <InvItemOption invItem={invItem} onClick={() => {}} />
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Accordion>
+        </ScrollArea>
       </Stack>
       {confirmBuyItem && (
         <BuyItemModal
@@ -2067,18 +2077,34 @@ function InvItemOption(props: {
   invItem: InventoryItem;
   onClick: (invItem: InventoryItem) => void;
 }) {
+  const theme = useMantineTheme();
+
   return (
     <StatButton onClick={() => props.onClick(props.invItem)}>
-      <Box>
-        <Text c='gray.0' fz='sm'>
-          {props.invItem.item.name}
-        </Text>
-      </Box>
-      <Group>
-        <Badge variant='default'>
-          {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
-        </Badge>
-      </Group>
+      <Grid w={'100%'}>
+        <Grid.Col span={6}>
+          <Group wrap='nowrap' gap={10}>
+            <ItemIcon group={props.invItem.item.group} size='1.2rem' color={theme.colors.gray[6]} />
+            <Text c='gray.0' fz='sm'>
+              {props.invItem.item.name}
+            </Text>
+          </Group>
+        </Grid.Col>
+        <Grid.Col span={3}>
+          <Grid>
+            <Grid.Col span={4}>
+              <Text>{props.invItem.quantity}</Text>
+            </Grid.Col>
+            <Grid.Col span={4}>
+              <Text>{props.invItem.item.bulk ?? '—'}</Text>
+            </Grid.Col>
+            <Grid.Col span={4}>
+              <Text ta='left'>{priceToString(props.invItem.item.price)}</Text>
+            </Grid.Col>
+          </Grid>
+        </Grid.Col>
+        <Grid.Col span={3}>3</Grid.Col>
+      </Grid>
     </StatButton>
   );
 }

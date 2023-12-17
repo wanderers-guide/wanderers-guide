@@ -146,6 +146,9 @@ interface Spell {
     data: Record<string, any>; // TODO
   };
   meta_data: {
+    damage?: Record<string, any>;
+    type?: string;
+    foundry?: Record<string, any>;
     unselectable?: boolean;
   };
   content_source_id: number;
