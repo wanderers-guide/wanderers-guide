@@ -1,11 +1,8 @@
 import { Character, AbilityBlock } from '@typing/content';
 import { VariableListStr } from '@typing/variables';
+import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
-
-// Hardcoded general and skill trait ids
-const GENERAL_TRAIT_ID = 1437;
-const SKILL_TRAIT_ID = 1438;
 
 export function collectCharacterAbilityBlocks(character: Character, blocks: AbilityBlock[]) {
   // Feats ///////////////////////////////
@@ -23,8 +20,7 @@ export function collectCharacterAbilityBlocks(character: Character, blocks: Abil
     });
 
   const generalAndSkillFeats = feats.filter((feat) => {
-    const traitIds = feat.traits ?? [];
-    return traitIds.includes(GENERAL_TRAIT_ID) || traitIds.includes(SKILL_TRAIT_ID);
+    return hasTraitType('GENERAL', feat.traits) || hasTraitType('SKILL', feat.traits);
   });
 
   const classFeats = feats.filter((feat) => {

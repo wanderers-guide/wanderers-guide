@@ -12,7 +12,7 @@ export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
   attempt = 1
-) {
+): Promise<T | null> {
   const { data, error } = await supabase.functions.invoke(type, { body });
   if (error instanceof FunctionsHttpError) {
     const errorMessage = await error.context.json();

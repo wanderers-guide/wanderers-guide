@@ -94,17 +94,61 @@ interface Item {
   size: Size;
   craft_requirements?: string;
   usage?: string;
-  meta_data?: Record<string, any>; // TODO
+  meta_data?: {
+    image_url?: string;
+    base_item?: string;
+    category?: string;
+    damage?: {
+      damageType: string;
+      dice: number;
+      die: string;
+    };
+    bulk_equipped?: number;
+    bulk_negate?: number;
+    group?: string;
+    hardness?: number;
+    hp?: number;
+    hp_max?: number;
+    broken_threshold?: number;
+    quantity?: number;
+    material?: {
+      grade?: string;
+      type?: string;
+    };
+    range?: number;
+    reload?: string;
+    runes?: {
+      potency_amount?: string;
+      striking_type?: string;
+      property_1?: string;
+      property_2?: string;
+      property_3?: string;
+      property_4?: string;
+    };
+    foundry: {
+      rules?: Record<string, any>;
+      tags?: Record<string, any>;
+      bonus?: number;
+      bonus_damage?: number;
+      container_id?: string;
+      splash_damage?: number;
+      stack_group?: string;
+      items?: Record<string, any>[];
+    };
+  };
   operations?: Operation[];
   content_source_id: number;
   version: string;
 }
 
 interface InventoryItem {
+  id: string;
   item: Item;
   quantity: number;
   is_formula: boolean;
   is_container: boolean;
+  is_equipped: boolean;
+  is_invested: boolean;
   container_contents: InventoryItem[];
 }
 interface Inventory {
@@ -150,6 +194,7 @@ interface Spell {
     type?: string;
     foundry?: Record<string, any>;
     unselectable?: boolean;
+    image_url?: string;
   };
   content_source_id: number;
   version: string;

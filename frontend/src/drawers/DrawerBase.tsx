@@ -24,6 +24,7 @@ import { convertToContentType } from '@content/content-utils';
 import { ClassDrawerTitle, ClassDrawerContent } from './types/ClassDrawer';
 import { ClassFeatureDrawerContent, ClassFeatureDrawerTitle } from './types/ClassFeatureDrawer';
 import { PrevMetadata } from './drawer-utils';
+import * as JsSearch from 'js-search';
 import { AncestryDrawerContent, AncestryDrawerTitle } from './types/AncestryDrawer';
 import { LanguageDrawerContent, LanguageDrawerTitle } from './types/LanguageDrawer';
 import { BackgroundDrawerTitle, BackgroundDrawerContent } from './types/BackgroundDrawer';
@@ -33,6 +34,8 @@ import { StatHealthDrawerContent, StatHealthDrawerTitle } from './types/StatHeal
 import { GenericDrawerContent, GenericDrawerTitle } from './types/GenericDrawer';
 import { TraitDrawerTitle, TraitDrawerContent } from './types/TraitDrawer';
 import { AddItemDrawerContent, AddItemDrawerTitle } from './types/AddItemDrawer';
+import { ItemDrawerContent, ItemDrawerTitle } from './types/ItemDrawer';
+import { InvItemDrawerContent, InvItemDrawerTitle } from './types/InvItemDrawer';
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -166,6 +169,7 @@ export default function DrawerBase() {
           'stat-resist-weak',
           'add-item',
           'add-spell',
+          'inv-item',
         ].includes(_drawer.type) && (
           <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
             <HoverCard.Target>
@@ -211,6 +215,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'item' && <ItemDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'class' && <ClassDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'class-feature' && <ClassFeatureDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'ancestry' && <AncestryDrawerTitle data={_drawer.data} />}
@@ -225,6 +230,7 @@ const DrawerTitle = React.forwardRef((props: {}, ref: React.LegacyRef<HTMLDivEle
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'add-item' && <AddItemDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'inv-item' && <InvItemDrawerTitle data={_drawer.data} />}
     </div>
   );
 });
@@ -239,6 +245,7 @@ function DrawerContent(props: {
       {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'item' && <ItemDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'class' && (
         <ClassDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
       )}
@@ -259,6 +266,7 @@ function DrawerContent(props: {
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'add-item' && <AddItemDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'inv-item' && <InvItemDrawerContent data={_drawer.data} />}
     </>
   );
 }

@@ -22,6 +22,7 @@
       "@items/*": ["src/process/items/*"],
       "@import/*": ["src/process/import/*"],
       "@export/*": ["src/process/export/*"],
+      "@conditions/*": ["src/process/conditions/*"],
       "@css/*": ["src/css/*"],
       "@ai/*": ["src/ai/*"],
     }

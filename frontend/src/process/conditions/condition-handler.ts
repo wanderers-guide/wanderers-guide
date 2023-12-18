@@ -8,7 +8,7 @@ import {
   getAllSkillVariables,
   getAllSpeedVariables,
   getVariable,
-} from './variable-manager';
+} from '../variables/variable-manager';
 
 const CONDITIONS: Condition[] = [
   {

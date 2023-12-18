@@ -26,6 +26,7 @@ export default defineConfig({
       '@items': path.resolve(__dirname, './src/process/items'),
       '@import': path.resolve(__dirname, './src/process/import'),
       '@export': path.resolve(__dirname, './src/process/export'),
+      '@conditions': path.resolve(__dirname, './src/process/conditions'),
       '@css': path.resolve(__dirname, './src/css'),
       '@ai': path.resolve(__dirname, './src/ai'),
     },
