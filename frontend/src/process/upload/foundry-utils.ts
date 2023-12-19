@@ -137,6 +137,7 @@ export const EQUIPMENT_TYPES = [
   'equipment',
   'weapon',
   'armor',
+  'shield',
   'kit',
   'consumable',
   'backpack',

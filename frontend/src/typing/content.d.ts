@@ -103,6 +103,11 @@ interface Item {
       dice: number;
       die: string;
     };
+    ac_bonus?: number; // For armor & shield
+    check_penalty?: number; // For armor
+    speed_penalty?: number; // For armor
+    dex_cap?: number; // For armor
+    strength?: number; // For armor
     bulk_equipped?: number;
     bulk_negate?: number;
     group?: string;
@@ -110,6 +115,7 @@ interface Item {
     hp?: number;
     hp_max?: number;
     broken_threshold?: number;
+    is_shoddy?: boolean; // TODO: Rules for this
     quantity?: number;
     material?: {
       grade?: string;

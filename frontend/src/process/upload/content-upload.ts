@@ -467,6 +467,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
       base_item: json.system?.baseItem,
       category: json.system?.category,
       damage: json.system?.damage,
+      ac_bonus: json.system?.acBonus,
       bulk_equipped: json.system?.equippedBulk?.value,
       bulk_negate: json.system?.negateBulk?.value,
       group: json.system?.group,

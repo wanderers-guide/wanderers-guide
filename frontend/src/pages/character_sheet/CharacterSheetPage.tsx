@@ -1904,12 +1904,15 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
     });
   };
 
-  const handleUpdateItem = (invItem: InventoryItem) => {
-    const newItems = inventory.items.map((item) => {
-      if (item.id === invItem.id) {
-        return _.cloneDeep(invItem);
+  const handleDeleteItem = (invItem: InventoryItem) => {
+    const newItems = inventory.items.filter((item) => item.id !== invItem.id);
+    // Remove from all containers
+    newItems.forEach((item) => {
+      if (item.is_container) {
+        item.container_contents = item.container_contents.filter(
+          (containedItem) => containedItem.id !== invItem.id
+        );
       }
-      return item;
     });
     setInventory((prev) => {
       return {
@@ -1917,6 +1920,53 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
         items: newItems,
       };
     });
+  };
+
+  const handleUpdateItem = (invItem: InventoryItem) => {
+    const newItems = inventory.items.map((item) => {
+      if (item.id === invItem.id) {
+        return _.cloneDeep(invItem);
+      }
+      return item;
+    });
+    // Update if it's in a container
+    newItems.forEach((item) => {
+      if (item.is_container) {
+        item.container_contents = item.container_contents.map((containedItem) => {
+          if (containedItem.id === invItem.id) {
+            return _.cloneDeep(invItem);
+          }
+          return containedItem;
+        });
+      }
+    });
+    setInventory((prev) => {
+      return {
+        ...prev,
+        items: newItems,
+      };
+    });
+  };
+
+  const handleMoveItem = (invItem: InventoryItem, containerItem: InventoryItem) => {
+    const movingItem = _.cloneDeep(invItem);
+    handleDeleteItem(invItem);
+    setTimeout(() => {
+      const foundContainer = inventory.items.find((item) => item.id === containerItem.id);
+      if (!foundContainer) return;
+      const newItems = inventory.items.map((item) => {
+        if (item.id === foundContainer.id) {
+          item.container_contents.push(movingItem);
+        }
+        return item;
+      });
+      setInventory((prev) => {
+        return {
+          ...prev,
+          items: newItems,
+        };
+      });
+    }, 100);
   };
 
   return (
@@ -2038,8 +2088,17 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                                 type: 'inv-item',
                                 data: {
                                   invItem: _.cloneDeep(containedItem),
-                                  onUpdateItem: (newInvItem: InventoryItem) => {
+                                  onItemUpdate: (newInvItem: InventoryItem) => {
                                     handleUpdateItem(newInvItem);
+                                  },
+                                  onItemDelete: (newInvItem: InventoryItem) => {
+                                    handleDeleteItem(newInvItem);
+                                  },
+                                  onItemMove: (
+                                    invItem: InventoryItem,
+                                    containerItem: InventoryItem
+                                  ) => {
+                                    handleMoveItem(invItem, containerItem);
                                   },
                                 },
                               });
@@ -2068,8 +2127,14 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                           type: 'inv-item',
                           data: {
                             invItem: _.cloneDeep(invItem),
-                            onUpdateItem: (newInvItem: InventoryItem) => {
+                            onItemUpdate: (newInvItem: InventoryItem) => {
                               handleUpdateItem(newInvItem);
+                            },
+                            onItemDelete: (newInvItem: InventoryItem) => {
+                              handleDeleteItem(newInvItem);
+                            },
+                            onItemMove: (invItem: InventoryItem, containerItem: InventoryItem) => {
+                              handleMoveItem(invItem, containerItem);
                             },
                           },
                         });

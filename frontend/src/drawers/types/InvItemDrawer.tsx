@@ -7,6 +7,8 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { priceToString } from '@items/currency-handler';
+import { isItemBroken } from '@items/inv-utils';
+import { getWeaponStats } from '@items/weapon-handler';
 import {
   Title,
   Text,
@@ -23,11 +25,15 @@ import {
   ActionIcon,
   Paper,
   NumberInput,
+  TextInput,
+  HoverCard,
 } from '@mantine/core';
+import { getHotkeyHandler } from '@mantine/hooks';
 import {
   IconCalendar,
   IconChevronDown,
   IconEdit,
+  IconHelpCircle,
   IconPackage,
   IconPhoto,
   IconSquareCheck,
@@ -36,7 +42,10 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { InventoryItem, Item } from '@typing/content';
+import { sign } from '@utils/numbers';
 import { hasTraitType } from '@utils/traits';
+import * as math from 'mathjs';
+import { useEffect, useRef, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
@@ -54,8 +63,15 @@ export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) 
   );
 }
 
-export function InvItemDrawerContent(props: { data: { invItem: InventoryItem } }) {
-  const invItem = props.data.invItem;
+export function InvItemDrawerContent(props: {
+  data: {
+    invItem: InventoryItem;
+    onItemUpdate: (invItem: InventoryItem) => void;
+    onItemDelete: (invItem: InventoryItem) => void;
+    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem) => void;
+  };
+}) {
+  const [invItem, setInvItem] = useState(props.data.invItem);
 
   const character = useRecoilValue(characterState);
   const containerItems = character?.inventory?.items.filter((item) => item.is_container) ?? [];
@@ -137,11 +153,19 @@ export function InvItemDrawerContent(props: { data: { invItem: InventoryItem } }
           <TraitsDisplay
             traitIds={invItem.item.traits ?? []}
             rarity={invItem.item.rarity}
+            broken={isItemBroken(invItem.item)}
+            shoddy={invItem.item.meta_data?.is_shoddy}
             interactable
           />
         </Box>
 
-        <InvItemSections invItem={props.data.invItem} />
+        <InvItemSections
+          invItem={props.data.invItem}
+          onItemUpdate={(invItem) => {
+            setInvItem(invItem);
+            props.data.onItemUpdate(invItem);
+          }}
+        />
 
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
@@ -209,6 +233,9 @@ export function InvItemDrawerContent(props: { data: { invItem: InventoryItem } }
                         Ctrl + T
                       </Text>
                     }
+                    onClick={() => {
+                      props.data.onItemMove(props.data.invItem, containerItem);
+                    }}
                   >
                     {containerItem.item.name}
                   </Menu.Item>
@@ -219,7 +246,15 @@ export function InvItemDrawerContent(props: { data: { invItem: InventoryItem } }
           <ActionIcon variant='light' color='cyan' radius='xl' aria-label='Edit Item'>
             <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
-          <ActionIcon variant='light' color='red' radius='xl' aria-label='Remove Item'>
+          <ActionIcon
+            variant='light'
+            color='red'
+            radius='xl'
+            aria-label='Remove Item'
+            onClick={() => {
+              props.data.onItemDelete(props.data.invItem);
+            }}
+          >
             <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
         </Group>
@@ -228,18 +263,34 @@ export function InvItemDrawerContent(props: { data: { invItem: InventoryItem } }
   );
 }
 
-function InvItemSections(props: { invItem: InventoryItem }) {
+function InvItemSections(props: {
+  invItem: InventoryItem;
+  onItemUpdate: (invItem: InventoryItem) => void;
+}) {
+  const bt = props.invItem.item.meta_data?.broken_threshold ?? 0;
+  const hardness = props.invItem.item.meta_data?.hardness ?? 0;
+  const maxHp = props.invItem.item.meta_data?.hp_max ?? 0;
+  const healthRef = useRef<HTMLInputElement>(null);
+  const [health, setHealth] = useState<string | undefined>();
+  useEffect(() => {
+    setHealth(props.invItem.item.meta_data?.hp ? `${props.invItem.item.meta_data.hp}` : undefined);
+  }, [props.invItem]);
+
+  ///
+
   const hasQuantity = hasTraitType('CONSUMABLE', props.invItem.item.traits);
-  const hasHealth = !!props.invItem.item.meta_data?.hp_max;
+  const hasHealth = !!maxHp;
   const hasAttackAndDamage = !!props.invItem.item.meta_data?.damage;
   const hasArmor = false;
+
+  ///
 
   let quantitySection = null;
   if (hasQuantity) {
     quantitySection = (
-      <Paper shadow='xs' my={5} p={5} bg='dark.6' radius='md'>
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group wrap='nowrap'>
-          <Text key={1} fw={600} c='gray.5' span>
+          <Text fw={600} c='gray.5' span>
             Quantity
           </Text>{' '}
           <NumberInput placeholder='Amount' size='xs' min={1} />
@@ -250,10 +301,155 @@ function InvItemSections(props: { invItem: InventoryItem }) {
 
   let healthSection = null;
   if (hasHealth) {
+    const handleHealthSubmit = () => {
+      const inputHealth = health ?? '0';
+      let result = -1;
+      try {
+        result = math.evaluate(inputHealth);
+      } catch (e) {
+        result = parseInt(inputHealth);
+      }
+      if (isNaN(result)) result = 0;
+      result = Math.floor(result);
+      if (result < 0) result = 0;
+      if (result > maxHp) result = maxHp;
+
+      props.onItemUpdate({
+        ...props.invItem,
+        item: {
+          ...props.invItem.item,
+          meta_data: {
+            ...props.invItem.item.meta_data!,
+            hp: result,
+          },
+        },
+      });
+      setHealth(`${result}`);
+      healthRef.current?.blur();
+    };
+
     healthSection = (
-      <Paper shadow='xs' p='xl' bg='dark.6'>
-        <Text>Health</Text>
-        <Text>{props.invItem.quantity}</Text>
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='dark.6'
+        radius='md'
+        style={{ position: 'relative' }}
+      >
+        <Group wrap='nowrap'>
+          <Text fw={600} c='gray.5' span>
+            Hit Points
+          </Text>{' '}
+          <TextInput
+            ref={healthRef}
+            w={120}
+            placeholder='HP'
+            value={health}
+            onChange={(e) => {
+              setHealth(e.target.value);
+            }}
+            onBlur={handleHealthSubmit}
+            onKeyDown={getHotkeyHandler([
+              ['mod+Enter', handleHealthSubmit],
+              ['Enter', handleHealthSubmit],
+            ])}
+            rightSection={
+              <Group>
+                <Text>/</Text>
+                <Text>{maxHp}</Text>
+              </Group>
+            }
+            rightSectionWidth={60}
+          />
+          <Group gap={5}>
+            <Stack gap={0}>
+              <Text ta='right' fz={10}>
+                Hardness
+              </Text>
+              <Text ta='right' fz={10}>
+                Broken Threshold
+              </Text>
+            </Stack>
+            <Stack gap={0}>
+              <Text ta='left' fw={500} c='gray.4' fz={10}>
+                {hardness}
+              </Text>
+              <Text ta='left' fw={500} c='gray.4' fz={10}>
+                {bt}
+              </Text>
+            </Stack>
+          </Group>
+        </Group>
+        <HoverCard
+          shadow='md'
+          openDelay={250}
+          width={200}
+          zIndex={1000}
+          position='top'
+          withinPortal
+        >
+          <HoverCard.Target>
+            <ActionIcon
+              variant='subtle'
+              aria-label='Help'
+              radius='xl'
+              size='sm'
+              style={{
+                position: 'absolute',
+                top: 5,
+                right: 5,
+              }}
+            >
+              <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+            </ActionIcon>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={5} px={10}>
+            <Text fz='xs'>
+              An item can be broken or destroyed if it takes enough damage. Each time an item takes
+              damage, reduce any damage by its Hardness value.
+            </Text>
+            <Text fz='xs'>
+              It becomes broken when its Hit Points are equal to or lower than its Broken Threshold
+              (BT); once its HP is reduced to 0, it is destroyed.
+            </Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      </Paper>
+    );
+  }
+
+  let attackAndDamageSection = null;
+  if (hasAttackAndDamage) {
+    const weaponStats = getWeaponStats('CHARACTER', props.invItem.item);
+
+    const damageBonus =
+      weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
+
+    attackAndDamageSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap' grow>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Attack
+            </Text>
+            <Text span>
+              {sign(weaponStats.attack_bonus.total[0])} / {sign(weaponStats.attack_bonus.total[1])}{' '}
+              / {sign(weaponStats.attack_bonus.total[2])}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Damage
+            </Text>
+            <Text span>
+              {weaponStats.damage.dice}
+              {weaponStats.damage.die}
+              {damageBonus} {weaponStats.damage.damageType}
+            </Text>
+          </Group>
+        </Group>
       </Paper>
     );
   }
@@ -261,6 +457,7 @@ function InvItemSections(props: { invItem: InventoryItem }) {
   return (
     <>
       <Stack gap={5}>
+        <>{attackAndDamageSection}</>
         <>{quantitySection}</>
         <>{healthSection}</>
       </Stack>

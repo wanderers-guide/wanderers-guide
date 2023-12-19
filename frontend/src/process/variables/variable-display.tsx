@@ -5,7 +5,8 @@ import { Box, Text, TextProps } from '@mantine/core';
 import { getProficiencyTypeValue } from './variable-utils';
 
 export function getFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
-  const parts = getProfValueParts(id, variableName)!;
+  const parts = getProfValueParts(id, variableName);
+  if (!parts) return isDC ? '10' : '+0';
   return isDC
     ? `${
         10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue

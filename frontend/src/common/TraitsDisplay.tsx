@@ -8,6 +8,7 @@ import {
   MantineSize,
   Stack,
   HoverCard,
+  ScrollArea,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Rarity } from '@typing/content';
@@ -16,6 +17,7 @@ import RichText from './RichText';
 import { fetchTraits } from '@content/content-store';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
+import { getConditionByName } from '@conditions/condition-handler';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -23,6 +25,8 @@ export default function TraitsDisplay(props: {
   size?: MantineSize;
   rarity?: Rarity;
   skill?: string | string[];
+  broken?: boolean;
+  shoddy?: boolean;
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
@@ -52,6 +56,7 @@ export default function TraitsDisplay(props: {
       {props.skill && (
         <SkillDisplay interactable={props.interactable} size={props.size} skill={props.skill} />
       )}
+      {props.broken && <BrokenDisplay interactable={props.interactable} size={props.size} />}
       {traits.map((trait, index) => (
         <HoverCard
           key={index}
@@ -160,6 +165,82 @@ export function SkillDisplay(props: {
   );
 }
 
+export function BrokenDisplay(props: { interactable?: boolean; size?: MantineSize }) {
+  const theme = useMantineTheme();
+
+  const broken = getConditionByName('Broken')!;
+
+  return (
+    <>
+      <HoverCard
+        disabled={!props.interactable}
+        width={265}
+        shadow='md'
+        zIndex={2000}
+        openDelay={250}
+        withinPortal
+        withArrow
+      >
+        <HoverCard.Target>
+          <Badge
+            size={props.size ?? 'md'}
+            color='red'
+            styles={{
+              root: {
+                textTransform: 'initial',
+                cursor: props.interactable ? 'pointer' : undefined,
+              },
+            }}
+          >
+            {broken.name}
+          </Badge>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <TraitOverview name={broken.name} description={broken.description} important={false} />
+        </HoverCard.Dropdown>
+      </HoverCard>
+    </>
+  );
+}
+
+export function ShoddyDisplay(props: { interactable?: boolean; size?: MantineSize }) {
+  const name = 'Shoddy';
+  const description = `Improvised or of dubious make, shoddy items are never available for purchase except for in the most desperate of communities. When available, a shoddy item usually costs half the Price of a standard item, though you can never sell one.
+  Attacks and checks involving a shoddy item take a –2 item penalty. This penalty also applies to any DCs that a shoddy item applies to (such as the AC provided when wearing shoddy armor, or the DC to break out of shoddy manacles). A shoddy suit of armor also worsens the armor’s check penalty by 2. A shoddy item’s Hit Points and Broken Threshold are each half that of a normal item of its type.`;
+
+  return (
+    <>
+      <HoverCard
+        disabled={!props.interactable}
+        width={265}
+        shadow='md'
+        zIndex={2000}
+        openDelay={250}
+        withinPortal
+        withArrow
+      >
+        <HoverCard.Target>
+          <Badge
+            size={props.size ?? 'md'}
+            color='yellow'
+            styles={{
+              root: {
+                textTransform: 'initial',
+                cursor: props.interactable ? 'pointer' : undefined,
+              },
+            }}
+          >
+            {name}
+          </Badge>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <TraitOverview name={name} description={description} important={false} />
+        </HoverCard.Dropdown>
+      </HoverCard>
+    </>
+  );
+}
+
 export function TraitOverview(props: { name: string; description: string; important: boolean }) {
   const theme = useMantineTheme();
 
@@ -179,9 +260,11 @@ export function TraitOverview(props: { name: string; description: string; import
       >
         {props.name}
       </Badge>
-      <RichText ta='justify' fz='sm'>
-        {props.description || 'No description given.'}
-      </RichText>
+      <ScrollArea h={props.description.length > 400 ? 300 : undefined} offsetScrollbars>
+        <RichText ta='justify' fz='sm'>
+          {props.description || 'No description given.'}
+        </RichText>
+      </ScrollArea>
     </Stack>
   );
 }
