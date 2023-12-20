@@ -396,7 +396,7 @@ function getProfDescription(variableName: string) {
     If you’re making a check and multiple subcategories of Lore could apply, or a non-Lore skill could apply, you can use whichever skill you prefer. If there’s any doubt whether a Lore skill applies to a specific topic or action, the GM decides whether it can be used or not. 
     Even if you’re untrained in Lore, you can use it to Recall Knowledge.`;
   }
-  return 'No description available for this proficiency.';
+  return '_No description available for this proficiency._';
 }
 
 function SkillActionsSection(props: { variableName: string }) {

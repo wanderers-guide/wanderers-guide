@@ -109,7 +109,7 @@ export function InvItemDrawerContent(props: {
       </>
     );
   }
-  if (invItem.item.bulk !== undefined && invItem.item.bulk !== '0') {
+  if (invItem.item.bulk !== undefined) {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>
@@ -612,8 +612,7 @@ function InvItemSections(props: {
                   This is the Strength modifier at which you are strong enough to overcome some of
                   the armor’s penalties. If your Strength modifier is equal to or greater than this
                   value, you no longer take the armor’s check penalty, and you decrease the Speed
-                  penalty by 5 feet (to no penalty if the penalty was –5 feet, or to a –5-foot
-                  penalty if the penalty was –10 feet).
+                  penalty by 5 feet.
                 </Text>
               )}
               {checkPenalty !== undefined && (
@@ -623,7 +622,7 @@ function InvItemSections(props: {
                   </Text>{' '}
                   While wearing your armor, you take this penalty to Strength- and Dexterity-based
                   skill checks, except for those that have the attack trait. If you meet the armor’s
-                  Strength threshold (see Strength below), you don’t take this penalty.
+                  Strength threshold, you don’t take this penalty.
                 </Text>
               )}
               {speedPenalty !== undefined && (

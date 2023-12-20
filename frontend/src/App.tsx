@@ -191,8 +191,6 @@ export default function App() {
     })();
   }, [location]);
 
-  console.log(background);
-
   return (
     <MantineProvider theme={theme} defaultColorScheme='dark'>
       <ModalsProvider modals={modals}>

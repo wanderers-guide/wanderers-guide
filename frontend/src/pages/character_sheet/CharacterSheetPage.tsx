@@ -131,6 +131,7 @@ import { variableNameToLabel, variableToLabel } from '@variables/variable-utils'
 import {
   displayAttributeValue,
   displayFinalProfValue,
+  getFinalAcValue,
   getFinalHealthValue,
 } from '@variables/variable-display';
 import { drawerState } from '@atoms/navAtoms';
@@ -182,7 +183,15 @@ import { BuyItemModal } from '@modals/BuyItemModal';
 import { ItemIcon } from '@common/ItemIcon';
 import { priceToString } from '@items/currency-handler';
 import {
+  getBestArmor,
+  getBestShield,
   getInvBulk,
+  getItemQuantity,
+  handleAddItem,
+  handleDeleteItem,
+  handleMoveItem,
+  handleUpdateItem,
+  isItemContainer,
   isItemEquippable,
   isItemInvestable,
   isItemWeapon,
@@ -401,10 +410,11 @@ function CharacterSheetInner(props: {
     if (!resultCharacter) return;
     // Update character nav state
     setCharacter(resultCharacter);
+    setInventory(getInventory(resultCharacter));
   }, [resultCharacter]);
 
   // Update character in db when state changed
-  const [debouncedCharacter] = useDebouncedValue(character, 200);
+  const [debouncedCharacter] = useDebouncedValue(character, 500);
   useDidUpdate(() => {
     if (!debouncedCharacter) return;
     mutateCharacter({
@@ -447,6 +457,34 @@ function CharacterSheetInner(props: {
     }
   );
 
+  // Inventory saving & management
+  const getInventory = (character: Character | null) => {
+    // Default inventory
+    return _.cloneDeep(
+      character?.inventory ?? {
+        coins: {
+          cp: 0,
+          sp: 0,
+          gp: 0,
+          pp: 0,
+        },
+        unarmed_attacks: [],
+        items: [],
+      }
+    );
+  };
+  const [inventory, setInventory] = useState(getInventory(character));
+  const [debouncedInventory] = useDebouncedValue(inventory, 500);
+  useDidUpdate(() => {
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        inventory: debouncedInventory,
+      };
+    });
+  }, [debouncedInventory]);
+
   return (
     <Center>
       <Box maw={1000} w='100%'>
@@ -456,10 +494,14 @@ function CharacterSheetInner(props: {
             <HealthSection />
             <ConditionSection />
             <AttributeSection />
-            <ArmorSection />
+            <ArmorSection inventory={inventory} setInventory={setInventory} />
             <SpeedSection />
           </SimpleGrid>
-          <SectionPanels content={props.content} />
+          <SectionPanels
+            content={props.content}
+            inventory={inventory}
+            setInventory={setInventory}
+          />
         </Stack>
       </Box>
     </Center>
@@ -1052,12 +1094,15 @@ function AttributeSection() {
   );
 }
 
-function ArmorSection() {
+function ArmorSection(props: {
+  inventory: Inventory;
+  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+}) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
+  const character = useRecoilState(characterState);
 
   const { hovered: armorHovered, ref: armorRef } = useHover();
   const { hovered: shieldHovered, ref: shieldRef } = useHover();
@@ -1068,6 +1113,9 @@ function ArmorSection() {
       data: { variableName: save.name },
     });
   };
+
+  const bestArmor = getBestArmor('CHARACTER', props.inventory);
+  const bestShield = getBestShield('CHARACTER', props.inventory);
 
   return (
     <BlurBox blur={10}>
@@ -1083,7 +1131,7 @@ function ArmorSection() {
         h='100%'
       >
         <Group wrap='nowrap' gap={5} justify='space-between'>
-          <Group wrap='nowrap' gap={0} justify='center'>
+          <Group wrap='nowrap' gap={0} justify='center' style={{ flex: 1 }}>
             <Box
               style={{ position: 'relative', cursor: 'pointer' }}
               ref={armorRef}
@@ -1102,50 +1150,82 @@ function ArmorSection() {
                 }}
               >
                 <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em'>
-                  25
-                  {/* {displayFinalProfValue('AC', true)} */}
+                  {getFinalAcValue('CHARACTER', bestArmor?.item)}
                 </Text>
                 <Text ta='center' c='gray.5' fz='xs'>
                   AC
                 </Text>
               </Stack>
             </Box>
-            <Box
-              style={{ position: 'relative', cursor: 'pointer' }}
-              ref={shieldRef}
-              onClick={() => {
-                //openDrawer({ type: 'shield' });
-              }}
-            >
-              <ShieldIcon size={85} color={shieldHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
-              <Stack
-                gap={0}
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                }}
-              >
-                <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em' pr={5}>
-                  +2
-                </Text>
-                <Text ta='center' fz={8} style={{ whiteSpace: 'nowrap' }}>
-                  Hardness 5
-                </Text>
-                <Center>
-                  <RingProgress
-                    size={30}
-                    thickness={3}
-                    sections={[{ value: 40, color: 'guide' }]}
-                    label={
-                      <Text fz={8} ta='center' style={{ pointerEvents: 'none' }}>
-                        HP
-                      </Text>
-                    }
+            <Box ref={shieldRef}>
+              {bestShield && (
+                <Box
+                  style={{ position: 'relative', cursor: 'pointer' }}
+                  onClick={() => {
+                    openDrawer({
+                      type: 'inv-item',
+                      data: {
+                        invItem: _.cloneDeep(bestShield),
+                        onItemUpdate: (newInvItem: InventoryItem) => {
+                          handleUpdateItem(props.setInventory, newInvItem);
+                        },
+                        onItemDelete: (newInvItem: InventoryItem) => {
+                          handleDeleteItem(props.setInventory, newInvItem);
+                          openDrawer(null);
+                        },
+                        onItemMove: (
+                          invItem: InventoryItem,
+                          containerItem: InventoryItem | null
+                        ) => {
+                          handleMoveItem(props.setInventory, invItem, containerItem);
+                        },
+                      },
+                    });
+                  }}
+                >
+                  <ShieldIcon
+                    size={85}
+                    color={shieldHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR}
                   />
-                </Center>
-              </Stack>
+                  <Stack
+                    gap={0}
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  >
+                    <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em' pr={5}>
+                      {sign(bestShield.item.meta_data?.ac_bonus ?? 0)}
+                    </Text>
+                    <Text ta='center' fz={8} style={{ whiteSpace: 'nowrap' }}>
+                      Hardness {bestShield.item.meta_data?.hardness ?? 0}
+                    </Text>
+                    <Center>
+                      <RingProgress
+                        size={30}
+                        thickness={3}
+                        sections={[
+                          {
+                            value: Math.ceil(
+                              ((bestShield.item.meta_data?.hp ?? 0) /
+                                (bestShield.item.meta_data?.hp_max ?? 1)) *
+                                100
+                            ),
+                            color: 'guide',
+                          },
+                        ]}
+                        label={
+                          <Text fz={8} ta='center' style={{ pointerEvents: 'none' }}>
+                            HP
+                          </Text>
+                        }
+                      />
+                    </Center>
+                  </Stack>
+                </Box>
+              )}
             </Box>
           </Group>
           <Stack gap={8}>
@@ -1289,7 +1369,11 @@ function SpeedSection() {
   );
 }
 
-function SectionPanels(props: { content: ContentPackage }) {
+function SectionPanels(props: {
+  content: ContentPackage;
+  inventory: Inventory;
+  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+}) {
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState<string | null>('skills-actions');
   const { hovered: hoveredTabOptions, ref: tabOptionsRef } = useHover<HTMLButtonElement>();
@@ -1425,7 +1509,12 @@ function SectionPanels(props: { content: ContentPackage }) {
         </Tabs.Panel>
 
         <Tabs.Panel value='inventory'>
-          <PanelInventory content={props.content} panelHeight={panelHeight} />
+          <PanelInventory
+            content={props.content}
+            panelHeight={panelHeight}
+            inventory={props.inventory}
+            setInventory={props.setInventory}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value='spells'>
@@ -1838,43 +1927,20 @@ function ActionSelectionOption(props: {
   );
 }
 
-function PanelInventory(props: { content: ContentPackage; panelHeight: number }) {
+function PanelInventory(props: {
+  content: ContentPackage;
+  panelHeight: number;
+  inventory: Inventory;
+  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+}) {
   const [character, setCharacter] = useRecoilState(characterState);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
 
-  const getInventory = (character: Character | null) => {
-    // Default inventory
-    return _.cloneDeep(
-      character?.inventory ?? {
-        coins: {
-          cp: 0,
-          sp: 0,
-          gp: 0,
-          pp: 0,
-        },
-        unarmed_attacks: [],
-        items: [],
-      }
-    );
-  };
-  const [inventory, setInventory] = useState(getInventory(character));
-  const [debouncedInventory] = useDebouncedValue(inventory, 200);
-  useEffect(() => {
-    if (!character) return;
-    setCharacter((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        inventory: debouncedInventory,
-      };
-    });
-  }, [debouncedInventory]);
-
   const invItems = searchQuery.trim()
-    ? inventory.items.filter((invItem) => {
+    ? props.inventory.items.filter((invItem) => {
         // Custom search, alt could be to use JsSearch here
         const query = searchQuery.trim().toLowerCase();
 
@@ -1890,101 +1956,7 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
           return true;
         return false;
       })
-    : inventory.items;
-
-  const handleAddItem = (item: Item, is_formula: boolean) => {
-    setInventory((prev) => {
-      const newItems = [
-        ..._.cloneDeep(prev.items),
-        {
-          id: crypto.randomUUID(),
-          item: _.cloneDeep(item),
-          quantity: item.meta_data?.quantity ?? 1,
-          is_formula: is_formula,
-          is_equipped: false,
-          is_invested: false,
-          is_container: item.meta_data?.bulk?.capacity !== undefined,
-          container_contents: [],
-        },
-      ].sort((a, b) => a.item.name.localeCompare(b.item.name));
-      return {
-        ...prev,
-        items: newItems,
-      };
-    });
-  };
-
-  const handleDeleteItem = (invItem: InventoryItem) => {
-    setInventory((prev) => {
-      const newItems = _.cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
-      // Remove from all containers
-      newItems.forEach((item) => {
-        if (item.is_container) {
-          item.container_contents = item.container_contents.filter(
-            (containedItem) => containedItem.id !== invItem.id
-          );
-        }
-      });
-      return {
-        ...prev,
-        items: newItems,
-      };
-    });
-  };
-
-  const handleUpdateItem = (invItem: InventoryItem) => {
-    setInventory((prev) => {
-      const newItems = _.cloneDeep(prev.items).map((item) => {
-        if (item.id === invItem.id) {
-          return _.cloneDeep(invItem);
-        }
-        return item;
-      });
-      // Update if it's in a container
-      newItems.forEach((item) => {
-        if (item.is_container) {
-          item.container_contents = item.container_contents.map((containedItem) => {
-            if (containedItem.id === invItem.id) {
-              return _.cloneDeep(invItem);
-            }
-            return containedItem;
-          });
-        }
-      });
-      return {
-        ...prev,
-        items: newItems,
-      };
-    });
-  };
-
-  const handleMoveItem = (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-    const movingItem = _.cloneDeep(invItem);
-    handleDeleteItem(invItem);
-    setTimeout(() => {
-      setInventory((prev) => {
-        let newItems: InventoryItem[] = [];
-        if (containerItem) {
-          const foundContainer = _.cloneDeep(
-            prev.items.find((item) => item.id === containerItem.id)
-          );
-          if (!foundContainer) return prev;
-          newItems = _.cloneDeep(prev.items).map((item) => {
-            if (item.id === foundContainer.id) {
-              item.container_contents.push(movingItem);
-            }
-            return item;
-          });
-        } else {
-          newItems = [..._.cloneDeep(prev.items), movingItem];
-        }
-        return {
-          ...prev,
-          items: newItems,
-        };
-      });
-    }, 100);
-  };
+    : props.inventory.items;
 
   return (
     <Box h='100%'>
@@ -2011,7 +1983,7 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
               },
             }}
           >
-            Bulk: {labelizeBulk(getInvBulk(inventory), true)} / 8
+            Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / 8
           </Badge>
           <CurrencySection character={character} />
           <Button
@@ -2028,7 +2000,7 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                     if (type === 'BUY') {
                       setConfirmBuyItem({ item });
                     } else {
-                      handleAddItem(item, type === 'FORMULA');
+                      handleAddItem(props.setInventory, item, type === 'FORMULA');
                     }
                   },
                 },
@@ -2089,7 +2061,7 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
               .sort((a, b) => a.item.name.localeCompare(b.item.name))
               .map((invItem, index) => (
                 <Box key={index}>
-                  {invItem.is_container ? (
+                  {isItemContainer(invItem.item) ? (
                     <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
                       <Accordion.Control>
                         <InvItemOption
@@ -2098,12 +2070,12 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                           onEquip={() => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_equipped = !newInvItem.is_equipped;
-                            handleUpdateItem(newInvItem);
+                            handleUpdateItem(props.setInventory, newInvItem);
                           }}
                           onInvest={() => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_invested = !newInvItem.is_invested;
-                            handleUpdateItem(newInvItem);
+                            handleUpdateItem(props.setInventory, newInvItem);
                           }}
                           onViewItem={() => {
                             openDrawer({
@@ -2111,17 +2083,17 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                               data: {
                                 invItem: _.cloneDeep(invItem),
                                 onItemUpdate: (newInvItem: InventoryItem) => {
-                                  handleUpdateItem(newInvItem);
+                                  handleUpdateItem(props.setInventory, newInvItem);
                                 },
                                 onItemDelete: (newInvItem: InventoryItem) => {
-                                  handleDeleteItem(newInvItem);
+                                  handleDeleteItem(props.setInventory, newInvItem);
                                   openDrawer(null);
                                 },
                                 onItemMove: (
                                   invItem: InventoryItem,
                                   containerItem: InventoryItem | null
                                 ) => {
-                                  handleMoveItem(invItem, containerItem);
+                                  handleMoveItem(props.setInventory, invItem, containerItem);
                                 },
                               },
                             });
@@ -2139,17 +2111,17 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                                   data: {
                                     invItem: _.cloneDeep(containedItem),
                                     onItemUpdate: (newInvItem: InventoryItem) => {
-                                      handleUpdateItem(newInvItem);
+                                      handleUpdateItem(props.setInventory, newInvItem);
                                     },
                                     onItemDelete: (newInvItem: InventoryItem) => {
-                                      handleDeleteItem(newInvItem);
+                                      handleDeleteItem(props.setInventory, newInvItem);
                                       openDrawer(null);
                                     },
                                     onItemMove: (
                                       invItem: InventoryItem,
                                       containerItem: InventoryItem | null
                                     ) => {
-                                      handleMoveItem(invItem, containerItem);
+                                      handleMoveItem(props.setInventory, invItem, containerItem);
                                     },
                                   },
                                 });
@@ -2157,15 +2129,16 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                             >
                               <InvItemOption
                                 invItem={containedItem}
+                                preventEquip
                                 onEquip={() => {
                                   const newInvItem = _.cloneDeep(containedItem);
                                   newInvItem.is_equipped = !newInvItem.is_equipped;
-                                  handleUpdateItem(newInvItem);
+                                  handleUpdateItem(props.setInventory, newInvItem);
                                 }}
                                 onInvest={() => {
                                   const newInvItem = _.cloneDeep(containedItem);
                                   newInvItem.is_invested = !newInvItem.is_invested;
-                                  handleUpdateItem(newInvItem);
+                                  handleUpdateItem(props.setInventory, newInvItem);
                                 }}
                               />
                             </StatButton>
@@ -2188,17 +2161,17 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                             data: {
                               invItem: _.cloneDeep(invItem),
                               onItemUpdate: (newInvItem: InventoryItem) => {
-                                handleUpdateItem(newInvItem);
+                                handleUpdateItem(props.setInventory, newInvItem);
                               },
                               onItemDelete: (newInvItem: InventoryItem) => {
-                                handleDeleteItem(newInvItem);
+                                handleDeleteItem(props.setInventory, newInvItem);
                                 openDrawer(null);
                               },
                               onItemMove: (
                                 invItem: InventoryItem,
                                 containerItem: InventoryItem | null
                               ) => {
-                                handleMoveItem(invItem, containerItem);
+                                handleMoveItem(props.setInventory, invItem, containerItem);
                               },
                             },
                           });
@@ -2209,12 +2182,12 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
                           onEquip={() => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_equipped = !newInvItem.is_equipped;
-                            handleUpdateItem(newInvItem);
+                            handleUpdateItem(props.setInventory, newInvItem);
                           }}
                           onInvest={() => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_invested = !newInvItem.is_invested;
-                            handleUpdateItem(newInvItem);
+                            handleUpdateItem(props.setInventory, newInvItem);
                           }}
                         />
                       </StatButton>
@@ -2233,14 +2206,14 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
       {confirmBuyItem && (
         <BuyItemModal
           open={!!confirmBuyItem}
-          inventory={inventory}
+          inventory={props.inventory}
           item={confirmBuyItem.item}
           onConfirm={(coins) => {
             if (!character) return;
-            handleAddItem(confirmBuyItem.item, false);
+            handleAddItem(props.setInventory, confirmBuyItem.item, false);
 
             // Update coins
-            setInventory((prev) => {
+            props.setInventory((prev) => {
               return {
                 ...prev,
                 coins,
@@ -2334,6 +2307,7 @@ function InvItemOption(props: {
   onInvest?: (invItem: InventoryItem) => void;
   onViewItem?: (invItem: InventoryItem) => void;
   hideSections?: boolean;
+  preventEquip?: boolean;
 }) {
   const theme = useMantineTheme();
 
@@ -2349,7 +2323,7 @@ function InvItemOption(props: {
           <Text c='gray.0' fz='sm'>
             {props.invItem.item.name}
           </Text>
-          {props.invItem.is_container && props.hideSections && (
+          {isItemContainer(props.invItem.item) && props.hideSections && (
             <Button
               variant='light'
               size='compact-xs'
@@ -2365,10 +2339,10 @@ function InvItemOption(props: {
           )}
           {isItemWeapon(props.invItem.item) && weaponStats && (
             <Group wrap='nowrap' gap={10}>
-              <Text c='gray.5' fz='xs' span>
+              <Text c='gray.6' fz='xs' fs='italic' span>
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>
-              <Text c='gray.5' fz='xs' span>
+              <Text c='gray.6' fz='xs' fs='italic' span>
                 {weaponStats.damage.dice}
                 {weaponStats.damage.die}
                 {weaponStats.damage.bonus.total > 0
@@ -2388,7 +2362,7 @@ function InvItemOption(props: {
                 {' '}
                 {isItemWithQuantity(props.invItem.item) && (
                   <Text ta='center' fz='xs'>
-                    {props.invItem.quantity}
+                    {getItemQuantity(props.invItem.item)}
                   </Text>
                 )}
               </>
@@ -2421,7 +2395,8 @@ function InvItemOption(props: {
           {isItemInvestable(props.invItem.item) && (
             <Button
               size='compact-xs'
-              variant={props.invItem.is_invested ? 'transparent' : 'outline'}
+              variant={props.invItem.is_invested ? 'subtle' : 'outline'}
+              color={props.invItem.is_equipped ? 'gray.7' : undefined}
               onClick={(e) => {
                 e.stopPropagation();
                 props.onInvest?.(props.invItem);
@@ -2434,12 +2409,14 @@ function InvItemOption(props: {
           {isItemEquippable(props.invItem.item) && (
             <Button
               size='compact-xs'
-              variant={props.invItem.is_equipped ? 'transparent' : 'outline'}
+              variant={props.invItem.is_equipped ? 'subtle' : 'outline'}
+              color={props.invItem.is_equipped ? 'gray.7' : undefined}
               onClick={(e) => {
                 e.stopPropagation();
                 props.onEquip?.(props.invItem);
               }}
               w={80}
+              disabled={props.preventEquip}
             >
               {props.invItem.is_equipped ? 'Unequip' : 'Equip'}
             </Button>

@@ -106,10 +106,11 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   HEALTH: newVariable('num', 'HEALTH'),
   TEMP_HEALTH: newVariable('num', 'TEMP_HEALTH'),
 
-  AC: newVariable('num', 'AC'),
-  ARMOR_CHECK_PENALTY: newVariable('num', 'ARMOR_CHECK_PENALTY'),
-  ARMOR_SPEED_PENALTY: newVariable('num', 'ARMOR_SPEED_PENALTY'),
-  DEX_CAP: newVariable('num', 'DEX_CAP'),
+  AC_BONUS: newVariable('num', 'AC_BONUS'),
+  // AC: newVariable('num', 'AC'),
+  // ARMOR_CHECK_PENALTY: newVariable('num', 'ARMOR_CHECK_PENALTY'),
+  // ARMOR_SPEED_PENALTY: newVariable('num', 'ARMOR_SPEED_PENALTY'),
+  // DEX_CAP: newVariable('num', 'DEX_CAP'),
   UNARMORED: newVariable('bool', 'UNARMORED'),
 
   SPEED: newVariable('num', 'SPEED'),

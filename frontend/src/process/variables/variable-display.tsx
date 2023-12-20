@@ -3,6 +3,8 @@ import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
 import { getProficiencyTypeValue } from './variable-utils';
+import { Item } from '@typing/content';
+import { getAcParts } from '@items/armor-handler';
 
 export function getFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
   const parts = getProfValueParts(id, variableName);
@@ -197,4 +199,13 @@ export function displayAttributeValue(id: StoreID, attributeName: string, textPr
       </Text>
     </Text>
   );
+}
+
+export function getFinalAcValue(id: StoreID, item?: Item) {
+  const { profBonus, bonusAc, dexBonus, armorBonus } = getAcParts(id, item);
+  return 10 + profBonus + bonusAc + dexBonus + armorBonus;
+}
+
+export function displayFinalAcValue(id: StoreID, item: Item) {
+  return <span>{getFinalAcValue(id, item)}</span>;
 }
