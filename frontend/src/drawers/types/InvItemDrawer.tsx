@@ -7,7 +7,14 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { priceToString } from '@items/currency-handler';
-import { isItemBroken } from '@items/inv-utils';
+import {
+  isItemArmor,
+  isItemBroken,
+  isItemShield,
+  isItemWeapon,
+  isItemWithQuantity,
+  labelizeBulk,
+} from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import {
   Title,
@@ -27,6 +34,7 @@ import {
   NumberInput,
   TextInput,
   HoverCard,
+  ScrollArea,
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import {
@@ -68,13 +76,15 @@ export function InvItemDrawerContent(props: {
     invItem: InventoryItem;
     onItemUpdate: (invItem: InventoryItem) => void;
     onItemDelete: (invItem: InventoryItem) => void;
-    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem) => void;
+    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
   };
 }) {
   const [invItem, setInvItem] = useState(props.data.invItem);
 
   const character = useRecoilValue(characterState);
-  const containerItems = character?.inventory?.items.filter((item) => item.is_container) ?? [];
+  const containerItems = (
+    character?.inventory?.items.filter((item) => item.is_container) ?? []
+  ).filter((i) => i.id !== props.data.invItem.id);
 
   let price = null;
   if (invItem.item.price) {
@@ -99,13 +109,13 @@ export function InvItemDrawerContent(props: {
       </>
     );
   }
-  if (invItem.item.bulk?.trim() && parseInt(invItem.item.bulk) !== 0) {
+  if (invItem.item.bulk !== undefined && invItem.item.bulk !== '0') {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>
           Bulk
         </Text>{' '}
-        {invItem.item.bulk}
+        {labelizeBulk(invItem.item.bulk)}
       </>
     );
   }
@@ -199,7 +209,7 @@ export function InvItemDrawerContent(props: {
             <Menu
               transitionProps={{ transition: 'pop-top-right' }}
               position='top-end'
-              width={220}
+              // width={140}
               withinPortal
               zIndex={10000}
             >
@@ -223,16 +233,17 @@ export function InvItemDrawerContent(props: {
                 </Button>
               </Menu.Target>
               <Menu.Dropdown>
-                {containerItems.map((containerItem) => (
+                <Menu.Item
+                  onClick={() => {
+                    props.data.onItemMove(props.data.invItem, null);
+                  }}
+                >
+                  Unstored
+                </Menu.Item>
+                <Menu.Divider />
+                {containerItems.map((containerItem, index) => (
                   <Menu.Item
-                    leftSection={
-                      <IconSquareCheck style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
-                    }
-                    rightSection={
-                      <Text size='xs' tt='uppercase' fw={700} c='dimmed'>
-                        Ctrl + T
-                      </Text>
-                    }
+                    key={index}
                     onClick={() => {
                       props.data.onItemMove(props.data.invItem, containerItem);
                     }}
@@ -267,6 +278,12 @@ function InvItemSections(props: {
   invItem: InventoryItem;
   onItemUpdate: (invItem: InventoryItem) => void;
 }) {
+  const ac = props.invItem.item.meta_data?.ac_bonus;
+  const dexCap = props.invItem.item.meta_data?.dex_cap;
+  const strength = props.invItem.item.meta_data?.strength;
+  const checkPenalty = props.invItem.item.meta_data?.check_penalty;
+  const speedPenalty = props.invItem.item.meta_data?.speed_penalty;
+
   const bt = props.invItem.item.meta_data?.broken_threshold ?? 0;
   const hardness = props.invItem.item.meta_data?.hardness ?? 0;
   const maxHp = props.invItem.item.meta_data?.hp_max ?? 0;
@@ -278,10 +295,10 @@ function InvItemSections(props: {
 
   ///
 
-  const hasQuantity = hasTraitType('CONSUMABLE', props.invItem.item.traits);
+  const hasQuantity = isItemWithQuantity(props.invItem.item);
   const hasHealth = !!maxHp;
-  const hasAttackAndDamage = !!props.invItem.item.meta_data?.damage;
-  const hasArmor = false;
+  const hasAttackAndDamage = isItemWeapon(props.invItem.item);
+  const hasArmor = isItemArmor(props.invItem.item) || isItemShield(props.invItem.item);
 
   ///
 
@@ -293,7 +310,18 @@ function InvItemSections(props: {
           <Text fw={600} c='gray.5' span>
             Quantity
           </Text>{' '}
-          <NumberInput placeholder='Amount' size='xs' min={1} />
+          <NumberInput
+            placeholder='Amount'
+            size='xs'
+            min={1}
+            defaultValue={props.invItem.quantity}
+            onChange={(value) => {
+              props.onItemUpdate({
+                ...props.invItem,
+                quantity: parseInt(`${value}`) || 1,
+              });
+            }}
+          />
         </Group>
       </Paper>
     );
@@ -434,7 +462,7 @@ function InvItemSections(props: {
             <Text fw={600} c='gray.5' span>
               Attack
             </Text>
-            <Text span>
+            <Text c='gray.5' span>
               {sign(weaponStats.attack_bonus.total[0])} / {sign(weaponStats.attack_bonus.total[1])}{' '}
               / {sign(weaponStats.attack_bonus.total[2])}
             </Text>
@@ -443,7 +471,7 @@ function InvItemSections(props: {
             <Text fw={600} c='gray.5' span>
               Damage
             </Text>
-            <Text span>
+            <Text c='gray.5' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
@@ -454,10 +482,173 @@ function InvItemSections(props: {
     );
   }
 
+  let armorSection = null;
+  if (hasArmor) {
+    armorSection = (
+      <Paper
+        shadow='xs'
+        my={5}
+        py={5}
+        px={10}
+        bg='dark.6'
+        radius='md'
+        style={{ position: 'relative' }}
+      >
+        <Group wrap='nowrap'>
+          <Group wrap='nowrap' mr={20}>
+            <Text fw={600} c='gray.5' span>
+              AC Bonus
+            </Text>{' '}
+            <Text c='gray.5' span>
+              {sign(ac ?? 0)}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' align='flex-start'>
+            {(dexCap !== undefined || strength !== undefined) && (
+              <Group gap={5}>
+                <Stack gap={0}>
+                  {dexCap !== undefined && (
+                    <Text ta='right' fz={10}>
+                      Dex Cap
+                    </Text>
+                  )}
+                  {strength !== undefined && (
+                    <Text ta='right' fz={10}>
+                      Strength
+                    </Text>
+                  )}
+                </Stack>
+                <Stack gap={0}>
+                  {dexCap !== undefined && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(dexCap)}
+                    </Text>
+                  )}
+                  {strength !== undefined && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(strength)}
+                    </Text>
+                  )}
+                </Stack>
+              </Group>
+            )}
+            {(!!checkPenalty || !!speedPenalty) && (
+              <Group gap={5}>
+                <Stack gap={0}>
+                  {!!checkPenalty && (
+                    <Text ta='right' fz={10}>
+                      Check Penalty
+                    </Text>
+                  )}
+                  {!!speedPenalty && (
+                    <Text ta='right' fz={10}>
+                      Speed Penalty
+                    </Text>
+                  )}
+                </Stack>
+                <Stack gap={0}>
+                  {!!checkPenalty && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(checkPenalty)}
+                    </Text>
+                  )}
+                  {!!speedPenalty && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(speedPenalty)}
+                    </Text>
+                  )}
+                </Stack>
+              </Group>
+            )}
+          </Group>
+        </Group>
+        <HoverCard
+          shadow='md'
+          openDelay={250}
+          width={200}
+          zIndex={1000}
+          position='top'
+          withinPortal
+        >
+          <HoverCard.Target>
+            <ActionIcon
+              variant='subtle'
+              aria-label='Help'
+              radius='xl'
+              size='sm'
+              style={{
+                position: 'absolute',
+                top: 5,
+                right: 5,
+              }}
+            >
+              <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+            </ActionIcon>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={5} px={10}>
+            <ScrollArea h={dexCap ? 250 : undefined} offsetScrollbars>
+              {ac !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    AC Bonus:
+                  </Text>{' '}
+                  This is the item bonus you add for the armor when determining AC.
+                </Text>
+              )}
+              {dexCap !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Dex Cap:
+                  </Text>{' '}
+                  This is the maximum Dexterity modifier you can benefit from towards your AC while
+                  wearing the armor.
+                </Text>
+              )}
+              {strength !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Strength:
+                  </Text>{' '}
+                  This is the Strength modifier at which you are strong enough to overcome some of
+                  the armor’s penalties. If your Strength modifier is equal to or greater than this
+                  value, you no longer take the armor’s check penalty, and you decrease the Speed
+                  penalty by 5 feet (to no penalty if the penalty was –5 feet, or to a –5-foot
+                  penalty if the penalty was –10 feet).
+                </Text>
+              )}
+              {checkPenalty !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Check Penalty:
+                  </Text>{' '}
+                  While wearing your armor, you take this penalty to Strength- and Dexterity-based
+                  skill checks, except for those that have the attack trait. If you meet the armor’s
+                  Strength threshold (see Strength below), you don’t take this penalty.
+                </Text>
+              )}
+              {speedPenalty !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Speed Penalty:
+                  </Text>{' '}
+                  While wearing a suit of armor, you take the penalty listed in this entry to your
+                  Speed, as well as to any other movement types you have, such as a climb Speed or
+                  swim Speed, to a minimum Speed of 5 feet. If you meet the armor’s Strength
+                  threshold, you reduce the penalty by 5 feet.
+                </Text>
+              )}
+            </ScrollArea>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      </Paper>
+    );
+  }
+
   return (
     <>
-      <Stack gap={5}>
+      <Stack gap={0}>
         <>{attackAndDamageSection}</>
+        <>{armorSection}</>
         <>{quantitySection}</>
         <>{healthSection}</>
       </Stack>

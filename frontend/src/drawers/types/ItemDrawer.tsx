@@ -6,6 +6,7 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { priceToString } from '@items/currency-handler';
+import { labelizeBulk } from '@items/inv-utils';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@typing/content';
@@ -89,13 +90,13 @@ export function ItemDrawerContent(props: { data: { id: number } }) {
       </>
     );
   }
-  if (item.bulk?.trim() && parseInt(item.bulk) !== 0) {
+  if (item.bulk !== undefined && item.bulk !== '0') {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>
           Bulk
         </Text>{' '}
-        {item.bulk}
+        {labelizeBulk(item.bulk)}
       </>
     );
   }

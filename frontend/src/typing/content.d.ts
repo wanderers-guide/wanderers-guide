@@ -108,8 +108,11 @@ interface Item {
     speed_penalty?: number; // For armor
     dex_cap?: number; // For armor
     strength?: number; // For armor
-    bulk_equipped?: number;
-    bulk_negate?: number;
+    bulk: {
+      capacity?: number;
+      held_or_stowed?: number;
+      ignored?: number;
+    };
     group?: string;
     hardness?: number;
     hp?: number;

@@ -181,6 +181,16 @@ import { saveCustomization } from '@content/customization-cache';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { ItemIcon } from '@common/ItemIcon';
 import { priceToString } from '@items/currency-handler';
+import {
+  getInvBulk,
+  isItemEquippable,
+  isItemInvestable,
+  isItemWeapon,
+  isItemWithQuantity,
+  labelizeBulk,
+} from '@items/inv-utils';
+import { getWeaponStats } from '@items/weapon-handler';
+import { sign } from '@utils/numbers';
 
 export default function CharacterSheetPage(props: {}) {
   setPageTitle(`Sheet`);
@@ -1883,20 +1893,20 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
     : inventory.items;
 
   const handleAddItem = (item: Item, is_formula: boolean) => {
-    const newItems = [
-      ...inventory.items,
-      {
-        id: crypto.randomUUID(),
-        item: _.cloneDeep(item),
-        quantity: 1,
-        is_formula: is_formula,
-        is_equipped: false,
-        is_invested: false,
-        is_container: false,
-        container_contents: [],
-      },
-    ].sort((a, b) => a.item.name.localeCompare(b.item.name));
     setInventory((prev) => {
+      const newItems = [
+        ..._.cloneDeep(prev.items),
+        {
+          id: crypto.randomUUID(),
+          item: _.cloneDeep(item),
+          quantity: item.meta_data?.quantity ?? 1,
+          is_formula: is_formula,
+          is_equipped: false,
+          is_invested: false,
+          is_container: item.meta_data?.bulk?.capacity !== undefined,
+          container_contents: [],
+        },
+      ].sort((a, b) => a.item.name.localeCompare(b.item.name));
       return {
         ...prev,
         items: newItems,
@@ -1905,16 +1915,16 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
   };
 
   const handleDeleteItem = (invItem: InventoryItem) => {
-    const newItems = inventory.items.filter((item) => item.id !== invItem.id);
-    // Remove from all containers
-    newItems.forEach((item) => {
-      if (item.is_container) {
-        item.container_contents = item.container_contents.filter(
-          (containedItem) => containedItem.id !== invItem.id
-        );
-      }
-    });
     setInventory((prev) => {
+      const newItems = _.cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
+      // Remove from all containers
+      newItems.forEach((item) => {
+        if (item.is_container) {
+          item.container_contents = item.container_contents.filter(
+            (containedItem) => containedItem.id !== invItem.id
+          );
+        }
+      });
       return {
         ...prev,
         items: newItems,
@@ -1923,24 +1933,24 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
   };
 
   const handleUpdateItem = (invItem: InventoryItem) => {
-    const newItems = inventory.items.map((item) => {
-      if (item.id === invItem.id) {
-        return _.cloneDeep(invItem);
-      }
-      return item;
-    });
-    // Update if it's in a container
-    newItems.forEach((item) => {
-      if (item.is_container) {
-        item.container_contents = item.container_contents.map((containedItem) => {
-          if (containedItem.id === invItem.id) {
-            return _.cloneDeep(invItem);
-          }
-          return containedItem;
-        });
-      }
-    });
     setInventory((prev) => {
+      const newItems = _.cloneDeep(prev.items).map((item) => {
+        if (item.id === invItem.id) {
+          return _.cloneDeep(invItem);
+        }
+        return item;
+      });
+      // Update if it's in a container
+      newItems.forEach((item) => {
+        if (item.is_container) {
+          item.container_contents = item.container_contents.map((containedItem) => {
+            if (containedItem.id === invItem.id) {
+              return _.cloneDeep(invItem);
+            }
+            return containedItem;
+          });
+        }
+      });
       return {
         ...prev,
         items: newItems,
@@ -1948,19 +1958,26 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
     });
   };
 
-  const handleMoveItem = (invItem: InventoryItem, containerItem: InventoryItem) => {
+  const handleMoveItem = (invItem: InventoryItem, containerItem: InventoryItem | null) => {
     const movingItem = _.cloneDeep(invItem);
     handleDeleteItem(invItem);
     setTimeout(() => {
-      const foundContainer = inventory.items.find((item) => item.id === containerItem.id);
-      if (!foundContainer) return;
-      const newItems = inventory.items.map((item) => {
-        if (item.id === foundContainer.id) {
-          item.container_contents.push(movingItem);
-        }
-        return item;
-      });
       setInventory((prev) => {
+        let newItems: InventoryItem[] = [];
+        if (containerItem) {
+          const foundContainer = _.cloneDeep(
+            prev.items.find((item) => item.id === containerItem.id)
+          );
+          if (!foundContainer) return prev;
+          newItems = _.cloneDeep(prev.items).map((item) => {
+            if (item.id === foundContainer.id) {
+              item.container_contents.push(movingItem);
+            }
+            return item;
+          });
+        } else {
+          newItems = [..._.cloneDeep(prev.items), movingItem];
+        }
         return {
           ...prev,
           items: newItems,
@@ -1994,7 +2011,7 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
               },
             }}
           >
-            Bulk: 5/8
+            Bulk: {labelizeBulk(getInvBulk(inventory), true)} / 8
           </Badge>
           <CurrencySection character={character} />
           <Button
@@ -2068,92 +2085,148 @@ function PanelInventory(props: { content: ContentPackage; panelHeight: number })
               },
             }}
           >
-            {invItems.map((invItem, index) => (
-              <Box key={index}>
-                {invItem.is_container ? (
-                  <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
-                    <Accordion.Control>
-                      <Text c='white' fz='sm'>
-                        {invItem.item.name}
-                      </Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={5}>
-                        {invItem?.container_contents.map((containedItem, index) => (
-                          <InvItemOption
-                            key={index}
-                            invItem={containedItem}
-                            onClick={() => {
-                              openDrawer({
-                                type: 'inv-item',
-                                data: {
-                                  invItem: _.cloneDeep(containedItem),
-                                  onItemUpdate: (newInvItem: InventoryItem) => {
-                                    handleUpdateItem(newInvItem);
-                                  },
-                                  onItemDelete: (newInvItem: InventoryItem) => {
-                                    handleDeleteItem(newInvItem);
-                                  },
-                                  onItemMove: (
-                                    invItem: InventoryItem,
-                                    containerItem: InventoryItem
-                                  ) => {
-                                    handleMoveItem(invItem, containerItem);
-                                  },
+            {_.cloneDeep(invItems)
+              .sort((a, b) => a.item.name.localeCompare(b.item.name))
+              .map((invItem, index) => (
+                <Box key={index}>
+                  {invItem.is_container ? (
+                    <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
+                      <Accordion.Control>
+                        <InvItemOption
+                          hideSections
+                          invItem={invItem}
+                          onEquip={() => {
+                            const newInvItem = _.cloneDeep(invItem);
+                            newInvItem.is_equipped = !newInvItem.is_equipped;
+                            handleUpdateItem(newInvItem);
+                          }}
+                          onInvest={() => {
+                            const newInvItem = _.cloneDeep(invItem);
+                            newInvItem.is_invested = !newInvItem.is_invested;
+                            handleUpdateItem(newInvItem);
+                          }}
+                          onViewItem={() => {
+                            openDrawer({
+                              type: 'inv-item',
+                              data: {
+                                invItem: _.cloneDeep(invItem),
+                                onItemUpdate: (newInvItem: InventoryItem) => {
+                                  handleUpdateItem(newInvItem);
                                 },
-                              });
-                            }}
-                            onEquip={() => {
-                              const newInvItem = _.cloneDeep(containedItem);
-                              newInvItem.is_equipped = !newInvItem.is_equipped;
-                              handleUpdateItem(newInvItem);
-                            }}
-                            onInvest={() => {
-                              const newInvItem = _.cloneDeep(containedItem);
-                              newInvItem.is_invested = !newInvItem.is_invested;
-                              handleUpdateItem(newInvItem);
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                ) : (
-                  <Box mb={5}>
-                    <InvItemOption
-                      invItem={invItem}
-                      onClick={() => {
-                        openDrawer({
-                          type: 'inv-item',
-                          data: {
-                            invItem: _.cloneDeep(invItem),
-                            onItemUpdate: (newInvItem: InventoryItem) => {
-                              handleUpdateItem(newInvItem);
+                                onItemDelete: (newInvItem: InventoryItem) => {
+                                  handleDeleteItem(newInvItem);
+                                  openDrawer(null);
+                                },
+                                onItemMove: (
+                                  invItem: InventoryItem,
+                                  containerItem: InventoryItem | null
+                                ) => {
+                                  handleMoveItem(invItem, containerItem);
+                                },
+                              },
+                            });
+                          }}
+                        />
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {invItem?.container_contents.map((containedItem, index) => (
+                            <StatButton
+                              key={index}
+                              onClick={() => {
+                                openDrawer({
+                                  type: 'inv-item',
+                                  data: {
+                                    invItem: _.cloneDeep(containedItem),
+                                    onItemUpdate: (newInvItem: InventoryItem) => {
+                                      handleUpdateItem(newInvItem);
+                                    },
+                                    onItemDelete: (newInvItem: InventoryItem) => {
+                                      handleDeleteItem(newInvItem);
+                                      openDrawer(null);
+                                    },
+                                    onItemMove: (
+                                      invItem: InventoryItem,
+                                      containerItem: InventoryItem | null
+                                    ) => {
+                                      handleMoveItem(invItem, containerItem);
+                                    },
+                                  },
+                                });
+                              }}
+                            >
+                              <InvItemOption
+                                invItem={containedItem}
+                                onEquip={() => {
+                                  const newInvItem = _.cloneDeep(containedItem);
+                                  newInvItem.is_equipped = !newInvItem.is_equipped;
+                                  handleUpdateItem(newInvItem);
+                                }}
+                                onInvest={() => {
+                                  const newInvItem = _.cloneDeep(containedItem);
+                                  newInvItem.is_invested = !newInvItem.is_invested;
+                                  handleUpdateItem(newInvItem);
+                                }}
+                              />
+                            </StatButton>
+                          ))}
+                          {invItem?.container_contents.length === 0 && (
+                            <Text c='gray.7' fz='sm' ta='center' fs='italic'>
+                              Container is empty
+                            </Text>
+                          )}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ) : (
+                    <Box mb={5}>
+                      <StatButton
+                        key={index}
+                        onClick={() => {
+                          openDrawer({
+                            type: 'inv-item',
+                            data: {
+                              invItem: _.cloneDeep(invItem),
+                              onItemUpdate: (newInvItem: InventoryItem) => {
+                                handleUpdateItem(newInvItem);
+                              },
+                              onItemDelete: (newInvItem: InventoryItem) => {
+                                handleDeleteItem(newInvItem);
+                                openDrawer(null);
+                              },
+                              onItemMove: (
+                                invItem: InventoryItem,
+                                containerItem: InventoryItem | null
+                              ) => {
+                                handleMoveItem(invItem, containerItem);
+                              },
                             },
-                            onItemDelete: (newInvItem: InventoryItem) => {
-                              handleDeleteItem(newInvItem);
-                            },
-                            onItemMove: (invItem: InventoryItem, containerItem: InventoryItem) => {
-                              handleMoveItem(invItem, containerItem);
-                            },
-                          },
-                        });
-                      }}
-                      onEquip={() => {
-                        const newInvItem = _.cloneDeep(invItem);
-                        newInvItem.is_equipped = !newInvItem.is_equipped;
-                        handleUpdateItem(newInvItem);
-                      }}
-                      onInvest={() => {
-                        const newInvItem = _.cloneDeep(invItem);
-                        newInvItem.is_invested = !newInvItem.is_invested;
-                        handleUpdateItem(newInvItem);
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            ))}
+                          });
+                        }}
+                      >
+                        <InvItemOption
+                          invItem={invItem}
+                          onEquip={() => {
+                            const newInvItem = _.cloneDeep(invItem);
+                            newInvItem.is_equipped = !newInvItem.is_equipped;
+                            handleUpdateItem(newInvItem);
+                          }}
+                          onInvest={() => {
+                            const newInvItem = _.cloneDeep(invItem);
+                            newInvItem.is_invested = !newInvItem.is_invested;
+                            handleUpdateItem(newInvItem);
+                          }}
+                        />
+                      </StatButton>
+                    </Box>
+                  )}
+                </Box>
+              ))}
+            {invItems.length === 0 && (
+              <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+                Your inventory is empty, add some items!
+              </Text>
+            )}
           </Accordion>
         </ScrollArea>
       </Stack>
@@ -2257,44 +2330,95 @@ export function CoinSection(props: {
 
 function InvItemOption(props: {
   invItem: InventoryItem;
-  onClick: (invItem: InventoryItem) => void;
   onEquip?: (invItem: InventoryItem) => void;
   onInvest?: (invItem: InventoryItem) => void;
+  onViewItem?: (invItem: InventoryItem) => void;
+  hideSections?: boolean;
 }) {
   const theme = useMantineTheme();
 
+  const weaponStats = isItemWeapon(props.invItem.item)
+    ? getWeaponStats('CHARACTER', props.invItem.item)
+    : null;
+
   return (
-    <StatButton onClick={() => props.onClick(props.invItem)}>
-      <Grid w={'100%'}>
-        <Grid.Col span='auto'>
-          <Group wrap='nowrap' gap={10}>
-            <ItemIcon group={props.invItem.item.group} size='1.2rem' color={theme.colors.gray[6]} />
-            <Text c='gray.0' fz='sm'>
-              {props.invItem.item.name}
-            </Text>
-          </Group>
-        </Grid.Col>
-        <Grid.Col span={3}>
-          <Grid>
-            <Grid.Col span={2}>
-              <Text ta='center' fz='xs'>
-                {props.invItem.quantity}
+    <Grid w={'100%'}>
+      <Grid.Col span='auto'>
+        <Group wrap='nowrap' gap={10}>
+          <ItemIcon group={props.invItem.item.group} size='1.2rem' color={theme.colors.gray[6]} />
+          <Text c='gray.0' fz='sm'>
+            {props.invItem.item.name}
+          </Text>
+          {props.invItem.is_container && props.hideSections && (
+            <Button
+              variant='light'
+              size='compact-xs'
+              radius='xl'
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                props.onViewItem?.(props.invItem);
+              }}
+            >
+              View Item
+            </Button>
+          )}
+          {isItemWeapon(props.invItem.item) && weaponStats && (
+            <Group wrap='nowrap' gap={10}>
+              <Text c='gray.5' fz='xs' span>
+                {sign(weaponStats.attack_bonus.total[0])}
               </Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Text ta='center' fz='xs'>
-                {props.invItem.item.bulk ?? '—'}
+              <Text c='gray.5' fz='xs' span>
+                {weaponStats.damage.dice}
+                {weaponStats.damage.die}
+                {weaponStats.damage.bonus.total > 0
+                  ? ` + ${weaponStats.damage.bonus.total}`
+                  : ``}{' '}
+                {weaponStats.damage.damageType}
               </Text>
-            </Grid.Col>
-            <Grid.Col span={7}>
-              <Text ta='left' fz='xs'>
-                {priceToString(props.invItem.item.price)}
-              </Text>
-            </Grid.Col>
-          </Grid>
-        </Grid.Col>
-        <Grid.Col span={2} offset={1}>
-          <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
+            </Group>
+          )}
+        </Group>
+      </Grid.Col>
+      <Grid.Col span={3}>
+        <Grid>
+          <Grid.Col span={2}>
+            {!props.hideSections && (
+              <>
+                {' '}
+                {isItemWithQuantity(props.invItem.item) && (
+                  <Text ta='center' fz='xs'>
+                    {props.invItem.quantity}
+                  </Text>
+                )}
+              </>
+            )}
+          </Grid.Col>
+          <Grid.Col span={3}>
+            {!props.hideSections && (
+              <>
+                {' '}
+                <Text ta='center' fz='xs'>
+                  {labelizeBulk(props.invItem.item.bulk)}
+                </Text>
+              </>
+            )}
+          </Grid.Col>
+          <Grid.Col span={7}>
+            {!props.hideSections && (
+              <>
+                {' '}
+                <Text ta='left' fz='xs'>
+                  {priceToString(props.invItem.item.price)}
+                </Text>
+              </>
+            )}
+          </Grid.Col>
+        </Grid>
+      </Grid.Col>
+      <Grid.Col span={2} offset={1}>
+        <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
+          {isItemInvestable(props.invItem.item) && (
             <Button
               size='compact-xs'
               variant={props.invItem.is_invested ? 'transparent' : 'outline'}
@@ -2302,9 +2426,12 @@ function InvItemOption(props: {
                 e.stopPropagation();
                 props.onInvest?.(props.invItem);
               }}
+              w={80}
             >
               {props.invItem.is_invested ? 'Divest' : 'Invest'}
             </Button>
+          )}
+          {isItemEquippable(props.invItem.item) && (
             <Button
               size='compact-xs'
               variant={props.invItem.is_equipped ? 'transparent' : 'outline'}
@@ -2312,13 +2439,14 @@ function InvItemOption(props: {
                 e.stopPropagation();
                 props.onEquip?.(props.invItem);
               }}
+              w={80}
             >
               {props.invItem.is_equipped ? 'Unequip' : 'Equip'}
             </Button>
-          </Group>
-        </Grid.Col>
-      </Grid>
-    </StatButton>
+          )}
+        </Group>
+      </Grid.Col>
+    </Grid>
   );
 }
 
