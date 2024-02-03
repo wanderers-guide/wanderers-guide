@@ -61,13 +61,18 @@ interface Item {
   id: number;
   created_at: string;
   name: string;
-  price?: Record<string, any>;
+  price?: {
+    cp?: number;
+    sp?: number;
+    gp?: number;
+    pp?: number;
+  };
   bulk?: string;
   level: number;
   rarity: Rarity;
   traits?: number[];
   description: string;
-  type: string;
+  group: ItemGroup;
   hands?: string;
   size: Size;
   craft_requirements?: string;

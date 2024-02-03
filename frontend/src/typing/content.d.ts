@@ -127,12 +127,9 @@ interface Item {
     range?: number;
     reload?: string;
     runes?: {
-      potency_amount?: string;
-      striking_type?: string;
-      property_1?: string;
-      property_2?: string;
-      property_3?: string;
-      property_4?: string;
+      striking: number;
+      potency: number;
+      property: string[];
     };
     foundry: {
       rules?: Record<string, any>;

@@ -1,7 +1,7 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect, insertData, upsertData, upsertResponseWrapper } from "../_shared/helpers.ts";
-import type { Item } from "../_shared/content";
+import { serve } from 'std/server';
+import { connect, insertData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import type { Item } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -14,11 +14,11 @@ serve(async (req: Request) => {
       rarity,
       traits,
       description,
-      type,
       hands,
       size,
       craft_requirements,
       usage,
+      group,
       meta_data,
       operations,
       content_source_id,
@@ -34,7 +34,7 @@ serve(async (req: Request) => {
       rarity,
       traits,
       description,
-      type,
+      group,
       hands,
       size,
       craft_requirements,

@@ -483,16 +483,16 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
       hp_max: json.system?.hp?.max ?? 0,
       broken_threshold: parseInt(json.system?.hp?.max ?? 0) / 2,
       quantity: json.system?.quantity,
-      material: json.system?.material,
+      material: {
+        type: json.system?.material?.type,
+        grade: json.system?.material?.grade,
+      },
       range: json.system?.range,
       reload: json.system?.reload?.value,
       runes: {
-        potency_amount: json.system?.potencyRune?.value,
-        striking_type: json.system?.strikingRune?.value,
-        property_1: json.system?.propertyRune1?.value,
-        property_2: json.system?.propertyRune2?.value,
-        property_3: json.system?.propertyRune3?.value,
-        property_4: json.system?.propertyRune4?.value,
+        striking: json.system?.runes?.striking,
+        potency: json.system?.runes?.potency,
+        property: json.system?.runes?.property,
       },
       foundry: {
         rules: json.system?.rules,

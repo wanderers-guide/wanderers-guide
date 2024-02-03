@@ -78,6 +78,7 @@ import { CreateAncestryModal } from './CreateAncestryModal';
 import { CreateBackgroundModal } from './CreateBackgroundModal';
 import useRefresh from '@utils/use-refresh';
 import { CreateTraitModal } from './CreateTraitModal';
+import { CreateItemModal } from './CreateItemModal';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -974,6 +975,28 @@ function ContentList<
               showNotification({
                 title: `Updated ${result.name}`,
                 message: `Successfully updated trait.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'item' && openedId && (
+        <CreateItemModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (item) => {
+            item.content_source_id = props.sourceId;
+            const result = await upsertItem(item);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated item.`,
                 autoClose: 3000,
               });
             }
