@@ -150,11 +150,9 @@ interface Item {
 interface InventoryItem {
   id: string;
   item: Item;
-  quantity: number;
   is_formula: boolean;
   is_equipped: boolean;
   is_invested: boolean;
-  is_container: boolean;
   container_contents: InventoryItem[];
 }
 interface Inventory {
