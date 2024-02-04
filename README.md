@@ -17,6 +17,6 @@ To help contribute, currently go to the [Legacy App](https://github.com/wanderer
 1. Install node.js using the instructions here: <https://nodejs.org/en/download>
 2. Go into the `/frontend` directory
 3. Run `npm install`
-4. While yarn installs, copy `.env.local.template` to `.env.local`
+4. While npm installs, copy `.env.local.template` to `.env.local`
 5. Paste the supabase url and key into `.env.local` (get these values from the project settings page)
 6. Run `npm run dev`
