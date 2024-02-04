@@ -18,7 +18,7 @@ import { IconBook2, IconHash, IconStar } from "@tabler/icons-react";
 import { getIconFromContentType } from "@content/content-utils";
 import { fetchContentById } from "@content/content-store";
 
-export function ContentFeedbackModal({
+export default function ContentFeedbackModal({
   context,
   id,
   innerProps,

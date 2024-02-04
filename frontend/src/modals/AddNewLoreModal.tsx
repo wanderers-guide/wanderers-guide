@@ -1,16 +1,13 @@
-import { Text, TextInput, Stack, Button, Group } from "@mantine/core";
+import { Button, Group, Stack, Text, TextInput } from "@mantine/core";
+import { getHotkeyHandler } from "@mantine/hooks";
 import { ContextModalProps } from "@mantine/modals";
-import { Character } from "@typing/content";
-import * as _ from "lodash-es";
-import { isValidImage } from "@utils/images";
-import { useState } from "react";
 import {
   labelToVariable,
   variableNameToLabel,
 } from "@variables/variable-utils";
-import { getHotkeyHandler } from "@mantine/hooks";
+import { useState } from "react";
 
-export function AddNewLoreModal({
+export default function AddNewLoreModal({
   context,
   id,
   innerProps,

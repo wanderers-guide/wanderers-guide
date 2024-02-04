@@ -2,7 +2,6 @@ import { characterState } from "@atoms/characterAtoms";
 import { drawerState } from "@atoms/navAtoms";
 import { sessionState } from "@atoms/supabaseAtoms";
 import { getContentDataFromHref } from "@common/rich_text_input/ContentLinkExtension";
-import { SelectContentModal } from "@common/select/SelectContent";
 import { GUIDE_BLUE } from "@constants/data";
 import { getCachedCustomization } from "@content/customization-cache";
 import DrawerBase from "@drawers/DrawerBase";
@@ -17,24 +16,28 @@ import {
 import { usePrevious } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
-import { AddNewLoreModal } from "@modals/AddNewLoreModal";
-import { ConditionModal } from "@modals/ConditionModal";
-import { ContentFeedbackModal } from "@modals/ContentFeedbackModal";
-import { SelectIconModal } from "@modals/SelectIconModal";
-import { SelectImageModal } from "@modals/SelectImageModal";
-import { UpdateCharacterPortraitModal } from "@modals/UpdateCharacterPortraitModal";
-import { UpdateNotePageModal } from "@modals/UpdateNotePageModal";
 import SearchSpotlight from "@nav/SearchSpotlight";
 import { IconBrush } from "@tabler/icons-react";
 import { getBackgroundImageFromURL } from "@utils/background-images";
 import { removeQueryParam } from "@utils/document-change";
-import { useEffect, useState } from "react";
+import { lazy, useEffect, useState } from "react";
 import { Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import tinycolor from "tinycolor2";
 import { supabase } from "./main";
 import Layout from "./nav/Layout";
 import { ImageOption } from "./typing";
+
+const SelectContentModal = lazy(() => import("@common/select/SelectContent"));
+const SelectImageModal = lazy(() => import("@modals/SelectImageModal"));
+const SelectIconModal = lazy(() => import("@modals/SelectIconModal"));
+const UpdateCharacterPortraitModal = lazy(
+  () => import("@modals/UpdateCharacterPortraitModal")
+);
+const ContentFeedbackModal = lazy(() => import("@modals/ContentFeedbackModal"));
+const AddNewLoreModal = lazy(() => import("@modals/AddNewLoreModal"));
+const UpdateNotePageModal = lazy(() => import("@modals/UpdateNotePageModal"));
+const ConditionModal = lazy(() => import("@modals/ConditionModal"));
 
 const modals = {
   selectContent: SelectContentModal,

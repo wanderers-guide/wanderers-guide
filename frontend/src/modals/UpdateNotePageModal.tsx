@@ -1,29 +1,23 @@
+import { Icon } from "@common/Icon";
+import { GUIDE_BLUE } from "@constants/data";
 import {
+  ActionIcon,
+  Box,
+  Button,
+  ColorInput,
+  Group,
+  Modal,
+  Stack,
   Text,
   TextInput,
-  Stack,
-  Button,
-  Group,
-  ColorInput,
-  Box,
   Title,
   UnstyledButton,
-  ActionIcon,
-  Modal,
 } from "@mantine/core";
-import { ContextModalProps, modals, openContextModal } from "@mantine/modals";
-import { Character } from "@typing/content";
-import * as _ from "lodash-es";
-import { isValidImage } from "@utils/images";
+import { ContextModalProps, modals } from "@mantine/modals";
 import { useState } from "react";
-import { GUIDE_BLUE } from "@constants/data";
-import { getAllBackgroundImages } from "@utils/background-images";
-import { IconAdjustments } from "@tabler/icons-react";
-import { Icon } from "@common/Icon";
-import useRefresh from "@utils/use-refresh";
 import { SelectIconModalContents } from "./SelectIconModal";
 
-export function UpdateNotePageModal({
+export default function UpdateNotePageModal({
   context,
   id,
   innerProps,

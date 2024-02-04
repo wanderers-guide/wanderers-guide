@@ -212,7 +212,7 @@ export function selectContent<T = Record<string, any>>(
   });
 }
 
-export function SelectContentModal({
+export default function SelectContentModal({
   context,
   id,
   innerProps,

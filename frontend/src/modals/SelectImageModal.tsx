@@ -16,7 +16,7 @@ import { ImageOption } from "@typing/index";
 import { uploadImage } from "@upload/image-upload";
 import { useState } from "react";
 
-export function SelectImageModal({
+export default function SelectImageModal({
   context,
   id,
   innerProps,

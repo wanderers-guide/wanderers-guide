@@ -4,7 +4,7 @@ import { Character } from "@typing/content";
 import { isValidImage } from "@utils/images";
 import { useState } from "react";
 
-export function UpdateCharacterPortraitModal({
+export default function UpdateCharacterPortraitModal({
   context,
   id,
   innerProps,

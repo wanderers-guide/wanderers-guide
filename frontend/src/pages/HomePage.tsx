@@ -1,7 +1,6 @@
-import { setPageTitle } from '@utils/document-change';
-import { useEffect } from 'react';
+import { setPageTitle } from "@utils/document-change";
 
-export default function HomePage() {
+export function Component() {
   setPageTitle();
 
   return (

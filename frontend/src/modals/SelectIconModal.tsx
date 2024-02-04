@@ -9,7 +9,7 @@ import {
 } from "@mantine/core";
 import { ContextModalProps } from "@mantine/modals";
 
-export function SelectIconModal({
+export default function SelectIconModal({
   context,
   id,
   innerProps,
