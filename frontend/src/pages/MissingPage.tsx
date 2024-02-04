@@ -12,9 +12,9 @@ import { setPageTitle } from "@utils/document-change";
 import Guy404 from "@assets/images/404-guy.png";
 import { useNavigate } from "react-router-dom";
 
-export default function MissingPage() {
+export function Component() {
   setPageTitle(`Error 404`);
-  
+
   const theme = useMantineTheme();
   const navigate = useNavigate();
 
@@ -77,7 +77,7 @@ export default function MissingPage() {
           size="md"
           color="green"
           onClick={() => {
-            navigate('/');
+            navigate("/");
           }}
         >
           Take me back to home page

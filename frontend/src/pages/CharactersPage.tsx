@@ -1,62 +1,54 @@
-import { useEffect, useRef, useState } from 'react';
-import { selectContent } from '@common/select/SelectContent';
+import { characterState } from "@atoms/characterAtoms";
+import BlurBox from "@common/BlurBox";
+import BlurButton from "@common/BlurButton";
+import { CharacterInfo } from "@common/CharacterInfo";
+import { ICON_BG_COLOR_HOVER } from "@constants/data";
+import exportToJSON from "@export/export-to-json";
+import exportToPDF from "@export/export-to-pdf";
+import importFromGUIDECHAR from "@import/guidechar/import-from-guidechar";
+import importFromJSON from "@import/json/import-from-json";
 import {
   ActionIcon,
   Box,
   Button,
   Center,
-  Grid,
+  Divider,
+  FileButton,
   Group,
+  Loader,
+  LoadingOverlay,
   Menu,
   Stack,
-  TextInput,
   Text,
   Title,
+  Tooltip,
+  VisuallyHidden,
   rem,
   useMantineTheme,
-  Divider,
-  Tooltip,
-  Loader,
-  FileButton,
-  VisuallyHidden,
-  LoadingOverlay,
-} from '@mantine/core';
-import { AbilityBlock, Character, ContentSource } from '@typing/content';
-import { OperationSection } from '@common/operations/Operations';
-import { setPageTitle } from '@utils/document-change';
-import { modals, openContextModal } from '@mantine/modals';
-import { CreateAbilityBlockModal } from '@modals/CreateAbilityBlockModal';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { makeRequest } from '@requests/request-manager';
-import { CharacterInfo } from '@common/CharacterInfo';
-import BlurBox from '@common/BlurBox';
+} from "@mantine/core";
+import { useHover } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
+import { hideNotification, showNotification } from "@mantine/notifications";
+import { makeRequest } from "@requests/request-manager";
 import {
   IconArchive,
   IconCodeDots,
   IconCopy,
   IconDots,
   IconFileTypePdf,
-  IconMessageCircle,
-  IconPhoto,
-  IconSettings,
   IconTrash,
   IconUpload,
   IconUserPlus,
-} from '@tabler/icons-react';
-import { useHover } from '@mantine/hooks';
-import { isPlayable } from '@utils/character';
-import { useNavigate } from 'react-router-dom';
-import { hideNotification, showNotification } from '@mantine/notifications';
-import { useRecoilState } from 'recoil';
-import { characterState } from '@atoms/characterAtoms';
-import exportToJSON from '@export/export-to-json';
-import importFromJSON from '@import/json/import-from-json';
-import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
-import exportToPDF from '@export/export-to-pdf';
-import BlurButton from '@common/BlurButton';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+} from "@tabler/icons-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Character } from "@typing/content";
+import { isPlayable } from "@utils/character";
+import { setPageTitle } from "@utils/document-change";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useRecoilState } from "recoil";
 
-export default function DashboardPage() {
+export function Component() {
   setPageTitle(`Characters`);
 
   const {
@@ -66,7 +58,7 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
-      return await makeRequest<Character[]>('find-character', {});
+      return await makeRequest<Character[]>("find-character", {});
     },
   });
 
@@ -94,48 +86,60 @@ export default function DashboardPage() {
 
   return (
     <Center>
-      <Box maw={875} w='100%'>
+      <Box maw={875} w="100%">
         <Box>
-          <Group px='sm' justify='space-between' wrap='nowrap'>
+          <Group px="sm" justify="space-between" wrap="nowrap">
             <Box>
-              <Title order={1} c='gray.0'>
+              <Title order={1} c="gray.0">
                 Characters
-                <Text pl={10} fz='xl' fw={500} c='gray.2' span>
-                  {characters && CHARACTER_LIMIT ? `(${characters.length}/${CHARACTER_LIMIT})` : ''}
+                <Text pl={10} fz="xl" fw={500} c="gray.2" span>
+                  {characters && CHARACTER_LIMIT
+                    ? `(${characters.length}/${CHARACTER_LIMIT})`
+                    : ""}
                 </Text>
               </Title>
             </Box>
-            <Group gap={5} wrap='nowrap'>
-              <Tooltip label='Create Character' openDelay={750}>
+            <Group gap={5} wrap="nowrap">
+              <Tooltip label="Create Character" openDelay={750}>
                 <ActionIcon
-                  variant='subtle'
-                  color='gray.0'
-                  size='xl'
-                  radius='xl'
-                  aria-label='Create Character'
+                  variant="subtle"
+                  color="gray.0"
+                  size="xl"
+                  radius="xl"
+                  aria-label="Create Character"
                   onClick={handleCreateCharacter}
                 >
-                  <IconUserPlus style={{ width: '70%', height: '70%' }} stroke={2.5} />
+                  <IconUserPlus
+                    style={{ width: "70%", height: "70%" }}
+                    stroke={2.5}
+                  />
                 </ActionIcon>
               </Tooltip>
-              <Menu shadow='md' width={220} withArrow withinPortal>
+              <Menu shadow="md" width={220} withArrow withinPortal>
                 <Menu.Target>
-                  <Tooltip label='Import Character' openDelay={750}>
+                  <Tooltip label="Import Character" openDelay={750}>
                     <ActionIcon
-                      variant='subtle'
-                      color='gray.0'
-                      size='xl'
-                      radius='xl'
-                      aria-label='Import Character'
+                      variant="subtle"
+                      color="gray.0"
+                      size="xl"
+                      radius="xl"
+                      aria-label="Import Character"
                     >
-                      <IconUpload style={{ width: '70%', height: '70%' }} stroke={2.5} />
+                      <IconUpload
+                        style={{ width: "70%", height: "70%" }}
+                        stroke={2.5}
+                      />
                     </ActionIcon>
                   </Tooltip>
                 </Menu.Target>
 
                 <Menu.Dropdown>
                   <Menu.Item
-                    leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
+                    leftSection={
+                      <IconCodeDots
+                        style={{ width: rem(14), height: rem(14) }}
+                      />
+                    }
                     onClick={() => {
                       jsonImportRef.current?.click();
                     }}
@@ -143,7 +147,11 @@ export default function DashboardPage() {
                     Import from JSON
                   </Menu.Item>
                   <Menu.Item
-                    leftSection={<IconArchive style={{ width: rem(14), height: rem(14) }} />}
+                    leftSection={
+                      <IconArchive
+                        style={{ width: rem(14), height: rem(14) }}
+                      />
+                    }
                     onClick={() => {
                       guidecharImportRef.current?.click();
                     }}
@@ -162,7 +170,7 @@ export default function DashboardPage() {
                   const character = await importFromJSON(file);
                   refetch();
                 }}
-                accept='application/JSON'
+                accept="application/JSON"
               >
                 {(props) => (
                   <Button ref={jsonImportRef} {...props}>
@@ -176,7 +184,7 @@ export default function DashboardPage() {
                   const character = await importFromGUIDECHAR(file);
                   refetch();
                 }}
-                accept='.guidechar'
+                accept=".guidechar"
               >
                 {(props) => (
                   <Button ref={guidecharImportRef} {...props}>
@@ -186,18 +194,18 @@ export default function DashboardPage() {
               </FileButton>
             </VisuallyHidden>
           </Group>
-          <Divider color='gray.2' />
+          <Divider color="gray.2" />
         </Box>
-        <Group pt='sm'>
+        <Group pt="sm">
           {isLoading && (
             <Loader
-              size='lg'
-              type='bars'
+              size="lg"
+              type="bars"
               style={{
-                position: 'absolute',
-                top: '30%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
+                position: "absolute",
+                top: "30%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
               }}
             />
           )}
@@ -205,14 +213,17 @@ export default function DashboardPage() {
             <CharacterCard key={index} character={character} />
           ))}
           {!isLoading && (characters ?? []).length === 0 && (
-            <BlurBox w={'100%'} h={200}>
+            <BlurBox w={"100%"} h={200}>
               <Stack mt={50} gap={10}>
-                <Text ta='center' c='gray.5' fs='italic'>
+                <Text ta="center" c="gray.5" fs="italic">
                   No characters found, want to create one?
                 </Text>
                 <Center>
                   <Box>
-                    <BlurButton loading={loadingCreateCharacter} onClick={handleCreateCharacter}>
+                    <BlurButton
+                      loading={loadingCreateCharacter}
+                      onClick={handleCreateCharacter}
+                    >
                       Create Character
                     </BlurButton>
                   </Box>
@@ -235,24 +246,25 @@ function CharacterCard(props: { character: Character }) {
 
   const { hovered: hoveredMain, ref: refMain } = useHover();
   const { hovered: hoveredEdit, ref: refEdit } = useHover<HTMLAnchorElement>();
-  const { hovered: hoveredOptions, ref: refOptions } = useHover<HTMLButtonElement>();
+  const { hovered: hoveredOptions, ref: refOptions } =
+    useHover<HTMLButtonElement>();
 
   const openConfirmDeleteModal = (character: Character) =>
     modals.openConfirmModal({
       title: <Title order={4}>Delete Character</Title>,
       children: (
         <>
-          <Text size='sm'>
+          <Text size="sm">
             Are you sure you want to delete <em>{character.name}</em>?
           </Text>
-          <Text size='sm'>They'll be gone for a very, very long time.</Text>
+          <Text size="sm">They'll be gone for a very, very long time.</Text>
         </>
       ),
-      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      labels: { confirm: "Delete", cancel: "Cancel" },
       onCancel: () => {},
       onConfirm: async () => {
         await deleteCharacter(character);
-        queryClient.refetchQueries(['find-character']);
+        queryClient.refetchQueries(["find-character"]);
       },
     });
 
@@ -260,17 +272,19 @@ function CharacterCard(props: { character: Character }) {
     <BlurBox blur={10}>
       <LoadingOverlay visible={loading} />
       <Box
-        pt='xs'
+        pt="xs"
         pb={5}
-        px='xs'
+        px="xs"
         ref={refMain}
         style={{
-          cursor: isPlayable(props.character) ? 'pointer' : undefined,
+          cursor: isPlayable(props.character) ? "pointer" : undefined,
           borderTopLeftRadius: theme.radius.md,
           borderTopRightRadius: theme.radius.md,
           backgroundColor:
-            hoveredMain && isPlayable(props.character) ? 'rgba(0, 0, 0, 0.15)' : undefined,
-          position: 'relative',
+            hoveredMain && isPlayable(props.character)
+              ? "rgba(0, 0, 0, 0.15)"
+              : undefined,
+          position: "relative",
         }}
         onClick={(e) => {
           if (!isPlayable(props.character)) return;
@@ -280,71 +294,86 @@ function CharacterCard(props: { character: Character }) {
         }}
       >
         <Box
-          component='a'
-          href={isPlayable(props.character) ? `/sheet/${props.character.id}` : undefined}
+          component="a"
+          href={
+            isPlayable(props.character)
+              ? `/sheet/${props.character.id}`
+              : undefined
+          }
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
-            height: '100%',
-            width: '100%',
+            height: "100%",
+            width: "100%",
           }}
         ></Box>
         <CharacterInfo character={props.character} />
       </Box>
-      <Group gap='xs' pb='xs' px='xs'>
+      <Group gap="xs" pb="xs" px="xs">
         <Button
-          size='xs'
-          variant='light'
-          color='gray'
-          radius='xl'
+          size="xs"
+          variant="light"
+          color="gray"
+          radius="xl"
           ref={refEdit}
-          style={{ flex: 1, backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined }}
+          style={{
+            flex: 1,
+            backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
+          }}
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
             navigate(`/builder/${props.character.id}`);
           }}
-          component='a'
+          component="a"
           href={`/builder/${props.character.id}`}
         >
-          {isPlayable(props.character) ? 'Edit' : 'Continue Building'}
+          {isPlayable(props.character) ? "Edit" : "Continue Building"}
         </Button>
-        <Menu shadow='md' width={200} withArrow withinPortal>
+        <Menu shadow="md" width={200} withArrow withinPortal>
           <Menu.Target>
             <ActionIcon
-              size='lg'
-              variant='light'
-              color='gray'
-              radius='xl'
-              aria-label='Options'
+              size="lg"
+              variant="light"
+              color="gray"
+              radius="xl"
+              aria-label="Options"
               ref={refOptions}
-              style={{ backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined }}
+              style={{
+                backgroundColor: hoveredOptions
+                  ? ICON_BG_COLOR_HOVER
+                  : undefined,
+              }}
             >
-              <IconDots style={{ width: '60%', height: '60%' }} stroke={1.5} />
+              <IconDots style={{ width: "60%", height: "60%" }} stroke={1.5} />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>
-              <Group justify='space-between'>
+              <Group justify="space-between">
                 <Box>Options</Box>
-                <Text fz={10} c='dimmed'>
+                <Text fz={10} c="dimmed">
                   # {props.character.id}
                 </Text>
               </Group>
             </Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={async () => {
                 const newCharacter = await createCharacterCopy(props.character);
-                queryClient.refetchQueries(['find-character']);
+                queryClient.refetchQueries(["find-character"]);
               }}
             >
               Create Copy
             </Menu.Item>
             <Menu.Item
-              leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCodeDots style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={async () => {
                 setLoading(true);
                 await exportToJSON(props.character);
@@ -354,7 +383,9 @@ function CharacterCard(props: { character: Character }) {
               Export to JSON
             </Menu.Item>
             <Menu.Item
-              leftSection={<IconFileTypePdf style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconFileTypePdf style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={async () => {
                 setLoading(true);
                 await exportToPDF(props.character);
@@ -368,8 +399,10 @@ function CharacterCard(props: { character: Character }) {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={() => openConfirmDeleteModal(props.character)}
             >
               Delete Character
@@ -382,7 +415,7 @@ function CharacterCard(props: { character: Character }) {
 }
 
 async function createCharacter() {
-  const result = await makeRequest<Character>('create-character', {});
+  const result = await makeRequest<Character>("create-character", {});
   return result;
 }
 
@@ -390,15 +423,15 @@ async function deleteCharacter(character: Character) {
   showNotification({
     id: `delete-character-${character.id}`,
     title: `Deleting "${character.name}"`,
-    message: 'Please wait...',
+    message: "Please wait...",
     autoClose: false,
     withCloseButton: false,
     loading: true,
   });
 
-  const result = await makeRequest('delete-content', {
+  const result = await makeRequest("delete-content", {
     id: character.id,
-    type: 'character',
+    type: "character",
   });
 
   hideNotification(`delete-character-${character.id}`);
@@ -410,7 +443,7 @@ async function createCharacterCopy(character: Character) {
   showNotification({
     id: `copy-character-${character.id}`,
     title: `Creating copy of "${character.name}"`,
-    message: 'Please wait...',
+    message: "Please wait...",
     autoClose: false,
     withCloseButton: false,
     loading: true,
@@ -424,7 +457,7 @@ async function createCharacterCopy(character: Character) {
     roll_history: undefined, // not needed
   };
 
-  const result = await makeRequest<Character>('create-character', copy);
+  const result = await makeRequest<Character>("create-character", copy);
 
   hideNotification(`copy-character-${character.id}`);
 

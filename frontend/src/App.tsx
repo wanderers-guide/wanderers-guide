@@ -1,41 +1,40 @@
+import { characterState } from "@atoms/characterAtoms";
+import { drawerState } from "@atoms/navAtoms";
+import { sessionState } from "@atoms/supabaseAtoms";
+import { getContentDataFromHref } from "@common/rich_text_input/ContentLinkExtension";
+import { SelectContentModal } from "@common/select/SelectContent";
+import { GUIDE_BLUE } from "@constants/data";
+import { getCachedCustomization } from "@content/customization-cache";
+import DrawerBase from "@drawers/DrawerBase";
+import { convertContentLink } from "@drawers/drawer-utils";
 import {
   Anchor,
   BackgroundImage,
   MantineProvider,
-  ScrollArea,
   Text,
   createTheme,
-} from '@mantine/core';
-import Layout from './nav/Layout';
-import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { useEffect, useState } from 'react';
-import { supabase } from './main';
-import { sessionState } from '@atoms/supabaseAtoms';
-import SearchSpotlight from '@nav/SearchSpotlight';
-import { Notifications } from '@mantine/notifications';
-import { ModalsProvider } from '@mantine/modals';
-import { SelectContentModal } from '@common/select/SelectContent';
-import { UpdateCharacterPortraitModal } from '@modals/UpdateCharacterPortraitModal';
-import { getBackgroundImageFromURL } from '@utils/background-images';
-import { SelectImageModal } from '@modals/SelectImageModal';
-import { ImageOption } from './typing';
-import { characterState } from '@atoms/characterAtoms';
-import { IconBrush } from '@tabler/icons-react';
-import tinycolor from 'tinycolor2';
-import { usePrevious } from '@mantine/hooks';
-import { GUIDE_BLUE } from '@constants/data';
-import DrawerBase from '@drawers/DrawerBase';
-import { removeQueryParam } from '@utils/document-change';
-import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
-import { convertContentLink } from '@drawers/drawer-utils';
-import { drawerState } from '@atoms/navAtoms';
-import { ContentFeedbackModal } from '@modals/ContentFeedbackModal';
-import { AddNewLoreModal } from '@modals/AddNewLoreModal';
-import { SelectIconModal } from '@modals/SelectIconModal';
-import { UpdateNotePageModal } from '@modals/UpdateNotePageModal';
-import { ConditionModal } from '@modals/ConditionModal';
-import { getCachedCustomization } from '@content/customization-cache';
+} from "@mantine/core";
+import { usePrevious } from "@mantine/hooks";
+import { ModalsProvider } from "@mantine/modals";
+import { Notifications } from "@mantine/notifications";
+import { AddNewLoreModal } from "@modals/AddNewLoreModal";
+import { ConditionModal } from "@modals/ConditionModal";
+import { ContentFeedbackModal } from "@modals/ContentFeedbackModal";
+import { SelectIconModal } from "@modals/SelectIconModal";
+import { SelectImageModal } from "@modals/SelectImageModal";
+import { UpdateCharacterPortraitModal } from "@modals/UpdateCharacterPortraitModal";
+import { UpdateNotePageModal } from "@modals/UpdateNotePageModal";
+import SearchSpotlight from "@nav/SearchSpotlight";
+import { IconBrush } from "@tabler/icons-react";
+import { getBackgroundImageFromURL } from "@utils/background-images";
+import { removeQueryParam } from "@utils/document-change";
+import { useEffect, useState } from "react";
+import { Outlet, useLocation, useSearchParams } from "react-router-dom";
+import { useRecoilState, useRecoilValue } from "recoil";
+import tinycolor from "tinycolor2";
+import { supabase } from "./main";
+import Layout from "./nav/Layout";
+import { ImageOption } from "./typing";
 
 const modals = {
   selectContent: SelectContentModal,
@@ -47,7 +46,7 @@ const modals = {
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
 };
-declare module '@mantine/modals' {
+declare module "@mantine/modals" {
   export interface MantineModalsOverride {
     modals: typeof modals;
   }
@@ -108,12 +107,20 @@ export default function App() {
 
           // TODO: Use account default if no character default
 
-          setBackground(await getBackgroundImageFromURL(cache?.background_image_url ?? undefined));
+          setBackground(
+            await getBackgroundImageFromURL(
+              cache?.background_image_url ?? undefined
+            )
+          );
         }
         return;
       }
-      console.log('Updating background image...');
-      setBackground(await getBackgroundImageFromURL(activeCharacer?.details?.background_image_url));
+      console.log("Updating background image...");
+      setBackground(
+        await getBackgroundImageFromURL(
+          activeCharacer?.details?.background_image_url
+        )
+      );
     })();
   }, [activeCharacer]);
 
@@ -122,51 +129,59 @@ export default function App() {
     createTheme({
       colors: {
         // @ts-ignore
-        guide: getShadesFromColor(getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
+        guide: getShadesFromColor(
+          getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE
+        ),
         dark: [
-          '#C1C2C5',
-          '#A6A7AB',
-          '#909296',
-          '#5c5f66',
-          '#373A40',
-          '#2C2E33',
-          '#25262b',
-          '#1A1B1E',
-          '#141517',
-          '#101113',
+          "#C1C2C5",
+          "#A6A7AB",
+          "#909296",
+          "#5c5f66",
+          "#373A40",
+          "#2C2E33",
+          "#25262b",
+          "#1A1B1E",
+          "#141517",
+          "#101113",
         ],
       },
-      primaryColor: 'guide',
-      defaultRadius: 'md',
-      fontFamily: 'Montserrat, sans-serif',
-      fontFamilyMonospace: 'Ubuntu Mono, monospace',
+      primaryColor: "guide",
+      defaultRadius: "md",
+      fontFamily: "Montserrat, sans-serif",
+      fontFamilyMonospace: "Ubuntu Mono, monospace",
     })
   );
   useEffect(() => {
-    if (prevCharacer?.details?.sheet_theme === activeCharacer?.details?.sheet_theme) return;
-    console.log('Updating color theme...');
+    if (
+      prevCharacer?.details?.sheet_theme ===
+      activeCharacer?.details?.sheet_theme
+    )
+      return;
+    console.log("Updating color theme...");
     setTheme(
       createTheme({
         colors: {
           // @ts-ignore
-          guide: getShadesFromColor(activeCharacer?.details?.sheet_theme?.color || GUIDE_BLUE),
+          guide: getShadesFromColor(
+            activeCharacer?.details?.sheet_theme?.color || GUIDE_BLUE
+          ),
           dark: [
-            '#C1C2C5',
-            '#A6A7AB',
-            '#909296',
-            '#5c5f66',
-            '#373A40',
-            '#2C2E33',
-            '#25262b',
-            '#1A1B1E',
-            '#141517',
-            '#101113',
+            "#C1C2C5",
+            "#A6A7AB",
+            "#909296",
+            "#5c5f66",
+            "#373A40",
+            "#2C2E33",
+            "#25262b",
+            "#1A1B1E",
+            "#141517",
+            "#101113",
           ],
         },
-        primaryColor: 'guide',
-        defaultRadius: 'md',
-        fontFamily: 'Montserrat, sans-serif',
-        fontFamilyMonospace: 'Ubuntu Mono, monospace',
+        primaryColor: "guide",
+        defaultRadius: "md",
+        fontFamily: "Montserrat, sans-serif",
+        fontFamilyMonospace: "Ubuntu Mono, monospace",
       })
     );
   }, [activeCharacer]);
@@ -177,7 +192,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       // If we have the `open=link_feat_3435` query param, open that content link
-      const openValue = searchParams.get('open');
+      const openValue = searchParams.get("open");
       if (openValue) {
         const contentData = getContentDataFromHref(openValue);
         const drawerData = contentData ? convertContentLink(contentData) : null;
@@ -186,38 +201,42 @@ export default function App() {
             openDrawer(drawerData);
           }, 500);
         }
-        removeQueryParam('open');
+        removeQueryParam("open");
       }
     })();
   }, [location]);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme='dark'>
+    <MantineProvider theme={theme} defaultColorScheme="dark">
       <ModalsProvider modals={modals}>
         <BackgroundImage
-          src={background?.url ?? ''}
+          src={background?.url ?? ""}
           radius={0}
-          style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000 }}
-          w='100vw'
-          h='100vh'
+          style={{ position: "fixed", top: 0, left: 0, zIndex: -1000 }}
+          w="100vw"
+          h="100vh"
         />
         {background?.source?.trim() && (
-          <Anchor href={background.source_url} target='_blank' underline='hover'>
+          <Anchor
+            href={background.source_url}
+            target="_blank"
+            underline="hover"
+          >
             <Text
-              size='xs'
-              c='dimmed'
+              size="xs"
+              c="dimmed"
               style={{
-                position: 'fixed',
+                position: "fixed",
                 bottom: 6,
                 right: 10,
               }}
             >
-              <IconBrush size='0.5rem' /> {background.source}
+              <IconBrush size="0.5rem" /> {background.source}
             </Text>
           </Anchor>
         )}
         <SearchSpotlight />
-        <Notifications position='top-right' zIndex={9400} />
+        <Notifications position="top-right" zIndex={9400} />
         <DrawerBase />
         <Layout>
           {/* Outlet is where react-router will render child routes */}

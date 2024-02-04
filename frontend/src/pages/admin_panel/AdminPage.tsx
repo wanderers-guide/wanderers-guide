@@ -1,12 +1,11 @@
-import { Button, Stack } from '@mantine/core';
-import { setPageTitle } from '@utils/document-change';
-import UploadContent from './UploadContent';
-import EditContent from './EditContent';
-import { useEffect } from 'react';
-import GenerateEmbeddings from './GenerateEmbeddings';
-import ImportLegacyContent from './ImportLegacyContent';
+import { Stack } from "@mantine/core";
+import { setPageTitle } from "@utils/document-change";
+import EditContent from "./EditContent";
+import GenerateEmbeddings from "./GenerateEmbeddings";
+import ImportLegacyContent from "./ImportLegacyContent";
+import UploadContent from "./UploadContent";
 
-export default function AdminPage() {
+export function Component() {
   setPageTitle(`Admin Panel`);
 
   return (
