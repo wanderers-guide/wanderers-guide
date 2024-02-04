@@ -43,7 +43,7 @@ export function ConditionModal({
   return (
     <Stack style={{ position: 'relative' }}>
       <div>
-        <ScrollArea h={400} pr={3} offsetScrollbars>
+        <ScrollArea h={400} pr={16}>
           <Group wrap='nowrap'>
             <RichText ta='justify'>{innerProps.condition.description}</RichText>
           </Group>

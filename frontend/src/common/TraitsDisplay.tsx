@@ -260,7 +260,7 @@ export function TraitOverview(props: { name: string; description: string; import
       >
         {props.name}
       </Badge>
-      <ScrollArea h={props.description.length > 400 ? 300 : undefined} offsetScrollbars>
+      <ScrollArea h={props.description.length > 400 ? 300 : undefined} pr={14}>
         <RichText ta='justify' fz='sm'>
           {props.description || 'No description given.'}
         </RichText>

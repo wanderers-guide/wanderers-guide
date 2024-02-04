@@ -593,7 +593,7 @@ function InvItemSections(props: {
             </ActionIcon>
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
-            <ScrollArea h={dexCap ? 250 : undefined} offsetScrollbars>
+            <ScrollArea h={dexCap ? 250 : undefined} pr={14}>
               {ac !== undefined && (
                 <Text fz='xs'>
                   <Text fz='xs' fw={600} span>

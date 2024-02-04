@@ -153,7 +153,7 @@ export function CreateTraitModal(props: {
       closeOnEscape={false}
       keepMounted={false}
     >
-      <ScrollArea offsetScrollbars>
+      <ScrollArea pr={14}>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
