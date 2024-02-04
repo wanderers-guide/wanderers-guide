@@ -1,4 +1,4 @@
-import { Box, BoxComponentProps, useMantineTheme } from '@mantine/core';
+import { Box, BoxComponentProps, useMantineTheme } from "@mantine/core";
 
 interface BlurBoxProps extends BoxComponentProps {
   children: React.ReactNode;
@@ -15,7 +15,7 @@ export default function BlurBox(props: BlurBoxProps) {
         borderRadius: theme.radius.md,
         backdropFilter: `blur(${props.blur ?? 8}px)`,
         // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-        backgroundColor: theme.colors.dark[8] + '85',
+        backgroundColor: theme.colors.dark[8] + "CC",
       }}
       {...props}
     >
