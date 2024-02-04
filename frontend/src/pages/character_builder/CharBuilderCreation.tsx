@@ -1,4 +1,29 @@
-import { CharacterInfo } from '@common/CharacterInfo';
+import D20Loader from "@assets/images/D20Loader";
+import { characterState } from "@atoms/characterAtoms";
+import { drawerState } from "@atoms/navAtoms";
+import { CharacterInfo } from "@common/CharacterInfo";
+import RichText from "@common/RichText";
+import ResultWrapper from "@common/operations/results/ResultWrapper";
+import {
+  SelectContentButton,
+  selectContent,
+} from "@common/select/SelectContent";
+import { ICON_BG_COLOR_HOVER } from "@constants/data";
+import { fetchContentPackage } from "@content/content-store";
+import { getIconFromContentType } from "@content/content-utils";
+import classes from "@css/FaqSimple.module.css";
+import {
+  AncestryInitialOverview,
+  convertAncestryOperationsIntoUI,
+} from "@drawers/types/AncestryDrawer";
+import {
+  BackgroundInitialOverview,
+  convertBackgroundOperationsIntoUI,
+} from "@drawers/types/BackgroundDrawer";
+import {
+  ClassInitialOverview,
+  convertClassOperationsIntoUI,
+} from "@drawers/types/ClassDrawer";
 import {
   Accordion,
   Badge,
@@ -7,66 +32,44 @@ import {
   Divider,
   Drawer,
   Group,
-  Indicator,
   ScrollArea,
-  SegmentedControl,
   Stack,
   Text,
   Title,
-  UnstyledButton,
-  VisuallyHidden,
   useMantineTheme,
-} from '@mantine/core';
+} from "@mantine/core";
+import {
+  useElementSize,
+  useHover,
+  useInterval,
+  useMergedRef,
+} from "@mantine/hooks";
+import { getChoiceCounts } from "@operations/choice-count-tracker";
+import { executeCharacterOperations } from "@operations/operation-controller";
+import { OperationResult } from "@operations/operation-runner";
+import { ObjectWithUUID } from "@operations/operation-utils";
+import { IconId, IconPuzzle } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
 import {
   AbilityBlock,
   Ancestry,
   Background,
-  Character,
   Class,
   ContentPackage,
-  ContentSource,
-} from '@typing/content';
-import classes from '@css/FaqSimple.module.css';
-import { useElementSize, useHover, useInterval, useMergedRef, useTimeout } from '@mantine/hooks';
-import { useEffect, useRef, useState } from 'react';
-import { SelectContentButton, selectContent } from '@common/select/SelectContent';
-import { characterState } from '@atoms/characterAtoms';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { useQuery } from '@tanstack/react-query';
-import D20Loader from '@assets/images/D20Loader';
-import { getIconFromContentType } from '@content/content-utils';
-import { executeCharacterOperations } from '@operations/operation-controller';
-import ResultWrapper from '@common/operations/results/ResultWrapper';
-import { IconId, IconLeaf, IconPuzzle } from '@tabler/icons-react';
-import { OperationResult } from '@operations/operation-runner';
-import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
-import { fetchContentPackage } from '@content/content-store';
-import { ObjectWithUUID } from '@operations/operation-utils';
-import { OperationResultPackage, OperationSelect } from '@typing/operations';
-import { getChoiceCounts } from '@operations/choice-count-tracker';
-import useRefresh from '@utils/use-refresh';
-import { set } from 'lodash';
-import _ from 'lodash';
-import {
-  AncestryInitialOverview,
-  convertAncestryOperationsIntoUI,
-} from '@drawers/types/AncestryDrawer';
-import { drawerState } from '@atoms/navAtoms';
-import {
-  BackgroundInitialOverview,
-  convertBackgroundOperationsIntoUI,
-} from '@drawers/types/BackgroundDrawer';
-import RichText from '@common/RichText';
-import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
-import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
+} from "@typing/content";
+import { OperationResultPackage, OperationSelect } from "@typing/operations";
+import { VariableListStr, VariableProf } from "@typing/variables";
+import { isCharacterBuilderMobile } from "@utils/screen-sizes";
 import {
   displayAttributeValue,
   displayFinalHealthValue,
   displayFinalProfValue,
-} from '@variables/variable-display';
-import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
-import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+} from "@variables/variable-display";
+import { getAllSkillVariables, getVariable } from "@variables/variable-manager";
+import { variableToLabel } from "@variables/variable-utils";
+import * as _ from "lodash-es";
+import { useEffect, useRef, useState } from "react";
+import { useRecoilState, useRecoilValue } from "recoil";
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -97,14 +100,18 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
   const loader = (
     <Box
       style={{
-        width: '100%',
-        height: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: "100%",
+        height: "300px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} />
+      <D20Loader
+        size={100}
+        color={theme.colors[theme.primaryColor][5]}
+        percentage={percentage}
+      />
     </Box>
   );
 
@@ -113,8 +120,10 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
   } else {
     return (
       <>
-        <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
-        <div style={{ display: doneLoading ? undefined : 'none' }}>
+        <div style={{ display: doneLoading ? "none" : undefined }}>
+          {loader}
+        </div>
+        <div style={{ display: doneLoading ? undefined : "none" }}>
           <CharBuilderCreationInner
             content={content}
             pageHeight={props.pageHeight}
@@ -140,13 +149,18 @@ export function CharBuilderCreationInner(props: {
   const [character, setCharacter] = useRecoilState(characterState);
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  const [operationResults, setOperationResults] = useState<OperationResultPackage>();
+  const [operationResults, setOperationResults] =
+    useState<OperationResultPackage>();
 
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
-    executeCharacterOperations(character, props.content, 'CHARACTER-BUILDER').then((results) => {
+    executeCharacterOperations(
+      character,
+      props.content,
+      "CHARACTER-BUILDER"
+    ).then((results) => {
       setOperationResults(results);
       executingOperations.current = false;
     });
@@ -158,19 +172,20 @@ export function CharBuilderCreationInner(props: {
     }, CHOICE_COUNT_INTERVAL + 500);
   }, []);
 
-  const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map(
-    (level) => {
-      return (
-        <LevelSection
-          key={level}
-          level={level}
-          opened={levelItemValue === `${level}`}
-          content={props.content}
-          operationResults={operationResults}
-        />
-      );
-    }
-  );
+  const levelItems = Array.from(
+    { length: (character?.level ?? 0) + 1 },
+    (_, i) => i
+  ).map((level) => {
+    return (
+      <LevelSection
+        key={level}
+        level={level}
+        opened={levelItemValue === `${level}`}
+        content={props.content}
+        operationResults={operationResults}
+      />
+    );
+  });
 
   return (
     <Group gap={0}>
@@ -181,25 +196,31 @@ export function CharBuilderCreationInner(props: {
             setStatPanelOpened(false);
           }}
           title={<Title order={3}>Character Stats</Title>}
-          size='xs'
+          size="xs"
         >
-          <CharacterStatSidebar content={props.content} pageHeight={window.innerHeight - 80} />
+          <CharacterStatSidebar
+            content={props.content}
+            pageHeight={window.innerHeight - 80}
+          />
         </Drawer>
       ) : (
-        <Box style={{ flexBasis: '35%' }}>
-          <CharacterStatSidebar content={props.content} pageHeight={props.pageHeight} />
+        <Box style={{ flexBasis: "35%" }}>
+          <CharacterStatSidebar
+            content={props.content}
+            pageHeight={props.pageHeight}
+          />
         </Box>
       )}
-      <Box style={{ flexBasis: isMobile ? '100%' : '65%' }}>
+      <Box style={{ flexBasis: isMobile ? "100%" : "65%" }}>
         {isMobile && (
           <>
-            <Group justify='space-between' align='flex-start' wrap='nowrap'>
+            <Group justify="space-between" align="flex-start" wrap="nowrap">
               <CharacterInfo
                 character={character}
                 hideImage
                 onClickAncestry={() => {
                   selectContent<Ancestry>(
-                    'ancestry',
+                    "ancestry",
                     (option) => {
                       setCharacter((prev) => {
                         if (!prev) return prev;
@@ -220,7 +241,7 @@ export function CharBuilderCreationInner(props: {
                 }}
                 onClickBackground={() => {
                   selectContent<Background>(
-                    'background',
+                    "background",
                     (option) => {
                       setCharacter((prev) => {
                         if (!prev) return prev;
@@ -241,7 +262,7 @@ export function CharBuilderCreationInner(props: {
                 }}
                 onClickClass={() => {
                   selectContent<Class>(
-                    'class',
+                    "class",
                     (option) => {
                       setCharacter((prev) => {
                         if (!prev) return prev;
@@ -263,10 +284,10 @@ export function CharBuilderCreationInner(props: {
               />
               <Button
                 leftSection={<IconId size={14} />}
-                variant='outline'
-                size='xs'
-                mt='sm'
-                mr='md'
+                variant="outline"
+                size="xs"
+                mt="sm"
+                mr="md"
                 onClick={() => {
                   setStatPanelOpened((prev) => !prev);
                 }}
@@ -281,7 +302,7 @@ export function CharBuilderCreationInner(props: {
           <Accordion
             value={levelItemValue}
             onChange={setLevelItemValue}
-            variant='filled'
+            variant="filled"
             styles={{
               label: {
                 paddingTop: 5,
@@ -305,7 +326,10 @@ export function CharBuilderCreationInner(props: {
   );
 }
 
-function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: number }) {
+function CharacterStatSidebar(props: {
+  content: ContentPackage;
+  pageHeight: number;
+}) {
   const { ref, height } = useElementSize();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
@@ -318,7 +342,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           character={character}
           onClickAncestry={() => {
             selectContent<Ancestry>(
-              'ancestry',
+              "ancestry",
               (option) => {
                 setCharacter((prev) => {
                   if (!prev) return prev;
@@ -339,7 +363,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           }}
           onClickBackground={() => {
             selectContent<Background>(
-              'background',
+              "background",
               (option) => {
                 setCharacter((prev) => {
                   if (!prev) return prev;
@@ -360,7 +384,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           }}
           onClickClass={() => {
             selectContent<Class>(
-              'class',
+              "class",
               (option) => {
                 setCharacter((prev) => {
                   if (!prev) return prev;
@@ -385,73 +409,107 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
         <Stack gap={5}>
           <Box>
             <Button
-              variant='default'
-              size='lg'
+              variant="default"
+              size="lg"
               fullWidth
               onClick={() => {
-                openDrawer({ type: 'stat-attr', data: {} });
+                openDrawer({ type: "stat-attr", data: {} });
               }}
             >
               <Group>
-                <AttributeModPart attribute='Str' variableName='ATTRIBUTE_STR' />
-                <AttributeModPart attribute='Dex' variableName='ATTRIBUTE_DEX' />
-                <AttributeModPart attribute='Con' variableName='ATTRIBUTE_CON' />
-                <AttributeModPart attribute='Int' variableName='ATTRIBUTE_INT' />
-                <AttributeModPart attribute='Wis' variableName='ATTRIBUTE_WIS' />
-                <AttributeModPart attribute='Cha' variableName='ATTRIBUTE_CHA' />
+                <AttributeModPart
+                  attribute="Str"
+                  variableName="ATTRIBUTE_STR"
+                />
+                <AttributeModPart
+                  attribute="Dex"
+                  variableName="ATTRIBUTE_DEX"
+                />
+                <AttributeModPart
+                  attribute="Con"
+                  variableName="ATTRIBUTE_CON"
+                />
+                <AttributeModPart
+                  attribute="Int"
+                  variableName="ATTRIBUTE_INT"
+                />
+                <AttributeModPart
+                  attribute="Wis"
+                  variableName="ATTRIBUTE_WIS"
+                />
+                <AttributeModPart
+                  attribute="Cha"
+                  variableName="ATTRIBUTE_CHA"
+                />
               </Group>
             </Button>
           </Box>
           <StatButton
             onClick={() => {
-              openDrawer({ type: 'stat-hp', data: {} });
+              openDrawer({ type: "stat-hp", data: {} });
             }}
           >
             <Box>
-              <Text c='gray.0' fz='sm'>
+              <Text c="gray.0" fz="sm">
                 Hit Points
               </Text>
             </Box>
             <Box>
-              <Text c='gray.0'>{displayFinalHealthValue('CHARACTER')}</Text>
+              <Text c="gray.0">{displayFinalHealthValue("CHARACTER")}</Text>
             </Box>
           </StatButton>
           <StatButton
             onClick={() => {
-              openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC', isDC: true } });
+              openDrawer({
+                type: "stat-prof",
+                data: { variableName: "CLASS_DC", isDC: true },
+              });
             }}
           >
             <Box>
-              <Text c='gray.0' fz='sm'>
+              <Text c="gray.0" fz="sm">
                 Class DC
               </Text>
             </Box>
             <Group>
-              <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-              <Badge variant='default'>
-                {getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}
+              <Text c="gray.0">
+                {displayFinalProfValue("CHARACTER", "CLASS_DC", true)}
+              </Text>
+              <Badge variant="default">
+                {
+                  getVariable<VariableProf>("CHARACTER", "CLASS_DC")?.value
+                    .value
+                }
               </Badge>
             </Group>
           </StatButton>
           <StatButton
             onClick={() => {
-              openDrawer({ type: 'stat-prof', data: { variableName: 'PERCEPTION' } });
+              openDrawer({
+                type: "stat-prof",
+                data: { variableName: "PERCEPTION" },
+              });
             }}
           >
             <Box>
-              <Text c='gray.0' fz='sm'>
+              <Text c="gray.0" fz="sm">
                 Perception
               </Text>
             </Box>
             <Group>
-              <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'PERCEPTION')}</Text>
-              <Badge variant='default'>
-                {getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value.value}
+              <Text c="gray.0">
+                {displayFinalProfValue("CHARACTER", "PERCEPTION")}
+              </Text>
+              <Badge variant="default">
+                {
+                  getVariable<VariableProf>("CHARACTER", "PERCEPTION")?.value
+                    .value
+                }
               </Badge>
             </Group>
           </StatButton>
           <Accordion
-            variant='separated'
+            variant="separated"
             styles={{
               label: {
                 paddingTop: 5,
@@ -467,43 +525,45 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               },
             }}
           >
-            <Accordion.Item className={classes.item} value={'skills'}>
+            <Accordion.Item className={classes.item} value={"skills"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Skills
                 </Text>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={5}>
-                  {getAllSkillVariables('CHARACTER')
-                    .filter((skill) => skill.name !== 'SKILL_LORE____')
+                  {getAllSkillVariables("CHARACTER")
+                    .filter((skill) => skill.name !== "SKILL_LORE____")
                     .map((skill, index) => (
                       <StatButton
                         key={index}
                         onClick={() => {
                           openDrawer({
-                            type: 'stat-prof',
+                            type: "stat-prof",
                             data: { variableName: skill.name },
                           });
                         }}
                       >
                         <Box>
-                          <Text c='gray.0' fz='sm'>
+                          <Text c="gray.0" fz="sm">
                             {variableToLabel(skill)}
                           </Text>
                         </Box>
                         <Group>
-                          <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
-                          <Badge variant='default'>{skill?.value.value}</Badge>
+                          <Text c="gray.0">
+                            {displayFinalProfValue("CHARACTER", skill.name)}
+                          </Text>
+                          <Badge variant="default">{skill?.value.value}</Badge>
                         </Group>
                       </StatButton>
                     ))}
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item className={classes.item} value={'saves'}>
+            <Accordion.Item className={classes.item} value={"saves"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Saves
                 </Text>
               </Accordion.Control>
@@ -512,69 +572,84 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'SAVE_FORT' },
+                        type: "stat-prof",
+                        data: { variableName: "SAVE_FORT" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Fortitude
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_FORT')}</Text>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SAVE_FORT')?.value.value}
+                      <Text c="gray.0">
+                        {displayFinalProfValue("CHARACTER", "SAVE_FORT")}
+                      </Text>
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "SAVE_FORT")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'SAVE_REFLEX' },
+                        type: "stat-prof",
+                        data: { variableName: "SAVE_REFLEX" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Reflex
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_REFLEX')}</Text>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SAVE_REFLEX')?.value.value}
+                      <Text c="gray.0">
+                        {displayFinalProfValue("CHARACTER", "SAVE_REFLEX")}
+                      </Text>
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "SAVE_REFLEX")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'SAVE_WILL' },
+                        type: "stat-prof",
+                        data: { variableName: "SAVE_WILL" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Will
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_WILL')}</Text>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SAVE_WILL')?.value.value}
+                      <Text c="gray.0">
+                        {displayFinalProfValue("CHARACTER", "SAVE_WILL")}
+                      </Text>
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "SAVE_WILL")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item className={classes.item} value={'attacks'}>
+            <Accordion.Item className={classes.item} value={"attacks"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Attacks
                 </Text>
               </Accordion.Control>
@@ -583,85 +658,105 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'SIMPLE_WEAPONS' },
+                        type: "stat-prof",
+                        data: { variableName: "SIMPLE_WEAPONS" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Simple Weapons
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>(
+                            "CHARACTER",
+                            "SIMPLE_WEAPONS"
+                          )?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'MARTIAL_WEAPONS' },
+                        type: "stat-prof",
+                        data: { variableName: "MARTIAL_WEAPONS" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Martial Weapons
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>(
+                            "CHARACTER",
+                            "MARTIAL_WEAPONS"
+                          )?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'ADVANCED_WEAPONS' },
+                        type: "stat-prof",
+                        data: { variableName: "ADVANCED_WEAPONS" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Advanced Weapons
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>(
+                            "CHARACTER",
+                            "ADVANCED_WEAPONS"
+                          )?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'UNARMED_ATTACKS' },
+                        type: "stat-prof",
+                        data: { variableName: "UNARMED_ATTACKS" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Unarmed Attacks
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>(
+                            "CHARACTER",
+                            "UNARMED_ATTACKS"
+                          )?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item className={classes.item} value={'defenses'}>
+            <Accordion.Item className={classes.item} value={"defenses"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Defenses
                 </Text>
               </Accordion.Control>
@@ -670,85 +765,99 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'LIGHT_ARMOR' },
+                        type: "stat-prof",
+                        data: { variableName: "LIGHT_ARMOR" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Light Armor
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "LIGHT_ARMOR")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'MEDIUM_ARMOR' },
+                        type: "stat-prof",
+                        data: { variableName: "MEDIUM_ARMOR" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Medium Armor
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "MEDIUM_ARMOR")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'HEAVY_ARMOR' },
+                        type: "stat-prof",
+                        data: { variableName: "HEAVY_ARMOR" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Heavy Armor
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "HEAVY_ARMOR")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'UNARMORED_DEFENSE' },
+                        type: "stat-prof",
+                        data: { variableName: "UNARMORED_DEFENSE" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Unarmored Defense
                       </Text>
                     </Box>
                     <Group>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value.value}
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>(
+                            "CHARACTER",
+                            "UNARMORED_DEFENSE"
+                          )?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item className={classes.item} value={'spellcasting'}>
+            <Accordion.Item className={classes.item} value={"spellcasting"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Spellcasting
                 </Text>
               </Accordion.Control>
@@ -757,81 +866,95 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'SPELL_ATTACK' },
+                        type: "stat-prof",
+                        data: { variableName: "SPELL_ATTACK" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Spell Attack
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
+                      <Text c="gray.0">
+                        {displayFinalProfValue("CHARACTER", "SPELL_ATTACK")}
+                      </Text>
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "SPELL_ATTACK")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                   <StatButton
                     onClick={() => {
                       openDrawer({
-                        type: 'stat-prof',
-                        data: { variableName: 'SPELL_DC' },
+                        type: "stat-prof",
+                        data: { variableName: "SPELL_DC" },
                       });
                     }}
                   >
                     <Box>
-                      <Text c='gray.0' fz='sm'>
+                      <Text c="gray.0" fz="sm">
                         Spell DC
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}
+                      <Text c="gray.0">
+                        {displayFinalProfValue("CHARACTER", "SPELL_DC")}
+                      </Text>
+                      <Badge variant="default">
+                        {
+                          getVariable<VariableProf>("CHARACTER", "SPELL_DC")
+                            ?.value.value
+                        }
                       </Badge>
                     </Group>
                   </StatButton>
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item className={classes.item} value={'languages'}>
+            <Accordion.Item className={classes.item} value={"languages"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Languages
                 </Text>
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={5}>
-                  {(getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map(
-                    (languageId, index) => (
-                      <StatButton
-                        key={index}
-                        onClick={() => {
-                          openDrawer({ type: 'language', data: { id: parseInt(languageId) } });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            {
-                              props.content.languages.find(
-                                (lang) => lang.id === parseInt(languageId)
-                              )?.name
-                            }
-                          </Text>
-                        </Box>
-                        <Group></Group>
-                      </StatButton>
-                    )
-                  )}
+                  {(
+                    getVariable<VariableListStr>("CHARACTER", "LANGUAGE_IDS")
+                      ?.value ?? []
+                  ).map((languageId, index) => (
+                    <StatButton
+                      key={index}
+                      onClick={() => {
+                        openDrawer({
+                          type: "language",
+                          data: { id: parseInt(languageId) },
+                        });
+                      }}
+                    >
+                      <Box>
+                        <Text c="gray.0" fz="sm">
+                          {
+                            props.content.languages.find(
+                              (lang) => lang.id === parseInt(languageId)
+                            )?.name
+                          }
+                        </Text>
+                      </Box>
+                      <Group></Group>
+                    </StatButton>
+                  ))}
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
-            <Accordion.Item className={classes.item} value={'resist-weaks'}>
+            <Accordion.Item className={classes.item} value={"resist-weaks"}>
               <Accordion.Control>
-                <Text c='white' fz='sm'>
+                <Text c="white" fz="sm">
                   Resist & Weaks
                 </Text>
               </Accordion.Control>
@@ -849,34 +972,40 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
 function AttributeModPart(props: { attribute: string; variableName: string }) {
   return (
     <Box>
-      <Text c='gray.0' ta='center' fz={11}>
+      <Text c="gray.0" ta="center" fz={11}>
         {props.attribute}
       </Text>
-      <Text c='gray.0' ta='center'>
-        {displayAttributeValue('CHARACTER', props.variableName, { c: 'gray.0', ta: 'center' })}
+      <Text c="gray.0" ta="center">
+        {displayAttributeValue("CHARACTER", props.variableName, {
+          c: "gray.0",
+          ta: "center",
+        })}
       </Text>
     </Box>
   );
 }
 
-export function StatButton(props: { children: React.ReactNode; onClick?: () => void }) {
+export function StatButton(props: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   return (
     <Box>
       <Button
-        variant='default'
-        size='compact-lg'
+        variant="default"
+        size="compact-lg"
         styles={{
           inner: {
-            width: '100%',
+            width: "100%",
           },
           label: {
-            width: '100%',
+            width: "100%",
           },
         }}
         fullWidth
         onClick={props.onClick}
       >
-        <Group w='100%' justify='space-between'>
+        <Group w="100%" justify="space-between">
           {props.children}
         </Group>
       </Button>
@@ -897,7 +1026,10 @@ function LevelSection(props: {
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMergedRef(ref, choiceCountRef);
 
-  const [choiceCounts, setChoiceCounts] = useState<{ current: number; max: number }>({
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
     current: 0,
     max: 0,
   });
@@ -941,7 +1073,7 @@ function LevelSection(props: {
   ) {
     if (props.level === 0) {
       return (
-        <Text fz='sm' mt={10} ta='center' c='gray.5' fs='italic'>
+        <Text fz="sm" mt={10} ta="center" c="gray.5" fs="italic">
           Select an ancestry, background, and class to get started.
         </Text>
       );
@@ -955,16 +1087,17 @@ function LevelSection(props: {
       ref={mergedRef}
       value={`${props.level}`}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
     >
       <Accordion.Control>
-        <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='sm'>
+        <Group wrap="nowrap" justify="space-between" gap={0}>
+          <Text c="gray.5" fw={700} fz="sm">
             {props.level === 0 ? (
               <>
-                Initial Stats{' '}
-                <Text fs='italic' c='dimmed' fz='sm' span>
+                Initial Stats{" "}
+                <Text fs="italic" c="dimmed" fz="sm" span>
                   (Level 1)
                 </Text>
               </>
@@ -973,12 +1106,12 @@ function LevelSection(props: {
             )}
           </Text>
           {choiceCounts.max > 0 && (
-            <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+            <Badge mr="sm" variant="outline" color="gray.5" size="xs">
               <Text
-                fz='sm'
+                fz="sm"
                 c={
                   choiceCounts.current === choiceCounts.max
-                    ? 'gray.5'
+                    ? "gray.5"
                     : theme.colors[theme.primaryColor][5]
                 }
                 fw={choiceCounts.current === choiceCounts.max ? undefined : 600}
@@ -986,7 +1119,7 @@ function LevelSection(props: {
               >
                 {choiceCounts.current}
               </Text>
-              <Text fz='sm' c='gray.5' span>
+              <Text fz="sm" c="gray.5" span>
                 /{choiceCounts.max}
               </Text>
             </Badge>
@@ -1004,7 +1137,7 @@ function LevelSection(props: {
           />
         ) : (
           <Accordion
-            variant='separated'
+            variant="separated"
             value={subSectionValue}
             onChange={setSubSectionValue}
             styles={{
@@ -1012,7 +1145,10 @@ function LevelSection(props: {
             }}
           >
             {props.operationResults?.ancestrySectionResults.map(
-              (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
+              (
+                r: { baseSource: AbilityBlock; baseResults: OperationResult[] },
+                index: number
+              ) =>
                 r.baseSource.level === props.level && (
                   <AncestrySectionAccordionItem
                     key={index}
@@ -1027,7 +1163,10 @@ function LevelSection(props: {
                 )
             )}
             {props.operationResults?.classFeatureResults.map(
-              (r: { baseSource: AbilityBlock; baseResults: OperationResult[] }, index: number) =>
+              (
+                r: { baseSource: AbilityBlock; baseResults: OperationResult[] },
+                index: number
+              ) =>
                 r.baseSource.level === props.level && (
                   <ClassFeatureAccordionItem
                     key={index}
@@ -1070,7 +1209,8 @@ function ClassFeatureAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (featureChoiceCountRef.current) {
         const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
-        if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
+        if (!_.isEqual(choiceCounts, featureChoiceCounts))
+          setFeatureChoiceCounts(choiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1081,7 +1221,8 @@ function ClassFeatureAccordionItem(props: {
       value={props.id}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1089,19 +1230,24 @@ function ClassFeatureAccordionItem(props: {
         <Group gap={5}>
           <Box>{props.feature.name}</Box>
           {featureChoiceCounts.max - featureChoiceCounts.current > 0 && (
-            <Badge variant='filled'>{featureChoiceCounts.max - featureChoiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {featureChoiceCounts.max - featureChoiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={featureChoiceCountRef}>
         <Stack gap={5}>
-          <RichText ta='justify'>{props.feature.description}</RichText>
+          <RichText ta="justify">{props.feature.description}</RichText>
           <DisplayOperationResult
             source={undefined}
             level={props.feature.level}
             results={props.results}
             onChange={(path, value) => {
-              props.onSaveChanges(`class-feature-${props.feature.id}_${path}`, value);
+              props.onSaveChanges(
+                `class-feature-${props.feature.id}_${path}`,
+                value
+              );
             }}
           />
         </Stack>
@@ -1132,7 +1278,8 @@ function AncestrySectionAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (featureChoiceCountRef.current) {
         const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
-        if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
+        if (!_.isEqual(choiceCounts, featureChoiceCounts))
+          setFeatureChoiceCounts(choiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1143,7 +1290,8 @@ function AncestrySectionAccordionItem(props: {
       value={props.id}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1151,19 +1299,24 @@ function AncestrySectionAccordionItem(props: {
         <Group gap={5}>
           <Box>{props.section.name}</Box>
           {featureChoiceCounts.max - featureChoiceCounts.current > 0 && (
-            <Badge variant='filled'>{featureChoiceCounts.max - featureChoiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {featureChoiceCounts.max - featureChoiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={featureChoiceCountRef}>
         <Stack gap={5}>
-          <RichText ta='justify'>{props.section.description}</RichText>
+          <RichText ta="justify">{props.section.description}</RichText>
           <DisplayOperationResult
             source={undefined}
             level={props.section.level}
             results={props.results}
             onChange={(path, value) => {
-              props.onSaveChanges(`ancestry-section-${props.section.id}_${path}`, value);
+              props.onSaveChanges(
+                `ancestry-section-${props.section.id}_${path}`,
+                value
+              );
             }}
           />
         </Stack>
@@ -1199,7 +1352,7 @@ function InitialStatsLevelSection(props: {
   return (
     <>
       <Accordion
-        variant='separated'
+        variant="separated"
         value={subSectionValue}
         onChange={setSubSectionValue}
         styles={{
@@ -1213,7 +1366,7 @@ function InitialStatsLevelSection(props: {
           onSaveChanges={(path, value) => {
             props.onSaveChanges(path, value);
           }}
-          opened={subSectionValue === 'ancestry'}
+          opened={subSectionValue === "ancestry"}
         />
 
         <BackgroundAccordionItem
@@ -1222,7 +1375,7 @@ function InitialStatsLevelSection(props: {
           onSaveChanges={(path, value) => {
             props.onSaveChanges(path, value);
           }}
-          opened={subSectionValue === 'background'}
+          opened={subSectionValue === "background"}
         />
 
         <ClassAccordionItem
@@ -1231,7 +1384,7 @@ function InitialStatsLevelSection(props: {
           onSaveChanges={(path, value) => {
             props.onSaveChanges(path, value);
           }}
-          opened={subSectionValue === 'class'}
+          opened={subSectionValue === "class"}
         />
 
         {props.operationResults.contentSourceResults.length > 0 && (
@@ -1240,7 +1393,7 @@ function InitialStatsLevelSection(props: {
             onSaveChanges={(path, value) => {
               props.onSaveChanges(path, value);
             }}
-            opened={subSectionValue === 'books'}
+            opened={subSectionValue === "books"}
           />
         )}
         {props.operationResults.itemResults.length > 0 && (
@@ -1249,7 +1402,7 @@ function InitialStatsLevelSection(props: {
             onSaveChanges={(path, value) => {
               props.onSaveChanges(path, value);
             }}
-            opened={subSectionValue === 'items'}
+            opened={subSectionValue === "items"}
           />
         )}
         {props.operationResults.characterResults.length > 0 && (
@@ -1258,7 +1411,7 @@ function InitialStatsLevelSection(props: {
             onSaveChanges={(path, value) => {
               props.onSaveChanges(path, value);
             }}
-            opened={subSectionValue === 'custom'}
+            opened={subSectionValue === "custom"}
           />
         )}
       </Accordion>
@@ -1290,7 +1443,8 @@ function AncestryAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!_.isEqual(newChoiceCounts, choiceCounts))
+          setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1298,12 +1452,18 @@ function AncestryAccordionItem(props: {
 
   // Only display the operation results that aren't already displayed in the ancestry overview
   const physicalFeatures = (props.content.abilityBlocks ?? []).filter(
-    (block) => block.type === 'physical-feature'
+    (block) => block.type === "physical-feature"
   );
-  const senses = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'sense');
-  const languages = (props.content.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
+  const senses = (props.content.abilityBlocks ?? []).filter(
+    (block) => block.type === "sense"
+  );
+  const languages = (props.content.languages ?? []).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
   const heritages = (props.content.abilityBlocks ?? []).filter(
-    (block) => block.type === 'heritage' && block.traits?.includes(props.ancestry?.trait_id ?? -1)
+    (block) =>
+      block.type === "heritage" &&
+      block.traits?.includes(props.ancestry?.trait_id ?? -1)
   );
   let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
   const ancestryInitialOverviewDisplay = props.ancestry
@@ -1312,7 +1472,7 @@ function AncestryAccordionItem(props: {
         physicalFeatures,
         senses,
         languages,
-        'READ/WRITE',
+        "READ/WRITE",
         props.operationResults?.ancestryResults ?? [],
         [character, setCharacter],
         openDrawer
@@ -1333,31 +1493,37 @@ function AncestryAccordionItem(props: {
     }
 
     // Filter operation results
-    ancestryOperationResults = ancestryOperationResults.filter((result: OperationResult) => {
-      return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
-      );
-    });
+    ancestryOperationResults = ancestryOperationResults.filter(
+      (result: OperationResult) => {
+        return !displayRecords.find(
+          (record) =>
+            result?.selection?.id !== undefined &&
+            record.operation?.id === result?.selection?.id
+        );
+      }
+    );
   }
 
   return (
     <Accordion.Item
-      value='ancestry'
+      value="ancestry"
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
       <Accordion.Control
         disabled={!props.ancestry}
-        icon={getIconFromContentType('ancestry', '1rem')}
+        icon={getIconFromContentType("ancestry", "1rem")}
       >
         <Group gap={5}>
           <Box>Ancestry</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
-            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {choiceCounts.max - choiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
@@ -1371,7 +1537,7 @@ function AncestryAccordionItem(props: {
                 senses={senses}
                 languages={languages}
                 heritages={heritages}
-                mode='READ/WRITE'
+                mode="READ/WRITE"
                 operationResults={props.operationResults.ancestryResults}
               />
             )}
@@ -1416,18 +1582,20 @@ function BackgroundAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!_.isEqual(newChoiceCounts, choiceCounts))
+          setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
   }, []);
 
   // Only display the operation results that aren't already displayed in the background overview
-  let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
+  let backgroundOperationResults =
+    props.operationResults?.backgroundResults ?? [];
   const backgroundInitialOverviewDisplay = props.background
     ? convertBackgroundOperationsIntoUI(
         props.background,
-        'READ/WRITE',
+        "READ/WRITE",
         props.operationResults?.backgroundResults ?? [],
         [character, setCharacter],
         openDrawer
@@ -1448,31 +1616,37 @@ function BackgroundAccordionItem(props: {
     }
 
     // Filter operation results
-    backgroundOperationResults = backgroundOperationResults.filter((result: OperationResult) => {
-      return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
-      );
-    });
+    backgroundOperationResults = backgroundOperationResults.filter(
+      (result: OperationResult) => {
+        return !displayRecords.find(
+          (record) =>
+            result?.selection?.id !== undefined &&
+            record.operation?.id === result?.selection?.id
+        );
+      }
+    );
   }
 
   return (
     <Accordion.Item
-      value='background'
+      value="background"
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
       <Accordion.Control
         disabled={!props.background}
-        icon={getIconFromContentType('background', '1rem')}
+        icon={getIconFromContentType("background", "1rem")}
       >
         <Group gap={5}>
           <Box>Background</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
-            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {choiceCounts.max - choiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
@@ -1482,7 +1656,7 @@ function BackgroundAccordionItem(props: {
             {props.background && (
               <BackgroundInitialOverview
                 background={props.background}
-                mode='READ/WRITE'
+                mode="READ/WRITE"
                 operationResults={props.operationResults.backgroundResults}
               />
             )}
@@ -1527,7 +1701,8 @@ function ClassAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!_.isEqual(newChoiceCounts, choiceCounts))
+          setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1538,7 +1713,7 @@ function ClassAccordionItem(props: {
   const classInitialOverviewDisplay = props.class_
     ? convertClassOperationsIntoUI(
         props.class_,
-        'READ/WRITE',
+        "READ/WRITE",
         props.operationResults?.classResults ?? [],
         [character, setCharacter]
       )
@@ -1558,28 +1733,37 @@ function ClassAccordionItem(props: {
     }
 
     // Filter operation results
-    classOperationResults = classOperationResults.filter((result: OperationResult) => {
-      return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
-      );
-    });
+    classOperationResults = classOperationResults.filter(
+      (result: OperationResult) => {
+        return !displayRecords.find(
+          (record) =>
+            result?.selection?.id !== undefined &&
+            record.operation?.id === result?.selection?.id
+        );
+      }
+    );
   }
 
   return (
     <Accordion.Item
-      value='class'
+      value="class"
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
-      <Accordion.Control disabled={!props.class_} icon={getIconFromContentType('class', '1rem')}>
+      <Accordion.Control
+        disabled={!props.class_}
+        icon={getIconFromContentType("class", "1rem")}
+      >
         <Group gap={5}>
           <Box>Class</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
-            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {choiceCounts.max - choiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
@@ -1589,7 +1773,7 @@ function ClassAccordionItem(props: {
             {props.class_ && (
               <ClassInitialOverview
                 class_={props.class_}
-                mode='READ/WRITE'
+                mode="READ/WRITE"
                 operationResults={props.operationResults.classResults}
               />
             )}
@@ -1633,7 +1817,8 @@ function BooksAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!_.isEqual(newChoiceCounts, choiceCounts))
+          setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1641,33 +1826,43 @@ function BooksAccordionItem(props: {
 
   return (
     <Accordion.Item
-      value='books'
+      value="books"
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
-      <Accordion.Control icon={getIconFromContentType('content-source', '1rem')}>
+      <Accordion.Control
+        icon={getIconFromContentType("content-source", "1rem")}
+      >
         <Group gap={5}>
           <Box>Books</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
-            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {choiceCounts.max - choiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={choiceCountRef}>
-        {props.operationResults.contentSourceResults.map((s: any, index: number) => (
-          <DisplayOperationResult
-            key={index}
-            source={s.baseSource}
-            level={character?.level ?? 1}
-            results={s.baseResults}
-            onChange={(path, value) => {
-              props.onSaveChanges(`content-source-${s.baseSource.id}_${path}`, value);
-            }}
-          />
-        ))}
+        {props.operationResults.contentSourceResults.map(
+          (s: any, index: number) => (
+            <DisplayOperationResult
+              key={index}
+              source={s.baseSource}
+              level={character?.level ?? 1}
+              results={s.baseResults}
+              onChange={(path, value) => {
+                props.onSaveChanges(
+                  `content-source-${s.baseSource.id}_${path}`,
+                  value
+                );
+              }}
+            />
+          )
+        )}
       </Accordion.Panel>
     </Accordion.Item>
   );
@@ -1693,7 +1888,8 @@ function ItemsAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!_.isEqual(newChoiceCounts, choiceCounts))
+          setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1701,18 +1897,21 @@ function ItemsAccordionItem(props: {
 
   return (
     <Accordion.Item
-      value='items'
+      value="items"
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
-      <Accordion.Control icon={getIconFromContentType('item', '1rem')}>
+      <Accordion.Control icon={getIconFromContentType("item", "1rem")}>
         <Group gap={5}>
           <Box>Items</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
-            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {choiceCounts.max - choiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
@@ -1755,7 +1954,8 @@ function CustomAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!_.isEqual(newChoiceCounts, choiceCounts))
+          setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1763,18 +1963,21 @@ function CustomAccordionItem(props: {
 
   return (
     <Accordion.Item
-      value='custom'
+      value="custom"
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor:
+          hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
-      <Accordion.Control icon={<IconPuzzle size='1rem' />}>
+      <Accordion.Control icon={<IconPuzzle size="1rem" />}>
         <Group gap={5}>
           <Box>Custom</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
-            <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
+            <Badge variant="filled">
+              {choiceCounts.max - choiceCounts.current}
+            </Badge>
           )}
         </Group>
       </Accordion.Control>
@@ -1809,7 +2012,10 @@ function DisplayOperationResult(props: {
   };
 
   return (
-    <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>
+    <ResultWrapper
+      label={`From ${props.source?.name ?? "Unknown"}`}
+      disabled={!props.source}
+    >
       <Stack gap={10}>
         {props.results
           .filter((result) => hasSelection(result))
@@ -1820,21 +2026,27 @@ function DisplayOperationResult(props: {
                   type={
                     (result?.selection?.options ?? []).length > 0
                       ? result?.selection?.options[0]._content_type
-                      : 'ability-block'
+                      : "ability-block"
                   }
                   onClick={(option) => {
-                    props.onChange(result.selection?.id ?? '', option._select_uuid);
+                    props.onChange(
+                      result.selection?.id ?? "",
+                      option._select_uuid
+                    );
                   }}
                   onClear={() => {
-                    props.onChange(result.selection?.id ?? '', '');
+                    props.onChange(result.selection?.id ?? "", "");
                   }}
                   selectedId={result.result?.source?.id}
                   options={{
-                    overrideOptions: result?.selection?.options.map((option) => ({
-                      ...option,
-                      _source_level: props.level,
-                    })),
-                    overrideLabel: result?.selection?.title || 'Select an Option',
+                    overrideOptions: result?.selection?.options.map(
+                      (option) => ({
+                        ...option,
+                        _source_level: props.level,
+                      })
+                    ),
+                    overrideLabel:
+                      result?.selection?.title || "Select an Option",
                     abilityBlockType:
                       (result?.selection?.options ?? []).length > 0
                         ? result?.selection?.options[0].type
@@ -1849,8 +2061,8 @@ function DisplayOperationResult(props: {
                   level={props.level}
                   results={result.result.results}
                   onChange={(path, value) => {
-                    let selectionUUID = result.selection?.id ?? '';
-                    let resultUUID = result.result?.source?._select_uuid ?? '';
+                    let selectionUUID = result.selection?.id ?? "";
+                    let resultUUID = result.result?.source?._select_uuid ?? "";
 
                     let newPath = path;
                     if (resultUUID) newPath = `${resultUUID}_${newPath}`;

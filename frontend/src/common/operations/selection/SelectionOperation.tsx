@@ -1,24 +1,7 @@
-import { SelectContentButton } from '@common/select/SelectContent';
-import { AbilityBlock, AbilityBlockType, Language, Rarity, Spell } from '@typing/content';
-import { OperationSection, OperationWrapper } from '../Operations';
-import {
-  OperationSelectOptionType,
-  OperationSelectOption,
-  OperationSelectFilters,
-  OperationSelectFiltersAbilityBlock,
-  OperationSelectFiltersSpell,
-  OperationSelectFiltersLanguage,
-  OperationSelectOptionAbilityBlock,
-  OperationGiveAbilityBlock,
-  OperationSelectOptionSpell,
-  OperationGiveSpell,
-  OperationSelectOptionLanguage,
-  OperationGiveLanguage,
-  OperationSelectOptionAdjValue,
-  OperationAdjValue,
-  OperationSelectFiltersAdjValue,
-  OperationSelectOptionCustom,
-} from '@typing/operations';
+import VariableSelect from "@common/VariableSelect";
+import RichTextInput from "@common/rich_text_input/RichTextInput";
+import { SelectContentButton } from "@common/select/SelectContent";
+import { toHTML } from "@content/content-utils";
 import {
   ActionIcon,
   Anchor,
@@ -38,32 +21,52 @@ import {
   TextInput,
   Tooltip,
   useMantineTheme,
-} from '@mantine/core';
-import { useState } from 'react';
-import { useDidUpdate, useDisclosure } from '@mantine/hooks';
-import { isString, set } from 'lodash';
-import { createDefaultOperation } from '@operations/operation-utils';
-import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
-import { setOption } from 'showdown';
-import VariableSelect from '@common/VariableSelect';
+} from "@mantine/core";
+import { useDidUpdate, useDisclosure } from "@mantine/hooks";
+import { createDefaultOperation } from "@operations/operation-utils";
+import { IconCircleMinus, IconCirclePlus } from "@tabler/icons-react";
+import { JSONContent } from "@tiptap/react";
 import {
-  AttributeValue,
+  AbilityBlock,
+  AbilityBlockType,
+  Language,
+  Rarity,
+  Spell,
+} from "@typing/content";
+import {
+  OperationAdjValue,
+  OperationGiveAbilityBlock,
+  OperationGiveLanguage,
+  OperationGiveSpell,
+  OperationSelectFilters,
+  OperationSelectFiltersAbilityBlock,
+  OperationSelectFiltersAdjValue,
+  OperationSelectFiltersLanguage,
+  OperationSelectFiltersSpell,
+  OperationSelectOption,
+  OperationSelectOptionAbilityBlock,
+  OperationSelectOptionAdjValue,
+  OperationSelectOptionCustom,
+  OperationSelectOptionLanguage,
+  OperationSelectOptionSpell,
+  OperationSelectOptionType,
+} from "@typing/operations";
+import {
   ExtendedProficiencyValue,
   VariableType,
   VariableValue,
-} from '@typing/variables';
-import { AdjustValueInput } from '../variables/AdjValOperation';
-import { getVariable } from '@variables/variable-manager';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { toHTML } from '@content/content-utils';
-import useRefresh from '@utils/use-refresh';
-import { JSONContent } from '@tiptap/react';
+} from "@typing/variables";
+import useRefresh from "@utils/use-refresh";
+import { getVariable } from "@variables/variable-manager";
+import { useState } from "react";
+import { OperationSection, OperationWrapper } from "../Operations";
+import { AdjustValueInput } from "../variables/AdjValOperation";
 
 export function SelectionOperation(props: {
   data: {
     title?: string;
     description?: string;
-    modeType: 'PREDEFINED' | 'FILTERED';
+    modeType: "PREDEFINED" | "FILTERED";
     optionType: OperationSelectOptionType;
     optionsPredefined?: OperationSelectOption[];
     optionsFilters?: OperationSelectFilters;
@@ -71,16 +74,15 @@ export function SelectionOperation(props: {
   onChange: (option: {
     title?: string;
     description?: string;
-    modeType: 'PREDEFINED' | 'FILTERED';
+    modeType: "PREDEFINED" | "FILTERED";
     optionType: OperationSelectOptionType;
     optionsPredefined?: OperationSelectOption[];
     optionsFilters?: OperationSelectFilters;
   }) => void;
   onRemove: () => void;
 }) {
-  const [optionType, setOptionType] = useState<OperationSelectOptionType | null>(
-    props.data.optionType
-  );
+  const [optionType, setOptionType] =
+    useState<OperationSelectOptionType | null>(props.data.optionType);
 
   const [title, setTitle] = useState<string | undefined>(props.data.title);
   const [modeType, setModeType] = useState(props.data.modeType);
@@ -96,7 +98,7 @@ export function SelectionOperation(props: {
     props.onChange({
       title: title,
       modeType: modeType,
-      optionType: optionType ?? 'ABILITY_BLOCK',
+      optionType: optionType ?? "ABILITY_BLOCK",
       optionsPredefined: options,
       optionsFilters: filters,
     });
@@ -111,31 +113,33 @@ export function SelectionOperation(props: {
   }, [props.data]);
 
   return (
-    <OperationWrapper onRemove={props.onRemove} title='Selection'>
-      <Stack w='100%'>
+    <OperationWrapper onRemove={props.onRemove} title="Selection">
+      <Stack w="100%">
         <Select
-          placeholder='Type'
-          size='xs'
+          placeholder="Type"
+          size="xs"
           w={130}
           data={
             [
-              { label: 'Ability Block', value: 'ABILITY_BLOCK' },
-              { label: 'Spell', value: 'SPELL' },
-              { label: 'Adjust Value', value: 'ADJ_VALUE' },
-              { label: 'Language', value: 'LANGUAGE' },
-              { label: 'Custom', value: 'CUSTOM' },
+              { label: "Ability Block", value: "ABILITY_BLOCK" },
+              { label: "Spell", value: "SPELL" },
+              { label: "Adjust Value", value: "ADJ_VALUE" },
+              { label: "Language", value: "LANGUAGE" },
+              { label: "Custom", value: "CUSTOM" },
             ] satisfies { label: string; value: OperationSelectOptionType }[]
           }
           value={optionType}
-          onChange={(value) => setOptionType(value as OperationSelectOptionType | null)}
+          onChange={(value) =>
+            setOptionType(value as OperationSelectOptionType | null)
+          }
         />
         <Stack gap={10}>
           <Box>
             <TextInput
-              label='Selection Title'
+              label="Selection Title"
               placeholder='"Select an Option"'
               value={title}
-              size='xs'
+              size="xs"
               onChange={(e) => setTitle(e.target.value)}
             />
           </Box>
@@ -144,34 +148,36 @@ export function SelectionOperation(props: {
             <Divider
               label={
                 <>
-                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE'].includes(
-                    optionType ?? ''
+                  {["ABILITY_BLOCK", "SPELL", "LANGUAGE", "ADJ_VALUE"].includes(
+                    optionType ?? ""
                   ) && (
                     <SegmentedControl
-                      size='xs'
+                      size="xs"
                       value={modeType}
-                      onChange={(value) => setModeType(value as 'PREDEFINED' | 'FILTERED')}
+                      onChange={(value) =>
+                        setModeType(value as "PREDEFINED" | "FILTERED")
+                      }
                       data={[
-                        { label: 'Predefined', value: 'PREDEFINED' },
-                        { label: 'Filtered', value: 'FILTERED' },
+                        { label: "Predefined", value: "PREDEFINED" },
+                        { label: "Filtered", value: "FILTERED" },
                       ]}
                     />
                   )}
                 </>
               }
-              labelPosition='left'
+              labelPosition="left"
             />
           </Box>
 
-          <Box py='sm'>
-            {modeType === 'PREDEFINED' && (
+          <Box py="sm">
+            {modeType === "PREDEFINED" && (
               <SelectionPredefined
                 optionType={optionType}
                 options={options}
                 onChange={(options) => setOptions(options)}
               />
             )}
-            {modeType === 'FILTERED' && (
+            {modeType === "FILTERED" && (
               <SelectionFiltered
                 optionType={optionType}
                 filters={filters}
@@ -190,7 +196,7 @@ function SelectionFiltered(props: {
   filters?: OperationSelectFilters;
   onChange: (filters: OperationSelectFilters) => void;
 }) {
-  if (props.optionType === 'ABILITY_BLOCK') {
+  if (props.optionType === "ABILITY_BLOCK") {
     return (
       <SelectionFilteredAbilityBlock
         optionType={props.optionType}
@@ -199,7 +205,7 @@ function SelectionFiltered(props: {
       />
     );
   }
-  if (props.optionType === 'SPELL') {
+  if (props.optionType === "SPELL") {
     return (
       <SelectionFilteredSpell
         optionType={props.optionType}
@@ -208,7 +214,7 @@ function SelectionFiltered(props: {
       />
     );
   }
-  if (props.optionType === 'LANGUAGE') {
+  if (props.optionType === "LANGUAGE") {
     return (
       <SelectionFilteredLanguage
         optionType={props.optionType}
@@ -217,7 +223,7 @@ function SelectionFiltered(props: {
       />
     );
   }
-  if (props.optionType === 'ADJ_VALUE') {
+  if (props.optionType === "ADJ_VALUE") {
     return (
       <SelectionFilteredAdjValue
         optionType={props.optionType}
@@ -235,19 +241,23 @@ function SelectionFilteredAbilityBlock(props: {
   filters?: OperationSelectFiltersAbilityBlock;
   onChange: (filters: OperationSelectFiltersAbilityBlock) => void;
 }) {
-  const [type, setType] = useState<AbilityBlockType | undefined>(props.filters?.abilityBlockType);
+  const [type, setType] = useState<AbilityBlockType | undefined>(
+    props.filters?.abilityBlockType
+  );
   const [minLevel, setMinLevel] = useState<number | undefined>(
     props.filters?.level.min ?? undefined
   );
   const [maxLevel, setMaxLevel] = useState<number | undefined>(
     props.filters?.level.max ?? undefined
   );
-  const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
+  const [traits, setTraits] = useState<string[]>(
+    (props.filters?.traits as string[]) ?? []
+  );
 
   useDidUpdate(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
-      type: 'ABILITY_BLOCK',
+      type: "ABILITY_BLOCK",
       level: {
         min: minLevel,
         max: maxLevel,
@@ -262,37 +272,39 @@ function SelectionFilteredAbilityBlock(props: {
       <Select
         data={
           [
-            { label: 'Action', value: 'action' },
-            { label: 'Feat', value: 'feat' },
-            { label: 'Physical Feature', value: 'physical-feature' },
-            { label: 'Sense', value: 'sense' },
-            { label: 'Class Feature', value: 'class-feature' },
-            { label: 'Heritage', value: 'heritage' },
+            { label: "Action", value: "action" },
+            { label: "Feat", value: "feat" },
+            { label: "Physical Feature", value: "physical-feature" },
+            { label: "Sense", value: "sense" },
+            { label: "Class Feature", value: "class-feature" },
+            { label: "Heritage", value: "heritage" },
           ] satisfies { label: string; value: AbilityBlockType }[]
         }
         value={type}
-        onChange={(value) => setType(value ? (value as AbilityBlockType) : undefined)}
+        onChange={(value) =>
+          setType(value ? (value as AbilityBlockType) : undefined)
+        }
       />
 
       <Box>
-        <Text c='gray.4' fz='xs'>
+        <Text c="gray.4" fz="xs">
           Levels
         </Text>
         <Group>
           <NumberInput
-            placeholder='Min'
+            placeholder="Min"
             value={minLevel}
             onChange={(value) => setMinLevel(parseInt(`${value}`))}
-            size='xs'
+            size="xs"
             min={-1}
             max={20}
           />
           -
           <NumberInput
-            placeholder='Max'
+            placeholder="Max"
             value={maxLevel}
             onChange={(value) => setMaxLevel(parseInt(`${value}`))}
-            size='xs'
+            size="xs"
             min={-1}
             max={20}
           />
@@ -300,10 +312,10 @@ function SelectionFilteredAbilityBlock(props: {
       </Box>
 
       <TagsInput
-        label='Has Traits'
-        placeholder='Enter trait'
-        size='xs'
-        splitChars={[',', ';', '|']}
+        label="Has Traits"
+        placeholder="Enter trait"
+        size="xs"
+        splitChars={[",", ";", "|"]}
         data={[]}
         value={traits}
         onChange={setTraits}
@@ -324,12 +336,14 @@ function SelectionFilteredSpell(props: {
     props.filters?.level.max ?? undefined
   );
   const [traits, setTraits] = useState<string[]>(props.filters?.traits ?? []);
-  const [traditions, setTraditions] = useState<string[]>(props.filters?.traditions ?? []);
+  const [traditions, setTraditions] = useState<string[]>(
+    props.filters?.traditions ?? []
+  );
 
   useDidUpdate(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
-      type: 'SPELL',
+      type: "SPELL",
       level: {
         min: minLevel,
         max: maxLevel,
@@ -342,24 +356,24 @@ function SelectionFilteredSpell(props: {
   return (
     <Stack gap={10}>
       <Box>
-        <Text c='gray.4' fz='xs'>
+        <Text c="gray.4" fz="xs">
           Levels
         </Text>
         <Group>
           <NumberInput
-            placeholder='Min'
+            placeholder="Min"
             value={minLevel}
             onChange={(value) => setMinLevel(parseInt(`${value}`))}
-            size='xs'
+            size="xs"
             min={-1}
             max={20}
           />
           -
           <NumberInput
-            placeholder='Max'
+            placeholder="Max"
             value={maxLevel}
             onChange={(value) => setMaxLevel(parseInt(`${value}`))}
-            size='xs'
+            size="xs"
             min={-1}
             max={20}
           />
@@ -367,21 +381,21 @@ function SelectionFilteredSpell(props: {
       </Box>
 
       <TagsInput
-        label='Has Traits'
-        placeholder='Enter trait'
-        size='xs'
-        splitChars={[',', ';', '|']}
+        label="Has Traits"
+        placeholder="Enter trait"
+        size="xs"
+        splitChars={[",", ";", "|"]}
         data={[]}
         value={traits}
         onChange={setTraits}
       />
 
       <TagsInput
-        label='Has Traditions'
-        placeholder='Enter tradition'
-        size='xs'
-        splitChars={[',', ';', '|']}
-        data={['Arcane', 'Divine', 'Occult', 'Primal']}
+        label="Has Traditions"
+        placeholder="Enter tradition"
+        size="xs"
+        splitChars={[",", ";", "|"]}
+        data={["Arcane", "Divine", "Occult", "Primal"]}
         value={traditions}
         onChange={setTraditions}
       />
@@ -394,13 +408,17 @@ function SelectionFilteredLanguage(props: {
   filters?: OperationSelectFiltersLanguage;
   onChange: (filters: OperationSelectFiltersLanguage) => void;
 }) {
-  const [rarity, setRarity] = useState<Rarity | undefined>(props.filters?.rarity ?? undefined);
-  const [core, setCore] = useState<boolean | undefined>(props.filters?.core ?? undefined);
+  const [rarity, setRarity] = useState<Rarity | undefined>(
+    props.filters?.rarity ?? undefined
+  );
+  const [core, setCore] = useState<boolean | undefined>(
+    props.filters?.core ?? undefined
+  );
 
   useDidUpdate(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
-      type: 'LANGUAGE',
+      type: "LANGUAGE",
       rarity: rarity,
       core: core,
     });
@@ -410,14 +428,14 @@ function SelectionFilteredLanguage(props: {
     <Stack gap={10}>
       <Box>
         <Select
-          label='Rarity'
-          placeholder='Select rarity'
+          label="Rarity"
+          placeholder="Select rarity"
           data={
             [
-              { label: 'Common', value: 'COMMON' },
-              { label: 'Uncommon', value: 'UNCOMMON' },
-              { label: 'Rare', value: 'RARE' },
-              { label: 'Unique', value: 'UNIQUE' },
+              { label: "Common", value: "COMMON" },
+              { label: "Uncommon", value: "UNCOMMON" },
+              { label: "Rare", value: "RARE" },
+              { label: "Unique", value: "UNIQUE" },
             ] satisfies { label: string; value: Rarity }[]
           }
           value={rarity}
@@ -428,25 +446,25 @@ function SelectionFilteredLanguage(props: {
               setRarity(value as Rarity);
             }
           }}
-          size='xs'
+          size="xs"
         />
       </Box>
 
       <Box>
         <SegmentedControl
-          size='xs'
-          value={core === undefined ? 'ANY' : core ? 'CORE' : 'NON-CORE'}
+          size="xs"
+          value={core === undefined ? "ANY" : core ? "CORE" : "NON-CORE"}
           onChange={(value) => {
-            if (value === 'ANY') {
+            if (value === "ANY") {
               setCore(undefined);
             } else {
-              setCore(value === 'CORE');
+              setCore(value === "CORE");
             }
           }}
           data={[
-            { label: 'Any', value: 'ANY' },
-            { label: 'Core Only', value: 'CORE' },
-            { label: 'Non-Core Only', value: 'NON-CORE' },
+            { label: "Any", value: "ANY" },
+            { label: "Core Only", value: "CORE" },
+            { label: "Non-Core Only", value: "NON-CORE" },
           ]}
         />
       </Box>
@@ -459,17 +477,19 @@ function SelectionFilteredAdjValue(props: {
   filters?: OperationSelectFiltersAdjValue;
   onChange: (filters: OperationSelectFiltersAdjValue) => void;
 }) {
-  const [group, setGroup] = useState<string | undefined>(props.filters?.group ?? undefined);
-  const [value, setValue] = useState<VariableValue | ExtendedProficiencyValue | undefined>(
-    props.filters?.value ?? undefined
+  const [group, setGroup] = useState<string | undefined>(
+    props.filters?.group ?? undefined
   );
+  const [value, setValue] = useState<
+    VariableValue | ExtendedProficiencyValue | undefined
+  >(props.filters?.value ?? undefined);
 
   useDidUpdate(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
-      type: 'ADJ_VALUE',
-      group: (group ?? 'SKILL') as OperationSelectFiltersAdjValue['group'],
-      value: value ?? '',
+      type: "ADJ_VALUE",
+      group: (group ?? "SKILL") as OperationSelectFiltersAdjValue["group"],
+      value: value ?? "",
     });
   }, [group, value]);
 
@@ -477,19 +497,19 @@ function SelectionFilteredAdjValue(props: {
     <Stack gap={10}>
       <Box>
         <SegmentedControl
-          size='xs'
+          size="xs"
           value={group}
           onChange={(value) => {
             setGroup(value);
           }}
           data={[
-            { label: 'Skill', value: 'SKILL' },
-            { label: 'Add Lore', value: 'ADD-LORE' },
-            { label: 'Attribute', value: 'ATTRIBUTE' },
-            { label: 'Weapon Group', value: 'WEAPON-GROUP' },
-            { label: 'Weapon', value: 'WEAPON' },
-            { label: 'Armor Group', value: 'ARMOR-GROUP' },
-            { label: 'Armor', value: 'ARMOR' },
+            { label: "Skill", value: "SKILL" },
+            { label: "Add Lore", value: "ADD-LORE" },
+            { label: "Attribute", value: "ATTRIBUTE" },
+            { label: "Weapon Group", value: "WEAPON-GROUP" },
+            { label: "Weapon", value: "WEAPON" },
+            { label: "Armor Group", value: "ARMOR-GROUP" },
+            { label: "Armor", value: "ARMOR" },
           ]}
         />
       </Box>
@@ -497,13 +517,13 @@ function SelectionFilteredAdjValue(props: {
       <Box>
         {group && (
           <AdjustValueInput
-            variableType={group === 'ATTRIBUTE' ? 'attr' : 'prof'}
-            value={value ?? ''}
+            variableType={group === "ATTRIBUTE" ? "attr" : "prof"}
+            value={value ?? ""}
             onChange={(value) => {
               setValue(value);
             }}
             options={{
-              profExtended: group === 'Skill' || group === 'ADD-LORE',
+              profExtended: group === "Skill" || group === "ADD-LORE",
             }}
           />
         )}
@@ -517,17 +537,17 @@ function SelectionPredefined(props: {
   options?: OperationSelectOption[];
   onChange: (options: OperationSelectOption[]) => void;
 }) {
-  if (props.optionType === 'ABILITY_BLOCK') {
+  if (props.optionType === "ABILITY_BLOCK") {
     return (
       <SelectionPredefinedAbilityBlock
         optionType={props.optionType}
         options={props.options as OperationSelectOptionAbilityBlock[]}
         onChange={props.onChange}
-        type='feat'
+        type="feat"
       />
     );
   }
-  if (props.optionType === 'SPELL') {
+  if (props.optionType === "SPELL") {
     return (
       <SelectionPredefinedSpell
         optionType={props.optionType}
@@ -536,7 +556,7 @@ function SelectionPredefined(props: {
       />
     );
   }
-  if (props.optionType === 'LANGUAGE') {
+  if (props.optionType === "LANGUAGE") {
     return (
       <SelectionPredefinedLanguage
         optionType={props.optionType}
@@ -545,7 +565,7 @@ function SelectionPredefined(props: {
       />
     );
   }
-  if (props.optionType === 'ADJ_VALUE') {
+  if (props.optionType === "ADJ_VALUE") {
     return (
       <SelectionPredefinedAdjValue
         optionType={props.optionType}
@@ -554,7 +574,7 @@ function SelectionPredefined(props: {
       />
     );
   }
-  if (props.optionType === 'CUSTOM') {
+  if (props.optionType === "CUSTOM") {
     return (
       <SelectionPredefinedCustom
         optionType={props.optionType}
@@ -573,7 +593,9 @@ function SelectionPredefinedAbilityBlock(props: {
   onChange: (options: OperationSelectOptionAbilityBlock[]) => void;
   type: AbilityBlockType;
 }) {
-  const [options, setOptions] = useState<OperationSelectOptionAbilityBlock[]>(props.options ?? []);
+  const [options, setOptions] = useState<OperationSelectOptionAbilityBlock[]>(
+    props.options ?? []
+  );
 
   useDidUpdate(() => {
     props.onChange(options);
@@ -584,8 +606,10 @@ function SelectionPredefinedAbilityBlock(props: {
       ? ([
           {
             id: crypto.randomUUID(),
-            type: 'ABILITY_BLOCK',
-            operation: createDefaultOperation('giveAbilityBlock') as OperationGiveAbilityBlock,
+            type: "ABILITY_BLOCK",
+            operation: createDefaultOperation(
+              "giveAbilityBlock"
+            ) as OperationGiveAbilityBlock,
           },
         ] satisfies OperationSelectOptionAbilityBlock[])
       : options;
@@ -593,15 +617,15 @@ function SelectionPredefinedAbilityBlock(props: {
   return (
     <Stack gap={10}>
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={index} wrap="nowrap" style={{ position: "relative" }}>
           <SelectContentButton<AbilityBlock>
-            type='ability-block'
+            type="ability-block"
             onClick={(selected) => {
               setOptions((prev) => {
                 const ops = [...prev].filter((op) => op.id !== option.id);
                 ops.push({
                   id: option.id,
-                  type: 'ABILITY_BLOCK',
+                  type: "ABILITY_BLOCK",
                   operation: {
                     ...option.operation,
                     data: {
@@ -618,54 +642,60 @@ function SelectionPredefinedAbilityBlock(props: {
               abilityBlockType: props.type,
             }}
           />
-          {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
-            <Tooltip label='Remove Option' position='right' withArrow withinPortal>
-              <ActionIcon
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  left: -40,
-                }}
-                size='sm'
-                variant='subtle'
-                color='gray'
-                onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
-                  });
-                }}
+          {optionsForUI[optionsForUI.length - 1].id === option.id &&
+            index !== 0 && (
+              <Tooltip
+                label="Remove Option"
+                position="right"
+                withArrow
+                withinPortal
               >
-                <IconCircleMinus size='0.9rem' />
-              </ActionIcon>
-            </Tooltip>
-          )}
+                <ActionIcon
+                  style={{
+                    position: "absolute",
+                    top: -5,
+                    left: -40,
+                  }}
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setOptions((prev) => {
+                      const ops = [...prev].filter((op) => op.id !== option.id);
+                      return ops;
+                    });
+                  }}
+                >
+                  <IconCircleMinus size="0.9rem" />
+                </ActionIcon>
+              </Tooltip>
+            )}
           {optionsForUI[optionsForUI.length - 1].id === option.id && (
-            <Tooltip label='Add Option' position='right' withArrow withinPortal>
+            <Tooltip label="Add Option" position="right" withArrow withinPortal>
               <ActionIcon
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 18,
                   left: -40,
                 }}
-                size='sm'
-                variant='subtle'
-                color='gray'
+                size="sm"
+                variant="subtle"
+                color="gray"
                 onClick={() => {
                   setOptions((prev) => {
                     const ops = [...optionsForUI];
                     ops.push({
                       id: crypto.randomUUID(),
-                      type: 'ABILITY_BLOCK',
+                      type: "ABILITY_BLOCK",
                       operation: createDefaultOperation(
-                        'giveAbilityBlock'
+                        "giveAbilityBlock"
                       ) as OperationGiveAbilityBlock,
                     });
                     return ops;
                   });
                 }}
               >
-                <IconCirclePlus size='0.9rem' />
+                <IconCirclePlus size="0.9rem" />
               </ActionIcon>
             </Tooltip>
           )}
@@ -680,7 +710,9 @@ function SelectionPredefinedSpell(props: {
   options?: OperationSelectOptionSpell[];
   onChange: (options: OperationSelectOptionSpell[]) => void;
 }) {
-  const [options, setOptions] = useState<OperationSelectOptionSpell[]>(props.options ?? []);
+  const [options, setOptions] = useState<OperationSelectOptionSpell[]>(
+    props.options ?? []
+  );
 
   useDidUpdate(() => {
     props.onChange(options);
@@ -691,8 +723,10 @@ function SelectionPredefinedSpell(props: {
       ? ([
           {
             id: crypto.randomUUID(),
-            type: 'SPELL',
-            operation: createDefaultOperation('giveSpell') as OperationGiveSpell,
+            type: "SPELL",
+            operation: createDefaultOperation(
+              "giveSpell"
+            ) as OperationGiveSpell,
           },
         ] satisfies OperationSelectOptionSpell[])
       : options;
@@ -700,15 +734,15 @@ function SelectionPredefinedSpell(props: {
   return (
     <Stack gap={10}>
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={index} wrap="nowrap" style={{ position: "relative" }}>
           <SelectContentButton<Spell>
-            type='spell'
+            type="spell"
             onClick={(selected) => {
               setOptions((prev) => {
                 const ops = [...prev].filter((op) => op.id !== option.id);
                 ops.push({
                   id: option.id,
-                  type: 'SPELL',
+                  type: "SPELL",
                   operation: {
                     ...option.operation,
                     data: {
@@ -722,52 +756,60 @@ function SelectionPredefinedSpell(props: {
             }}
             selectedId={option.operation.data.spellId}
           />
-          {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
-            <Tooltip label='Remove Option' position='right' withArrow withinPortal>
-              <ActionIcon
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  left: -40,
-                }}
-                size='sm'
-                variant='subtle'
-                color='gray'
-                onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
-                  });
-                }}
+          {optionsForUI[optionsForUI.length - 1].id === option.id &&
+            index !== 0 && (
+              <Tooltip
+                label="Remove Option"
+                position="right"
+                withArrow
+                withinPortal
               >
-                <IconCircleMinus size='0.9rem' />
-              </ActionIcon>
-            </Tooltip>
-          )}
+                <ActionIcon
+                  style={{
+                    position: "absolute",
+                    top: -5,
+                    left: -40,
+                  }}
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setOptions((prev) => {
+                      const ops = [...prev].filter((op) => op.id !== option.id);
+                      return ops;
+                    });
+                  }}
+                >
+                  <IconCircleMinus size="0.9rem" />
+                </ActionIcon>
+              </Tooltip>
+            )}
           {optionsForUI[optionsForUI.length - 1].id === option.id && (
-            <Tooltip label='Add Option' position='right' withArrow withinPortal>
+            <Tooltip label="Add Option" position="right" withArrow withinPortal>
               <ActionIcon
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 18,
                   left: -40,
                 }}
-                size='sm'
-                variant='subtle'
-                color='gray'
+                size="sm"
+                variant="subtle"
+                color="gray"
                 onClick={() => {
                   setOptions((prev) => {
                     const ops = [...optionsForUI];
                     ops.push({
                       id: crypto.randomUUID(),
-                      type: 'SPELL',
-                      operation: createDefaultOperation('giveSpell') as OperationGiveSpell,
+                      type: "SPELL",
+                      operation: createDefaultOperation(
+                        "giveSpell"
+                      ) as OperationGiveSpell,
                     });
                     return ops;
                   });
                 }}
               >
-                <IconCirclePlus size='0.9rem' />
+                <IconCirclePlus size="0.9rem" />
               </ActionIcon>
             </Tooltip>
           )}
@@ -782,7 +824,9 @@ function SelectionPredefinedLanguage(props: {
   options?: OperationSelectOptionLanguage[];
   onChange: (options: OperationSelectOptionLanguage[]) => void;
 }) {
-  const [options, setOptions] = useState<OperationSelectOptionLanguage[]>(props.options ?? []);
+  const [options, setOptions] = useState<OperationSelectOptionLanguage[]>(
+    props.options ?? []
+  );
 
   useDidUpdate(() => {
     props.onChange(options);
@@ -793,8 +837,10 @@ function SelectionPredefinedLanguage(props: {
       ? ([
           {
             id: crypto.randomUUID(),
-            type: 'LANGUAGE',
-            operation: createDefaultOperation('giveLanguage') as OperationGiveLanguage,
+            type: "LANGUAGE",
+            operation: createDefaultOperation(
+              "giveLanguage"
+            ) as OperationGiveLanguage,
           },
         ] satisfies OperationSelectOptionLanguage[])
       : options;
@@ -802,15 +848,15 @@ function SelectionPredefinedLanguage(props: {
   return (
     <Stack gap={10}>
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={index} wrap="nowrap" style={{ position: "relative" }}>
           <SelectContentButton<Language>
-            type='language'
+            type="language"
             onClick={(selected) => {
               setOptions((prev) => {
                 const ops = [...prev].filter((op) => op.id !== option.id);
                 ops.push({
                   id: option.id,
-                  type: 'LANGUAGE',
+                  type: "LANGUAGE",
                   operation: {
                     ...option.operation,
                     data: {
@@ -824,52 +870,60 @@ function SelectionPredefinedLanguage(props: {
             }}
             selectedId={option.operation.data.languageId}
           />
-          {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
-            <Tooltip label='Remove Option' position='right' withArrow withinPortal>
-              <ActionIcon
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  left: -40,
-                }}
-                size='sm'
-                variant='subtle'
-                color='gray'
-                onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
-                  });
-                }}
+          {optionsForUI[optionsForUI.length - 1].id === option.id &&
+            index !== 0 && (
+              <Tooltip
+                label="Remove Option"
+                position="right"
+                withArrow
+                withinPortal
               >
-                <IconCircleMinus size='0.9rem' />
-              </ActionIcon>
-            </Tooltip>
-          )}
+                <ActionIcon
+                  style={{
+                    position: "absolute",
+                    top: -5,
+                    left: -40,
+                  }}
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setOptions((prev) => {
+                      const ops = [...prev].filter((op) => op.id !== option.id);
+                      return ops;
+                    });
+                  }}
+                >
+                  <IconCircleMinus size="0.9rem" />
+                </ActionIcon>
+              </Tooltip>
+            )}
           {optionsForUI[optionsForUI.length - 1].id === option.id && (
-            <Tooltip label='Add Option' position='right' withArrow withinPortal>
+            <Tooltip label="Add Option" position="right" withArrow withinPortal>
               <ActionIcon
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 18,
                   left: -40,
                 }}
-                size='sm'
-                variant='subtle'
-                color='gray'
+                size="sm"
+                variant="subtle"
+                color="gray"
                 onClick={() => {
                   setOptions((prev) => {
                     const ops = [...optionsForUI];
                     ops.push({
                       id: crypto.randomUUID(),
-                      type: 'LANGUAGE',
-                      operation: createDefaultOperation('giveLanguage') as OperationGiveLanguage,
+                      type: "LANGUAGE",
+                      operation: createDefaultOperation(
+                        "giveLanguage"
+                      ) as OperationGiveLanguage,
                     });
                     return ops;
                   });
                 }}
               >
-                <IconCirclePlus size='0.9rem' />
+                <IconCirclePlus size="0.9rem" />
               </ActionIcon>
             </Tooltip>
           )}
@@ -886,12 +940,17 @@ function SelectionPredefinedAdjValue(props: {
 }) {
   const [variableType, setVariableType] = useState<VariableType>(
     (props.options ?? []).length > 0
-      ? getVariable('CHARACTER', props.options![0].operation.data.variable)?.type ?? 'prof'
-      : 'prof'
+      ? getVariable("CHARACTER", props.options![0].operation.data.variable)
+          ?.type ?? "prof"
+      : "prof"
   );
-  const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);
+  const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(
+    props.options ?? []
+  );
   const [adjustment, setAdjustment] = useState<VariableValue | undefined>(
-    (props.options ?? []).length > 0 ? props.options![0].operation.data.value : undefined
+    (props.options ?? []).length > 0
+      ? props.options![0].operation.data.value
+      : undefined
   );
 
   useDidUpdate(() => {
@@ -903,8 +962,8 @@ function SelectionPredefinedAdjValue(props: {
       ? ([
           {
             id: crypto.randomUUID(),
-            type: 'ADJ_VALUE',
-            operation: createDefaultOperation('adjValue') as OperationAdjValue,
+            type: "ADJ_VALUE",
+            operation: createDefaultOperation("adjValue") as OperationAdjValue,
           },
         ] satisfies OperationSelectOptionAdjValue[])
       : options;
@@ -913,22 +972,22 @@ function SelectionPredefinedAdjValue(props: {
     <Stack gap={10}>
       <Group>
         <Select
-          size='xs'
-          placeholder='Value Type'
+          size="xs"
+          placeholder="Value Type"
           data={
             [
-              { label: 'String', value: 'str' },
-              { label: 'Number', value: 'num' },
-              { label: 'Boolean', value: 'bool' },
-              { label: 'Proficiency', value: 'prof' },
-              { label: 'Attribute', value: 'attr' },
-              { label: 'List', value: 'list-str' },
+              { label: "String", value: "str" },
+              { label: "Number", value: "num" },
+              { label: "Boolean", value: "bool" },
+              { label: "Proficiency", value: "prof" },
+              { label: "Attribute", value: "attr" },
+              { label: "List", value: "list-str" },
             ] satisfies { label: string; value: VariableType }[]
           }
           value={variableType}
           onChange={(value) => {
             if (value === null) {
-              setVariableType('prof');
+              setVariableType("prof");
             }
             setVariableType(value as VariableType);
             setOptions([]);
@@ -937,7 +996,7 @@ function SelectionPredefinedAdjValue(props: {
         />
         <AdjustValueInput
           variableType={variableType}
-          value={adjustment ?? ''}
+          value={adjustment ?? ""}
           onChange={(value) => {
             setAdjustment(value);
           }}
@@ -945,7 +1004,7 @@ function SelectionPredefinedAdjValue(props: {
       </Group>
 
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={index} wrap="nowrap" style={{ position: "relative" }}>
           <VariableSelect
             value={option.operation.data.variable}
             onChange={(variableName, variable) => {
@@ -953,7 +1012,7 @@ function SelectionPredefinedAdjValue(props: {
                 const ops = [...prev].filter((op) => op.id !== option.id);
                 ops.push({
                   id: option.id,
-                  type: 'ADJ_VALUE',
+                  type: "ADJ_VALUE",
                   operation: {
                     ...option.operation,
                     data: {
@@ -968,52 +1027,60 @@ function SelectionPredefinedAdjValue(props: {
             }}
             variableType={variableType}
           />
-          {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
-            <Tooltip label='Remove Option' position='right' withArrow withinPortal>
-              <ActionIcon
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  left: -40,
-                }}
-                size='sm'
-                variant='subtle'
-                color='gray'
-                onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
-                  });
-                }}
+          {optionsForUI[optionsForUI.length - 1].id === option.id &&
+            index !== 0 && (
+              <Tooltip
+                label="Remove Option"
+                position="right"
+                withArrow
+                withinPortal
               >
-                <IconCircleMinus size='0.9rem' />
-              </ActionIcon>
-            </Tooltip>
-          )}
+                <ActionIcon
+                  style={{
+                    position: "absolute",
+                    top: -5,
+                    left: -40,
+                  }}
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setOptions((prev) => {
+                      const ops = [...prev].filter((op) => op.id !== option.id);
+                      return ops;
+                    });
+                  }}
+                >
+                  <IconCircleMinus size="0.9rem" />
+                </ActionIcon>
+              </Tooltip>
+            )}
           {optionsForUI[optionsForUI.length - 1].id === option.id && (
-            <Tooltip label='Add Option' position='right' withArrow withinPortal>
+            <Tooltip label="Add Option" position="right" withArrow withinPortal>
               <ActionIcon
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 18,
                   left: -40,
                 }}
-                size='sm'
-                variant='subtle'
-                color='gray'
+                size="sm"
+                variant="subtle"
+                color="gray"
                 onClick={() => {
                   setOptions((prev) => {
                     const ops = [...optionsForUI];
                     ops.push({
                       id: crypto.randomUUID(),
-                      type: 'ADJ_VALUE',
-                      operation: createDefaultOperation('adjValue') as OperationAdjValue,
+                      type: "ADJ_VALUE",
+                      operation: createDefaultOperation(
+                        "adjValue"
+                      ) as OperationAdjValue,
                     });
                     return ops;
                   });
                 }}
               >
-                <IconCirclePlus size='0.9rem' />
+                <IconCirclePlus size="0.9rem" />
               </ActionIcon>
             </Tooltip>
           )}
@@ -1028,7 +1095,9 @@ function SelectionPredefinedCustom(props: {
   options?: OperationSelectOptionCustom[];
   onChange: (options: OperationSelectOptionCustom[]) => void;
 }) {
-  const [options, setOptions] = useState<OperationSelectOptionCustom[]>(props.options ?? []);
+  const [options, setOptions] = useState<OperationSelectOptionCustom[]>(
+    props.options ?? []
+  );
 
   useDidUpdate(() => {
     props.onChange(options);
@@ -1039,9 +1108,9 @@ function SelectionPredefinedCustom(props: {
       ? ([
           {
             id: crypto.randomUUID(),
-            type: 'CUSTOM',
-            title: '',
-            description: '',
+            type: "CUSTOM",
+            title: "",
+            description: "",
             operations: [],
           },
         ] satisfies OperationSelectOptionCustom[])
@@ -1050,7 +1119,7 @@ function SelectionPredefinedCustom(props: {
   return (
     <Stack gap={10}>
       {optionsForUI.map((option, index) => (
-        <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
+        <Group key={index} wrap="nowrap" style={{ position: "relative" }}>
           <SelectionPredefinedCustomOption
             option={option}
             onChange={(newOption) => {
@@ -1064,54 +1133,60 @@ function SelectionPredefinedCustom(props: {
               });
             }}
           />
-          {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
-            <Tooltip label='Remove Option' position='right' withArrow withinPortal>
-              <ActionIcon
-                style={{
-                  position: 'absolute',
-                  top: -5,
-                  left: -40,
-                }}
-                size='sm'
-                variant='subtle'
-                color='gray'
-                onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
-                  });
-                }}
+          {optionsForUI[optionsForUI.length - 1].id === option.id &&
+            index !== 0 && (
+              <Tooltip
+                label="Remove Option"
+                position="right"
+                withArrow
+                withinPortal
               >
-                <IconCircleMinus size='0.9rem' />
-              </ActionIcon>
-            </Tooltip>
-          )}
+                <ActionIcon
+                  style={{
+                    position: "absolute",
+                    top: -5,
+                    left: -40,
+                  }}
+                  size="sm"
+                  variant="subtle"
+                  color="gray"
+                  onClick={() => {
+                    setOptions((prev) => {
+                      const ops = [...prev].filter((op) => op.id !== option.id);
+                      return ops;
+                    });
+                  }}
+                >
+                  <IconCircleMinus size="0.9rem" />
+                </ActionIcon>
+              </Tooltip>
+            )}
           {optionsForUI[optionsForUI.length - 1].id === option.id && (
-            <Tooltip label='Add Option' position='right' withArrow withinPortal>
+            <Tooltip label="Add Option" position="right" withArrow withinPortal>
               <ActionIcon
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 18,
                   left: -40,
                 }}
-                size='sm'
-                variant='subtle'
-                color='gray'
+                size="sm"
+                variant="subtle"
+                color="gray"
                 onClick={() => {
                   setOptions((prev) => {
                     const ops = [...optionsForUI];
                     ops.push({
                       id: crypto.randomUUID(),
-                      type: 'CUSTOM',
-                      title: '',
-                      description: '',
+                      type: "CUSTOM",
+                      title: "",
+                      description: "",
                       operations: [],
                     });
                     return ops;
                   });
                 }}
               >
-                <IconCirclePlus size='0.9rem' />
+                <IconCirclePlus size="0.9rem" />
               </ActionIcon>
             </Tooltip>
           )}
@@ -1133,7 +1208,7 @@ function SelectionPredefinedCustomOption(props: {
   return (
     <Stack>
       <TextInput
-        label='Name'
+        label="Name"
         required
         value={props.option.title}
         onChange={(event) => {
@@ -1145,7 +1220,7 @@ function SelectionPredefinedCustomOption(props: {
       />
       {displayDescription && (
         <RichTextInput
-          label='Description'
+          label="Description"
           required
           value={description ?? toHTML(props.option.description)}
           onChange={(text, json) => {
@@ -1159,48 +1234,54 @@ function SelectionPredefinedCustomOption(props: {
       )}
 
       <Divider
-        my='xs'
+        my="xs"
         label={
-          <Group gap={3} wrap='nowrap'>
+          <Group gap={3} wrap="nowrap">
             <Button
-              variant={openedOperations ? 'light' : 'subtle'}
-              size='compact-sm'
-              color='gray.6'
+              variant={openedOperations ? "light" : "subtle"}
+              size="compact-sm"
+              color="gray.6"
             >
               Operations
             </Button>
             {props.option.operations && props.option.operations.length > 0 && (
-              <Badge variant='light' color={theme.primaryColor} size='xs'>
+              <Badge variant="light" color={theme.primaryColor} size="xs">
                 {props.option.operations.length}
               </Badge>
             )}
           </Group>
         }
-        labelPosition='left'
+        labelPosition="left"
         onClick={toggleOperations}
       />
       <Collapse in={openedOperations}>
         <Stack gap={10}>
           <OperationSection
             title={
-              <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
+              <HoverCard openDelay={250} width={260} shadow="md" withinPortal>
                 <HoverCard.Target>
-                  <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
+                  <Anchor target="_blank" underline="hover" fz="sm" fs="italic">
                     How to Use Operations
                   </Anchor>
                 </HoverCard.Target>
                 <HoverCard.Dropdown>
-                  <Text size='sm'>
-                    Operations are used to make changes to a character. They can give feats, spells,
-                    and more, as well as change stats, skills, and other values.
+                  <Text size="sm">
+                    Operations are used to make changes to a character. They can
+                    give feats, spells, and more, as well as change stats,
+                    skills, and other values.
                   </Text>
-                  <Text size='sm'>
-                    Use conditionals to apply operations only when certain conditions are met and
-                    selections whenever a choice needs to be made.
+                  <Text size="sm">
+                    Use conditionals to apply operations only when certain
+                    conditions are met and selections whenever a choice needs to
+                    be made.
                   </Text>
-                  <Text size='xs' fs='italic'>
-                    For more help, see{' '}
-                    <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
+                  <Text size="xs" fs="italic">
+                    For more help, see{" "}
+                    <Anchor
+                      href="https://discord.gg/kxCpa6G"
+                      target="_blank"
+                      underline="hover"
+                    >
                       our Discord server
                     </Anchor>
                     .

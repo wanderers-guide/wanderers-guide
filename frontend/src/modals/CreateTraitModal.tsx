@@ -1,43 +1,27 @@
+import RichTextInput from "@common/rich_text_input/RichTextInput";
+import { fetchContentById } from "@content/content-store";
+import { toHTML } from "@content/content-utils";
 import {
-  LoadingOverlay,
-  Box,
-  Modal,
-  Stack,
-  Group,
-  TextInput,
-  Select,
   Button,
-  Divider,
   Collapse,
-  Switch,
-  TagsInput,
-  Textarea,
-  Text,
-  Anchor,
-  HoverCard,
-  Title,
-  Badge,
+  Divider,
+  Group,
+  LoadingOverlay,
+  Modal,
   ScrollArea,
+  Stack,
+  Switch,
+  TextInput,
+  Title,
   useMantineTheme,
-} from '@mantine/core';
-import _, { set } from 'lodash';
-import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
-import { useQuery } from '@tanstack/react-query';
-import { useForm } from '@mantine/form';
-import TraitsInput from '@common/TraitsInput';
-import { useDisclosure } from '@mantine/hooks';
-import { Operation } from '@typing/operations';
-import ActionsInput from '@common/ActionsInput';
-import { OperationSection } from '@common/operations/Operations';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { JSONContent } from '@tiptap/react';
-import { toHTML } from '@content/content-utils';
-import { isValidImage } from '@utils/images';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { toLabel } from '@utils/strings';
-import { fetchContentById, fetchTraits } from '@content/content-store';
-import useRefresh from '@utils/use-refresh';
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { useDisclosure } from "@mantine/hooks";
+import { useQuery } from "@tanstack/react-query";
+import { JSONContent } from "@tiptap/react";
+import { Trait } from "@typing/content";
+import useRefresh from "@utils/use-refresh";
+import { useState } from "react";
 
 export function CreateTraitModal(props: {
   opened: boolean;
@@ -59,7 +43,7 @@ export function CreateTraitModal(props: {
       // eslint-disable-next-line
       const [_key, { editId }] = queryKey;
 
-      const trait = await fetchContentById<Trait>('trait', editId);
+      const trait = await fetchContentById<Trait>("trait", editId);
       if (!trait) return null;
 
       form.setInitialValues({
@@ -95,9 +79,9 @@ export function CreateTraitModal(props: {
   const form = useForm<Trait>({
     initialValues: {
       id: -1,
-      created_at: '',
-      name: '',
-      description: '',
+      created_at: "",
+      name: "",
+      description: "",
       meta_data: {
         important: false,
         creature_trait: false,
@@ -140,7 +124,10 @@ export function CreateTraitModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'} Trait
+          {props.editId === undefined || props.editId === -1
+            ? "Create"
+            : "Edit"}{" "}
+          Trait
         </Title>
       }
       styles={{
@@ -148,7 +135,7 @@ export function CreateTraitModal(props: {
           paddingRight: 2,
         },
       }}
-      size={'md'}
+      size={"md"}
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
@@ -157,33 +144,37 @@ export function CreateTraitModal(props: {
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
-            <Group wrap='nowrap' justify='space-between'>
-              <Group wrap='nowrap'>
-                <TextInput label='Name' required {...form.getInputProps('name')} />
+            <Group wrap="nowrap" justify="space-between">
+              <Group wrap="nowrap">
+                <TextInput
+                  label="Name"
+                  required
+                  {...form.getInputProps("name")}
+                />
               </Group>
             </Group>
 
             <Divider
-              my='xs'
+              my="xs"
               label={
-                <Group gap={3} wrap='nowrap'>
+                <Group gap={3} wrap="nowrap">
                   <Button
-                    variant={openedAdditional ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
+                    variant={openedAdditional ? "light" : "subtle"}
+                    size="compact-sm"
+                    color="gray.6"
                   >
                     Misc. Sections
                   </Button>
                 </Group>
               }
-              labelPosition='left'
+              labelPosition="left"
               onClick={toggleAdditional}
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
                 <Switch
-                  label='Important'
-                  labelPosition='left'
+                  label="Important"
+                  labelPosition="left"
                   checked={metaData.important}
                   onChange={(event) =>
                     setMetaData({
@@ -194,8 +185,8 @@ export function CreateTraitModal(props: {
                 />
 
                 <Switch
-                  label='Unselectable'
-                  labelPosition='left'
+                  label="Unselectable"
+                  labelPosition="left"
                   checked={metaData.unselectable}
                   onChange={(event) =>
                     setMetaData({
@@ -206,8 +197,8 @@ export function CreateTraitModal(props: {
                 />
 
                 <Switch
-                  label='Creature Trait'
-                  labelPosition='left'
+                  label="Creature Trait"
+                  labelPosition="left"
                   checked={metaData.creature_trait}
                   onChange={(event) =>
                     setMetaData({
@@ -218,8 +209,8 @@ export function CreateTraitModal(props: {
                 />
 
                 <Switch
-                  label='Ancestry Trait'
-                  labelPosition='left'
+                  label="Ancestry Trait"
+                  labelPosition="left"
                   checked={metaData.ancestry_trait}
                   onChange={(event) =>
                     setMetaData({
@@ -230,8 +221,8 @@ export function CreateTraitModal(props: {
                 />
 
                 <Switch
-                  label='Class Trait'
-                  labelPosition='left'
+                  label="Class Trait"
+                  labelPosition="left"
                   checked={metaData.class_trait}
                   onChange={(event) =>
                     setMetaData({
@@ -247,19 +238,19 @@ export function CreateTraitModal(props: {
 
             {displayDescription && (
               <RichTextInput
-                label='Description'
+                label="Description"
                 required
                 value={description ?? toHTML(form.values.description)}
                 onChange={(text, json) => {
                   setDescription(json);
-                  form.setFieldValue('description', text);
+                  form.setFieldValue("description", text);
                 }}
               />
             )}
 
-            <Group justify='flex-end'>
+            <Group justify="flex-end">
               <Button
-                variant='default'
+                variant="default"
                 onClick={() => {
                   props.onCancel();
                   onReset();
@@ -267,8 +258,10 @@ export function CreateTraitModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
+              <Button type="submit">
+                {props.editId === undefined || props.editId === -1
+                  ? "Create"
+                  : "Update"}
               </Button>
             </Group>
           </Stack>

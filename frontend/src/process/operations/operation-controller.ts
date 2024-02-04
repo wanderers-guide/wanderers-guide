@@ -6,23 +6,42 @@ import {
   ContentPackage,
   ContentSource,
   Item,
-} from '@typing/content';
-import { getRootSelection, resetSelections, setSelections } from './selection-tree';
-import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
-import { OperationOptions, OperationResult, runOperations } from './operation-runner';
-import { addVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
-import { isAttributeValue } from '@variables/variable-utils';
-import _ from 'lodash';
-import { hashData } from '@utils/numbers';
-import { StoreID } from '@typing/variables';
+} from "@typing/content";
+import {
+  getRootSelection,
+  resetSelections,
+  setSelections,
+} from "./selection-tree";
+import {
+  Operation,
+  OperationResultPackage,
+  OperationSelect,
+} from "@typing/operations";
+import {
+  OperationOptions,
+  OperationResult,
+  runOperations,
+} from "./operation-runner";
+import {
+  addVariable,
+  getVariable,
+  resetVariables,
+  setVariable,
+} from "@variables/variable-manager";
+import { isAttributeValue } from "@variables/variable-utils";
+import * as _ from "lodash-es";
+import { hashData } from "@utils/numbers";
+import { StoreID } from "@typing/variables";
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
     setSelections(
-      [...Object.entries(character.operation_data.selections)].map(([key, value]) => ({
-        key,
-        value,
-      }))
+      [...Object.entries(character.operation_data.selections)].map(
+        ([key, value]) => ({
+          key,
+          value,
+        })
+      )
     );
   } else {
     resetSelections();
@@ -71,15 +90,25 @@ export async function executeCharacterOperations(
 ): Promise<OperationResultPackage> {
   resetVariables();
   defineSelectionTree(character);
-  setVariable('CHARACTER', 'PAGE_CONTEXT', context);
-  setVariable('CHARACTER', 'LEVEL', character.level);
+  setVariable("CHARACTER", "PAGE_CONTEXT", context);
+  setVariable("CHARACTER", "LEVEL", character.level);
 
-  const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
-  const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
-  const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
+  const class_ = content.classes.find(
+    (c) => c.id === character.details?.class?.id
+  );
+  const background = content.backgrounds.find(
+    (b) => b.id === character.details?.background?.id
+  );
+  const ancestry = content.ancestries.find(
+    (a) => a.id === character.details?.ancestry?.id
+  );
 
   const classFeatures = content.abilityBlocks
-    .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
+    .filter(
+      (ab) =>
+        ab.type === "class-feature" &&
+        ab.traits?.includes(class_?.trait_id ?? -1)
+    )
     .sort((a, b) => {
       if (a.level !== undefined && b.level !== undefined) {
         if (a.level !== b.level) {
@@ -90,10 +119,13 @@ export async function executeCharacterOperations(
     });
 
   const operationsPassthrough = async (options?: OperationOptions) => {
-    let contentSourceResults: { baseSource: ContentSource; baseResults: OperationResult[] }[] = [];
+    let contentSourceResults: {
+      baseSource: ContentSource;
+      baseResults: OperationResult[];
+    }[] = [];
     for (const source of content.sources ?? []) {
       const results = await executeOperations(
-        'CHARACTER',
+        "CHARACTER",
         `content-source-${source.id}`,
         source.operations ?? [],
         options,
@@ -109,18 +141,18 @@ export async function executeCharacterOperations(
     }
 
     let characterResults = await executeOperations(
-      'CHARACTER',
-      'character',
+      "CHARACTER",
+      "character",
       character.custom_operations ?? [],
       options,
-      'Custom'
+      "Custom"
     );
 
     let classResults: OperationResult[] = [];
     if (class_) {
       classResults = await executeOperations(
-        'CHARACTER',
-        'class',
+        "CHARACTER",
+        "class",
         getExtendedClassOperations(class_),
         options,
         class_.name
@@ -130,8 +162,8 @@ export async function executeCharacterOperations(
     let ancestryResults: OperationResult[] = [];
     if (ancestry) {
       ancestryResults = await executeOperations(
-        'CHARACTER',
-        'ancestry',
+        "CHARACTER",
+        "ancestry",
         getExtendedAncestryOperations(ancestry),
         options,
         ancestry.name
@@ -141,8 +173,8 @@ export async function executeCharacterOperations(
     let backgroundResults: OperationResult[] = [];
     if (background) {
       backgroundResults = await executeOperations(
-        'CHARACTER',
-        'background',
+        "CHARACTER",
+        "background",
         background.operations ?? [],
         options,
         background.name
@@ -150,12 +182,15 @@ export async function executeCharacterOperations(
     }
 
     // Ancestry heritage and feats
-    let ancestrySectionResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
+    let ancestrySectionResults: {
+      baseSource: AbilityBlock;
+      baseResults: OperationResult[];
+    }[] = [];
     if (ancestry) {
       for (const section of getAncestrySections(ancestry)) {
         if (section.level === undefined || section.level <= character.level) {
           const results = await executeOperations(
-            'CHARACTER',
+            "CHARACTER",
             `ancestry-section-${section.id}`,
             section.operations ?? [],
             options,
@@ -170,11 +205,14 @@ export async function executeCharacterOperations(
       }
     }
 
-    let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
+    let classFeatureResults: {
+      baseSource: AbilityBlock;
+      baseResults: OperationResult[];
+    }[] = [];
     for (const feature of classFeatures) {
       if (feature.level === undefined || feature.level <= character.level) {
         const results = await executeOperations(
-          'CHARACTER',
+          "CHARACTER",
           `class-feature-${feature.id}`,
           feature.operations ?? [],
           options,
@@ -188,7 +226,8 @@ export async function executeCharacterOperations(
       }
     }
 
-    let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
+    let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] =
+      [];
     // TODO: items
 
     return {
@@ -206,11 +245,19 @@ export async function executeCharacterOperations(
   // Value creation round //
   await operationsPassthrough({ doOnlyValueCreation: true });
   // define values for any weapons or lores
-  for (const value of Object.values(character?.operation_data?.selections ?? {})) {
-    if (value.startsWith('SKILL_LORE_')) {
-      addVariable('CHARACTER', 'prof', value, { value: 'U', attribute: 'ATTRIBUTE_INT' });
-    } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
-      addVariable('CHARACTER', 'prof', value);
+  for (const value of Object.values(
+    character?.operation_data?.selections ?? {}
+  )) {
+    if (value.startsWith("SKILL_LORE_")) {
+      addVariable("CHARACTER", "prof", value, {
+        value: "U",
+        attribute: "ATTRIBUTE_INT",
+      });
+    } else if (
+      value.startsWith("WEAPON_") ||
+      value.startsWith("WEAPON_GROUP_")
+    ) {
+      addVariable("CHARACTER", "prof", value);
     }
   }
 
@@ -229,7 +276,10 @@ export async function executeCharacterOperations(
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }
 
-function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {
+function mergeOperationResults(
+  normal: Record<string, any[]>,
+  conditional: Record<string, any[]>
+) {
   const merged = _.cloneDeep(normal);
   // Merge simple arrays
   for (const [key, value] of Object.entries(conditional)) {
@@ -248,7 +298,9 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
     for (const v of value) {
       if (v.baseSource && Array.isArray(v.baseResults)) {
         found = true;
-        const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
+        const duplicate = value.find(
+          (v2) => v2.baseSource?.id === v.baseSource?.id
+        );
         if (duplicate) {
           v.baseResults.push(...duplicate.baseResults);
           v.baseResults = _.uniq(v.baseResults);
@@ -277,14 +329,18 @@ function limitBoostOptions(
   for (const opR of operationResults) {
     const selectedOption = opR?.result?.source?.variable;
     const amount = opR?.result?.source?.value?.value;
-    if (selectedOption && +amount === 1 && selectedOption.startsWith('ATTRIBUTE_')) {
+    if (
+      selectedOption &&
+      +amount === 1 &&
+      selectedOption.startsWith("ATTRIBUTE_")
+    ) {
       unselectedOptions.push(selectedOption);
     }
   }
 
   // Pull from all hardset attribute boosts
   for (const op of operations) {
-    if (op.type === 'adjValue') {
+    if (op.type === "adjValue") {
       // setValue isn't a boost
       // @ts-ignore
       if (+op.data?.value?.value === 1) {
@@ -326,22 +382,24 @@ export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
 
   // Operations for adding skill trainings equal to Int attribute modifier
   const baseTrainings = class_.skill_training_base;
-  const intVariableValue = getVariable('CHARACTER', 'ATTRIBUTE_INT')?.value;
-  const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
+  const intVariableValue = getVariable("CHARACTER", "ATTRIBUTE_INT")?.value;
+  const intValue = isAttributeValue(intVariableValue)
+    ? intVariableValue.value
+    : 0;
   for (let i = 0; i < baseTrainings + intValue; i++) {
     operations.push({
       id: `720d2fe6-f042-4353-8313-1293375b1301-${i}`,
-      type: 'select',
+      type: "select",
       data: {
-        title: 'Select a Skill to be Trained',
-        modeType: 'FILTERED',
-        optionType: 'ADJ_VALUE',
+        title: "Select a Skill to be Trained",
+        modeType: "FILTERED",
+        optionType: "ADJ_VALUE",
         optionsPredefined: [],
         optionsFilters: {
           id: `f8703468-ab35-4f84-8dc7-7c48556258e3-${i}`,
-          type: 'ADJ_VALUE',
-          group: 'SKILL',
-          value: { value: 'T' },
+          type: "ADJ_VALUE",
+          group: "SKILL",
+          value: { value: "T" },
         },
       },
     });
@@ -362,21 +420,23 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier
-  const intVariableValue = getVariable('CHARACTER', 'ATTRIBUTE_INT')?.value;
-  const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
+  const intVariableValue = getVariable("CHARACTER", "ATTRIBUTE_INT")?.value;
+  const intValue = isAttributeValue(intVariableValue)
+    ? intVariableValue.value
+    : 0;
   if (intValue <= 0) return operations;
   for (let i = 0; i < intValue; i++) {
     operations.push({
       id: `957ee14b-c6dc-44eb-881b-e99a1b4e5118-${i}`,
-      type: 'select',
+      type: "select",
       data: {
-        title: 'Select a Language',
-        modeType: 'FILTERED',
-        optionType: 'LANGUAGE',
+        title: "Select a Language",
+        modeType: "FILTERED",
+        optionType: "LANGUAGE",
         optionsPredefined: [],
         optionsFilters: {
           id: `688aa1e3-226d-424b-b762-2b3c2bec36c1-${i}`,
-          type: 'LANGUAGE',
+          type: "LANGUAGE",
           core: true,
         },
       },
@@ -388,58 +448,58 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
 
 export function getAncestrySections(ancestry: Ancestry): AbilityBlock[] {
   const heritage: AbilityBlock = {
-    id: hashData({ name: 'heritage' }),
-    created_at: '',
+    id: hashData({ name: "heritage" }),
+    created_at: "",
     operations: [
       {
-        id: '3fd6a268-771b-49fc-93ed-9b53695d1a29',
-        type: 'select',
+        id: "3fd6a268-771b-49fc-93ed-9b53695d1a29",
+        type: "select",
         data: {
-          title: 'Select a Heritage',
-          modeType: 'FILTERED',
-          optionType: 'ABILITY_BLOCK',
+          title: "Select a Heritage",
+          modeType: "FILTERED",
+          optionType: "ABILITY_BLOCK",
           optionsPredefined: [],
           optionsFilters: {
-            id: 'c8dc1601-4c97-4838-9bd5-31d0e6b87286',
-            type: 'ABILITY_BLOCK',
+            id: "c8dc1601-4c97-4838-9bd5-31d0e6b87286",
+            type: "ABILITY_BLOCK",
             level: {},
             traits: [ancestry.trait_id],
-            abilityBlockType: 'heritage',
+            abilityBlockType: "heritage",
           },
         },
       },
     ],
-    name: 'Heritage',
+    name: "Heritage",
     actions: null,
     level: 1,
-    rarity: 'COMMON',
+    rarity: "COMMON",
     description: `You select a heritage to reflect abilities passed down to you from your ancestors or
     common among those of your ancestry in the environment where you were raised.`,
-    type: 'heritage',
+    type: "heritage",
     content_source_id: -1,
   };
 
   const getAncestryFeat = (index: number, level: number): AbilityBlock => {
     return {
       id: hashData({ name: `ancestry-feat-${index}` }),
-      created_at: '',
+      created_at: "",
       operations: [
         {
           id: `9f26290c-a2db-4c45-9b34-5053e60c106d-${index}`,
-          type: 'select',
+          type: "select",
           data: {
-            title: 'Select a Feat',
-            modeType: 'FILTERED',
-            optionType: 'ABILITY_BLOCK',
+            title: "Select a Feat",
+            modeType: "FILTERED",
+            optionType: "ABILITY_BLOCK",
             optionsPredefined: [],
             optionsFilters: {
               id: `31634b70-4ea4-447f-9743-817509d601df-${index}`,
-              type: 'ABILITY_BLOCK',
+              type: "ABILITY_BLOCK",
               level: {
                 max: level,
               },
               traits: [ancestry.trait_id],
-              abilityBlockType: 'feat',
+              abilityBlockType: "feat",
             },
           },
         },
@@ -447,9 +507,9 @@ export function getAncestrySections(ancestry: Ancestry): AbilityBlock[] {
       name: `${ancestry.name} Feat`,
       actions: null,
       level: level,
-      rarity: 'COMMON',
+      rarity: "COMMON",
       description: `You gain an ancestry feat.`,
-      type: 'class-feature',
+      type: "class-feature",
       content_source_id: -1,
     };
   };

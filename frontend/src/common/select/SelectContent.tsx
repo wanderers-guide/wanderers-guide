@@ -1,33 +1,80 @@
 /* eslint-disable react-refresh/only-export-components */
+import { drawerState } from "@atoms/navAtoms";
+import { ActionSymbol } from "@common/Actions";
+import { BuyItemButton } from "@common/BuyItemButton";
+import TraitsDisplay from "@common/TraitsDisplay";
+import {
+  fetchContentAll,
+  fetchContentById,
+  fetchContentSources,
+} from "@content/content-store";
+import { isActionCost } from "@content/content-utils";
+import { GenericData } from "@drawers/types/GenericDrawer";
 import {
   ActionIcon,
+  Avatar,
+  Badge,
   Box,
   Button,
-  CloseButton,
+  Center,
   Group,
-  Overlay,
-  Stack,
-  TextInput,
-  Text,
-  Title,
-  Transition,
-  useMantineTheme,
-  LoadingOverlay,
+  Indicator,
   Loader,
-  Badge,
+  Menu,
+  Overlay,
   Pagination,
   ScrollArea,
-  Center,
-  Portal,
-  Avatar,
-  MantineColor,
-  BackgroundImage,
-  Indicator,
-  Menu,
-  rem,
+  Stack,
+  Text,
+  TextInput,
   ThemeIcon,
-  Select,
-} from '@mantine/core';
+  Title,
+  Transition,
+  rem,
+  useMantineTheme,
+} from "@mantine/core";
+import { useDebouncedState, useHover } from "@mantine/hooks";
+import { ContextModalProps, modals, openContextModal } from "@mantine/modals";
+import {
+  IconArrowNarrowRight,
+  IconCheck,
+  IconChevronDown,
+  IconCircleDotFilled,
+  IconCopy,
+  IconDots,
+  IconQuestionMark,
+  IconSearch,
+  IconTrash,
+  IconX,
+  IconZoomCheck,
+} from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ExtendedProficiencyType,
+  ProficiencyType,
+  VariableProf,
+} from "@typing/variables";
+import { pluralize, toLabel } from "@utils/strings";
+import {
+  getStatBlockDisplay,
+  getStatDisplay,
+} from "@variables/initial-stats-display";
+import { meetsPrerequisites } from "@variables/prereq-detection";
+import {
+  getAllAttributeVariables,
+  getVariable,
+} from "@variables/variable-manager";
+import {
+  isProficiencyType,
+  maxProficiencyType,
+  nextProficiencyType,
+  prevProficiencyType,
+  proficiencyTypeToLabel,
+} from "@variables/variable-utils";
+import * as JsSearch from "js-search";
+import * as _ from "lodash-es";
+import { useEffect, useRef, useState } from "react";
+import { useRecoilState } from "recoil";
 import {
   AbilityBlock,
   AbilityBlockType,
@@ -38,66 +85,13 @@ import {
   Creature,
   Item,
   Language,
-  Rarity,
   Spell,
   Trait,
-} from '../../typing/content';
-import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
-import _ from 'lodash';
-import { useEffect, useRef, useState } from 'react';
-import {
-  useClickOutside,
-  useDebouncedState,
-  useDebouncedValue,
-  useHover,
-  usePagination,
-} from '@mantine/hooks';
-import {
-  IconArrowNarrowRight,
-  IconCheck,
-  IconChevronDown,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconCircleDotFilled,
-  IconCopy,
-  IconDots,
-  IconQuestionMark,
-  IconSearch,
-  IconTrash,
-  IconX,
-  IconZoomCheck,
-} from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActionSymbol } from '@common/Actions';
-import * as JsSearch from 'js-search';
-import { pluralize, toLabel } from '@utils/strings';
-import { drawerState } from '@atoms/navAtoms';
-import { useRecoilState } from 'recoil';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { isActionCost } from '@content/content-utils';
-import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
-import {
-  compactLabels,
-  isProficiencyType,
-  maxProficiencyType,
-  nextProficiencyType,
-  prevProficiencyType,
-  proficiencyTypeToLabel,
-  variableNameToLabel,
-} from '@variables/variable-utils';
-import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
-import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
-import {
-  ExtendedProficiencyType,
-  ProficiencyType,
-  ProficiencyValue,
-  VariableProf,
-} from '@typing/variables';
-import { meetsPrerequisites } from '@variables/prereq-detection';
-import { GenericData } from '@drawers/types/GenericDrawer';
-import { BuyItemButton } from '@common/BuyItemButton';
+} from "../../typing/content";
 
-export function SelectContentButton<T = Record<string, any>>(props: {
+export function SelectContentButton<
+  T extends Record<string, any> = Record<string, any>
+>(props: {
   type: ContentType;
   onClick: (option: T) => void;
   onClear?: () => void;
@@ -137,16 +131,20 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   }, [props.selectedId, props.type]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
-  // @ts-ignore
-  const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
+
+  const label = selected
+    ? selected.name
+    : props.options?.overrideLabel ?? `Select ${typeName}`;
 
   return (
-    <Button.Group className='selection-choice-base'>
+    <Button.Group className="selection-choice-base">
       <Button
-        className={selected ? 'selection-choice-selected' : 'selection-choice-unselected'}
-        variant={selected ? 'light' : 'filled'}
-        size='compact-sm'
-        radius='xl'
+        className={
+          selected ? "selection-choice-selected" : "selection-choice-unselected"
+        }
+        variant={selected ? "light" : "filled"}
+        size="compact-sm"
+        radius="xl"
         onClick={() => {
           selectContent<T>(
             props.type,
@@ -155,7 +153,10 @@ export function SelectContentButton<T = Record<string, any>>(props: {
               props.onClick(option);
             },
             {
-              overrideOptions: props.options?.overrideOptions as Record<string, any>[],
+              overrideOptions: props.options?.overrideOptions as Record<
+                string,
+                any
+              >[],
               overrideLabel: props.options?.overrideLabel,
               abilityBlockType: props.options?.abilityBlockType,
               groupBySource: props.options?.groupBySource,
@@ -170,15 +171,15 @@ export function SelectContentButton<T = Record<string, any>>(props: {
       </Button>
       {selected && (
         <Button
-          variant='light'
-          size='compact-sm'
-          radius='xl'
+          variant="light"
+          size="compact-sm"
+          radius="xl"
           onClick={() => {
             setSelected(undefined);
             props.onClear && props.onClear();
           }}
         >
-          <IconX size='1rem' />
+          <IconX size="1rem" />
         </Button>
       )}
     </Button.Group>
@@ -201,7 +202,7 @@ export function selectContent<T = Record<string, any>>(
   if (options?.overrideLabel) label = options.overrideLabel;
 
   openContextModal({
-    modal: 'selectContent',
+    modal: "selectContent",
     title: <Title order={3}>{label}</Title>,
     innerProps: {
       type,
@@ -230,10 +231,12 @@ export function SelectContentModal({
 
   const theme = useMantineTheme();
 
-  const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
-  const [selectedSource, setSelectedSource] = useState<number | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useDebouncedState("", 200);
+  const [selectedSource, setSelectedSource] = useState<number | "all">("all");
 
-  const typeName = toLabel(innerProps.options?.abilityBlockType || innerProps.type);
+  const typeName = toLabel(
+    innerProps.options?.abilityBlockType || innerProps.type
+  );
 
   const { data: contentSources, isFetching } = useQuery({
     queryKey: [`enabled-content-sources`, {}],
@@ -243,44 +246,50 @@ export function SelectContentModal({
       const [_key, {}] = queryKey;
       return await fetchContentSources();
     },
-    enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
+    enabled:
+      !!innerProps.options?.groupBySource &&
+      !innerProps.options?.overrideOptions,
   });
 
-  const activeSource = contentSources?.find((source) => source.id === selectedSource);
+  const activeSource = contentSources?.find(
+    (source) => source.id === selectedSource
+  );
 
   const totalOptionCount =
     contentSources?.reduce(
       (total, source) =>
         ((source.meta_data?.counts
-          ? source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
+          ? source.meta_data.counts[
+              innerProps.options?.abilityBlockType ?? innerProps.type
+            ]
           : undefined) ?? 0) + total,
       0
     ) ?? 0;
 
   return (
-    <Box style={{ position: 'relative', height: 455 }}>
-      <Transition mounted={openedDrawer} transition='slide-right'>
+    <Box style={{ position: "relative", height: 455 }}>
+      <Transition mounted={openedDrawer} transition="slide-right">
         {(styles) => (
           <Box
             style={{
               ...styles,
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
               backgroundColor: theme.colors.dark[7],
-              width: 'max(50%, 275px)',
-              height: '100%',
+              width: "max(50%, 275px)",
+              height: "100%",
               zIndex: 100,
 
               borderRightWidth: 2,
-              borderRightStyle: 'solid',
+              borderRightStyle: "solid",
               borderRightColor: theme.colors.dark[6],
             }}
           >
             <Box
               style={{
-                position: 'relative',
-                height: '100%',
+                position: "relative",
+                height: "100%",
                 //borderTop: '1px solid ' + theme.colors.dark[6],
               }}
             >
@@ -298,31 +307,33 @@ export function SelectContentModal({
               /> */}
               {isFetching && (
                 <Loader
-                  type='bars'
+                  type="bars"
                   style={{
-                    position: 'absolute',
-                    top: '35%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    position: "absolute",
+                    top: "35%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
                   }}
                 />
               )}
               <ContentSourceOption
-                name={'All Books'}
+                name={"All Books"}
                 description={`${totalOptionCount.toLocaleString()} ${pluralize(
                   innerProps.options?.abilityBlockType ?? innerProps.type
                 )}`}
                 onClick={() => {
-                  setSelectedSource('all');
+                  setSelectedSource("all");
                   setOpenedDrawer(false);
                 }}
-                selected={selectedSource === 'all'}
+                selected={selectedSource === "all"}
               />
               {contentSources
                 ?.filter(
                   (source) =>
                     source.meta_data?.counts &&
-                    source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
+                    source.meta_data.counts[
+                      innerProps.options?.abilityBlockType ?? innerProps.type
+                    ]
                 )
                 .map((source, index) => (
                   <ContentSourceOption
@@ -356,27 +367,27 @@ export function SelectContentModal({
         />
       )}
       <Stack gap={10}>
-        <Group wrap='nowrap'>
+        <Group wrap="nowrap">
           <TextInput
             style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
+            leftSection={<IconSearch size="0.9rem" />}
             placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
           {innerProps.options?.groupBySource && (
             <Button
-              size='compact-lg'
-              fz='xs'
-              variant='light'
+              size="compact-lg"
+              fz="xs"
+              variant="light"
               onClick={() => setOpenedDrawer(true)}
-              rightSection={<IconChevronDown size='1.1rem' />}
+              rightSection={<IconChevronDown size="1.1rem" />}
               styles={{
                 section: {
                   marginLeft: 3,
                 },
               }}
             >
-              {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
+              {_.truncate(activeSource?.name ?? "All Books", { length: 20 })}
             </Button>
           )}
         </Group>
@@ -385,7 +396,9 @@ export function SelectContentModal({
           type={innerProps.type}
           abilityBlockType={innerProps.options?.abilityBlockType}
           skillAdjustment={innerProps.options?.skillAdjustment}
-          sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+          sourceId={
+            innerProps.options?.groupBySource ? selectedSource : undefined
+          }
           selectedId={innerProps.options?.selectedId}
           overrideOptions={innerProps.options?.overrideOptions}
           searchQuery={searchQuery}
@@ -411,27 +424,28 @@ function ContentSourceOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
       }}
       onClick={props.onClick}
-      justify='space-between'
-      align='center'
+      justify="space-between"
+      align="center"
     >
       <Box>
         <Text>{props.name}</Text>
       </Box>
       <Badge
-        variant='dot'
-        size='xs'
+        variant="dot"
+        size="xs"
         styles={{
           root: {
             // @ts-ignore
-            '--badge-dot-size': 0,
-            textTransform: 'initial',
+            "--badge-dot-size": 0,
+            textTransform: "initial",
             color: theme.colors.dark[1],
           },
         }}
@@ -447,13 +461,16 @@ function SelectionOptions(props: {
   type: ContentType;
   skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
-  sourceId?: number | 'all';
+  sourceId?: number | "all";
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
 }) {
   const { data, isFetching } = useQuery({
-    queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
+    queryKey: [
+      `select-content-options-${props.type}`,
+      { sourceId: props.sourceId },
+    ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
@@ -461,7 +478,7 @@ function SelectionOptions(props: {
       return (
         (await fetchContentAll(
           props.type,
-          sourceId === 'all' || !sourceId ? undefined : [sourceId]
+          sourceId === "all" || !sourceId ? undefined : [sourceId]
         )) ?? null
       );
     },
@@ -472,17 +489,21 @@ function SelectionOptions(props: {
   if (props.overrideOptions) options = props.overrideOptions;
 
   // Filter options based on source
-  if (props.sourceId !== undefined && props.sourceId !== 'all') {
-    options = options.filter((option) => option.content_source_id === props.sourceId);
+  if (props.sourceId !== undefined && props.sourceId !== "all") {
+    options = options.filter(
+      (option) => option.content_source_id === props.sourceId
+    );
   }
 
   // Filter by ability block type
   if (props.abilityBlockType) {
-    options = options.filter((option) => option.type === props.abilityBlockType);
+    options = options.filter(
+      (option) => option.type === props.abilityBlockType
+    );
   } else {
     // An ability block type is required for ability blocks
     if (
-      props.type === 'ability-block' &&
+      props.type === "ability-block" &&
       (!props.overrideOptions || props.overrideOptions.length === 0)
     ) {
       options = [];
@@ -490,11 +511,11 @@ function SelectionOptions(props: {
   }
 
   // Filter options based on search query
-  const search = useRef(new JsSearch.Search('id'));
+  const search = useRef(new JsSearch.Search("id"));
   useEffect(() => {
     if (!options) return;
-    search.current.addIndex('name');
-    search.current.addIndex('description');
+    search.current.addIndex("name");
+    search.current.addIndex("description");
     search.current.addDocuments(options);
   }, [data]);
   let filteredOptions = props.searchQuery
@@ -555,8 +576,8 @@ export function SelectionOptionsInner(props: {
   const typeName = toLabel(props.abilityBlockType || props.type);
   if (!props.isLoading && props.options.length === 0) {
     return (
-      <Box pt='lg'>
-        <Text fz='md' c='dimmed' ta='center' fs='italic'>
+      <Box pt="lg">
+        <Text fz="md" c="dimmed" ta="center" fs="italic">
           No {pluralize(typeName.toLowerCase())} found!
         </Text>
       </Box>
@@ -565,15 +586,19 @@ export function SelectionOptionsInner(props: {
 
   return (
     <>
-      <ScrollArea viewportRef={viewport} h={props.h ?? 372} style={{ position: 'relative' }}>
+      <ScrollArea
+        viewportRef={viewport}
+        h={props.h ?? 372}
+        style={{ position: "relative" }}
+      >
         {props.isLoading ? (
           <Loader
-            type='bars'
+            type="bars"
             style={{
-              position: 'absolute',
-              top: '35%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
+              position: "absolute",
+              top: "35%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
             }}
           />
         ) : (
@@ -595,7 +620,7 @@ export function SelectionOptionsInner(props: {
       </ScrollArea>
       <Center>
         <Pagination
-          size='sm'
+          size="sm"
           total={Math.ceil(props.options.length / NUM_PER_PAGE)}
           value={activePage}
           onChange={(value) => {
@@ -620,13 +645,13 @@ function SelectionOptionsRoot(props: {
   onCopy?: (id: number) => void;
 }) {
   // Render appropriate options based on type
-  if (props.type === 'ability-block') {
-    if (props.abilityBlockType === 'feat') {
+  if (props.type === "ability-block") {
+    if (props.abilityBlockType === "feat") {
       return (
         <>
           {props.options.map((feat, index) => (
             <FeatSelectionOption
-              key={'feat-' + index}
+              key={"feat-" + index}
               feat={feat as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === feat.id}
@@ -639,12 +664,12 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
-    } else if (props.abilityBlockType === 'action') {
+    } else if (props.abilityBlockType === "action") {
       return (
         <>
           {props.options.map((action, index) => (
             <ActionSelectionOption
-              key={'action-' + index}
+              key={"action-" + index}
               action={action as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === action.id}
@@ -655,12 +680,12 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
-    } else if (props.abilityBlockType === 'class-feature') {
+    } else if (props.abilityBlockType === "class-feature") {
       return (
         <>
           {props.options.map((classFeature, index) => (
             <ClassFeatureSelectionOption
-              key={'class-feature-' + index}
+              key={"class-feature-" + index}
               classFeature={classFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === classFeature.id}
@@ -671,12 +696,12 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
-    } else if (props.abilityBlockType === 'sense') {
+    } else if (props.abilityBlockType === "sense") {
       return (
         <>
           {props.options.map((sense, index) => (
             <SenseSelectionOption
-              key={'sense-' + index}
+              key={"sense-" + index}
               sense={sense as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === sense.id}
@@ -687,12 +712,12 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
-    } else if (props.abilityBlockType === 'physical-feature') {
+    } else if (props.abilityBlockType === "physical-feature") {
       return (
         <>
           {props.options.map((physicalFeature, index) => (
             <PhysicalFeatureSelectionOption
-              key={'physical-feature-' + index}
+              key={"physical-feature-" + index}
               physicalFeature={physicalFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === physicalFeature.id}
@@ -703,12 +728,12 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
-    } else if (props.abilityBlockType === 'heritage') {
+    } else if (props.abilityBlockType === "heritage") {
       return (
         <>
           {props.options.map((heritage, index) => (
             <HeritageSelectionOption
-              key={'heritage-' + index}
+              key={"heritage-" + index}
               heritage={heritage as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === heritage.id}
@@ -722,12 +747,12 @@ function SelectionOptionsRoot(props: {
       );
     }
   }
-  if (props.type === 'class') {
+  if (props.type === "class") {
     return (
       <>
         {props.options.map((class_, index) => (
           <ClassSelectionOption
-            key={'class-' + index}
+            key={"class-" + index}
             class_={class_ as Class}
             onClick={props.onClick}
             selected={props.selectedId === class_.id}
@@ -740,12 +765,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'background') {
+  if (props.type === "background") {
     return (
       <>
         {props.options.map((background, index) => (
           <BackgroundSelectionOption
-            key={'background-' + index}
+            key={"background-" + index}
             background={background as Background}
             onClick={props.onClick}
             selected={props.selectedId === background.id}
@@ -758,12 +783,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'ancestry') {
+  if (props.type === "ancestry") {
     return (
       <>
         {props.options.map((ancestry, index) => (
           <AncestrySelectionOption
-            key={'ancestry-' + index}
+            key={"ancestry-" + index}
             ancestry={ancestry as Ancestry}
             onClick={props.onClick}
             selected={props.selectedId === ancestry.id}
@@ -776,12 +801,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'item') {
+  if (props.type === "item") {
     return (
       <>
         {props.options.map((item, index) => (
           <ItemSelectionOption
-            key={'item-' + index}
+            key={"item-" + index}
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
@@ -793,12 +818,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'spell') {
+  if (props.type === "spell") {
     return (
       <>
         {props.options.map((spell, index) => (
           <SpellSelectionOption
-            key={'spell-' + index}
+            key={"spell-" + index}
             spell={spell as Spell}
             onClick={props.onClick}
             selected={props.selectedId === spell.id}
@@ -810,12 +835,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'trait') {
+  if (props.type === "trait") {
     return (
       <>
         {props.options.map((trait, index) => (
           <TraitSelectionOption
-            key={'trait-' + index}
+            key={"trait-" + index}
             trait={trait as Trait}
             onClick={props.onClick}
             selected={props.selectedId === trait.id}
@@ -827,12 +852,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'language') {
+  if (props.type === "language") {
     return (
       <>
         {props.options.map((language, index) => (
           <LanguageSelectionOption
-            key={'language-' + index}
+            key={"language-" + index}
             language={language as Language}
             onClick={props.onClick}
             selected={props.selectedId === language.id}
@@ -844,12 +869,12 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
-  if (props.type === 'creature') {
+  if (props.type === "creature") {
     return (
       <>
         {props.options.map((creature, index) => (
           <CreatureSelectionOption
-            key={'creature-' + index}
+            key={"creature-" + index}
             creature={creature as Creature}
             onClick={props.onClick}
             selected={props.selectedId === creature.id}
@@ -864,11 +889,12 @@ function SelectionOptionsRoot(props: {
 
   // Skill increase with lore support
   const isSkillIncreaseWithLore =
-    props.skillAdjustment && props.options.find((o) => o.variable === 'SKILL_LORE____');
+    props.skillAdjustment &&
+    props.options.find((o) => o.variable === "SKILL_LORE____");
   if (isSkillIncreaseWithLore) {
     const addNewLore = (option: AbilityBlock) => {
       openContextModal({
-        modal: 'addNewLore',
+        modal: "addNewLore",
         title: <Title order={3}>Add New Lore</Title>,
         innerProps: {
           onConfirm: (loreName) => {
@@ -883,8 +909,8 @@ function SelectionOptionsRoot(props: {
 
     // If the only options are lores, it's adding a new lore. Just shortcut to that.
     if (
-      props.options.filter((o) => o.variable.startsWith('SKILL_LORE_')).length ===
-      props.options.length
+      props.options.filter((o) => o.variable.startsWith("SKILL_LORE_"))
+        .length === props.options.length
     ) {
       modals.closeAll();
       addNewLore(isSkillIncreaseWithLore as AbilityBlock);
@@ -894,10 +920,10 @@ function SelectionOptionsRoot(props: {
     return (
       <>
         {props.options
-          .filter((o) => o.variable !== 'SKILL_LORE____')
+          .filter((o) => o.variable !== "SKILL_LORE____")
           .map((option, index) => (
             <GenericSelectionOption
-              key={'generic-' + index}
+              key={"generic-" + index}
               option={option as GenericAbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === option.id}
@@ -933,7 +959,7 @@ function SelectionOptionsRoot(props: {
     <>
       {props.options.map((option, index) => (
         <GenericSelectionOption
-          key={'generic-' + index}
+          key={"generic-" + index}
           option={option as GenericAbilityBlock}
           onClick={props.onClick}
           selected={props.selectedId === option.id}
@@ -968,32 +994,38 @@ export function GenericSelectionOption(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // @ts-ignore
-  const variable = getVariable('CHARACTER', props.option.variable);
+  const variable = getVariable("CHARACTER", props.option.variable);
 
-  let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value.value;
+  let currentProf: ProficiencyType | undefined | null = (
+    variable as VariableProf
+  )?.value.value;
   let nextProf =
-    props.skillAdjustment === '1'
-      ? nextProficiencyType(currentProf ?? 'U')
-      : props.skillAdjustment === '-1'
-      ? prevProficiencyType(currentProf ?? 'U')
+    props.skillAdjustment === "1"
+      ? nextProficiencyType(currentProf ?? "U")
+      : props.skillAdjustment === "-1"
+      ? prevProficiencyType(currentProf ?? "U")
       : props.skillAdjustment;
 
   // If selected already, show the previous data to reflect the change
   if (props.selected && currentProf) {
     nextProf = currentProf;
     currentProf =
-      props.skillAdjustment === '1'
+      props.skillAdjustment === "1"
         ? prevProficiencyType(currentProf)
-        : props.skillAdjustment === '-1'
+        : props.skillAdjustment === "-1"
         ? nextProficiencyType(currentProf)
         : props.skillAdjustment;
   }
 
   let limitedByLevel = false;
-  if (props.skillAdjustment === '1') {
-    if (nextProf && nextProf === 'M' && (props.option._source_level ?? 1) < 7) {
+  if (props.skillAdjustment === "1") {
+    if (nextProf && nextProf === "M" && (props.option._source_level ?? 1) < 7) {
       limitedByLevel = true;
-    } else if (nextProf && nextProf === 'L' && (props.option._source_level ?? 1) < 15) {
+    } else if (
+      nextProf &&
+      nextProf === "L" &&
+      (props.option._source_level ?? 1) < 15
+    ) {
       limitedByLevel = true;
     }
   }
@@ -1003,33 +1035,34 @@ export function GenericSelectionOption(props: {
     currentProf &&
     (currentProf === props.skillAdjustment ||
       (isProficiencyType(props.skillAdjustment) &&
-        maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
+        maxProficiencyType(currentProf ?? "U", props.skillAdjustment) ===
+          currentProf));
 
   const disabled = alreadyProficient || limitedByLevel;
 
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
+        cursor: disabled ? "not-allowed" : "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
         backgroundColor: disabled
           ? theme.colors.dark[8]
           : hovered || props.selected
           ? theme.colors.dark[6]
-          : 'transparent',
-        position: 'relative',
+          : "transparent",
+        position: "relative",
       }}
       onClick={() => {
         if (disabled) return;
         props.onClick(props.option);
       }}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
-        <Group pl={8} wrap='nowrap' gap={5}>
-          <Text fz='sm'>{props.option.name}</Text>{' '}
+      <Group wrap="nowrap" gap={5}>
+        <Group pl={8} wrap="nowrap" gap={5}>
+          <Text fz="sm">{props.option.name}</Text>{" "}
           {/* {props.skillAdjustment && variable && (variable as VariableProf).attribute && (
             <Badge
               variant='dot'
@@ -1047,50 +1080,50 @@ export function GenericSelectionOption(props: {
           )} */}
         </Group>
         {props.option._is_core && (
-          <ThemeIcon variant='light' size='xs' radius='xl'>
-            <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />
+          <ThemeIcon variant="light" size="xs" radius="xl">
+            <IconCircleDotFilled style={{ width: "70%", height: "70%" }} />
           </ThemeIcon>
         )}
       </Group>
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         {props.skillAdjustment && variable && (
           <Badge
-            variant='dot'
-            size='xs'
+            variant="dot"
+            size="xs"
             styles={{
               root: {
                 // @ts-ignore
-                '--badge-dot-size': 0,
-                textTransform: 'initial',
+                "--badge-dot-size": 0,
+                textTransform: "initial",
               },
             }}
-            c='gray.6'
+            c="gray.6"
           >
-            <Group gap={2} wrap='nowrap'>
+            <Group gap={2} wrap="nowrap">
               {alreadyProficient ? (
-                <>{proficiencyTypeToLabel(currentProf ?? 'U')}</>
+                <>{proficiencyTypeToLabel(currentProf ?? "U")}</>
               ) : (
                 <>
-                  {proficiencyTypeToLabel(currentProf ?? 'U')}
-                  <IconArrowNarrowRight size='0.8rem' />
-                  {proficiencyTypeToLabel(nextProf ?? 'U')}
+                  {proficiencyTypeToLabel(currentProf ?? "U")}
+                  <IconArrowNarrowRight size="0.8rem" />
+                  {proficiencyTypeToLabel(nextProf ?? "U")}
                 </>
               )}
             </Group>
           </Badge>
         )}
-        {props.option._content_type === 'language' && (
+        {props.option._content_type === "language" && (
           <Button
-            size='compact-xs'
-            variant='subtle'
+            size="compact-xs"
+            variant="subtle"
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 12,
               right: props.includeOptions ? 40 : 10,
             }}
             onClick={(e) => {
               e.stopPropagation();
-              openDrawer({ type: 'language', data: { id: props.option.id } });
+              openDrawer({ type: "language", data: { id: props.option.id } });
             }}
           >
             Details
@@ -1098,16 +1131,19 @@ export function GenericSelectionOption(props: {
         )}
         {props.option._custom_select && (
           <Button
-            size='compact-xs'
-            variant='subtle'
+            size="compact-xs"
+            variant="subtle"
             style={{
-              position: 'absolute',
+              position: "absolute",
               top: 12,
               right: props.includeOptions ? 40 : 10,
             }}
             onClick={(e) => {
               e.stopPropagation();
-              openDrawer({ type: 'generic', data: props.option._custom_select });
+              openDrawer({
+                type: "generic",
+                data: props.option._custom_select,
+              });
             }}
           >
             Details
@@ -1115,24 +1151,24 @@ export function GenericSelectionOption(props: {
         )}
 
         {props.includeOptions && (
-          <Menu shadow='md' width={200}>
+          <Menu shadow="md" width={200}>
             <Menu.Target>
               <ActionIcon
-                size='sm'
-                variant='subtle'
-                radius='xl'
+                size="sm"
+                variant="subtle"
+                radius="xl"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 13,
                   right: 15,
                 }}
-                aria-label='Options'
+                aria-label="Options"
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
                 }}
               >
-                <IconDots size='1rem' />
+                <IconDots size="1rem" />
               </ActionIcon>
             </Menu.Target>
 
@@ -1156,7 +1192,7 @@ export function GenericSelectionOption(props: {
 
               <Menu.Label>Danger zone</Menu.Label>
               <Menu.Item
-                color='red'
+                color="red"
                 leftSection={
                   <IconTrash
                     style={{ width: rem(14), height: rem(14) }}
@@ -1191,29 +1227,30 @@ export function FeatSelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const prereqMet = meetsPrerequisites('CHARACTER', props.feat.prerequisites);
+  const prereqMet = meetsPrerequisites("CHARACTER", props.feat.prerequisites);
 
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.feat)}
-      justify='space-between'
+      justify="space-between"
     >
       {props.displayLevel && !props.feat.meta_data?.unselectable && (
         <Text
           fz={10}
-          c='dimmed'
-          ta='right'
+          c="dimmed"
+          ta="right"
           w={14}
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 15,
             left: 1,
           }}
@@ -1221,43 +1258,43 @@ export function FeatSelectionOption(props: {
           {props.feat.level}.
         </Text>
       )}
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.feat.name}</Text>
+          <Text fz="sm">{props.feat.name}</Text>
         </Box>
         <Box>
           <ActionSymbol cost={props.feat.actions} />
         </Box>
         {prereqMet.result && (
           <>
-            {prereqMet.result === 'FULLY' && (
-              <ThemeIcon variant='light' size='xs' radius='xl'>
-                <IconCheck style={{ width: '70%', height: '70%' }} />
+            {prereqMet.result === "FULLY" && (
+              <ThemeIcon variant="light" size="xs" radius="xl">
+                <IconCheck style={{ width: "70%", height: "70%" }} />
               </ThemeIcon>
             )}
-            {prereqMet.result === 'PARTIALLY' && (
-              <ThemeIcon variant='light' size='xs' radius='xl'>
-                <IconZoomCheck style={{ width: '70%', height: '70%' }} />
+            {prereqMet.result === "PARTIALLY" && (
+              <ThemeIcon variant="light" size="xs" radius="xl">
+                <IconZoomCheck style={{ width: "70%", height: "70%" }} />
               </ThemeIcon>
             )}
-            {prereqMet.result === 'UNKNOWN' && (
-              <ThemeIcon variant='light' size='xs' radius='xl' color='yellow'>
-                <IconQuestionMark style={{ width: '70%', height: '70%' }} />
+            {prereqMet.result === "UNKNOWN" && (
+              <ThemeIcon variant="light" size="xs" radius="xl" color="yellow">
+                <IconQuestionMark style={{ width: "70%", height: "70%" }} />
               </ThemeIcon>
             )}
-            {prereqMet.result === 'NOT' && (
-              <ThemeIcon variant='light' size='xs' radius='xl' color='red'>
-                <IconX style={{ width: '70%', height: '70%' }} />
+            {prereqMet.result === "NOT" && (
+              <ThemeIcon variant="light" size="xs" radius="xl" color="red">
+                <IconX style={{ width: "70%", height: "70%" }} />
               </ThemeIcon>
             )}
           </>
         )}
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.feat.traits ?? []}
             rarity={props.feat.rarity}
           />
@@ -1268,47 +1305,49 @@ export function FeatSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
-          variant='subtle'
+          size="compact-xs"
+          variant="subtle"
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer({ type: 'feat', data: { id: props.feat.id } });
+            openDrawer({ type: "feat", data: { id: props.feat.id } });
           }}
         >
           Details
         </Button>
       )}
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.feat.id);
@@ -1321,8 +1360,10 @@ export function FeatSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.feat.id);
@@ -1353,29 +1394,30 @@ export function ActionSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.action)}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.action.name}</Text>
+          <Text fz="sm">{props.action.name}</Text>
         </Box>
         <Box>
           <ActionSymbol cost={props.action.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.action.traits ?? []}
             rarity={props.action.rarity}
             skill={props.action.meta_data?.skill}
@@ -1387,47 +1429,49 @@ export function ActionSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
-          variant='subtle'
+          size="compact-xs"
+          variant="subtle"
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer({ type: 'action', data: { id: props.action.id } });
+            openDrawer({ type: "action", data: { id: props.action.id } });
           }}
         >
           Details
         </Button>
       )}
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.action.id);
@@ -1440,8 +1484,10 @@ export function ActionSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.action.id);
@@ -1472,42 +1518,43 @@ export function ClassFeatureSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.classFeature)}
-      justify='space-between'
+      justify="space-between"
     >
       <Text
         fz={10}
-        c='dimmed'
-        ta='right'
+        c="dimmed"
+        ta="right"
         w={14}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 15,
           left: 1,
         }}
       >
         {props.classFeature.level}.
       </Text>
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.classFeature.name}</Text>
+          <Text fz="sm">{props.classFeature.name}</Text>
         </Box>
         <Box>
           <ActionSymbol cost={props.classFeature.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.classFeature.traits ?? []}
             rarity={props.classFeature.rarity}
           />
@@ -1518,47 +1565,52 @@ export function ClassFeatureSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
-          variant='subtle'
+          size="compact-xs"
+          variant="subtle"
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer({ type: 'class-feature', data: { id: props.classFeature.id } });
+            openDrawer({
+              type: "class-feature",
+              data: { id: props.classFeature.id },
+            });
           }}
         >
           Details
         </Button>
       )}
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.classFeature.id);
@@ -1571,8 +1623,10 @@ export function ClassFeatureSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.classFeature.id);
@@ -1603,29 +1657,30 @@ export function HeritageSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.heritage)}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.heritage.name}</Text>
+          <Text fz="sm">{props.heritage.name}</Text>
         </Box>
         <Box>
           <ActionSymbol cost={props.heritage.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.heritage.traits ?? []}
             rarity={props.heritage.rarity}
           />
@@ -1636,47 +1691,49 @@ export function HeritageSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
-          variant='subtle'
+          size="compact-xs"
+          variant="subtle"
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer({ type: 'heritage', data: { id: props.heritage.id } });
+            openDrawer({ type: "heritage", data: { id: props.heritage.id } });
           }}
         >
           Details
         </Button>
       )}
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.heritage.id);
@@ -1689,8 +1746,10 @@ export function HeritageSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.heritage.id);
@@ -1720,29 +1779,30 @@ export function PhysicalFeatureSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.physicalFeature)}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.physicalFeature.name}</Text>
+          <Text fz="sm">{props.physicalFeature.name}</Text>
         </Box>
         <Box>
           <ActionSymbol cost={props.physicalFeature.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.physicalFeature.traits ?? []}
             rarity={props.physicalFeature.rarity}
           />
@@ -1750,46 +1810,51 @@ export function PhysicalFeatureSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 12,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'class-feature', data: { id: props.physicalFeature.id } });
+          openDrawer({
+            type: "class-feature",
+            data: { id: props.physicalFeature.id },
+          });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.physicalFeature.id);
@@ -1802,8 +1867,10 @@ export function PhysicalFeatureSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.physicalFeature.id);
@@ -1833,29 +1900,30 @@ export function SenseSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.sense)}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.sense.name}</Text>
+          <Text fz="sm">{props.sense.name}</Text>
         </Box>
         <Box>
           <ActionSymbol cost={props.sense.actions} />
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.sense.traits ?? []}
             rarity={props.sense.rarity}
           />
@@ -1863,46 +1931,48 @@ export function SenseSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 12,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'class-feature', data: { id: props.sense.id } });
+          openDrawer({ type: "class-feature", data: { id: props.sense.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.sense.id);
@@ -1915,8 +1985,10 @@ export function SenseSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.sense.id);
@@ -1945,16 +2017,16 @@ export function ClassSelectionOption(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const classHp = getStatDisplay(
-    'CHARACTER',
-    'MAX_HEALTH_CLASS_PER_LEVEL',
+    "CHARACTER",
+    "MAX_HEALTH_CLASS_PER_LEVEL",
     props.class_.operations ?? [],
-    'READ'
+    "READ"
   );
   const attributes = getStatBlockDisplay(
-    'CHARACTER',
-    getAllAttributeVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllAttributeVariables("CHARACTER").map((v) => v.name),
     props.class_.operations ?? [],
-    'READ'
+    "READ"
   );
   const keyAttribute =
     attributes.length > 0
@@ -1966,14 +2038,15 @@ export function ClassSelectionOption(props: {
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
-      id: 'change-option',
+      id: "change-option",
       title: <Title order={4}>Change Class</Title>,
       children: (
-        <Text size='sm'>
-          Are you sure you want to change your class? Any previous class selections will be erased.
+        <Text size="sm">
+          Are you sure you want to change your class? Any previous class
+          selections will be erased.
         </Text>
       ),
-      labels: { confirm: 'Confirm', cancel: 'Cancel' },
+      labels: { confirm: "Confirm", cancel: "Cancel" },
       onCancel: () => {},
       onConfirm: () => props.onClick(props.class_),
     });
@@ -1981,12 +2054,13 @@ export function ClassSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => {
         if (props.hasSelected && !props.selected) {
@@ -1995,101 +2069,108 @@ export function ClassSelectionOption(props: {
           props.onClick(props.class_);
         }
       }}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap'>
+      <Group wrap="nowrap">
         <Avatar
           src={props.class_.artwork_url}
-          radius='sm'
+          radius="sm"
           styles={{
             image: {
-              objectFit: 'contain',
+              objectFit: "contain",
             },
           }}
         />
 
         <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
+          <Text size="sm" fw={500}>
             {props.class_.name}
           </Text>
 
           <Group gap={5}>
             <Badge
-              variant='dot'
-              size='xs'
+              variant="dot"
+              size="xs"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
+                  "--badge-dot-size": 0,
                 },
               }}
-              c='gray.6'
+              c="gray.6"
             >
-              {classHp.ui ?? '-'} HP
+              {classHp.ui ?? "-"} HP
             </Badge>
             <Badge
-              variant='dot'
-              size='xs'
+              variant="dot"
+              size="xs"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
+                  "--badge-dot-size": 0,
                 },
               }}
-              c='gray.6'
+              c="gray.6"
             >
-              {keyAttribute.ui ?? 'Varies'}
+              {keyAttribute.ui ?? "Varies"}
             </Badge>
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />
+          <TraitsDisplay
+            justify="flex-end"
+            size="xs"
+            traitIds={[]}
+            rarity={props.class_.rarity}
+          />
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 20,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'class', data: { id: props.class_.id } });
+          openDrawer({ type: "class", data: { id: props.class_.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.class_.id);
@@ -2102,8 +2183,10 @@ export function ClassSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.class_.id);
@@ -2132,38 +2215,38 @@ export function AncestrySelectionOption(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const ancestryHp = getStatDisplay(
-    'CHARACTER',
-    'MAX_HEALTH_ANCESTRY',
+    "CHARACTER",
+    "MAX_HEALTH_ANCESTRY",
     props.ancestry.operations ?? [],
-    'READ'
+    "READ"
   );
   const attributes = getStatBlockDisplay(
-    'CHARACTER',
-    getAllAttributeVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllAttributeVariables("CHARACTER").map((v) => v.name),
     props.ancestry.operations ?? [],
-    'READ'
+    "READ"
   );
 
   const flawAttributes = getStatBlockDisplay(
-    'CHARACTER',
-    getAllAttributeVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllAttributeVariables("CHARACTER").map((v) => v.name),
     props.ancestry.operations ?? [],
-    'READ',
+    "READ",
     undefined,
     { onlyNegatives: true }
   );
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
-      id: 'change-option',
+      id: "change-option",
       title: <Title order={4}>Change Ancestry</Title>,
       children: (
-        <Text size='sm'>
-          Are you sure you want to change your ancestry? Any previous ancestry selections will be
-          erased.
+        <Text size="sm">
+          Are you sure you want to change your ancestry? Any previous ancestry
+          selections will be erased.
         </Text>
       ),
-      labels: { confirm: 'Confirm', cancel: 'Cancel' },
+      labels: { confirm: "Confirm", cancel: "Cancel" },
       onCancel: () => {},
       onConfirm: () => props.onClick(props.ancestry),
     });
@@ -2171,12 +2254,13 @@ export function AncestrySelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => {
         if (props.hasSelected && !props.selected) {
@@ -2185,80 +2269,84 @@ export function AncestrySelectionOption(props: {
           props.onClick(props.ancestry);
         }
       }}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap'>
+      <Group wrap="nowrap">
         <Avatar
           src={props.ancestry.artwork_url}
-          radius='sm'
+          radius="sm"
           styles={{
             image: {
-              objectFit: 'contain',
+              objectFit: "contain",
             },
           }}
         />
 
         <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
+          <Text size="sm" fw={500}>
             {props.ancestry.name}
           </Text>
 
           <Group gap={5}>
             <Badge
-              variant='dot'
-              size='xs'
+              variant="dot"
+              size="xs"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
+                  "--badge-dot-size": 0,
                 },
               }}
-              c='gray.6'
+              c="gray.6"
             >
               {ancestryHp.ui} HP
             </Badge>
             <Badge
-              variant='dot'
-              size='xs'
+              variant="dot"
+              size="xs"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
+                  "--badge-dot-size": 0,
                 },
               }}
-              c='gray.6'
+              c="gray.6"
             >
               +
               {attributes.flatMap((attribute, index) =>
-                index < attributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
+                index < attributes.length - 1
+                  ? [attribute.ui, ", "]
+                  : [attribute.ui]
               )}
             </Badge>
             {flawAttributes.length > 0 && (
               <Badge
-                variant='dot'
-                size='xs'
+                variant="dot"
+                size="xs"
                 styles={{
                   root: {
                     // @ts-ignore
-                    '--badge-dot-size': 0,
+                    "--badge-dot-size": 0,
                   },
                 }}
-                c='gray.6'
+                c="gray.6"
               >
                 -
                 {flawAttributes.flatMap((attribute, index) =>
-                  index < flawAttributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
+                  index < flawAttributes.length - 1
+                    ? [attribute.ui, ", "]
+                    : [attribute.ui]
                 )}
               </Badge>
             )}
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={[]}
             rarity={props.ancestry.rarity}
           />
@@ -2266,46 +2354,48 @@ export function AncestrySelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 20,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'ancestry', data: { id: props.ancestry.id } });
+          openDrawer({ type: "ancestry", data: { id: props.ancestry.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.ancestry.id);
@@ -2318,8 +2408,10 @@ export function AncestrySelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.ancestry.id);
@@ -2349,35 +2441,36 @@ export function BackgroundSelectionOption(props: {
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
-      id: 'change-option',
+      id: "change-option",
       title: <Title order={4}>Change Background</Title>,
       children: (
-        <Text size='sm'>
-          Are you sure you want to change your background? Any previous background selections will
-          be erased.
+        <Text size="sm">
+          Are you sure you want to change your background? Any previous
+          background selections will be erased.
         </Text>
       ),
-      labels: { confirm: 'Confirm', cancel: 'Cancel' },
+      labels: { confirm: "Confirm", cancel: "Cancel" },
       onCancel: () => {},
       onConfirm: () => props.onClick(props.background),
     });
 
   const attributes = getStatBlockDisplay(
-    'CHARACTER',
-    getAllAttributeVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllAttributeVariables("CHARACTER").map((v) => v.name),
     props.background.operations ?? [],
-    'READ'
+    "READ"
   );
 
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => {
         if (props.hasSelected && !props.selected) {
@@ -2386,11 +2479,11 @@ export function BackgroundSelectionOption(props: {
           props.onClick(props.background);
         }
       }}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap'>
+      <Group wrap="nowrap">
         <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
+          <Text size="sm" fw={500}>
             {props.background.name}
           </Text>
 
@@ -2398,15 +2491,15 @@ export function BackgroundSelectionOption(props: {
             {attributes.map((attribute, index) => (
               <Badge
                 key={index}
-                variant='dot'
-                size='xs'
+                variant="dot"
+                size="xs"
                 styles={{
                   root: {
                     // @ts-ignore
-                    '--badge-dot-size': 0,
+                    "--badge-dot-size": 0,
                   },
                 }}
-                c='gray.6'
+                c="gray.6"
               >
                 {attribute.ui}
               </Badge>
@@ -2414,11 +2507,11 @@ export function BackgroundSelectionOption(props: {
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={[]}
             rarity={props.background.rarity}
           />
@@ -2426,46 +2519,48 @@ export function BackgroundSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 20,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'background', data: { id: props.background.id } });
+          openDrawer({ type: "background", data: { id: props.background.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.background.id);
@@ -2478,8 +2573,10 @@ export function BackgroundSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.background.id);
@@ -2503,7 +2600,7 @@ export function ItemSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
   includeAdd?: boolean;
-  onAdd?: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
+  onAdd?: (item: Item, type: "GIVE" | "BUY" | "FORMULA") => void;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2512,39 +2609,40 @@ export function ItemSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => hovered && props.onClick(props.item)}
-      justify='space-between'
+      justify="space-between"
     >
       <Text
         fz={10}
-        c='dimmed'
-        ta='right'
+        c="dimmed"
+        ta="right"
         w={14}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 15,
           left: 1,
         }}
       >
         {props.item.level}.
       </Text>
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.item.name}</Text>
+          <Text fz="sm">{props.item.name}</Text>
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.item.traits ?? []}
             rarity={props.item.rarity}
           />
@@ -2556,61 +2654,63 @@ export function ItemSelectionOption(props: {
       {props.includeAdd && (
         <Box
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: 10,
           }}
         >
           <BuyItemButton
-            onBuy={() => props.onAdd?.(props.item, 'BUY')}
-            onGive={() => props.onAdd?.(props.item, 'GIVE')}
-            onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
+            onBuy={() => props.onAdd?.(props.item, "BUY")}
+            onGive={() => props.onAdd?.(props.item, "GIVE")}
+            onFormula={() => props.onAdd?.(props.item, "FORMULA")}
           />
         </Box>
       )}
       {props.includeDetails && (
         <Button
-          size='compact-xs'
-          variant='subtle'
+          size="compact-xs"
+          variant="subtle"
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: props.includeOptions ? 40 : 10,
           }}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer({ type: 'item', data: { id: props.item.id } });
+            openDrawer({ type: "item", data: { id: props.item.id } });
           }}
         >
           Details
         </Button>
       )}
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.item.id);
@@ -2623,8 +2723,10 @@ export function ItemSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.item.id);
@@ -2654,32 +2756,33 @@ export function SpellSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.spell)}
-      justify='space-between'
+      justify="space-between"
     >
       <Text
         fz={10}
-        c='dimmed'
-        ta='right'
+        c="dimmed"
+        ta="right"
         w={14}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 15,
           left: 1,
         }}
       >
         {props.spell.rank}.
       </Text>
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.spell.name}</Text>
+          <Text fz="sm">{props.spell.name}</Text>
         </Box>
         {isActionCost(props.spell.cast) && (
           <Box>
@@ -2687,11 +2790,11 @@ export function SpellSelectionOption(props: {
           </Box>
         )}
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.spell.traits ?? []}
             rarity={props.spell.rarity}
           />
@@ -2699,46 +2802,48 @@ export function SpellSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 12,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'spell', data: { id: props.spell.id } });
+          openDrawer({ type: "spell", data: { id: props.spell.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.spell.id);
@@ -2751,8 +2856,10 @@ export function SpellSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.spell.id);
@@ -2782,72 +2889,75 @@ export function TraitSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.trait)}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Indicator
           disabled={!props.trait.meta_data?.important}
           inline
           size={12}
           offset={-10}
-          position='middle-end'
+          position="middle-end"
           color={theme.primaryColor}
           withBorder
         >
           <Box pl={8}>
-            <Text fz='sm'>{props.trait.name}</Text>
+            <Text fz="sm">{props.trait.name}</Text>
           </Box>
         </Indicator>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 12,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'trait', data: { id: props.trait.id } });
+          openDrawer({ type: "trait", data: { id: props.trait.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.trait.id);
@@ -2860,8 +2970,10 @@ export function TraitSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.trait.id);
@@ -2891,26 +3003,27 @@ export function LanguageSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => props.onClick(props.language)}
-      justify='space-between'
+      justify="space-between"
     >
-      <Group wrap='nowrap' gap={5}>
+      <Group wrap="nowrap" gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.language.name}</Text>
+          <Text fz="sm">{props.language.name}</Text>
         </Box>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={[]}
             rarity={props.language.rarity}
           />
@@ -2918,46 +3031,48 @@ export function LanguageSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 12,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'language', data: { id: props.language.id } });
+          openDrawer({ type: "language", data: { id: props.language.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.language.id);
@@ -2970,8 +3085,10 @@ export function LanguageSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.language.id);
@@ -3002,98 +3119,99 @@ export function CreatureSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      p="sm"
       style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+        cursor: "pointer",
+        borderBottom: "1px solid " + theme.colors.dark[6],
+        backgroundColor:
+          hovered || props.selected ? theme.colors.dark[6] : "transparent",
+        position: "relative",
       }}
       onClick={() => {
         props.onClick(props.creature);
       }}
-      justify='space-between'
+      justify="space-between"
     >
       <Text
         fz={10}
-        c='dimmed'
-        ta='right'
+        c="dimmed"
+        ta="right"
         w={14}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 15,
           left: 1,
         }}
       >
         {props.creature.level}.
       </Text>
-      <Group ml={8} wrap='nowrap'>
+      <Group ml={8} wrap="nowrap">
         <Avatar
           src={props.creature.meta_data?.image_url}
-          radius='sm'
+          radius="sm"
           styles={{
             image: {
-              objectFit: 'contain',
+              objectFit: "contain",
             },
           }}
         />
 
         <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
+          <Text size="sm" fw={500}>
             {props.creature.name}
           </Text>
 
           <Group gap={5}>
             {props.creature.family_type && (
               <Badge
-                variant='dot'
-                size='xs'
+                variant="dot"
+                size="xs"
                 styles={{
                   root: {
                     // @ts-ignore
-                    '--badge-dot-size': 0,
-                    textTransform: 'initial',
+                    "--badge-dot-size": 0,
+                    textTransform: "initial",
                   },
                 }}
-                c='gray.6'
+                c="gray.6"
               >
                 {props.creature.family_type}
               </Badge>
             )}
             <Badge
-              variant='dot'
-              size='xs'
+              variant="dot"
+              size="xs"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
+                  "--badge-dot-size": 0,
                 },
               }}
-              c='gray.6'
+              c="gray.6"
             >
               AC {props.creature.stats?.ac}
             </Badge>
             <Badge
-              variant='dot'
-              size='xs'
+              variant="dot"
+              size="xs"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
+                  "--badge-dot-size": 0,
                 },
               }}
-              c='gray.6'
+              c="gray.6"
             >
               {props.creature.stats?.hp.max} HP
             </Badge>
           </Group>
         </div>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+      <Group wrap="nowrap" justify="flex-end" style={{ marginLeft: "auto" }}>
         <Box>
           <TraitsDisplay
-            justify='flex-end'
-            size='xs'
+            justify="flex-end"
+            size="xs"
             traitIds={props.creature.traits ?? []}
             rarity={props.creature.rarity}
           />
@@ -3101,46 +3219,48 @@ export function CreatureSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
-        variant='subtle'
+        size="compact-xs"
+        variant="subtle"
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 20,
           right: props.includeOptions ? 40 : 10,
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'creature', data: { id: props.creature.id } });
+          openDrawer({ type: "creature", data: { id: props.creature.id } });
         }}
       >
         Details
       </Button>
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow="md" width={200}>
           <Menu.Target>
             <ActionIcon
-              size='sm'
-              variant='subtle'
-              radius='xl'
+              size="sm"
+              variant="subtle"
+              radius="xl"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 13,
                 right: 15,
               }}
-              aria-label='Options'
+              aria-label="Options"
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
               }}
             >
-              <IconDots size='1rem' />
+              <IconDots size="1rem" />
             </ActionIcon>
           </Menu.Target>
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
             <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+              leftSection={
+                <IconCopy style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onCopy?.(props.creature.id);
@@ -3153,8 +3273,10 @@ export function CreatureSelectionOption(props: {
 
             <Menu.Label>Danger zone</Menu.Label>
             <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+              color="red"
+              leftSection={
+                <IconTrash style={{ width: rem(14), height: rem(14) }} />
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 props.onDelete?.(props.creature.id);

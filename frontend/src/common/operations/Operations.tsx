@@ -11,10 +11,10 @@ import {
   useMantineTheme,
   Title,
   Tooltip,
-} from '@mantine/core';
-import { modals } from '@mantine/modals';
-import { createDefaultOperation } from '@operations/operation-utils';
-import { AbilityBlockType, Spell } from '@typing/content';
+} from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { createDefaultOperation } from "@operations/operation-utils";
+import { AbilityBlockType, Spell } from "@typing/content";
 import {
   Operation,
   OperationAddBonusToValue,
@@ -27,25 +27,25 @@ import {
   OperationSelect,
   OperationSetValue,
   OperationType,
-} from '@typing/operations';
-import _ from 'lodash';
-import { ReactNode, useEffect, useRef, useState } from 'react';
-import ConditionalOperation from './conditional/ConditionalOperation';
-import { GiveActionOperation } from './ability_block/GiveActionOperation';
-import { GiveClassFeatureOperation } from './ability_block/GiveClassFeatureOperation';
-import { GiveFeatOperation } from './ability_block/GiveFeatOperation';
-import { GiveSpellOperation } from './spell/GiveSpellOperation';
-import { AdjValOperation } from './variables/AdjValOperation';
-import { SetValOperation } from './variables/SetValOperation';
-import { CreateValOperation } from './variables/CreateValOperation';
-import { useDidUpdate } from '@mantine/hooks';
-import { SelectionOperation } from './selection/SelectionOperation';
-import { GiveLanguageOperation } from './language/GiveLanguageOperation';
-import { GiveSenseOperation } from './ability_block/GiveSenseOperation';
-import { GivePhysicalFeatureOperation } from './ability_block/GivePhysicalFeatureOperation';
-import { addVariable, resetVariables } from '@variables/variable-manager';
-import { GiveHeritageOperation } from './ability_block/GiveHeritageOperation';
-import { AddBonusToValOperation } from './variables/AddBonusToValOperation';
+} from "@typing/operations";
+import * as _ from "lodash-es";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import ConditionalOperation from "./conditional/ConditionalOperation";
+import { GiveActionOperation } from "./ability_block/GiveActionOperation";
+import { GiveClassFeatureOperation } from "./ability_block/GiveClassFeatureOperation";
+import { GiveFeatOperation } from "./ability_block/GiveFeatOperation";
+import { GiveSpellOperation } from "./spell/GiveSpellOperation";
+import { AdjValOperation } from "./variables/AdjValOperation";
+import { SetValOperation } from "./variables/SetValOperation";
+import { CreateValOperation } from "./variables/CreateValOperation";
+import { useDidUpdate } from "@mantine/hooks";
+import { SelectionOperation } from "./selection/SelectionOperation";
+import { GiveLanguageOperation } from "./language/GiveLanguageOperation";
+import { GiveSenseOperation } from "./ability_block/GiveSenseOperation";
+import { GivePhysicalFeatureOperation } from "./ability_block/GivePhysicalFeatureOperation";
+import { addVariable, resetVariables } from "@variables/variable-manager";
+import { GiveHeritageOperation } from "./ability_block/GiveHeritageOperation";
+import { AddBonusToValOperation } from "./variables/AddBonusToValOperation";
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -57,33 +57,35 @@ export function OperationWrapper(props: {
   const openConfirmModal = () =>
     modals.openConfirmModal({
       title: <Title order={4}>Remove Operation</Title>,
-      children: <Text size='sm'>Are you sure you want to remove this operation?</Text>,
-      labels: { confirm: 'Confirm', cancel: 'Cancel' },
+      children: (
+        <Text size="sm">Are you sure you want to remove this operation?</Text>
+      ),
+      labels: { confirm: "Confirm", cancel: "Cancel" },
       onCancel: () => {},
       onConfirm: () => props.onRemove(),
     });
 
   return (
-    <Container w={'min(700px, 100%)'}>
+    <Container w={"min(700px, 100%)"}>
       <Paper
-        py='xs'
-        pl='xs'
+        py="xs"
+        pl="xs"
         pr={40}
-        radius='xl'
+        radius="xl"
         style={{
-          position: 'relative',
+          position: "relative",
         }}
       >
-        <Group wrap='nowrap' align='flex-start'>
-          <Group align='flex-start'>
+        <Group wrap="nowrap" align="flex-start">
+          <Group align="flex-start">
             <Badge
-              variant='dot'
-              size='lg'
+              variant="dot"
+              size="lg"
               styles={{
                 root: {
                   // @ts-ignore
-                  '--badge-dot-size': 0,
-                  textTransform: 'initial',
+                  "--badge-dot-size": 0,
+                  textTransform: "initial",
                 },
               }}
               style={{
@@ -102,16 +104,21 @@ export function OperationWrapper(props: {
         </Group>
         <Box
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 12,
             right: 12,
             zIndex: 100,
           }}
         >
-          <Tooltip label='Remove Operation' position='right' withArrow withinPortal>
+          <Tooltip
+            label="Remove Operation"
+            position="right"
+            withArrow
+            withinPortal
+          >
             <CloseButton
-              size='sm'
-              radius='xl'
+              size="sm"
+              radius="xl"
               onClick={() => {
                 openConfirmModal();
               }}
@@ -138,8 +145,8 @@ export function OperationSection(props: {
     // Reset variable store
     resetVariables();
     for (let op of props.value ?? []) {
-      if (op.type === 'createValue') {
-        addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value);
+      if (op.type === "createValue") {
+        addVariable("CHARACTER", op.data.type, op.data.variable, op.data.value);
       }
     }
   }, [props.value]);
@@ -150,38 +157,44 @@ export function OperationSection(props: {
 
   return (
     <Stack gap={10}>
-      <Group justify='space-between'>
+      <Group justify="space-between">
         <Box>{props.title}</Box>
         <Select
           ref={selectRef}
-          variant='filled'
-          size='xs'
-          placeholder='Add Operation'
+          variant="filled"
+          size="xs"
+          placeholder="Add Operation"
           data={[
-            { value: 'select', label: 'Selection' },
-            { value: 'conditional', label: 'Conditional' },
-            { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
-            { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
-            { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
-            { value: 'giveAbilityBlock:::physical-feature', label: 'Give Physical Feature' },
-            { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
-            { value: 'giveSpell', label: 'Give Spell' },
-            { value: 'giveLanguage', label: 'Give Language' },
-            { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
-            { value: 'adjValue', label: 'Adjust Value' },
-            { value: 'addBonusToValue', label: 'Add Bonus to Value' },
-            { value: 'createValue', label: 'Create Value' },
-            { value: 'setValue', label: 'Override Value' },
-            { value: 'RESO', label: 'RESO' }, // TODO
+            { value: "select", label: "Selection" },
+            { value: "conditional", label: "Conditional" },
+            { value: "giveAbilityBlock:::feat", label: "Give Feat" },
+            {
+              value: "giveAbilityBlock:::class-feature",
+              label: "Give Class Feature",
+            },
+            { value: "giveAbilityBlock:::sense", label: "Give Sense" },
+            {
+              value: "giveAbilityBlock:::physical-feature",
+              label: "Give Physical Feature",
+            },
+            { value: "giveAbilityBlock:::heritage", label: "Give Heritage" },
+            { value: "giveSpell", label: "Give Spell" },
+            { value: "giveLanguage", label: "Give Language" },
+            { value: "giveSelectOption", label: "Give Select Option" }, // TODO
+            { value: "adjValue", label: "Adjust Value" },
+            { value: "addBonusToValue", label: "Add Bonus to Value" },
+            { value: "createValue", label: "Create Value" },
+            { value: "setValue", label: "Override Value" },
+            { value: "RESO", label: "RESO" }, // TODO
           ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
-          searchValue={''}
+          searchValue={""}
           value={null}
           onChange={(value) => {
             if (value) {
               let abilBlockType = null;
-              if (value.includes('giveAbilityBlock:::')) {
-                abilBlockType = value.split(':::')[1];
-                value = 'giveAbilityBlock';
+              if (value.includes("giveAbilityBlock:::")) {
+                abilBlockType = value.split(":::")[1];
+                value = "giveAbilityBlock";
               }
 
               const newOp = createDefaultOperation(value as OperationType);
@@ -228,7 +241,7 @@ export function OperationSection(props: {
           />
         ))}
         {operations.length === 0 && (
-          <Text size='sm' c='gray.7' ta='center' fs='italic'>
+          <Text size="sm" c="gray.7" ta="center" fs="italic">
             No operations
           </Text>
         )}
@@ -243,10 +256,10 @@ export function OperationDisplay(props: {
   onRemove: (id: string) => void;
 }) {
   switch (props.operation.type) {
-    case 'giveAbilityBlock':
+    case "giveAbilityBlock":
       let opGiveAbilBlock = props.operation as OperationGiveAbilityBlock;
       switch (opGiveAbilBlock.data.type) {
-        case 'feat':
+        case "feat":
           return (
             <GiveFeatOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
@@ -257,7 +270,7 @@ export function OperationDisplay(props: {
               onRemove={() => props.onRemove(props.operation.id)}
             />
           );
-        case 'action':
+        case "action":
           return (
             <GiveActionOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
@@ -268,7 +281,7 @@ export function OperationDisplay(props: {
               onRemove={() => props.onRemove(props.operation.id)}
             />
           );
-        case 'class-feature':
+        case "class-feature":
           return (
             <GiveClassFeatureOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
@@ -279,7 +292,7 @@ export function OperationDisplay(props: {
               onRemove={() => props.onRemove(props.operation.id)}
             />
           );
-        case 'sense':
+        case "sense":
           return (
             <GiveSenseOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
@@ -290,7 +303,7 @@ export function OperationDisplay(props: {
               onRemove={() => props.onRemove(props.operation.id)}
             />
           );
-        case 'physical-feature':
+        case "physical-feature":
           return (
             <GivePhysicalFeatureOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
@@ -301,7 +314,7 @@ export function OperationDisplay(props: {
               onRemove={() => props.onRemove(props.operation.id)}
             />
           );
-        case 'heritage':
+        case "heritage":
           return (
             <GiveHeritageOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
@@ -315,7 +328,7 @@ export function OperationDisplay(props: {
         default:
           return null;
       }
-    case 'giveSpell':
+    case "giveSpell":
       let opGiveSpell = props.operation as OperationGiveSpell;
       return (
         <GiveSpellOperation
@@ -327,7 +340,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'giveLanguage':
+    case "giveLanguage":
       let opGiveLanguage = props.operation as OperationGiveLanguage;
       return (
         <GiveLanguageOperation
@@ -339,7 +352,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'conditional':
+    case "conditional":
       let opConditional = props.operation as OperationConditional;
       return (
         <ConditionalOperation
@@ -355,7 +368,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'select':
+    case "select":
       let opSelection = props.operation as OperationSelect;
       return (
         <SelectionOperation
@@ -367,7 +380,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'adjValue':
+    case "adjValue":
       let opAdjValue = props.operation as OperationAdjValue;
       return (
         <AdjValOperation
@@ -384,7 +397,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'setValue':
+    case "setValue":
       let opSetValue = props.operation as OperationSetValue;
       return (
         // TODO: make it VariableValue
@@ -402,7 +415,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'createValue':
+    case "createValue":
       let opCreateValue = props.operation as OperationCreateValue;
       return (
         <CreateValOperation
@@ -424,7 +437,7 @@ export function OperationDisplay(props: {
           onRemove={() => props.onRemove(props.operation.id)}
         />
       );
-    case 'addBonusToValue':
+    case "addBonusToValue":
       let opAddBonusToValue = props.operation as OperationAddBonusToValue;
       return (
         <AddBonusToValOperation

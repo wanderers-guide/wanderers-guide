@@ -1,8 +1,8 @@
-import { Inventory, InventoryItem, Item } from '@typing/content';
-import { StoreID } from '@typing/variables';
-import { hasTraitType } from '@utils/traits';
-import { getFinalAcValue } from '@variables/variable-display';
-import _ from 'lodash';
+import { Inventory, InventoryItem, Item } from "@typing/content";
+import { StoreID } from "@typing/variables";
+import { hasTraitType } from "@utils/traits";
+import { getFinalAcValue } from "@variables/variable-display";
+import * as _ from "lodash-es";
 
 export function getFlatInvItems(inv: Inventory) {
   const flatItems = inv.items.reduce((acc, invItem) => {
@@ -25,8 +25,9 @@ export function getInvBulk(inv: Inventory) {
   for (const invItem of inv.items) {
     const bulk =
       (invItem.is_equipped
-        ? invItem.item.meta_data?.bulk?.held_or_stowed ?? parseFloat(invItem.item.bulk ?? '0')
-        : parseFloat(invItem.item.bulk ?? '0')) ?? 0;
+        ? invItem.item.meta_data?.bulk?.held_or_stowed ??
+          parseFloat(invItem.item.bulk ?? "0")
+        : parseFloat(invItem.item.bulk ?? "0")) ?? 0;
     totalBulk += bulk * getItemQuantity(invItem.item);
 
     if (isItemContainer(invItem.item)) {
@@ -35,7 +36,7 @@ export function getInvBulk(inv: Inventory) {
       for (const containerItem of invItem.container_contents) {
         const innerBulk =
           containerItem.item.meta_data?.bulk?.held_or_stowed ??
-          parseFloat(containerItem.item.bulk ?? '0') ??
+          parseFloat(containerItem.item.bulk ?? "0") ??
           0;
         containerTotalBulk += innerBulk * getItemQuantity(containerItem.item);
       }
@@ -75,7 +76,9 @@ export const handleDeleteItem = (
   invItem: InventoryItem
 ) => {
   setInventory((prev) => {
-    const newItems = _.cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
+    const newItems = _.cloneDeep(
+      prev.items.filter((item) => item.id !== invItem.id)
+    );
     // Remove from all containers
     newItems.forEach((item) => {
       if (isItemContainer(item.item)) {
@@ -105,12 +108,14 @@ export const handleUpdateItem = (
     // Update if it's in a container
     newItems.forEach((item) => {
       if (isItemContainer(item.item)) {
-        item.container_contents = item.container_contents.map((containedItem) => {
-          if (containedItem.id === invItem.id) {
-            return _.cloneDeep(invItem);
+        item.container_contents = item.container_contents.map(
+          (containedItem) => {
+            if (containedItem.id === invItem.id) {
+              return _.cloneDeep(invItem);
+            }
+            return containedItem;
           }
-          return containedItem;
-        });
+        );
       }
     });
     return {
@@ -131,7 +136,9 @@ export const handleMoveItem = (
     setInventory((prev) => {
       let newItems: InventoryItem[] = [];
       if (containerItem) {
-        const foundContainer = _.cloneDeep(prev.items.find((item) => item.id === containerItem.id));
+        const foundContainer = _.cloneDeep(
+          prev.items.find((item) => item.id === containerItem.id)
+        );
         if (!foundContainer) return prev;
         movingItem.is_equipped = false;
         newItems = _.cloneDeep(prev.items).map((item) => {
@@ -205,7 +212,7 @@ export function isItemContainer(item: Item) {
 }
 
 export function isItemInvestable(item: Item) {
-  return hasTraitType('INVESTED', item.traits);
+  return hasTraitType("INVESTED", item.traits);
 }
 
 export function isItemEquippable(item: Item) {
@@ -213,7 +220,7 @@ export function isItemEquippable(item: Item) {
 }
 
 export function isItemWithQuantity(item: Item) {
-  return hasTraitType('CONSUMABLE', item.traits);
+  return hasTraitType("CONSUMABLE", item.traits);
 }
 
 export function isItemWeapon(item: Item) {
@@ -231,21 +238,21 @@ export function isItemShield(item: Item) {
 export function labelizeBulk(bulk?: number | string, displayZero = false) {
   if (bulk === undefined) {
     if (displayZero) {
-      return '0';
+      return "0";
     } else {
-      return '–';
+      return "–";
     }
   }
   bulk = parseFloat(bulk as string);
   if (bulk === 0) {
     if (displayZero) {
-      return '0';
+      return "0";
     } else {
-      return '–';
+      return "–";
     }
   }
   if (bulk === 0.1) {
-    return 'L';
+    return "L";
   }
   return `${parseFloat(bulk.toFixed(1))}`;
 }

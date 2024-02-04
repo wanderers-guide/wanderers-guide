@@ -1,4 +1,4 @@
-import _, { maxBy } from 'lodash';
+import * as _ from "lodash-es";
 
 export function sign(num: number | string): string {
   num = _.isString(num) ? parseInt(num) : num;

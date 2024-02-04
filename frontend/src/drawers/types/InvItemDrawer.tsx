@@ -1,12 +1,8 @@
-import { characterState } from '@atoms/characterAtoms';
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
-import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentById } from '@content/content-store';
-import { isActionCost } from '@content/content-utils';
-import { priceToString } from '@items/currency-handler';
+import { characterState } from "@atoms/characterAtoms";
+import IndentedText from "@common/IndentedText";
+import RichText from "@common/RichText";
+import TraitsDisplay from "@common/TraitsDisplay";
+import { priceToString } from "@items/currency-handler";
 import {
   isItemArmor,
   isItemBroken,
@@ -15,58 +11,53 @@ import {
   isItemWeapon,
   isItemWithQuantity,
   labelizeBulk,
-} from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
+} from "@items/inv-utils";
+import { getWeaponStats } from "@items/weapon-handler";
 import {
-  Title,
-  Text,
-  Image,
-  Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Button,
-  Menu,
-  rem,
   ActionIcon,
-  Paper,
-  NumberInput,
-  TextInput,
+  Box,
+  Button,
+  Divider,
+  Group,
   HoverCard,
+  Image,
+  Menu,
+  NumberInput,
+  Paper,
   ScrollArea,
-} from '@mantine/core';
-import { getHotkeyHandler } from '@mantine/hooks';
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  rem,
+} from "@mantine/core";
+import { getHotkeyHandler } from "@mantine/hooks";
 import {
-  IconCalendar,
   IconChevronDown,
   IconEdit,
   IconHelpCircle,
-  IconPackage,
-  IconPhoto,
-  IconSquareCheck,
   IconTrashXFilled,
-  IconUsers,
-} from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { InventoryItem, Item } from '@typing/content';
-import { sign } from '@utils/numbers';
-import { hasTraitType } from '@utils/traits';
-import * as math from 'mathjs';
-import { useEffect, useRef, useState } from 'react';
-import { useRecoilValue } from 'recoil';
+} from "@tabler/icons-react";
+import { InventoryItem } from "@typing/content";
+import { sign } from "@utils/numbers";
+import { evaluate } from "mathjs/number";
+import { useEffect, useRef, useState } from "react";
+import { useRecoilValue } from "recoil";
 
-export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
+export function InvItemDrawerTitle(props: {
+  data: { invItem: InventoryItem };
+}) {
   return (
     <>
-      <Group justify='space-between' wrap='nowrap'>
-        <Group wrap='nowrap' gap={10}>
+      <Group justify="space-between" wrap="nowrap">
+        <Group wrap="nowrap" gap={10}>
           <Box>
             <Title order={3}>{props.data.invItem.item.name}</Title>
           </Box>
         </Group>
-        <Text style={{ textWrap: 'nowrap' }}>Item {props.data.invItem.item.level}</Text>
+        <Text style={{ textWrap: "nowrap" }}>
+          Item {props.data.invItem.item.level}
+        </Text>
       </Group>
     </>
   );
@@ -77,23 +68,27 @@ export function InvItemDrawerContent(props: {
     invItem: InventoryItem;
     onItemUpdate: (invItem: InventoryItem) => void;
     onItemDelete: (invItem: InventoryItem) => void;
-    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
+    onItemMove: (
+      invItem: InventoryItem,
+      containerItem: InventoryItem | null
+    ) => void;
   };
 }) {
   const [invItem, setInvItem] = useState(props.data.invItem);
 
   const character = useRecoilValue(characterState);
   const containerItems = (
-    character?.inventory?.items.filter((item) => isItemContainer(item.item)) ?? []
+    character?.inventory?.items.filter((item) => isItemContainer(item.item)) ??
+    []
   ).filter((i) => i.id !== props.data.invItem.id);
 
   let price = null;
   if (invItem.item.price) {
     price = (
       <>
-        <Text key={1} fw={600} c='gray.5' span>
+        <Text key={1} fw={600} c="gray.5" span>
           Price
-        </Text>{' '}
+        </Text>{" "}
         {priceToString(invItem.item.price)}
       </>
     );
@@ -103,19 +98,19 @@ export function InvItemDrawerContent(props: {
   if (invItem.item.usage) {
     UBH.push(
       <>
-        <Text key={0} fw={600} c='gray.5' span>
+        <Text key={0} fw={600} c="gray.5" span>
           Usage
-        </Text>{' '}
-        {invItem.item.usage.replace(/-/g, ' ')}
+        </Text>{" "}
+        {invItem.item.usage.replace(/-/g, " ")}
       </>
     );
   }
   if (invItem.item.bulk !== undefined) {
     UBH.push(
       <>
-        <Text key={1} fw={600} c='gray.5' span>
+        <Text key={1} fw={600} c="gray.5" span>
           Bulk
-        </Text>{' '}
+        </Text>{" "}
         {labelizeBulk(invItem.item.bulk)}
       </>
     );
@@ -123,9 +118,9 @@ export function InvItemDrawerContent(props: {
   if (invItem.item.hands) {
     UBH.push(
       <>
-        <Text key={1} fw={600} c='gray.5' span>
+        <Text key={1} fw={600} c="gray.5" span>
           Hands
-        </Text>{' '}
+        </Text>{" "}
         {invItem.item.hands}
       </>
     );
@@ -135,9 +130,9 @@ export function InvItemDrawerContent(props: {
   if (invItem.item.craft_requirements) {
     craftReq = (
       <>
-        <Text key={1} fw={600} c='gray.5' span>
+        <Text key={1} fw={600} c="gray.5" span>
           Craft Requirements
-        </Text>{' '}
+        </Text>{" "}
         {invItem.item.craft_requirements}
       </>
     );
@@ -148,13 +143,13 @@ export function InvItemDrawerContent(props: {
       {invItem.item.meta_data?.image_url && (
         <Image
           style={{
-            float: 'right',
+            float: "right",
             maxWidth: 150,
-            height: 'auto',
+            height: "auto",
           }}
-          ml='sm'
-          radius='md'
-          fit='contain'
+          ml="sm"
+          radius="md"
+          fit="contain"
           src={invItem.item.meta_data?.image_url}
         />
       )}
@@ -178,50 +173,55 @@ export function InvItemDrawerContent(props: {
           }}
         />
 
-        {price && <IndentedText ta='justify'>{price}</IndentedText>}
+        {price && <IndentedText ta="justify">{price}</IndentedText>}
         {UBH.length > 0 && (
-          <IndentedText ta='justify'>
-            {UBH.flatMap((node, index) => (index < UBH.length - 1 ? [node, '; '] : [node]))}
+          <IndentedText ta="justify">
+            {UBH.flatMap((node, index) =>
+              index < UBH.length - 1 ? [node, "; "] : [node]
+            )}
           </IndentedText>
         )}
 
         <Divider />
-        <RichText ta='justify' py={5}>
+        <RichText ta="justify" py={5}>
           {invItem.item.description}
         </RichText>
 
         {craftReq && (
           <>
             <Divider />
-            <IndentedText ta='justify'>{craftReq}</IndentedText>
+            <IndentedText ta="justify">{craftReq}</IndentedText>
           </>
         )}
       </Box>
       <Box
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: 0,
-          width: '100%',
+          width: "100%",
         }}
       >
         {/* <Divider mr={15} mb={10} /> */}
-        <Group justify='flex-end' wrap='nowrap' mr={15} gap={15}>
+        <Group justify="flex-end" wrap="nowrap" mr={15} gap={15}>
           {containerItems.length > 0 && (
             <Menu
-              transitionProps={{ transition: 'pop-top-right' }}
-              position='top-end'
+              transitionProps={{ transition: "pop-top-right" }}
+              position="top-end"
               // width={140}
               withinPortal
               zIndex={10000}
             >
               <Menu.Target>
                 <Button
-                  variant='light'
-                  color='teal'
-                  size='compact-sm'
-                  radius='xl'
+                  variant="light"
+                  color="teal"
+                  size="compact-sm"
+                  radius="xl"
                   rightSection={
-                    <IconChevronDown style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                    <IconChevronDown
+                      style={{ width: rem(18), height: rem(18) }}
+                      stroke={1.5}
+                    />
                   }
                   styles={{
                     section: {
@@ -255,19 +255,27 @@ export function InvItemDrawerContent(props: {
               </Menu.Dropdown>
             </Menu>
           )}
-          <ActionIcon variant='light' color='cyan' radius='xl' aria-label='Edit Item'>
-            <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
+          <ActionIcon
+            variant="light"
+            color="cyan"
+            radius="xl"
+            aria-label="Edit Item"
+          >
+            <IconEdit style={{ width: "70%", height: "70%" }} stroke={1.5} />
           </ActionIcon>
           <ActionIcon
-            variant='light'
-            color='red'
-            radius='xl'
-            aria-label='Remove Item'
+            variant="light"
+            color="red"
+            radius="xl"
+            aria-label="Remove Item"
             onClick={() => {
               props.data.onItemDelete(props.data.invItem);
             }}
           >
-            <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+            <IconTrashXFilled
+              style={{ width: "70%", height: "70%" }}
+              stroke={1.5}
+            />
           </ActionIcon>
         </Group>
       </Box>
@@ -291,7 +299,11 @@ function InvItemSections(props: {
   const healthRef = useRef<HTMLInputElement>(null);
   const [health, setHealth] = useState<string | undefined>();
   useEffect(() => {
-    setHealth(props.invItem.item.meta_data?.hp ? `${props.invItem.item.meta_data.hp}` : undefined);
+    setHealth(
+      props.invItem.item.meta_data?.hp
+        ? `${props.invItem.item.meta_data.hp}`
+        : undefined
+    );
   }, [props.invItem]);
 
   ///
@@ -299,21 +311,22 @@ function InvItemSections(props: {
   const hasQuantity = isItemWithQuantity(props.invItem.item);
   const hasHealth = !!maxHp;
   const hasAttackAndDamage = isItemWeapon(props.invItem.item);
-  const hasArmor = isItemArmor(props.invItem.item) || isItemShield(props.invItem.item);
+  const hasArmor =
+    isItemArmor(props.invItem.item) || isItemShield(props.invItem.item);
 
   ///
 
   let quantitySection = null;
   if (hasQuantity) {
     quantitySection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap'>
-          <Text fw={600} c='gray.5' span>
+      <Paper shadow="xs" my={5} py={5} px={10} bg="dark.6" radius="md">
+        <Group wrap="nowrap">
+          <Text fw={600} c="gray.5" span>
             Quantity
-          </Text>{' '}
+          </Text>{" "}
           <NumberInput
-            placeholder='Amount'
-            size='xs'
+            placeholder="Amount"
+            size="xs"
             min={1}
             defaultValue={props.invItem.item.meta_data?.quantity}
             onChange={(value) => {
@@ -337,10 +350,10 @@ function InvItemSections(props: {
   let healthSection = null;
   if (hasHealth) {
     const handleHealthSubmit = () => {
-      const inputHealth = health ?? '0';
+      const inputHealth = health ?? "0";
       let result = -1;
       try {
-        result = math.evaluate(inputHealth);
+        result = evaluate(inputHealth);
       } catch (e) {
         result = parseInt(inputHealth);
       }
@@ -365,30 +378,30 @@ function InvItemSections(props: {
 
     healthSection = (
       <Paper
-        shadow='xs'
+        shadow="xs"
         my={5}
         py={5}
         px={10}
-        bg='dark.6'
-        radius='md'
-        style={{ position: 'relative' }}
+        bg="dark.6"
+        radius="md"
+        style={{ position: "relative" }}
       >
-        <Group wrap='nowrap'>
-          <Text fw={600} c='gray.5' span>
+        <Group wrap="nowrap">
+          <Text fw={600} c="gray.5" span>
             Hit Points
-          </Text>{' '}
+          </Text>{" "}
           <TextInput
             ref={healthRef}
             w={120}
-            placeholder='HP'
+            placeholder="HP"
             value={health}
             onChange={(e) => {
               setHealth(e.target.value);
             }}
             onBlur={handleHealthSubmit}
             onKeyDown={getHotkeyHandler([
-              ['mod+Enter', handleHealthSubmit],
-              ['Enter', handleHealthSubmit],
+              ["mod+Enter", handleHealthSubmit],
+              ["Enter", handleHealthSubmit],
             ])}
             rightSection={
               <Group>
@@ -400,54 +413,59 @@ function InvItemSections(props: {
           />
           <Group gap={5}>
             <Stack gap={0}>
-              <Text ta='right' fz={10}>
+              <Text ta="right" fz={10}>
                 Hardness
               </Text>
-              <Text ta='right' fz={10}>
+              <Text ta="right" fz={10}>
                 Broken Threshold
               </Text>
             </Stack>
             <Stack gap={0}>
-              <Text ta='left' fw={500} c='gray.4' fz={10}>
+              <Text ta="left" fw={500} c="gray.4" fz={10}>
                 {hardness}
               </Text>
-              <Text ta='left' fw={500} c='gray.4' fz={10}>
+              <Text ta="left" fw={500} c="gray.4" fz={10}>
                 {bt}
               </Text>
             </Stack>
           </Group>
         </Group>
         <HoverCard
-          shadow='md'
+          shadow="md"
           openDelay={250}
           width={200}
           zIndex={1000}
-          position='top'
+          position="top"
           withinPortal
         >
           <HoverCard.Target>
             <ActionIcon
-              variant='subtle'
-              aria-label='Help'
-              radius='xl'
-              size='sm'
+              variant="subtle"
+              aria-label="Help"
+              radius="xl"
+              size="sm"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 5,
                 right: 5,
               }}
             >
-              <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+              <IconHelpCircle
+                style={{ width: "80%", height: "80%" }}
+                stroke={1.5}
+              />
             </ActionIcon>
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
-            <Text fz='xs'>
-              An item can be broken or destroyed if it takes enough damage. Each time an item takes
-              damage, reduce any damage by its Hardness value.
+            <Text fz="xs">
+              An item can be broken or destroyed if it takes enough damage. Each
+              time an item takes damage, reduce any damage by its Hardness
+              value.
             </Text>
-            <Text fz='xs'>
-              It becomes broken when its Hit Points are equal to or lower than its Broken Threshold
-              (BT); once its HP is reduced to 0, it is destroyed.
+            <Text fz="xs">
+              It becomes broken when its Hit Points are equal to or lower than
+              its Broken Threshold (BT); once its HP is reduced to 0, it is
+              destroyed.
             </Text>
           </HoverCard.Dropdown>
         </HoverCard>
@@ -457,28 +475,31 @@ function InvItemSections(props: {
 
   let attackAndDamageSection = null;
   if (hasAttackAndDamage) {
-    const weaponStats = getWeaponStats('CHARACTER', props.invItem.item);
+    const weaponStats = getWeaponStats("CHARACTER", props.invItem.item);
 
     const damageBonus =
-      weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
+      weaponStats.damage.bonus.total > 0
+        ? ` + ${weaponStats.damage.bonus.total}`
+        : ``;
 
     attackAndDamageSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap' grow>
-          <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.5' span>
+      <Paper shadow="xs" my={5} py={5} px={10} bg="dark.6" radius="md">
+        <Group wrap="nowrap" grow>
+          <Group wrap="nowrap" gap={10}>
+            <Text fw={600} c="gray.5" span>
               Attack
             </Text>
-            <Text c='gray.5' span>
-              {sign(weaponStats.attack_bonus.total[0])} / {sign(weaponStats.attack_bonus.total[1])}{' '}
-              / {sign(weaponStats.attack_bonus.total[2])}
+            <Text c="gray.5" span>
+              {sign(weaponStats.attack_bonus.total[0])} /{" "}
+              {sign(weaponStats.attack_bonus.total[1])} /{" "}
+              {sign(weaponStats.attack_bonus.total[2])}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.5' span>
+          <Group wrap="nowrap" gap={10}>
+            <Text fw={600} c="gray.5" span>
               Damage
             </Text>
-            <Text c='gray.5' span>
+            <Text c="gray.5" span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
@@ -493,46 +514,46 @@ function InvItemSections(props: {
   if (hasArmor) {
     armorSection = (
       <Paper
-        shadow='xs'
+        shadow="xs"
         my={5}
         py={5}
         px={10}
-        bg='dark.6'
-        radius='md'
-        style={{ position: 'relative' }}
+        bg="dark.6"
+        radius="md"
+        style={{ position: "relative" }}
       >
-        <Group wrap='nowrap'>
-          <Group wrap='nowrap' mr={20}>
-            <Text fw={600} c='gray.5' span>
+        <Group wrap="nowrap">
+          <Group wrap="nowrap" mr={20}>
+            <Text fw={600} c="gray.5" span>
               AC Bonus
-            </Text>{' '}
-            <Text c='gray.5' span>
+            </Text>{" "}
+            <Text c="gray.5" span>
               {sign(ac ?? 0)}
             </Text>
           </Group>
-          <Group wrap='nowrap' align='flex-start'>
+          <Group wrap="nowrap" align="flex-start">
             {(dexCap !== undefined || strength !== undefined) && (
               <Group gap={5}>
                 <Stack gap={0}>
                   {dexCap !== undefined && (
-                    <Text ta='right' fz={10}>
+                    <Text ta="right" fz={10}>
                       Dex Cap
                     </Text>
                   )}
                   {strength !== undefined && (
-                    <Text ta='right' fz={10}>
+                    <Text ta="right" fz={10}>
                       Strength
                     </Text>
                   )}
                 </Stack>
                 <Stack gap={0}>
                   {dexCap !== undefined && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta="left" fw={500} c="gray.4" fz={10}>
                       {sign(dexCap)}
                     </Text>
                   )}
                   {strength !== undefined && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta="left" fw={500} c="gray.4" fz={10}>
                       {sign(strength)}
                     </Text>
                   )}
@@ -543,24 +564,24 @@ function InvItemSections(props: {
               <Group gap={5}>
                 <Stack gap={0}>
                   {!!checkPenalty && (
-                    <Text ta='right' fz={10}>
+                    <Text ta="right" fz={10}>
                       Check Penalty
                     </Text>
                   )}
                   {!!speedPenalty && (
-                    <Text ta='right' fz={10}>
+                    <Text ta="right" fz={10}>
                       Speed Penalty
                     </Text>
                   )}
                 </Stack>
                 <Stack gap={0}>
                   {!!checkPenalty && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta="left" fw={500} c="gray.4" fz={10}>
                       {sign(checkPenalty)}
                     </Text>
                   )}
                   {!!speedPenalty && (
-                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                    <Text ta="left" fw={500} c="gray.4" fz={10}>
                       {sign(speedPenalty)}
                     </Text>
                   )}
@@ -570,76 +591,83 @@ function InvItemSections(props: {
           </Group>
         </Group>
         <HoverCard
-          shadow='md'
+          shadow="md"
           openDelay={250}
           width={200}
           zIndex={1000}
-          position='top'
+          position="top"
           withinPortal
         >
           <HoverCard.Target>
             <ActionIcon
-              variant='subtle'
-              aria-label='Help'
-              radius='xl'
-              size='sm'
+              variant="subtle"
+              aria-label="Help"
+              radius="xl"
+              size="sm"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 top: 5,
                 right: 5,
               }}
             >
-              <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+              <IconHelpCircle
+                style={{ width: "80%", height: "80%" }}
+                stroke={1.5}
+              />
             </ActionIcon>
           </HoverCard.Target>
           <HoverCard.Dropdown py={5} px={10}>
             <ScrollArea h={dexCap ? 250 : undefined} pr={14}>
               {ac !== undefined && (
-                <Text fz='xs'>
-                  <Text fz='xs' fw={600} span>
+                <Text fz="xs">
+                  <Text fz="xs" fw={600} span>
                     AC Bonus:
-                  </Text>{' '}
-                  This is the item bonus you add for the armor when determining AC.
+                  </Text>{" "}
+                  This is the item bonus you add for the armor when determining
+                  AC.
                 </Text>
               )}
               {dexCap !== undefined && (
-                <Text fz='xs'>
-                  <Text fz='xs' fw={600} span>
+                <Text fz="xs">
+                  <Text fz="xs" fw={600} span>
                     Dex Cap:
-                  </Text>{' '}
-                  This is the maximum Dexterity modifier you can benefit from towards your AC while
-                  wearing the armor.
+                  </Text>{" "}
+                  This is the maximum Dexterity modifier you can benefit from
+                  towards your AC while wearing the armor.
                 </Text>
               )}
               {strength !== undefined && (
-                <Text fz='xs'>
-                  <Text fz='xs' fw={600} span>
+                <Text fz="xs">
+                  <Text fz="xs" fw={600} span>
                     Strength:
-                  </Text>{' '}
-                  This is the Strength modifier at which you are strong enough to overcome some of
-                  the armor’s penalties. If your Strength modifier is equal to or greater than this
-                  value, you no longer take the armor’s check penalty, and you decrease the Speed
+                  </Text>{" "}
+                  This is the Strength modifier at which you are strong enough
+                  to overcome some of the armor’s penalties. If your Strength
+                  modifier is equal to or greater than this value, you no longer
+                  take the armor’s check penalty, and you decrease the Speed
                   penalty by 5 feet.
                 </Text>
               )}
               {checkPenalty !== undefined && (
-                <Text fz='xs'>
-                  <Text fz='xs' fw={600} span>
+                <Text fz="xs">
+                  <Text fz="xs" fw={600} span>
                     Check Penalty:
-                  </Text>{' '}
-                  While wearing your armor, you take this penalty to Strength- and Dexterity-based
-                  skill checks, except for those that have the attack trait. If you meet the armor’s
-                  Strength threshold, you don’t take this penalty.
+                  </Text>{" "}
+                  While wearing your armor, you take this penalty to Strength-
+                  and Dexterity-based skill checks, except for those that have
+                  the attack trait. If you meet the armor’s Strength threshold,
+                  you don’t take this penalty.
                 </Text>
               )}
               {speedPenalty !== undefined && (
-                <Text fz='xs'>
-                  <Text fz='xs' fw={600} span>
+                <Text fz="xs">
+                  <Text fz="xs" fw={600} span>
                     Speed Penalty:
-                  </Text>{' '}
-                  While wearing a suit of armor, you take the penalty listed in this entry to your
-                  Speed, as well as to any other movement types you have, such as a climb Speed or
-                  swim Speed, to a minimum Speed of 5 feet. If you meet the armor’s Strength
+                  </Text>{" "}
+                  While wearing a suit of armor, you take the penalty listed in
+                  this entry to your Speed, as well as to any other movement
+                  types you have, such as a climb Speed or swim Speed, to a
+                  minimum Speed of 5 feet. If you meet the armor’s Strength
                   threshold, you reduce the penalty by 5 feet.
                 </Text>
               )}

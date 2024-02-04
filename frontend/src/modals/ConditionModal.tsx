@@ -9,14 +9,19 @@ import {
   ActionIcon,
   Badge,
   ScrollArea,
-} from '@mantine/core';
-import { ContextModalProps } from '@mantine/modals';
-import { Character, Condition, ContentSource, ContentType } from '@typing/content';
-import _ from 'lodash';
-import { isValidImage } from '@utils/images';
-import { useState } from 'react';
-import { DrawerType } from '@typing/index';
-import { useQuery } from '@tanstack/react-query';
+} from "@mantine/core";
+import { ContextModalProps } from "@mantine/modals";
+import {
+  Character,
+  Condition,
+  ContentSource,
+  ContentType,
+} from "@typing/content";
+import * as _ from "lodash-es";
+import { isValidImage } from "@utils/images";
+import { useState } from "react";
+import { DrawerType } from "@typing/index";
+import { useQuery } from "@tanstack/react-query";
 import {
   IconAdjustments,
   IconBook2,
@@ -24,10 +29,10 @@ import {
   IconMinus,
   IconPlus,
   IconStar,
-} from '@tabler/icons-react';
-import { getIconFromContentType } from '@content/content-utils';
-import { fetchContentById } from '@content/content-store';
-import RichText from '@common/RichText';
+} from "@tabler/icons-react";
+import { getIconFromContentType } from "@content/content-utils";
+import { fetchContentById } from "@content/content-store";
+import RichText from "@common/RichText";
 
 export function ConditionModal({
   context,
@@ -41,21 +46,21 @@ export function ConditionModal({
   const [value, setValue] = useState<number>(innerProps.condition.value ?? 0);
 
   return (
-    <Stack style={{ position: 'relative' }}>
+    <Stack style={{ position: "relative" }}>
       <div>
         <ScrollArea h={400} pr={16}>
-          <Group wrap='nowrap'>
-            <RichText ta='justify'>{innerProps.condition.description}</RichText>
+          <Group wrap="nowrap">
+            <RichText ta="justify">{innerProps.condition.description}</RichText>
           </Group>
         </ScrollArea>
       </div>
       {innerProps.condition.value !== undefined && (
-        <Group justify='center'>
+        <Group justify="center">
           <ActionIcon
-            variant='subtle'
-            aria-label='Decrease Value'
-            color='gray'
-            radius='xl'
+            variant="subtle"
+            aria-label="Decrease Value"
+            color="gray"
+            radius="xl"
             onClick={() => {
               if (value <= 1) return;
 
@@ -63,16 +68,16 @@ export function ConditionModal({
               setValue((v) => v - 1);
             }}
           >
-            <IconMinus style={{ width: '70%', height: '70%' }} stroke={1.5} />
+            <IconMinus style={{ width: "70%", height: "70%" }} stroke={1.5} />
           </ActionIcon>
-          <Badge variant='light' color='gray' size='xl' w={45}>
+          <Badge variant="light" color="gray" size="xl" w={45}>
             {value}
           </Badge>
           <ActionIcon
-            variant='subtle'
-            aria-label='Increase Value'
-            color='gray'
-            radius='xl'
+            variant="subtle"
+            aria-label="Increase Value"
+            color="gray"
+            radius="xl"
             onClick={() => {
               if (value >= 9) return;
 
@@ -80,7 +85,7 @@ export function ConditionModal({
               setValue((v) => v + 1);
             }}
           >
-            <IconPlus style={{ width: '70%', height: '70%' }} stroke={1.5} />
+            <IconPlus style={{ width: "70%", height: "70%" }} stroke={1.5} />
           </ActionIcon>
         </Group>
       )}

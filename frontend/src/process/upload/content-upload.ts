@@ -1,4 +1,4 @@
-import { FileWithPath } from '@mantine/dropzone';
+import { FileWithPath } from "@mantine/dropzone";
 import {
   AbilityBlock,
   AbilityBlockType,
@@ -7,7 +7,7 @@ import {
   ContentType,
   Item,
   Spell,
-} from '@typing/content';
+} from "@typing/content";
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -17,25 +17,29 @@ import {
   findContentSource,
   getTraitIds,
   stripFoundryLinking,
-} from './foundry-utils';
-import _ from 'lodash';
-import { uploadCreatureHandler } from './creature-import';
-import { throwError } from '@utils/notifications';
+} from "./foundry-utils";
+import * as _ from "lodash-es";
+import { uploadCreatureHandler } from "./creature-import";
+import { throwError } from "@utils/notifications";
 import {
   upsertAbilityBlock,
   upsertSpell,
   upsertItem,
   upsertCreature,
   upsertBackground,
-} from '@content/content-creation';
-import { toText, toMarkdown, convertToContentType } from '@content/content-utils';
-import { classifySkillForAction } from '@ai/open-ai-handler';
-import { UploadResult } from '@typing/index';
-import { populateContent } from '@ai/vector-db/vector-manager';
-import { hideNotification, showNotification } from '@mantine/notifications';
-import { pluralize, toLabel } from '@utils/strings';
-import { performAutoContentLinking } from './auto-content-linking';
-import { convertCastToActionCost } from '@utils/actions';
+} from "@content/content-creation";
+import {
+  toText,
+  toMarkdown,
+  convertToContentType,
+} from "@content/content-utils";
+import { classifySkillForAction } from "@ai/open-ai-handler";
+import { UploadResult } from "@typing/index";
+import { populateContent } from "@ai/vector-db/vector-manager";
+import { hideNotification, showNotification } from "@mantine/notifications";
+import { pluralize, toLabel } from "@utils/strings";
+import { performAutoContentLinking } from "./auto-content-linking";
+import { convertCastToActionCost } from "@utils/actions";
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -81,22 +85,26 @@ export async function uploadContentList(
 
   // Generate embeddings for the added content
   showNotification({
-    id: 'generate-embeddings',
+    id: "generate-embeddings",
     title: `Generating embeddings...`,
     message: `This may take a couple seconds, please wait.`,
     autoClose: false,
   });
-  const result = await populateContent(convertToContentType(type), [...addedIds]);
-  hideNotification('generate-embeddings');
+  const result = await populateContent(convertToContentType(type), [
+    ...addedIds,
+  ]);
+  hideNotification("generate-embeddings");
   showNotification({
-    id: 'generate-embeddings',
+    id: "generate-embeddings",
     title: `Successfully Generated Embeddings`,
-    message: `Generated ${result.total} embeddings for ${pluralize(toLabel(type))}.`,
+    message: `Generated ${result.total} embeddings for ${pluralize(
+      toLabel(type)
+    )}.`,
     autoClose: 6000,
   });
 
-  console.log('-------- UPLOAD STATS --------');
-  console.group('Successful Uploads:');
+  console.log("-------- UPLOAD STATS --------");
+  console.group("Successful Uploads:");
   for (let [type, sources] of uploadStats.uploads) {
     console.group(type);
     console.table(Object.fromEntries(sources));
@@ -104,7 +112,7 @@ export async function uploadContentList(
   }
   console.groupEnd();
 
-  console.group('Failed Uploads:');
+  console.group("Failed Uploads:");
   for (let [type, sources] of uploadStats.failedUploads) {
     console.group(type);
     console.table(Object.fromEntries(sources));
@@ -112,12 +120,15 @@ export async function uploadContentList(
   }
   console.groupEnd();
 
-  console.group('Missing Sources:');
+  console.group("Missing Sources:");
   console.table(Object.fromEntries(uploadStats.missingSources));
   console.groupEnd();
 }
 
-async function uploadContent(type: string, file: FileWithPath): Promise<UploadResult> {
+async function uploadContent(
+  type: string,
+  file: FileWithPath
+): Promise<UploadResult> {
   const jsonUrl = URL.createObjectURL(file);
 
   const res = await fetch(jsonUrl);
@@ -130,28 +141,31 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
   const source = await findContentSource(undefined, foundryId);
   if (!source || !remaster) {
     // Increase missing source count
-    uploadStats.missingSources.set(foundryId, (uploadStats.missingSources.get(foundryId) ?? 0) + 1);
+    uploadStats.missingSources.set(
+      foundryId,
+      (uploadStats.missingSources.get(foundryId) ?? 0) + 1
+    );
     return {
       success: false,
     };
   }
 
   let result;
-  if (type === 'action') {
+  if (type === "action") {
     result = await uploadAction(source, json);
-  } else if (type === 'feat') {
+  } else if (type === "feat") {
     result = await uploadFeat(source, json);
-  } else if (type === 'class-feature') {
+  } else if (type === "class-feature") {
     result = await uploadClassFeature(source, json);
-  } else if (type === 'spell') {
+  } else if (type === "spell") {
     result = await uploadSpell(source, json);
-  } else if (type === 'item') {
+  } else if (type === "item") {
     result = await uploadItem(source, json);
-  } else if (type === 'creature') {
+  } else if (type === "creature") {
     result = await uploadCreature(source, json);
-  } else if (type === 'heritage') {
+  } else if (type === "heritage") {
     result = await uploadHeritage(source, json);
-  } else if (type === 'background') {
+  } else if (type === "background") {
     result = await uploadBackground(source, json);
   } else {
     console.error(`Unknown type: ${type}`);
@@ -178,7 +192,10 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
     }
     uploadStats.failedUploads
       .get(type)!
-      .set(foundryId, (uploadStats.failedUploads.get(type)!.get(foundryId) ?? 0) + 1);
+      .set(
+        foundryId,
+        (uploadStats.failedUploads.get(type)!.get(foundryId) ?? 0) + 1
+      );
   }
   if (DEBUG) {
     console.log(json);
@@ -191,7 +208,7 @@ async function uploadAction(
   source: ContentSource,
   json: Record<string, any>
 ): Promise<UploadResult> {
-  if (json.type !== 'action') {
+  if (json.type !== "action") {
     if (DEBUG) {
       console.error(`Not an action, it's a "${json.type}"!`);
     }
@@ -200,32 +217,39 @@ async function uploadAction(
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value)
+  );
   const description = await performAutoContentLinking(descValues.description);
 
   // Classify the skill for skill actions
   // - Kinda an overkill to do this just for the actions
   //   but it's a good test for using AI to curate our data
-  const isSkillAction = (json.system?.traits?.value ?? []).includes('skill');
+  const isSkillAction = (json.system?.traits?.value ?? []).includes("skill");
   let skill: string | null = null;
   if (isSkillAction) {
-    skill = await classifySkillForAction(toMarkdown(descValues.description) ?? '');
+    skill = await classifySkillForAction(
+      toMarkdown(descValues.description) ?? ""
+    );
     console.log(`Classified skill for action: ${toText(json.name)}, ${skill}`);
   }
 
   const action = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
-    actions: convertToActionCost(json.system?.actionType?.value, json.system?.actions?.value),
+    created_at: "",
+    name: toText(json.name) ?? "",
+    actions: convertToActionCost(
+      json.system?.actionType?.value,
+      json.system?.actions?.value
+    ),
     rarity: convertToRarity(json.system?.traits?.rarity),
     frequency: toText(descValues.frequency),
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(description) ?? '',
+    description: toMarkdown(description) ?? "",
     special: toMarkdown(descValues.special),
-    type: 'action',
+    type: "action",
     meta_data: {
       skill: skill ?? undefined,
       foundry: {
@@ -235,12 +259,12 @@ async function uploadAction(
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies AbilityBlock;
 
   const abilityBlock = await upsertAbilityBlock(action);
   if (DEBUG) {
-    console.log('Created Ability Block:');
+    console.log("Created Ability Block:");
     console.log(abilityBlock);
   }
   return {
@@ -249,8 +273,11 @@ async function uploadAction(
   };
 }
 
-async function uploadFeat(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
-  if (json.type === 'feat' && json.system?.category !== 'classfeature') {
+async function uploadFeat(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
+  if (json.type === "feat" && json.system?.category !== "classfeature") {
   } else {
     if (DEBUG) {
       console.error(`Not a feat, it's a "${json.type}"!`);
@@ -261,28 +288,35 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
   }
 
   const descValues = extractFromDescription(
-    stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
+    stripFoundryLinking(
+      json.system?.description?.value,
+      json.system?.level?.value
+    )
   );
   const prerequisites =
-    json.system?.prerequisites?.value?.map((prereq: { value: string }) => toText(prereq.value)) ??
-    undefined;
+    json.system?.prerequisites?.value?.map((prereq: { value: string }) =>
+      toText(prereq.value)
+    ) ?? undefined;
   const description = await performAutoContentLinking(descValues.description);
 
   const action = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
-    actions: convertToActionCost(json.system?.actionType?.value, json.system?.actions?.value),
+    created_at: "",
+    name: toText(json.name) ?? "",
+    actions: convertToActionCost(
+      json.system?.actionType?.value,
+      json.system?.actions?.value
+    ),
     level: json.system?.level?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
     frequency: toText(descValues.frequency),
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(description) ?? '',
+    description: toMarkdown(description) ?? "",
     special: toMarkdown(descValues.special),
     prerequisites: prerequisites,
-    type: 'feat',
+    type: "feat",
     meta_data: {
       foundry: {
         rules: json.system?.rules,
@@ -291,12 +325,12 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies AbilityBlock;
 
   const abilityBlock = await upsertAbilityBlock(action);
   if (DEBUG) {
-    console.log('Created Ability Block:');
+    console.log("Created Ability Block:");
     console.log(abilityBlock);
   }
   return {
@@ -309,7 +343,7 @@ async function uploadClassFeature(
   source: ContentSource,
   json: Record<string, any>
 ): Promise<UploadResult> {
-  if (json.type === 'feat' && json.system?.category === 'classfeature') {
+  if (json.type === "feat" && json.system?.category === "classfeature") {
   } else {
     if (DEBUG) {
       console.error(`Not a class feature, it's a "${json.type}"!`);
@@ -319,23 +353,28 @@ async function uploadClassFeature(
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value)
+  );
   const description = await performAutoContentLinking(descValues.description);
 
   const action = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
-    actions: convertToActionCost(json.system?.actionType?.value, json.system?.actions?.value),
+    created_at: "",
+    name: toText(json.name) ?? "",
+    actions: convertToActionCost(
+      json.system?.actionType?.value,
+      json.system?.actions?.value
+    ),
     level: json.system?.level?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
     frequency: toText(descValues.frequency),
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(description) ?? '',
+    description: toMarkdown(description) ?? "",
     special: toMarkdown(descValues.special),
-    type: 'class-feature',
+    type: "class-feature",
     meta_data: {
       foundry: {
         rules: json.system?.rules,
@@ -344,12 +383,12 @@ async function uploadClassFeature(
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies AbilityBlock;
 
   const abilityBlock = await upsertAbilityBlock(action);
   if (DEBUG) {
-    console.log('Created Ability Block:');
+    console.log("Created Ability Block:");
     console.log(abilityBlock);
   }
   return {
@@ -362,7 +401,7 @@ async function uploadSpell(
   source: ContentSource,
   json: Record<string, any>
 ): Promise<UploadResult> {
-  if (json.type !== 'spell') {
+  if (json.type !== "spell") {
     if (DEBUG) {
       console.error(`Not a spell, it's a "${json.type}"!`);
     }
@@ -372,30 +411,35 @@ async function uploadSpell(
   }
 
   const descValues = extractFromDescription(
-    stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
+    stripFoundryLinking(
+      json.system?.description?.value,
+      json.system?.level?.value
+    )
   );
   const description = await performAutoContentLinking(descValues.description);
 
   const spell = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
+    created_at: "",
+    name: toText(json.name) ?? "",
     rank: json.system?.level?.value,
     traditions: json.system?.traditions?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    cast: convertCastToActionCost(json.system?.time?.value ?? ''),
+    cast: convertCastToActionCost(json.system?.time?.value ?? ""),
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     defense: json.system?.save?.value,
     cost: json.system?.cost?.value,
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
-    requirements: toText(descValues?.requirements) || json.system?.materials?.value,
+    requirements:
+      toText(descValues?.requirements) || json.system?.materials?.value,
     range: json.system?.range?.value,
     area:
       descValues?.area ||
-      (json.system?.area && `${json.system?.area?.value}-foot ${json.system?.area?.type}`),
+      (json.system?.area &&
+        `${json.system?.area?.value}-foot ${json.system?.area?.type}`),
     targets: json.system?.target?.value,
     duration: json.system?.duration?.value,
-    description: toMarkdown(description) ?? '',
+    description: toMarkdown(description) ?? "",
     heightened: {
       text: descValues.heightened as unknown as {
         amount: string;
@@ -412,19 +456,19 @@ async function uploadSpell(
         components: json.system?.components,
         attribute: json.system?.ability?.value,
         materials: json.system?.materials?.value,
-        is_focus: json.system?.category?.value === 'focus',
+        is_focus: json.system?.category?.value === "focus",
         is_sustained: json.system?.sustained?.value,
         has_counteract_check: json.system?.hasCounteractCheck?.value,
         custom_tradition: json.system?.traditions?.custom,
       },
     },
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies Spell;
 
   const createdSpell = await upsertSpell(spell);
   if (DEBUG) {
-    console.log('Created Spell:');
+    console.log("Created Spell:");
     console.log(createdSpell);
   }
   return {
@@ -433,7 +477,10 @@ async function uploadSpell(
   };
 }
 
-async function uploadItem(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
+async function uploadItem(
+  source: ContentSource,
+  json: Record<string, any>
+): Promise<UploadResult> {
   if (!EQUIPMENT_TYPES.includes(json.type)) {
     if (DEBUG) {
       console.error(`Not an item, it's a "${json.type}"!`);
@@ -444,25 +491,31 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
   }
 
   const descValues = extractFromDescription(
-    stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
+    stripFoundryLinking(
+      json.system?.description?.value,
+      json.system?.level?.value
+    )
   );
   const description = await performAutoContentLinking(descValues.description);
 
   const item = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
+    created_at: "",
+    name: toText(json.name) ?? "",
     level: json.system?.level?.value,
     price: json.system?.price?.value,
     rarity: convertToRarity(json.system?.traits?.rarity),
     bulk: json.system?.bulk?.value,
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
-    group: ((json.system?.group || json.system?.category || json.type) ?? '').toUpperCase(),
+    group: (
+      (json.system?.group || json.system?.category || json.type) ??
+      ""
+    ).toUpperCase(),
     hands: undefined,
     size: convertToSize(json.system?.size?.value),
     craft_requirements: toText(descValues?.craft_requirements),
     usage: json.system?.usage?.value,
-    description: toMarkdown(description) ?? '',
+    description: toMarkdown(description) ?? "",
     meta_data: {
       base_item: json.system?.baseItem,
       category: json.system?.category,
@@ -506,12 +559,12 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
       },
     },
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies Item;
 
   const createdItem = await upsertItem(item);
   if (DEBUG) {
-    console.log('Created Item:');
+    console.log("Created Item:");
     console.log(createdItem);
   }
   return {
@@ -524,7 +577,7 @@ async function uploadCreature(
   source: ContentSource,
   json: Record<string, any>
 ): Promise<UploadResult> {
-  if (json.type !== 'npc') {
+  if (json.type !== "npc") {
     if (DEBUG) {
       console.error(`Not a creature, it's a "${json.type}"!`);
     }
@@ -538,9 +591,9 @@ async function uploadCreature(
 
     const createdCreature = await upsertCreature(creature);
     if (DEBUG) {
-      console.log('Converted Creature:');
+      console.log("Converted Creature:");
       console.log(creature);
-      console.log('Created Creature:');
+      console.log("Created Creature:");
       console.log(createdCreature);
     }
     return {
@@ -549,7 +602,7 @@ async function uploadCreature(
     };
   } catch (e) {
     console.log(e);
-    if (typeof e === 'string') {
+    if (typeof e === "string") {
       throwError(e);
     } else if (e instanceof Error) {
       throwError(e.message);
@@ -564,7 +617,7 @@ async function uploadHeritage(
   source: ContentSource,
   json: Record<string, any>
 ): Promise<UploadResult> {
-  if (json.type !== 'heritage') {
+  if (json.type !== "heritage") {
     if (DEBUG) {
       console.error(`Not a heritage, it's a "${json.type}"!`);
     }
@@ -573,21 +626,23 @@ async function uploadHeritage(
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value)
+  );
   const description = await performAutoContentLinking(descValues.description);
 
   const heritage = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
+    created_at: "",
+    name: toText(json.name) ?? "",
     level: -1,
     actions: null,
     rarity: convertToRarity(json.system?.traits?.rarity),
     requirements: toText(descValues?.requirements),
     access: toText(json.access),
-    description: toMarkdown(description) ?? '',
-    special: toMarkdown(descValues.special) ?? '',
-    type: 'heritage',
+    description: toMarkdown(description) ?? "",
+    special: toMarkdown(descValues.special) ?? "",
+    type: "heritage",
     meta_data: {
       foundry: {
         rules: json.system?.rules,
@@ -596,7 +651,7 @@ async function uploadHeritage(
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies AbilityBlock;
 
   // Add ancestry trait
@@ -608,7 +663,7 @@ async function uploadHeritage(
 
   const createdHeritage = await upsertAbilityBlock(heritage);
   if (DEBUG) {
-    console.log('Created Heritage:');
+    console.log("Created Heritage:");
     console.log(createdHeritage);
   }
   return {
@@ -621,7 +676,7 @@ async function uploadBackground(
   source: ContentSource,
   json: Record<string, any>
 ): Promise<UploadResult> {
-  if (json.type !== 'background') {
+  if (json.type !== "background") {
     if (DEBUG) {
       console.error(`Not a background, it's a "${json.type}"!`);
     }
@@ -630,30 +685,32 @@ async function uploadBackground(
     };
   }
 
-  const descValues = extractFromDescription(stripFoundryLinking(json.system?.description?.value));
+  const descValues = extractFromDescription(
+    stripFoundryLinking(json.system?.description?.value)
+  );
   let description = await performAutoContentLinking(descValues.description);
 
   // Format background description
-  description = toMarkdown(description) ?? '';
-  description = description.trim().replace(/\*/g, ''); // remove bolding
-  description = description.replace(/^([\s\S]*?)(\n\n|$)/, '> _$1_\n\n');
+  description = toMarkdown(description) ?? "";
+  description = description.trim().replace(/\*/g, ""); // remove bolding
+  description = description.replace(/^([\s\S]*?)(\n\n|$)/, "> _$1_\n\n");
   // Now it's formatted in a clean way!
 
   const background = {
     id: -1,
-    created_at: '',
-    name: toText(json.name) ?? '',
+    created_at: "",
+    name: toText(json.name) ?? "",
     rarity: convertToRarity(json.system?.traits?.rarity),
     description: description,
-    artwork_url: '',
+    artwork_url: "",
     operations: [],
     content_source_id: source.id,
-    version: '1.0',
+    version: "1.0",
   } satisfies Background;
 
   const createdBackground = await upsertBackground(background);
   if (DEBUG) {
-    console.log('Created Background:');
+    console.log("Created Background:");
     console.log(createdBackground);
   }
   return {

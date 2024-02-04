@@ -166,8 +166,8 @@ import {
   variableToLabel,
 } from "@variables/variable-utils";
 import * as JsSearch from "js-search";
-import _ from "lodash";
-import * as math from "mathjs";
+import * as _ from "lodash-es";
+import { evaluate } from "mathjs/number";
 import { useEffect, useRef, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from "recoil";
@@ -250,7 +250,7 @@ function confirmHealth(
 
   let result = -1;
   try {
-    result = math.evaluate(hp);
+    result = evaluate(hp);
   } catch (e) {
     result = parseInt(hp);
   }
@@ -307,7 +307,7 @@ function confirmExperience(
 ) {
   let result = -1;
   try {
-    result = math.evaluate(exp);
+    result = evaluate(exp);
   } catch (e) {
     result = parseInt(exp);
   }
@@ -787,7 +787,7 @@ function HealthSection() {
                 onChange={(value) => {
                   let result = -1;
                   try {
-                    result = math.evaluate(value);
+                    result = evaluate(value);
                   } catch (e) {
                     result = parseInt(value);
                   }
