@@ -1,24 +1,17 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useRecoilValue } from "recoil";
 import { sessionState } from "@atoms/supabaseAtoms";
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useRecoilValue } from "recoil";
 
 export default function RestrictedRoute(props: { page: React.ReactNode }) {
-  const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
+  const location = useLocation();
 
-  useEffect(() => {
-    const redirect = window.location.pathname.substring(1);
-    setTimeout(() => {
-      if (!session) {
-        navigate(`/login?redirect=${redirect}`);
-      }
-    });
-  }, [session]);
+  const redirect = location.pathname.substring(1);
 
   if (session) {
     return <>{props.page}</>;
   } else {
-    return <></>;
+    return <Navigate to={`/login?redirect=${redirect}`} />;
   }
 }
