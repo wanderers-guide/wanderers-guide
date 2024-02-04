@@ -57,9 +57,11 @@ export const handleAddItem = (
       {
         id: crypto.randomUUID(),
         item: _.cloneDeep(item),
+        quantity: 1,
         is_formula: is_formula,
         is_equipped: false,
         is_invested: false,
+        is_container: false,
         container_contents: [],
       },
     ].sort((a, b) => a.item.name.localeCompare(b.item.name));
