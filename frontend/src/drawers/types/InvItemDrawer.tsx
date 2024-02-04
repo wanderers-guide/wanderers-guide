@@ -10,6 +10,7 @@ import { priceToString } from '@items/currency-handler';
 import {
   isItemArmor,
   isItemBroken,
+  isItemContainer,
   isItemShield,
   isItemWeapon,
   isItemWithQuantity,
@@ -83,7 +84,7 @@ export function InvItemDrawerContent(props: {
 
   const character = useRecoilValue(characterState);
   const containerItems = (
-    character?.inventory?.items.filter((item) => item.is_container) ?? []
+    character?.inventory?.items.filter((item) => isItemContainer(item.item)) ?? []
   ).filter((i) => i.id !== props.data.invItem.id);
 
   let price = null;
@@ -314,11 +315,17 @@ function InvItemSections(props: {
             placeholder='Amount'
             size='xs'
             min={1}
-            defaultValue={props.invItem.quantity}
+            defaultValue={props.invItem.item.meta_data?.quantity}
             onChange={(value) => {
               props.onItemUpdate({
                 ...props.invItem,
-                quantity: parseInt(`${value}`) || 1,
+                item: {
+                  ...props.invItem.item,
+                  meta_data: {
+                    ...props.invItem.item.meta_data!,
+                    quantity: parseInt(`${value}`) || 1,
+                  },
+                },
               });
             }}
           />
