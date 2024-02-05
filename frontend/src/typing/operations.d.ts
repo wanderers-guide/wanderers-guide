@@ -6,7 +6,8 @@ import {
   ExtendedProficiencyValue,
   VariableValue,
 } from './variables';
-import { AbilityBlockType, Rarity } from './content';
+import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource } from './content';
+import { OperationResult } from './../process/operations/operation-runner';
 
 export type OperationResultPackage = {
   contentSourceResults: {

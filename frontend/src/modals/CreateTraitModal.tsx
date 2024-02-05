@@ -26,24 +26,30 @@ import { useState } from 'react';
 export function CreateTraitModal(props: {
   opened: boolean;
   editId?: number;
+  editTrait?: Trait;
   onComplete: (trait: Trait) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+  const editing =
+    (props.editId !== undefined && props.editId !== -1) || props.editTrait !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-trait-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-trait-${props.editId}`, { editId: props.editId, editTrait: props.editTrait }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId }] = queryKey;
+      const [_key, { editId, editTrait }] = queryKey as [
+        string,
+        { editId?: number; editTrait?: Trait }
+      ];
 
-      const trait = await fetchContentById<Trait>('trait', editId);
+      const trait = editId ? await fetchContentById<Trait>('trait', editId) : editTrait;
       if (!trait) return null;
 
       form.setInitialValues({
@@ -63,7 +69,7 @@ export function CreateTraitModal(props: {
 
       return trait;
     },
-    enabled: props.editId !== undefined && props.editId !== -1,
+    enabled: editing,
     refetchOnWindowFocus: false,
   });
 
@@ -122,11 +128,7 @@ export function CreateTraitModal(props: {
         props.onCancel();
         onReset();
       }}
-      title={
-        <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'} Trait
-        </Title>
-      }
+      title={<Title order={3}>{editing ? 'Edit' : 'Create'} Trait</Title>}
       styles={{
         body: {
           paddingRight: 2,
@@ -251,9 +253,7 @@ export function CreateTraitModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
             </Group>
           </Stack>
         </form>

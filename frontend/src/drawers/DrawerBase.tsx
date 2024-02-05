@@ -112,7 +112,7 @@ export default function DrawerBase() {
       }
       withCloseButton={false}
       position='right'
-      zIndex={1000}
+      zIndex={_drawer?.data.zIndex ?? 1000}
       styles={{
         title: {
           width: '100%',
@@ -129,7 +129,7 @@ export default function DrawerBase() {
       {/* This "fix" will still have the bug on titles that are multiline */}
       <ScrollArea
         viewportRef={viewport}
-        h={`calc(100vh - (${titleHeight || 30}px + 45px))`}
+        h={`calc(100vh - (${titleHeight || 30}px + 50px))`}
         pr={14}
         scrollbars='y'
       >

@@ -1194,14 +1194,14 @@ export function FeatSelectionOption(props: {
     >
       {props.displayLevel && !props.feat.meta_data?.unselectable && (
         <Text
-          fz={10}
+          fz={9}
           c='dimmed'
           ta='right'
           w={14}
           style={{
             position: 'absolute',
-            top: 15,
-            left: 1,
+            top: 18,
+            left: 2,
           }}
         >
           {props.feat.level}.

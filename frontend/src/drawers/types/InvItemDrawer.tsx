@@ -32,9 +32,12 @@ import {
   rem,
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
+import { CreateItemModal } from '@modals/CreateItemModal';
 import { IconChevronDown, IconEdit, IconHelpCircle, IconTrashXFilled } from '@tabler/icons-react';
 import { InventoryItem } from '@typing/content';
 import { sign } from '@utils/numbers';
+import useRefresh from '@utils/use-refresh';
+import _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilValue } from 'recoil';
@@ -63,11 +66,14 @@ export function InvItemDrawerContent(props: {
   };
 }) {
   const [invItem, setInvItem] = useState(props.data.invItem);
+  const [editingItem, setEditingItem] = useState(false);
+
+  const [displaySections, refreshSections] = useRefresh();
 
   const character = useRecoilValue(characterState);
   const containerItems = (
     character?.inventory?.items.filter((item) => isItemContainer(item.item)) ?? []
-  ).filter((i) => i.id !== props.data.invItem.id);
+  ).filter((i) => i.id !== invItem.id);
 
   let price = null;
   if (invItem.item.price) {
@@ -152,13 +158,15 @@ export function InvItemDrawerContent(props: {
           />
         </Box>
 
-        <InvItemSections
-          invItem={props.data.invItem}
-          onItemUpdate={(invItem) => {
-            setInvItem(invItem);
-            props.data.onItemUpdate(invItem);
-          }}
-        />
+        {displaySections && (
+          <InvItemSections
+            invItem={invItem}
+            onItemUpdate={(invItem) => {
+              setInvItem(invItem);
+              props.data.onItemUpdate(invItem);
+            }}
+          />
+        )}
 
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
@@ -218,7 +226,7 @@ export function InvItemDrawerContent(props: {
               <Menu.Dropdown>
                 <Menu.Item
                   onClick={() => {
-                    props.data.onItemMove(props.data.invItem, null);
+                    props.data.onItemMove(invItem, null);
                   }}
                 >
                   Unstored
@@ -228,7 +236,7 @@ export function InvItemDrawerContent(props: {
                   <Menu.Item
                     key={index}
                     onClick={() => {
-                      props.data.onItemMove(props.data.invItem, containerItem);
+                      props.data.onItemMove(invItem, containerItem);
                     }}
                   >
                     {containerItem.item.name}
@@ -237,7 +245,15 @@ export function InvItemDrawerContent(props: {
               </Menu.Dropdown>
             </Menu>
           )}
-          <ActionIcon variant='light' color='cyan' radius='xl' aria-label='Edit Item'>
+          <ActionIcon
+            variant='light'
+            color='cyan'
+            radius='xl'
+            aria-label='Edit Item'
+            onClick={() => {
+              setEditingItem(true);
+            }}
+          >
             <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
           <ActionIcon
@@ -246,12 +262,32 @@ export function InvItemDrawerContent(props: {
             radius='xl'
             aria-label='Remove Item'
             onClick={() => {
-              props.data.onItemDelete(props.data.invItem);
+              props.data.onItemDelete(invItem);
             }}
           >
             <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
         </Group>
+        {editingItem && (
+          <CreateItemModal
+            opened={editingItem}
+            editItem={invItem.item}
+            onComplete={async (item) => {
+              const newInvItem = {
+                ..._.cloneDeep(invItem),
+                item,
+              };
+              console.log(newInvItem);
+              setInvItem(newInvItem);
+              props.data.onItemUpdate(newInvItem);
+              refreshSections();
+              setEditingItem(false);
+            }}
+            onCancel={() => {
+              setEditingItem(false);
+            }}
+          />
+        )}
       </Box>
     </Box>
   );

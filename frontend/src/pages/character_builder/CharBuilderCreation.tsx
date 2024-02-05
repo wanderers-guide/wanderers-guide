@@ -886,7 +886,7 @@ function LevelSection(props: {
   level: number;
   opened: boolean;
   content: ContentPackage;
-  operationResults: any;
+  operationResults?: OperationResultPackage;
 }) {
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -1175,7 +1175,7 @@ function AncestrySectionAccordionItem(props: {
 
 function InitialStatsLevelSection(props: {
   content: ContentPackage;
-  operationResults: any;
+  operationResults?: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
 }) {
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -1270,7 +1270,7 @@ function InitialStatsLevelSection(props: {
 function AncestryAccordionItem(props: {
   ancestry?: Ancestry;
   content: ContentPackage;
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1396,7 +1396,7 @@ function AncestryAccordionItem(props: {
 
 function BackgroundAccordionItem(props: {
   background?: Background;
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1507,7 +1507,7 @@ function BackgroundAccordionItem(props: {
 
 function ClassAccordionItem(props: {
   class_?: Class;
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1613,7 +1613,7 @@ function ClassAccordionItem(props: {
 }
 
 function BooksAccordionItem(props: {
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1658,10 +1658,14 @@ function BooksAccordionItem(props: {
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={choiceCountRef}>
-        {props.operationResults.contentSourceResults.map((s: any, index: number) => (
+        {props.operationResults.contentSourceResults.map((s, index) => (
           <DisplayOperationResult
             key={index}
-            source={s.baseSource}
+            source={{
+              ...s.baseSource,
+              _select_uuid: `${s.baseSource.id}`,
+              _content_type: 'content-source',
+            }}
             level={character?.level ?? 1}
             results={s.baseResults}
             onChange={(path, value) => {
@@ -1675,7 +1679,7 @@ function BooksAccordionItem(props: {
 }
 
 function ItemsAccordionItem(props: {
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1718,24 +1722,28 @@ function ItemsAccordionItem(props: {
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={choiceCountRef}>
-        {/* {props.operationResults.itemResults.map((s: any, index: number) => (
+        {props.operationResults.itemResults.map((s, index) => (
           <DisplayOperationResult
             key={index}
-            source={s.baseSource}
+            source={{
+              ...s.baseSource,
+              _select_uuid: `${s.baseSource.id}`,
+              _content_type: 'item',
+            }}
             level={s.baseSource.level}
             results={s.baseResults}
             onChange={(path, value) => {
               props.onSaveChanges(`item-${s.baseSource.id}_${path}`, value);
             }}
           />
-        ))} */}
+        ))}
       </Accordion.Panel>
     </Accordion.Item>
   );
 }
 
 function CustomAccordionItem(props: {
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {

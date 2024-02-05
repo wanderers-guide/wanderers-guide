@@ -37,11 +37,14 @@ import { useState } from 'react';
 export function CreateSpellModal(props: {
   opened: boolean;
   editId?: number;
+  editSpell?: Spell;
   onComplete: (spell: Spell) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+  const editing =
+    (props.editId !== undefined && props.editId !== -1) || props.editSpell !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -49,13 +52,16 @@ export function CreateSpellModal(props: {
   const [openedHeightened, { toggle: toggleHeightened }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-spell-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-spell-${props.editId}`, { editId: props.editId, editSpell: props.editSpell }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId }] = queryKey;
+      const [_key, { editId, editSpell }] = queryKey as [
+        string,
+        { editId?: number; editSpell?: Spell }
+      ];
 
-      const spell = await fetchContentById<Spell>('spell', editId);
+      const spell = editId ? await fetchContentById<Spell>('spell', editId) : editSpell;
       if (!spell) return null;
 
       form.setInitialValues({
@@ -70,7 +76,7 @@ export function CreateSpellModal(props: {
 
       return spell;
     },
-    enabled: props.editId !== undefined && props.editId !== -1,
+    enabled: editing,
     refetchOnWindowFocus: false,
   });
 
@@ -155,7 +161,7 @@ export function CreateSpellModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
+          {editing ? 'Edit' : 'Create'}
           {' Spell'}
         </Title>
       }
@@ -498,9 +504,7 @@ export function CreateSpellModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
             </Group>
           </Stack>
         </form>

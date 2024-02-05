@@ -1129,6 +1129,7 @@ function ArmorSection(props: {
                     openDrawer({
                       type: 'inv-item',
                       data: {
+                        zIndex: 100,
                         invItem: _.cloneDeep(bestShield),
                         onItemUpdate: (newInvItem: InventoryItem) => {
                           handleUpdateItem(props.setInventory, newInvItem);
@@ -2045,6 +2046,7 @@ function PanelInventory(props: {
                             openDrawer({
                               type: 'inv-item',
                               data: {
+                                zIndex: 100,
                                 invItem: _.cloneDeep(invItem),
                                 onItemUpdate: (newInvItem: InventoryItem) => {
                                   handleUpdateItem(props.setInventory, newInvItem);
@@ -2073,6 +2075,7 @@ function PanelInventory(props: {
                                 openDrawer({
                                   type: 'inv-item',
                                   data: {
+                                    zIndex: 100,
                                     invItem: _.cloneDeep(containedItem),
                                     onItemUpdate: (newInvItem: InventoryItem) => {
                                       handleUpdateItem(props.setInventory, newInvItem);
@@ -2123,6 +2126,7 @@ function PanelInventory(props: {
                           openDrawer({
                             type: 'inv-item',
                             data: {
+                              zIndex: 100,
                               invItem: _.cloneDeep(invItem),
                               onItemUpdate: (newInvItem: InventoryItem) => {
                                 handleUpdateItem(props.setInventory, newInvItem);

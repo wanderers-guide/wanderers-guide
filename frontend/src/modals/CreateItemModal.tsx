@@ -40,11 +40,15 @@ import { useState } from 'react';
 export function CreateItemModal(props: {
   opened: boolean;
   editId?: number;
+  editItem?: Item;
+  zIndex?: number;
   onComplete: (item: Item) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+  const editing =
+    (props.editId !== undefined && props.editId !== -1) || props.editItem !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -52,13 +56,16 @@ export function CreateItemModal(props: {
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-item-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-item-${props.editId}`, { editId: props.editId, editItem: props.editItem }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId }] = queryKey;
+      const [_key, { editId, editItem }] = queryKey as [
+        string,
+        { editId?: number; editItem?: Item }
+      ];
 
-      const item = await fetchContentById<Item>('item', editId);
+      const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
       if (!item) return null;
 
       form.setInitialValues({
@@ -81,7 +88,7 @@ export function CreateItemModal(props: {
 
       return item;
     },
-    enabled: props.editId !== undefined && props.editId !== -1,
+    enabled: editing,
     refetchOnWindowFocus: false,
   });
 
@@ -133,7 +140,7 @@ export function CreateItemModal(props: {
         damage: {
           damageType: '',
           dice: 1,
-          die: 'd6',
+          die: '',
           extra: '',
         },
         ac_bonus: undefined,
@@ -263,7 +270,7 @@ export function CreateItemModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
+          {editing ? 'Edit' : 'Create'}
           {' Item'}
         </Title>
       }
@@ -276,6 +283,7 @@ export function CreateItemModal(props: {
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
+      zIndex={props.zIndex}
     >
       <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
@@ -870,9 +878,7 @@ export function CreateItemModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
             </Group>
           </Stack>
         </form>
