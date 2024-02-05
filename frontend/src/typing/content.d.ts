@@ -102,6 +102,7 @@ interface Item {
       damageType: string;
       dice: number;
       die: string;
+      extra?: string;
     };
     ac_bonus?: number; // For armor & shield
     check_penalty?: number; // For armor
@@ -127,9 +128,9 @@ interface Item {
     range?: number;
     reload?: string;
     runes?: {
-      striking: number;
-      potency: number;
-      property: string[];
+      striking?: number;
+      potency?: number;
+      property?: string[];
     };
     foundry: {
       rules?: Record<string, any>;
