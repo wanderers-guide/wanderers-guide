@@ -1,10 +1,10 @@
-import ActionsInput from "@common/ActionsInput";
-import TraitsInput from "@common/TraitsInput";
-import { OperationSection } from "@common/operations/Operations";
-import RichTextInput from "@common/rich_text_input/RichTextInput";
-import { EDIT_MODAL_HEIGHT } from "@constants/data";
-import { fetchContentById, fetchTraits } from "@content/content-store";
-import { toHTML } from "@content/content-utils";
+import ActionsInput from '@common/ActionsInput';
+import TraitsInput from '@common/TraitsInput';
+import { OperationSection } from '@common/operations/Operations';
+import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { fetchContentById, fetchTraits } from '@content/content-store';
+import { toHTML } from '@content/content-utils';
 import {
   Anchor,
   Badge,
@@ -25,23 +25,17 @@ import {
   Textarea,
   Title,
   useMantineTheme,
-} from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { useDisclosure } from "@mantine/hooks";
-import { useQuery } from "@tanstack/react-query";
-import { JSONContent } from "@tiptap/react";
-import {
-  AbilityBlock,
-  AbilityBlockType,
-  ActionCost,
-  Rarity,
-  Trait,
-} from "@typing/content";
-import { Operation } from "@typing/operations";
-import { isValidImage } from "@utils/images";
-import { toLabel } from "@utils/strings";
-import useRefresh from "@utils/use-refresh";
-import { useState } from "react";
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useDisclosure } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
+import { JSONContent } from '@tiptap/react';
+import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
+import { Operation } from '@typing/operations';
+import { isValidImage } from '@utils/images';
+import { toLabel } from '@utils/strings';
+import useRefresh from '@utils/use-refresh';
+import { useState } from 'react';
 
 export function CreateAbilityBlockModal(props: {
   opened: boolean;
@@ -65,10 +59,7 @@ export function CreateAbilityBlockModal(props: {
       // eslint-disable-next-line
       const [_key, { editId }] = queryKey;
 
-      const abilityBlock = await fetchContentById<AbilityBlock>(
-        "ability-block",
-        editId
-      );
+      const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', editId);
       if (abilityBlock && abilityBlock.type !== props.type) return null;
       if (!abilityBlock) return null;
 
@@ -98,37 +89,34 @@ export function CreateAbilityBlockModal(props: {
   const form = useForm<AbilityBlock>({
     initialValues: {
       id: -1,
-      created_at: "",
+      created_at: '',
       operations: [] as Operation[] | undefined,
-      name: "",
+      name: '',
       actions: null as ActionCost,
       level: undefined as number | undefined,
-      rarity: "COMMON" as Rarity,
+      rarity: 'COMMON' as Rarity,
       prerequisites: [] as string[],
-      frequency: "" as string | undefined,
-      cost: "",
-      trigger: "",
-      requirements: "",
-      access: "",
-      description: "",
-      special: "",
+      frequency: '' as string | undefined,
+      cost: '',
+      trigger: '',
+      requirements: '',
+      access: '',
+      description: '',
+      special: '',
       type: props.type,
       meta_data: {},
       traits: [] as number[],
       content_source_id: -1,
-      version: "1.0",
+      version: '1.0',
     },
 
     validate: {
       level:
-        props.type === "feat" || props.type === "class-feature"
-          ? (value) =>
-              value !== undefined && !isNaN(+value) ? null : "Invalid level"
+        props.type === 'feat' || props.type === 'class-feature'
+          ? (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level')
           : undefined,
       rarity: (value) =>
-        ["COMMON", "UNCOMMON", "RARE", "UNIQUE"].includes(value)
-          ? null
-          : "Invalid rarity",
+        ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
     },
   });
 
@@ -167,9 +155,7 @@ export function CreateAbilityBlockModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined || props.editId === -1
-            ? "Create"
-            : "Edit"}{" "}
+          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}{' '}
           {toLabel(props.type)}
         </Title>
       }
@@ -178,57 +164,47 @@ export function CreateAbilityBlockModal(props: {
           paddingRight: 2,
         },
       }}
-      size={openedOperations ? "xl" : "md"}
+      size={openedOperations ? 'xl' : 'md'}
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
     >
-      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14}>
+      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
-            <Group wrap="nowrap" justify="space-between">
-              <Group wrap="nowrap">
-                <TextInput
-                  label="Name"
-                  required
-                  {...form.getInputProps("name")}
-                />
-                <ActionsInput
-                  label="Actions"
-                  w={100}
-                  {...form.getInputProps("actions")}
-                />
+            <Group wrap='nowrap' justify='space-between'>
+              <Group wrap='nowrap'>
+                <TextInput label='Name' required {...form.getInputProps('name')} />
+                <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
               </Group>
 
-              {(props.type === "feat" || props.type === "class-feature") && (
+              {(props.type === 'feat' || props.type === 'class-feature') && (
                 <Select
-                  label="Level"
+                  label='Level'
                   required
-                  data={Array.from({ length: 20 }, (_, i) =>
-                    (i + 1).toString()
-                  )}
+                  data={Array.from({ length: 20 }, (_, i) => (i + 1).toString())}
                   w={70}
-                  {...form.getInputProps("level")}
+                  {...form.getInputProps('level')}
                 />
               )}
             </Group>
 
-            <Group wrap="nowrap" align="flex-start">
+            <Group wrap='nowrap' align='flex-start'>
               <Select
-                label="Rarity"
+                label='Rarity'
                 required
                 data={[
-                  { value: "COMMON", label: "Common" },
-                  { value: "UNCOMMON", label: "Uncommon" },
-                  { value: "RARE", label: "Rare" },
-                  { value: "UNIQUE", label: "Unique" },
+                  { value: 'COMMON', label: 'Common' },
+                  { value: 'UNCOMMON', label: 'Uncommon' },
+                  { value: 'RARE', label: 'Rare' },
+                  { value: 'UNIQUE', label: 'Unique' },
                 ]}
                 w={140}
-                {...form.getInputProps("rarity")}
+                {...form.getInputProps('rarity')}
               />
               <TraitsInput
-                label="Other Traits"
+                label='Other Traits'
                 value={traits.map((trait) => trait.name)}
                 onTraitChange={(traits) => setTraits(traits)}
                 style={{ flex: 1 }}
@@ -236,97 +212,95 @@ export function CreateAbilityBlockModal(props: {
             </Group>
 
             <TagsInput
-              label="Prerequisites"
-              splitChars={[",", ";", "|"]}
-              {...form.getInputProps("prerequisites")}
+              label='Prerequisites'
+              splitChars={[',', ';', '|']}
+              {...form.getInputProps('prerequisites')}
             />
 
             <Divider
-              my="xs"
+              my='xs'
               label={
-                <Group gap={3} wrap="nowrap">
+                <Group gap={3} wrap='nowrap'>
                   <Button
-                    variant={openedAdditional ? "light" : "subtle"}
-                    size="compact-sm"
-                    color="gray.6"
+                    variant={openedAdditional ? 'light' : 'subtle'}
+                    size='compact-sm'
+                    color='gray.6'
                   >
                     Misc. Sections
                   </Button>
                   {miscSectionCount && miscSectionCount > 0 && (
-                    <Badge variant="light" color={theme.primaryColor} size="xs">
+                    <Badge variant='light' color={theme.primaryColor} size='xs'>
                       {miscSectionCount}
                     </Badge>
                   )}
                 </Group>
               }
-              labelPosition="left"
+              labelPosition='left'
               onClick={toggleAdditional}
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
                 <Textarea
-                  label="Frequency"
+                  label='Frequency'
                   minRows={1}
                   maxRows={4}
                   autosize
-                  {...form.getInputProps("frequency")}
+                  {...form.getInputProps('frequency')}
                 />
 
                 <Textarea
-                  label="Cost"
+                  label='Cost'
                   minRows={1}
                   maxRows={4}
                   autosize
-                  {...form.getInputProps("cost")}
+                  {...form.getInputProps('cost')}
                 />
 
                 <Textarea
-                  label="Trigger"
+                  label='Trigger'
                   minRows={1}
                   maxRows={4}
                   autosize
-                  {...form.getInputProps("trigger")}
+                  {...form.getInputProps('trigger')}
                 />
 
                 <Textarea
-                  label="Requirements"
+                  label='Requirements'
                   minRows={1}
                   maxRows={4}
                   autosize
-                  {...form.getInputProps("requirements")}
+                  {...form.getInputProps('requirements')}
                 />
 
                 <Textarea
-                  label="Access"
+                  label='Access'
                   minRows={1}
                   maxRows={4}
                   autosize
-                  {...form.getInputProps("access")}
+                  {...form.getInputProps('access')}
                 />
 
-                <Divider mx="lg" label="Advanced" labelPosition="center" />
+                <Divider mx='lg' label='Advanced' labelPosition='center' />
 
                 <TextInput
-                  defaultValue={metaData.image_url ?? ""}
-                  label="Image URL"
+                  defaultValue={metaData.image_url ?? ''}
+                  label='Image URL'
                   onChange={async (e) => {
                     setIsValidImageURL(
-                      !e.target?.value
-                        ? true
-                        : await isValidImage(e.target?.value)
+                      !e.target?.value ? true : await isValidImage(e.target?.value)
                     );
                     setMetaData({
                       ...metaData,
                       image_url: e.target?.value,
                     });
                   }}
-                  error={isValidImageURL ? false : "Invalid URL"}
+                  error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
-                <Stack py="xs">
+                <Stack py='xs'>
                   <Switch
-                    label="Can Select Multiple Times"
-                    labelPosition="left"
+                    label='Can Select Multiple Times'
+                    labelPosition='left'
                     checked={metaData.canSelectMultipleTimes}
                     onChange={(event) =>
                       setMetaData({
@@ -336,8 +310,8 @@ export function CreateAbilityBlockModal(props: {
                     }
                   />
                   <Switch
-                    label="Unselectable"
-                    labelPosition="left"
+                    label='Unselectable'
+                    labelPosition='left'
                     checked={metaData.unselectable}
                     onChange={(event) =>
                       setMetaData({
@@ -354,87 +328,70 @@ export function CreateAbilityBlockModal(props: {
 
             {displayDescription && (
               <RichTextInput
-                label="Description"
+                label='Description'
                 required
                 value={description ?? toHTML(form.values.description)}
                 onChange={(text, json) => {
                   setDescription(json);
-                  form.setFieldValue("description", text);
+                  form.setFieldValue('description', text);
                 }}
               />
             )}
 
             <Textarea
-              label="Special"
+              label='Special'
               minRows={1}
               maxRows={4}
               autosize
-              {...form.getInputProps("special")}
+              {...form.getInputProps('special')}
             />
 
             <Divider
-              my="xs"
+              my='xs'
               label={
-                <Group gap={3} wrap="nowrap">
+                <Group gap={3} wrap='nowrap'>
                   <Button
-                    variant={openedOperations ? "light" : "subtle"}
-                    size="compact-sm"
-                    color="gray.6"
+                    variant={openedOperations ? 'light' : 'subtle'}
+                    size='compact-sm'
+                    color='gray.6'
                   >
                     Operations
                   </Button>
-                  {form.values.operations &&
-                    form.values.operations.length > 0 && (
-                      <Badge
-                        variant="light"
-                        color={theme.primaryColor}
-                        size="xs"
-                      >
-                        {form.values.operations.length}
-                      </Badge>
-                    )}
+                  {form.values.operations && form.values.operations.length > 0 && (
+                    <Badge variant='light' color={theme.primaryColor} size='xs'>
+                      {form.values.operations.length}
+                    </Badge>
+                  )}
                 </Group>
               }
-              labelPosition="left"
+              labelPosition='left'
               onClick={toggleOperations}
             />
             <Collapse in={openedOperations}>
               <Stack gap={10}>
                 <OperationSection
                   title={
-                    <HoverCard
-                      openDelay={250}
-                      width={260}
-                      shadow="md"
-                      withinPortal
-                    >
+                    <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
                       <HoverCard.Target>
-                        <Anchor
-                          target="_blank"
-                          underline="hover"
-                          fz="sm"
-                          fs="italic"
-                        >
+                        <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
                           How to Use Operations
                         </Anchor>
                       </HoverCard.Target>
                       <HoverCard.Dropdown>
-                        <Text size="sm">
-                          Operations are used to make changes to a character.
-                          They can give feats, spells, and more, as well as
-                          change stats, skills, and other values.
+                        <Text size='sm'>
+                          Operations are used to make changes to a character. They can give feats,
+                          spells, and more, as well as change stats, skills, and other values.
                         </Text>
-                        <Text size="sm">
-                          Use conditionals to apply operations only when certain
-                          conditions are met and selections whenever a choice
-                          needs to be made.
+                        <Text size='sm'>
+                          Use conditionals to apply operations only when certain conditions are met
+                          and selections whenever a choice needs to be made.
                         </Text>
-                        <Text size="xs" fs="italic">
-                          For more help, see{" "}
+                        <Text size='xs' fs='italic'>
+                          For more help, see{' '}
                           <Anchor
-                            href="https://discord.gg/kxCpa6G"
-                            target="_blank"
-                            underline="hover"
+                            href='https://discord.gg/kxCpa6G'
+                            target='_blank'
+                            underline='hover'
                           >
                             our Discord server
                           </Anchor>
@@ -444,17 +401,15 @@ export function CreateAbilityBlockModal(props: {
                     </HoverCard>
                   }
                   value={form.values.operations}
-                  onChange={(operations) =>
-                    form.setValues({ ...form.values, operations })
-                  }
+                  onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />
               </Stack>
             </Collapse>
 
-            <Group justify="flex-end">
+            <Group justify='flex-end'>
               <Button
-                variant="default"
+                variant='default'
                 onClick={() => {
                   props.onCancel();
                   onReset();
@@ -462,10 +417,8 @@ export function CreateAbilityBlockModal(props: {
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {props.editId === undefined || props.editId === -1
-                  ? "Create"
-                  : "Update"}
+              <Button type='submit'>
+                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
               </Button>
             </Group>
           </Stack>

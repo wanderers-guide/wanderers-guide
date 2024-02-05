@@ -277,7 +277,7 @@ export function CreateItemModal(props: {
       closeOnEscape={false}
       keepMounted={false}
     >
-      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14}>
+      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>

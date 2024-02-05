@@ -1,7 +1,7 @@
-import { characterState } from "@atoms/characterAtoms";
-import BlurBox from "@common/BlurBox";
-import { defineDefaultSources } from "@content/content-store";
-import { saveCustomization } from "@content/customization-cache";
+import { characterState } from '@atoms/characterAtoms';
+import BlurBox from '@common/BlurBox';
+import { defineDefaultSources } from '@content/content-store';
+import { saveCustomization } from '@content/customization-cache';
 import {
   ActionIcon,
   Box,
@@ -13,27 +13,21 @@ import {
   Text,
   rem,
   useMantineTheme,
-} from "@mantine/core";
-import { useDebouncedValue, useDidUpdate } from "@mantine/hooks";
-import { makeRequest } from "@requests/request-manager";
-import {
-  IconArrowLeft,
-  IconArrowRight,
-  IconHammer,
-  IconHome,
-  IconUser,
-} from "@tabler/icons-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Character } from "@typing/content";
-import { JSendResponse } from "@typing/requests";
-import { isPlayable } from "@utils/character";
-import { setPageTitle } from "@utils/document-change";
-import { isCharacterBuilderMobile } from "@utils/screen-sizes";
-import { useEffect, useState } from "react";
-import { useLoaderData, useNavigate } from "react-router-dom";
-import { useRecoilState } from "recoil";
-import CharBuilderCreation from "./CharBuilderCreation";
-import CharBuilderHome from "./CharBuilderHome";
+} from '@mantine/core';
+import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
+import { makeRequest } from '@requests/request-manager';
+import { IconArrowLeft, IconArrowRight, IconHammer, IconHome, IconUser } from '@tabler/icons-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Character } from '@typing/content';
+import { JSendResponse } from '@typing/requests';
+import { isPlayable } from '@utils/character';
+import { setPageTitle } from '@utils/document-change';
+import { isCharacterBuilderMobile } from '@utils/screen-sizes';
+import { useEffect, useState } from 'react';
+import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+import CharBuilderCreation from './CharBuilderCreation';
+import CharBuilderHome from './CharBuilderHome';
 
 export function Component() {
   setPageTitle(`Builder`);
@@ -75,7 +69,7 @@ export function Component() {
   } = useQuery({
     queryKey: [`find-character-${characterId}`],
     queryFn: async () => {
-      const resultCharacter = await makeRequest<Character>("find-character", {
+      const resultCharacter = await makeRequest<Character>('find-character', {
         id: characterId,
       });
 
@@ -90,7 +84,7 @@ export function Component() {
         });
       } else {
         // Character not found, redirect to characters
-        window.location.href = "/characters";
+        window.location.href = '/characters';
       }
 
       return resultCharacter;
@@ -126,11 +120,11 @@ export function Component() {
       content_sources?: any;
       operation_data?: any;
     }) => {
-      const response = await makeRequest<JSendResponse>("update-character", {
+      const response = await makeRequest<JSendResponse>('update-character', {
         id: characterId,
         ...data,
       });
-      return response ? response.status === "success" : false;
+      return response ? response.status === 'success' : false;
     },
     {
       onSuccess: () => {
@@ -141,109 +135,105 @@ export function Component() {
 
   return (
     <Center>
-      <Box maw={800} w="100%">
-        <Stack style={{ position: "relative" }}>
+      <Box maw={800} w='100%'>
+        <Stack style={{ position: 'relative' }}>
           {!isCharacterBuilderMobile() && (
             <>
               <ActionIcon
-                variant="filled"
-                color="gray"
-                aria-label="Next Page"
-                radius="xl"
-                size="xl"
+                variant='filled'
+                color='gray'
+                aria-label='Next Page'
+                radius='xl'
+                size='xl'
                 style={{
-                  position: "absolute",
-                  top: "45%",
+                  position: 'absolute',
+                  top: '45%',
                   right: -70,
-                  visibility: active === 2 ? "hidden" : "visible",
+                  visibility: active === 2 ? 'hidden' : 'visible',
                 }}
                 onClick={() => handleStepChange(active + 1)}
                 disabled={active === 1 && !isPlayable(character)}
               >
-                <IconArrowRight
-                  style={{ width: "70%", height: "70%" }}
-                  stroke={2}
-                />
+                <IconArrowRight style={{ width: '70%', height: '70%' }} stroke={2} />
               </ActionIcon>
               <ActionIcon
-                variant="filled"
-                color="gray"
-                aria-label="Previous Page"
-                radius="xl"
-                size="xl"
+                variant='filled'
+                color='gray'
+                aria-label='Previous Page'
+                radius='xl'
+                size='xl'
                 style={{
-                  position: "absolute",
-                  top: "45%",
+                  position: 'absolute',
+                  top: '45%',
                   left: -70,
-                  visibility: active === 0 ? "hidden" : "visible",
+                  visibility: active === 0 ? 'hidden' : 'visible',
                 }}
                 onClick={() => handleStepChange(active - 1)}
               >
-                <IconArrowLeft
-                  style={{ width: "70%", height: "70%" }}
-                  stroke={2}
-                />
+                <IconArrowLeft style={{ width: '70%', height: '70%' }} stroke={2} />
               </ActionIcon>
             </>
           )}
-          <BlurBox blur={10} p="sm">
+          <BlurBox blur={10} p='sm'>
             <Stepper
               active={active}
               onStepClick={setActive}
               iconSize={32}
-              size={isCharacterBuilderMobile() ? "xs" : undefined}
+              size={isCharacterBuilderMobile() ? 'xs' : undefined}
             >
               <Stepper.Step
-                label="Home"
+                label='Home'
                 allowStepSelect={true}
                 icon={<IconHome style={stepIconStyle} />}
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight}>
+                <ScrollArea h={pageHeight} scrollbars='y'>
                   {character && !isLoading ? (
                     <CharBuilderHome pageHeight={pageHeight} />
                   ) : (
                     <LoadingOverlay
                       visible={isLoading}
                       zIndex={1000}
-                      overlayProps={{ radius: "md", backgroundOpacity: 0 }}
-                      loaderProps={{ type: "bars" }}
+                      overlayProps={{ radius: 'md', backgroundOpacity: 0 }}
+                      loaderProps={{ type: 'bars' }}
                     />
                   )}
                 </ScrollArea>
               </Stepper.Step>
               <Stepper.Step
-                label="Builder"
+                label='Builder'
                 allowStepSelect={true}
                 icon={<IconHammer style={stepIconStyle} />}
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight}>
+                <ScrollArea h={pageHeight} scrollbars='y'>
                   {character && !isLoading ? (
                     <CharBuilderCreation pageHeight={pageHeight} />
                   ) : (
                     <LoadingOverlay
                       visible={isLoading}
                       zIndex={1000}
-                      overlayProps={{ radius: "md", backgroundOpacity: 0 }}
-                      loaderProps={{ type: "bars" }}
+                      overlayProps={{ radius: 'md', backgroundOpacity: 0 }}
+                      loaderProps={{ type: 'bars' }}
                     />
                   )}
                 </ScrollArea>
               </Stepper.Step>
               <Stepper.Step
-                label="Sheet"
+                label='Sheet'
                 allowStepSelect={isPlayable(character)}
                 icon={<IconUser style={stepIconStyle} />}
                 completedIcon={<IconUser style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight}>
-                  <Text ta="center">Redirecting to sheet...</Text>
+                <ScrollArea h={pageHeight} scrollbars='y'>
+                  <Text ta='center'>Redirecting to sheet...</Text>
                 </ScrollArea>
               </Stepper.Step>
 
               <Stepper.Completed>
-                <ScrollArea h={pageHeight}>Complete</ScrollArea>
+                <ScrollArea h={pageHeight} scrollbars='y'>
+                  Complete
+                </ScrollArea>
               </Stepper.Completed>
             </Stepper>
           </BlurBox>

@@ -1,6 +1,6 @@
-import { userIconState } from "@atoms/navAtoms";
-import { sessionState } from "@atoms/supabaseAtoms";
-import classes from "@css/Layout.module.css";
+import { userIconState } from '@atoms/navAtoms';
+import { sessionState } from '@atoms/supabaseAtoms';
+import classes from '@css/Layout.module.css';
 import {
   AppShell,
   Avatar,
@@ -14,8 +14,8 @@ import {
   UnstyledButton,
   rem,
   useMantineTheme,
-} from "@mantine/core";
-import { useDisclosure, useViewportSize } from "@mantine/hooks";
+} from '@mantine/core';
+import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import {
   IconChevronDown,
   IconLayersIntersect,
@@ -24,15 +24,15 @@ import {
   IconSpeakerphone,
   IconSwords,
   IconUsers,
-} from "@tabler/icons-react";
-import { getIcon } from "@utils/images";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useRecoilState, useRecoilValue } from "recoil";
-import { supabase } from "../main";
-import { LoginButton } from "./LoginButton";
-import { SearchBar } from "./Searchbar";
-import WanderersGuideLogo from "./WanderersGuideLogo";
+} from '@tabler/icons-react';
+import { getIcon } from '@utils/images';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { supabase } from '../main';
+import { LoginButton } from './LoginButton';
+import { SearchBar } from './Searchbar';
+import WanderersGuideLogo from './WanderersGuideLogo';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
@@ -62,45 +62,40 @@ export default function Layout(props: { children: React.ReactNode }) {
       header={{ height: 50, collapsed: !pinned, offset: opened }}
       navbar={{
         width: 300,
-        breakpoint: "md",
+        breakpoint: 'md',
         collapsed: { desktop: true, mobile: !opened },
       }}
-      padding="md"
+      padding='md'
     >
       <AppShell.Header
         h={50}
         style={{
           border: `0px solid`,
           borderRadius: 0,
-          backdropFilter: "blur(8px)",
+          backdropFilter: 'blur(8px)',
           // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-          backgroundColor: theme.colors.dark[8] + "CC",
+          backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >
-        <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" />
+        <Group h='100%' px='md'>
+          <Burger opened={opened} onClick={toggle} hiddenFrom='md' size='sm' />
           <Group style={{ flex: 1 }}>
             <WanderersGuideLogo size={30} />
             <Group
               gap={0}
               style={{ flex: 1 }}
-              visibleFrom="md"
-              justify="space-between"
-              wrap="nowrap"
+              visibleFrom='md'
+              justify='space-between'
+              wrap='nowrap'
             >
               {width >= 1050 ? (
                 <Group gap={0}>
-                  <UnstyledButton className={classes.control}>
-                    About
-                  </UnstyledButton>
-                  <UnstyledButton className={classes.control}>
-                    Community
-                  </UnstyledButton>
+                  <UnstyledButton className={classes.control}>About</UnstyledButton>
+                  <UnstyledButton className={classes.control}>Community</UnstyledButton>
                   <UnstyledButton
                     className={classes.control}
                     onClick={() => {
-                      window.location.href =
-                        "https://www.patreon.com/wanderersguide";
+                      window.location.href = 'https://www.patreon.com/wanderersguide';
                     }}
                   >
                     Support
@@ -108,7 +103,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                   <UnstyledButton
                     className={classes.control}
                     onClick={() => {
-                      window.location.href = "https://wanderersguide.app";
+                      window.location.href = 'https://wanderersguide.app';
                     }}
                   >
                     Legacy Site
@@ -123,14 +118,14 @@ export default function Layout(props: { children: React.ReactNode }) {
                 {!session ? (
                   <LoginButton
                     onClick={() => {
-                      navigate("/characters");
+                      navigate('/characters');
                     }}
                   />
                 ) : (
                   <Menu
                     width={260}
-                    position="bottom-end"
-                    transitionProps={{ transition: "pop-top-right" }}
+                    position='bottom-end'
+                    transitionProps={{ transition: 'pop-top-right' }}
                     onClose={() => setUserMenuOpened(false)}
                     onOpen={() => setUserMenuOpened(true)}
                     withinPortal
@@ -138,32 +133,28 @@ export default function Layout(props: { children: React.ReactNode }) {
                     <Menu.Target>
                       <UnstyledButton
                         py={1}
-                        pr="xs"
+                        pr='xs'
                         style={{
                           borderTopLeftRadius: theme.radius.xl,
                           borderBottomLeftRadius: theme.radius.xl,
                           borderTopRightRadius: theme.radius.md,
                           borderBottomRightRadius: theme.radius.md,
-                          backgroundColor: userMenuOpened
-                            ? "#14151750"
-                            : undefined,
+                          backgroundColor: userMenuOpened ? '#14151750' : undefined,
                         }}
                       >
                         <Group gap={7}>
                           <Avatar
                             src={
                               userIcon
-                                ? `data:image/svg+xml;utf8,${encodeURIComponent(
-                                    userIcon
-                                  )}`
+                                ? `data:image/svg+xml;utf8,${encodeURIComponent(userIcon)}`
                                 : undefined
                             }
-                            alt={"Account Dropdown"}
-                            radius="xl"
+                            alt={'Account Dropdown'}
+                            radius='xl'
                             size={30}
                           />
-                          <Text fw={500} size="sm" c="gray.4" lh={1} mr={3}>
-                            {"Account"}
+                          <Text fw={500} size='sm' c='gray.4' lh={1} mr={3}>
+                            {'Account'}
                           </Text>
                           <IconChevronDown
                             style={{ width: rem(12), height: rem(12) }}
@@ -182,7 +173,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           />
                         }
                         onClick={() => {
-                          navigate("/characters");
+                          navigate('/characters');
                         }}
                       >
                         Characters
@@ -218,7 +209,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           />
                         }
                         onClick={() => {
-                          navigate("/admin");
+                          navigate('/admin');
                         }}
                       >
                         Admin Panel
@@ -227,10 +218,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                       <Menu.Label>Settings</Menu.Label>
                       <Menu.Item
                         leftSection={
-                          <IconSettings
-                            style={{ width: rem(16), height: rem(16) }}
-                            stroke={1.5}
-                          />
+                          <IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                         }
                       >
                         Account
@@ -247,10 +235,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                       </Menu.Item> */}
                       <Menu.Item
                         leftSection={
-                          <IconLogout
-                            style={{ width: rem(16), height: rem(16) }}
-                            stroke={1.5}
-                          />
+                          <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                         }
                         onClick={async () => {
                           supabase.auth.signOut();
@@ -268,20 +253,20 @@ export default function Layout(props: { children: React.ReactNode }) {
       </AppShell.Header>
 
       <AppShell.Navbar
-        py="md"
+        py='md'
         px={4}
         style={{
           border: `0px solid`,
           borderRadius: 0,
-          backdropFilter: "blur(8px)",
+          backdropFilter: 'blur(8px)',
           // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-          backgroundColor: theme.colors.dark[8] + "75",
+          backgroundColor: theme.colors.dark[8] + '75',
         }}
       >
         <UnstyledButton
           className={classes.control}
           onClick={() => {
-            navigate("/characters");
+            navigate('/characters');
             close();
           }}
         >
@@ -292,7 +277,7 @@ export default function Layout(props: { children: React.ReactNode }) {
         <UnstyledButton
           className={classes.control}
           onClick={() => {
-            navigate("/admin");
+            navigate('/admin');
             close();
           }}
         >
@@ -312,8 +297,9 @@ export default function Layout(props: { children: React.ReactNode }) {
       </AppShell.Navbar>
 
       <ScrollArea
-        h={"100vh"}
-        type="auto"
+        h={'100vh'}
+        type='auto'
+        scrollbars='y'
         onScrollPositionChange={(pos) => {
           if (pos.y > SCROLL_PINNED_THRESHOLD) {
             setPinned(false);

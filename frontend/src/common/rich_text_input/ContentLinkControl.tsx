@@ -1,57 +1,46 @@
-import { useEffect, useState } from "react";
-import { Menu, ScrollArea, Box, Title } from "@mantine/core";
-import { useDisclosure, useWindowEvent } from "@mantine/hooks";
-import { IconLink } from "@tabler/icons-react";
-import { RichTextEditor, useRichTextEditorContext } from "@mantine/tiptap";
-import { selectContent } from "@common/select/SelectContent";
-import { AbilityBlockType, ContentType } from "@typing/content";
-import * as _ from "lodash-es";
-import {
-  buildHrefFromContentData,
-  getContentDataFromHref,
-} from "./ContentLinkExtension";
-import { toLabel } from "@utils/strings";
-import { convertToContentType } from "@content/content-utils";
-import { fetchContentById } from "@content/content-store";
+import { useEffect, useState } from 'react';
+import { Menu, ScrollArea, Box, Title } from '@mantine/core';
+import { useDisclosure, useWindowEvent } from '@mantine/hooks';
+import { IconLink } from '@tabler/icons-react';
+import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
+import { selectContent } from '@common/select/SelectContent';
+import { AbilityBlockType, ContentType } from '@typing/content';
+import * as _ from 'lodash-es';
+import { buildHrefFromContentData, getContentDataFromHref } from './ContentLinkExtension';
+import { toLabel } from '@utils/strings';
+import { convertToContentType } from '@content/content-utils';
+import { fetchContentById } from '@content/content-store';
 
 export default function ContentLinkControl() {
   const { editor } = useRichTextEditorContext();
 
   const [content, setContent] = useState<Record<string, any>>();
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState('');
   const [opened, { open, close }] = useDisclosure(false);
 
   const handleOpen = () => {
     open();
-    const linkData = editor?.getAttributes("link");
-    setUrl(linkData?.href || "");
+    const linkData = editor?.getAttributes('link');
+    setUrl(linkData?.href || '');
   };
 
   const handleClose = () => {
     close();
     setTimeout(() => {
-      setUrl("");
+      setUrl('');
     }, 1000);
   };
 
   const setLink = (newUrl: string) => {
     handleClose();
-    newUrl === ""
-      ? editor?.chain().focus().extendMarkRange("link").unsetLink().run()
-      : editor
-          ?.chain()
-          .focus()
-          .extendMarkRange("link")
-          .setLink({ href: newUrl, rel: "tag" })
-          .run();
+    newUrl === ''
+      ? editor?.chain().focus().extendMarkRange('link').unsetLink().run()
+      : editor?.chain().focus().extendMarkRange('link').setLink({ href: newUrl, rel: 'tag' }).run();
   };
 
-  useWindowEvent("edit-link", handleOpen, false);
+  useWindowEvent('edit-link', handleOpen, false);
 
-  function onSelectContent<T>(
-    type: ContentType,
-    abilityBlockType?: AbilityBlockType
-  ) {
+  function onSelectContent<T>(type: ContentType, abilityBlockType?: AbilityBlockType) {
     selectContent<T>(
       type,
       (option) => {
@@ -85,12 +74,12 @@ export default function ContentLinkControl() {
 
   const selectedContentType = toLabel(getContentDataFromHref(url)?.type);
 
-  const selectedContentName = content?.name ?? "";
+  const selectedContentName = content?.name ?? '';
 
   return (
     <Menu
-      shadow="md"
-      position="top"
+      shadow='md'
+      position='top'
       width={180}
       withinPortal
       withArrow
@@ -100,19 +89,19 @@ export default function ContentLinkControl() {
       <Menu.Target>
         <RichTextEditor.Control
           onClick={handleOpen}
-          active={editor?.isActive("link")}
-          aria-label="Link Content"
+          active={editor?.isActive('link')}
+          aria-label='Link Content'
         >
-          <IconLink size="1.0rem" stroke={1.5} />
+          <IconLink size='1.0rem' stroke={1.5} />
         </RichTextEditor.Control>
       </Menu.Target>
 
       <Menu.Dropdown>
-        <ScrollArea h={250}>
+        <ScrollArea h={250} scrollbars='y'>
           {selectedContentType ? (
             <>
               <Menu.Label>
-                <Title order={6} c="gray.4">
+                <Title order={6} c='gray.4'>
                   Linked {selectedContentType}
                 </Title>
                 <Box>{selectedContentName}</Box>
@@ -122,50 +111,32 @@ export default function ContentLinkControl() {
           ) : (
             <>
               <Menu.Label>
-                <Title order={6} c="gray.4">
+                <Title order={6} c='gray.4'>
                   Select a Category
                 </Title>
               </Menu.Label>
               <Menu.Divider />
             </>
           )}
-          <Menu.Item onClick={() => onSelectContent("ability-block", "action")}>
-            Action
-          </Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("ability-block", "feat")}>
-            Feat
-          </Menu.Item>
-          <Menu.Item
-            onClick={() => onSelectContent("ability-block", "physical-feature")}
-          >
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'action')}>Action</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'feat')}>Feat</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'physical-feature')}>
             Physical Feature
           </Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("ability-block", "sense")}>
-            Sense
-          </Menu.Item>
-          <Menu.Item
-            onClick={() => onSelectContent("ability-block", "class-feature")}
-          >
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'sense')}>Sense</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'class-feature')}>
             Class Feature
           </Menu.Item>
-          <Menu.Item
-            onClick={() => onSelectContent("ability-block", "heritage")}
-          >
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'heritage')}>
             Heritage
           </Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("trait")}>Trait</Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("item")}>Item</Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("spell")}>Spell</Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("class")}>Class</Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("ancestry")}>
-            Ancestry
-          </Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("background")}>
-            Background
-          </Menu.Item>
-          <Menu.Item onClick={() => onSelectContent("language")}>
-            Language
-          </Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('trait')}>Trait</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('item')}>Item</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('spell')}>Spell</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('class')}>Class</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ancestry')}>Ancestry</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('background')}>Background</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('language')}>Language</Menu.Item>
         </ScrollArea>
       </Menu.Dropdown>
     </Menu>
