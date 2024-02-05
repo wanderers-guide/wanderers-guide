@@ -2,7 +2,7 @@ import { fetchContentAll } from '@content/content-store';
 import { Autocomplete, TagsInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@typing/content';
-import _ from 'lodash';
+import _ from 'lodash-es';
 
 function cleanName(name?: string) {
   if (!name) return name;
@@ -12,7 +12,6 @@ function cleanName(name?: string) {
 export function ItemSelect(props: {
   label?: string;
   placeholder?: string;
-  valueId?: number;
   valueName?: string;
   filter: (item: Item) => boolean;
   onChange: (item?: Item, name?: string) => void;
@@ -27,25 +26,18 @@ export function ItemSelect(props: {
   return (
     <>
       {isFetching || !data ? (
-        <Autocomplete size='xs' w={190} readOnly />
+        <Autocomplete readOnly />
       ) : (
         <Autocomplete
-          size='xs'
-          w={190}
           label={props.label}
           placeholder={props.placeholder}
-          defaultValue={
-            props.valueId
-              ? `${props.valueId}`
-              : data.find((item) => cleanName(item.name) === props.valueName)?.id.toString()
-          }
+          value={data.find((item) => cleanName(item.name) === props.valueName)?.name}
           onChange={(value) => {
-            const item = data.find((item) => `${item.id}` === value);
+            console.log(value);
+            const item = data.find((item) => item.name === value);
             props.onChange(item, cleanName(item?.name));
           }}
-          data={data.filter(props.filter).map((item) => {
-            return { label: item.name, value: `${item.id}` };
-          })}
+          data={_.uniq(data.filter(props.filter).map((item) => item.name))}
         />
       )}
     </>
@@ -55,7 +47,6 @@ export function ItemSelect(props: {
 export function ItemMultiSelect(props: {
   label?: string;
   placeholder?: string;
-  valueId?: number[];
   valueName?: string[];
   filter: (item: Item) => boolean;
   onChange: (items?: Item[], names?: string[]) => void;
@@ -76,19 +67,15 @@ export function ItemMultiSelect(props: {
           <TagsInput
             label={props.label}
             placeholder={props.placeholder}
-            defaultValue={data
+            value={data
               .filter((item) => {
-                if (props.valueId && Array.isArray(props.valueId)) {
-                  return props.valueId.includes(item.id);
-                } else if (props.valueName && Array.isArray(props.valueName)) {
+                if (props.valueName && Array.isArray(props.valueName)) {
                   return props.valueName.includes(cleanName(item.name) ?? '');
                 }
                 return false;
               })
-              .map((item) => `${item.id}`)}
-            data={data.filter(props.filter).map((item) => {
-              return { label: item.name, value: `${item.id}` };
-            })}
+              .map((item) => item.name)}
+            data={_.uniq(data.filter(props.filter).map((item) => item.name))}
             limit={1000}
             onChange={(value) => {
               const items = value
