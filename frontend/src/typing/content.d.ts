@@ -73,7 +73,7 @@ interface Condition {
   for_creature: boolean;
 }
 
-type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD';
+type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'MATERIAL';
 interface Item {
   id: number;
   created_at: string;

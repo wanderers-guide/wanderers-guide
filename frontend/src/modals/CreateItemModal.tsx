@@ -1,3 +1,4 @@
+import { ItemMultiSelect, ItemSelect } from '@common/ItemSelect';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
@@ -87,6 +88,10 @@ export function CreateItemModal(props: {
   const [potencyRune, setPotencyRune] = useState<number | undefined>(0);
   const [propertyRunes, setPropertyRunes] = useState<string[] | undefined>([]);
 
+  const [baseItem, setBaseItem] = useState<string | undefined>();
+
+  const [materialType, setMaterialType] = useState<string | undefined>();
+
   const form = useForm<Item>({
     initialValues: {
       id: -1,
@@ -167,13 +172,18 @@ export function CreateItemModal(props: {
       traits: traits.map((trait) => trait.id),
       meta_data: {
         ...values.meta_data!,
-        category:
-          values.group === 'WEAPON'
-            ? weaponCategory
-            : values.group === 'ARMOR'
-            ? armorCategory
-            : '',
-        group: values.group === 'WEAPON' ? weaponGroup : values.group === 'ARMOR' ? armorGroup : '',
+        base_item: baseItem,
+        material: {
+          ...values.meta_data?.material,
+          type: materialType,
+        },
+        runes: {
+          striking: strikingRune,
+          potency: potencyRune,
+          property: propertyRunes,
+        },
+        category: values.group === 'WEAPON' ? weaponCategory : armorCategory,
+        group: values.group === 'WEAPON' ? weaponGroup : armorGroup,
       },
     });
     setTimeout(() => {
@@ -314,6 +324,8 @@ export function CreateItemModal(props: {
                     { value: 'ARMOR', label: 'Armor' },
                     { value: 'SHIELD', label: 'Shield' },
                     { value: 'WEAPON', label: 'Weapon' },
+                    { value: 'RUNE', label: 'Rune' },
+                    { value: 'MATERIAL', label: 'Material' },
                   ] satisfies { value: ItemGroup; label: string }[]
                 }
                 {...form.getInputProps('group')}
@@ -353,9 +365,23 @@ export function CreateItemModal(props: {
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
-                {/* TODO: Base Item */}
+                <ItemSelect
+                  label='Base Item'
+                  placeholder='(for proficiencies)'
+                  valueName={baseItem}
+                  filter={(item) => {
+                    return (
+                      !item.meta_data?.base_item ||
+                      item.meta_data?.base_item ===
+                        item.name.trim().replace(/\s/g, '-').toLowerCase()
+                    );
+                  }}
+                  onChange={(item, name) => {
+                    setBaseItem(name);
+                  }}
+                />
 
-                <Accordion variant='filled'>
+                <Accordion variant='separated'>
                   <Accordion.Item value={'weapon'}>
                     <Accordion.Control>
                       <Text fz='sm'>Weapon</Text>
@@ -373,19 +399,19 @@ export function CreateItemModal(props: {
                             { value: 'd12', label: 'd12' },
                             { value: 'd20', label: 'd20' },
                           ]}
-                          {...form.getInputProps('meta_data.damage.die')}
+                          {...form.getInputProps('meta_data?.damage?.die')}
                         />
 
                         <TextInput
                           label='Damage Type'
                           placeholder='ex. slashing'
-                          {...form.getInputProps('meta_data.damage.damageType')}
+                          {...form.getInputProps('meta_data?.damage?.damageType')}
                         />
 
                         <TextInput
                           label='Extra Damage'
                           placeholder='ex. 1d4 fire'
-                          {...form.getInputProps('meta_data.damage.extra')}
+                          {...form.getInputProps('meta_data?.damage?.extra')}
                         />
 
                         <Select
@@ -428,13 +454,13 @@ export function CreateItemModal(props: {
                           label='Range'
                           placeholder='Range'
                           min={0}
-                          {...form.getInputProps('meta_data.range')}
+                          {...form.getInputProps('meta_data?.range')}
                         />
 
                         <TextInput
                           label='Reload'
                           placeholder='Reload'
-                          {...form.getInputProps('meta_data.reload')}
+                          {...form.getInputProps('meta_data?.reload')}
                         />
                       </Stack>
                     </Accordion.Panel>
@@ -448,7 +474,7 @@ export function CreateItemModal(props: {
                         <NumberInput
                           label='AC Bonus'
                           placeholder='AC Bonus'
-                          {...form.getInputProps('meta_data.ac_bonus')}
+                          {...form.getInputProps('meta_data?.ac_bonus')}
                         />
 
                         <Select
@@ -479,28 +505,28 @@ export function CreateItemModal(props: {
                           label='Check Penalty'
                           placeholder='Check Penalty'
                           max={0}
-                          {...form.getInputProps('meta_data.check_penalty')}
+                          {...form.getInputProps('meta_data?.check_penalty')}
                         />
 
                         <NumberInput
                           label='Speed Penalty'
                           placeholder='Speed Penalty'
                           max={0}
-                          {...form.getInputProps('meta_data.speed_penalty')}
+                          {...form.getInputProps('meta_data?.speed_penalty')}
                         />
 
                         <NumberInput
                           label='Dexterity Cap'
                           placeholder='Dexterity Cap'
                           min={0}
-                          {...form.getInputProps('meta_data.dex_cap')}
+                          {...form.getInputProps('meta_data?.dex_cap')}
                         />
 
                         <NumberInput
                           label='Min Strength'
                           placeholder='Min Strength'
                           min={0}
-                          {...form.getInputProps('meta_data.strength')}
+                          {...form.getInputProps('meta_data?.strength')}
                         />
                       </Stack>
                     </Accordion.Panel>
@@ -515,14 +541,14 @@ export function CreateItemModal(props: {
                           label='Bulk Capacity'
                           placeholder='Bulk Capacity'
                           min={0}
-                          {...form.getInputProps('meta_data.bulk.capacity')}
+                          {...form.getInputProps('meta_data?.bulk?.capacity')}
                         />
 
                         <NumberInput
                           label='Bulk Ignored'
                           placeholder='Bulk Ignored'
                           min={0}
-                          {...form.getInputProps('meta_data.bulk.ignored')}
+                          {...form.getInputProps('meta_data?.bulk?.ignored')}
                         />
                       </Stack>
                     </Accordion.Panel>
@@ -533,8 +559,6 @@ export function CreateItemModal(props: {
                     </Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap={10}>
-                        {/* TODO: Striking Rune */}
-
                         <Select
                           label='Striking Rune'
                           data={[
@@ -562,7 +586,17 @@ export function CreateItemModal(props: {
                           }}
                         />
 
-                        {/* TODO: Property Runes */}
+                        <ItemMultiSelect
+                          label='Property Runes'
+                          placeholder='(limited to potency rune #)'
+                          valueName={propertyRunes}
+                          filter={(item) => {
+                            return item.group === 'RUNE';
+                          }}
+                          onChange={(items, names) => {
+                            setPropertyRunes(names);
+                          }}
+                        />
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -572,11 +606,26 @@ export function CreateItemModal(props: {
                     </Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap={10}>
-                        {/* TODO: Hardness */}
+                        <NumberInput
+                          label='Hardness'
+                          placeholder='Hardness'
+                          min={0}
+                          {...form.getInputProps('meta_data?.hardness')}
+                        />
 
-                        {/* TODO: Hp_max */}
+                        <NumberInput
+                          label='Max HP'
+                          placeholder='Max HP'
+                          min={0}
+                          {...form.getInputProps('meta_data?.hp_max')}
+                        />
 
-                        {/* TODO: broken_threshold */}
+                        <NumberInput
+                          label='Broken Threshold'
+                          placeholder='(typically 1/2 max HP)'
+                          min={0}
+                          {...form.getInputProps('meta_data?.broken_threshold')}
+                        />
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -586,9 +635,27 @@ export function CreateItemModal(props: {
                     </Accordion.Control>
                     <Accordion.Panel>
                       <Stack gap={10}>
-                        {/* TODO: Type */}
+                        <ItemSelect
+                          label='Type'
+                          placeholder='Type'
+                          valueName={materialType}
+                          filter={(item) => {
+                            return item.group === 'MATERIAL';
+                          }}
+                          onChange={(item, name) => {
+                            setMaterialType(name);
+                          }}
+                        />
 
-                        {/* TODO: Grade */}
+                        <Select
+                          label='Grade'
+                          data={[
+                            { value: 'low', label: 'Low' },
+                            { value: 'standard', label: 'Standard' },
+                            { value: 'high', label: 'High' },
+                          ]}
+                          {...form.getInputProps('meta_data?.material?.grade')}
+                        />
                       </Stack>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -600,7 +667,7 @@ export function CreateItemModal(props: {
                       <Stack gap={10}>
                         <Checkbox
                           label='Is Shoddy'
-                          {...form.getInputProps('meta_data.is_shoddy', {
+                          {...form.getInputProps('meta_data?.is_shoddy', {
                             type: 'checkbox',
                           })}
                         />
@@ -609,14 +676,14 @@ export function CreateItemModal(props: {
                           label='Quantity'
                           placeholder='Quantity'
                           min={0}
-                          {...form.getInputProps('meta_data.quantity')}
+                          {...form.getInputProps('meta_data?.quantity')}
                         />
 
                         <NumberInput
                           label='Bulk (when held or stowed)'
                           placeholder='Bulk (when held or stowed)'
                           min={0}
-                          {...form.getInputProps('meta_data.bulk.held_or_stowed')}
+                          {...form.getInputProps('meta_data?.bulk?.held_or_stowed')}
                         />
 
                         <TextInput
@@ -624,9 +691,9 @@ export function CreateItemModal(props: {
                           label='Image URL'
                           onChange={async (e) => {
                             setIsValidImageURL(
-                              !e.target?.value ? true : await isValidImage(e.target?.value)
+                              e.target?.value.trim() ? await isValidImage(e.target?.value) : true
                             );
-                            form.setFieldValue('meta_data.image_url', e.target?.value);
+                            form.setFieldValue('meta_data?.image_url', e.target?.value ?? '');
                           }}
                           error={isValidImageURL ? false : 'Invalid URL'}
                         />
