@@ -23,6 +23,18 @@ import { Trait } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
 
+/**
+ * Modal for creating or editing a trait
+ * @param props.opened - Whether the modal is opened
+ * @param props.editId - The id of the trait being edited
+ * @param props.editTrait - The trait being edited (alternative to editId)
+ * @param props.onComplete - Callback when the modal is completed
+ * @param props.onCancel - Callback when the modal is cancelled
+ * Notes:
+ * - Either supply editId or editTrait to resulting in editing mode
+ * - If editId is supplied, the trait with that id will be fetched
+ * - If editTrait is supplied, it will be used instead of fetching
+ */
 export function CreateTraitModal(props: {
   opened: boolean;
   editId?: number;
@@ -39,6 +51,7 @@ export function CreateTraitModal(props: {
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
 
+  // Fetch the trait if in editing mode
   const { data, isFetching } = useQuery({
     queryKey: [`get-trait-${props.editId}`, { editId: props.editId, editTrait: props.editTrait }],
     queryFn: async ({ queryKey }) => {
@@ -52,6 +65,7 @@ export function CreateTraitModal(props: {
       const trait = editId ? await fetchContentById<Trait>('trait', editId) : editTrait;
       if (!trait) return null;
 
+      // Set the initial values, track metadata separately
       form.setInitialValues({
         ...trait,
       });
@@ -82,6 +96,7 @@ export function CreateTraitModal(props: {
     ancestry_trait: false,
   });
 
+  // Initialize form
   const form = useForm<Trait>({
     initialValues: {
       id: -1,
@@ -89,6 +104,7 @@ export function CreateTraitModal(props: {
       name: '',
       description: '',
       meta_data: {
+        // We use the metaData state to track these values, disregard these
         important: false,
         creature_trait: false,
         unselectable: false,
