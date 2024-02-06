@@ -31,7 +31,7 @@ import { useState } from 'react';
  * @param props.onComplete - Callback when the modal is completed
  * @param props.onCancel - Callback when the modal is cancelled
  * Notes:
- * - Either supply editId or editTrait to resulting in editing mode
+ * - Either supply editId or editTrait to be in editing mode
  * - If editId is supplied, the trait with that id will be fetched
  * - If editTrait is supplied, it will be used instead of fetching
  */

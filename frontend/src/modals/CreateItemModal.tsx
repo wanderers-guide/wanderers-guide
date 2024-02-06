@@ -37,6 +37,18 @@ import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
 
+/**
+ * Modal for creating or editing an item
+ * @param props.opened - Whether the modal is opened
+ * @param props.editId - The id of the item being edited
+ * @param props.editItem - The item being edited (alternative to editId)
+ * @param props.onComplete - Callback when the modal is completed
+ * @param props.onCancel - Callback when the modal is cancelled
+ * Notes:
+ * - Either supply editId or editItem to be in editing mode
+ * - If editId is supplied, the item with that id will be fetched
+ * - If editItem is supplied, it will be used instead of fetching
+ */
 export function CreateItemModal(props: {
   opened: boolean;
   editId?: number;
