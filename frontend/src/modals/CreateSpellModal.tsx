@@ -34,6 +34,18 @@ import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
 
+/**
+ * Modal for creating or editing a spell
+ * @param props.opened - Whether the modal is opened
+ * @param props.editId - The id of the spell being edited
+ * @param props.editSpell - The spell being edited (alternative to editId)
+ * @param props.onComplete - Callback when the modal is completed
+ * @param props.onCancel - Callback when the modal is cancelled
+ * Notes:
+ * - Either supply editId or editSpell to be in editing mode
+ * - If editId is supplied, the spell with that id will be fetched
+ * - If editSpell is supplied, it will be used instead of fetching
+ */
 export function CreateSpellModal(props: {
   opened: boolean;
   editId?: number;
