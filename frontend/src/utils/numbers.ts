@@ -1,8 +1,12 @@
-import * as _ from "lodash-es";
+import * as _ from 'lodash-es';
 
 export function sign(num: number | string): string {
   num = _.isString(num) ? parseInt(num) : num;
   return num < 0 ? `${num}` : `+${num}`;
+}
+
+export function rankNumber(num: number): string {
+  return num === 0 ? '0' : num === 1 ? '1st' : num === 2 ? '2nd' : num === 3 ? '3rd' : `${num}th`;
 }
 
 export function hashData(data: Record<string, any>): number {

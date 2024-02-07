@@ -197,6 +197,7 @@ interface Spell {
   meta_data: {
     damage?: Record<string, any>;
     type?: string;
+    ritual?: Record<string, any>;
     foundry?: Record<string, any>;
     unselectable?: boolean;
     image_url?: string;
@@ -345,7 +346,7 @@ interface Character {
     selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
     notes?: Record<string, string>; // <op UUID> -> string
   };
-  spells?: Record<string, any>; // TODO
+  spells?: {};
   companions?: Record<string, any>; // TODO
 }
 

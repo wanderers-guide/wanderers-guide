@@ -1,16 +1,6 @@
-import {
-  fetchContentAll,
-  fetchContentById,
-  fetchTraitByName,
-} from "@content/content-store";
-import { GenericData } from "@drawers/types/GenericDrawer";
-import {
-  AbilityBlock,
-  ContentType,
-  Item,
-  Language,
-  Spell,
-} from "@typing/content";
+import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
+import { GenericData } from '@drawers/types/GenericDrawer';
+import { AbilityBlock, ContentType, Item, Language, Spell } from '@typing/content';
 import {
   OperationAddBonusToValue,
   OperationAdjValue,
@@ -19,6 +9,7 @@ import {
   OperationGiveAbilityBlock,
   OperationGiveLanguage,
   OperationGiveSpell,
+  OperationGiveSpellSlot,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -37,68 +28,68 @@ import {
   OperationSelectOptionType,
   OperationSetValue,
   OperationType,
-} from "@typing/operations";
-import { StoreID, Variable, VariableProf } from "@typing/variables";
+} from '@typing/operations';
+import { StoreID, Variable, VariableProf } from '@typing/variables';
 import {
   getAllArmorGroupVariables,
   getAllAttributeVariables,
   getAllSkillVariables,
   getAllWeaponGroupVariables,
   getVariable,
-} from "@variables/variable-manager";
-import { labelToVariable, variableToLabel } from "@variables/variable-utils";
-import * as _ from "lodash-es";
+} from '@variables/variable-manager';
+import { labelToVariable, variableToLabel } from '@variables/variable-utils';
+import * as _ from 'lodash-es';
 
 export const createDefaultOperation = (type: OperationType) => {
-  if (type === "giveAbilityBlock") {
+  if (type === 'giveAbilityBlock') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        type: "feat",
+        type: 'feat',
         abilityBlockId: -1,
       },
     } satisfies OperationGiveAbilityBlock;
-  } else if (type === "adjValue") {
+  } else if (type === 'adjValue') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        variable: "",
+        variable: '',
         value: 0,
       },
     } satisfies OperationAdjValue;
-  } else if (type === "addBonusToValue") {
+  } else if (type === 'addBonusToValue') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        variable: "",
+        variable: '',
         value: undefined,
         type: undefined,
-        text: "",
+        text: '',
       },
     } satisfies OperationAddBonusToValue;
-  } else if (type === "setValue") {
+  } else if (type === 'setValue') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        variable: "",
+        variable: '',
         value: false,
       },
     } satisfies OperationSetValue;
-  } else if (type === "createValue") {
+  } else if (type === 'createValue') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        variable: "",
-        value: "",
-        type: "str",
+        variable: '',
+        value: '',
+        type: 'str',
       },
     } satisfies OperationCreateValue;
-  } else if (type === "conditional") {
+  } else if (type === 'conditional') {
     return {
       id: crypto.randomUUID(),
       type: type,
@@ -108,15 +99,15 @@ export const createDefaultOperation = (type: OperationType) => {
         falseOperations: undefined,
       },
     } satisfies OperationConditional;
-  } else if (type === "select") {
+  } else if (type === 'select') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        title: "",
-        description: "",
-        modeType: "PREDEFINED",
-        optionType: "ABILITY_BLOCK",
+        title: '',
+        description: '',
+        modeType: 'PREDEFINED',
+        optionType: 'ABILITY_BLOCK',
         optionsPredefined: [],
         optionsFilters: undefined,
         // {
@@ -130,24 +121,34 @@ export const createDefaultOperation = (type: OperationType) => {
         // },
       },
     } satisfies OperationSelect;
-  } else if (type === "giveSpell") {
+  } else if (type === 'giveSpell') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
         spellId: -1,
+        type: 'NORMAL',
       },
     } satisfies OperationGiveSpell;
-  } else if (type === "removeAbilityBlock") {
+  } else if (type === 'giveSpellSlot') {
     return {
       id: crypto.randomUUID(),
       type: type,
       data: {
-        type: "feat",
+        castingSource: '',
+        slots: [],
+      },
+    } satisfies OperationGiveSpellSlot;
+  } else if (type === 'removeAbilityBlock') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        type: 'feat',
         abilityBlockId: -1,
       },
     } satisfies OperationRemoveAbilityBlock;
-  } else if (type === "removeSpell") {
+  } else if (type === 'removeSpell') {
     return {
       id: crypto.randomUUID(),
       type: type,
@@ -155,7 +156,7 @@ export const createDefaultOperation = (type: OperationType) => {
         spellId: -1,
       },
     } satisfies OperationRemoveSpell;
-  } else if (type === "giveLanguage") {
+  } else if (type === 'giveLanguage') {
     return {
       id: crypto.randomUUID(),
       type: type,
@@ -163,7 +164,7 @@ export const createDefaultOperation = (type: OperationType) => {
         languageId: -1,
       },
     } satisfies OperationGiveLanguage;
-  } else if (type === "removeLanguage") {
+  } else if (type === 'removeLanguage') {
     return {
       id: crypto.randomUUID(),
       type: type,
@@ -187,13 +188,13 @@ export async function determineFilteredSelectionList(
   operationUUID: string,
   filters: OperationSelectFilters
 ): Promise<ObjectWithUUID[]> {
-  if (filters.type === "ABILITY_BLOCK") {
+  if (filters.type === 'ABILITY_BLOCK') {
     return await getAbilityBlockList(operationUUID, filters);
-  } else if (filters.type === "SPELL") {
+  } else if (filters.type === 'SPELL') {
     return await getSpellList(operationUUID, filters);
-  } else if (filters.type === "LANGUAGE") {
+  } else if (filters.type === 'LANGUAGE') {
     return await getLanguageList(id, operationUUID, filters);
-  } else if (filters.type === "ADJ_VALUE") {
+  } else if (filters.type === 'ADJ_VALUE') {
     return await getAdjValueList(id, operationUUID, filters);
   }
   return [];
@@ -203,12 +204,10 @@ async function getAbilityBlockList(
   operationUUID: string,
   filters: OperationSelectFiltersAbilityBlock
 ) {
-  let abilityBlocks = await fetchContentAll<AbilityBlock>("ability-block");
+  let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
   if (filters.abilityBlockType !== undefined) {
-    abilityBlocks = abilityBlocks.filter(
-      (ab) => ab.type === filters.abilityBlockType
-    );
+    abilityBlocks = abilityBlocks.filter((ab) => ab.type === filters.abilityBlockType);
   }
 
   if (filters.level.min !== undefined) {
@@ -225,9 +224,7 @@ async function getAbilityBlockList(
     const traits = await Promise.all(
       filters.traits.map((trait) =>
         // If it's a number, it's a trait id, otherwise it's a trait name
-        _.isNumber(trait)
-          ? fetchTraitByName(undefined, undefined, trait)
-          : fetchTraitByName(trait)
+        _.isNumber(trait) ? fetchTraitByName(undefined, undefined, trait) : fetchTraitByName(trait)
       )
     );
     const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
@@ -252,16 +249,13 @@ async function getAbilityBlockList(
     return {
       ...ab,
       _select_uuid: `${ab.id}`,
-      _content_type: "ability-block" as ContentType,
+      _content_type: 'ability-block' as ContentType,
     };
   });
 }
 
-async function getSpellList(
-  operationUUID: string,
-  filters: OperationSelectFiltersSpell
-) {
-  let spells = await fetchContentAll<Spell>("spell");
+async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
+  let spells = await fetchContentAll<Spell>('spell');
 
   if (filters.level.min !== undefined) {
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
@@ -270,9 +264,7 @@ async function getSpellList(
     spells = spells.filter((spell) => spell.rank >= filters.level.max!);
   }
   if (filters.traits !== undefined) {
-    const traits = await Promise.all(
-      filters.traits.map((trait) => fetchTraitByName(trait))
-    );
+    const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
     const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
 
     // Filter out spells that don't have all the traits
@@ -292,10 +284,7 @@ async function getSpellList(
   }
   if (filters.traditions !== undefined) {
     spells = spells.filter((spell) => {
-      const intersection = _.intersection(
-        spell.traditions,
-        filters.traditions ?? []
-      );
+      const intersection = _.intersection(spell.traditions, filters.traditions ?? []);
       return intersection.length === filters.traditions!.length;
     });
   }
@@ -304,7 +293,7 @@ async function getSpellList(
     return {
       ...spell,
       _select_uuid: `${spell.id}`,
-      _content_type: "spell" as ContentType,
+      _content_type: 'spell' as ContentType,
     };
   });
 }
@@ -314,17 +303,14 @@ async function getLanguageList(
   operationUUID: string,
   filters: OperationSelectFiltersLanguage
 ) {
-  let languages = await fetchContentAll<Language>("language");
+  let languages = await fetchContentAll<Language>('language');
 
   if (filters.rarity) {
-    languages = languages.filter(
-      (language) => language.rarity === filters.rarity
-    );
+    languages = languages.filter((language) => language.rarity === filters.rarity);
   }
   if (filters.core) {
     // Sort by core first
-    const coreLangs = (getVariable(id, "CORE_LANGUAGE_NAMES")?.value ??
-      []) as string[];
+    const coreLangs = (getVariable(id, 'CORE_LANGUAGE_NAMES')?.value ?? []) as string[];
     languages = languages.map((language) => ({
       ...language,
       _is_core: coreLangs.includes(language.name),
@@ -335,7 +321,7 @@ async function getLanguageList(
     return {
       ...language,
       _select_uuid: `${language.id}`,
-      _content_type: "language" as ContentType,
+      _content_type: 'language' as ContentType,
     };
   });
 }
@@ -347,42 +333,42 @@ async function getAdjValueList(
 ) {
   let variables: Variable[] = [];
 
-  if (filters.group === "SKILL") {
+  if (filters.group === 'SKILL') {
     variables = getAllSkillVariables(id);
   }
-  if (filters.group === "ADD-LORE") {
+  if (filters.group === 'ADD-LORE') {
     variables = getAllSkillVariables(id).filter((variable) =>
-      variable.name.startsWith("SKILL_LORE_")
+      variable.name.startsWith('SKILL_LORE_')
     );
   }
-  if (filters.group === "ATTRIBUTE") {
+  if (filters.group === 'ATTRIBUTE') {
     variables = getAllAttributeVariables(id);
   }
-  if (filters.group === "WEAPON-GROUP") {
+  if (filters.group === 'WEAPON-GROUP') {
     variables = getAllWeaponGroupVariables(id);
   }
-  if (filters.group === "ARMOR-GROUP") {
+  if (filters.group === 'ARMOR-GROUP') {
     variables = getAllArmorGroupVariables(id);
   }
-  if (filters.group === "WEAPON") {
-    const items = await fetchContentAll<Item>("item");
-    const weapons = items.filter((item) => item.group === "WEAPON");
+  if (filters.group === 'WEAPON') {
+    const items = await fetchContentAll<Item>('item');
+    const weapons = items.filter((item) => item.group === 'WEAPON');
     variables = weapons.map((w) => {
       return {
         name: `WEAPON_${labelToVariable(w.name)}`,
-        type: "prof",
-        value: { value: "U" },
+        type: 'prof',
+        value: { value: 'U' },
       } satisfies VariableProf;
     });
   }
-  if (filters.group === "ARMOR") {
-    const items = await fetchContentAll<Item>("item");
-    const armor = items.filter((item) => item.group === "ARMOR");
+  if (filters.group === 'ARMOR') {
+    const items = await fetchContentAll<Item>('item');
+    const armor = items.filter((item) => item.group === 'ARMOR');
     variables = armor.map((a) => {
       return {
         name: `ARMOR_${labelToVariable(a.name)}`,
-        type: "prof",
-        value: { value: "U" },
+        type: 'prof',
+        value: { value: 'U' },
       } satisfies VariableProf;
     });
   }
@@ -390,9 +376,9 @@ async function getAdjValueList(
   return variables.map((variable) => {
     return {
       _select_uuid: `${variable.name}`,
-      _content_type: "ability-block" as ContentType,
+      _content_type: 'ability-block' as ContentType,
       id: `${variable.name}`,
-      name: variable ? variableToLabel(variable) : "Unknown Value",
+      name: variable ? variableToLabel(variable) : 'Unknown Value',
       value: filters.value,
       variable: variable.name,
     };
@@ -404,40 +390,24 @@ export async function determinePredefinedSelectionList(
   type: OperationSelectOptionType,
   options: OperationSelectOption[]
 ): Promise<ObjectWithUUID[]> {
-  if (type === "ABILITY_BLOCK") {
-    return await getAbilityBlockPredefinedList(
-      options as OperationSelectOptionAbilityBlock[]
-    );
-  } else if (type === "SPELL") {
-    return await getSpellPredefinedList(
-      options as OperationSelectOptionSpell[]
-    );
-  } else if (type === "LANGUAGE") {
-    return await getLanguagePredefinedList(
-      options as OperationSelectOptionLanguage[]
-    );
-  } else if (type === "ADJ_VALUE") {
-    return await getAdjValuePredefinedList(
-      id,
-      options as OperationSelectOptionAdjValue[]
-    );
-  } else if (type === "CUSTOM") {
-    return await getCustomPredefinedList(
-      options as OperationSelectOptionCustom[]
-    );
+  if (type === 'ABILITY_BLOCK') {
+    return await getAbilityBlockPredefinedList(options as OperationSelectOptionAbilityBlock[]);
+  } else if (type === 'SPELL') {
+    return await getSpellPredefinedList(options as OperationSelectOptionSpell[]);
+  } else if (type === 'LANGUAGE') {
+    return await getLanguagePredefinedList(options as OperationSelectOptionLanguage[]);
+  } else if (type === 'ADJ_VALUE') {
+    return await getAdjValuePredefinedList(id, options as OperationSelectOptionAdjValue[]);
+  } else if (type === 'CUSTOM') {
+    return await getCustomPredefinedList(options as OperationSelectOptionCustom[]);
   }
   return [];
 }
 
-async function getAbilityBlockPredefinedList(
-  options: OperationSelectOptionAbilityBlock[]
-) {
+async function getAbilityBlockPredefinedList(options: OperationSelectOptionAbilityBlock[]) {
   const abilityBlocks = await Promise.all(
     options.map((option) =>
-      fetchContentById<AbilityBlock>(
-        "ability-block",
-        option.operation.data.abilityBlockId
-      )
+      fetchContentById<AbilityBlock>('ability-block', option.operation.data.abilityBlockId)
     )
   );
 
@@ -450,7 +420,7 @@ async function getAbilityBlockPredefinedList(
       result.push({
         ...abilityBlock,
         _select_uuid: option!.id,
-        _content_type: "ability-block" as ContentType,
+        _content_type: 'ability-block' as ContentType,
       });
     }
   }
@@ -459,63 +429,52 @@ async function getAbilityBlockPredefinedList(
 
 async function getSpellPredefinedList(options: OperationSelectOptionSpell[]) {
   const spells = await Promise.all(
-    options.map((option) =>
-      fetchContentById<Spell>("spell", option.operation.data.spellId)
-    )
+    options.map((option) => fetchContentById<Spell>('spell', option.operation.data.spellId))
   );
 
   const result = [];
   for (const spell of spells) {
     if (spell) {
-      const option = options.find(
-        (option) => option.operation.data.spellId === spell.id
-      );
+      const option = options.find((option) => option.operation.data.spellId === spell.id);
       result.push({
         ...spell,
         _select_uuid: option!.id,
-        _content_type: "spell" as ContentType,
+        _content_type: 'spell' as ContentType,
       });
     }
   }
   return result;
 }
 
-async function getLanguagePredefinedList(
-  options: OperationSelectOptionLanguage[]
-) {
+async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[]) {
   const languages = await Promise.all(
     options.map((option) =>
-      fetchContentById<Language>("language", option.operation.data.languageId)
+      fetchContentById<Language>('language', option.operation.data.languageId)
     )
   );
 
   const result = [];
   for (const language of languages) {
     if (language) {
-      const option = options.find(
-        (option) => option.operation.data.languageId === language.id
-      );
+      const option = options.find((option) => option.operation.data.languageId === language.id);
       result.push({
         ...language,
         _select_uuid: option!.id,
-        _content_type: "language" as ContentType,
+        _content_type: 'language' as ContentType,
       });
     }
   }
   return result;
 }
 
-async function getAdjValuePredefinedList(
-  id: StoreID,
-  options: OperationSelectOptionAdjValue[]
-) {
+async function getAdjValuePredefinedList(id: StoreID, options: OperationSelectOptionAdjValue[]) {
   return options.map((option) => {
     const variable = getVariable(id, option.operation.data.variable);
     return {
       _select_uuid: option.operation.id,
-      _content_type: "ability-block" as ContentType,
+      _content_type: 'ability-block' as ContentType,
       id: option.operation.id,
-      name: variable ? variableToLabel(variable) : "Unknown Value",
+      name: variable ? variableToLabel(variable) : 'Unknown Value',
       value: option.operation.data.value,
       variable: option.operation.data.variable,
     };
@@ -526,7 +485,7 @@ async function getCustomPredefinedList(options: OperationSelectOptionCustom[]) {
   return options.map((option) => {
     return {
       _select_uuid: option.id,
-      _content_type: "ability-block" as ContentType,
+      _content_type: 'ability-block' as ContentType,
       _custom_select: {
         title: option.title,
         description: option.description,

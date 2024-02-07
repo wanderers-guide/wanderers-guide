@@ -44,7 +44,8 @@ export type Operation =
   | OperationGiveLanguage
   | OperationRemoveLanguage
   | OperationGiveSpell
-  | OperationRemoveSpell;
+  | OperationRemoveSpell
+  | OperationGiveSpellSlot;
 export type OperationType =
   | 'adjValue'
   | 'addBonusToValue'
@@ -57,7 +58,8 @@ export type OperationType =
   | 'conditional'
   | 'select'
   | 'giveSpell'
-  | 'removeSpell';
+  | 'removeSpell'
+  | 'giveSpellSlot';
 
 interface OperationBase {
   readonly id: string;
@@ -141,17 +143,32 @@ export type ConditionOperator =
   | 'LESS_THAN'
   | 'GREATER_THAN';
 
+export type GiveSpellData = {
+  spellId: number;
+  type: 'NORMAL' | 'FOCUS' | 'INNATE';
+  castingSource?: string;
+  level?: number;
+  tradition?: 'ARCANE' | 'OCCULT' | 'PRIMAL' | 'DIVINE';
+  casts?: number;
+};
+
 export interface OperationGiveSpell extends OperationBase {
   readonly type: 'giveSpell';
-  data: {
-    spellId: number;
-  };
+  data: GiveSpellData;
 }
 
 export interface OperationRemoveSpell extends OperationBase {
   readonly type: 'removeSpell';
   data: {
     spellId: number;
+  };
+}
+
+export interface OperationGiveSpellSlot extends OperationBase {
+  readonly type: 'giveSpellSlot';
+  data: {
+    castingSource: string;
+    slots: { lvl: number; rank: number; amt: number }[];
   };
 }
 
