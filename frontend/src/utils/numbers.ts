@@ -5,8 +5,16 @@ export function sign(num: number | string): string {
   return num < 0 ? `${num}` : `+${num}`;
 }
 
-export function rankNumber(num: number): string {
-  return num === 0 ? '0' : num === 1 ? '1st' : num === 2 ? '2nd' : num === 3 ? '3rd' : `${num}th`;
+export function rankNumber(num: number, zeroName = '0'): string {
+  return num === 0
+    ? zeroName
+    : num === 1
+    ? '1st'
+    : num === 2
+    ? '2nd'
+    : num === 3
+    ? '3rd'
+    : `${num}th`;
 }
 
 export function hashData(data: Record<string, any>): number {

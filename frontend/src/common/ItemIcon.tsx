@@ -6,6 +6,8 @@ const getIconMap = (size: string, color: string) => ({
   ARMOR: <GiCloak color={color} size={size} />,
   WEAPON: <GiCloak color={color} size={size} />,
   SHIELD: <GiCloak color={color} size={size} />,
+  RUNE: <GiCloak color={color} size={size} />,
+  MATERIAL: <GiCloak color={color} size={size} />,
 });
 
 export function ItemIcon(props: { group: ItemGroup; size: string; color: string }) {

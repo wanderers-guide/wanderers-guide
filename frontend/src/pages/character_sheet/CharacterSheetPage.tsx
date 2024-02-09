@@ -27,6 +27,7 @@ import {
   FeatSelectionOption,
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
+  SpellSelectionOption,
   selectContent,
 } from '@common/select/SelectContent';
 import {
@@ -36,7 +37,10 @@ import {
   getConditionByName,
 } from '@conditions/condition-handler';
 import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER } from '@constants/data';
-import { collectCharacterAbilityBlocks } from '@content/collect-content';
+import {
+  collectCharacterAbilityBlocks,
+  collectCharacterSpellcasting,
+} from '@content/collect-content';
 import { defineDefaultSources, fetchContentAll, fetchContentPackage } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import classes from '@css/FaqSimple.module.css';
@@ -125,13 +129,15 @@ import {
   InventoryItem,
   Item,
   Rarity,
+  Spell,
+  SpellSlot,
 } from '@typing/content';
 import { OperationResultPackage } from '@typing/operations';
 import { JSendResponse } from '@typing/requests';
 import { VariableAttr, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { interpolateHealth } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
-import { sign } from '@utils/numbers';
+import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import {
   displayAttributeValue,
@@ -152,7 +158,7 @@ import { variableNameToLabel, variableToLabel } from '@variables/variable-utils'
 import * as JsSearch from 'js-search';
 import * as _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 
@@ -2411,71 +2417,73 @@ function PanelSpells(props: { panelHeight: number }) {
   const character = useRecoilValue(characterState);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [section, setSection] = useState('FEATS');
+  const [section, setSection] = useState<string>();
 
-  const { data: rawData } = useQuery({
-    queryKey: [`find-feats-and-features`],
+  const { data } = useQuery({
+    queryKey: [`find-spells`],
     queryFn: async () => {
       if (!character) return null;
 
-      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
-      return collectCharacterAbilityBlocks(character, abilityBlocks);
+      return {
+        spells: await fetchContentAll<Spell>('spell'),
+        data: collectCharacterSpellcasting(character),
+      };
     },
   });
 
   // Filter options based on search query
-  const search = useRef(new JsSearch.Search('id'));
-  useEffect(() => {
-    if (!rawData) return;
-    search.current.addIndex('name');
-    search.current.addIndex('description');
-    search.current.addIndex('_group');
-    search.current.addDocuments([
-      ...rawData.ancestryFeats.map((feat) => ({
-        ...feat,
-        _group: 'ancestryFeats',
-      })),
-      ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
-      ...rawData.generalAndSkillFeats.map((feat) => ({
-        ...feat,
-        _group: 'generalAndSkillFeats',
-      })),
-      ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
-      ...rawData.classFeatures.map((feat) => ({
-        ...feat,
-        _group: 'classFeatures',
-      })),
-      ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
-      ...rawData.physicalFeatures.map((feat) => ({
-        ...feat,
-        _group: 'physicalFeatures',
-      })),
-    ]);
-  }, [rawData]);
+  // const search = useRef(new JsSearch.Search('id'));
+  // useEffect(() => {
+  //   if (!rawData) return;
+  //   search.current.addIndex('name');
+  //   search.current.addIndex('description');
+  //   search.current.addIndex('_group');
+  //   search.current.addDocuments([
+  //     ...rawData..map((feat) => ({
+  //       ...feat,
+  //       _group: 'ancestryFeats',
+  //     })),
+  //     ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
+  //     ...rawData.generalAndSkillFeats.map((feat) => ({
+  //       ...feat,
+  //       _group: 'generalAndSkillFeats',
+  //     })),
+  //     ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
+  //     ...rawData.classFeatures.map((feat) => ({
+  //       ...feat,
+  //       _group: 'classFeatures',
+  //     })),
+  //     ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
+  //     ...rawData.physicalFeatures.map((feat) => ({
+  //       ...feat,
+  //       _group: 'physicalFeatures',
+  //     })),
+  //   ]);
+  // }, [rawData]);
 
-  const constructData = (data: Record<string, any>[]) => {
-    const classFeats = data.filter((feat) => feat._group === 'classFeats');
-    const ancestryFeats = data.filter((feat) => feat._group === 'ancestryFeats');
-    const generalAndSkillFeats = data.filter((feat) => feat._group === 'generalAndSkillFeats');
-    const otherFeats = data.filter((feat) => feat._group === 'otherFeats');
-    const classFeatures = data.filter((feat) => feat._group === 'classFeatures');
-    const heritages = data.filter((feat) => feat._group === 'heritages');
-    const physicalFeatures = data.filter((feat) => feat._group === 'physicalFeatures');
+  // const constructData = (data: Record<string, any>[]) => {
+  //   const classFeats = data.filter((feat) => feat._group === 'classFeats');
+  //   const ancestryFeats = data.filter((feat) => feat._group === 'ancestryFeats');
+  //   const generalAndSkillFeats = data.filter((feat) => feat._group === 'generalAndSkillFeats');
+  //   const otherFeats = data.filter((feat) => feat._group === 'otherFeats');
+  //   const classFeatures = data.filter((feat) => feat._group === 'classFeatures');
+  //   const heritages = data.filter((feat) => feat._group === 'heritages');
+  //   const physicalFeatures = data.filter((feat) => feat._group === 'physicalFeatures');
 
-    return {
-      classFeats,
-      ancestryFeats,
-      generalAndSkillFeats,
-      otherFeats,
-      classFeatures,
-      heritages,
-      physicalFeatures,
-    } as typeof rawData;
-  };
+  //   return {
+  //     classFeats,
+  //     ancestryFeats,
+  //     generalAndSkillFeats,
+  //     otherFeats,
+  //     classFeatures,
+  //     heritages,
+  //     physicalFeatures,
+  //   } as typeof rawData;
+  // };
 
-  const data = searchQuery.trim()
-    ? constructData(search.current.search(searchQuery.trim()))
-    : rawData;
+  // const data = searchQuery.trim()
+  //   ? constructData(search.current.search(searchQuery.trim()))
+  //   : rawData;
 
   return (
     <Box h='100%'>
@@ -2484,7 +2492,7 @@ function PanelSpells(props: { panelHeight: number }) {
           <TextInput
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search feats & features`}
+            placeholder={`Search spells`}
             onChange={(event) => setSearchQuery(event.target.value)}
             styles={{
               input: {
@@ -2497,17 +2505,30 @@ function PanelSpells(props: { panelHeight: number }) {
             onChange={setSection}
             disabled={!!searchQuery.trim()}
             data={[
-              { label: 'Feats', value: 'FEATS' },
-              { label: 'Features', value: 'FEATURES' },
-            ]}
+              { label: 'Spells', value: 'NORMAL' },
+              { label: 'Focus', value: 'FOCUS' },
+              { label: 'Innate', value: 'INNATE' },
+            ].filter((section) => {
+              if (!data) return false;
+
+              if (section.value === 'FOCUS') {
+                return data.data.focus.length > 0;
+              }
+              if (section.value === 'INNATE') {
+                return data.data.innate.length > 0;
+              }
+              if (section.value === 'NORMAL') {
+                return data.data.slots.length > 0;
+              }
+            })}
           />
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-          {data && (section === 'FEATS' || searchQuery.trim()) && (
+          {data && (
             <Accordion
               variant='separated'
               multiple
-              defaultValue={['class-feats', 'ancestry-feats', 'general-skill-feats', 'other-feats']}
+              defaultValue={[]}
               styles={{
                 label: {
                   paddingTop: 5,
@@ -2523,152 +2544,114 @@ function PanelSpells(props: { panelHeight: number }) {
                 },
               }}
             >
-              {data.classFeats.length > 0 && (
-                <Accordion.Item value='class-feats'>
-                  <Accordion.Control>Class Feats</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.classFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.ancestryFeats.length > 0 && (
-                <Accordion.Item value='ancestry-feats'>
-                  <Accordion.Control>Ancestry Feats</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.ancestryFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.generalAndSkillFeats.length > 0 && (
-                <Accordion.Item value='general-skill-feats'>
-                  <Accordion.Control>General & Skill Feats</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.generalAndSkillFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.otherFeats.length > 0 && (
-                <Accordion.Item value='other-feats'>
-                  <Accordion.Control>Other Feats</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.otherFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-            </Accordion>
-          )}
+              {data.data.sources.map((source, index) => (
+                <div key={index}>
+                  {source.type.startsWith('SPONTANEOUS-') ? (
+                    <>
+                      {/* Spontaneous Spellcasting, show spell list and slots on the side */}
+                      {data.data.list.filter((d) => d.source === source.name).length > 0 && (
+                        <Accordion.Item value={`${source.name}-normal-spells`}>
+                          <Accordion.Control>
+                            {variableNameToLabel(source.name)} Spells
+                          </Accordion.Control>
+                          <Accordion.Panel
+                            styles={{
+                              content: {
+                                padding: 0,
+                              },
+                            }}
+                          >
+                            <Stack gap={0}>
+                              <Divider color='dark.6' />
+                              <SpellList
+                                spellIds={data.data.list
+                                  .filter((d) => d.source === source.name)
+                                  .map((d) => d.spell_id)}
+                                allSpells={data.spells}
+                                type='SPONTANEOUS'
+                                extra={{ slots: data.data.slots }}
+                              />
+                            </Stack>
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {/* Prepared Spellcasting, show slots with spells in them */}
+                      {data.data.list.filter((d) => d.source === source.name).length > 0 && (
+                        <Accordion.Item value={`${source.name}-normal-spells`}>
+                          <Accordion.Control>
+                            <Group wrap='nowrap' justify='space-between'>
+                              <Text>{variableNameToLabel(source.name)} Spells</Text>
+                              <Box pr={10}>
+                                <BlurButton
+                                  size='xs'
+                                  fw={500}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                  }}
+                                >
+                                  Manage
+                                </BlurButton>
+                              </Box>
+                            </Group>
+                          </Accordion.Control>
+                          <Accordion.Panel
+                            styles={{
+                              content: {
+                                padding: 0,
+                              },
+                            }}
+                          >
+                            <Stack gap={0} px={10}>
+                              <Divider color='dark.6' />
+                              <SpellList
+                                spellIds={data.data.list
+                                  .filter((d) => d.source === source.name)
+                                  .map((d) => d.spell_id)}
+                                allSpells={data.spells}
+                                type='PREPARED'
+                                extra={{ slots: data.data.slots }}
+                              />
+                            </Stack>
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      )}
+                    </>
+                  )}
+                  {data.data.focus.filter((d) => d.source === source.name).length > 0 && (
+                    <Accordion.Item value={`${source.name}-focus-spells`}>
+                      <Accordion.Control>
+                        {variableNameToLabel(source.name)} Focus Spells
+                      </Accordion.Control>
+                      <Accordion.Panel
+                        styles={{
+                          content: {
+                            padding: 0,
+                          },
+                        }}
+                      >
+                        <Stack gap={0}>
+                          <Divider color='dark.6' />
+                          <SpellList
+                            spellIds={data.data.focus
+                              .filter((d) => d.source === source.name)
+                              .map((d) => d.spell_id)}
+                            allSpells={data.spells}
+                            type='FOCUS'
+                          />
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  )}
+                </div>
+              ))}
 
-          {data && (section === 'FEATURES' || searchQuery.trim()) && (
-            <Accordion
-              variant='separated'
-              multiple
-              defaultValue={['class-features', 'heritages', 'ancestry-features']}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {data.classFeatures.length > 0 && (
-                <Accordion.Item value='class-features'>
-                  <Accordion.Control>Class Features</Accordion.Control>
+              {data.data.innate.length > 0 && (
+                <Accordion.Item value='innate-spells'>
+                  <Accordion.Control>Innate Spells</Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -2678,14 +2661,14 @@ function PanelSpells(props: { panelHeight: number }) {
                   >
                     <Stack gap={0}>
                       <Divider color='dark.6' />
-                      {data.classFeatures.map((feature, index) => (
-                        <ClassFeatureSelectionOption
-                          key={index}
-                          classFeature={feature}
+                      {data.data.innate.map((entry, index) => (
+                        <SpellSelectionOption
+                          key={index} /* TODO: Added innate spell casting stuff */
+                          spell={data.spells.find((spell) => spell.id === entry.spell_id)!}
                           onClick={() => {
                             openDrawer({
-                              type: 'class-feature',
-                              data: { id: feature.id },
+                              type: 'spell',
+                              data: { id: entry.spell_id },
                               extra: { addToHistory: true },
                             });
                           }}
@@ -2695,9 +2678,9 @@ function PanelSpells(props: { panelHeight: number }) {
                   </Accordion.Panel>
                 </Accordion.Item>
               )}
-              {data.heritages.length > 0 && (
-                <Accordion.Item value='heritages'>
-                  <Accordion.Control>Heritage</Accordion.Control>
+              {data.data.ritual.length > 0 && (
+                <Accordion.Item value='ritual-spells'>
+                  <Accordion.Control>Rituals</Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -2707,43 +2690,14 @@ function PanelSpells(props: { panelHeight: number }) {
                   >
                     <Stack gap={0}>
                       <Divider color='dark.6' />
-                      {data.heritages.map((heritage, index) => (
-                        <HeritageSelectionOption
+                      {data.data.ritual.map((entry, index) => (
+                        <SpellSelectionOption
                           key={index}
-                          heritage={heritage}
+                          spell={data.spells.find((spell) => spell.id === entry.spell_id)!}
                           onClick={() => {
                             openDrawer({
-                              type: 'heritage',
-                              data: { id: heritage.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.physicalFeatures.length > 0 && (
-                <Accordion.Item value='ancestry-features'>
-                  <Accordion.Control>Ancestry Features</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.physicalFeatures.map((feature, index) => (
-                        <PhysicalFeatureSelectionOption
-                          key={index}
-                          physicalFeature={feature}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'physical-feature',
-                              data: { id: feature.id },
+                              type: 'spell',
+                              data: { id: entry.spell_id },
                               extra: { addToHistory: true },
                             });
                           }}
@@ -2759,6 +2713,206 @@ function PanelSpells(props: { panelHeight: number }) {
       </Stack>
     </Box>
   );
+}
+
+function SpellList(props: {
+  spellIds: number[];
+  allSpells: Spell[];
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS';
+  extra?: {
+    slots?: SpellSlot[];
+  };
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Display spells in an ordered list by rank
+  const spells = useMemo(() => {
+    const filteredSpells = props.spellIds
+      .map((id) => props.allSpells.find((spell) => spell.id === id))
+      .filter((spell) => spell) as Spell[];
+    return _.groupBy(filteredSpells, 'rank');
+  }, [props.spellIds, props.allSpells]);
+
+  const slots = useMemo(() => {
+    if (!props.extra?.slots || props.extra.slots.length === 0) return null;
+
+    const mappedSlots = props.extra.slots.map((slot) => ({
+      ...slot,
+      spell: props.allSpells.find((spell) => spell.id === slot.spell_id),
+    }));
+    return _.groupBy(mappedSlots, 'rank');
+  }, [props.extra?.slots, props.allSpells]);
+
+  if (props.type === 'PREPARED') {
+    // Display spell slots
+    return (
+      <Accordion
+        variant='separated'
+        multiple
+        defaultValue={[]}
+        styles={{
+          label: {
+            paddingTop: 5,
+            paddingBottom: 5,
+          },
+          control: {
+            paddingLeft: 13,
+            paddingRight: 13,
+          },
+          item: {
+            marginTop: 0,
+            marginBottom: 5,
+          },
+        }}
+      >
+        {slots &&
+          Object.keys(slots)
+            .filter((rank) => slots[rank].length > 0)
+            .map((rank, index) => (
+              <Accordion.Item value={`rank-group-${index}`}>
+                <Accordion.Control>
+                  <Group wrap='nowrap' justify='space-between' gap={0}>
+                    <Text c='gray.5' fw={700} fz='sm'>
+                      {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                    </Text>
+                    <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                      <Text fz='sm' c='gray.5' span>
+                        {slots[rank].length}
+                      </Text>
+                    </Badge>
+                  </Group>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <Stack gap={0}>
+                    <Divider color='dark.6' />
+                    {slots[rank]
+                      .filter((slot) => slot.spell)
+                      .map((slot, index) => (
+                        <SpellSelectionOption
+                          key={index}
+                          spell={slot.spell!}
+                          onClick={() => {
+                            openDrawer({
+                              type: 'spell',
+                              data: { id: slot.spell_id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        />
+                      ))}
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            ))}
+      </Accordion>
+    );
+  }
+
+  if (props.type === 'SPONTANEOUS') {
+    // Display spells list
+    return (
+      <Accordion
+        variant='separated'
+        multiple
+        defaultValue={[]}
+        styles={{
+          label: {
+            paddingTop: 5,
+            paddingBottom: 5,
+          },
+          control: {
+            paddingLeft: 13,
+            paddingRight: 13,
+          },
+          item: {
+            marginTop: 0,
+            marginBottom: 5,
+          },
+        }}
+      >
+        {spells &&
+          Object.keys(spells).map((rank, index) => (
+            <Accordion.Item value={`rank-group-${index}`}>
+              <Accordion.Control>
+                {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))} Rank`}
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {spells[rank].map((spell, index) => (
+                    <SpellSelectionOption
+                      key={index}
+                      spell={spell}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'spell',
+                          data: { id: spell.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          ))}
+      </Accordion>
+    );
+  }
+
+  if (props.type === 'FOCUS') {
+    // Display spells list
+    return (
+      <Accordion
+        variant='separated'
+        multiple
+        defaultValue={[]}
+        styles={{
+          label: {
+            paddingTop: 5,
+            paddingBottom: 5,
+          },
+          control: {
+            paddingLeft: 13,
+            paddingRight: 13,
+          },
+          item: {
+            marginTop: 0,
+            marginBottom: 5,
+          },
+        }}
+      >
+        {spells &&
+          Object.keys(spells).map((rank, index) => (
+            <Accordion.Item value={`rank-group-${index}`}>
+              <Accordion.Control>
+                {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))} Rank`}
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {spells[rank].map((spell, index) => (
+                    <SpellSelectionOption
+                      key={index}
+                      spell={spell}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'spell',
+                          data: { id: spell.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          ))}
+      </Accordion>
+    );
+  }
+
+  return null;
 }
 
 function PanelFeatsFeatures(props: { panelHeight: number }) {

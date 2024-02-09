@@ -98,9 +98,9 @@ export function GiveSpellOperation(props: {
               onChange={(v) => setTradition(v as 'ARCANE' | 'OCCULT' | 'PRIMAL' | 'DIVINE')}
               data={[
                 { label: 'Arcane', value: 'ARCANE' },
+                { label: 'Divine', value: 'DIVINE' },
                 { label: 'Occult', value: 'OCCULT' },
                 { label: 'Primal', value: 'PRIMAL' },
-                { label: 'Divine', value: 'DIVINE' },
               ]}
             />
             <NumberInput

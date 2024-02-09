@@ -45,7 +45,9 @@ export type Operation =
   | OperationRemoveLanguage
   | OperationGiveSpell
   | OperationRemoveSpell
-  | OperationGiveSpellSlot;
+  | OperationGiveSpellSlot
+  | OperationDefineCastingSource;
+
 export type OperationType =
   | 'adjValue'
   | 'addBonusToValue'
@@ -59,7 +61,8 @@ export type OperationType =
   | 'select'
   | 'giveSpell'
   | 'removeSpell'
-  | 'giveSpellSlot';
+  | 'giveSpellSlot'
+  | 'defineCastingSource';
 
 interface OperationBase {
   readonly id: string;
@@ -143,11 +146,14 @@ export type ConditionOperator =
   | 'LESS_THAN'
   | 'GREATER_THAN';
 
-export type GiveSpellData = {
+export interface GiveSpellData extends SpellMetadata {
   spellId: number;
+}
+
+export type SpellMetadata = {
   type: 'NORMAL' | 'FOCUS' | 'INNATE';
   castingSource?: string;
-  level?: number;
+  rank?: number;
   tradition?: 'ARCANE' | 'OCCULT' | 'PRIMAL' | 'DIVINE';
   casts?: number;
 };
@@ -169,6 +175,14 @@ export interface OperationGiveSpellSlot extends OperationBase {
   data: {
     castingSource: string;
     slots: { lvl: number; rank: number; amt: number }[];
+  };
+}
+
+export interface OperationDefineCastingSource extends OperationAdjValue {
+  readonly type: 'defineCastingSource';
+  data: {
+    variable: 'CASTING_SOURCES';
+    value: VariableValue;
   };
 }
 
@@ -279,7 +293,8 @@ interface OperationSelectFiltersSpell extends OperationSelectFiltersBase {
   };
   traits?: string[];
   traditions?: string[];
-  // TODO: add more filters
+
+  spellData?: SpellMetadata;
 }
 
 interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
