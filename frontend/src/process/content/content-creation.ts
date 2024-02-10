@@ -9,6 +9,7 @@ import {
   Item,
   Spell,
   Trait,
+Language,
 } from "@typing/content";
 import * as _ from "lodash-es";
 import { makeRequest } from "@requests/request-manager";
@@ -88,4 +89,11 @@ export async function upsertTrait(trait: Trait) {
     ...trait,
   });
   return result ? (result === true ? trait : result) : null;
+}
+
+export async function upsertLanguage(language: Language) {
+  const result = await makeRequest<Language | true>("create-language", {
+    ...language,
+  });
+  return result ? (result === true ? language : result) : null;
 }
