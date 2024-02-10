@@ -48,6 +48,28 @@ type ContentType =
   | 'language'
   | 'content-source';
 
+interface SpellSlot {
+  rank: number;
+  source: string;
+  spell_id?: number;
+  exhausted?: boolean;
+  color?: string;
+}
+
+interface SpellListEntry {
+  spell_id: number;
+  rank: number;
+  source: string;
+}
+
+interface SpellInnateEntry {
+  spell_id: number;
+  rank: number;
+  tradition: string;
+  casts_max: number;
+  casts_current: number;
+}
+
 interface Trait {
   id: number;
   created_at: string;
@@ -197,6 +219,7 @@ interface Spell {
   meta_data: {
     damage?: Record<string, any>;
     type?: string;
+    ritual?: Record<string, any>;
     foundry?: Record<string, any>;
     unselectable?: boolean;
     image_url?: string;
@@ -345,7 +368,16 @@ interface Character {
     selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
     notes?: Record<string, string>; // <op UUID> -> string
   };
-  spells?: Record<string, any>; // TODO
+  spells?: {
+    slots: SpellSlot[];
+    list: SpellListEntry[];
+    // List of ritual spells, by id
+    rituals: number[];
+    // The number of focus points
+    focus_point_current: number;
+    // Used for tracking how many times an innate spell has been cast
+    innate_casts: SpellInnateEntry[];
+  };
   companions?: Record<string, any>; // TODO
 }
 

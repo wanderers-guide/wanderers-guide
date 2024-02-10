@@ -406,6 +406,7 @@ async function uploadSpell(
     meta_data: {
       damage: Object.values(json.system?.damage?.value ?? {}),
       type: json.system?.spellType?.value,
+      ritual: json.system?.ritual,
       foundry: {
         rules: json.system?.rules,
         tags: json.system?.traits?.otherTags,

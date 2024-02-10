@@ -67,8 +67,6 @@ export function AdjustValueInput(props: {
     profExtended?: boolean;
   };
 }) {
-  console.log(props.value);
-
   if (props.variableType === 'attr') {
     const value = props.value as AttributeValue;
     return (
@@ -144,8 +142,6 @@ export function AdjustValueInput(props: {
     );
   } else if (props.variableType === 'prof') {
     const value = props.value as ProficiencyValue;
-
-    console.log(value.value);
 
     return (
       <>

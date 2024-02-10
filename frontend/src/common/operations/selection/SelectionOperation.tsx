@@ -51,6 +51,7 @@ import { getVariable } from '@variables/variable-manager';
 import { useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import { AdjustValueInput } from '../variables/AdjValOperation';
+import { labelToVariable } from '@variables/variable-utils';
 
 export function SelectionOperation(props: {
   data: {
@@ -319,6 +320,13 @@ function SelectionFilteredSpell(props: {
   const [traits, setTraits] = useState<string[]>(props.filters?.traits ?? []);
   const [traditions, setTraditions] = useState<string[]>(props.filters?.traditions ?? []);
 
+  // Spell Data
+  const [type, setType] = useState(props.filters?.spellData?.type ?? 'NORMAL');
+  const [castingSource, setCastingSource] = useState(props.filters?.spellData?.castingSource);
+  const [rank, setRank] = useState(props.filters?.spellData?.rank);
+  const [tradition, setTradition] = useState(props.filters?.spellData?.tradition);
+  const [casts, setCasts] = useState(props.filters?.spellData?.casts);
+
   useDidUpdate(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
@@ -329,11 +337,111 @@ function SelectionFilteredSpell(props: {
       },
       traits: traits,
       traditions: traditions,
+      spellData: {
+        type: type ?? 'NORMAL',
+        castingSource: castingSource,
+        rank: rank,
+        tradition: tradition,
+        casts: casts,
+      },
     });
-  }, [minLevel, maxLevel, traits, traditions]);
+  }, [minLevel, maxLevel, traits, traditions, type, castingSource, rank, tradition, casts]);
 
   return (
     <Stack gap={10}>
+      <Divider label={<Text fz='sm'>Spell Data</Text>} labelPosition='left' />
+
+      <Stack gap={10}>
+        <Box>
+          <SegmentedControl
+            value={type}
+            size='xs'
+            onChange={(v) => setType(v as 'NORMAL' | 'FOCUS' | 'INNATE')}
+            data={[
+              { label: 'Normal', value: 'NORMAL' },
+              { label: 'Focus', value: 'FOCUS' },
+              { label: 'Innate', value: 'INNATE' },
+            ]}
+          />
+        </Box>
+
+        {type === 'NORMAL' && (
+          <Group>
+            <TextInput
+              ff='Ubuntu Mono, monospace'
+              size='xs'
+              placeholder='Casting Source'
+              w={190}
+              value={castingSource}
+              onChange={(e) => {
+                setCastingSource(labelToVariable(e.target.value, false));
+              }}
+            />
+            <NumberInput
+              size='xs'
+              placeholder='Rank'
+              min={0}
+              max={10}
+              w={70}
+              value={rank}
+              onChange={(val) => setRank(parseInt(`${val}`))}
+              allowDecimal={false}
+            />
+          </Group>
+        )}
+        {type === 'FOCUS' && (
+          <Group>
+            <TextInput
+              ff='Ubuntu Mono, monospace'
+              size='xs'
+              placeholder='Casting Source'
+              w={190}
+              value={castingSource}
+              onChange={(e) => {
+                setCastingSource(labelToVariable(e.target.value, false));
+              }}
+            />
+          </Group>
+        )}
+        {type === 'INNATE' && (
+          <Group>
+            <SegmentedControl
+              value={tradition}
+              size='xs'
+              onChange={(v) => setTradition(v as 'ARCANE' | 'OCCULT' | 'PRIMAL' | 'DIVINE')}
+              data={[
+                { label: 'Arcane', value: 'ARCANE' },
+                { label: 'Divine', value: 'DIVINE' },
+                { label: 'Occult', value: 'OCCULT' },
+                { label: 'Primal', value: 'PRIMAL' },
+              ]}
+            />
+            <NumberInput
+              size='xs'
+              placeholder='Rank'
+              min={0}
+              max={10}
+              w={70}
+              value={rank}
+              onChange={(val) => setRank(parseInt(`${val}`))}
+              allowDecimal={false}
+            />
+            <NumberInput
+              size='xs'
+              placeholder='Casts/day'
+              min={0}
+              max={10}
+              w={90}
+              value={casts}
+              onChange={(val) => setCasts(parseInt(`${val}`))}
+              allowDecimal={false}
+            />
+          </Group>
+        )}
+      </Stack>
+
+      <Divider label={<Text fz='sm'>List Filters</Text>} labelPosition='left' />
+
       <Box>
         <Text c='gray.4' fz='xs'>
           Levels
@@ -675,6 +783,37 @@ function SelectionPredefinedSpell(props: {
 }) {
   const [options, setOptions] = useState<OperationSelectOptionSpell[]>(props.options ?? []);
 
+  // Spell Data
+  const firstOption = props.options && (props.options.length > 0 ? props.options[0] : undefined);
+  const [type, setType] = useState(firstOption?.operation.data.type ?? 'NORMAL');
+  const [castingSource, setCastingSource] = useState(firstOption?.operation.data.castingSource);
+  const [rank, setRank] = useState(firstOption?.operation.data.rank);
+  const [tradition, setTradition] = useState(firstOption?.operation.data.tradition);
+  const [casts, setCasts] = useState(firstOption?.operation.data.casts);
+
+  useDidUpdate(() => {
+    const ops = [...options];
+    if (ops.length > 0) {
+      // Update the first option's spell data
+      ops[0] = {
+        id: ops[0].id,
+        type: 'SPELL',
+        operation: {
+          ...ops[0].operation,
+          data: {
+            ...ops[0].operation.data,
+            type: type,
+            castingSource: castingSource,
+            rank: rank,
+            tradition: tradition,
+            casts: casts,
+          },
+        },
+      };
+    }
+    props.onChange(ops);
+  }, [type, castingSource, rank, tradition, casts]);
+
   useDidUpdate(() => {
     props.onChange(options);
   }, [options]);
@@ -692,6 +831,99 @@ function SelectionPredefinedSpell(props: {
 
   return (
     <Stack gap={10}>
+      <Divider label={<Text fz='sm'>Spell Data</Text>} labelPosition='left' />
+
+      <Stack gap={10}>
+        <Box>
+          <SegmentedControl
+            value={type}
+            size='xs'
+            onChange={(v) => setType(v as 'NORMAL' | 'FOCUS' | 'INNATE')}
+            data={[
+              { label: 'Normal', value: 'NORMAL' },
+              { label: 'Focus', value: 'FOCUS' },
+              { label: 'Innate', value: 'INNATE' },
+            ]}
+          />
+        </Box>
+
+        {type === 'NORMAL' && (
+          <Group>
+            <TextInput
+              ff='Ubuntu Mono, monospace'
+              size='xs'
+              placeholder='Casting Source'
+              w={190}
+              value={castingSource}
+              onChange={(e) => {
+                setCastingSource(labelToVariable(e.target.value, false));
+              }}
+            />
+            <NumberInput
+              size='xs'
+              placeholder='Rank'
+              min={0}
+              max={10}
+              w={70}
+              value={rank}
+              onChange={(val) => setRank(parseInt(`${val}`))}
+              allowDecimal={false}
+            />
+          </Group>
+        )}
+        {type === 'FOCUS' && (
+          <Group>
+            <TextInput
+              ff='Ubuntu Mono, monospace'
+              size='xs'
+              placeholder='Casting Source'
+              w={190}
+              value={castingSource}
+              onChange={(e) => {
+                setCastingSource(labelToVariable(e.target.value, false));
+              }}
+            />
+          </Group>
+        )}
+        {type === 'INNATE' && (
+          <Group>
+            <SegmentedControl
+              value={tradition}
+              size='xs'
+              onChange={(v) => setTradition(v as 'ARCANE' | 'OCCULT' | 'PRIMAL' | 'DIVINE')}
+              data={[
+                { label: 'Arcane', value: 'ARCANE' },
+                { label: 'Divine', value: 'DIVINE' },
+                { label: 'Occult', value: 'OCCULT' },
+                { label: 'Primal', value: 'PRIMAL' },
+              ]}
+            />
+            <NumberInput
+              size='xs'
+              placeholder='Rank'
+              min={0}
+              max={10}
+              w={70}
+              value={rank}
+              onChange={(val) => setRank(parseInt(`${val}`))}
+              allowDecimal={false}
+            />
+            <NumberInput
+              size='xs'
+              placeholder='Casts/day'
+              min={0}
+              max={10}
+              w={90}
+              value={casts}
+              onChange={(val) => setCasts(parseInt(`${val}`))}
+              allowDecimal={false}
+            />
+          </Group>
+        )}
+      </Stack>
+
+      <Divider label={<Text fz='sm'>List Options</Text>} labelPosition='left' />
+
       {optionsForUI.map((option, index) => (
         <Group key={index} wrap='nowrap' style={{ position: 'relative' }}>
           <SelectContentButton<Spell>
