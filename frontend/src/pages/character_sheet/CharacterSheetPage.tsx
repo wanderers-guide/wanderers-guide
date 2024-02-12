@@ -118,11 +118,14 @@ import {
   IconPlus,
   IconSearch,
   IconSettings,
+  IconSquareRounded,
+  IconSquareRoundedFilled,
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AbilityBlock,
   ActionCost,
+  CastingSource,
   Character,
   ContentPackage,
   Inventory,
@@ -130,6 +133,7 @@ import {
   Item,
   Rarity,
   Spell,
+  SpellInnateEntry,
   SpellSlot,
 } from '@typing/content';
 import { OperationResultPackage } from '@typing/operations';
@@ -961,12 +965,21 @@ function ConditionSection() {
               <Group justify='center'>
                 <TokenSelect
                   count={3}
+                  onChange={(v) => {
+                    setCharacter((c) => {
+                      if (!c) return c;
+                      return {
+                        ...c,
+                        hero_points: v,
+                      };
+                    });
+                  }}
                   size='xs'
                   emptySymbol={
                     <ActionIcon
                       variant='transparent'
                       color='gray.1'
-                      aria-label='Hero Point Empty'
+                      aria-label='Hero Point, Empty'
                       size='xs'
                       style={{ opacity: 0.7 }}
                     >
@@ -977,7 +990,7 @@ function ConditionSection() {
                     <ActionIcon
                       variant='transparent'
                       color='gray.1'
-                      aria-label='Hero Point Full'
+                      aria-label='Hero Point, Full'
                       size='xs'
                       style={{ opacity: 0.7 }}
                     >
@@ -2500,7 +2513,7 @@ function PanelSpells(props: { panelHeight: number }) {
               },
             }}
           />
-          <SegmentedControl
+          {/* <SegmentedControl
             value={section}
             onChange={setSection}
             disabled={!!searchQuery.trim()}
@@ -2521,14 +2534,20 @@ function PanelSpells(props: { panelHeight: number }) {
                 return data.data.slots.length > 0;
               }
             })}
-          />
+          /> */}
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {data && (
             <Accordion
               variant='separated'
               multiple
-              defaultValue={[]}
+              defaultValue={[
+                ...data.data.sources.map((source) => `spontaneous-${source.name}`),
+                ...data.data.sources.map((source) => `prepared-${source.name}`),
+                ...data.data.sources.map((source) => `focus-${source.name}`),
+                'innate',
+                // 'ritual',
+              ]}
               styles={{
                 label: {
                   paddingTop: 5,
@@ -2548,164 +2567,67 @@ function PanelSpells(props: { panelHeight: number }) {
                 <div key={index}>
                   {source.type.startsWith('SPONTANEOUS-') ? (
                     <>
-                      {/* Spontaneous Spellcasting, show spell list and slots on the side */}
                       {data.data.list.filter((d) => d.source === source.name).length > 0 && (
-                        <Accordion.Item value={`${source.name}-normal-spells`}>
-                          <Accordion.Control>
-                            {variableNameToLabel(source.name)} Spells
-                          </Accordion.Control>
-                          <Accordion.Panel
-                            styles={{
-                              content: {
-                                padding: 0,
-                              },
-                            }}
-                          >
-                            <Stack gap={0}>
-                              <Divider color='dark.6' />
-                              <SpellList
-                                spellIds={data.data.list
-                                  .filter((d) => d.source === source.name)
-                                  .map((d) => d.spell_id)}
-                                allSpells={data.spells}
-                                type='SPONTANEOUS'
-                                extra={{ slots: data.data.slots }}
-                              />
-                            </Stack>
-                          </Accordion.Panel>
-                        </Accordion.Item>
+                        <SpellList
+                          index={`spontaneous-${source.name}`}
+                          source={source}
+                          spellIds={data.data.list
+                            .filter((d) => d.source === source.name)
+                            .map((d) => d.spell_id)}
+                          allSpells={data.spells}
+                          type='SPONTANEOUS'
+                          extra={{ slots: data.data.slots }}
+                        />
                       )}
                     </>
                   ) : (
                     <>
-                      {/* Prepared Spellcasting, show slots with spells in them */}
                       {data.data.list.filter((d) => d.source === source.name).length > 0 && (
-                        <Accordion.Item value={`${source.name}-normal-spells`}>
-                          <Accordion.Control>
-                            <Group wrap='nowrap' justify='space-between'>
-                              <Text>{variableNameToLabel(source.name)} Spells</Text>
-                              <Box pr={10}>
-                                <BlurButton
-                                  size='xs'
-                                  fw={500}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                  }}
-                                >
-                                  Manage
-                                </BlurButton>
-                              </Box>
-                            </Group>
-                          </Accordion.Control>
-                          <Accordion.Panel
-                            styles={{
-                              content: {
-                                padding: 0,
-                              },
-                            }}
-                          >
-                            <Stack gap={0} px={10}>
-                              <Divider color='dark.6' />
-                              <SpellList
-                                spellIds={data.data.list
-                                  .filter((d) => d.source === source.name)
-                                  .map((d) => d.spell_id)}
-                                allSpells={data.spells}
-                                type='PREPARED'
-                                extra={{ slots: data.data.slots }}
-                              />
-                            </Stack>
-                          </Accordion.Panel>
-                        </Accordion.Item>
+                        <SpellList
+                          index={`prepared-${source.name}`}
+                          source={source}
+                          spellIds={data.data.list
+                            .filter((d) => d.source === source.name)
+                            .map((d) => d.spell_id)}
+                          allSpells={data.spells}
+                          type='PREPARED'
+                          extra={{ slots: data.data.slots }}
+                        />
                       )}
                     </>
                   )}
                   {data.data.focus.filter((d) => d.source === source.name).length > 0 && (
-                    <Accordion.Item value={`${source.name}-focus-spells`}>
-                      <Accordion.Control>
-                        {variableNameToLabel(source.name)} Focus Spells
-                      </Accordion.Control>
-                      <Accordion.Panel
-                        styles={{
-                          content: {
-                            padding: 0,
-                          },
-                        }}
-                      >
-                        <Stack gap={0}>
-                          <Divider color='dark.6' />
-                          <SpellList
-                            spellIds={data.data.focus
-                              .filter((d) => d.source === source.name)
-                              .map((d) => d.spell_id)}
-                            allSpells={data.spells}
-                            type='FOCUS'
-                          />
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
+                    <SpellList
+                      index={`focus-${source.name}`}
+                      source={source}
+                      spellIds={data.data.focus
+                        .filter((d) => d.source === source.name)
+                        .map((d) => d.spell_id)}
+                      allSpells={data.spells}
+                      type='FOCUS'
+                      extra={{ focusPoints: data.data.focus_points }}
+                    />
                   )}
                 </div>
               ))}
 
               {data.data.innate.length > 0 && (
-                <Accordion.Item value='innate-spells'>
-                  <Accordion.Control>Innate Spells</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.data.innate.map((entry, index) => (
-                        <SpellSelectionOption
-                          key={index} /* TODO: Added innate spell casting stuff */
-                          spell={data.spells.find((spell) => spell.id === entry.spell_id)!}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'spell',
-                              data: { id: entry.spell_id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
+                <SpellList
+                  index={'innate'}
+                  spellIds={data.data.innate.map((d) => d.spell_id)}
+                  allSpells={data.spells}
+                  type='INNATE'
+                  extra={{ innates: data.data.innate }}
+                />
               )}
-              {data.data.ritual.length > 0 && (
-                <Accordion.Item value='ritual-spells'>
-                  <Accordion.Control>Rituals</Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.data.ritual.map((entry, index) => (
-                        <SpellSelectionOption
-                          key={index}
-                          spell={data.spells.find((spell) => spell.id === entry.spell_id)!}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'spell',
-                              data: { id: entry.spell_id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
+              {/* Always display ritual section */}
+              {true && (
+                <SpellList
+                  index={'ritual'}
+                  spellIds={data.data.ritual.map((d) => d.spell_id)}
+                  allSpells={data.spells}
+                  type='RITUAL'
+                />
               )}
             </Accordion>
           )}
@@ -2716,15 +2638,20 @@ function PanelSpells(props: { panelHeight: number }) {
 }
 
 function SpellList(props: {
+  index: string;
+  source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS';
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
   extra?: {
     slots?: SpellSlot[];
+    innates?: SpellInnateEntry[];
+    focusPoints?: {
+      current: number;
+      max: number;
+    };
   };
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-
   // Display spells in an ordered list by rank
   const spells = useMemo(() => {
     const filteredSpells = props.spellIds
@@ -2743,176 +2670,456 @@ function SpellList(props: {
     return _.groupBy(mappedSlots, 'rank');
   }, [props.extra?.slots, props.allSpells]);
 
-  if (props.type === 'PREPARED') {
-    // Display spell slots
+  const innateSpells = useMemo(() => {
+    const filteredSpells = props.extra?.innates
+      ?.map((innate) => ({
+        ...innate,
+        spell: props.allSpells.find((spell) => spell.id === innate.spell_id),
+      }))
+      .filter((innate) => innate.spell);
+    return _.groupBy(filteredSpells, 'rank');
+  }, [props.extra?.innates, props.allSpells]);
+
+  if (props.type === 'PREPARED' && props.source) {
     return (
-      <Accordion
-        variant='separated'
-        multiple
-        defaultValue={[]}
-        styles={{
-          label: {
-            paddingTop: 5,
-            paddingBottom: 5,
-          },
-          control: {
-            paddingLeft: 13,
-            paddingRight: 13,
-          },
-          item: {
-            marginTop: 0,
-            marginBottom: 5,
-          },
-        }}
-      >
-        {slots &&
-          Object.keys(slots)
-            .filter((rank) => slots[rank].length > 0)
-            .map((rank, index) => (
-              <Accordion.Item value={`rank-group-${index}`}>
-                <Accordion.Control>
-                  <Group wrap='nowrap' justify='space-between' gap={0}>
-                    <Text c='gray.5' fw={700} fz='sm'>
-                      {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
-                    </Text>
-                    <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                      <Text fz='sm' c='gray.5' span>
-                        {slots[rank].length}
-                      </Text>
-                    </Badge>
-                  </Group>
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <Stack gap={0}>
-                    <Divider color='dark.6' />
-                    {slots[rank]
-                      .filter((slot) => slot.spell)
-                      .map((slot, index) => (
-                        <SpellSelectionOption
-                          key={index}
-                          spell={slot.spell!}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'spell',
-                              data: { id: slot.spell_id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                  </Stack>
-                </Accordion.Panel>
-              </Accordion.Item>
-            ))}
-      </Accordion>
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              {variableNameToLabel(props.source.name)} Spells
+            </Text>
+            <Box mr={10}>
+              <BlurButton
+                size='xs'
+                fw={500}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                Manage
+              </BlurButton>
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {slots &&
+                Object.keys(slots)
+                  .filter((rank) => slots[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Text c='gray.5' fw={700} fz='sm'>
+                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                          </Text>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {slots[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {slots[rank].map((slot, index) => (
+                            <SpellListEntry key={index} spell={slot.spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
     );
   }
 
-  if (props.type === 'SPONTANEOUS') {
-    // Display spells list
+  if (props.type === 'SPONTANEOUS' && props.source) {
     return (
-      <Accordion
-        variant='separated'
-        multiple
-        defaultValue={[]}
-        styles={{
-          label: {
-            paddingTop: 5,
-            paddingBottom: 5,
-          },
-          control: {
-            paddingLeft: 13,
-            paddingRight: 13,
-          },
-          item: {
-            marginTop: 0,
-            marginBottom: 5,
-          },
-        }}
-      >
-        {spells &&
-          Object.keys(spells).map((rank, index) => (
-            <Accordion.Item value={`rank-group-${index}`}>
-              <Accordion.Control>
-                {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))} Rank`}
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap={0}>
-                  <Divider color='dark.6' />
-                  {spells[rank].map((spell, index) => (
-                    <SpellSelectionOption
-                      key={index}
-                      spell={spell}
-                      onClick={() => {
-                        openDrawer({
-                          type: 'spell',
-                          data: { id: spell.id },
-                          extra: { addToHistory: true },
-                        });
-                      }}
-                    />
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              {variableNameToLabel(props.source.name)} Spells
+            </Text>
+            <Box mr={10}>
+              <BlurButton
+                size='xs'
+                fw={500}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                Manage
+              </BlurButton>
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {slots &&
+                Object.keys(slots)
+                  .filter((rank) => slots[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Box>
+                            <Text c='gray.5' fw={700} fz='sm' w={100}>
+                              {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                            </Text>
+                            <SpellSlotSelect
+                              count={slots[rank]?.filter((slot) => `${slot.rank}` === rank).length}
+                              onChange={(v) => {}}
+                            />
+                          </Box>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {spells[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {spells[rank].map((spell, index) => (
+                            <SpellListEntry key={index} spell={spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
                   ))}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          ))}
-      </Accordion>
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
     );
   }
 
-  if (props.type === 'FOCUS') {
-    // Display spells list
+  if (props.type === 'FOCUS' && props.source && props.extra?.focusPoints) {
     return (
-      <Accordion
-        variant='separated'
-        multiple
-        defaultValue={[]}
-        styles={{
-          label: {
-            paddingTop: 5,
-            paddingBottom: 5,
-          },
-          control: {
-            paddingLeft: 13,
-            paddingRight: 13,
-          },
-          item: {
-            marginTop: 0,
-            marginBottom: 5,
-          },
-        }}
-      >
-        {spells &&
-          Object.keys(spells).map((rank, index) => (
-            <Accordion.Item value={`rank-group-${index}`}>
-              <Accordion.Control>
-                {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))} Rank`}
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap={0}>
-                  <Divider color='dark.6' />
-                  {spells[rank].map((spell, index) => (
-                    <SpellSelectionOption
-                      key={index}
-                      spell={spell}
-                      onClick={() => {
-                        openDrawer({
-                          type: 'spell',
-                          data: { id: spell.id },
-                          extra: { addToHistory: true },
-                        });
-                      }}
-                    />
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              {variableNameToLabel(props.source.name)} Focus Spells
+            </Text>
+            <Box mr={10}>
+              <SpellSlotSelect count={props.extra?.focusPoints.max} onChange={(v) => {}} />
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {spells &&
+                Object.keys(spells)
+                  .filter((rank) => spells[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Text c='gray.5' fw={700} fz='sm'>
+                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                          </Text>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {spells[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {spells[rank].map((spell, index) => (
+                            <SpellListEntry key={index} spell={spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
                   ))}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          ))}
-      </Accordion>
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  if (props.type === 'INNATE' && props.extra?.innates) {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              Innate Spells
+            </Text>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {innateSpells &&
+                Object.keys(innateSpells)
+                  .filter((rank) => innateSpells[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Text c='gray.5' fw={700} fz='sm'>
+                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                          </Text>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {innateSpells[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {innateSpells[rank].map((innate, index) => (
+                            <SpellListEntry key={index} spell={innate.spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  if (props.type === 'RITUAL') {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Group gap={10}>
+              <Text c='gray.5' fw={700} fz='sm'>
+                Rituals
+              </Text>
+              <Badge variant='outline' color='gray.5' size='xs'>
+                <Text fz='sm' c='gray.5' span>
+                  {props.spellIds.length}
+                </Text>
+              </Badge>
+            </Group>
+
+            <Box mr={10}>
+              <BlurButton
+                size='xs'
+                fw={500}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                Manage
+              </BlurButton>
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={5}>
+            <Divider color='dark.6' />
+            {spells &&
+              Object.keys(spells)
+                .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])
+                .map((spell, index) => <SpellListEntry key={index} spell={spell} />)}
+
+            {props.spellIds.length === 0 && (
+              <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
+                No rituals known
+              </Text>
+            )}
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
     );
   }
 
   return null;
+}
+
+function SpellListEntry(props: { spell?: Spell }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  if (props.spell) {
+    return (
+      <SpellSelectionOption
+        spell={props.spell}
+        onClick={() => {
+          openDrawer({
+            type: 'spell',
+            data: { id: props.spell?.id },
+            extra: { addToHistory: true },
+          });
+        }}
+      />
+    );
+  }
+
+  return (
+    <StatButton
+      onClick={() => {
+        // Open manage spells drawer
+      }}
+    >
+      <Text fz='xs' fs='italic' fw={500}>
+        No Spell Prepared
+      </Text>
+    </StatButton>
+  );
+}
+
+function SpellSlotSelect(props: { count: number; onChange: (v: number) => void }) {
+  return (
+    <TokenSelect
+      count={props.count}
+      onChange={props.onChange}
+      size='xs'
+      emptySymbol={
+        <ActionIcon
+          variant='transparent'
+          color='gray.1'
+          aria-label='Spell Slot, Unused'
+          size='xs'
+          style={{ opacity: 0.7 }}
+        >
+          <IconSquareRounded size='0.8rem' />
+        </ActionIcon>
+      }
+      fullSymbol={
+        <ActionIcon
+          variant='transparent'
+          color='gray.1'
+          aria-label='Spell Slot, Exhuasted'
+          size='xs'
+          style={{ opacity: 0.7 }}
+        >
+          <IconSquareRoundedFilled size='0.8rem' />
+        </ActionIcon>
+      }
+    />
+  );
 }
 
 function PanelFeatsFeatures(props: { panelHeight: number }) {

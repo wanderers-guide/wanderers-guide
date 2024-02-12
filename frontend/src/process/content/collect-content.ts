@@ -5,6 +5,7 @@ import {
   SpellSlot,
   SpellListEntry,
   SpellInnateEntry,
+  CastingSource,
 } from '@typing/content';
 import { GiveSpellData, SpellMetadata } from '@typing/operations';
 import { VariableListStr } from '@typing/variables';
@@ -207,7 +208,7 @@ export function collectCharacterSpellcasting(character: Character) {
         type: parts[1],
         tradition: parts[2],
         attribute: parts[3],
-      };
+      } satisfies CastingSource as CastingSource;
     }),
   };
 }

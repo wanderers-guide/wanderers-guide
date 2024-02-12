@@ -70,6 +70,13 @@ interface SpellInnateEntry {
   casts_current: number;
 }
 
+interface CastingSource {
+  name: string;
+  type: string;
+  tradition: string;
+  attribute: string;
+}
+
 interface Trait {
   id: number;
   created_at: string;
