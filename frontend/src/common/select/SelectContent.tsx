@@ -86,6 +86,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
+    filterFn?: (option: T) => boolean;
   };
 }) {
   const [selected, setSelected] = useState<T | undefined>();
@@ -140,6 +141,8 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
               skillAdjustment: props.options?.skillAdjustment,
               // @ts-ignore
               selectedId: selected?.id,
+              // @ts-ignore
+              filterFn: props.options?.filterFn,
             }
           );
         }}
@@ -173,6 +176,7 @@ export function selectContent<T = Record<string, any>>(
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
     selectedId?: number;
+    filterFn?: (option: Record<string, any>) => boolean;
   }
 ) {
   let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
@@ -202,6 +206,7 @@ export default function SelectContentModal({
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
     selectedId?: number;
+    filterFn?: (option: Record<string, any>) => boolean;
   };
 }>) {
   const [openedDrawer, setOpenedDrawer] = useState(false);
@@ -371,6 +376,7 @@ export default function SelectContentModal({
             innerProps.onClick(option);
             context.closeModal(id);
           }}
+          filterFn={innerProps.options?.filterFn}
         />
       </Stack>
     </Box>
@@ -429,6 +435,7 @@ function SelectionOptions(props: {
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
+  filterFn?: (option: Record<string, any>) => boolean;
 }) {
   const { data, isFetching } = useQuery({
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
@@ -446,7 +453,9 @@ function SelectionOptions(props: {
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
-  let options = data ? [...data.values()].filter((d) => d) : [];
+  let options = data
+    ? [...data.values()].filter((d) => d).filter(props.filterFn ? props.filterFn : () => true)
+    : [];
   if (props.overrideOptions) options = props.overrideOptions;
 
   // Filter options based on source
@@ -2636,6 +2645,7 @@ export function SpellSelectionOption(props: {
   onClick: (spell: Spell) => void;
   selected?: boolean;
   includeOptions?: boolean;
+  includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -2690,21 +2700,24 @@ export function SpellSelectionOption(props: {
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'spell', data: { id: props.spell.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails === undefined ||
+        (props.includeDetails === true && (
+          <Button
+            size='compact-xs'
+            variant='subtle'
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: props.includeOptions ? 40 : 10,
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawer({ type: 'spell', data: { id: props.spell.id } });
+            }}
+          >
+            Details
+          </Button>
+        ))}
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>
@@ -2729,29 +2742,30 @@ export function SpellSelectionOption(props: {
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.spell.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
+            {props.onCopy && (
+              <Menu.Item
+                leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onCopy?.(props.spell.id);
+                }}
+              >
+                Duplicate
+              </Menu.Item>
+            )}
 
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.spell.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
+            {props.onDelete && (
+              <Menu.Item
+                color='red'
+                leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onDelete?.(props.spell.id);
+                }}
+              >
+                Delete
+              </Menu.Item>
+            )}
           </Menu.Dropdown>
         </Menu>
       )}

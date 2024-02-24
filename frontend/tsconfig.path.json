@@ -23,6 +23,7 @@
       "@import/*": ["src/process/import/*"],
       "@export/*": ["src/process/export/*"],
       "@conditions/*": ["src/process/conditions/*"],
+      "@spells/*": ["src/process/spells/*"],
       "@css/*": ["src/css/*"],
       "@ai/*": ["src/ai/*"],
     }

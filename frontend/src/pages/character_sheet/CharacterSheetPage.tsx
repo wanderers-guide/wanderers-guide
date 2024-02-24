@@ -99,6 +99,7 @@ import {
 } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
+import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { makeRequest } from '@requests/request-manager';
@@ -2431,9 +2432,16 @@ function PanelSpells(props: { panelHeight: number }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [section, setSection] = useState<string>();
+  const [manageSpells, setManageSpells] = useState<
+    | {
+        source: string;
+        type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+      }
+    | undefined
+  >();
 
   const { data } = useQuery({
-    queryKey: [`find-spells`],
+    queryKey: [`find-spells-and-data`],
     queryFn: async () => {
       if (!character) return null;
 
@@ -2445,58 +2453,25 @@ function PanelSpells(props: { panelHeight: number }) {
   });
 
   // Filter options based on search query
-  // const search = useRef(new JsSearch.Search('id'));
-  // useEffect(() => {
-  //   if (!rawData) return;
-  //   search.current.addIndex('name');
-  //   search.current.addIndex('description');
-  //   search.current.addIndex('_group');
-  //   search.current.addDocuments([
-  //     ...rawData..map((feat) => ({
-  //       ...feat,
-  //       _group: 'ancestryFeats',
-  //     })),
-  //     ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
-  //     ...rawData.generalAndSkillFeats.map((feat) => ({
-  //       ...feat,
-  //       _group: 'generalAndSkillFeats',
-  //     })),
-  //     ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
-  //     ...rawData.classFeatures.map((feat) => ({
-  //       ...feat,
-  //       _group: 'classFeatures',
-  //     })),
-  //     ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
-  //     ...rawData.physicalFeatures.map((feat) => ({
-  //       ...feat,
-  //       _group: 'physicalFeatures',
-  //     })),
-  //   ]);
-  // }, [rawData]);
+  const search = useRef(new JsSearch.Search('id'));
+  useEffect(() => {
+    if (!data) return;
+    search.current.addIndex('name');
+    search.current.addIndex('description');
+    search.current.addIndex('duration');
+    search.current.addIndex('targets');
+    search.current.addIndex('area');
+    search.current.addIndex('range');
+    search.current.addIndex('requirements');
+    search.current.addIndex('trigger');
+    search.current.addIndex('cost');
+    search.current.addIndex('defense');
+    search.current.addDocuments(data.spells);
+  }, [data]);
 
-  // const constructData = (data: Record<string, any>[]) => {
-  //   const classFeats = data.filter((feat) => feat._group === 'classFeats');
-  //   const ancestryFeats = data.filter((feat) => feat._group === 'ancestryFeats');
-  //   const generalAndSkillFeats = data.filter((feat) => feat._group === 'generalAndSkillFeats');
-  //   const otherFeats = data.filter((feat) => feat._group === 'otherFeats');
-  //   const classFeatures = data.filter((feat) => feat._group === 'classFeatures');
-  //   const heritages = data.filter((feat) => feat._group === 'heritages');
-  //   const physicalFeatures = data.filter((feat) => feat._group === 'physicalFeatures');
-
-  //   return {
-  //     classFeats,
-  //     ancestryFeats,
-  //     generalAndSkillFeats,
-  //     otherFeats,
-  //     classFeatures,
-  //     heritages,
-  //     physicalFeatures,
-  //   } as typeof rawData;
-  // };
-
-  // const data = searchQuery.trim()
-  //   ? constructData(search.current.search(searchQuery.trim()))
-  //   : rawData;
+  const allSpells = searchQuery.trim()
+    ? (search.current?.search(searchQuery.trim()) as Spell[])
+    : data?.spells ?? [];
 
   return (
     <Box h='100%'>
@@ -2574,9 +2549,10 @@ function PanelSpells(props: { panelHeight: number }) {
                           spellIds={data.data.list
                             .filter((d) => d.source === source.name)
                             .map((d) => d.spell_id)}
-                          allSpells={data.spells}
+                          allSpells={allSpells}
                           type='SPONTANEOUS'
                           extra={{ slots: data.data.slots }}
+                          openManageSpells={(source, type) => setManageSpells({ source, type })}
                         />
                       )}
                     </>
@@ -2589,9 +2565,10 @@ function PanelSpells(props: { panelHeight: number }) {
                           spellIds={data.data.list
                             .filter((d) => d.source === source.name)
                             .map((d) => d.spell_id)}
-                          allSpells={data.spells}
+                          allSpells={allSpells}
                           type='PREPARED'
                           extra={{ slots: data.data.slots }}
+                          openManageSpells={(source, type) => setManageSpells({ source, type })}
                         />
                       )}
                     </>
@@ -2603,7 +2580,7 @@ function PanelSpells(props: { panelHeight: number }) {
                       spellIds={data.data.focus
                         .filter((d) => d.source === source.name)
                         .map((d) => d.spell_id)}
-                      allSpells={data.spells}
+                      allSpells={allSpells}
                       type='FOCUS'
                       extra={{ focusPoints: data.data.focus_points }}
                     />
@@ -2615,7 +2592,7 @@ function PanelSpells(props: { panelHeight: number }) {
                 <SpellList
                   index={'innate'}
                   spellIds={data.data.innate.map((d) => d.spell_id)}
-                  allSpells={data.spells}
+                  allSpells={allSpells}
                   type='INNATE'
                   extra={{ innates: data.data.innate }}
                 />
@@ -2625,14 +2602,23 @@ function PanelSpells(props: { panelHeight: number }) {
                 <SpellList
                   index={'ritual'}
                   spellIds={data.data.ritual.map((d) => d.spell_id)}
-                  allSpells={data.spells}
+                  allSpells={allSpells}
                   type='RITUAL'
+                  openManageSpells={(source, type) => setManageSpells({ source, type })}
                 />
               )}
             </Accordion>
           )}
         </ScrollArea>
       </Stack>
+      {manageSpells && (
+        <ManageSpellsModal
+          opened={!!manageSpells}
+          onClose={() => setManageSpells(undefined)}
+          source={manageSpells.source}
+          type={manageSpells.type}
+        />
+      )}
     </Box>
   );
 }
@@ -2651,6 +2637,7 @@ function SpellList(props: {
       max: number;
     };
   };
+  openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
 }) {
   // Display spells in an ordered list by rank
   const spells = useMemo(() => {
@@ -2695,6 +2682,10 @@ function SpellList(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
+                  props.openManageSpells?.(
+                    props.source!.name,
+                    props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                  );
                 }}
               >
                 Manage
@@ -2735,7 +2726,7 @@ function SpellList(props: {
                 Object.keys(slots)
                   .filter((rank) => slots[rank].length > 0)
                   .map((rank, index) => (
-                    <Accordion.Item value={`rank-group-${index}`}>
+                    <Accordion.Item key={index} value={`rank-group-${index}`}>
                       <Accordion.Control>
                         <Group wrap='nowrap' justify='space-between' gap={0}>
                           <Text c='gray.5' fw={700} fz='sm'>
@@ -2779,6 +2770,7 @@ function SpellList(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
+                  props.openManageSpells?.(props.source!.name, 'LIST-ONLY');
                 }}
               >
                 Manage

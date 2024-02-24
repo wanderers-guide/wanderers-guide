@@ -156,7 +156,7 @@ export function collectCharacterSpellcasting(character: Character) {
   slots = mergeSpellSlots(slots, character.spells?.slots ?? []);
 
   // List of character's spells
-  let list = character.spells?.list ?? [];
+  let list = _.cloneDeep(character.spells?.list ?? []);
   let focus: { spell_id: number; source: string }[] = [];
   let innate: SpellInnateEntry[] = [];
   for (const strD of spellDatas) {
