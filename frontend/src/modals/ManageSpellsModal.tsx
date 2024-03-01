@@ -24,7 +24,7 @@ import {
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, Spell, SpellListEntry, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
 import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
@@ -177,14 +177,53 @@ const SlotsSection = (props: {
                       setCharacter((c) => {
                         if (!c) return c;
 
-                        const slots = [
-                          ...(c.spells?.slots ?? []),
+                        // Clear any existing slots for this spell
+                        let slots = (c.spells?.slots ?? []).filter(
+                          (entry) =>
+                            !(
+                              entry.spell_id === slot.spell_id &&
+                              entry.source === props.source &&
+                              `${entry.rank}` === rank
+                            )
+                        );
+
+                        // Add the new spell
+                        slots = [
+                          ...slots,
                           {
                             rank: spell.rank,
                             source: props.source,
                             spell_id: spell.id,
                           },
                         ];
+
+                        return {
+                          ...c,
+                          spells: {
+                            ...(c.spells ?? {
+                              slots: [],
+                              list: [],
+                              rituals: [],
+                              focus_point_current: 0,
+                              innate_casts: [],
+                            }),
+                            slots: slots,
+                          },
+                        };
+                      });
+                    }}
+                    onClear={() => {
+                      setCharacter((c) => {
+                        if (!c) return c;
+
+                        const slots = (c.spells?.slots ?? []).filter(
+                          (entry) =>
+                            !(
+                              entry.spell_id === slot.spell_id &&
+                              entry.source === props.source &&
+                              `${entry.rank}` === rank
+                            )
+                        );
 
                         return {
                           ...c,

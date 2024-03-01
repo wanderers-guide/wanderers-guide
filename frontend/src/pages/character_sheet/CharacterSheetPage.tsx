@@ -2440,22 +2440,24 @@ function PanelSpells(props: { panelHeight: number }) {
     | undefined
   >();
 
-  const { data } = useQuery({
+  const { data: spells } = useQuery({
     queryKey: [`find-spells-and-data`],
     queryFn: async () => {
       if (!character) return null;
 
-      return {
-        spells: await fetchContentAll<Spell>('spell'),
-        data: collectCharacterSpellcasting(character),
-      };
+      return await fetchContentAll<Spell>('spell');
     },
   });
+
+  const charData = useMemo(() => {
+    if (!character) return null;
+    return collectCharacterSpellcasting(character);
+  }, [character]);
 
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
   useEffect(() => {
-    if (!data) return;
+    if (!spells) return;
     search.current.addIndex('name');
     search.current.addIndex('description');
     search.current.addIndex('duration');
@@ -2466,12 +2468,12 @@ function PanelSpells(props: { panelHeight: number }) {
     search.current.addIndex('trigger');
     search.current.addIndex('cost');
     search.current.addIndex('defense');
-    search.current.addDocuments(data.spells);
-  }, [data]);
+    search.current.addDocuments(spells);
+  }, [spells]);
 
   const allSpells = searchQuery.trim()
     ? (search.current?.search(searchQuery.trim()) as Spell[])
-    : data?.spells ?? [];
+    : spells ?? [];
 
   return (
     <Box h='100%'>
@@ -2512,14 +2514,14 @@ function PanelSpells(props: { panelHeight: number }) {
           /> */}
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-          {data && (
+          {charData && (
             <Accordion
               variant='separated'
               multiple
               defaultValue={[
-                ...data.data.sources.map((source) => `spontaneous-${source.name}`),
-                ...data.data.sources.map((source) => `prepared-${source.name}`),
-                ...data.data.sources.map((source) => `focus-${source.name}`),
+                ...charData.sources.map((source) => `spontaneous-${source.name}`),
+                ...charData.sources.map((source) => `prepared-${source.name}`),
+                ...charData.sources.map((source) => `focus-${source.name}`),
                 'innate',
                 // 'ritual',
               ]}
@@ -2538,70 +2540,70 @@ function PanelSpells(props: { panelHeight: number }) {
                 },
               }}
             >
-              {data.data.sources.map((source, index) => (
+              {charData.sources.map((source, index) => (
                 <div key={index}>
                   {source.type.startsWith('SPONTANEOUS-') ? (
                     <>
-                      {data.data.list.filter((d) => d.source === source.name).length > 0 && (
+                      {charData.list.filter((d) => d.source === source.name).length > 0 && (
                         <SpellList
                           index={`spontaneous-${source.name}`}
                           source={source}
-                          spellIds={data.data.list
+                          spellIds={charData.list
                             .filter((d) => d.source === source.name)
                             .map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='SPONTANEOUS'
-                          extra={{ slots: data.data.slots }}
+                          extra={{ slots: charData.slots }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
                         />
                       )}
                     </>
                   ) : (
                     <>
-                      {data.data.list.filter((d) => d.source === source.name).length > 0 && (
+                      {charData.list.filter((d) => d.source === source.name).length > 0 && (
                         <SpellList
                           index={`prepared-${source.name}`}
                           source={source}
-                          spellIds={data.data.list
+                          spellIds={charData.list
                             .filter((d) => d.source === source.name)
                             .map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='PREPARED'
-                          extra={{ slots: data.data.slots }}
+                          extra={{ slots: charData.slots }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
                         />
                       )}
                     </>
                   )}
-                  {data.data.focus.filter((d) => d.source === source.name).length > 0 && (
+                  {charData.focus.filter((d) => d.source === source.name).length > 0 && (
                     <SpellList
                       index={`focus-${source.name}`}
                       source={source}
-                      spellIds={data.data.focus
+                      spellIds={charData.focus
                         .filter((d) => d.source === source.name)
                         .map((d) => d.spell_id)}
                       allSpells={allSpells}
                       type='FOCUS'
-                      extra={{ focusPoints: data.data.focus_points }}
+                      extra={{ focusPoints: charData.focus_points }}
                     />
                   )}
                 </div>
               ))}
 
-              {data.data.innate.length > 0 && (
+              {charData.innate.length > 0 && (
                 <SpellList
                   index={'innate'}
-                  spellIds={data.data.innate.map((d) => d.spell_id)}
+                  spellIds={charData.innate.map((d) => d.spell_id)}
                   allSpells={allSpells}
                   type='INNATE'
-                  extra={{ innates: data.data.innate }}
+                  extra={{ innates: charData.innate }}
                 />
               )}
               {/* Always display ritual section */}
               {true && (
                 <SpellList
                   index={'ritual'}
-                  spellIds={data.data.ritual.map((d) => d.spell_id)}
+                  spellIds={charData.ritual.map((d) => d.spell_id)}
                   allSpells={allSpells}
                   type='RITUAL'
                   openManageSpells={(source, type) => setManageSpells({ source, type })}
