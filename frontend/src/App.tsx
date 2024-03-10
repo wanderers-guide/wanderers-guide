@@ -30,6 +30,7 @@ const ContentFeedbackModal = lazy(() => import('@modals/ContentFeedbackModal'));
 const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
 const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
 const ConditionModal = lazy(() => import('@modals/ConditionModal'));
+const SelectSpellRankModal = lazy(() => import('@modals/SelectSpellRankModal'));
 // const ManageSpellsModal = lazy(() => import('@modals/ManageSpellsModal'));
 
 const modals = {
@@ -41,6 +42,7 @@ const modals = {
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
+  selectSpellRank: SelectSpellRankModal,
   // manageSpells: ManageSpellsModal,
 };
 declare module '@mantine/modals' {

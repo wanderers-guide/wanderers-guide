@@ -13,12 +13,16 @@ import {
   Box,
   Button,
   Center,
+  CloseButton,
+  Divider,
   Group,
   Indicator,
   Loader,
   Menu,
+  MultiSelect,
   Overlay,
   Pagination,
+  Popover,
   ScrollArea,
   Stack,
   Text,
@@ -38,6 +42,7 @@ import {
   IconCircleDotFilled,
   IconCopy,
   IconDots,
+  IconFilter,
   IconQuestionMark,
   IconSearch,
   IconTrash,
@@ -74,6 +79,16 @@ import {
   Spell,
   Trait,
 } from '../../typing/content';
+import { re } from 'mathjs';
+
+interface FilterOptions {
+  options: {
+    title: string;
+    type: 'MULTI-SELECT' | 'SELECT' | 'TRAITS-SELECT' | 'TEXT-INPUT' | 'NUMBER-INPUT' | 'CHECKBOX';
+    key: string;
+    options?: string[] | { label: string; value: string }[];
+  }[];
+}
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -86,7 +101,10 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
+    filterOptions?: FilterOptions;
     filterFn?: (option: T) => boolean;
+    includeDetails?: boolean;
+    includeOptions?: boolean;
   };
 }) {
   const [selected, setSelected] = useState<T | undefined>();
@@ -143,6 +161,8 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
               selectedId: selected?.id,
               // @ts-ignore
               filterFn: props.options?.filterFn,
+              includeDetails: props.options?.includeDetails,
+              includeOptions: props.options?.includeOptions,
             }
           );
         }}
@@ -175,8 +195,11 @@ export function selectContent<T = Record<string, any>>(
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
+    filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
+    includeDetails?: boolean;
+    includeOptions?: boolean;
   }
 ) {
   let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
@@ -205,8 +228,11 @@ export default function SelectContentModal({
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
+    filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
+    includeDetails?: boolean;
+    includeOptions?: boolean;
   };
 }>) {
   const [openedDrawer, setOpenedDrawer] = useState(false);
@@ -215,6 +241,73 @@ export default function SelectContentModal({
 
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
   const [selectedSource, setSelectedSource] = useState<number | 'all'>('all');
+
+  const [filterSelections, setFilterSelections] = useState<Record<string, any>>({});
+  const [openedFilters, setOpenedFilters] = useState(false);
+
+  const updateFilterSelection = (key: string, value: any) => {
+    if (!value || (Array.isArray(value) && value.length === 0)) {
+      // Remove
+      const newFilterSelections = { ...filterSelections };
+      delete newFilterSelections[key];
+      setFilterSelections(newFilterSelections);
+    } else {
+      // Add
+      setFilterSelections((prev) => ({ ...prev, [key]: value }));
+    }
+  };
+
+  const getMergedFilterFn = () => {
+    const newFilterFn = (option: Record<string, any>) => {
+      for (const key of Object.keys(filterSelections)) {
+        const value = option[key];
+        const filterValue = filterSelections[key];
+        if (Array.isArray(value)) {
+          if (Array.isArray(filterValue)) {
+            if (!value.every((val) => filterValue.includes(val))) {
+              return false;
+            }
+          } else {
+            if (!filterValue.includes(value)) {
+              return false;
+            }
+          }
+        } else if (typeof value === 'number') {
+          if (Array.isArray(filterValue)) {
+            if (!filterValue.find((val) => `${val}` === `${value}`)) {
+              return false;
+            }
+          } else {
+            if (`${value}` !== `${filterValue}`) {
+              return false;
+            }
+          }
+        } else if (typeof value === 'string') {
+          if (Array.isArray(filterValue)) {
+            if (!filterValue.find((val) => value.toLowerCase().includes(val.toLowerCase()))) {
+              return false;
+            }
+          } else {
+            if (!value.toLowerCase().includes(filterValue.toLowerCase())) {
+              return false;
+            }
+          }
+        } else if (typeof value === 'boolean') {
+          if (Array.isArray(filterValue)) {
+            if (!filterValue.find((val) => val === value)) {
+              return false;
+            }
+          } else {
+            if (value !== filterValue) {
+              return false;
+            }
+          }
+        }
+      }
+      return innerProps.options?.filterFn ? innerProps.options.filterFn(option) : true;
+    };
+    return newFilterFn;
+  };
 
   const typeName = toLabel(innerProps.options?.abilityBlockType || innerProps.type);
 
@@ -362,6 +455,68 @@ export default function SelectContentModal({
               {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
             </Button>
           )}
+
+          {innerProps.options?.filterOptions && (
+            <Popover
+              width={200}
+              position='bottom'
+              withArrow
+              shadow='md'
+              opened={openedFilters}
+              closeOnClickOutside={false}
+            >
+              <Popover.Target>
+                <Indicator
+                  inline
+                  label={`${Object.keys(filterSelections).length}`}
+                  size={16}
+                  zIndex={1000}
+                  disabled={Object.keys(filterSelections).length === 0}
+                >
+                  <ActionIcon
+                    size='lg'
+                    variant='light'
+                    radius='md'
+                    aria-label='Filters'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setOpenedFilters(!openedFilters);
+                    }}
+                  >
+                    <IconFilter size='1rem' />
+                  </ActionIcon>
+                </Indicator>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <Group wrap='nowrap' justify='space-between'>
+                  <Title order={5}>Filters</Title>
+                  <CloseButton
+                    onClick={() => {
+                      setOpenedFilters(false);
+                    }}
+                  />
+                </Group>
+                <Divider mt={5} />
+                <Stack gap={10}>
+                  {innerProps.options.filterOptions.options.map((option, index) => (
+                    <Box key={index}>
+                      {option.type === 'MULTI-SELECT' && (
+                        <MultiSelect
+                          label={option.title}
+                          data={option.options ?? []}
+                          onChange={(value) => {
+                            updateFilterSelection(option.key, value);
+                          }}
+                          value={filterSelections[option.key] ?? []}
+                        />
+                      )}
+                    </Box>
+                  ))}
+                </Stack>
+              </Popover.Dropdown>
+            </Popover>
+          )}
         </Group>
 
         <SelectionOptions
@@ -376,7 +531,9 @@ export default function SelectContentModal({
             innerProps.onClick(option);
             context.closeModal(id);
           }}
-          filterFn={innerProps.options?.filterFn}
+          filterFn={getMergedFilterFn()}
+          includeOptions={innerProps.options?.includeOptions}
+          includeDetails={innerProps.options?.includeDetails}
         />
       </Stack>
     </Box>
@@ -436,6 +593,8 @@ function SelectionOptions(props: {
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
   filterFn?: (option: Record<string, any>) => boolean;
+  includeOptions?: boolean;
+  includeDetails?: boolean;
 }) {
   const { data, isFetching } = useQuery({
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
@@ -453,10 +612,9 @@ function SelectionOptions(props: {
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
-  let options = data
-    ? [...data.values()].filter((d) => d).filter(props.filterFn ? props.filterFn : () => true)
-    : [];
+  let options = data ? [...data.values()] : [];
   if (props.overrideOptions) options = props.overrideOptions;
+  options = options.filter((d) => d).filter(props.filterFn ? props.filterFn : () => true);
 
   // Filter options based on source
   if (props.sourceId !== undefined && props.sourceId !== 'all') {
@@ -511,6 +669,8 @@ function SelectionOptions(props: {
       isLoading={isFetching || !options}
       onClick={props.onClick}
       selectedId={props.selectedId}
+      includeDetails={props.includeDetails}
+      includeOptions={props.includeOptions}
     />
   );
 }
@@ -524,6 +684,7 @@ export function SelectionOptionsInner(props: {
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   includeOptions?: boolean;
+  includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
   h?: number;
@@ -579,6 +740,7 @@ export function SelectionOptionsInner(props: {
             abilityBlockType={props.abilityBlockType}
             onClick={props.onClick}
             selectedId={props.selectedId}
+            includeDetails={props.includeDetails}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -608,6 +770,7 @@ function SelectionOptionsRoot(props: {
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   includeOptions?: boolean;
+  includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -794,6 +957,7 @@ function SelectionOptionsRoot(props: {
             spell={spell as Spell}
             onClick={props.onClick}
             selected={props.selectedId === spell.id}
+            includeDetails={props.includeDetails}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1115,6 +1279,7 @@ export function GenericSelectionOption(props: {
               <ActionIcon
                 size='sm'
                 variant='subtle'
+                color='gray.5'
                 radius='xl'
                 style={{
                   position: 'absolute',
@@ -1284,6 +1449,7 @@ export function FeatSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -1403,6 +1569,7 @@ export function ActionSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -1537,6 +1704,7 @@ export function ClassFeatureSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -1655,6 +1823,7 @@ export function HeritageSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -1771,6 +1940,7 @@ export function PhysicalFeatureSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -1884,6 +2054,7 @@ export function SenseSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2071,6 +2242,7 @@ export function ClassSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2287,6 +2459,7 @@ export function AncestrySelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2447,6 +2620,7 @@ export function BackgroundSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2592,6 +2766,7 @@ export function ItemSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2724,6 +2899,7 @@ export function SpellSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2834,6 +3010,7 @@ export function TraitSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -2944,6 +3121,7 @@ export function LanguageSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',
@@ -3127,6 +3305,7 @@ export function CreatureSelectionOption(props: {
             <ActionIcon
               size='sm'
               variant='subtle'
+              color='gray.5'
               radius='xl'
               style={{
                 position: 'absolute',

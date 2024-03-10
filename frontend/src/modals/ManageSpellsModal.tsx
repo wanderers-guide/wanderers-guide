@@ -23,7 +23,7 @@ import {
   LoadingOverlay,
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
-import { ContextModalProps } from '@mantine/modals';
+import { ContextModalProps, openContextModal } from '@mantine/modals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, Spell, SpellListEntry, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
@@ -37,6 +37,7 @@ import { drawerState } from '@atoms/navAtoms';
 import * as JsSearch from 'js-search';
 import { VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
+import useRefresh from '@utils/use-refresh';
 
 export default function ManageSpellsModal(props: {
   opened: boolean;
@@ -85,13 +86,29 @@ export default function ManageSpellsModal(props: {
 
   const spells = useMemo(() => {
     const filteredSpells = charData?.list
-      .map((entry) =>
-        allFilteredSpells.find(
+      .map((entry) => {
+        const foundSpell = allFilteredSpells.find(
           (spell) => spell.id === entry.spell_id && entry.source === props.source
-        )
-      )
+        );
+        if (!foundSpell) return null;
+        return {
+          ...foundSpell,
+          rank: entry.rank,
+        } as Spell;
+      })
       .filter((spell) => spell)
-      .filter((spell) => isNormalSpell(spell!)) as Spell[] | undefined;
+      .filter((spell) => isNormalSpell(spell!))
+      .sort((a, b) => {
+        if (a!.rank === 0 && b!.rank === 0) {
+          return a!.name.localeCompare(b!.name);
+        } else if (a!.rank === 0) {
+          return -1;
+        } else if (b!.rank === 0) {
+          return 1;
+        } else {
+          return a!.rank - b!.rank;
+        }
+      }) as Spell[] | undefined;
     return filteredSpells;
   }, [charData, allFilteredSpells]);
 
@@ -115,6 +132,7 @@ export default function ManageSpellsModal(props: {
       <Stack style={{ position: 'relative' }} mx={10}>
         {props.type === 'LIST-ONLY' ? (
           <ListSection
+            selectRank
             spells={spells ?? []}
             source={props.source}
             searchQuery={searchQuery}
@@ -158,6 +176,7 @@ const SlotsSection = (props: {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
+  const [displaySlots, refreshSlots] = useRefresh();
 
   return (
     <ScrollArea pr={14} h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} scrollbars='y'>
@@ -168,97 +187,123 @@ const SlotsSection = (props: {
               {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
             </Text>
             <Divider pt={0} pb={10} />
-            <Group key={index} gap={10}>
-              {props.slots[rank].map((slot, index) => (
-                <Box key={index}>
-                  <SelectContentButton
-                    type='spell'
-                    onClick={(spell) => {
-                      setCharacter((c) => {
-                        if (!c) return c;
+            {displaySlots && (
+              <Group key={index} gap={10}>
+                {props.slots[rank].map((slot, index) => (
+                  <Box key={index}>
+                    <SelectContentButton
+                      type='spell'
+                      onClick={(spell) => {
+                        setCharacter((c) => {
+                          if (!c) return c;
+                          // // Clear any existing slots for this spell
+                          // let slots = (c.spells?.slots ?? []).filter(
+                          //   (entry) =>
+                          //     !(entry.spell_id === slot.spell_id && entry.source === props.source)
+                          // );
+                          // Add the new spell
+                          let slots = c.spells?.slots ?? [];
+                          slots = [
+                            ...slots,
+                            {
+                              rank: parseInt(rank),
+                              source: props.source,
+                              spell_id: spell.id,
+                            },
+                          ];
 
-                        // Clear any existing slots for this spell
-                        let slots = (c.spells?.slots ?? []).filter(
-                          (entry) =>
-                            !(
-                              entry.spell_id === slot.spell_id &&
-                              entry.source === props.source &&
-                              `${entry.rank}` === rank
-                            )
-                        );
+                          console.log('slots', slots);
 
-                        // Add the new spell
-                        slots = [
-                          ...slots,
-                          {
-                            rank: spell.rank,
-                            source: props.source,
-                            spell_id: spell.id,
-                          },
-                        ];
+                          return {
+                            ...c,
+                            spells: {
+                              ...(c.spells ?? {
+                                slots: [],
+                                list: [],
+                                rituals: [],
+                                focus_point_current: 0,
+                                innate_casts: [],
+                              }),
+                              slots: slots,
+                            },
+                          };
+                        });
+                        refreshSlots();
+                      }}
+                      onClear={() => {
+                        setCharacter((c) => {
+                          if (!c) return c;
 
-                        return {
-                          ...c,
-                          spells: {
-                            ...(c.spells ?? {
-                              slots: [],
-                              list: [],
-                              rituals: [],
-                              focus_point_current: 0,
-                              innate_casts: [],
-                            }),
-                            slots: slots,
-                          },
-                        };
-                      });
-                    }}
-                    onClear={() => {
-                      setCharacter((c) => {
-                        if (!c) return c;
+                          const slots = (c.spells?.slots ?? []).filter(
+                            (entry) =>
+                              !(
+                                entry.spell_id === slot.spell_id &&
+                                entry.source === props.source &&
+                                `${entry.rank}` === rank
+                              )
+                          );
 
-                        const slots = (c.spells?.slots ?? []).filter(
-                          (entry) =>
-                            !(
-                              entry.spell_id === slot.spell_id &&
-                              entry.source === props.source &&
-                              `${entry.rank}` === rank
-                            )
-                        );
+                          return {
+                            ...c,
+                            spells: {
+                              ...(c.spells ?? {
+                                slots: [],
+                                list: [],
+                                rituals: [],
+                                focus_point_current: 0,
+                                innate_casts: [],
+                              }),
+                              slots: slots,
+                            },
+                          };
+                        });
+                        refreshSlots();
+                      }}
+                      selectedId={slot.spell_id === -1 ? undefined : slot.spell_id}
+                      options={{
+                        includeDetails: true,
+                        overrideOptions: props.spells,
+                        filterFn: (spell: Spell) => {
+                          // const foundSpell =
+                          //   props.spells !== undefined
+                          //     ? props.spells.find((s) => s.id === spell.id)
+                          //     : undefined;
+                          // if (props.spells !== undefined && !foundSpell) return false;
 
-                        return {
-                          ...c,
-                          spells: {
-                            ...(c.spells ?? {
-                              slots: [],
-                              list: [],
-                              rituals: [],
-                              focus_point_current: 0,
-                              innate_casts: [],
-                            }),
-                            slots: slots,
-                          },
-                        };
-                      });
-                    }}
-                    selectedId={slot.spell_id === -1 ? undefined : slot.spell_id}
-                    options={{
-                      filterFn: (spell: Spell) => {
-                        if (props.spells !== undefined) {
-                          const foundSpell = props.spells.find((s) => s.id === spell.id);
-                          if (!foundSpell) return false;
-                        }
-
-                        if (rank === '0') {
-                          return isNormalSpell(spell) && isCantrip(spell);
-                        } else {
-                          return isNormalSpell(spell) && `${spell.rank}` === rank;
-                        }
-                      },
-                    }}
-                  />
-                </Box>
-              ))}
-            </Group>
+                          if (rank === '0') {
+                            return isNormalSpell(spell) && isCantrip(spell);
+                          } else {
+                            return isNormalSpell(spell) && spell.rank <= parseInt(rank);
+                          }
+                        },
+                        filterOptions: {
+                          options: [
+                            {
+                              title: 'Rank',
+                              type: 'MULTI-SELECT',
+                              options: [
+                                { label: 'Cantrip', value: '0' },
+                                { label: '1st', value: '1' },
+                                { label: '2nd', value: '2' },
+                                { label: '3rd', value: '3' },
+                                { label: '4th', value: '4' },
+                                { label: '5th', value: '5' },
+                                { label: '6th', value: '6' },
+                                { label: '7th', value: '7' },
+                                { label: '8th', value: '8' },
+                                { label: '9th', value: '9' },
+                                { label: '10th', value: '10' },
+                              ],
+                              key: 'rank',
+                            },
+                          ],
+                        },
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Group>
+            )}
           </Box>
         ))}
       </Stack>
@@ -267,6 +312,7 @@ const SlotsSection = (props: {
 };
 
 const ListSection = (props: {
+  selectRank?: boolean;
   spells: Spell[];
   source: string;
   searchQuery: string;
@@ -276,8 +322,48 @@ const ListSection = (props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
+  const [rankSelectSpell, setRankSelectSpell] = useState<Spell | null>(null);
+
+  const addSpell = (option: Spell, rank: number) => {
+    setCharacter((c) => {
+      if (!c) return c;
+
+      const list = [
+        ...(c.spells?.list ?? []),
+        {
+          spell_id: option.id,
+          rank: rank, //option.rank,
+          source: props.source,
+        },
+      ];
+
+      return {
+        ...c,
+        spells: {
+          ...(c.spells ?? {
+            slots: [],
+            list: [],
+            rituals: [],
+            focus_point_current: 0,
+            innate_casts: [],
+          }),
+          list: list,
+        },
+      };
+    });
+  };
+
   return (
     <ScrollArea pr={14} h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} scrollbars='y'>
+      <SelectSpellRankModal
+        spell={rankSelectSpell}
+        onConfirm={(spell, rank) => {
+          if (spell && rank) {
+            addSpell(spell, rank);
+          }
+          setRankSelectSpell(null);
+        }}
+      />
       <Group>
         <TextInput
           style={{ flex: 1 }}
@@ -301,39 +387,46 @@ const ListSection = (props: {
             selectContent<Spell>(
               'spell',
               (option) => {
-                setCharacter((c) => {
-                  if (!c) return c;
-
-                  const list = [
-                    ...(c.spells?.list ?? []),
-                    {
-                      spell_id: option.id,
-                      rank: option.rank,
-                      source: props.source,
-                    },
-                  ];
-
-                  return {
-                    ...c,
-                    spells: {
-                      ...(c.spells ?? {
-                        slots: [],
-                        list: [],
-                        rituals: [],
-                        focus_point_current: 0,
-                        innate_casts: [],
-                      }),
-                      list: list,
-                    },
-                  };
-                });
+                if (option.rank === 0 || option.rank === 10) {
+                  addSpell(option, option.rank);
+                } else {
+                  if (props.selectRank) {
+                    setRankSelectSpell(option);
+                  } else {
+                    addSpell(option, option.rank);
+                  }
+                }
               },
               {
+                includeDetails: true,
                 groupBySource: true,
                 overrideLabel: 'Add Spell',
 
                 filterFn: (spellRec: Record<string, any>) => {
                   return isNormalSpell(spellRec as Spell);
+                },
+
+                filterOptions: {
+                  options: [
+                    {
+                      title: 'Rank',
+                      type: 'MULTI-SELECT',
+                      options: [
+                        { label: 'Cantrip', value: '0' },
+                        { label: '1st', value: '1' },
+                        { label: '2nd', value: '2' },
+                        { label: '3rd', value: '3' },
+                        { label: '4th', value: '4' },
+                        { label: '5th', value: '5' },
+                        { label: '6th', value: '6' },
+                        { label: '7th', value: '7' },
+                        { label: '8th', value: '8' },
+                        { label: '9th', value: '9' },
+                        { label: '10th', value: '10' },
+                      ],
+                      key: 'rank',
+                    },
+                  ],
                 },
               }
             );
@@ -352,9 +445,6 @@ const ListSection = (props: {
             onDelete={(spellId) => {
               setCharacter((c) => {
                 if (!c) return c;
-
-                console.log(c.spells?.list);
-                console.log(spellId);
 
                 const list = (c.spells?.list ?? []).filter((entry) => {
                   return !(entry.spell_id === spellId && entry.source === props.source);
@@ -381,5 +471,36 @@ const ListSection = (props: {
         ))}
       </Stack>
     </ScrollArea>
+  );
+};
+
+const SelectSpellRankModal = (props: {
+  spell: Spell | null;
+  onConfirm: (spell: Spell | null, rank: number | null) => void;
+}) => {
+  const getRankOptions = (X: number): number[] => Array.from({ length: 11 - X }, (_, i) => X + i);
+
+  return (
+    <Modal
+      opened={!!props.spell}
+      onClose={() => props.onConfirm(null, null)}
+      title={<Title order={3}>Select {props.spell?.name}'s Rank</Title>}
+    >
+      <Stack gap={10}>
+        {props.spell &&
+          getRankOptions(props.spell.rank).map((rank) => (
+            <Button
+              key={rank}
+              onClick={() => {
+                props.onConfirm(props.spell, rank);
+              }}
+              variant='light'
+              fullWidth
+            >
+              {rankNumber(rank)}
+            </Button>
+          ))}
+      </Stack>
+    </Modal>
   );
 };
