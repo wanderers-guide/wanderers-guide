@@ -11,6 +11,7 @@ import {
   upsertItem,
   upsertSpell,
   upsertTrait,
+  upsertLanguage,
 } from '@content/content-creation';
 import { fetchContentPackage, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
@@ -64,6 +65,7 @@ import { CreateClassModal } from './CreateClassModal';
 import { CreateItemModal } from './CreateItemModal';
 import { CreateSpellModal } from './CreateSpellModal';
 import { CreateTraitModal } from './CreateTraitModal';
+import { CreateLanguageModal } from './CreateLanguageModal';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -965,6 +967,28 @@ function ContentList<
               showNotification({
                 title: `Updated ${result.name}`,
                 message: `Successfully updated trait.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'language' && openedId && (
+        <CreateLanguageModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (language) => {
+            language.content_source_id = props.sourceId;
+            const result = await upsertLanguage(language);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated language.`,
                 autoClose: 3000,
               });
             }
