@@ -18,7 +18,7 @@ import {
   getTraitIds,
   stripFoundryLinking,
 } from './foundry-utils';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { uploadCreatureHandler } from './creature-import';
 import { throwError } from '@utils/notifications';
 import {
@@ -40,7 +40,7 @@ import { convertCastToActionCost } from '@utils/actions';
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
 
-const DEBUG = false;
+const DEBUG = true;
 
 let uploadStats: {
   total: number;
@@ -406,6 +406,7 @@ async function uploadSpell(
     meta_data: {
       damage: Object.values(json.system?.damage?.value ?? {}),
       type: json.system?.spellType?.value,
+      ritual: json.system?.ritual,
       foundry: {
         rules: json.system?.rules,
         tags: json.system?.traits?.otherTags,

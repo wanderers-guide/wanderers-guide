@@ -1,169 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  Avatar,
-  Text,
-  Group,
-  Stack,
-  Button,
-  Stepper,
-  Box,
-  Center,
-  TextInput,
-  NumberInput,
-  Select,
-  PasswordInput,
-  Tabs,
-  rem,
-  Switch,
-  ScrollArea,
-  ActionIcon,
-  useMantineTheme,
-  LoadingOverlay,
-  Title,
-  Menu,
-  Paper,
-  Badge,
-  SegmentedControl,
-  Accordion,
-  Pill,
-  Divider,
-  Textarea,
-  SimpleGrid,
-  RingProgress,
-  Grid,
-} from '@mantine/core';
-import BlurBox from '@common/BlurBox';
-import {
-  IconPhoto,
-  IconMessageCircle,
-  IconSettings,
-  IconBooks,
-  IconAsset,
-  IconVocabulary,
-  IconWorld,
-  IconBook2,
-  IconBrandSafari,
-  IconMap,
-  IconNotebook,
-  IconDots,
-  IconUsers,
-  IconArrowRight,
-  IconArrowLeft,
-  IconTools,
-  IconHome,
-  IconUser,
-  IconHammer,
-  IconPhotoPlus,
-  IconUserCircle,
-  IconUserScan,
-  IconPhotoUp,
-  IconUserPlus,
-  IconRefresh,
-  IconRefreshDot,
-  IconAdjustments,
-  IconListDetails,
-  IconPaw,
-  IconCaretLeftRight,
-  IconBadgesFilled,
-  IconSword,
-  IconBackpack,
-  IconFlare,
-  IconNotes,
-  IconSearch,
-  IconPlus,
-  IconExternalLink,
-  IconStarFilled,
-  IconStar,
-  IconRosette,
-  IconRosetteFilled,
-  IconJewishStar,
-  IconJewishStarFilled,
-} from '@tabler/icons-react';
-import { LinksGroup } from '@common/LinksGroup';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  AbilityBlock,
-  ActionCost,
-  Character,
-  Condition,
-  ContentPackage,
-  ContentSource,
-  Inventory,
-  InventoryItem,
-  Item,
-  Rarity,
-} from '@typing/content';
-import { makeRequest } from '@requests/request-manager';
-import { useLoaderData, useNavigate } from 'react-router-dom';
-import {
-  getHotkeyHandler,
-  useDebouncedState,
-  useDebouncedValue,
-  useDidUpdate,
-  useHover,
-  useInterval,
-} from '@mantine/hooks';
-import { modals, openContextModal } from '@mantine/modals';
-import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
+import ArmorIcon from '@assets/images/ArmorIcon';
+import BoxIcon from '@assets/images/BoxIcon';
+import D20Loader from '@assets/images/D20Loader';
+import HeroPointIcon from '@assets/images/HeroPointIcon';
+import PerceptionIcon from '@assets/images/PerceptionIcon';
+import ShieldIcon from '@assets/images/ShieldIcon';
+import SpeedIcon from '@assets/images/SpeedIcon';
+import CopperCoin from '@assets/images/currency/copper.png';
+import GoldCoin from '@assets/images/currency/gold.png';
+import PlatinumCoin from '@assets/images/currency/platinum.png';
+import SilverCoin from '@assets/images/currency/silver.png';
 import { characterState } from '@atoms/characterAtoms';
-import { setPageTitle } from '@utils/document-change';
-import { isPlayable } from '@utils/character';
-import { JSendResponse } from '@typing/requests';
-import _, { set } from 'lodash';
-import { defineDefaultSources, fetchContentAll, fetchContentPackage } from '@content/content-store';
-import { isCharacterSheetMobile } from '@utils/screen-sizes';
-import * as JsSearch from 'js-search';
-import {
-  getAllArmorGroupVariables,
-  getAllArmorVariables,
-  getAllAttributeVariables,
-  getAllSaveVariables,
-  getAllSkillVariables,
-  getAllWeaponGroupVariables,
-  getAllWeaponVariables,
-  getVariable,
-  getVariables,
-} from '@variables/variable-manager';
-import { VariableAttr, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
-import { toLabel } from '@utils/strings';
-import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
-import {
-  displayAttributeValue,
-  displayFinalProfValue,
-  getFinalAcValue,
-  getFinalHealthValue,
-} from '@variables/variable-display';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
-import TraitsDisplay from '@common/TraitsDisplay';
-import D20Loader from '@assets/images/D20Loader';
-import { executeCharacterOperations } from '@operations/operation-controller';
-import { OperationResultPackage } from '@typing/operations';
-import { Icon } from '@common/Icon';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER } from '@constants/data';
-import classes from '@css/FaqSimple.module.css';
+import BlurBox from '@common/BlurBox';
+import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
 import ClickEditText from '@common/ClickEditText';
-import TokenSelect from '@common/TokenSelect';
 import ConditionPill from '@common/ConditionPill';
-import * as math from 'mathjs';
-import { interpolateHealth } from '@utils/colors';
-import BlurButton from '@common/BlurButton';
-import ArmorIcon from '@assets/images/ArmorIcon';
-import ShieldIcon from '@assets/images/ShieldIcon';
-import PerceptionIcon from '@assets/images/PerceptionIcon';
-import SpeedIcon from '@assets/images/SpeedIcon';
-import ClassDcIcon from '@assets/images/FancyBoxIcon';
-import CircleIcon from '@assets/images/CircleIcon';
-import BoxIcon from '@assets/images/BoxIcon';
-import HeroPointIcon from '@assets/images/HeroPointIcon';
+import { Icon } from '@common/Icon';
+import { ItemIcon } from '@common/ItemIcon';
+import TokenSelect from '@common/TokenSelect';
+import TraitsDisplay from '@common/TraitsDisplay';
+import RichTextInput from '@common/rich_text_input/RichTextInput';
 import {
   ClassFeatureSelectionOption,
   FeatSelectionOption,
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
+  SpellSelectionOption,
   selectContent,
 } from '@common/select/SelectContent';
 import {
@@ -172,15 +36,15 @@ import {
   getAllConditions,
   getConditionByName,
 } from '@conditions/condition-handler';
-import tinyInputClasses from '@css/TinyBlurInput.module.css';
-import { collectCharacterAbilityBlocks } from '@content/collect-content';
-import CopperCoin from '@assets/images/currency/copper.png';
-import SilverCoin from '@assets/images/currency/silver.png';
-import GoldCoin from '@assets/images/currency/gold.png';
-import PlatinumCoin from '@assets/images/currency/platinum.png';
+import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER } from '@constants/data';
+import {
+  collectCharacterAbilityBlocks,
+  collectCharacterSpellcasting,
+} from '@content/collect-content';
+import { defineDefaultSources, fetchContentAll, fetchContentPackage } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
-import { BuyItemModal } from '@modals/BuyItemModal';
-import { ItemIcon } from '@common/ItemIcon';
+import classes from '@css/FaqSimple.module.css';
+import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { priceToString } from '@items/currency-handler';
 import {
   getBestArmor,
@@ -199,9 +63,111 @@ import {
   labelizeBulk,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
-import { sign } from '@utils/numbers';
+import {
+  Accordion,
+  ActionIcon,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Center,
+  Divider,
+  Grid,
+  Group,
+  Menu,
+  Paper,
+  Pill,
+  RingProgress,
+  ScrollArea,
+  SegmentedControl,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+  rem,
+  useMantineTheme,
+} from '@mantine/core';
+import {
+  getHotkeyHandler,
+  useDebouncedValue,
+  useDidUpdate,
+  useHover,
+  useInterval,
+} from '@mantine/hooks';
+import { modals, openContextModal } from '@mantine/modals';
+import { BuyItemModal } from '@modals/BuyItemModal';
+import ManageSpellsModal from '@modals/ManageSpellsModal';
+import { executeCharacterOperations } from '@operations/operation-controller';
+import { StatButton } from '@pages/character_builder/CharBuilderCreation';
+import { makeRequest } from '@requests/request-manager';
+import {
+  IconBackpack,
+  IconBadgesFilled,
+  IconCaretLeftRight,
+  IconDots,
+  IconExternalLink,
+  IconFlare,
+  IconJewishStar,
+  IconJewishStarFilled,
+  IconListDetails,
+  IconNotebook,
+  IconNotes,
+  IconPaw,
+  IconPlus,
+  IconSearch,
+  IconSettings,
+  IconSquareRounded,
+  IconSquareRoundedFilled,
+} from '@tabler/icons-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AbilityBlock,
+  ActionCost,
+  CastingSource,
+  Character,
+  ContentPackage,
+  Inventory,
+  InventoryItem,
+  Item,
+  Rarity,
+  Spell,
+  SpellInnateEntry,
+  SpellSlot,
+} from '@typing/content';
+import { OperationResultPackage } from '@typing/operations';
+import { JSendResponse } from '@typing/requests';
+import { VariableAttr, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
+import { interpolateHealth } from '@utils/colors';
+import { setPageTitle } from '@utils/document-change';
+import { rankNumber, sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
+import {
+  displayAttributeValue,
+  displayFinalProfValue,
+  getFinalAcValue,
+  getFinalHealthValue,
+} from '@variables/variable-display';
+import {
+  getAllArmorGroupVariables,
+  getAllArmorVariables,
+  getAllSaveVariables,
+  getAllSkillVariables,
+  getAllWeaponGroupVariables,
+  getAllWeaponVariables,
+  getVariable,
+} from '@variables/variable-manager';
+import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
+import * as JsSearch from 'js-search';
+import * as _ from 'lodash-es';
+import { evaluate } from 'mathjs/number';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLoaderData, useNavigate } from 'react-router-dom';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 
-export default function CharacterSheetPage(props: {}) {
+export function Component(props: {}) {
   setPageTitle(`Sheet`);
 
   const { characterId } = useLoaderData() as {
@@ -273,7 +239,7 @@ function confirmHealth(
 
   let result = -1;
   try {
-    result = math.evaluate(hp);
+    result = evaluate(hp);
   } catch (e) {
     result = parseInt(hp);
   }
@@ -326,7 +292,7 @@ function confirmExperience(
 ) {
   let result = -1;
   try {
-    result = math.evaluate(exp);
+    result = evaluate(exp);
   } catch (e) {
     result = parseInt(exp);
   }
@@ -627,13 +593,22 @@ function CharacterInfoSection() {
             color='gray.5'
             nameCutOff={20}
             onClickAncestry={() => {
-              openDrawer({ type: 'ancestry', data: { id: character?.details?.ancestry?.id } });
+              openDrawer({
+                type: 'ancestry',
+                data: { id: character?.details?.ancestry?.id },
+              });
             }}
             onClickBackground={() => {
-              openDrawer({ type: 'background', data: { id: character?.details?.background?.id } });
+              openDrawer({
+                type: 'background',
+                data: { id: character?.details?.background?.id },
+              });
             }}
             onClickClass={() => {
-              openDrawer({ type: 'class', data: { id: character?.details?.class?.id } });
+              openDrawer({
+                type: 'class',
+                data: { id: character?.details?.class?.id },
+              });
             }}
           />
           <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
@@ -769,7 +744,7 @@ function HealthSection() {
                 onChange={(value) => {
                   let result = -1;
                   try {
-                    result = math.evaluate(value);
+                    result = evaluate(value);
                   } catch (e) {
                     result = parseInt(value);
                   }
@@ -868,7 +843,7 @@ function ConditionSection() {
                 <IconPlus size='1rem' stroke={1.5} />
               </ActionIcon>
             </Group>
-            <ScrollArea h={70}>
+            <ScrollArea h={70} scrollbars='y'>
               <Group gap={5} justify='center'>
                 {compiledConditions(character?.details?.conditions ?? []).map(
                   (condition, index) => (
@@ -991,12 +966,21 @@ function ConditionSection() {
               <Group justify='center'>
                 <TokenSelect
                   count={3}
+                  onChange={(v) => {
+                    setCharacter((c) => {
+                      if (!c) return c;
+                      return {
+                        ...c,
+                        hero_points: v,
+                      };
+                    });
+                  }}
                   size='xs'
                   emptySymbol={
                     <ActionIcon
                       variant='transparent'
                       color='gray.1'
-                      aria-label='Hero Point Empty'
+                      aria-label='Hero Point, Empty'
                       size='xs'
                       style={{ opacity: 0.7 }}
                     >
@@ -1007,7 +991,7 @@ function ConditionSection() {
                     <ActionIcon
                       variant='transparent'
                       color='gray.1'
-                      aria-label='Hero Point Full'
+                      aria-label='Hero Point, Full'
                       size='xs'
                       style={{ opacity: 0.7 }}
                     >
@@ -1165,6 +1149,7 @@ function ArmorSection(props: {
                     openDrawer({
                       type: 'inv-item',
                       data: {
+                        zIndex: 100,
                         invItem: _.cloneDeep(bestShield),
                         onItemUpdate: (newInvItem: InventoryItem) => {
                           handleUpdateItem(props.setInventory, newInvItem);
@@ -1585,7 +1570,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
               },
             }}
           />
-          <ScrollArea h={props.panelHeight - 50}>
+          <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
             <Stack gap={5}>
               {getAllSkillVariables('CHARACTER')
                 .filter((skill) => skill.name !== 'SKILL_LORE____')
@@ -1647,6 +1632,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 aria-label='Filter One Action'
                 style={{
                   backgroundColor: actionTypeFilter === 'ALL' ? theme.colors.dark[6] : undefined,
+                  borderColor: actionTypeFilter === 'ALL' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('ALL');
@@ -1663,6 +1649,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 style={{
                   backgroundColor:
                     actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
+                  borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('ONE-ACTION');
@@ -1679,6 +1666,8 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 style={{
                   backgroundColor:
                     actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
+                  borderColor:
+                    actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('TWO-ACTIONS');
@@ -1695,6 +1684,8 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 style={{
                   backgroundColor:
                     actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
+                  borderColor:
+                    actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('THREE-ACTIONS');
@@ -1711,6 +1702,8 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 style={{
                   backgroundColor:
                     actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
+                  borderColor:
+                    actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('FREE-ACTION');
@@ -1727,6 +1720,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 style={{
                   backgroundColor:
                     actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
+                  borderColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('REACTION');
@@ -1736,7 +1730,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
               </ActionIcon>
             </Group>
           </Group>
-          <ScrollArea h={props.panelHeight - 50}>
+          <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
             <Accordion
               value={actionSectionValue}
               onChange={setActionSectionValue}
@@ -1933,6 +1927,7 @@ function PanelInventory(props: {
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
+  const theme = useMantineTheme();
   const [character, setCharacter] = useRecoilState(characterState);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -1988,6 +1983,7 @@ function PanelInventory(props: {
           <CurrencySection character={character} />
           <Button
             color='dark.6'
+            style={{ borderColor: theme.colors.dark[4] }}
             radius='md'
             fw={500}
             rightSection={<IconPlus size='1.0rem' />}
@@ -2010,7 +2006,7 @@ function PanelInventory(props: {
             Add Item
           </Button>
         </Group>
-        <ScrollArea h={props.panelHeight - 50}>
+        <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           <Grid w={'100%'}>
             <Grid.Col span='auto'>
               <Text ta='left' fz='xs' pl={5}>
@@ -2081,6 +2077,7 @@ function PanelInventory(props: {
                             openDrawer({
                               type: 'inv-item',
                               data: {
+                                zIndex: 100,
                                 invItem: _.cloneDeep(invItem),
                                 onItemUpdate: (newInvItem: InventoryItem) => {
                                   handleUpdateItem(props.setInventory, newInvItem);
@@ -2109,6 +2106,7 @@ function PanelInventory(props: {
                                 openDrawer({
                                   type: 'inv-item',
                                   data: {
+                                    zIndex: 100,
                                     invItem: _.cloneDeep(containedItem),
                                     onItemUpdate: (newInvItem: InventoryItem) => {
                                       handleUpdateItem(props.setInventory, newInvItem);
@@ -2159,6 +2157,7 @@ function PanelInventory(props: {
                           openDrawer({
                             type: 'inv-item',
                             data: {
+                              zIndex: 100,
                               invItem: _.cloneDeep(invItem),
                               onItemUpdate: (newInvItem: InventoryItem) => {
                                 handleUpdateItem(props.setInventory, newInvItem);
@@ -2428,7 +2427,693 @@ function InvItemOption(props: {
 }
 
 function PanelSpells(props: { panelHeight: number }) {
+  const theme = useMantineTheme();
+  const character = useRecoilValue(characterState);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [section, setSection] = useState<string>();
+  const [manageSpells, setManageSpells] = useState<
+    | {
+        source: string;
+        type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+      }
+    | undefined
+  >();
+
+  const { data: spells } = useQuery({
+    queryKey: [`find-spells-and-data`],
+    queryFn: async () => {
+      if (!character) return null;
+
+      return await fetchContentAll<Spell>('spell');
+    },
+  });
+
+  const charData = useMemo(() => {
+    if (!character) return null;
+    return collectCharacterSpellcasting(character);
+  }, [character]);
+
+  // Filter options based on search query
+  const search = useRef(new JsSearch.Search('id'));
+  useEffect(() => {
+    if (!spells) return;
+    search.current.addIndex('name');
+    search.current.addIndex('description');
+    search.current.addIndex('duration');
+    search.current.addIndex('targets');
+    search.current.addIndex('area');
+    search.current.addIndex('range');
+    search.current.addIndex('requirements');
+    search.current.addIndex('trigger');
+    search.current.addIndex('cost');
+    search.current.addIndex('defense');
+    search.current.addDocuments(spells);
+  }, [spells]);
+
+  const allSpells = searchQuery.trim()
+    ? (search.current?.search(searchQuery.trim()) as Spell[])
+    : spells ?? [];
+
+  return (
+    <Box h='100%'>
+      <Stack gap={5}>
+        <Group>
+          <TextInput
+            style={{ flex: 1 }}
+            leftSection={<IconSearch size='0.9rem' />}
+            placeholder={`Search spells`}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              },
+            }}
+          />
+          {/* <SegmentedControl
+            value={section}
+            onChange={setSection}
+            disabled={!!searchQuery.trim()}
+            data={[
+              { label: 'Spells', value: 'NORMAL' },
+              { label: 'Focus', value: 'FOCUS' },
+              { label: 'Innate', value: 'INNATE' },
+            ].filter((section) => {
+              if (!data) return false;
+
+              if (section.value === 'FOCUS') {
+                return data.data.focus.length > 0;
+              }
+              if (section.value === 'INNATE') {
+                return data.data.innate.length > 0;
+              }
+              if (section.value === 'NORMAL') {
+                return data.data.slots.length > 0;
+              }
+            })}
+          /> */}
+        </Group>
+        <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+          {charData && (
+            <Accordion
+              variant='separated'
+              multiple
+              defaultValue={[
+                ...charData.sources.map((source) => `spontaneous-${source.name}`),
+                ...charData.sources.map((source) => `prepared-${source.name}`),
+                ...charData.sources.map((source) => `focus-${source.name}`),
+                'innate',
+                // 'ritual',
+              ]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {charData.sources.map((source, index) => (
+                <div key={index}>
+                  {source.type.startsWith('SPONTANEOUS-') ? (
+                    <>
+                      {charData.list.filter((d) => d.source === source.name).length > 0 && (
+                        <SpellList
+                          index={`spontaneous-${source.name}`}
+                          source={source}
+                          spellIds={charData.list
+                            .filter((d) => d.source === source.name)
+                            .map((d) => d.spell_id)}
+                          allSpells={allSpells}
+                          type='SPONTANEOUS'
+                          extra={{ slots: charData.slots }}
+                          openManageSpells={(source, type) => setManageSpells({ source, type })}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {charData.list.filter((d) => d.source === source.name).length > 0 && (
+                        <SpellList
+                          index={`prepared-${source.name}`}
+                          source={source}
+                          spellIds={charData.list
+                            .filter((d) => d.source === source.name)
+                            .map((d) => d.spell_id)}
+                          allSpells={allSpells}
+                          type='PREPARED'
+                          extra={{ slots: charData.slots }}
+                          openManageSpells={(source, type) => setManageSpells({ source, type })}
+                        />
+                      )}
+                    </>
+                  )}
+                  {charData.focus.filter((d) => d.source === source.name).length > 0 && (
+                    <SpellList
+                      index={`focus-${source.name}`}
+                      source={source}
+                      spellIds={charData.focus
+                        .filter((d) => d.source === source.name)
+                        .map((d) => d.spell_id)}
+                      allSpells={allSpells}
+                      type='FOCUS'
+                      extra={{ focusPoints: charData.focus_points }}
+                    />
+                  )}
+                </div>
+              ))}
+
+              {charData.innate.length > 0 && (
+                <SpellList
+                  index={'innate'}
+                  spellIds={charData.innate.map((d) => d.spell_id)}
+                  allSpells={allSpells}
+                  type='INNATE'
+                  extra={{ innates: charData.innate }}
+                />
+              )}
+              {/* Always display ritual section */}
+              {true && (
+                <SpellList
+                  index={'ritual'}
+                  spellIds={charData.ritual.map((d) => d.spell_id)}
+                  allSpells={allSpells}
+                  type='RITUAL'
+                  openManageSpells={(source, type) => setManageSpells({ source, type })}
+                />
+              )}
+            </Accordion>
+          )}
+        </ScrollArea>
+      </Stack>
+      {manageSpells && (
+        <ManageSpellsModal
+          opened={!!manageSpells}
+          onClose={() => setManageSpells(undefined)}
+          source={manageSpells.source}
+          type={manageSpells.type}
+        />
+      )}
+    </Box>
+  );
+}
+
+function SpellList(props: {
+  index: string;
+  source?: CastingSource;
+  spellIds: number[];
+  allSpells: Spell[];
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
+  extra?: {
+    slots?: SpellSlot[];
+    innates?: SpellInnateEntry[];
+    focusPoints?: {
+      current: number;
+      max: number;
+    };
+  };
+  openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
+}) {
+  // Display spells in an ordered list by rank
+  const spells = useMemo(() => {
+    const filteredSpells = props.spellIds
+      .map((id) => props.allSpells.find((spell) => spell.id === id))
+      .filter((spell) => spell) as Spell[];
+    return _.groupBy(filteredSpells, 'rank');
+  }, [props.spellIds, props.allSpells]);
+
+  const slots = useMemo(() => {
+    if (!props.extra?.slots || props.extra.slots.length === 0) return null;
+
+    const mappedSlots = props.extra.slots.map((slot) => ({
+      ...slot,
+      spell: props.allSpells.find((spell) => spell.id === slot.spell_id),
+    }));
+    return _.groupBy(mappedSlots, 'rank');
+  }, [props.extra?.slots, props.allSpells]);
+
+  const innateSpells = useMemo(() => {
+    const filteredSpells = props.extra?.innates
+      ?.map((innate) => ({
+        ...innate,
+        spell: props.allSpells.find((spell) => spell.id === innate.spell_id),
+      }))
+      .filter((innate) => innate.spell);
+    return _.groupBy(filteredSpells, 'rank');
+  }, [props.extra?.innates, props.allSpells]);
+
+  if (props.type === 'PREPARED' && props.source) {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              {variableNameToLabel(props.source.name)} Spells
+            </Text>
+            <Box mr={10}>
+              <BlurButton
+                size='xs'
+                fw={500}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  props.openManageSpells?.(
+                    props.source!.name,
+                    props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                  );
+                }}
+              >
+                Manage
+              </BlurButton>
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {slots &&
+                Object.keys(slots)
+                  .filter((rank) => slots[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item key={index} value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Text c='gray.5' fw={700} fz='sm'>
+                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                          </Text>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {slots[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {slots[rank].map((slot, index) => (
+                            <SpellListEntry key={index} spell={slot.spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  if (props.type === 'SPONTANEOUS' && props.source) {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              {variableNameToLabel(props.source.name)} Spells
+            </Text>
+            <Box mr={10}>
+              <BlurButton
+                size='xs'
+                fw={500}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  props.openManageSpells?.(props.source!.name, 'LIST-ONLY');
+                }}
+              >
+                Manage
+              </BlurButton>
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {slots &&
+                Object.keys(slots)
+                  .filter((rank) => slots[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Box>
+                            <Text c='gray.5' fw={700} fz='sm' w={100}>
+                              {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                            </Text>
+                            <SpellSlotSelect
+                              count={slots[rank]?.filter((slot) => `${slot.rank}` === rank).length}
+                              onChange={(v) => {}}
+                            />
+                          </Box>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {spells[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {spells[rank].map((spell, index) => (
+                            <SpellListEntry key={index} spell={spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  if (props.type === 'FOCUS' && props.source && props.extra?.focusPoints) {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              {variableNameToLabel(props.source.name)} Focus Spells
+            </Text>
+            <Box mr={10}>
+              <SpellSlotSelect count={props.extra?.focusPoints.max} onChange={(v) => {}} />
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {spells &&
+                Object.keys(spells)
+                  .filter((rank) => spells[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Text c='gray.5' fw={700} fz='sm'>
+                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                          </Text>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {spells[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {spells[rank].map((spell, index) => (
+                            <SpellListEntry key={index} spell={spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  if (props.type === 'INNATE' && props.extra?.innates) {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Text c='gray.5' fw={700} fz='sm'>
+              Innate Spells
+            </Text>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={0}>
+            <Divider color='dark.6' />
+            <Accordion
+              px={10}
+              variant='separated'
+              multiple
+              defaultValue={[]}
+              styles={{
+                label: {
+                  paddingTop: 5,
+                  paddingBottom: 5,
+                },
+                control: {
+                  paddingLeft: 13,
+                  paddingRight: 13,
+                },
+                item: {
+                  marginTop: 0,
+                  marginBottom: 5,
+                },
+              }}
+            >
+              {innateSpells &&
+                Object.keys(innateSpells)
+                  .filter((rank) => innateSpells[rank].length > 0)
+                  .map((rank, index) => (
+                    <Accordion.Item value={`rank-group-${index}`}>
+                      <Accordion.Control>
+                        <Group wrap='nowrap' justify='space-between' gap={0}>
+                          <Text c='gray.5' fw={700} fz='sm'>
+                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+                          </Text>
+                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                            <Text fz='sm' c='gray.5' span>
+                              {innateSpells[rank].length}
+                            </Text>
+                          </Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={5}>
+                          {innateSpells[rank].map((innate, index) => (
+                            <SpellListEntry key={index} spell={innate.spell} />
+                          ))}
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  ))}
+            </Accordion>
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
+  if (props.type === 'RITUAL') {
+    return (
+      <Accordion.Item value={props.index}>
+        <Accordion.Control>
+          <Group wrap='nowrap' justify='space-between' gap={0}>
+            <Group gap={10}>
+              <Text c='gray.5' fw={700} fz='sm'>
+                Rituals
+              </Text>
+              <Badge variant='outline' color='gray.5' size='xs'>
+                <Text fz='sm' c='gray.5' span>
+                  {props.spellIds.length}
+                </Text>
+              </Badge>
+            </Group>
+
+            <Box mr={10}>
+              <BlurButton
+                size='xs'
+                fw={500}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                Manage
+              </BlurButton>
+            </Box>
+          </Group>
+        </Accordion.Control>
+        <Accordion.Panel
+          styles={{
+            content: {
+              padding: 0,
+            },
+          }}
+        >
+          <Stack gap={5}>
+            <Divider color='dark.6' />
+            {spells &&
+              Object.keys(spells)
+                .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])
+                .map((spell, index) => <SpellListEntry key={index} spell={spell} />)}
+
+            {props.spellIds.length === 0 && (
+              <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
+                No rituals known
+              </Text>
+            )}
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+    );
+  }
+
   return null;
+}
+
+function SpellListEntry(props: { spell?: Spell }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  if (props.spell) {
+    return (
+      <SpellSelectionOption
+        spell={props.spell}
+        onClick={() => {
+          openDrawer({
+            type: 'spell',
+            data: { id: props.spell?.id },
+            extra: { addToHistory: true },
+          });
+        }}
+      />
+    );
+  }
+
+  return (
+    <StatButton
+      onClick={() => {
+        // Open manage spells drawer
+      }}
+    >
+      <Text fz='xs' fs='italic' fw={500}>
+        No Spell Prepared
+      </Text>
+    </StatButton>
+  );
+}
+
+function SpellSlotSelect(props: { count: number; onChange: (v: number) => void }) {
+  return (
+    <TokenSelect
+      count={props.count}
+      onChange={props.onChange}
+      size='xs'
+      emptySymbol={
+        <ActionIcon
+          variant='transparent'
+          color='gray.1'
+          aria-label='Spell Slot, Unused'
+          size='xs'
+          style={{ opacity: 0.7 }}
+        >
+          <IconSquareRounded size='0.8rem' />
+        </ActionIcon>
+      }
+      fullSymbol={
+        <ActionIcon
+          variant='transparent'
+          color='gray.1'
+          aria-label='Spell Slot, Exhuasted'
+          size='xs'
+          style={{ opacity: 0.7 }}
+        >
+          <IconSquareRoundedFilled size='0.8rem' />
+        </ActionIcon>
+      }
+    />
+  );
 }
 
 function PanelFeatsFeatures(props: { panelHeight: number }) {
@@ -2456,16 +3141,25 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
     search.current.addIndex('description');
     search.current.addIndex('_group');
     search.current.addDocuments([
-      ...rawData.ancestryFeats.map((feat) => ({ ...feat, _group: 'ancestryFeats' })),
+      ...rawData.ancestryFeats.map((feat) => ({
+        ...feat,
+        _group: 'ancestryFeats',
+      })),
       ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
       ...rawData.generalAndSkillFeats.map((feat) => ({
         ...feat,
         _group: 'generalAndSkillFeats',
       })),
       ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
-      ...rawData.classFeatures.map((feat) => ({ ...feat, _group: 'classFeatures' })),
+      ...rawData.classFeatures.map((feat) => ({
+        ...feat,
+        _group: 'classFeatures',
+      })),
       ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
-      ...rawData.physicalFeatures.map((feat) => ({ ...feat, _group: 'physicalFeatures' })),
+      ...rawData.physicalFeatures.map((feat) => ({
+        ...feat,
+        _group: 'physicalFeatures',
+      })),
     ]);
   }, [rawData]);
 
@@ -2518,7 +3212,7 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
             ]}
           />
         </Group>
-        <ScrollArea h={props.panelHeight - 50}>
+        <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {data && (section === 'FEATS' || searchQuery.trim()) && (
             <Accordion
               variant='separated'
@@ -2782,6 +3476,7 @@ function PanelCompanions(props: { panelHeight: number }) {
 }
 
 function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
+  const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [character, setCharacter] = useRecoilState(characterState);
@@ -2816,7 +3511,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
       >
         <Stack gap={10}>
           <Title order={4}>Information</Title>
-          <ScrollArea h={props.panelHeight - 60}>
+          <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
             <Box w={280}>
               <Stack gap={5}>
                 <TextInput
@@ -3106,7 +3801,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
       >
         <Stack gap={10}>
           <Title order={4}>Languages</Title>
-          <ScrollArea h={props.panelHeight - 60}>
+          <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
             <Box w={280}>
               <Pill.Group>
                 {languages.map((language, index) => (
@@ -3117,9 +3812,16 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                       label: {
                         cursor: 'pointer',
                       },
+                      root: {
+                        border: `1px solid ${theme.colors.dark[4]}`,
+                        backgroundColor: theme.colors.dark[6],
+                      },
                     }}
                     onClick={() => {
-                      openDrawer({ type: 'language', data: { id: language?.id } });
+                      openDrawer({
+                        type: 'language',
+                        data: { id: language?.id },
+                      });
                     }}
                   >
                     {language?.name ?? 'Unknown'}
@@ -3140,7 +3842,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
       >
         <Stack gap={10}>
           <Title order={4}>Proficiencies</Title>
-          <ScrollArea h={props.panelHeight - 60}>
+          <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
             <Box w={280}>
               <Accordion
                 variant='separated'
@@ -3621,7 +4323,7 @@ function PanelNotes(props: { panelHeight: number }) {
 
       {pages.map((page, index) => (
         <Tabs.Panel key={index} value={`${index}`} style={{ position: 'relative' }}>
-          <ScrollArea h={props.panelHeight}>
+          <ScrollArea h={props.panelHeight} scrollbars='y'>
             <RichTextInput
               placeholder='Your notes...'
               value={page.contents}

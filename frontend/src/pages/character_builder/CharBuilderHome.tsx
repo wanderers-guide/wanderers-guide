@@ -53,7 +53,7 @@ import { uploadImage } from '@upload/image-upload';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
@@ -318,7 +318,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
               backgroundColor: 'rgba(0, 0, 0, 0.13)',
             }}
           >
-            <ScrollArea h='100%'>
+            <ScrollArea h='100%' scrollbars='y'>
               <Tabs defaultValue='books'>
                 <Tabs.List>
                   <Tabs.Tab value='books' leftSection={<IconBooks style={iconStyle} />}>

@@ -1,29 +1,9 @@
-import {
-  Text,
-  Group,
-  Anchor,
-  Card,
-  SimpleGrid,
-  UnstyledButton,
-  Avatar,
-  MantineRadius,
-  FileButton,
-  LoadingOverlay,
-  HoverCard,
-  ScrollArea,
-  ActionIcon,
-  Modal,
-} from '@mantine/core';
-import { ContextModalProps } from '@mantine/modals';
-import _, { set } from 'lodash';
-import { ImageOption } from '@typing/index';
-import classes from '@css/ActionsGrid.module.css';
-import { IconBrush, IconUpload } from '@tabler/icons-react';
-import { uploadImage } from '@upload/image-upload';
-import { useState } from 'react';
 import { Icon, iconComponents } from '@common/Icon';
+import classes from '@css/ActionsGrid.module.css';
+import { ActionIcon, Card, ScrollArea, SimpleGrid, UnstyledButton } from '@mantine/core';
+import { ContextModalProps } from '@mantine/modals';
 
-export function SelectIconModal({
+export default function SelectIconModal({
   context,
   id,
   innerProps,
@@ -60,7 +40,7 @@ export function SelectIconModalContents(props: {
 
   return (
     <Card withBorder radius='md' className={classes.card} pl={15} py={15} pr={5}>
-      <ScrollArea h={315}>
+      <ScrollArea h={315} scrollbars='y'>
         <SimpleGrid cols={3} pl={5} py={5} pr={15}>
           {items}
         </SimpleGrid>

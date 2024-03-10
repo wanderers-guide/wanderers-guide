@@ -1,46 +1,35 @@
-import {
-  LoadingOverlay,
-  Box,
-  Modal,
-  Stack,
-  Group,
-  TextInput,
-  Select,
-  Button,
-  Divider,
-  Collapse,
-  Switch,
-  TagsInput,
-  Textarea,
-  Text,
-  Anchor,
-  HoverCard,
-  Title,
-  Badge,
-  ScrollArea,
-  Autocomplete,
-  CloseButton,
-  Tooltip,
-  useMantineTheme,
-  NumberInput,
-} from '@mantine/core';
-import _, { set } from 'lodash';
-import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, Class, Rarity, Spell, Trait } from '@typing/content';
-import { useQuery } from '@tanstack/react-query';
-import { useForm } from '@mantine/form';
-import TraitsInput from '@common/TraitsInput';
-import { useDisclosure } from '@mantine/hooks';
-import { Operation } from '@typing/operations';
-import ActionsInput from '@common/ActionsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { JSONContent } from '@tiptap/react';
-import { toHTML } from '@content/content-utils';
-import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { toLabel } from '@utils/strings';
 import { fetchContentById } from '@content/content-store';
+import { toHTML } from '@content/content-utils';
+import {
+  Anchor,
+  Badge,
+  Button,
+  Collapse,
+  Divider,
+  Group,
+  HoverCard,
+  LoadingOverlay,
+  Modal,
+  NumberInput,
+  ScrollArea,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  useMantineTheme,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useDisclosure } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
+import { JSONContent } from '@tiptap/react';
+import { Class, Rarity } from '@typing/content';
+import { Operation } from '@typing/operations';
+import { isValidImage } from '@utils/images';
+import { useState } from 'react';
 
 export function CreateClassModal(props: {
   opened: boolean;
@@ -135,7 +124,7 @@ export function CreateClassModal(props: {
       closeOnEscape={false}
       keepMounted={false}
     >
-      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} offsetScrollbars>
+      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>

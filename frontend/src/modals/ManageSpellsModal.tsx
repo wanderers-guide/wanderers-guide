@@ -1,0 +1,385 @@
+import { characterState } from '@atoms/characterAtoms';
+import {
+  SelectContentButton,
+  SpellSelectionOption,
+  selectContent,
+} from '@common/select/SelectContent';
+import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { collectCharacterSpellcasting } from '@content/collect-content';
+import { fetchContentAll } from '@content/content-store';
+import {
+  Box,
+  Button,
+  Divider,
+  Group,
+  Modal,
+  ScrollArea,
+  Stack,
+  Text,
+  Title,
+  TextInput,
+  useMantineTheme,
+  Grid,
+  LoadingOverlay,
+} from '@mantine/core';
+import { getHotkeyHandler } from '@mantine/hooks';
+import { ContextModalProps } from '@mantine/modals';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Character, Spell, SpellListEntry, SpellSlot } from '@typing/content';
+import { rankNumber } from '@utils/numbers';
+import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
+import _ from 'lodash-es';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { isCantrip, isNormalSpell } from '@spells/spell-utils';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
+import { drawerState } from '@atoms/navAtoms';
+import * as JsSearch from 'js-search';
+import { VariableListStr } from '@typing/variables';
+import { getVariable } from '@variables/variable-manager';
+
+export default function ManageSpellsModal(props: {
+  opened: boolean;
+  onClose: () => void;
+  source: string;
+  type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+}) {
+  const theme = useMantineTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  const { data: allRawSpells, isFetching } = useQuery({
+    queryKey: [`find-spells`],
+    queryFn: async () => {
+      return await fetchContentAll<Spell>('spell');
+    },
+  });
+
+  // Filter options based on search query
+  const search = useRef(new JsSearch.Search('id'));
+  useEffect(() => {
+    if (!allRawSpells) return;
+    search.current.addIndex('name');
+    search.current.addIndex('description');
+    search.current.addIndex('duration');
+    search.current.addIndex('targets');
+    search.current.addIndex('area');
+    search.current.addIndex('range');
+    search.current.addIndex('requirements');
+    search.current.addIndex('trigger');
+    search.current.addIndex('cost');
+    search.current.addIndex('defense');
+    search.current.addDocuments(allRawSpells);
+  }, [allRawSpells]);
+
+  const charData = useMemo(() => {
+    if (!character) return null;
+    return collectCharacterSpellcasting(character);
+  }, [character]);
+
+  const allFilteredSpells =
+    (searchQuery.trim()
+      ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined)
+      : allRawSpells ?? []) ?? [];
+
+  const spells = useMemo(() => {
+    const filteredSpells = charData?.list
+      .map((entry) =>
+        allFilteredSpells.find(
+          (spell) => spell.id === entry.spell_id && entry.source === props.source
+        )
+      )
+      .filter((spell) => spell)
+      .filter((spell) => isNormalSpell(spell!)) as Spell[] | undefined;
+    return filteredSpells;
+  }, [charData, allFilteredSpells]);
+
+  const slots = useMemo(() => {
+    return _.groupBy(charData?.slots, 'rank');
+  }, [charData]);
+
+  return (
+    <Modal
+      opened={props.opened}
+      onClose={props.onClose}
+      title={<Title order={3}>Manage Spells - {variableNameToLabel(props.source)}</Title>}
+      styles={{
+        body: {
+          paddingRight: 2,
+        },
+      }}
+      size={props.type === 'SLOTS-AND-LIST' ? 'xl' : 'md'}
+      keepMounted={false}
+    >
+      <Stack style={{ position: 'relative' }} mx={10}>
+        {props.type === 'LIST-ONLY' ? (
+          <ListSection
+            spells={spells ?? []}
+            source={props.source}
+            searchQuery={searchQuery}
+            setSearchQuery={(val) => {
+              setSearchQuery(val);
+            }}
+          />
+        ) : props.type === 'SLOTS-AND-LIST' ? (
+          <Grid>
+            <Grid.Col span={6}>
+              <ListSection
+                spells={spells ?? []}
+                source={props.source}
+                searchQuery={searchQuery}
+                setSearchQuery={(val) => {
+                  setSearchQuery(val);
+                }}
+              />
+            </Grid.Col>
+            <Grid.Col span={6}>
+              <LoadingOverlay visible={isFetching} />
+              <SlotsSection slots={slots} spells={spells ?? []} source={props.source} />
+            </Grid.Col>
+          </Grid>
+        ) : (
+          <>
+            <LoadingOverlay visible={isFetching} />
+            <SlotsSection slots={slots} source={props.source} />
+          </>
+        )}
+      </Stack>
+    </Modal>
+  );
+}
+
+const SlotsSection = (props: {
+  slots: Record<string, SpellSlot[]>;
+  spells?: Spell[];
+  source: string;
+}) => {
+  const theme = useMantineTheme();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <ScrollArea pr={14} h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} scrollbars='y'>
+      <Stack gap={10}>
+        {Object.keys(props.slots).map((rank, index) => (
+          <Box key={index}>
+            <Text size='md' pl={5}>
+              {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
+            </Text>
+            <Divider pt={0} pb={10} />
+            <Group key={index} gap={10}>
+              {props.slots[rank].map((slot, index) => (
+                <Box key={index}>
+                  <SelectContentButton
+                    type='spell'
+                    onClick={(spell) => {
+                      setCharacter((c) => {
+                        if (!c) return c;
+
+                        // Clear any existing slots for this spell
+                        let slots = (c.spells?.slots ?? []).filter(
+                          (entry) =>
+                            !(
+                              entry.spell_id === slot.spell_id &&
+                              entry.source === props.source &&
+                              `${entry.rank}` === rank
+                            )
+                        );
+
+                        // Add the new spell
+                        slots = [
+                          ...slots,
+                          {
+                            rank: spell.rank,
+                            source: props.source,
+                            spell_id: spell.id,
+                          },
+                        ];
+
+                        return {
+                          ...c,
+                          spells: {
+                            ...(c.spells ?? {
+                              slots: [],
+                              list: [],
+                              rituals: [],
+                              focus_point_current: 0,
+                              innate_casts: [],
+                            }),
+                            slots: slots,
+                          },
+                        };
+                      });
+                    }}
+                    onClear={() => {
+                      setCharacter((c) => {
+                        if (!c) return c;
+
+                        const slots = (c.spells?.slots ?? []).filter(
+                          (entry) =>
+                            !(
+                              entry.spell_id === slot.spell_id &&
+                              entry.source === props.source &&
+                              `${entry.rank}` === rank
+                            )
+                        );
+
+                        return {
+                          ...c,
+                          spells: {
+                            ...(c.spells ?? {
+                              slots: [],
+                              list: [],
+                              rituals: [],
+                              focus_point_current: 0,
+                              innate_casts: [],
+                            }),
+                            slots: slots,
+                          },
+                        };
+                      });
+                    }}
+                    selectedId={slot.spell_id === -1 ? undefined : slot.spell_id}
+                    options={{
+                      filterFn: (spell: Spell) => {
+                        if (props.spells !== undefined) {
+                          const foundSpell = props.spells.find((s) => s.id === spell.id);
+                          if (!foundSpell) return false;
+                        }
+
+                        if (rank === '0') {
+                          return isNormalSpell(spell) && isCantrip(spell);
+                        } else {
+                          return isNormalSpell(spell) && `${spell.rank}` === rank;
+                        }
+                      },
+                    }}
+                  />
+                </Box>
+              ))}
+            </Group>
+          </Box>
+        ))}
+      </Stack>
+    </ScrollArea>
+  );
+};
+
+const ListSection = (props: {
+  spells: Spell[];
+  source: string;
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+}) => {
+  const theme = useMantineTheme();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  return (
+    <ScrollArea pr={14} h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} scrollbars='y'>
+      <Group>
+        <TextInput
+          style={{ flex: 1 }}
+          leftSection={<IconSearch size='0.9rem' />}
+          placeholder={`Search spell list`}
+          defaultValue={props.searchQuery}
+          onChange={(e) => props.setSearchQuery(e.target.value)}
+          styles={{
+            input: {
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            },
+          }}
+        />
+        <Button
+          color='dark.6'
+          style={{ borderColor: theme.colors.dark[4] }}
+          radius='md'
+          fw={500}
+          rightSection={<IconPlus size='1.0rem' />}
+          onClick={() => {
+            selectContent<Spell>(
+              'spell',
+              (option) => {
+                setCharacter((c) => {
+                  if (!c) return c;
+
+                  const list = [
+                    ...(c.spells?.list ?? []),
+                    {
+                      spell_id: option.id,
+                      rank: option.rank,
+                      source: props.source,
+                    },
+                  ];
+
+                  return {
+                    ...c,
+                    spells: {
+                      ...(c.spells ?? {
+                        slots: [],
+                        list: [],
+                        rituals: [],
+                        focus_point_current: 0,
+                        innate_casts: [],
+                      }),
+                      list: list,
+                    },
+                  };
+                });
+              },
+              {
+                groupBySource: true,
+                overrideLabel: 'Add Spell',
+
+                filterFn: (spellRec: Record<string, any>) => {
+                  return isNormalSpell(spellRec as Spell);
+                },
+              }
+            );
+          }}
+        >
+          Add Spell
+        </Button>
+      </Group>
+      <Stack>
+        {props.spells.map((spell) => (
+          <SpellSelectionOption
+            spell={spell}
+            onClick={(spell) => {
+              openDrawer({ type: 'spell', data: { id: spell.id } });
+            }}
+            onDelete={(spellId) => {
+              setCharacter((c) => {
+                if (!c) return c;
+
+                console.log(c.spells?.list);
+                console.log(spellId);
+
+                const list = (c.spells?.list ?? []).filter((entry) => {
+                  return !(entry.spell_id === spellId && entry.source === props.source);
+                });
+
+                return {
+                  ...c,
+                  spells: {
+                    ...(c.spells ?? {
+                      slots: [],
+                      list: [],
+                      rituals: [],
+                      focus_point_current: 0,
+                      innate_casts: [],
+                    }),
+                    list: list,
+                  },
+                };
+              });
+            }}
+            includeDetails={false}
+            includeOptions={true}
+          />
+        ))}
+      </Stack>
+    </ScrollArea>
+  );
+};

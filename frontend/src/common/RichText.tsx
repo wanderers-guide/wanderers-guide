@@ -1,6 +1,6 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Anchor, Blockquote, Code, Divider, List, Text, TextProps } from '@mantine/core';
+import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps } from '@mantine/core';
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
@@ -15,11 +15,15 @@ interface RichTextProps extends TextProps {
 
 export default function RichText(props: RichTextProps) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  let convertedChildren = props.children as string | undefined;
 
   // Convert action symbol text of abbr to code markdown (then convert it back)
   // This is a hack to get around the fact that markdown doesn't really support abbr
   const regex = /<abbr[^>]*class="action-symbol"[^>]*>(\d+)<\/abbr>/gm;
-  const convertedChildren = props.children?.replace(regex, '`action_symbol_$1`');
+  convertedChildren = convertedChildren?.replace(regex, '`action_symbol_$1`');
+
+  // Convert the string output from editor table format to be read by react-markdown
+  convertedChildren = convertedChildren?.replace(/\|\n\n\|/g, '|\n|');
 
   return (
     <Markdown
@@ -117,6 +121,42 @@ export default function RichText(props: RichTextProps) {
             >
               {children}
             </Blockquote>
+          );
+        },
+        table(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Table striped withTableBorder className={className}>
+              {children}
+            </Table>
+          );
+        },
+        thead(innerProps) {
+          const { children, className } = innerProps;
+          return <Table.Thead className={className}>{children}</Table.Thead>;
+        },
+        tbody(innerProps) {
+          const { children, className } = innerProps;
+          return <Table.Tbody className={className}>{children}</Table.Tbody>;
+        },
+        tr(innerProps) {
+          const { children, className } = innerProps;
+          return <Table.Tr className={className}>{children}</Table.Tr>;
+        },
+        th(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Table.Th ta='center' className={className}>
+              {children}
+            </Table.Th>
+          );
+        },
+        td(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Table.Td ta='center' className={className}>
+              {children}
+            </Table.Td>
           );
         },
       }}

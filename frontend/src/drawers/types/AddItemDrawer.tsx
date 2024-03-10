@@ -122,6 +122,7 @@ export function AddItemDrawerContent(props: {
         h={'calc(100vh - 160px)'}
         style={{ position: 'relative' }}
         pr={5}
+        scrollbars='y'
       >
         {isFetching ? (
           <Loader

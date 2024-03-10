@@ -21,14 +21,16 @@ import {
   OperationAdjValue,
   OperationConditional,
   OperationCreateValue,
+  OperationDefineCastingSource,
   OperationGiveAbilityBlock,
   OperationGiveLanguage,
   OperationGiveSpell,
+  OperationGiveSpellSlot,
   OperationSelect,
   OperationSetValue,
   OperationType,
 } from '@typing/operations';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import ConditionalOperation from './conditional/ConditionalOperation';
 import { GiveActionOperation } from './ability_block/GiveActionOperation';
@@ -46,6 +48,8 @@ import { GivePhysicalFeatureOperation } from './ability_block/GivePhysicalFeatur
 import { addVariable, resetVariables } from '@variables/variable-manager';
 import { GiveHeritageOperation } from './ability_block/GiveHeritageOperation';
 import { AddBonusToValOperation } from './variables/AddBonusToValOperation';
+import { GiveSpellSlotOperation } from './spell/GiveSpellSlotOperation';
+import { DefineCastingSourceOperation } from './spell/DefineCastingSourceOperation';
 
 export function OperationWrapper(props: {
   children: React.ReactNode;
@@ -161,11 +165,19 @@ export function OperationSection(props: {
             { value: 'select', label: 'Selection' },
             { value: 'conditional', label: 'Conditional' },
             { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
-            { value: 'giveAbilityBlock:::class-feature', label: 'Give Class Feature' },
+            {
+              value: 'giveAbilityBlock:::class-feature',
+              label: 'Give Class Feature',
+            },
             { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
-            { value: 'giveAbilityBlock:::physical-feature', label: 'Give Physical Feature' },
+            {
+              value: 'giveAbilityBlock:::physical-feature',
+              label: 'Give Physical Feature',
+            },
             { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
             { value: 'giveSpell', label: 'Give Spell' },
+            { value: 'giveSpellSlot', label: 'Give Spell Slots' },
+            { value: 'defineCastingSource', label: 'Define Casting Source' },
             { value: 'giveLanguage', label: 'Give Language' },
             { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'adjValue', label: 'Adjust Value' },
@@ -319,10 +331,37 @@ export function OperationDisplay(props: {
       let opGiveSpell = props.operation as OperationGiveSpell;
       return (
         <GiveSpellOperation
-          selectedId={opGiveSpell.data.spellId}
-          onSelect={(option) => {
-            opGiveSpell.data.spellId = option.id;
+          data={opGiveSpell.data}
+          onSelect={(data) => {
+            opGiveSpell.data = _.cloneDeep(data);
             props.onChange(_.cloneDeep(opGiveSpell));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'giveSpellSlot':
+      let opGiveSpellSlot = props.operation as OperationGiveSpellSlot;
+      return (
+        <GiveSpellSlotOperation
+          castingSource={opGiveSpellSlot.data.castingSource}
+          slots={opGiveSpellSlot.data.slots}
+          onSelect={(source, slots) => {
+            opGiveSpellSlot.data.castingSource = source;
+            opGiveSpellSlot.data.slots = slots;
+            props.onChange(_.cloneDeep(opGiveSpellSlot));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'defineCastingSource':
+      let opDefineCastingSource = props.operation as OperationDefineCastingSource;
+      return (
+        <DefineCastingSourceOperation
+          value={opDefineCastingSource.data.value as string}
+          onSelect={(value) => {
+            opDefineCastingSource.data.value = value;
+            console.log('opDefineCastingSource', opDefineCastingSource);
+            props.onChange(_.cloneDeep(opDefineCastingSource));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

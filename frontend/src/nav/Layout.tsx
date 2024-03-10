@@ -1,47 +1,38 @@
-import { useDebouncedState, useDisclosure, useHeadroom, useViewportSize } from '@mantine/hooks';
+import { userIconState } from '@atoms/navAtoms';
+import { sessionState } from '@atoms/supabaseAtoms';
+import classes from '@css/Layout.module.css';
 import {
   AppShell,
   Avatar,
   Box,
   Burger,
-  Button,
+  Divider,
   Group,
   Menu,
-  UnstyledButton,
+  ScrollArea,
   Text,
+  UnstyledButton,
   rem,
   useMantineTheme,
-  Divider,
-  ScrollArea,
 } from '@mantine/core';
-import classes from '@css/Layout.module.css';
-import WanderersGuideLogo from './WanderersGuideLogo';
-import { SearchBar } from './Searchbar';
-import { useNavigate } from 'react-router-dom';
-import { sessionState } from '@atoms/supabaseAtoms';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import {
   IconChevronDown,
-  IconHeart,
-  IconStar,
-  IconMessage,
-  IconSettings,
-  IconSwitchHorizontal,
-  IconLogout,
-  IconPlayerPause,
-  IconTrash,
-  IconCategory,
   IconLayersIntersect,
+  IconLogout,
+  IconSettings,
+  IconSpeakerphone,
   IconSwords,
   IconUsers,
-  IconSpeakerphone,
 } from '@tabler/icons-react';
-import { useEffect, useRef, useState } from 'react';
 import { getIcon } from '@utils/images';
-import { userIconState } from '@atoms/navAtoms';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import { supabase } from '../main';
-import BlurButton from '@common/BlurButton';
 import { LoginButton } from './LoginButton';
+import { SearchBar } from './Searchbar';
+import WanderersGuideLogo from './WanderersGuideLogo';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
@@ -83,7 +74,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           borderRadius: 0,
           backdropFilter: 'blur(8px)',
           // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-          backgroundColor: theme.colors.dark[8] + '75',
+          backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >
         <Group h='100%' px='md'>
@@ -308,6 +299,7 @@ export default function Layout(props: { children: React.ReactNode }) {
       <ScrollArea
         h={'100vh'}
         type='auto'
+        scrollbars='y'
         onScrollPositionChange={(pos) => {
           if (pos.y > SCROLL_PINNED_THRESHOLD) {
             setPinned(false);

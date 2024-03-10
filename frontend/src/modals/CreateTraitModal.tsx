@@ -1,67 +1,71 @@
+import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { fetchContentById } from '@content/content-store';
+import { toHTML } from '@content/content-utils';
 import {
-  LoadingOverlay,
-  Box,
-  Modal,
-  Stack,
-  Group,
-  TextInput,
-  Select,
   Button,
-  Divider,
   Collapse,
-  Switch,
-  TagsInput,
-  Textarea,
-  Text,
-  Anchor,
-  HoverCard,
-  Title,
-  Badge,
+  Divider,
+  Group,
+  LoadingOverlay,
+  Modal,
   ScrollArea,
+  Stack,
+  Switch,
+  TextInput,
+  Title,
   useMantineTheme,
 } from '@mantine/core';
-import _, { set } from 'lodash';
-import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
-import { useQuery } from '@tanstack/react-query';
 import { useForm } from '@mantine/form';
-import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
-import { Operation } from '@typing/operations';
-import ActionsInput from '@common/ActionsInput';
-import { OperationSection } from '@common/operations/Operations';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { toHTML } from '@content/content-utils';
-import { isValidImage } from '@utils/images';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { toLabel } from '@utils/strings';
-import { fetchContentById, fetchTraits } from '@content/content-store';
+import { Trait } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
+import { useState } from 'react';
 
+/**
+ * Modal for creating or editing a trait
+ * @param props.opened - Whether the modal is opened
+ * @param props.editId - The id of the trait being edited
+ * @param props.editTrait - The trait being edited (alternative to editId)
+ * @param props.onComplete - Callback when the modal is completed
+ * @param props.onCancel - Callback when the modal is cancelled
+ * Notes:
+ * - Either supply editId or editTrait to be in editing mode
+ * - If editId is supplied, the trait with that id will be fetched
+ * - If editTrait is supplied, it will be used instead of fetching
+ */
 export function CreateTraitModal(props: {
   opened: boolean;
   editId?: number;
+  editTrait?: Trait;
   onComplete: (trait: Trait) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+  const editing =
+    (props.editId !== undefined && props.editId !== -1) || props.editTrait !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
 
+  // Fetch the trait if in editing mode
   const { data, isFetching } = useQuery({
-    queryKey: [`get-trait-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-trait-${props.editId}`, { editId: props.editId, editTrait: props.editTrait }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId }] = queryKey;
+      const [_key, { editId, editTrait }] = queryKey as [
+        string,
+        { editId?: number; editTrait?: Trait }
+      ];
 
-      const trait = await fetchContentById<Trait>('trait', editId);
+      const trait = editId ? await fetchContentById<Trait>('trait', editId) : editTrait;
       if (!trait) return null;
 
+      // Set the initial values, track metadata separately
       form.setInitialValues({
         ...trait,
       });
@@ -79,7 +83,7 @@ export function CreateTraitModal(props: {
 
       return trait;
     },
-    enabled: props.editId !== undefined && props.editId !== -1,
+    enabled: editing,
     refetchOnWindowFocus: false,
   });
 
@@ -92,6 +96,7 @@ export function CreateTraitModal(props: {
     ancestry_trait: false,
   });
 
+  // Initialize form
   const form = useForm<Trait>({
     initialValues: {
       id: -1,
@@ -99,6 +104,7 @@ export function CreateTraitModal(props: {
       name: '',
       description: '',
       meta_data: {
+        // We use the metaData state to track these values, disregard these
         important: false,
         creature_trait: false,
         unselectable: false,
@@ -138,11 +144,7 @@ export function CreateTraitModal(props: {
         props.onCancel();
         onReset();
       }}
-      title={
-        <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'} Trait
-        </Title>
-      }
+      title={<Title order={3}>{editing ? 'Edit' : 'Create'} Trait</Title>}
       styles={{
         body: {
           paddingRight: 2,
@@ -153,7 +155,7 @@ export function CreateTraitModal(props: {
       closeOnEscape={false}
       keepMounted={false}
     >
-      <ScrollArea offsetScrollbars>
+      <ScrollArea pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
@@ -267,9 +269,7 @@ export function CreateTraitModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
             </Group>
           </Stack>
         </form>

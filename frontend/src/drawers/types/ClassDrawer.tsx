@@ -1,65 +1,54 @@
-import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
-import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { FeatSelectionOption } from '@common/select/SelectContent';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentAll, fetchContentById } from '@content/content-store';
-import { getMetadataOpenedDict } from '@drawers/drawer-utils';
+import { characterState } from "@atoms/characterAtoms";
+import { drawerState } from "@atoms/navAtoms";
+import IndentedText from "@common/IndentedText";
+import RichText from "@common/RichText";
+import TraitsDisplay from "@common/TraitsDisplay";
+import { FeatSelectionOption } from "@common/select/SelectContent";
+import { fetchContentAll, fetchContentById } from "@content/content-store";
+import { getMetadataOpenedDict } from "@drawers/drawer-utils";
 import {
-  Title,
-  Text,
+  Accordion,
+  ActionIcon,
+  Anchor,
+  Box,
+  Divider,
+  Group,
+  HoverCard,
   Image,
   Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Spoiler,
-  Anchor,
   Paper,
-  useMantineTheme,
-  ActionIcon,
-  HoverCard,
+  Stack,
   Table,
-  Accordion,
-} from '@mantine/core';
+  Text,
+  Title,
+  useMantineTheme,
+} from "@mantine/core";
+import { addedClassSkillTrainings } from "@operations/operation-controller";
+import { OperationResult } from "@operations/operation-runner";
 import {
-  addedClassSkillTrainings,
-  getExtendedClassOperations,
-} from '@operations/operation-controller';
-import { OperationResult } from '@operations/operation-runner';
-import {
-  IconBadges,
   IconBadgesFilled,
-  IconEye,
   IconEyeFilled,
-  IconHeart,
   IconHeartHandshake,
   IconHelpCircle,
-  IconShield,
   IconShieldCheckeredFilled,
-  IconShieldFilled,
   IconSword,
   IconVocabulary,
-} from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Character, Class } from '@typing/content';
-import { DrawerType } from '@typing/index';
-import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
+} from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
+import { AbilityBlock, Character, Class } from "@typing/content";
+import {
+  getDisplay,
+  getStatBlockDisplay,
+  getStatDisplay,
+} from "@variables/initial-stats-display";
 import {
   getAllAttributeVariables,
   getAllSaveVariables,
   getAllSkillVariables,
-} from '@variables/variable-manager';
-import { compactLabels } from '@variables/variable-utils';
-import _ from 'lodash';
-import { get } from 'lodash';
-import { useState } from 'react';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+} from "@variables/variable-manager";
+import * as _ from "lodash-es";
+import { useState } from "react";
+import { SetterOrUpdater, useRecoilState } from "recoil";
 
 export function ClassDrawerTitle(props: { data: { id: number } }) {
   const id = props.data.id;
@@ -70,15 +59,15 @@ export function ClassDrawerTitle(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await fetchContentById<Class>('class', id);
+      return await fetchContentById<Class>("class", id);
     },
   });
 
   return (
     <>
       {class_ && (
-        <Group justify='space-between' wrap='nowrap'>
-          <Group wrap='nowrap' gap={10}>
+        <Group justify="space-between" wrap="nowrap">
+          <Group wrap="nowrap" gap={10}>
             <Box>
               <Title order={3}>{class_.name}</Title>
             </Box>
@@ -102,8 +91,10 @@ export function ClassDrawerContent(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      const class_ = await fetchContentById<Class>('class', id);
-      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      const class_ = await fetchContentById<Class>("class", id);
+      const abilityBlocks = await fetchContentAll<AbilityBlock>(
+        "ability-block"
+      );
       return {
         class_,
         abilityBlocks,
@@ -116,15 +107,18 @@ export function ClassDrawerContent(props: {
   const classFeatures = _.groupBy(
     (data?.abilityBlocks ?? []).filter(
       (block) =>
-        block.type === 'class-feature' && block.traits?.includes(data?.class_?.trait_id ?? -1)
+        block.type === "class-feature" &&
+        block.traits?.includes(data?.class_?.trait_id ?? -1)
     ),
-    'level'
+    "level"
   );
   const feats = _.groupBy(
     (data?.abilityBlocks ?? []).filter(
-      (block) => block.type === 'feat' && block.traits?.includes(data?.class_?.trait_id ?? -1)
+      (block) =>
+        block.type === "feat" &&
+        block.traits?.includes(data?.class_?.trait_id ?? -1)
     ),
-    'level'
+    "level"
   );
 
   const featSections = Object.keys(feats).map((level) => (
@@ -138,7 +132,7 @@ export function ClassDrawerContent(props: {
         }}
       >
         <Stack gap={0}>
-          <Divider color='dark.6' />
+          <Divider color="dark.6" />
           {feats[level]
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((feat, index) => (
@@ -148,7 +142,7 @@ export function ClassDrawerContent(props: {
                 onClick={() => {
                   props.onMetadataChange?.();
                   openDrawer({
-                    type: 'feat',
+                    type: "feat",
                     data: { id: feat.id },
                     extra: { addToHistory: true },
                   });
@@ -163,12 +157,12 @@ export function ClassDrawerContent(props: {
   if (!data || !data.class_ || !data.abilityBlocks) {
     return (
       <Loader
-        type='bars'
+        type="bars"
         style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          position: "absolute",
+          top: "35%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
         }}
       />
     );
@@ -176,60 +170,61 @@ export function ClassDrawerContent(props: {
 
   return (
     <Stack>
-      <ClassInitialOverview class_={data.class_} mode='READ' />
+      <ClassInitialOverview class_={data.class_} mode="READ" />
       <Box>
         <Title order={3}>Class Features</Title>
         <Divider />
         <Table striped withColumnBorders withRowBorders={false}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th ta='center'>Level</Table.Th>
+              <Table.Th ta="center">Level</Table.Th>
               <Table.Th>Class Features</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {Array.from({ length: 20 }, (_, i) => i + 1).map((level, index) => (
               <Table.Tr key={index}>
-                <Table.Td ta='center'>{level}</Table.Td>
+                <Table.Td ta="center">{level}</Table.Td>
                 <Table.Td>
-                  {classFeatures[`${level}`] && classFeatures[`${level}`].length > 0 && (
-                    <>
-                      {classFeatures[`${level}`].flatMap((feature, index) =>
-                        index < classFeatures[`${level}`].length - 1
-                          ? [
-                              <Anchor
-                                fz='sm'
-                                onClick={() => {
-                                  props.onMetadataChange?.();
-                                  openDrawer({
-                                    type: 'class-feature',
-                                    data: { id: feature.id },
-                                    extra: { addToHistory: true },
-                                  });
-                                }}
-                              >
-                                {feature.name}
-                              </Anchor>,
-                              ', ',
-                            ]
-                          : [
-                              <Anchor
-                                fz='sm'
-                                onClick={() => {
-                                  props.onMetadataChange?.();
-                                  openDrawer({
-                                    type: 'class-feature',
-                                    data: { id: feature.id },
-                                    extra: { addToHistory: true },
-                                  });
-                                }}
-                              >
-                                {feature.name}
-                              </Anchor>,
-                            ]
-                      )}
-                    </>
-                  )}
+                  {classFeatures[`${level}`] &&
+                    classFeatures[`${level}`].length > 0 && (
+                      <>
+                        {classFeatures[`${level}`].flatMap((feature, index) =>
+                          index < classFeatures[`${level}`].length - 1
+                            ? [
+                                <Anchor
+                                  fz="sm"
+                                  onClick={() => {
+                                    props.onMetadataChange?.();
+                                    openDrawer({
+                                      type: "class-feature",
+                                      data: { id: feature.id },
+                                      extra: { addToHistory: true },
+                                    });
+                                  }}
+                                >
+                                  {feature.name}
+                                </Anchor>,
+                                ", ",
+                              ]
+                            : [
+                                <Anchor
+                                  fz="sm"
+                                  onClick={() => {
+                                    props.onMetadataChange?.();
+                                    openDrawer({
+                                      type: "class-feature",
+                                      data: { id: feature.id },
+                                      extra: { addToHistory: true },
+                                    });
+                                  }}
+                                >
+                                  {feature.name}
+                                </Anchor>,
+                              ]
+                        )}
+                      </>
+                    )}
                 </Table.Td>
               </Table.Tr>
             ))}
@@ -241,12 +236,12 @@ export function ClassDrawerContent(props: {
         <Title order={3}>Feats</Title>
 
         <Accordion
-          variant='separated'
+          variant="separated"
           // Save opened state in drawer metadata (so it persists when opening links and going back)
           defaultValue={getMetadataOpenedDict().feat_section}
           onChange={(value) => {
             props.onMetadataChange?.({
-              feat_section: value ?? '',
+              feat_section: value ?? "",
             });
           }}
         >
@@ -259,7 +254,7 @@ export function ClassDrawerContent(props: {
 
 export function ClassInitialOverview(props: {
   class_: Class;
-  mode: 'READ' | 'READ/WRITE';
+  mode: "READ" | "READ/WRITE";
   operationResults?: OperationResult[];
 }) {
   const theme = useMantineTheme();
@@ -279,254 +274,285 @@ export function ClassInitialOverview(props: {
     <>
       <Box
         style={{
-          position: 'relative',
+          position: "relative",
         }}
       >
         <Box
           mah={descHidden ? 400 : undefined}
           style={{
             WebkitMaskImage: descHidden
-              ? 'linear-gradient(to bottom, black 60%, transparent 100%)'
+              ? "linear-gradient(to bottom, black 60%, transparent 100%)"
               : undefined,
             maskImage: descHidden
-              ? 'linear-gradient(to bottom, black 60%, transparent 100%)'
+              ? "linear-gradient(to bottom, black 60%, transparent 100%)"
               : undefined,
-            overflowY: descHidden ? 'hidden' : undefined,
+            overflowY: descHidden ? "hidden" : undefined,
           }}
         >
           {props.class_.artwork_url && (
             <Image
               style={{
-                float: 'right',
+                float: "right",
                 maxWidth: 150,
-                height: 'auto',
+                height: "auto",
               }}
-              ml='sm'
-              radius='md'
-              fit='contain'
+              ml="sm"
+              radius="md"
+              fit="contain"
               src={props.class_.artwork_url}
             />
           )}
-          <RichText ta='justify'>{props.class_.description}</RichText>
+          <RichText ta="justify">{props.class_.description}</RichText>
         </Box>
         <Anchor
-          size='sm'
+          size="sm"
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 5,
             right: 20,
           }}
           onClick={() => setDescHidden(!descHidden)}
         >
-          {descHidden ? 'Show more' : 'Show less'}
+          {descHidden ? "Show more" : "Show less"}
         </Anchor>
       </Box>
-      <Group align='flex-start' grow>
+      <Group align="flex-start" grow>
         <Paper
-          shadow='xs'
-          p='sm'
-          radius='md'
-          style={{ backgroundColor: theme.colors.dark[8], position: 'relative' }}
+          shadow="xs"
+          p="sm"
+          radius="md"
+          style={{
+            backgroundColor: theme.colors.dark[8],
+            position: "relative",
+          }}
         >
           <HoverCard
-            shadow='md'
+            shadow="md"
             openDelay={250}
             width={200}
             zIndex={1000}
-            position='top'
+            position="top"
             withinPortal
           >
             <HoverCard.Target>
               <ActionIcon
-                variant='subtle'
-                aria-label='Help'
-                radius='xl'
-                size='sm'
+                variant="subtle"
+                aria-label="Help"
+                radius="xl"
+                size="sm"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 5,
                   right: 5,
                 }}
               >
-                <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+                <IconHelpCircle
+                  style={{ width: "80%", height: "80%" }}
+                  stroke={1.5}
+                />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text fz='xs'>
-                At 1st level, your class gives you an attribute boost in the key attribute.
+              <Text fz="xs">
+                At 1st level, your class gives you an attribute boost in the key
+                attribute.
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c='gray.5' ta='center'>
+          <Text c="gray.5" ta="center">
             Key Attribute
           </Text>
           <Text
-            c='gray.4'
+            c="gray.4"
             fw={700}
-            ta='center'
-            style={{ display: 'flex', justifyContent: 'center' }}
+            ta="center"
+            style={{ display: "flex", justifyContent: "center" }}
           >
-            {display.keyAttribute.ui ?? 'Varies'}
+            {display.keyAttribute.ui ?? "Varies"}
           </Text>
         </Paper>
         <Paper
-          shadow='xs'
-          p='sm'
-          radius='md'
-          style={{ backgroundColor: theme.colors.dark[8], position: 'relative' }}
+          shadow="xs"
+          p="sm"
+          radius="md"
+          style={{
+            backgroundColor: theme.colors.dark[8],
+            position: "relative",
+          }}
         >
           <HoverCard
-            shadow='md'
+            shadow="md"
             openDelay={250}
             width={200}
             zIndex={1000}
-            position='top'
+            position="top"
             withinPortal
           >
             <HoverCard.Target>
               <ActionIcon
-                variant='subtle'
-                aria-label='Help'
-                radius='xl'
-                size='sm'
+                variant="subtle"
+                aria-label="Help"
+                radius="xl"
+                size="sm"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 5,
                   right: 5,
                 }}
               >
-                <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+                <IconHelpCircle
+                  style={{ width: "80%", height: "80%" }}
+                  stroke={1.5}
+                />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text fz='xs'>
-                You increase your maximum number of HP by this number at 1st level and every level
-                thereafter.
+              <Text fz="xs">
+                You increase your maximum number of HP by this number at 1st
+                level and every level thereafter.
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c='gray.5' ta='center'>
+          <Text c="gray.5" ta="center">
             Hit Points
           </Text>
-          <Text c='gray.4' fw={700} ta='center'>
-            {display.classHp.ui ?? 'Varies'}
+          <Text c="gray.4" fw={700} ta="center">
+            {display.classHp.ui ?? "Varies"}
           </Text>
         </Paper>
       </Group>
       <Box>
         <Divider
-          px='xs'
+          px="xs"
           label={
             <Group gap={5}>
-              <IconEyeFilled size='0.8rem' />
+              <IconEyeFilled size="0.8rem" />
               <Box>Perception</Box>
             </Group>
           }
-          labelPosition='left'
+          labelPosition="left"
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.perception.ui}
         </IndentedText>
       </Box>
       <Box>
         <Divider
-          px='xs'
+          px="xs"
           label={
             <Group gap={5}>
-              <IconBadgesFilled size='0.8rem' />
+              <IconBadgesFilled size="0.8rem" />
               <Box>Skills</Box>
             </Group>
           }
-          labelPosition='left'
+          labelPosition="left"
         />
         {display.skills.map((skill, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText
+            key={index}
+            disabled={MODE !== "READ"}
+            px="xs"
+            c="gray.5"
+            fz="sm"
+          >
             {skill.ui}
           </IndentedText>
         ))}
         {display.additionalSkillTrainings.map((record, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText
+            key={index}
+            disabled={MODE !== "READ"}
+            px="xs"
+            c="gray.5"
+            fz="sm"
+          >
             {record.ui}
           </IndentedText>
         ))}
       </Box>
       <Box>
         <Divider
-          px='xs'
+          px="xs"
           label={
             <Group gap={5}>
-              <IconHeartHandshake size='0.8rem' />
+              <IconHeartHandshake size="0.8rem" />
               <Box>Saving Throws</Box>
             </Group>
           }
-          labelPosition='left'
+          labelPosition="left"
         />
         {display.saves.map((save, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText
+            key={index}
+            disabled={MODE !== "READ"}
+            px="xs"
+            c="gray.5"
+            fz="sm"
+          >
             {save.ui}
           </IndentedText>
         ))}
       </Box>
       <Box>
         <Divider
-          px='xs'
+          px="xs"
           label={
             <Group gap={5}>
-              <IconSword size='0.8rem' />
+              <IconSword size="0.8rem" />
               <Box>Attacks</Box>
             </Group>
           }
-          labelPosition='left'
+          labelPosition="left"
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.simpleWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.martialWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.advancedWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.unarmedAttacks.ui}
         </IndentedText>
       </Box>
       <Box>
         <Divider
-          px='xs'
+          px="xs"
           label={
             <Group gap={5}>
-              <IconShieldCheckeredFilled size='0.8rem' />
+              <IconShieldCheckeredFilled size="0.8rem" />
               <Box>Defenses</Box>
             </Group>
           }
-          labelPosition='left'
+          labelPosition="left"
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.lightArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.mediumArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.heavyArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.unarmoredDefense.ui}
         </IndentedText>
       </Box>
       <Box>
         <Divider
-          px='xs'
+          px="xs"
           label={
             <Group gap={5}>
-              <IconVocabulary size='0.8rem' />
+              <IconVocabulary size="0.8rem" />
               <Box>Class DC</Box>
             </Group>
           }
-          labelPosition='left'
+          labelPosition="left"
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== "READ"} px="xs" c="gray.5" fz="sm">
           {display.classDC.ui}
         </IndentedText>
       </Box>
@@ -536,24 +562,24 @@ export function ClassInitialOverview(props: {
 
 export function convertClassOperationsIntoUI(
   class_: Class,
-  mode: 'READ' | 'READ/WRITE',
+  mode: "READ" | "READ/WRITE",
   operationResults: OperationResult[],
   charState: [Character | null, SetterOrUpdater<Character | null>]
 ) {
   const classOperations = class_.operations ?? [];
   const MODE = mode;
   const writeDetails =
-    MODE === 'READ/WRITE'
+    MODE === "READ/WRITE"
       ? {
           operationResults: operationResults,
           characterState: charState,
-          primarySource: 'class',
+          primarySource: "class",
         }
       : undefined;
 
   const attributes = getStatBlockDisplay(
-    'CHARACTER',
-    getAllAttributeVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllAttributeVariables("CHARACTER").map((v) => v.name),
     classOperations,
     MODE,
     writeDetails,
@@ -568,44 +594,50 @@ export function convertClassOperationsIntoUI(
         };
 
   const classHp = getStatDisplay(
-    'CHARACTER',
-    'MAX_HEALTH_CLASS_PER_LEVEL',
+    "CHARACTER",
+    "MAX_HEALTH_CLASS_PER_LEVEL",
     classOperations,
     MODE,
     writeDetails
   );
 
-  const perception = getStatDisplay('CHARACTER', 'PERCEPTION', classOperations, MODE, writeDetails);
+  const perception = getStatDisplay(
+    "CHARACTER",
+    "PERCEPTION",
+    classOperations,
+    MODE,
+    writeDetails
+  );
   const skills = getStatBlockDisplay(
-    'CHARACTER',
-    getAllSkillVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllSkillVariables("CHARACTER").map((v) => v.name),
     classOperations,
     MODE,
     writeDetails
   );
 
   let additionalSkillTrainings = [];
-  if (MODE === 'READ') {
+  if (MODE === "READ") {
     additionalSkillTrainings = [
       {
         ui: (
           <>
-            Trained in a number of additional skills equal to {class_.skill_training_base} plus your
-            Intelligence modifier
+            Trained in a number of additional skills equal to{" "}
+            {class_.skill_training_base} plus your Intelligence modifier
           </>
         ),
         operation: null,
       },
     ];
-  } else if (MODE === 'READ/WRITE') {
+  } else if (MODE === "READ/WRITE") {
     const skillTrainingOps = addedClassSkillTrainings(class_);
     for (const op of skillTrainingOps) {
       const result = getDisplay(
-        'CHARACTER',
-        { value: 'T' },
+        "CHARACTER",
+        { value: "T" },
         op,
         undefined,
-        'READ/WRITE',
+        "READ/WRITE",
         writeDetails
       );
       additionalSkillTrainings.push({
@@ -616,69 +648,75 @@ export function convertClassOperationsIntoUI(
   }
 
   const saves = getStatBlockDisplay(
-    'CHARACTER',
-    getAllSaveVariables('CHARACTER').map((v) => v.name),
+    "CHARACTER",
+    getAllSaveVariables("CHARACTER").map((v) => v.name),
     classOperations,
     MODE,
     writeDetails
   );
   const simpleWeapons = getStatDisplay(
-    'CHARACTER',
-    'SIMPLE_WEAPONS',
+    "CHARACTER",
+    "SIMPLE_WEAPONS",
     classOperations,
     MODE,
     writeDetails
   );
   const martialWeapons = getStatDisplay(
-    'CHARACTER',
-    'MARTIAL_WEAPONS',
+    "CHARACTER",
+    "MARTIAL_WEAPONS",
     classOperations,
     MODE,
     writeDetails
   );
   const advancedWeapons = getStatDisplay(
-    'CHARACTER',
-    'ADVANCED_WEAPONS',
+    "CHARACTER",
+    "ADVANCED_WEAPONS",
     classOperations,
     MODE,
     writeDetails
   );
   const unarmedAttacks = getStatDisplay(
-    'CHARACTER',
-    'UNARMED_ATTACKS',
+    "CHARACTER",
+    "UNARMED_ATTACKS",
     classOperations,
     MODE,
     writeDetails
   );
   const lightArmor = getStatDisplay(
-    'CHARACTER',
-    'LIGHT_ARMOR',
+    "CHARACTER",
+    "LIGHT_ARMOR",
     classOperations,
     MODE,
     writeDetails
   );
   const mediumArmor = getStatDisplay(
-    'CHARACTER',
-    'MEDIUM_ARMOR',
+    "CHARACTER",
+    "MEDIUM_ARMOR",
     classOperations,
     MODE,
     writeDetails
   );
   const heavyArmor = getStatDisplay(
-    'CHARACTER',
-    'HEAVY_ARMOR',
+    "CHARACTER",
+    "HEAVY_ARMOR",
     classOperations,
     MODE,
     writeDetails
   );
   const unarmoredDefense = getStatDisplay(
-    'CHARACTER',
-    'UNARMORED_DEFENSE',
+    "CHARACTER",
+    "UNARMORED_DEFENSE",
     classOperations,
     MODE,
     writeDetails
   );
-  const classDC = getStatDisplay('CHARACTER', 'CLASS_DC', classOperations, 'READ', writeDetails);
+  const classDC = getStatDisplay(
+    "CHARACTER",
+    "CLASS_DC",
+    classOperations,
+    "READ",
+    writeDetails
+  );
 
   return {
     keyAttribute,

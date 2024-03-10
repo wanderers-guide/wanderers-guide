@@ -1,23 +1,22 @@
+import { drawerState } from '@atoms/navAtoms';
+import { getConditionByName } from '@conditions/condition-handler';
+import { fetchTraits } from '@content/content-store';
 import {
-  useMantineTheme,
-  Loader,
-  Group,
-  Text,
   Badge,
+  Group,
+  HoverCard,
+  Loader,
   MantineColor,
   MantineSize,
-  Stack,
-  HoverCard,
   ScrollArea,
+  Stack,
+  useMantineTheme,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Rarity } from '@typing/content';
-import _ from 'lodash';
-import RichText from './RichText';
-import { fetchTraits } from '@content/content-store';
-import { drawerState } from '@atoms/navAtoms';
+import { startCase } from 'lodash-es';
 import { useRecoilState } from 'recoil';
-import { getConditionByName } from '@conditions/condition-handler';
+import RichText from './RichText';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -129,7 +128,7 @@ export function RarityDisplay(props: {
         },
       }}
     >
-      {_.startCase(props.rarity.toLowerCase())}
+      {startCase(props.rarity.toLowerCase())}
     </Badge>
   );
 }
@@ -158,7 +157,7 @@ export function SkillDisplay(props: {
             },
           }}
         >
-          {_.startCase(skill.toLowerCase())}
+          {startCase(skill.toLowerCase())}
         </Badge>
       ))}
     </>
@@ -260,7 +259,7 @@ export function TraitOverview(props: { name: string; description: string; import
       >
         {props.name}
       </Badge>
-      <ScrollArea h={props.description.length > 400 ? 300 : undefined} offsetScrollbars>
+      <ScrollArea h={props.description.length > 400 ? 300 : undefined} pr={14} scrollbars='y'>
         <RichText ta='justify' fz='sm'>
           {props.description || 'No description given.'}
         </RichText>

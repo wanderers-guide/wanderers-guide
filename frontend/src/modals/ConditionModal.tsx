@@ -1,35 +1,11 @@
-import {
-  Text,
-  TextInput,
-  Stack,
-  Button,
-  Group,
-  Loader,
-  Avatar,
-  ActionIcon,
-  Badge,
-  ScrollArea,
-} from '@mantine/core';
-import { ContextModalProps } from '@mantine/modals';
-import { Character, Condition, ContentSource, ContentType } from '@typing/content';
-import _ from 'lodash';
-import { isValidImage } from '@utils/images';
-import { useState } from 'react';
-import { DrawerType } from '@typing/index';
-import { useQuery } from '@tanstack/react-query';
-import {
-  IconAdjustments,
-  IconBook2,
-  IconHash,
-  IconMinus,
-  IconPlus,
-  IconStar,
-} from '@tabler/icons-react';
-import { getIconFromContentType } from '@content/content-utils';
-import { fetchContentById } from '@content/content-store';
 import RichText from '@common/RichText';
+import { ActionIcon, Badge, Group, ScrollArea, Stack } from '@mantine/core';
+import { ContextModalProps } from '@mantine/modals';
+import { IconMinus, IconPlus } from '@tabler/icons-react';
+import { Condition } from '@typing/content';
+import { useState } from 'react';
 
-export function ConditionModal({
+export default function ConditionModal({
   context,
   id,
   innerProps,
@@ -43,7 +19,7 @@ export function ConditionModal({
   return (
     <Stack style={{ position: 'relative' }}>
       <div>
-        <ScrollArea h={400} pr={3} offsetScrollbars>
+        <ScrollArea h={400} pr={16} scrollbars='y'>
           <Group wrap='nowrap'>
             <RichText ta='justify'>{innerProps.condition.description}</RichText>
           </Group>

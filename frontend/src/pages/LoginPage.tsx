@@ -9,13 +9,12 @@ import { useRecoilValue } from "recoil";
 import { useEffect } from "react";
 import { setPageTitle } from "@utils/document-change";
 
-export default function LoginPage() {
-  setPageTitle('Login');
+export function Component() {
+  setPageTitle("Login");
 
   const theme = useMantineTheme();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
-
 
   const [searchParams] = useSearchParams();
   useEffect(() => {
@@ -27,7 +26,6 @@ export default function LoginPage() {
       navigate("/");
     }
   }, [session]);
-
 
   return (
     <>

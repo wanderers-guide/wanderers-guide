@@ -1,41 +1,36 @@
-import {
-  Anchor,
-  BackgroundImage,
-  MantineProvider,
-  ScrollArea,
-  Text,
-  createTheme,
-} from '@mantine/core';
-import Layout from './nav/Layout';
+import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
+import { sessionState } from '@atoms/supabaseAtoms';
+import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
+import { GUIDE_BLUE } from '@constants/data';
+import { getCachedCustomization } from '@content/customization-cache';
+import DrawerBase from '@drawers/DrawerBase';
+import { convertContentLink } from '@drawers/drawer-utils';
+import { Anchor, BackgroundImage, MantineProvider, Text, createTheme } from '@mantine/core';
+import { usePrevious } from '@mantine/hooks';
+import { ModalsProvider } from '@mantine/modals';
+import { Notifications } from '@mantine/notifications';
+import SearchSpotlight from '@nav/SearchSpotlight';
+import { IconBrush } from '@tabler/icons-react';
+import { getBackgroundImageFromURL } from '@utils/background-images';
+import { removeQueryParam } from '@utils/document-change';
+import { lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { useEffect, useState } from 'react';
-import { supabase } from './main';
-import { sessionState } from '@atoms/supabaseAtoms';
-import SearchSpotlight from '@nav/SearchSpotlight';
-import { Notifications } from '@mantine/notifications';
-import { ModalsProvider } from '@mantine/modals';
-import { SelectContentModal } from '@common/select/SelectContent';
-import { UpdateCharacterPortraitModal } from '@modals/UpdateCharacterPortraitModal';
-import { getBackgroundImageFromURL } from '@utils/background-images';
-import { SelectImageModal } from '@modals/SelectImageModal';
-import { ImageOption } from './typing';
-import { characterState } from '@atoms/characterAtoms';
-import { IconBrush } from '@tabler/icons-react';
 import tinycolor from 'tinycolor2';
-import { usePrevious } from '@mantine/hooks';
-import { GUIDE_BLUE } from '@constants/data';
-import DrawerBase from '@drawers/DrawerBase';
-import { removeQueryParam } from '@utils/document-change';
-import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
-import { convertContentLink } from '@drawers/drawer-utils';
-import { drawerState } from '@atoms/navAtoms';
-import { ContentFeedbackModal } from '@modals/ContentFeedbackModal';
-import { AddNewLoreModal } from '@modals/AddNewLoreModal';
-import { SelectIconModal } from '@modals/SelectIconModal';
-import { UpdateNotePageModal } from '@modals/UpdateNotePageModal';
-import { ConditionModal } from '@modals/ConditionModal';
-import { getCachedCustomization } from '@content/customization-cache';
+import { supabase } from './main';
+import Layout from './nav/Layout';
+import { ImageOption } from './typing';
+
+const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
+const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
+const SelectIconModal = lazy(() => import('@modals/SelectIconModal'));
+const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterPortraitModal'));
+const ContentFeedbackModal = lazy(() => import('@modals/ContentFeedbackModal'));
+const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
+const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
+const ConditionModal = lazy(() => import('@modals/ConditionModal'));
+// const ManageSpellsModal = lazy(() => import('@modals/ManageSpellsModal'));
 
 const modals = {
   selectContent: SelectContentModal,
@@ -46,6 +41,7 @@ const modals = {
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
+  // manageSpells: ManageSpellsModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {

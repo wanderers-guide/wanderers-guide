@@ -12,7 +12,7 @@ import {
 } from '@typing/variables';
 import { Box, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { useDidUpdate } from '@mantine/hooks';
 
 export function AdjValOperation(props: {
@@ -77,7 +77,10 @@ export function AdjustValueInput(props: {
           placeholder='Number to Add'
           value={value.value}
           onChange={(val) =>
-            props.onChange({ value: parseInt(`${val}`), partial: value.partial } as AttributeValue)
+            props.onChange({
+              value: parseInt(`${val}`),
+              partial: value.partial,
+            } as AttributeValue)
           }
           allowDecimal={false}
         />
@@ -139,6 +142,7 @@ export function AdjustValueInput(props: {
     );
   } else if (props.variableType === 'prof') {
     const value = props.value as ProficiencyValue;
+
     return (
       <>
         {props.options?.profExtended ? (
@@ -147,7 +151,10 @@ export function AdjustValueInput(props: {
             value={value.value}
             onChange={(val) =>
               // @ts-ignore
-              props.onChange({ value: val, attribute: value.attribute } as ExtendedProficiencyValue)
+              props.onChange({
+                value: val,
+                attribute: value.attribute,
+              } as ExtendedProficiencyValue)
             }
             data={[
               { label: 'U', value: 'U' },
@@ -164,7 +171,10 @@ export function AdjustValueInput(props: {
             size='xs'
             value={value.value}
             onChange={(val) =>
-              props.onChange({ value: val, attribute: value.attribute } as ProficiencyValue)
+              props.onChange({
+                value: val,
+                attribute: value.attribute,
+              } as ProficiencyValue)
             }
             data={[
               { label: 'U', value: 'U' },

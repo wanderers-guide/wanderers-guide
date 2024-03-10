@@ -1,58 +1,66 @@
-import {
-  LoadingOverlay,
-  Box,
-  Modal,
-  Stack,
-  Group,
-  TextInput,
-  Select,
-  Button,
-  Divider,
-  Collapse,
-  Switch,
-  TagsInput,
-  Textarea,
-  Text,
-  Anchor,
-  HoverCard,
-  Title,
-  Badge,
-  ScrollArea,
-  Autocomplete,
-  CloseButton,
-  Tooltip,
-  useMantineTheme,
-  NumberInput,
-  Checkbox,
-  Accordion,
-} from '@mantine/core';
-import _, { set } from 'lodash';
-import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, Rarity, Item, Trait, ItemGroup } from '@typing/content';
-import { useQuery } from '@tanstack/react-query';
-import { useForm } from '@mantine/form';
+import { ItemMultiSelect, ItemSelect } from '@common/ItemSelect';
 import TraitsInput from '@common/TraitsInput';
-import { useDisclosure } from '@mantine/hooks';
-import { Operation } from '@typing/operations';
-import ActionsInput from '@common/ActionsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { JSONContent } from '@tiptap/react';
-import { toHTML } from '@content/content-utils';
-import { isValidImage } from '@utils/images';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { toLabel } from '@utils/strings';
 import { fetchContentById, fetchTraits } from '@content/content-store';
+import { toHTML } from '@content/content-utils';
+import {
+  Accordion,
+  Anchor,
+  Badge,
+  Box,
+  Button,
+  Checkbox,
+  Collapse,
+  Divider,
+  Group,
+  HoverCard,
+  LoadingOverlay,
+  Modal,
+  NumberInput,
+  ScrollArea,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  useMantineTheme,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useDisclosure } from '@mantine/hooks';
+import { useQuery } from '@tanstack/react-query';
+import { JSONContent } from '@tiptap/react';
+import { Item, ItemGroup, Trait } from '@typing/content';
+import { isValidImage } from '@utils/images';
 import useRefresh from '@utils/use-refresh';
+import _ from 'lodash-es';
+import { useState } from 'react';
 
+/**
+ * Modal for creating or editing an item
+ * @param props.opened - Whether the modal is opened
+ * @param props.editId - The id of the item being edited
+ * @param props.editItem - The item being edited (alternative to editId)
+ * @param props.onComplete - Callback when the modal is completed
+ * @param props.onCancel - Callback when the modal is cancelled
+ * Notes:
+ * - Either supply editId or editItem to be in editing mode
+ * - If editId is supplied, the item with that id will be fetched
+ * - If editItem is supplied, it will be used instead of fetching
+ */
 export function CreateItemModal(props: {
   opened: boolean;
   editId?: number;
+  editItem?: Item;
+  zIndex?: number;
   onComplete: (item: Item) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+  const editing =
+    (props.editId !== undefined && props.editId !== -1) || props.editItem !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -60,33 +68,61 @@ export function CreateItemModal(props: {
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-item-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-item-${props.editId}`, { editId: props.editId, editItem: props.editItem }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId }] = queryKey;
+      const [_key, { editId, editItem }] = queryKey as [
+        string,
+        { editId?: number; editItem?: Item }
+      ];
 
-      const item = await fetchContentById<Item>('item', editId);
+      const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
       if (!item) return null;
 
       form.setInitialValues({
-        ...item,
+        ..._.merge(form.values, item),
         // @ts-ignore
         level: item.level.toString(),
       });
       form.reset();
       setTraits(await fetchTraits(item.traits));
+      setArmorCategory(item.meta_data?.category ?? '');
+      setArmorGroup(item.meta_data?.group ?? '');
+      setWeaponCategory(item.meta_data?.category ?? '');
+      setWeaponGroup(item.meta_data?.group ?? '');
+      setStrikingRune(item.meta_data?.runes?.striking);
+      setPotencyRune(item.meta_data?.runes?.potency);
+      setPropertyRunes(item.meta_data?.runes?.property);
+      setBaseItem(item.meta_data?.base_item);
+      setMaterialType(item.meta_data?.material?.type);
       refreshDisplayDescription();
 
       return item;
     },
-    enabled: props.editId !== undefined && props.editId !== -1,
+    enabled: editing,
     refetchOnWindowFocus: false,
   });
 
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
+
   const [isValidImageURL, setIsValidImageURL] = useState(true);
+  const [imageURL, setImageURL] = useState<string>('');
+
+  const [armorCategory, setArmorCategory] = useState('');
+  const [armorGroup, setArmorGroup] = useState('');
+
+  const [weaponCategory, setWeaponCategory] = useState('');
+  const [weaponGroup, setWeaponGroup] = useState('');
+
+  const [strikingRune, setStrikingRune] = useState<number | undefined>(0);
+  const [potencyRune, setPotencyRune] = useState<number | undefined>(0);
+  const [propertyRunes, setPropertyRunes] = useState<string[] | undefined>([]);
+
+  const [baseItem, setBaseItem] = useState<string | undefined>();
+
+  const [materialType, setMaterialType] = useState<string | undefined>();
 
   const form = useForm<Item>({
     initialValues: {
@@ -116,7 +152,8 @@ export function CreateItemModal(props: {
         damage: {
           damageType: '',
           dice: 1,
-          die: 'd6',
+          die: '',
+          extra: '',
         },
         ac_bonus: undefined,
         check_penalty: undefined,
@@ -141,7 +178,11 @@ export function CreateItemModal(props: {
         },
         range: undefined,
         reload: undefined,
-        runes: undefined,
+        runes: {
+          striking: undefined,
+          potency: undefined,
+          property: [],
+        },
         foundry: {},
       },
       operations: [],
@@ -157,10 +198,27 @@ export function CreateItemModal(props: {
   });
 
   const onSubmit = async (values: typeof form.values) => {
+    // Combine the form values with the controlled state values
     props.onComplete({
       ...values,
       level: values.level ? +values.level : 0,
       traits: traits.map((trait) => trait.id),
+      meta_data: {
+        ...values.meta_data!,
+        base_item: baseItem,
+        material: {
+          ...values.meta_data?.material,
+          type: materialType,
+        },
+        runes: {
+          striking: strikingRune,
+          potency: potencyRune,
+          property: propertyRunes,
+        },
+        category: weaponCategory ? weaponCategory : armorCategory,
+        group: weaponGroup ? weaponGroup : armorGroup,
+        image_url: isValidImageURL ? imageURL : '',
+      },
     });
     setTimeout(() => {
       onReset();
@@ -173,15 +231,47 @@ export function CreateItemModal(props: {
     setDescription(undefined);
   };
 
-  const miscSectionCount = 0;
-  // (form.values.cost && form.values.cost.length > 0 ? 1 : 0) +
-  // (form.values.trigger && form.values.trigger.length > 0 ? 1 : 0) +
-  // (form.values.requirements && form.values.requirements.length > 0 ? 1 : 0) +
-  // (form.values.range && form.values.range.length > 0 ? 1 : 0) +
-  // (form.values.area && form.values.area.length > 0 ? 1 : 0) +
-  // (form.values.targets && form.values.targets.length > 0 ? 1 : 0) +
-  // (form.values.duration && form.values.duration.length > 0 ? 1 : 0) +
-  // (form.values.defense && form.values.defense.length > 0 ? 1 : 0);
+  // Count the number of misc. sections that are filled out
+  const miscSectionCount =
+    (baseItem && baseItem.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.damage?.die && form.values.meta_data.damage.die.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.damage?.damageType && form.values.meta_data.damage.damageType.length > 0
+      ? 1
+      : 0) +
+    (form.values.meta_data?.damage?.extra && form.values.meta_data.damage.extra.length > 0
+      ? 1
+      : 0) +
+    ((weaponCategory || armorCategory) && (weaponCategory.length > 0 || armorCategory.length > 0)
+      ? 1
+      : 0) +
+    ((weaponGroup || armorGroup) && (weaponGroup.length > 0 || armorGroup.length > 0) ? 1 : 0) +
+    (form.values.meta_data?.range && form.values.meta_data.range > 0 ? 1 : 0) +
+    (form.values.meta_data?.reload && form.values.meta_data.reload.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.ac_bonus && form.values.meta_data.ac_bonus > 0 ? 1 : 0) +
+    (form.values.meta_data?.check_penalty && form.values.meta_data.check_penalty < 0 ? 1 : 0) +
+    (form.values.meta_data?.speed_penalty && form.values.meta_data.speed_penalty < 0 ? 1 : 0) +
+    (form.values.meta_data?.dex_cap && form.values.meta_data.dex_cap > 0 ? 1 : 0) +
+    (form.values.meta_data?.strength && form.values.meta_data.strength > 0 ? 1 : 0) +
+    (form.values.meta_data?.bulk?.capacity && form.values.meta_data.bulk.capacity > 0 ? 1 : 0) +
+    (form.values.meta_data?.bulk?.held_or_stowed && form.values.meta_data.bulk.held_or_stowed > 0
+      ? 1
+      : 0) +
+    (form.values.meta_data?.bulk?.ignored && form.values.meta_data.bulk.ignored > 0 ? 1 : 0) +
+    (strikingRune && strikingRune > 0 ? 1 : 0) +
+    (potencyRune && potencyRune > 0 ? 1 : 0) +
+    (propertyRunes && propertyRunes.length > 0 ? 1 : 0) +
+    (materialType && materialType.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.material?.grade && form.values.meta_data.material.grade.length > 0
+      ? 1
+      : 0) +
+    (form.values.meta_data?.hardness && form.values.meta_data.hardness > 0 ? 1 : 0) +
+    (form.values.meta_data?.hp_max && form.values.meta_data.hp_max > 0 ? 1 : 0) +
+    (form.values.meta_data?.broken_threshold && form.values.meta_data.broken_threshold > 0
+      ? 1
+      : 0) +
+    (form.values.meta_data?.is_shoddy ? 1 : 0) +
+    (form.values.meta_data?.quantity && form.values.meta_data.quantity > 0 ? 1 : 0) +
+    (form.values.meta_data?.image_url && form.values.meta_data.image_url.length > 0 ? 1 : 0);
 
   return (
     <Modal
@@ -192,7 +282,7 @@ export function CreateItemModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
+          {editing ? 'Edit' : 'Create'}
           {' Item'}
         </Title>
       }
@@ -205,8 +295,9 @@ export function CreateItemModal(props: {
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
+      zIndex={props.zIndex}
     >
-      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} offsetScrollbars>
+      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
@@ -300,12 +391,15 @@ export function CreateItemModal(props: {
                     { value: 'ARMOR', label: 'Armor' },
                     { value: 'SHIELD', label: 'Shield' },
                     { value: 'WEAPON', label: 'Weapon' },
+                    { value: 'RUNE', label: 'Rune' },
+                    { value: 'MATERIAL', label: 'Material' },
                   ] satisfies { value: ItemGroup; label: string }[]
                 }
                 {...form.getInputProps('group')}
               />
               <Select
                 label='Hands'
+                clearable
                 data={[
                   { value: '1', label: '1' },
                   { value: '1+', label: '1+' },
@@ -316,161 +410,397 @@ export function CreateItemModal(props: {
               />
             </Group>
             <TextInput label='Usage' placeholder='Usage' {...form.getInputProps('usage')} />
-            <Divider
-              my='xs'
-              label={
-                <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedAdditional ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
-                    Misc. Sections
-                  </Button>
-                  {miscSectionCount && miscSectionCount > 0 && (
-                    <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {miscSectionCount}
-                    </Badge>
-                  )}
-                </Group>
-              }
-              labelPosition='left'
-              onClick={toggleAdditional}
-            />
-            <Collapse in={openedAdditional}>
-              <Stack gap={10}>
-                {/* TODO: Base Item */}
+            <Box>
+              <Divider
+                my='xs'
+                label={
+                  <Group gap={3} wrap='nowrap'>
+                    <Button
+                      variant={openedAdditional ? 'light' : 'subtle'}
+                      size='compact-sm'
+                      color='gray.6'
+                    >
+                      Misc. Sections
+                    </Button>
+                    {miscSectionCount && miscSectionCount > 0 && (
+                      <Badge variant='light' color={theme.primaryColor} size='xs'>
+                        {miscSectionCount}
+                      </Badge>
+                    )}
+                  </Group>
+                }
+                labelPosition='left'
+                onClick={toggleAdditional}
+              />
+              <Collapse in={openedAdditional}>
+                <Stack gap={10}>
+                  <Box pb={5}>
+                    <ItemSelect
+                      label='Base Item'
+                      placeholder='(for proficiency tracking)'
+                      valueName={baseItem}
+                      filter={(item) => {
+                        return (
+                          !item.meta_data?.base_item ||
+                          item.meta_data?.base_item ===
+                            item.name.trim().replace(/\s/g, '-').toLowerCase()
+                        );
+                      }}
+                      onChange={(item, name) => {
+                        setBaseItem(name);
+                      }}
+                    />
+                  </Box>
 
-                <Accordion variant='filled'>
-                  <Accordion.Item value={'weapon'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Weapon</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        {/* TODO: Damage Die */}
+                  <Accordion variant='separated'>
+                    <Accordion.Item value={'weapon'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Weapon</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <Group wrap='nowrap'>
+                            <Select
+                              label='Damage Die'
+                              clearable
+                              data={[
+                                { value: 'd2', label: 'd2' },
+                                { value: 'd4', label: 'd4' },
+                                { value: 'd6', label: 'd6' },
+                                { value: 'd8', label: 'd8' },
+                                { value: 'd10', label: 'd10' },
+                                { value: 'd12', label: 'd12' },
+                                { value: 'd20', label: 'd20' },
+                              ]}
+                              {...form.getInputProps('meta_data.damage.die')}
+                            />
 
-                        {/* TODO: Damage Type */}
+                            <TextInput
+                              label='Damage Type'
+                              placeholder='ex. slashing'
+                              {...form.getInputProps('meta_data.damage.damageType')}
+                            />
+                          </Group>
 
-                        {/* TODO: Extra Damage */}
+                          <TextInput
+                            label='Extra Damage'
+                            placeholder='ex. 1d4 fire'
+                            {...form.getInputProps('meta_data.damage.extra')}
+                          />
 
-                        {/* TODO: Reload */}
+                          <Group wrap='nowrap'>
+                            <Select
+                              label='Category'
+                              clearable
+                              data={[
+                                { value: 'simple', label: 'Simple' },
+                                { value: 'martial', label: 'Martial' },
+                                { value: 'advanced', label: 'Advanced' },
+                                { value: 'unarmed_attack', label: 'Unarmed' },
+                              ]}
+                              value={weaponCategory}
+                              onChange={(value) => setWeaponCategory(value ?? '')}
+                            />
 
-                        {/* TODO: Range */}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                  <Accordion.Item value={'armor-shield'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Armor / Shield</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        {/* TODO: AC Bonus */}
+                            <Select
+                              label='Group'
+                              clearable
+                              data={[
+                                { value: 'axe', label: 'Axe' },
+                                { value: 'bomb', label: 'Bomb' },
+                                { value: 'bow', label: 'Bow' },
+                                { value: 'brawling', label: 'Brawling' },
+                                { value: 'club', label: 'Club' },
+                                { value: 'crossbow', label: 'Crossbow' },
+                                { value: 'dart', label: 'Dart' },
+                                { value: 'flail', label: 'Flail' },
+                                { value: 'hammer', label: 'Hammer' },
+                                { value: 'knife', label: 'Knife' },
+                                { value: 'pick', label: 'Pick' },
+                                { value: 'polearm', label: 'Polearm' },
+                                { value: 'shield', label: 'Shield' },
+                                { value: 'sling', label: 'Sling' },
+                                { value: 'spear', label: 'Spear' },
+                                { value: 'sword', label: 'Sword' },
+                              ]}
+                              value={weaponGroup}
+                              onChange={(value) => setWeaponGroup(value ?? '')}
+                            />
+                          </Group>
 
-                        {/* TODO: Category */}
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Range'
+                              placeholder='Range'
+                              min={0}
+                              {...form.getInputProps('meta_data.range')}
+                            />
 
-                        {/* TODO: Group */}
+                            <TextInput
+                              label='Reload'
+                              placeholder='Reload'
+                              {...form.getInputProps('meta_data.reload')}
+                            />
+                          </Group>
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'armor-shield'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Armor / Shield</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <NumberInput
+                            label='AC Bonus'
+                            placeholder='AC Bonus'
+                            {...form.getInputProps('meta_data.ac_bonus')}
+                          />
 
-                        {/* TODO: Check penalty */}
+                          <Group wrap='nowrap'>
+                            <Select
+                              label='Category'
+                              clearable
+                              data={[
+                                { value: 'light', label: 'Light' },
+                                { value: 'medium', label: 'Medium' },
+                                { value: 'heavy', label: 'Heavy' },
+                                { value: 'unarmored_defense', label: 'Unarmored' },
+                              ]}
+                              value={armorCategory}
+                              onChange={(value) => setArmorCategory(value ?? '')}
+                            />
 
-                        {/* TODO: Speed penalty */}
+                            <Select
+                              label='Group'
+                              clearable
+                              data={[
+                                { value: 'leather', label: 'Leather' },
+                                { value: 'composite', label: 'Composite' },
+                                { value: 'chain', label: 'Chain' },
+                                { value: 'plate', label: 'Plate' },
+                              ]}
+                              value={armorGroup}
+                              onChange={(value) => setArmorGroup(value ?? '')}
+                            />
+                          </Group>
 
-                        {/* TODO: Dex cap */}
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Check Penalty'
+                              placeholder='Check Penalty'
+                              max={0}
+                              {...form.getInputProps('meta_data.check_penalty')}
+                            />
 
-                        {/* TODO: Strength */}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                  <Accordion.Item value={'container'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Container</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        {/* TODO: bulk_capacity */}
+                            <NumberInput
+                              label='Speed Penalty'
+                              placeholder='Speed Penalty'
+                              max={0}
+                              {...form.getInputProps('meta_data.speed_penalty')}
+                            />
+                          </Group>
 
-                        {/* TODO: bulk_held_or_stowed */}
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Dexterity Cap'
+                              placeholder='Dexterity Cap'
+                              min={0}
+                              {...form.getInputProps('meta_data.dex_cap')}
+                            />
 
-                        {/* TODO: bulk_ignored */}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                  <Accordion.Item value={'runes'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Runes</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        {/* TODO: Striking Rune */}
+                            <NumberInput
+                              label='Min Strength'
+                              placeholder='Min Strength'
+                              min={0}
+                              {...form.getInputProps('meta_data.strength')}
+                            />
+                          </Group>
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'container'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Container</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Bulk Capacity'
+                              placeholder='Bulk Capacity'
+                              min={0}
+                              {...form.getInputProps('meta_data.bulk.capacity')}
+                            />
 
-                        {/* TODO: Potency Rune */}
+                            <NumberInput
+                              label='Bulk Ignored'
+                              placeholder='Bulk Ignored'
+                              min={0}
+                              {...form.getInputProps('meta_data.bulk.ignored')}
+                            />
+                          </Group>
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'runes'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Runes</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <Group wrap='nowrap'>
+                            <Select
+                              label='Striking Rune'
+                              clearable
+                              data={[
+                                { value: '1', label: 'Striking' },
+                                { value: '2', label: 'Greater Striking' },
+                                { value: '3', label: 'Major Striking' },
+                              ]}
+                              value={strikingRune !== undefined ? `${strikingRune}` : undefined}
+                              onChange={(value) => {
+                                setStrikingRune(value ? +value : undefined);
+                              }}
+                            />
 
-                        {/* TODO: Property Runes */}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                  <Accordion.Item value={'hp'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Hit Points</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        {/* TODO: Hardness */}
+                            <Select
+                              label='Potency Rune'
+                              clearable
+                              data={[
+                                { value: '1', label: '+1 Potency' },
+                                { value: '2', label: '+2 Potency' },
+                                { value: '3', label: '+3 Potency' },
+                                { value: '4', label: '+4 Potency' },
+                              ]}
+                              value={potencyRune !== undefined ? `${potencyRune}` : undefined}
+                              onChange={(value) => {
+                                setPotencyRune(value ? +value : undefined);
+                              }}
+                            />
+                          </Group>
 
-                        {/* TODO: Hp_max */}
+                          <ItemMultiSelect
+                            label='Property Runes'
+                            placeholder='(limited to potency rune #)'
+                            valueName={propertyRunes}
+                            filter={(item) => {
+                              return item.group === 'RUNE';
+                            }}
+                            onChange={(items, names) => {
+                              setPropertyRunes(names);
+                            }}
+                          />
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'hp'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Hit Points</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <NumberInput
+                            label='Hardness'
+                            placeholder='Hardness'
+                            min={0}
+                            {...form.getInputProps('meta_data.hardness')}
+                          />
 
-                        {/* TODO: broken_threshold */}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                  <Accordion.Item value={'material'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Material</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        {/* TODO: Type */}
+                          <NumberInput
+                            label='Max HP'
+                            placeholder='Max HP'
+                            min={0}
+                            {...form.getInputProps('meta_data.hp_max')}
+                          />
 
-                        {/* TODO: Grade */}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                  <Accordion.Item value={'other'}>
-                    <Accordion.Control>
-                      <Text fz='sm'>Other</Text>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap={10}>
-                        <Checkbox
-                          label='Is Shoddy'
-                          {...form.getInputProps('meta_data.is_shoddy', { type: 'checkbox' })}
-                        />
+                          <NumberInput
+                            label='Broken Threshold'
+                            placeholder='(typically 1/2 max HP)'
+                            min={0}
+                            {...form.getInputProps('meta_data.broken_threshold')}
+                          />
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'material'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Material</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <Group wrap='nowrap'>
+                            <ItemSelect
+                              label='Type'
+                              placeholder='Type'
+                              valueName={materialType}
+                              filter={(item) => {
+                                return item.group === 'MATERIAL';
+                              }}
+                              onChange={(item, name) => {
+                                setMaterialType(name);
+                              }}
+                            />
 
-                        <NumberInput
-                          label='Quantity'
-                          placeholder='Quantity'
-                          min={0}
-                          {...form.getInputProps('meta_data.quantity')}
-                        />
+                            <Select
+                              label='Grade'
+                              clearable
+                              data={[
+                                { value: 'low', label: 'Low' },
+                                { value: 'standard', label: 'Standard' },
+                                { value: 'high', label: 'High' },
+                              ]}
+                              {...form.getInputProps('meta_data.material.grade')}
+                            />
+                          </Group>
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'other'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Other</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <Checkbox
+                            label='Is Shoddy'
+                            {...form.getInputProps('meta_data.is_shoddy', {
+                              type: 'checkbox',
+                            })}
+                          />
 
-                        <TextInput
-                          defaultValue={form.values.meta_data?.image_url ?? ''}
-                          label='Image URL'
-                          onChange={async (e) => {
-                            setIsValidImageURL(
-                              !e.target?.value ? true : await isValidImage(e.target?.value)
-                            );
-                            form.setFieldValue('meta_data.image_url', e.target?.value);
-                          }}
-                          error={isValidImageURL ? false : 'Invalid URL'}
-                        />
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                </Accordion>
-              </Stack>
-            </Collapse>
+                          <NumberInput
+                            label='Quantity'
+                            placeholder='Quantity'
+                            min={0}
+                            {...form.getInputProps('meta_data.quantity')}
+                          />
+
+                          <NumberInput
+                            label='Bulk (when held or stowed)'
+                            placeholder='Bulk (when held or stowed)'
+                            min={0}
+                            {...form.getInputProps('meta_data.bulk.held_or_stowed')}
+                          />
+
+                          <TextInput
+                            defaultValue={form.values.meta_data?.image_url ?? ''}
+                            label='Image URL'
+                            onChange={async (e) => {
+                              setIsValidImageURL(
+                                e.target.value.trim() ? await isValidImage(e.target.value) : true
+                              );
+                              setImageURL(e.target.value ?? '');
+                            }}
+                            error={isValidImageURL ? false : 'Invalid URL'}
+                          />
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  </Accordion>
+                </Stack>
+              </Collapse>
+            </Box>
             {displayDescription && (
               <RichTextInput
                 label='Description'
@@ -560,9 +890,7 @@ export function CreateItemModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
             </Group>
           </Stack>
         </form>

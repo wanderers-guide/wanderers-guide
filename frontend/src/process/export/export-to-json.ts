@@ -3,7 +3,7 @@ import { Character } from '@typing/content';
 // Legacy WG .guidechar exports are version 3
 const VERSION = 4;
 
-export default function exportToJSON(character: Character) {
+export default async function exportToJSON(character: Character) {
   const exportObject = {
     version: VERSION,
     character,

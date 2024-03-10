@@ -1,19 +1,26 @@
+import { SelectContentButton } from "@common/select/SelectContent";
+import { Box } from "@mantine/core";
+import { OperationResult } from "@operations/operation-runner";
+import { Character } from "@typing/content";
 import {
   Operation,
   OperationSelect,
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
-} from '@typing/operations';
-import { ReactElement, ReactNode } from 'react';
-import { getAllAttributeVariables, getVariable } from './variable-manager';
+} from "@typing/operations";
 import {
   AttributeValue,
   ProficiencyValue,
-  Variable,
   StoreID,
+  Variable,
   VariableType,
   VariableValue,
-} from '@typing/variables';
+} from "@typing/variables";
+import { listToLabel, toLabel } from "@utils/strings";
+import * as _ from "lodash-es";
+import { ReactNode } from "react";
+import { SetterOrUpdater } from "recoil";
+import { getVariable } from "./variable-manager";
 import {
   compactLabels,
   isAttributeValue,
@@ -22,14 +29,7 @@ import {
   proficiencyTypeToLabel,
   variableNameToLabel,
   variableToLabel,
-} from './variable-utils';
-import _ from 'lodash';
-import { listToLabel, toLabel } from '@utils/strings';
-import { SelectContentButton } from '@common/select/SelectContent';
-import { OperationResult } from '@operations/operation-runner';
-import { SetterOrUpdater } from 'recoil';
-import { Character } from '@typing/content';
-import { Box } from '@mantine/core';
+} from "./variable-utils";
 
 type CharacterState = [Character | null, SetterOrUpdater<Character | null>];
 
@@ -37,7 +37,7 @@ export function getStatBlockDisplay(
   id: StoreID,
   variableNames: string[],
   operations: Operation[],
-  mode: 'READ' | 'READ/WRITE',
+  mode: "READ" | "READ/WRITE",
   writeDetails?: {
     operationResults: OperationResult[];
     characterState: CharacterState;
@@ -87,7 +87,7 @@ export function getStatDisplay(
   id: StoreID,
   variableName: string,
   operations: Operation[],
-  mode: 'READ' | 'READ/WRITE',
+  mode: "READ" | "READ/WRITE",
   writeDetails?: {
     operationResults: OperationResult[];
     characterState: CharacterState;
@@ -115,20 +115,20 @@ export function getStatDisplay(
       bestValue = value;
       return true;
     }
-    if (variable.type === 'num') {
+    if (variable.type === "num") {
       if (value >= bestValue) {
         bestValue = value;
         return true;
       }
-    } else if (variable.type === 'str') {
+    } else if (variable.type === "str") {
       bestValue = value;
       return true;
-    } else if (variable.type === 'bool') {
+    } else if (variable.type === "bool") {
       if (value === true) {
         bestValue = value;
         return true;
       }
-    } else if (variable.type === 'prof') {
+    } else if (variable.type === "prof") {
       bestValue = {
         value: maxProficiencyType(
           (bestValue as ProficiencyValue).value,
@@ -136,7 +136,7 @@ export function getStatDisplay(
         ),
       };
       if (bestValue === value) return true;
-    } else if (variable.type === 'attr') {
+    } else if (variable.type === "attr") {
       const bestValueAttr = bestValue as AttributeValue;
       const operationValueAttr = value as AttributeValue;
       if (operationValueAttr.value >= bestValueAttr.value) {
@@ -148,7 +148,7 @@ export function getStatDisplay(
           return true;
         }
       }
-    } else if (variable.type === 'list-str') {
+    } else if (variable.type === "list-str") {
       bestValue = value;
       return true;
     }
@@ -157,24 +157,24 @@ export function getStatDisplay(
 
   let uuid = variableName;
   for (const operation of operations) {
-    if (operation.type === 'adjValue' || operation.type === 'setValue') {
+    if (operation.type === "adjValue" || operation.type === "setValue") {
       if (operation.data.variable === variableName) {
         setBestValue(operation.data.value);
       }
-    } else if (operation.type === 'select') {
-      if (operation.data.optionType === 'ADJ_VALUE') {
+    } else if (operation.type === "select") {
+      if (operation.data.optionType === "ADJ_VALUE") {
         // // If the variable is an attribute and we're selecting any attribute, add it
         if (
-          operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
-          operation.data.optionsFilters?.group === 'ATTRIBUTE' &&
-          variable.type === 'attr'
+          operation.data.optionsFilters?.type === "ADJ_VALUE" &&
+          operation.data.optionsFilters?.group === "ATTRIBUTE" &&
+          variable.type === "attr"
         ) {
           if (!bestValue) {
             // @ts-ignore
             const changed = setBestValue(operation.data.optionsFilters.value);
             if (changed) {
               bestOperation = operation;
-              uuid = 'ATTRIBUTE-FREE';
+              uuid = "ATTRIBUTE-FREE";
             }
           }
         }
@@ -188,19 +188,20 @@ export function getStatDisplay(
               bestOperation = operation;
 
               const opts = (
-                (operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[]
+                (operation.data.optionsPredefined ??
+                  []) as OperationSelectOptionAdjValue[]
               ).map((o) => o.operation.data.variable);
-              uuid = opts.sort().join('_');
+              uuid = opts.sort().join("_");
             }
           }
         }
-      } else if (operation.data.optionType === 'CUSTOM') {
+      } else if (operation.data.optionType === "CUSTOM") {
         // Check all operations in all the options in the select
         let found = false;
         for (const option of (operation.data.optionsPredefined ??
           []) as OperationSelectOptionCustom[]) {
           for (const subop of option.operations ?? []) {
-            if (subop.type === 'adjValue' || subop.type === 'setValue') {
+            if (subop.type === "adjValue" || subop.type === "setValue") {
               if (subop.data.variable === variableName) {
                 const changed = setBestValue(subop.data.value);
                 if (changed) bestOperation = operation;
@@ -215,14 +216,16 @@ export function getStatDisplay(
             []) as OperationSelectOptionCustom[]) {
             variableNames.push(option.id);
           }
-          uuid = variableNames.sort().join('_');
+          uuid = variableNames.sort().join("_");
         }
       }
     }
   }
 
-  // @ts-ignore
-  const bestValueNum = isAttributeValue(bestValue) ? bestValue.value : bestValue;
+  const bestValueNum = isAttributeValue(bestValue)
+    ? // @ts-expect-error TODO actually think this is an error but will leave for now
+      bestValue.value
+    : bestValue;
   if (_.isNumber(bestValueNum)) {
     if (options?.onlyNegatives) {
       if (bestValueNum >= 0) {
@@ -242,7 +245,15 @@ export function getStatDisplay(
   }
 
   return {
-    ui: getDisplay(id, bestValue, bestOperation, variable, mode, writeDetails, options),
+    ui: getDisplay(
+      id,
+      bestValue,
+      bestOperation,
+      variable,
+      mode,
+      writeDetails,
+      options
+    ),
     operation: bestOperation,
     variable,
     bestValue,
@@ -255,7 +266,7 @@ export function getDisplay(
   value: VariableValue | null,
   operation: OperationSelect | null,
   variable: Variable | undefined,
-  mode: 'READ' | 'READ/WRITE',
+  mode: "READ" | "READ/WRITE",
   writeDetails?: {
     operationResults: OperationResult[];
     characterState: CharacterState;
@@ -269,20 +280,22 @@ export function getDisplay(
   if (value === null) return null;
 
   const result = operation?.id
-    ? writeDetails?.operationResults.find((r) => r?.selection?.id === operation?.id)
+    ? writeDetails?.operationResults.find(
+        (r) => r?.selection?.id === operation?.id
+      )
     : null;
 
-  console.log('result', result);
+  console.log("result", result);
 
   // Handle attributes
   if (isAttributeValue(value)) {
     // || (_.isNumber(+value) && variable?.type === 'attr')
     if (operation) {
-      if (mode === 'READ/WRITE') {
+      if (mode === "READ/WRITE") {
         return (
           <Box py={0}>
             <SelectContentButton
-              type={'ability-block'}
+              type={"ability-block"}
               onClick={(option) => {
                 updateCharacter(
                   writeDetails?.characterState,
@@ -294,30 +307,30 @@ export function getDisplay(
                 updateCharacter(
                   writeDetails?.characterState,
                   `${writeDetails?.primarySource}_${operation.id}`,
-                  ''
+                  ""
                 );
               }}
               selectedId={result?.result?.source?.id}
               options={{
                 overrideOptions: result?.selection?.options,
-                overrideLabel: result?.selection?.title || 'Select an Option',
+                overrideLabel: result?.selection?.title || "Select an Option",
               }}
             />
           </Box>
         );
       } else {
-        const attrs = getVarList(id, operation, 'attr');
+        const attrs = getVarList(id, operation, "attr");
         return (
           <>
             {listToLabel(
               attrs.map((a) => (options?.fullNames ? a : compactLabels(a))),
-              'or'
+              "or"
             )}
           </>
         );
       }
     } else {
-      const name = variableNameToLabel(variable?.name ?? '');
+      const name = variableNameToLabel(variable?.name ?? "");
       return <>{options?.fullNames ? name : compactLabels(name)}</>;
     }
   }
@@ -325,11 +338,11 @@ export function getDisplay(
   // Handle profs
   if (isProficiencyValue(value)) {
     if (operation) {
-      if (mode === 'READ/WRITE') {
+      if (mode === "READ/WRITE") {
         return (
           <Box py={5}>
             <SelectContentButton
-              type={'ability-block'}
+              type={"ability-block"}
               onClick={(option) => {
                 updateCharacter(
                   writeDetails?.characterState,
@@ -341,13 +354,13 @@ export function getDisplay(
                 updateCharacter(
                   writeDetails?.characterState,
                   `${writeDetails?.primarySource}_${operation.id}`,
-                  ''
+                  ""
                 );
               }}
               selectedId={result?.result?.source?.id}
               options={{
                 overrideOptions: result?.selection?.options,
-                overrideLabel: result?.selection?.title || 'Select an Option',
+                overrideLabel: result?.selection?.title || "Select an Option",
                 abilityBlockType:
                   (result?.selection?.options ?? []).length > 0
                     ? result?.selection?.options[0].type
@@ -359,35 +372,37 @@ export function getDisplay(
         );
       } else {
         // Display as `Trained in your choice of Acrobatics or Athletics`
-        const profs = getVarList(id, operation, 'prof');
+        const profs = getVarList(id, operation, "prof");
 
         // If all the profs are the same, display as `Trained in Acrobatics`
         if (profs.every((p) => p === profs[0])) {
-          return `${proficiencyTypeToLabel((value as ProficiencyValue).value)} in ${profs[0]}`;
+          return `${proficiencyTypeToLabel(
+            (value as ProficiencyValue).value
+          )} in ${profs[0]}`;
         } else {
           return (
             <>
-              {proficiencyTypeToLabel((value as ProficiencyValue).value)} in your choice of{' '}
-              {listToLabel(profs, 'or')}
+              {proficiencyTypeToLabel((value as ProficiencyValue).value)} in
+              your choice of {listToLabel(profs, "or")}
             </>
           );
         }
       }
     } else {
       // Display as `Expert in Fortitude`
-      return `${proficiencyTypeToLabel((value as ProficiencyValue).value)} in ${variableNameToLabel(
-        variable?.name ?? ''
-      )}`;
+      return `${proficiencyTypeToLabel(
+        (value as ProficiencyValue).value
+      )} in ${variableNameToLabel(variable?.name ?? "")}`;
     }
   }
 
   // Handle numbers
-  if (variable?.type === 'num') {
+  if (variable?.type === "num") {
     if (operation) {
       return (
         <Box py={5}>
           <SelectContentButton
-            type={'ability-block'}
+            type={"ability-block"}
             onClick={(option) => {
               updateCharacter(
                 writeDetails?.characterState,
@@ -399,13 +414,13 @@ export function getDisplay(
               updateCharacter(
                 writeDetails?.characterState,
                 `${writeDetails?.primarySource}_${operation.id}`,
-                ''
+                ""
               );
             }}
             selectedId={result?.result?.source?.id}
             options={{
               overrideOptions: result?.selection?.options,
-              overrideLabel: result?.selection?.title || 'Select an Option',
+              overrideLabel: result?.selection?.title || "Select an Option",
               abilityBlockType:
                 (result?.selection?.options ?? []).length > 0
                   ? result?.selection?.options[0].type
@@ -421,12 +436,12 @@ export function getDisplay(
   }
 
   // Handle strings
-  if (variable?.type === 'str' || variable?.type === 'list-str') {
+  if (variable?.type === "str" || variable?.type === "list-str") {
     if (operation) {
       return (
         <Box py={5}>
           <SelectContentButton
-            type={'ability-block'}
+            type={"ability-block"}
             onClick={(option) => {
               updateCharacter(
                 writeDetails?.characterState,
@@ -438,13 +453,13 @@ export function getDisplay(
               updateCharacter(
                 writeDetails?.characterState,
                 `${writeDetails?.primarySource}_${operation.id}`,
-                ''
+                ""
               );
             }}
             selectedId={result?.result?.source?.id}
             options={{
               overrideOptions: result?.selection?.options,
-              overrideLabel: result?.selection?.title || 'Select an Option',
+              overrideLabel: result?.selection?.title || "Select an Option",
               abilityBlockType:
                 (result?.selection?.options ?? []).length > 0
                   ? result?.selection?.options[0].type
@@ -467,10 +482,14 @@ export function getDisplay(
  * @param operation
  * @returns - List of labels of variables
  */
-function getVarList(id: StoreID, operation: OperationSelect, type: VariableType): string[] {
+function getVarList(
+  id: StoreID,
+  operation: OperationSelect,
+  type: VariableType
+): string[] {
   const labels: string[] = [];
 
-  if (operation.data.optionType === 'ADJ_VALUE') {
+  if (operation.data.optionType === "ADJ_VALUE") {
     for (const option of (operation.data.optionsPredefined ??
       []) as OperationSelectOptionAdjValue[]) {
       const variable = getVariable(id, option.operation.data.variable);
@@ -479,20 +498,20 @@ function getVarList(id: StoreID, operation: OperationSelect, type: VariableType)
       }
     }
     if (
-      operation.data.optionsFilters?.type === 'ADJ_VALUE' &&
-      operation.data.optionsFilters?.group === 'ATTRIBUTE' &&
-      type === 'attr'
+      operation.data.optionsFilters?.type === "ADJ_VALUE" &&
+      operation.data.optionsFilters?.group === "ATTRIBUTE" &&
+      type === "attr"
     ) {
       // for (const variable of getAllAttributeVariables()) {
       //   labels.push(variableToLabel(variable));
       // }
-      labels.push('Free');
+      labels.push("Free");
     }
-  } else if (operation.data.optionType === 'CUSTOM') {
+  } else if (operation.data.optionType === "CUSTOM") {
     for (const option of (operation.data.optionsPredefined ??
       []) as OperationSelectOptionCustom[]) {
       for (const subop of option.operations ?? []) {
-        if (subop.type === 'adjValue' || subop.type === 'setValue') {
+        if (subop.type === "adjValue" || subop.type === "setValue") {
           const variable = getVariable(id, subop.data.variable);
           if (variable && variable.type === type) {
             labels.push(variableToLabel(variable));
@@ -505,7 +524,11 @@ function getVarList(id: StoreID, operation: OperationSelect, type: VariableType)
   return labels.sort();
 }
 
-function updateCharacter(characterState: CharacterState | undefined, path: string, value: string) {
+function updateCharacter(
+  characterState: CharacterState | undefined,
+  path: string,
+  value: string
+) {
   if (!characterState) return;
   const [character, setCharacter] = characterState;
   setCharacter((prev) => {

@@ -1,14 +1,17 @@
 import { AbilityBlock, Language, Spell } from '@typing/content';
 import {
   ConditionCheckData,
+  GiveSpellData,
   Operation,
   OperationAddBonusToValue,
   OperationAdjValue,
   OperationConditional,
   OperationCreateValue,
+  OperationDefineCastingSource,
   OperationGiveAbilityBlock,
   OperationGiveLanguage,
   OperationGiveSpell,
+  OperationGiveSpellSlot,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -22,7 +25,7 @@ import {
   getVariable,
   setVariable,
 } from '@variables/variable-manager';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { SelectionTreeNode } from './selection-tree';
 import { displayError, throwError } from '@utils/notifications';
 import {
@@ -96,6 +99,10 @@ export async function runOperations(
       return await runGiveLanguage(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpell') {
       return await runGiveSpell(varId, operation, sourceLabel);
+    } else if (operation.type === 'giveSpellSlot') {
+      return await runGiveSpellSlot(varId, operation, sourceLabel);
+    } else if (operation.type === 'defineCastingSource') {
+      return await runDefineCastingSource(varId, operation, sourceLabel);
     } else if (operation.type === 'removeAbilityBlock') {
       return await runRemoveAbilityBlock(varId, operation, sourceLabel);
     } else if (operation.type === 'removeLanguage') {
@@ -230,6 +237,20 @@ async function updateVariables(
   } else if (operation.data.optionType === 'SPELL') {
     adjVariable(varId, 'SPELL_IDS', `${selectedOption.id}`, sourceLabel);
     adjVariable(varId, 'SPELL_NAMES', selectedOption.name, sourceLabel);
+
+    adjVariable(
+      varId,
+      'SPELL_DATA',
+      JSON.stringify({
+        spellId: selectedOption.id,
+        type: selectedOption._meta_data?.type,
+        castingSource: selectedOption._meta_data?.castingSource,
+        level: selectedOption._meta_data?.level,
+        tradition: selectedOption._meta_data?.tradition,
+        casts: selectedOption._meta_data?.casts,
+      } satisfies GiveSpellData),
+      sourceLabel
+    );
   } else if (operation.data.optionType === 'ADJ_VALUE') {
     adjVariable(varId, selectedOption.variable, selectedOption.value, sourceLabel);
   } else if (operation.data.optionType === 'CUSTOM') {
@@ -373,6 +394,49 @@ async function runGiveSpell(
 
   adjVariable(varId, 'SPELL_IDS', `${spell.id}`, sourceLabel);
   adjVariable(varId, 'SPELL_NAMES', spell.name, sourceLabel);
+
+  adjVariable(
+    varId,
+    'SPELL_DATA',
+    JSON.stringify({
+      spellId: spell.id,
+      type: operation.data.type,
+      castingSource: operation.data.castingSource,
+      level: operation.data.level,
+      tradition: operation.data.tradition,
+      casts: operation.data.casts,
+    } satisfies GiveSpellData),
+    sourceLabel
+  );
+
+  return null;
+}
+
+async function runGiveSpellSlot(
+  varId: StoreID,
+  operation: OperationGiveSpellSlot,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  for (const slot of operation.data.slots) {
+    adjVariable(
+      varId,
+      'SPELL_SLOTS',
+      JSON.stringify({
+        ...slot,
+        source: operation.data.castingSource,
+      }),
+      sourceLabel
+    );
+  }
+  return null;
+}
+
+async function runDefineCastingSource(
+  varId: StoreID,
+  operation: OperationDefineCastingSource,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  adjVariable(varId, 'CASTING_SOURCES', operation.data.value, sourceLabel);
   return null;
 }
 

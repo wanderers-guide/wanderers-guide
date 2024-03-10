@@ -1,4 +1,23 @@
+import D20Loader from '@assets/images/D20Loader';
+import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
 import { CharacterInfo } from '@common/CharacterInfo';
+import RichText from '@common/RichText';
+import ResultWrapper from '@common/operations/results/ResultWrapper';
+import { SelectContentButton, selectContent } from '@common/select/SelectContent';
+import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { fetchContentPackage } from '@content/content-store';
+import { getIconFromContentType } from '@content/content-utils';
+import classes from '@css/FaqSimple.module.css';
+import {
+  AncestryInitialOverview,
+  convertAncestryOperationsIntoUI,
+} from '@drawers/types/AncestryDrawer';
+import {
+  BackgroundInitialOverview,
+  convertBackgroundOperationsIntoUI,
+} from '@drawers/types/BackgroundDrawer';
+import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
 import {
   Accordion,
   Badge,
@@ -7,66 +26,33 @@ import {
   Divider,
   Drawer,
   Group,
-  Indicator,
   ScrollArea,
-  SegmentedControl,
   Stack,
   Text,
   Title,
-  UnstyledButton,
-  VisuallyHidden,
   useMantineTheme,
 } from '@mantine/core';
-import {
-  AbilityBlock,
-  Ancestry,
-  Background,
-  Character,
-  Class,
-  ContentPackage,
-  ContentSource,
-} from '@typing/content';
-import classes from '@css/FaqSimple.module.css';
-import { useElementSize, useHover, useInterval, useMergedRef, useTimeout } from '@mantine/hooks';
-import { useEffect, useRef, useState } from 'react';
-import { SelectContentButton, selectContent } from '@common/select/SelectContent';
-import { characterState } from '@atoms/characterAtoms';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { useQuery } from '@tanstack/react-query';
-import D20Loader from '@assets/images/D20Loader';
-import { getIconFromContentType } from '@content/content-utils';
-import { executeCharacterOperations } from '@operations/operation-controller';
-import ResultWrapper from '@common/operations/results/ResultWrapper';
-import { IconId, IconLeaf, IconPuzzle } from '@tabler/icons-react';
-import { OperationResult } from '@operations/operation-runner';
-import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
-import { fetchContentPackage } from '@content/content-store';
-import { ObjectWithUUID } from '@operations/operation-utils';
-import { OperationResultPackage, OperationSelect } from '@typing/operations';
+import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
-import useRefresh from '@utils/use-refresh';
-import { set } from 'lodash';
-import _ from 'lodash';
-import {
-  AncestryInitialOverview,
-  convertAncestryOperationsIntoUI,
-} from '@drawers/types/AncestryDrawer';
-import { drawerState } from '@atoms/navAtoms';
-import {
-  BackgroundInitialOverview,
-  convertBackgroundOperationsIntoUI,
-} from '@drawers/types/BackgroundDrawer';
-import RichText from '@common/RichText';
-import { VariableAttr, VariableListStr, VariableProf } from '@typing/variables';
-import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import { executeCharacterOperations } from '@operations/operation-controller';
+import { OperationResult } from '@operations/operation-runner';
+import { ObjectWithUUID } from '@operations/operation-utils';
+import { IconId, IconPuzzle } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
+import { OperationResultPackage, OperationSelect } from '@typing/operations';
+import { VariableListStr, VariableProf } from '@typing/variables';
+import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 import {
   displayAttributeValue,
   displayFinalHealthValue,
   displayFinalProfValue,
 } from '@variables/variable-display';
-import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
-import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import { variableToLabel } from '@variables/variable-utils';
+import * as _ from 'lodash-es';
+import { useEffect, useRef, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -277,7 +263,7 @@ export function CharBuilderCreationInner(props: {
             <Divider pb={5} />
           </>
         )}
-        <ScrollArea h={props.pageHeight} offsetScrollbars>
+        <ScrollArea h={props.pageHeight} pr={14} scrollbars='y'>
           <Accordion
             value={levelItemValue}
             onChange={setLevelItemValue}
@@ -381,7 +367,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           }}
         />
       </Box>
-      <ScrollArea h={props.pageHeight - height - 20} offsetScrollbars>
+      <ScrollArea h={props.pageHeight - height - 20} pr={14} scrollbars='y'>
         <Stack gap={5}>
           <Box>
             <Button
@@ -418,7 +404,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           </StatButton>
           <StatButton
             onClick={() => {
-              openDrawer({ type: 'stat-prof', data: { variableName: 'CLASS_DC', isDC: true } });
+              openDrawer({
+                type: 'stat-prof',
+                data: { variableName: 'CLASS_DC', isDC: true },
+              });
             }}
           >
             <Box>
@@ -435,7 +424,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           </StatButton>
           <StatButton
             onClick={() => {
-              openDrawer({ type: 'stat-prof', data: { variableName: 'PERCEPTION' } });
+              openDrawer({
+                type: 'stat-prof',
+                data: { variableName: 'PERCEPTION' },
+              });
             }}
           >
             <Box>
@@ -810,7 +802,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       <StatButton
                         key={index}
                         onClick={() => {
-                          openDrawer({ type: 'language', data: { id: parseInt(languageId) } });
+                          openDrawer({
+                            type: 'language',
+                            data: { id: parseInt(languageId) },
+                          });
                         }}
                       >
                         <Box>
@@ -853,7 +848,10 @@ function AttributeModPart(props: { attribute: string; variableName: string }) {
         {props.attribute}
       </Text>
       <Text c='gray.0' ta='center'>
-        {displayAttributeValue('CHARACTER', props.variableName, { c: 'gray.0', ta: 'center' })}
+        {displayAttributeValue('CHARACTER', props.variableName, {
+          c: 'gray.0',
+          ta: 'center',
+        })}
       </Text>
     </Box>
   );
@@ -888,7 +886,7 @@ function LevelSection(props: {
   level: number;
   opened: boolean;
   content: ContentPackage;
-  operationResults: any;
+  operationResults?: OperationResultPackage;
 }) {
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -897,7 +895,10 @@ function LevelSection(props: {
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMergedRef(ref, choiceCountRef);
 
-  const [choiceCounts, setChoiceCounts] = useState<{ current: number; max: number }>({
+  const [choiceCounts, setChoiceCounts] = useState<{
+    current: number;
+    max: number;
+  }>({
     current: 0,
     max: 0,
   });
@@ -1174,7 +1175,7 @@ function AncestrySectionAccordionItem(props: {
 
 function InitialStatsLevelSection(props: {
   content: ContentPackage;
-  operationResults: any;
+  operationResults?: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
 }) {
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -1269,7 +1270,7 @@ function InitialStatsLevelSection(props: {
 function AncestryAccordionItem(props: {
   ancestry?: Ancestry;
   content: ContentPackage;
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1395,7 +1396,7 @@ function AncestryAccordionItem(props: {
 
 function BackgroundAccordionItem(props: {
   background?: Background;
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1506,7 +1507,7 @@ function BackgroundAccordionItem(props: {
 
 function ClassAccordionItem(props: {
   class_?: Class;
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1612,7 +1613,7 @@ function ClassAccordionItem(props: {
 }
 
 function BooksAccordionItem(props: {
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1657,10 +1658,14 @@ function BooksAccordionItem(props: {
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={choiceCountRef}>
-        {props.operationResults.contentSourceResults.map((s: any, index: number) => (
+        {props.operationResults.contentSourceResults.map((s, index) => (
           <DisplayOperationResult
             key={index}
-            source={s.baseSource}
+            source={{
+              ...s.baseSource,
+              _select_uuid: `${s.baseSource.id}`,
+              _content_type: 'content-source',
+            }}
             level={character?.level ?? 1}
             results={s.baseResults}
             onChange={(path, value) => {
@@ -1674,7 +1679,7 @@ function BooksAccordionItem(props: {
 }
 
 function ItemsAccordionItem(props: {
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1717,24 +1722,28 @@ function ItemsAccordionItem(props: {
         </Group>
       </Accordion.Control>
       <Accordion.Panel ref={choiceCountRef}>
-        {/* {props.operationResults.itemResults.map((s: any, index: number) => (
+        {props.operationResults.itemResults.map((s, index) => (
           <DisplayOperationResult
             key={index}
-            source={s.baseSource}
+            source={{
+              ...s.baseSource,
+              _select_uuid: `${s.baseSource.id}`,
+              _content_type: 'item',
+            }}
             level={s.baseSource.level}
             results={s.baseResults}
             onChange={(path, value) => {
               props.onSaveChanges(`item-${s.baseSource.id}_${path}`, value);
             }}
           />
-        ))} */}
+        ))}
       </Accordion.Panel>
     </Accordion.Item>
   );
 }
 
 function CustomAccordionItem(props: {
-  operationResults: any;
+  operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {

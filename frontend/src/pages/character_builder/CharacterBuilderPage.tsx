@@ -1,75 +1,35 @@
-import { useEffect, useState } from 'react';
+import { characterState } from '@atoms/characterAtoms';
+import BlurBox from '@common/BlurBox';
+import { defineDefaultSources } from '@content/content-store';
+import { saveCustomization } from '@content/customization-cache';
 import {
-  Avatar,
-  Text,
-  Group,
-  Stack,
-  Button,
-  Stepper,
+  ActionIcon,
   Box,
   Center,
-  TextInput,
-  NumberInput,
-  Select,
-  PasswordInput,
-  Tabs,
-  rem,
-  Switch,
-  ScrollArea,
-  ActionIcon,
-  useMantineTheme,
   LoadingOverlay,
-  Title,
+  ScrollArea,
+  Stack,
+  Stepper,
+  Text,
+  rem,
+  useMantineTheme,
 } from '@mantine/core';
-import BlurBox from '@common/BlurBox';
-import {
-  IconPhoto,
-  IconMessageCircle,
-  IconSettings,
-  IconBooks,
-  IconAsset,
-  IconVocabulary,
-  IconWorld,
-  IconBook2,
-  IconBrandSafari,
-  IconMap,
-  IconNotebook,
-  IconDots,
-  IconUsers,
-  IconArrowRight,
-  IconArrowLeft,
-  IconTools,
-  IconHome,
-  IconUser,
-  IconHammer,
-  IconPhotoPlus,
-  IconUserCircle,
-  IconUserScan,
-  IconPhotoUp,
-  IconUserPlus,
-  IconRefresh,
-  IconRefreshDot,
-} from '@tabler/icons-react';
-import { LinksGroup } from '@common/LinksGroup';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, ContentSource } from '@typing/content';
-import { makeRequest } from '@requests/request-manager';
-import { useLoaderData, useNavigate } from 'react-router-dom';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
-import { modals, openContextModal } from '@mantine/modals';
-import CharBuilderHome from './CharBuilderHome';
-import CharBuilderCreation from './CharBuilderCreation';
-import { useRecoilState } from 'recoil';
-import { characterState } from '@atoms/characterAtoms';
-import { setPageTitle } from '@utils/document-change';
-import { isPlayable } from '@utils/character';
+import { makeRequest } from '@requests/request-manager';
+import { IconArrowLeft, IconArrowRight, IconHammer, IconHome, IconUser } from '@tabler/icons-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Character } from '@typing/content';
 import { JSendResponse } from '@typing/requests';
-import _ from 'lodash';
-import { defineDefaultSources } from '@content/content-store';
+import { isPlayable } from '@utils/character';
+import { setPageTitle } from '@utils/document-change';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import { saveCustomization } from '@content/customization-cache';
+import { useEffect, useState } from 'react';
+import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
+import CharBuilderCreation from './CharBuilderCreation';
+import CharBuilderHome from './CharBuilderHome';
 
-export default function CharacterBuilderPage() {
+export function Component() {
   setPageTitle(`Builder`);
 
   const theme = useMantineTheme();
@@ -227,7 +187,7 @@ export default function CharacterBuilderPage() {
                 icon={<IconHome style={stepIconStyle} />}
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight}>
+                <ScrollArea h={pageHeight} scrollbars='y'>
                   {character && !isLoading ? (
                     <CharBuilderHome pageHeight={pageHeight} />
                   ) : (
@@ -246,7 +206,7 @@ export default function CharacterBuilderPage() {
                 icon={<IconHammer style={stepIconStyle} />}
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight}>
+                <ScrollArea h={pageHeight} scrollbars='y'>
                   {character && !isLoading ? (
                     <CharBuilderCreation pageHeight={pageHeight} />
                   ) : (
@@ -265,13 +225,15 @@ export default function CharacterBuilderPage() {
                 icon={<IconUser style={stepIconStyle} />}
                 completedIcon={<IconUser style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight}>
+                <ScrollArea h={pageHeight} scrollbars='y'>
                   <Text ta='center'>Redirecting to sheet...</Text>
                 </ScrollArea>
               </Stepper.Step>
 
               <Stepper.Completed>
-                <ScrollArea h={pageHeight}>Complete</ScrollArea>
+                <ScrollArea h={pageHeight} scrollbars='y'>
+                  Complete
+                </ScrollArea>
               </Stepper.Completed>
             </Stepper>
           </BlurBox>

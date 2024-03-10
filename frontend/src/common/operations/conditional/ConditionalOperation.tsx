@@ -18,7 +18,7 @@ import { Variable, VariableType } from '@typing/variables';
 import { useEffect, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { IconCaretRightFilled, IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { ConditionCheckData, ConditionOperator, Operation } from '@typing/operations';
 import { useDidUpdate } from '@mantine/hooks';
@@ -91,7 +91,7 @@ export default function ConditionalOperation(props: {
         <Divider />
         <>
           {true && (
-            <ScrollArea mah={400}>
+            <ScrollArea mah={400} scrollbars='y'>
               <Stack>
                 <OperationSection
                   title={

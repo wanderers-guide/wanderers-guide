@@ -1,26 +1,22 @@
+import classes from '@css/ActionsGrid.module.css';
 import {
-  Text,
-  Group,
-  Anchor,
-  Card,
-  SimpleGrid,
-  UnstyledButton,
   Avatar,
-  MantineRadius,
+  Card,
   FileButton,
-  LoadingOverlay,
   HoverCard,
+  LoadingOverlay,
   ScrollArea,
+  SimpleGrid,
+  Text,
+  UnstyledButton,
 } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
-import _, { set } from 'lodash';
-import { ImageOption } from '@typing/index';
-import classes from '@css/ActionsGrid.module.css';
 import { IconBrush, IconUpload } from '@tabler/icons-react';
+import { ImageOption } from '@typing/index';
 import { uploadImage } from '@upload/image-upload';
 import { useState } from 'react';
 
-export function SelectImageModal({
+export default function SelectImageModal({
   context,
   id,
   innerProps,
@@ -65,7 +61,7 @@ export function SelectImageModal({
   return (
     <Card withBorder radius='md' className={classes.card} pl={15} py={15} pr={5}>
       <LoadingOverlay visible={loading} />
-      <ScrollArea h={315}>
+      <ScrollArea h={315} scrollbars='y'>
         <SimpleGrid cols={3} pl={5} py={5} pr={15}>
           <FileButton
             onChange={async (file) => {

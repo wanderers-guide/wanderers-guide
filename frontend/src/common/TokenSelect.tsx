@@ -5,6 +5,7 @@ export default function TokenSelect(props: {
   emptySymbol?: JSX.Element;
   fullSymbol?: JSX.Element;
   count: number;
+  onChange?: (value: number) => void;
   size?: MantineSize;
 }) {
   const [value, setValue] = useState(props.count);
@@ -17,11 +18,14 @@ export default function TokenSelect(props: {
       fullSymbol={props.fullSymbol}
       value={value}
       onChange={(v) => {
+        let value;
         if (v === value) {
-          setValue(v - 1);
+          value = v - 1;
         } else {
-          setValue(v);
+          value = v;
         }
+        setValue(value);
+        props.onChange?.(value);
       }}
     />
   );

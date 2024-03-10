@@ -1,33 +1,66 @@
 /* eslint-disable react-refresh/only-export-components */
+import { drawerState } from '@atoms/navAtoms';
+import { ActionSymbol } from '@common/Actions';
+import { BuyItemButton } from '@common/BuyItemButton';
+import TraitsDisplay from '@common/TraitsDisplay';
+import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
+import { isActionCost } from '@content/content-utils';
+import { GenericData } from '@drawers/types/GenericDrawer';
 import {
   ActionIcon,
+  Avatar,
+  Badge,
   Box,
   Button,
-  CloseButton,
+  Center,
   Group,
-  Overlay,
-  Stack,
-  TextInput,
-  Text,
-  Title,
-  Transition,
-  useMantineTheme,
-  LoadingOverlay,
+  Indicator,
   Loader,
-  Badge,
+  Menu,
+  Overlay,
   Pagination,
   ScrollArea,
-  Center,
-  Portal,
-  Avatar,
-  MantineColor,
-  BackgroundImage,
-  Indicator,
-  Menu,
-  rem,
+  Stack,
+  Text,
+  TextInput,
   ThemeIcon,
-  Select,
+  Title,
+  Transition,
+  rem,
+  useMantineTheme,
 } from '@mantine/core';
+import { useDebouncedState, useHover } from '@mantine/hooks';
+import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
+import {
+  IconArrowNarrowRight,
+  IconCheck,
+  IconChevronDown,
+  IconCircleDotFilled,
+  IconCopy,
+  IconDots,
+  IconQuestionMark,
+  IconSearch,
+  IconTrash,
+  IconX,
+  IconZoomCheck,
+} from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/variables';
+import { pluralize, toLabel } from '@utils/strings';
+import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
+import { meetsPrerequisites } from '@variables/prereq-detection';
+import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
+import {
+  isProficiencyType,
+  maxProficiencyType,
+  nextProficiencyType,
+  prevProficiencyType,
+  proficiencyTypeToLabel,
+} from '@variables/variable-utils';
+import * as JsSearch from 'js-search';
+import * as _ from 'lodash-es';
+import { useEffect, useRef, useState } from 'react';
+import { useRecoilState } from 'recoil';
 import {
   AbilityBlock,
   AbilityBlockType,
@@ -38,66 +71,11 @@ import {
   Creature,
   Item,
   Language,
-  Rarity,
   Spell,
   Trait,
 } from '../../typing/content';
-import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
-import _ from 'lodash';
-import { useEffect, useRef, useState } from 'react';
-import {
-  useClickOutside,
-  useDebouncedState,
-  useDebouncedValue,
-  useHover,
-  usePagination,
-} from '@mantine/hooks';
-import {
-  IconArrowNarrowRight,
-  IconCheck,
-  IconChevronDown,
-  IconChevronsLeft,
-  IconChevronsRight,
-  IconCircleDotFilled,
-  IconCopy,
-  IconDots,
-  IconQuestionMark,
-  IconSearch,
-  IconTrash,
-  IconX,
-  IconZoomCheck,
-} from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActionSymbol } from '@common/Actions';
-import * as JsSearch from 'js-search';
-import { pluralize, toLabel } from '@utils/strings';
-import { drawerState } from '@atoms/navAtoms';
-import { useRecoilState } from 'recoil';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { isActionCost } from '@content/content-utils';
-import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
-import {
-  compactLabels,
-  isProficiencyType,
-  maxProficiencyType,
-  nextProficiencyType,
-  prevProficiencyType,
-  proficiencyTypeToLabel,
-  variableNameToLabel,
-} from '@variables/variable-utils';
-import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
-import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
-import {
-  ExtendedProficiencyType,
-  ProficiencyType,
-  ProficiencyValue,
-  VariableProf,
-} from '@typing/variables';
-import { meetsPrerequisites } from '@variables/prereq-detection';
-import { GenericData } from '@drawers/types/GenericDrawer';
-import { BuyItemButton } from '@common/BuyItemButton';
 
-export function SelectContentButton<T = Record<string, any>>(props: {
+export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
   onClick: (option: T) => void;
   onClear?: () => void;
@@ -108,6 +86,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
+    filterFn?: (option: T) => boolean;
   };
 }) {
   const [selected, setSelected] = useState<T | undefined>();
@@ -137,7 +116,7 @@ export function SelectContentButton<T = Record<string, any>>(props: {
   }, [props.selectedId, props.type]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
-  // @ts-ignore
+
   const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
 
   return (
@@ -162,6 +141,8 @@ export function SelectContentButton<T = Record<string, any>>(props: {
               skillAdjustment: props.options?.skillAdjustment,
               // @ts-ignore
               selectedId: selected?.id,
+              // @ts-ignore
+              filterFn: props.options?.filterFn,
             }
           );
         }}
@@ -195,6 +176,7 @@ export function selectContent<T = Record<string, any>>(
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
     selectedId?: number;
+    filterFn?: (option: Record<string, any>) => boolean;
   }
 ) {
   let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
@@ -211,7 +193,7 @@ export function selectContent<T = Record<string, any>>(
   });
 }
 
-export function SelectContentModal({
+export default function SelectContentModal({
   context,
   id,
   innerProps,
@@ -224,6 +206,7 @@ export function SelectContentModal({
     skillAdjustment?: ExtendedProficiencyType;
     groupBySource?: boolean;
     selectedId?: number;
+    filterFn?: (option: Record<string, any>) => boolean;
   };
 }>) {
   const [openedDrawer, setOpenedDrawer] = useState(false);
@@ -393,6 +376,7 @@ export function SelectContentModal({
             innerProps.onClick(option);
             context.closeModal(id);
           }}
+          filterFn={innerProps.options?.filterFn}
         />
       </Stack>
     </Box>
@@ -451,6 +435,7 @@ function SelectionOptions(props: {
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
+  filterFn?: (option: Record<string, any>) => boolean;
 }) {
   const { data, isFetching } = useQuery({
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
@@ -468,7 +453,9 @@ function SelectionOptions(props: {
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
-  let options = data ? [...data.values()].filter((d) => d) : [];
+  let options = data
+    ? [...data.values()].filter((d) => d).filter(props.filterFn ? props.filterFn : () => true)
+    : [];
   if (props.overrideOptions) options = props.overrideOptions;
 
   // Filter options based on source
@@ -565,7 +552,12 @@ export function SelectionOptionsInner(props: {
 
   return (
     <>
-      <ScrollArea viewportRef={viewport} h={props.h ?? 372} style={{ position: 'relative' }}>
+      <ScrollArea
+        viewportRef={viewport}
+        h={props.h ?? 372}
+        scrollbars='y'
+        style={{ position: 'relative' }}
+      >
         {props.isLoading ? (
           <Loader
             type='bars'
@@ -1107,7 +1099,10 @@ export function GenericSelectionOption(props: {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              openDrawer({ type: 'generic', data: props.option._custom_select });
+              openDrawer({
+                type: 'generic',
+                data: props.option._custom_select,
+              });
             }}
           >
             Details
@@ -1208,14 +1203,14 @@ export function FeatSelectionOption(props: {
     >
       {props.displayLevel && !props.feat.meta_data?.unselectable && (
         <Text
-          fz={10}
+          fz={9}
           c='dimmed'
           ta='right'
           w={14}
           style={{
             position: 'absolute',
-            top: 15,
-            left: 1,
+            top: 18,
+            left: 2,
           }}
         >
           {props.feat.level}.
@@ -1527,7 +1522,10 @@ export function ClassFeatureSelectionOption(props: {
           }}
           onClick={(e) => {
             e.stopPropagation();
-            openDrawer({ type: 'class-feature', data: { id: props.classFeature.id } });
+            openDrawer({
+              type: 'class-feature',
+              data: { id: props.classFeature.id },
+            });
           }}
         >
           Details
@@ -1759,7 +1757,10 @@ export function PhysicalFeatureSelectionOption(props: {
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'class-feature', data: { id: props.physicalFeature.id } });
+          openDrawer({
+            type: 'class-feature',
+            data: { id: props.physicalFeature.id },
+          });
         }}
       >
         Details
@@ -2644,6 +2645,7 @@ export function SpellSelectionOption(props: {
   onClick: (spell: Spell) => void;
   selected?: boolean;
   includeOptions?: boolean;
+  includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -2698,21 +2700,24 @@ export function SpellSelectionOption(props: {
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
-      <Button
-        size='compact-xs'
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'spell', data: { id: props.spell.id } });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails === undefined ||
+        (props.includeDetails === true && (
+          <Button
+            size='compact-xs'
+            variant='subtle'
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: props.includeOptions ? 40 : 10,
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDrawer({ type: 'spell', data: { id: props.spell.id } });
+            }}
+          >
+            Details
+          </Button>
+        ))}
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>
@@ -2737,29 +2742,30 @@ export function SpellSelectionOption(props: {
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.spell.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
+            {props.onCopy && (
+              <Menu.Item
+                leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onCopy?.(props.spell.id);
+                }}
+              >
+                Duplicate
+              </Menu.Item>
+            )}
 
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.spell.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
+            {props.onDelete && (
+              <Menu.Item
+                color='red'
+                leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onDelete?.(props.spell.id);
+                }}
+              >
+                Delete
+              </Menu.Item>
+            )}
           </Menu.Dropdown>
         </Menu>
       )}

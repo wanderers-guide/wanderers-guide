@@ -12,9 +12,10 @@ import { Operation, OperationResultPackage, OperationSelect } from '@typing/oper
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
 import { addVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
 import { isAttributeValue } from '@variables/variable-utils';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { hashData } from '@utils/numbers';
 import { StoreID } from '@typing/variables';
+import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -90,7 +91,10 @@ export async function executeCharacterOperations(
     });
 
   const operationsPassthrough = async (options?: OperationOptions) => {
-    let contentSourceResults: { baseSource: ContentSource; baseResults: OperationResult[] }[] = [];
+    let contentSourceResults: {
+      baseSource: ContentSource;
+      baseResults: OperationResult[];
+    }[] = [];
     for (const source of content.sources ?? []) {
       const results = await executeOperations(
         'CHARACTER',
@@ -150,7 +154,10 @@ export async function executeCharacterOperations(
     }
 
     // Ancestry heritage and feats
-    let ancestrySectionResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
+    let ancestrySectionResults: {
+      baseSource: AbilityBlock;
+      baseResults: OperationResult[];
+    }[] = [];
     if (ancestry) {
       for (const section of getAncestrySections(ancestry)) {
         if (section.level === undefined || section.level <= character.level) {
@@ -170,7 +177,10 @@ export async function executeCharacterOperations(
       }
     }
 
-    let classFeatureResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
+    let classFeatureResults: {
+      baseSource: AbilityBlock;
+      baseResults: OperationResult[];
+    }[] = [];
     for (const feature of classFeatures) {
       if (feature.level === undefined || feature.level <= character.level) {
         const results = await executeOperations(
@@ -189,7 +199,31 @@ export async function executeCharacterOperations(
     }
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
-    // TODO: items
+    for (const invItem of character.inventory ? getFlatInvItems(character.inventory) : []) {
+      // If item can be invested, only run operations if it is
+      if (isItemInvestable(invItem.item) && !invItem.is_invested) {
+        continue;
+      }
+      // If item can be equipped, only run operations if it is
+      if (isItemEquippable(invItem.item) && !invItem.is_equipped) {
+        continue;
+      }
+
+      const results = await executeOperations(
+        'CHARACTER',
+        `item-${invItem.item.id}`,
+        invItem.item.operations ?? [],
+        options,
+        invItem.item.name
+      );
+
+      if (results.length > 0) {
+        itemResults.push({
+          baseSource: invItem.item,
+          baseResults: results,
+        });
+      }
+    }
 
     return {
       contentSourceResults,
@@ -208,7 +242,10 @@ export async function executeCharacterOperations(
   // define values for any weapons or lores
   for (const value of Object.values(character?.operation_data?.selections ?? {})) {
     if (value.startsWith('SKILL_LORE_')) {
-      addVariable('CHARACTER', 'prof', value, { value: 'U', attribute: 'ATTRIBUTE_INT' });
+      addVariable('CHARACTER', 'prof', value, {
+        value: 'U',
+        attribute: 'ATTRIBUTE_INT',
+      });
     } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
       addVariable('CHARACTER', 'prof', value);
     }

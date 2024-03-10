@@ -1,55 +1,62 @@
+import TraitsInput from '@common/TraitsInput';
+import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { fetchContentById, fetchTraits } from '@content/content-store';
+import { toHTML } from '@content/content-utils';
 import {
-  LoadingOverlay,
-  Box,
-  Modal,
-  Stack,
-  Group,
-  TextInput,
-  Select,
+  Autocomplete,
+  Badge,
   Button,
-  Divider,
+  CloseButton,
   Collapse,
+  Divider,
+  Group,
+  LoadingOverlay,
+  Modal,
+  ScrollArea,
+  Select,
+  Stack,
   Switch,
   TagsInput,
+  TextInput,
   Textarea,
-  Text,
-  Anchor,
-  HoverCard,
   Title,
-  Badge,
-  ScrollArea,
-  Autocomplete,
-  CloseButton,
   Tooltip,
   useMantineTheme,
 } from '@mantine/core';
-import _, { set } from 'lodash';
-import { useState } from 'react';
-import { AbilityBlock, AbilityBlockType, Rarity, Spell, Trait } from '@typing/content';
-import { useQuery } from '@tanstack/react-query';
 import { useForm } from '@mantine/form';
-import TraitsInput from '@common/TraitsInput';
 import { useDisclosure } from '@mantine/hooks';
-import { Operation } from '@typing/operations';
-import ActionsInput from '@common/ActionsInput';
-import { OperationSection } from '@common/operations/Operations';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { toHTML } from '@content/content-utils';
+import { Spell, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { toLabel } from '@utils/strings';
-import { fetchContentById, fetchTraits } from '@content/content-store';
 import useRefresh from '@utils/use-refresh';
+import _ from 'lodash-es';
+import { useState } from 'react';
 
+/**
+ * Modal for creating or editing a spell
+ * @param props.opened - Whether the modal is opened
+ * @param props.editId - The id of the spell being edited
+ * @param props.editSpell - The spell being edited (alternative to editId)
+ * @param props.onComplete - Callback when the modal is completed
+ * @param props.onCancel - Callback when the modal is cancelled
+ * Notes:
+ * - Either supply editId or editSpell to be in editing mode
+ * - If editId is supplied, the spell with that id will be fetched
+ * - If editSpell is supplied, it will be used instead of fetching
+ */
 export function CreateSpellModal(props: {
   opened: boolean;
   editId?: number;
+  editSpell?: Spell;
   onComplete: (spell: Spell) => void;
   onCancel: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
+  const editing =
+    (props.editId !== undefined && props.editId !== -1) || props.editSpell !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -57,17 +64,20 @@ export function CreateSpellModal(props: {
   const [openedHeightened, { toggle: toggleHeightened }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-spell-${props.editId}`, { editId: props.editId }],
+    queryKey: [`get-spell-${props.editId}`, { editId: props.editId, editSpell: props.editSpell }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId }] = queryKey;
+      const [_key, { editId, editSpell }] = queryKey as [
+        string,
+        { editId?: number; editSpell?: Spell }
+      ];
 
-      const spell = await fetchContentById<Spell>('spell', editId);
+      const spell = editId ? await fetchContentById<Spell>('spell', editId) : editSpell;
       if (!spell) return null;
 
       form.setInitialValues({
-        ...spell,
+        ..._.merge(form.values, spell),
         // @ts-ignore
         rank: spell.rank.toString(),
       });
@@ -78,7 +88,7 @@ export function CreateSpellModal(props: {
 
       return spell;
     },
-    enabled: props.editId !== undefined && props.editId !== -1,
+    enabled: editing,
     refetchOnWindowFocus: false,
   });
 
@@ -163,7 +173,7 @@ export function CreateSpellModal(props: {
       }}
       title={
         <Title order={3}>
-          {props.editId === undefined || props.editId === -1 ? 'Create' : 'Edit'}
+          {editing ? 'Edit' : 'Create'}
           {' Spell'}
         </Title>
       }
@@ -177,7 +187,7 @@ export function CreateSpellModal(props: {
       closeOnEscape={false}
       keepMounted={false}
     >
-      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} offsetScrollbars>
+      <ScrollArea h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
@@ -186,6 +196,7 @@ export function CreateSpellModal(props: {
                 <TextInput label='Name' required {...form.getInputProps('name')} />
                 <Select
                   label='Cast'
+                  clearable
                   w={100}
                   data={[
                     { value: 'ONE-ACTION', label: '◆' },
@@ -416,6 +427,7 @@ export function CreateSpellModal(props: {
                       <Select
                         w={150}
                         label='Heighten Amount'
+                        clearable
                         data={[
                           { label: '+1', value: '(+1)' },
                           { label: '+2', value: '(+2)' },
@@ -504,9 +516,7 @@ export function CreateSpellModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
             </Group>
           </Stack>
         </form>

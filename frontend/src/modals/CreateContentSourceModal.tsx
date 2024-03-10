@@ -1,64 +1,6 @@
-import {
-  LoadingOverlay,
-  Box,
-  Modal,
-  Stack,
-  Group,
-  TextInput,
-  Select,
-  Button,
-  Divider,
-  Collapse,
-  Switch,
-  TagsInput,
-  Textarea,
-  Text,
-  Anchor,
-  HoverCard,
-  Title,
-  Badge,
-  ScrollArea,
-  Autocomplete,
-  CloseButton,
-  Tooltip,
-  Center,
-  Tabs,
-  useMantineTheme,
-} from '@mantine/core';
-import _, { set } from 'lodash';
-import { useEffect, useRef, useState } from 'react';
-import {
-  AbilityBlock,
-  AbilityBlockType,
-  Ancestry,
-  Background,
-  Class,
-  ContentSource,
-  ContentType,
-  Creature,
-  Item,
-  Language,
-  Rarity,
-  Spell,
-  Trait,
-} from '@typing/content';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from '@mantine/form';
-import TraitsInput from '@common/TraitsInput';
-import { useDebouncedState, useDisclosure } from '@mantine/hooks';
-import { Operation } from '@typing/operations';
-import ActionsInput from '@common/ActionsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { JSONContent } from '@tiptap/react';
-import { getIconFromContentType, toHTML } from '@content/content-utils';
-import { isValidImage } from '@utils/images';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { pluralize, toLabel } from '@utils/strings';
-import { IconEdit, IconPlus, IconSearch } from '@tabler/icons-react';
-import * as JsSearch from 'js-search';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
-import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import {
   deleteContentSource,
   upsertAbilityBlock,
@@ -69,16 +11,61 @@ import {
   upsertItem,
   upsertSpell,
   upsertTrait,
+  upsertLanguage,
 } from '@content/content-creation';
-import { showNotification } from '@mantine/notifications';
-import { CreateSpellModal } from './CreateSpellModal';
-import { CreateClassModal } from './CreateClassModal';
 import { fetchContentPackage, resetContentStore } from '@content/content-store';
+import { getIconFromContentType, toHTML } from '@content/content-utils';
+import {
+  Anchor,
+  Autocomplete,
+  Badge,
+  Button,
+  Center,
+  Collapse,
+  Divider,
+  Group,
+  HoverCard,
+  LoadingOverlay,
+  Modal,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+  Title,
+  useMantineTheme,
+} from '@mantine/core';
+import { useForm } from '@mantine/form';
+import { useDebouncedState, useDisclosure } from '@mantine/hooks';
+import { showNotification } from '@mantine/notifications';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { JSONContent } from '@tiptap/react';
+import {
+  AbilityBlock,
+  AbilityBlockType,
+  Ancestry,
+  Background,
+  Class,
+  ContentType,
+  Creature,
+  Item,
+  Language,
+  Spell,
+  Trait,
+} from '@typing/content';
+import { Operation } from '@typing/operations';
+import { pluralize, toLabel } from '@utils/strings';
+import * as JsSearch from 'js-search';
+import * as _ from 'lodash-es';
+import { useEffect, useRef, useState } from 'react';
+import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { CreateAncestryModal } from './CreateAncestryModal';
 import { CreateBackgroundModal } from './CreateBackgroundModal';
-import useRefresh from '@utils/use-refresh';
-import { CreateTraitModal } from './CreateTraitModal';
+import { CreateClassModal } from './CreateClassModal';
 import { CreateItemModal } from './CreateItemModal';
+import { CreateSpellModal } from './CreateSpellModal';
+import { CreateTraitModal } from './CreateTraitModal';
+import { CreateLanguageModal } from './CreateLanguageModal';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -672,7 +659,12 @@ export function CreateContentSourceModal(props: {
 }
 
 function ContentList<
-  T extends { name: string; level?: number; rank?: number; type?: AbilityBlockType }
+  T extends {
+    name: string;
+    level?: number;
+    rank?: number;
+    type?: AbilityBlockType;
+  }
 >(props: {
   sourceId: number;
   type: ContentType;
@@ -985,12 +977,36 @@ function ContentList<
         />
       )}
 
+      {props.type === 'language' && openedId && (
+        <CreateLanguageModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (language) => {
+            language.content_source_id = props.sourceId;
+            const result = await upsertLanguage(language);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated language.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
       {props.type === 'item' && openedId && (
         <CreateItemModal
           opened={!!openedId}
           editId={openedId}
           onComplete={async (item) => {
             item.content_source_id = props.sourceId;
+
+            console.log(item);
             const result = await upsertItem(item);
 
             if (result) {

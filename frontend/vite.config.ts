@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -27,9 +28,16 @@ export default defineConfig({
       '@import': path.resolve(__dirname, './src/process/import'),
       '@export': path.resolve(__dirname, './src/process/export'),
       '@conditions': path.resolve(__dirname, './src/process/conditions'),
+      '@spells': path.resolve(__dirname, './src/process/spells'),
       '@css': path.resolve(__dirname, './src/css'),
       '@ai': path.resolve(__dirname, './src/ai'),
     },
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      emitFile: true,
+      filename: 'stats.html',
+    }),
+  ],
 });

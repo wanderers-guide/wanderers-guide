@@ -1,36 +1,36 @@
 import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
-import { Content } from '@tiptap/react';
 import { AbilityBlock, ContentType, Item, Language, Spell } from '@typing/content';
 import {
-  OperationType,
-  OperationGiveAbilityBlock,
+  OperationAddBonusToValue,
   OperationAdjValue,
-  OperationSetValue,
-  OperationCreateValue,
   OperationConditional,
-  OperationSelect,
-  OperationGiveSpell,
-  OperationRemoveAbilityBlock,
-  OperationRemoveSpell,
+  OperationCreateValue,
+  OperationDefineCastingSource,
+  OperationGiveAbilityBlock,
   OperationGiveLanguage,
+  OperationGiveSpell,
+  OperationGiveSpellSlot,
+  OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
+  OperationRemoveSpell,
+  OperationSelect,
   OperationSelectFilters,
   OperationSelectFiltersAbilityBlock,
-  OperationSelectFiltersSpell,
+  OperationSelectFiltersAdjValue,
   OperationSelectFiltersLanguage,
+  OperationSelectFiltersSpell,
   OperationSelectOption,
-  OperationSelectOptionType,
   OperationSelectOptionAbilityBlock,
-  OperationSelectOptionSpell,
-  OperationSelectOptionLanguage,
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
-  Operation,
-  OperationSelectFiltersAdjValue,
-  OperationAddBonusToValue,
+  OperationSelectOptionLanguage,
+  OperationSelectOptionSpell,
+  OperationSelectOptionType,
+  OperationSetValue,
+  OperationType,
 } from '@typing/operations';
-import { Variable, StoreID, VariableProf } from '@typing/variables';
+import { StoreID, Variable, VariableProf } from '@typing/variables';
 import {
   getAllArmorGroupVariables,
   getAllAttributeVariables,
@@ -39,7 +39,7 @@ import {
   getVariable,
 } from '@variables/variable-manager';
 import { labelToVariable, variableToLabel } from '@variables/variable-utils';
-import _, { filter } from 'lodash';
+import * as _ from 'lodash-es';
 
 export const createDefaultOperation = (type: OperationType) => {
   if (type === 'giveAbilityBlock') {
@@ -128,8 +128,27 @@ export const createDefaultOperation = (type: OperationType) => {
       type: type,
       data: {
         spellId: -1,
+        type: 'NORMAL',
       },
     } satisfies OperationGiveSpell;
+  } else if (type === 'giveSpellSlot') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        castingSource: '',
+        slots: [],
+      },
+    } satisfies OperationGiveSpellSlot;
+  } else if (type === 'defineCastingSource') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        variable: 'CASTING_SOURCES',
+        value: ':::SPONTANEOUS-REPERTOIRE:::ARCANE:::ATTRIBUTE_STR',
+      },
+    } satisfies OperationDefineCastingSource;
   } else if (type === 'removeAbilityBlock') {
     return {
       id: crypto.randomUUID(),
@@ -172,6 +191,7 @@ export interface ObjectWithUUID {
   [key: string]: any;
   _select_uuid: string;
   _content_type: ContentType;
+  _meta_data?: Record<string, any>;
 }
 
 export async function determineFilteredSelectionList(
@@ -285,6 +305,9 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
       ...spell,
       _select_uuid: `${spell.id}`,
       _content_type: 'spell' as ContentType,
+      _meta_data: {
+        ...filters.spellData,
+      },
     };
   });
 }
@@ -427,10 +450,14 @@ async function getSpellPredefinedList(options: OperationSelectOptionSpell[]) {
   for (const spell of spells) {
     if (spell) {
       const option = options.find((option) => option.operation.data.spellId === spell.id);
+      const firstOption = options.length > 0 ? options[0] : undefined;
       result.push({
         ...spell,
         _select_uuid: option!.id,
         _content_type: 'spell' as ContentType,
+        _meta_data: {
+          ...firstOption?.operation.data,
+        },
       });
     }
   }

@@ -6,7 +6,8 @@ import {
   ExtendedProficiencyValue,
   VariableValue,
 } from './variables';
-import { AbilityBlockType, Rarity } from './content';
+import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource } from './content';
+import { OperationResult } from './../process/operations/operation-runner';
 
 export type OperationResultPackage = {
   contentSourceResults: {
@@ -43,7 +44,10 @@ export type Operation =
   | OperationGiveLanguage
   | OperationRemoveLanguage
   | OperationGiveSpell
-  | OperationRemoveSpell;
+  | OperationRemoveSpell
+  | OperationGiveSpellSlot
+  | OperationDefineCastingSource;
+
 export type OperationType =
   | 'adjValue'
   | 'addBonusToValue'
@@ -56,7 +60,9 @@ export type OperationType =
   | 'conditional'
   | 'select'
   | 'giveSpell'
-  | 'removeSpell';
+  | 'removeSpell'
+  | 'giveSpellSlot'
+  | 'defineCastingSource';
 
 interface OperationBase {
   readonly id: string;
@@ -140,17 +146,43 @@ export type ConditionOperator =
   | 'LESS_THAN'
   | 'GREATER_THAN';
 
+export interface GiveSpellData extends SpellMetadata {
+  spellId: number;
+}
+
+export type SpellMetadata = {
+  type: 'NORMAL' | 'FOCUS' | 'INNATE';
+  castingSource?: string;
+  rank?: number;
+  tradition?: 'ARCANE' | 'OCCULT' | 'PRIMAL' | 'DIVINE';
+  casts?: number;
+};
+
 export interface OperationGiveSpell extends OperationBase {
   readonly type: 'giveSpell';
-  data: {
-    spellId: number;
-  };
+  data: GiveSpellData;
 }
 
 export interface OperationRemoveSpell extends OperationBase {
   readonly type: 'removeSpell';
   data: {
     spellId: number;
+  };
+}
+
+export interface OperationGiveSpellSlot extends OperationBase {
+  readonly type: 'giveSpellSlot';
+  data: {
+    castingSource: string;
+    slots: { lvl: number; rank: number; amt: number }[];
+  };
+}
+
+export interface OperationDefineCastingSource extends OperationAdjValue {
+  readonly type: 'defineCastingSource';
+  data: {
+    variable: 'CASTING_SOURCES';
+    value: VariableValue;
   };
 }
 
@@ -261,7 +293,8 @@ interface OperationSelectFiltersSpell extends OperationSelectFiltersBase {
   };
   traits?: string[];
   traditions?: string[];
-  // TODO: add more filters
+
+  spellData?: SpellMetadata;
 }
 
 interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {

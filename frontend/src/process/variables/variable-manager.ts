@@ -26,7 +26,7 @@ import {
   isProficiencyValue,
   isExtendedProficiencyValue,
 } from './variable-utils';
-import _ from 'lodash';
+import * as _ from 'lodash-es';
 import { throwError } from '@utils/notifications';
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
@@ -37,20 +37,35 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   ATTRIBUTE_WIS: newVariable('attr', 'ATTRIBUTE_WIS'),
   ATTRIBUTE_CHA: newVariable('attr', 'ATTRIBUTE_CHA'),
 
-  SAVE_FORT: newVariable('prof', 'SAVE_FORT', { value: 'U', attribute: 'ATTRIBUTE_CON' }),
-  SAVE_REFLEX: newVariable('prof', 'SAVE_REFLEX', { value: 'U', attribute: 'ATTRIBUTE_DEX' }),
-  SAVE_WILL: newVariable('prof', 'SAVE_WILL', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  SAVE_FORT: newVariable('prof', 'SAVE_FORT', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_CON',
+  }),
+  SAVE_REFLEX: newVariable('prof', 'SAVE_REFLEX', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_DEX',
+  }),
+  SAVE_WILL: newVariable('prof', 'SAVE_WILL', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_WIS',
+  }),
 
   SKILL_ACROBATICS: newVariable('prof', 'SKILL_ACROBATICS', {
     value: 'U',
     attribute: 'ATTRIBUTE_DEX',
   }),
-  SKILL_ARCANA: newVariable('prof', 'SKILL_ARCANA', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
+  SKILL_ARCANA: newVariable('prof', 'SKILL_ARCANA', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_INT',
+  }),
   SKILL_ATHLETICS: newVariable('prof', 'SKILL_ATHLETICS', {
     value: 'U',
     attribute: 'ATTRIBUTE_STR',
   }),
-  SKILL_CRAFTING: newVariable('prof', 'SKILL_CRAFTING', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
+  SKILL_CRAFTING: newVariable('prof', 'SKILL_CRAFTING', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_INT',
+  }),
   SKILL_DECEPTION: newVariable('prof', 'SKILL_DECEPTION', {
     value: 'U',
     attribute: 'ATTRIBUTE_CHA',
@@ -63,8 +78,14 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
     value: 'U',
     attribute: 'ATTRIBUTE_CHA',
   }),
-  SKILL_MEDICINE: newVariable('prof', 'SKILL_MEDICINE', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
-  SKILL_NATURE: newVariable('prof', 'SKILL_NATURE', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  SKILL_MEDICINE: newVariable('prof', 'SKILL_MEDICINE', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_WIS',
+  }),
+  SKILL_NATURE: newVariable('prof', 'SKILL_NATURE', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_WIS',
+  }),
   SKILL_OCCULTISM: newVariable('prof', 'SKILL_OCCULTISM', {
     value: 'U',
     attribute: 'ATTRIBUTE_INT',
@@ -73,15 +94,35 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
     value: 'U',
     attribute: 'ATTRIBUTE_CHA',
   }),
-  SKILL_RELIGION: newVariable('prof', 'SKILL_RELIGION', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
-  SKILL_SOCIETY: newVariable('prof', 'SKILL_SOCIETY', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
-  SKILL_STEALTH: newVariable('prof', 'SKILL_STEALTH', { value: 'U', attribute: 'ATTRIBUTE_DEX' }),
-  SKILL_SURVIVAL: newVariable('prof', 'SKILL_SURVIVAL', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
-  SKILL_THIEVERY: newVariable('prof', 'SKILL_THIEVERY', { value: 'U', attribute: 'ATTRIBUTE_DEX' }),
-  SKILL_LORE____: newVariable('prof', 'SKILL_LORE____', { value: 'U', attribute: 'ATTRIBUTE_INT' }),
+  SKILL_RELIGION: newVariable('prof', 'SKILL_RELIGION', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_WIS',
+  }),
+  SKILL_SOCIETY: newVariable('prof', 'SKILL_SOCIETY', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_INT',
+  }),
+  SKILL_STEALTH: newVariable('prof', 'SKILL_STEALTH', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_DEX',
+  }),
+  SKILL_SURVIVAL: newVariable('prof', 'SKILL_SURVIVAL', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_WIS',
+  }),
+  SKILL_THIEVERY: newVariable('prof', 'SKILL_THIEVERY', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_DEX',
+  }),
+  SKILL_LORE____: newVariable('prof', 'SKILL_LORE____', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_INT',
+  }),
 
   SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'), // TODO: add attribute
   SPELL_DC: newVariable('prof', 'SPELL_DC'), // TODO: add attribute
+  CASTING_SOURCES: newVariable('list-str', 'CASTING_SOURCES'),
+  SPELL_SLOTS: newVariable('list-str', 'SPELL_SLOTS'),
 
   LIGHT_ARMOR: newVariable('prof', 'LIGHT_ARMOR'),
   MEDIUM_ARMOR: newVariable('prof', 'MEDIUM_ARMOR'),
@@ -93,7 +134,10 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   ADVANCED_WEAPONS: newVariable('prof', 'ADVANCED_WEAPONS'),
   UNARMED_ATTACKS: newVariable('prof', 'UNARMED_ATTACKS'),
 
-  PERCEPTION: newVariable('prof', 'PERCEPTION', { value: 'U', attribute: 'ATTRIBUTE_WIS' }),
+  PERCEPTION: newVariable('prof', 'PERCEPTION', {
+    value: 'U',
+    attribute: 'ATTRIBUTE_WIS',
+  }),
   CLASS_DC: newVariable('prof', 'CLASS_DC'),
   LEVEL: newVariable('num', 'LEVEL'),
   SIZE: newVariable('str', 'SIZE'),
@@ -152,6 +196,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   LANGUAGE_IDS: newVariable('list-str', 'LANGUAGE_IDS'),
   CLASS_FEATURE_IDS: newVariable('list-str', 'CLASS_FEATURE_IDS'),
   PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
+
+  SPELL_DATA: newVariable('list-str', 'SPELL_DATA'),
 
   // BULK_LIMIT: newVariable("num", "BULK_LIMIT"),
   // INVEST_LIMIT: newVariable("num", "INVEST_LIMIT"),
@@ -284,7 +330,13 @@ export function addVariableBonus(
   if (!getVariableStore(id).bonuses[name]) {
     getVariableStore(id).bonuses[name] = [];
   }
-  getVariableStore(id).bonuses[name].push({ value, type, text, source, timestamp: Date.now() });
+  getVariableStore(id).bonuses[name].push({
+    value,
+    type,
+    text,
+    source,
+    timestamp: Date.now(),
+  });
 }
 
 /**

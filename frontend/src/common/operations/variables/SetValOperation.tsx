@@ -132,6 +132,9 @@ export function SetValueInput(props: {
     );
   } else if (props.variableType === 'prof') {
     const value = props.value as ProficiencyValue;
+
+    console.log(value.value);
+
     return (
       <>
         <SegmentedControl

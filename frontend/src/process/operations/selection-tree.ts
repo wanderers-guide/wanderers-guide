@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import * as _ from "lodash-es";
 
 export interface SelectionTreeNode {
   value: string | null;
@@ -20,8 +20,12 @@ export function setSelections(metadata: { key: string; value: string }[]) {
   }
 }
 
-function addToSelectionTree(root: SelectionTreeNode, key: string, value: string): void {
-  const subIds = key.split('_');
+function addToSelectionTree(
+  root: SelectionTreeNode,
+  key: string,
+  value: string
+): void {
+  const subIds = key.split("_");
   let currentNode = root;
 
   for (const subId of subIds) {
