@@ -2641,6 +2641,61 @@ function SpellList(props: {
   };
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
 }) {
+
+  const [character, setCharacter] = useRecoilState(characterState);
+
+  const castSpell = (cast: boolean, spell: Spell) => {
+    if(!character) return;
+
+    if((props.type === 'PREPARED' ||  props.type === 'SPONTANEOUS') && props.source) {
+      setCharacter((c) => {
+        if (!c) return c;
+        let slots = c.spells?.slots ?? [];
+        const newUpdatedSlots = slots.map((slot) => {
+          if (slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name) {
+            return {
+              ...slot,
+              exhausted: cast,
+            };
+          }
+          return slot;
+        });
+        return {
+          ...c,
+          spells: {
+            ...(c.spells ?? {
+              slots: [],
+              list: [],
+              rituals: [],
+              focus_point_current: 0,
+              innate_casts: [],
+            }),
+            slots: newUpdatedSlots,
+          },
+        };
+      });
+    }
+
+    if(props.type === 'FOCUS') {
+      setCharacter((c) => {
+        if (!c) return c;
+        return {
+          ...c,
+          spells: {
+            ...(c.spells ?? {
+              slots: [],
+              list: [],
+              rituals: [],
+              focus_point_current: 0,
+              innate_casts: [],
+            }),
+            focus_point_current: Math.max((c.spells?.focus_point_current ?? 0) + (cast ? - 1 : 1), 0),
+          },
+        };
+      });
+    }
+  }
+
   // Display spells in an ordered list by rank
   const spells = useMemo(() => {
     const filteredSpells = props.spellIds
@@ -2744,7 +2799,14 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {slots[rank].map((slot, index) => (
-                            <SpellListEntry key={index} spell={slot.spell} />
+                            <SpellListEntry key={index} spell={slot.spell} exhausted={!!slot.exhausted} onCastSpell={(cast: boolean) => {
+                              if(slot.spell) castSpell(cast, slot.spell);
+                            }} onOpenManageSpells={() => {
+                              props.openManageSpells?.(
+                                props.source!.name,
+                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                              );
+                            }} />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -2835,7 +2897,14 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {spells[rank].map((spell, index) => (
-                            <SpellListEntry key={index} spell={spell} />
+                            <SpellListEntry key={index} spell={spell} exhausted={!!slots[rank].find((s) => !s.exhausted)} onCastSpell={(cast: boolean) => {
+                              castSpell(cast, spell);
+                            }} onOpenManageSpells={() => {
+                              props.openManageSpells?.(
+                                props.source!.name,
+                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                              );
+                            }} />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -2910,7 +2979,14 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {spells[rank].map((spell, index) => (
-                            <SpellListEntry key={index} spell={spell} />
+                            <SpellListEntry key={index} spell={spell} exhausted={!character?.spells?.focus_point_current} onCastSpell={(cast: boolean) => {
+                              castSpell(cast, spell);
+                            }} onOpenManageSpells={() => {
+                              props.openManageSpells?.(
+                                props.source!.name,
+                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                              );
+                            }} />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -2982,7 +3058,14 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {innateSpells[rank].map((innate, index) => (
-                            <SpellListEntry key={index} spell={innate.spell} />
+                            <SpellListEntry key={index} spell={innate.spell} exhausted={innate.casts_current >= innate.casts_max} onCastSpell={(cast: boolean) => {
+                              if (innate.spell) castSpell(cast, innate.spell);
+                            }} onOpenManageSpells={() => {
+                              props.openManageSpells?.(
+                                props.source!.name,
+                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                              );
+                            }} />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -3037,7 +3120,14 @@ function SpellList(props: {
             {spells &&
               Object.keys(spells)
                 .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])
-                .map((spell, index) => <SpellListEntry key={index} spell={spell} />)}
+                .map((spell, index) => <SpellListEntry key={index} spell={spell} exhausted={false} onCastSpell={(cast: boolean) => {
+                  castSpell(cast, spell);
+                }} onOpenManageSpells={() => {
+                  props.openManageSpells?.(
+                    props.source!.name,
+                    props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                  );
+                }} />)}
 
             {props.spellIds.length === 0 && (
               <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
@@ -3053,31 +3143,42 @@ function SpellList(props: {
   return null;
 }
 
-function SpellListEntry(props: { spell?: Spell }) {
+function SpellListEntry(props: { spell?: Spell, exhausted: boolean, onCastSpell: (cast: boolean) => void, onOpenManageSpells?: () => void}) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   if (props.spell) {
     return (
+      <StatButton
+    
+      onClick={() => {
+        if(!props.spell) return;
+        openDrawer({
+          type: 'cast-spell',
+          data: { spell: props.spell, exhausted: props.exhausted, onCastSpell: (cast: boolean) => {
+            props.onCastSpell(cast);
+          } },
+          extra: { addToHistory: true },
+        });
+      }}
+      >
       <SpellSelectionOption
+        noBackground
+        hideRank
+        exhausted={props.exhausted}
         spell={props.spell}
-        onClick={() => {
-          openDrawer({
-            type: 'spell',
-            data: { id: props.spell?.id },
-            extra: { addToHistory: true },
-          });
-        }}
+        onClick={() => {}}
       />
+      </StatButton>
     );
   }
 
   return (
     <StatButton
       onClick={() => {
-        // Open manage spells drawer
+        props.onOpenManageSpells?.();
       }}
     >
-      <Text fz='xs' fs='italic' fw={500}>
+      <Text fz='xs' fs='italic' c='dimmed' fw={500} pl={20}>
         No Spell Prepared
       </Text>
     </StatButton>

@@ -13,6 +13,7 @@ export type DrawerType =
   | 'generic'
   | 'character'
   | 'inv-item'
+  | 'cast-spell'
   | 'add-item'
   | 'add-spell'
   | 'stat-prof'

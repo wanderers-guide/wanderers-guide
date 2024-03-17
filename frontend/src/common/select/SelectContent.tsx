@@ -2823,6 +2823,9 @@ export function SpellSelectionOption(props: {
   includeDetails?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
+  noBackground?: boolean;
+  hideRank?: boolean;
+  exhausted?: boolean;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2835,12 +2838,17 @@ export function SpellSelectionOption(props: {
       style={{
         cursor: 'pointer',
         borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        backgroundColor: (hovered || props.selected) && !props.noBackground ? theme.colors.dark[6] : 'transparent',
         position: 'relative',
+        opacity: props.exhausted ? 0.5 : 1,
+        width: '100%',
       }}
       onClick={() => props.onClick(props.spell)}
       justify='space-between'
     >
+      {!props.hideRank && (
+
+      
       <Text
         fz={10}
         c='dimmed'
@@ -2854,9 +2862,10 @@ export function SpellSelectionOption(props: {
       >
         {props.spell.rank}.
       </Text>
+      )}
       <Group wrap='nowrap' gap={5}>
         <Box pl={8}>
-          <Text fz='sm'>{props.spell.name}</Text>
+          <Text fz='sm' td={props.exhausted ? "line-through" : undefined}>{props.spell.name}</Text>
         </Box>
         {isActionCost(props.spell.cast) && (
           <Box>

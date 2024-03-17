@@ -857,10 +857,11 @@ function AttributeModPart(props: { attribute: string; variableName: string }) {
   );
 }
 
-export function StatButton(props: { children: React.ReactNode; onClick?: () => void }) {
+export function StatButton(props: { children: React.ReactNode; onClick?: () => void, disabled?: boolean }) {
   return (
     <Box>
       <Button
+        disabled={props.disabled}
         variant='default'
         size='compact-lg'
         styles={{

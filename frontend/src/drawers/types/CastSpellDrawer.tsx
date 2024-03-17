@@ -1,4 +1,5 @@
 import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
@@ -6,27 +7,18 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button } from '@mantine/core';
 import { isCantrip } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
-import { useRecoilValue } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
-export function SpellDrawerTitle(props: { data: { id: number } }) {
-  const id = props.data.id;
+export function CastSpellDrawerTitle(props: { data: { spell: Spell, exhausted: boolean, onCastSpell: (cast: boolean) => void } }) {
+  const spell = props.data.spell;
 
   const character = useRecoilValue(characterState);
-
-  const { data: spell } = useQuery({
-    queryKey: [`find-spell-${id}`, { id }],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-      // eslint-disable-next-line
-      const [_key, { id }] = queryKey;
-      return await fetchContentById<Spell>('spell', id);
-    },
-  });
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const cast = spell?.cast ?? '';
 
@@ -51,39 +43,45 @@ export function SpellDrawerTitle(props: { data: { id: number } }) {
               </Box>
             )}
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>{rankTitle} {rank}</Text>
+          {props.data.exhausted ? (
+            <Button
+                                  variant='outline'
+                                  radius='xl'
+                                  mb={3}
+                                  
+                                  size='compact-sm'
+                                  onClick={() => {
+                                    props.data.onCastSpell(false);
+                                    openDrawer(null);
+                                  }}
+                                  >
+Recover {rankTitle} {rank}
+                                  </Button>
+          ) : (
+<Button
+                                  variant='filled'
+                                  radius='xl'
+                                  mb={3}
+                                  
+                                  size='compact-sm'
+                                  onClick={() => {
+                                    props.data.onCastSpell(true);
+                                    openDrawer(null);
+                                  }}
+                                  >
+Cast {rankTitle} {rank}
+                                  </Button>
+          )}
+          
+          
         </Group>
       )}
     </>
   );
 }
 
-export function SpellDrawerContent(props: { data: { id: number } }) {
-  const id = props.data.id;
-
-  const { data: spell } = useQuery({
-    queryKey: [`find-spell-${id}`, { id }],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-      // eslint-disable-next-line
-      const [_key, { id }] = queryKey;
-      return await fetchContentById<Spell>('spell', id);
-    },
-  });
-
-  if (!spell) {
-    return (
-      <Loader
-        type='bars'
-        style={{
-          position: 'absolute',
-          top: '35%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-        }}
-      />
-    );
-  }
+export function CastSpellDrawerContent(props: { data: { spell: Spell } }) {
+  const spell = props.data.spell;
 
   const CR = [];
   const cast = spell?.cast ?? '';

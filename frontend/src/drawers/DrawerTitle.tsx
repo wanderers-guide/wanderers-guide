@@ -17,6 +17,7 @@ import { StatAttrDrawerTitle } from "./types/StatAttrDrawer";
 import { StatHealthDrawerTitle } from "./types/StatHealthDrawer";
 import { StatProfDrawerTitle } from "./types/StatProfDrawer";
 import { TraitDrawerTitle } from "./types/TraitDrawer";
+import { CastSpellDrawerTitle } from "./types/CastSpellDrawer";
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
@@ -67,6 +68,9 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       )}
       {_drawer?.type === "inv-item" && (
         <InvItemDrawerTitle data={_drawer.data} />
+      )}
+      {_drawer?.type === "cast-spell" && (
+        <CastSpellDrawerTitle data={_drawer.data} />
       )}
     </div>
   );

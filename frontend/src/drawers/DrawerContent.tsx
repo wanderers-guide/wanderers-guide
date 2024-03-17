@@ -16,6 +16,7 @@ import { StatAttrDrawerContent } from "./types/StatAttrDrawer";
 import { StatHealthDrawerContent } from "./types/StatHealthDrawer";
 import { StatProfDrawerContent } from "./types/StatProfDrawer";
 import { TraitDrawerContent } from "./types/TraitDrawer";
+import { CastSpellDrawerContent } from "./types/CastSpellDrawer";
 
 export default function DrawerContent(props: {
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
@@ -81,6 +82,9 @@ export default function DrawerContent(props: {
       )}
       {_drawer?.type === "inv-item" && (
         <InvItemDrawerContent data={_drawer.data} />
+      )}
+      {_drawer?.type === "cast-spell" && (
+        <CastSpellDrawerContent data={_drawer.data} />
       )}
     </>
   );
