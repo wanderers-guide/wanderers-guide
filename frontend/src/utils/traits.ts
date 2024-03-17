@@ -2,6 +2,8 @@ type TraitType =
   | 'GENERAL'
   | 'SKILL'
   | 'INVESTED'
+  | 'EXPLORATION'
+  | 'DOWNTIME'
   | 'CONSUMABLE'
   | 'THROWN'
   | 'THROWN-10'
@@ -18,6 +20,8 @@ const traitMap: Record<number, TraitType> = {
   1438: 'SKILL',
   1527: 'INVESTED',
   1531: 'CONSUMABLE',
+  1457: 'EXPLORATION',
+  1466: 'DOWNTIME',
   1575: 'THROWN',
   1626: 'THROWN-10',
   1843: 'THROWN-20',

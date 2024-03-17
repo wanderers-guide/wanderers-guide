@@ -37,10 +37,7 @@ import {
   getConditionByName,
 } from '@conditions/condition-handler';
 import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER } from '@constants/data';
-import {
-  collectCharacterAbilityBlocks,
-  collectCharacterSpellcasting,
-} from '@content/collect-content';
+import { collectCharacterAbilityBlocks, collectCharacterSpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentAll, fetchContentPackage } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import classes from '@css/FaqSimple.module.css';
@@ -90,13 +87,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import {
-  getHotkeyHandler,
-  useDebouncedValue,
-  useDidUpdate,
-  useHover,
-  useInterval,
-} from '@mantine/hooks';
+import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover, useInterval } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
@@ -144,6 +135,7 @@ import { interpolateHealth } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
+import { hasTraitType } from '@utils/traits';
 import {
   displayAttributeValue,
   displayFinalProfValue,
@@ -230,11 +222,7 @@ export function Component(props: {}) {
   }
 }
 
-function confirmHealth(
-  hp: string,
-  character: Character,
-  setCharacter: SetterOrUpdater<Character | null>
-) {
+function confirmHealth(hp: string, character: Character, setCharacter: SetterOrUpdater<Character | null>) {
   const maxHealth = getFinalHealthValue('CHARACTER');
 
   let result = -1;
@@ -285,11 +273,7 @@ function confirmHealth(
   return result;
 }
 
-function confirmExperience(
-  exp: string,
-  character: Character,
-  setCharacter: SetterOrUpdater<Character | null>
-) {
+function confirmExperience(exp: string, character: Character, setCharacter: SetterOrUpdater<Character | null>) {
   let result = -1;
   try {
     result = evaluate(exp);
@@ -310,11 +294,7 @@ function confirmExperience(
   return result;
 }
 
-function CharacterSheetInner(props: {
-  content: ContentPackage;
-  characterId: number;
-  onFinishLoading: () => void;
-}) {
+function CharacterSheetInner(props: { content: ContentPackage; characterId: number; onFinishLoading: () => void }) {
   setPageTitle(`Sheet`);
 
   const queryClient = useQueryClient();
@@ -463,11 +443,7 @@ function CharacterSheetInner(props: {
             <ArmorSection inventory={inventory} setInventory={setInventory} />
             <SpeedSection />
           </SimpleGrid>
-          <SectionPanels
-            content={props.content}
-            inventory={inventory}
-            setInventory={setInventory}
-          />
+          <SectionPanels content={props.content} inventory={inventory} setInventory={setInventory} />
         </Stack>
       </Box>
     </Center>
@@ -539,9 +515,7 @@ function CharacterInfoSection() {
     // TODO:
 
     // Remove Fatigued Condition
-    let newConditions = _.cloneDeep(character?.details?.conditions ?? []).filter(
-      (c) => c.name !== 'Fatigued'
-    );
+    let newConditions = _.cloneDeep(character?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
 
     // Remove Wounded condition if we're now at full health
     const wounded = newConditions.find((c) => c.name === 'Wounded');
@@ -811,9 +785,7 @@ function ConditionSection() {
                       if (!character) return;
                       const condition = getConditionByName(option.name);
                       if (!condition) return;
-                      const hasCondition = character.details?.conditions?.find(
-                        (c) => c.name === condition.name
-                      );
+                      const hasCondition = character.details?.conditions?.find((c) => c.name === condition.name);
                       if (hasCondition) return;
                       setCharacter({
                         ...character,
@@ -845,101 +817,93 @@ function ConditionSection() {
             </Group>
             <ScrollArea h={70} scrollbars='y'>
               <Group gap={5} justify='center'>
-                {compiledConditions(character?.details?.conditions ?? []).map(
-                  (condition, index) => (
-                    <ConditionPill
-                      key={index}
-                      text={condition.name}
-                      amount={condition.value}
-                      onClick={() => {
-                        openContextModal({
-                          modal: 'condition',
-                          title: (
-                            <Group justify='space-between'>
-                              <Title order={3}>{condition.name}</Title>
-                              {condition.source ? (
-                                <Text fs='italic' fz='sm' mr={15}>
-                                  From: <Text span>{condition.source}</Text>
-                                </Text>
-                              ) : (
-                                <Button
-                                  variant='light'
-                                  color='gray'
-                                  size='compact-xs'
-                                  mr={15}
-                                  onClick={() => {
-                                    modals.closeAll();
+                {compiledConditions(character?.details?.conditions ?? []).map((condition, index) => (
+                  <ConditionPill
+                    key={index}
+                    text={condition.name}
+                    amount={condition.value}
+                    onClick={() => {
+                      openContextModal({
+                        modal: 'condition',
+                        title: (
+                          <Group justify='space-between'>
+                            <Title order={3}>{condition.name}</Title>
+                            {condition.source ? (
+                              <Text fs='italic' fz='sm' mr={15}>
+                                From: <Text span>{condition.source}</Text>
+                              </Text>
+                            ) : (
+                              <Button
+                                variant='light'
+                                color='gray'
+                                size='compact-xs'
+                                mr={15}
+                                onClick={() => {
+                                  modals.closeAll();
 
-                                    let newConditions = _.cloneDeep(
-                                      character?.details?.conditions ?? []
-                                    );
-                                    // Remove condition
-                                    newConditions = newConditions.filter(
-                                      (c) => c.name !== condition.name
-                                    );
-                                    // Add wounded condition if we're removing dying
-                                    if (condition.name === 'Dying') {
-                                      const wounded = newConditions.find(
-                                        (c) => c.name === 'Wounded'
-                                      );
-                                      if (wounded) {
-                                        wounded.value = 1 + wounded.value!;
-                                      } else {
-                                        newConditions.push(getConditionByName('Wounded')!);
-                                      }
+                                  let newConditions = _.cloneDeep(character?.details?.conditions ?? []);
+                                  // Remove condition
+                                  newConditions = newConditions.filter((c) => c.name !== condition.name);
+                                  // Add wounded condition if we're removing dying
+                                  if (condition.name === 'Dying') {
+                                    const wounded = newConditions.find((c) => c.name === 'Wounded');
+                                    if (wounded) {
+                                      wounded.value = 1 + wounded.value!;
+                                    } else {
+                                      newConditions.push(getConditionByName('Wounded')!);
                                     }
+                                  }
 
-                                    setCharacter((c) => {
-                                      if (!c) return c;
+                                  setCharacter((c) => {
+                                    if (!c) return c;
+                                    return {
+                                      ...c,
+                                      details: {
+                                        ...c.details,
+                                        conditions: newConditions,
+                                      },
+                                    };
+                                  });
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </Group>
+                        ),
+                        innerProps: {
+                          condition: condition,
+                          onValueChange: (condition, value) => {
+                            setCharacter((c) => {
+                              if (!c) return c;
+                              return {
+                                ...c,
+                                details: {
+                                  ...c.details,
+                                  conditions: c.details?.conditions?.map((c) => {
+                                    if (c.name === condition.name) {
                                       return {
                                         ...c,
-                                        details: {
-                                          ...c.details,
-                                          conditions: newConditions,
-                                        },
+                                        value: value,
                                       };
-                                    });
-                                  }}
-                                >
-                                  Remove
-                                </Button>
-                              )}
-                            </Group>
-                          ),
-                          innerProps: {
-                            condition: condition,
-                            onValueChange: (condition, value) => {
-                              setCharacter((c) => {
-                                if (!c) return c;
-                                return {
-                                  ...c,
-                                  details: {
-                                    ...c.details,
-                                    conditions: c.details?.conditions?.map((c) => {
-                                      if (c.name === condition.name) {
-                                        return {
-                                          ...c,
-                                          value: value,
-                                        };
-                                      } else {
-                                        return c;
-                                      }
-                                    }),
-                                  },
-                                };
-                              });
-                            },
+                                    } else {
+                                      return c;
+                                    }
+                                  }),
+                                },
+                              };
+                            });
                           },
-                          styles: {
-                            title: {
-                              width: '100%',
-                            },
+                        },
+                        styles: {
+                          title: {
+                            width: '100%',
                           },
-                        });
-                      }}
-                    />
-                  )
-                )}
+                        },
+                      });
+                    }}
+                  />
+                ))}
                 {(character?.details?.conditions ?? []).length === 0 && (
                   <Text c='gray.6' fz='xs' fs='italic'>
                     None active
@@ -1078,10 +1042,7 @@ function AttributeSection() {
   );
 }
 
-function ArmorSection(props: {
-  inventory: Inventory;
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
-}) {
+function ArmorSection(props: { inventory: Inventory; setInventory: React.Dispatch<React.SetStateAction<Inventory>> }) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
@@ -1158,20 +1119,14 @@ function ArmorSection(props: {
                           handleDeleteItem(props.setInventory, newInvItem);
                           openDrawer(null);
                         },
-                        onItemMove: (
-                          invItem: InventoryItem,
-                          containerItem: InventoryItem | null
-                        ) => {
+                        onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
                           handleMoveItem(props.setInventory, invItem, containerItem);
                         },
                       },
                     });
                   }}
                 >
-                  <ShieldIcon
-                    size={85}
-                    color={shieldHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR}
-                  />
+                  <ShieldIcon size={85} color={shieldHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
                   <Stack
                     gap={0}
                     style={{
@@ -1194,9 +1149,7 @@ function ArmorSection(props: {
                         sections={[
                           {
                             value: Math.ceil(
-                              ((bestShield.item.meta_data?.hp ?? 0) /
-                                (bestShield.item.meta_data?.hp_max ?? 1)) *
-                                100
+                              ((bestShield.item.meta_data?.hp ?? 0) / (bestShield.item.meta_data?.hp_max ?? 1)) * 100
                             ),
                             color: 'guide',
                           },
@@ -1376,8 +1329,7 @@ function SectionPanels(props: {
     'notes',
     'extras',
   ];
-  const primaryBuilderTabs =
-    getVariable<VariableListStr>('CHARACTER', 'PRIMARY_BUILDER_TABS')?.value ?? [];
+  const primaryBuilderTabs = getVariable<VariableListStr>('CHARACTER', 'PRIMARY_BUILDER_TABS')?.value ?? [];
   const tabOptions = allBuilderTabs.filter((tab) => !primaryBuilderTabs.includes(tab));
   const openedTabOption = tabOptions.find((tab) => tab === activeTab);
   const getTabIcon = (tab: string) => {
@@ -1405,14 +1357,7 @@ function SectionPanels(props: {
 
   return (
     <BlurBox blur={10} p='sm'>
-      <Tabs
-        color='dark.6'
-        variant='pills'
-        radius='xl'
-        keepMounted={false}
-        value={activeTab}
-        onChange={setActiveTab}
-      >
+      <Tabs color='dark.6' variant='pills' radius='xl' keepMounted={false} value={activeTab} onChange={setActiveTab}>
         <Tabs.List pb={10} grow>
           {primaryBuilderTabs.includes('skills-actions') && (
             <Tabs.Tab value='skills-actions' leftSection={getTabIcon('skills-actions')}>
@@ -1459,8 +1404,7 @@ function SectionPanels(props: {
                 aria-label='Tab Options'
                 ref={tabOptionsRef}
                 style={{
-                  backgroundColor:
-                    hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
+                  backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
                   color: openedTabOption ? theme.colors.gray[0] : undefined,
                 }}
               >
@@ -1546,6 +1490,41 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
 
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
   const [actionSectionValue, setActionSectionValue] = useState<string | null>(null);
+
+  const actions = props.content.abilityBlocks.filter((ab) => ab.type === 'action');
+
+  const skillActions = useMemo(() => {
+    const skillActions: { [key: string]: AbilityBlock[] } = {};
+    for (const action of actions.filter((a) => a.meta_data?.skill)) {
+      const skills = Array.isArray(action.meta_data!.skill!) ? action.meta_data!.skill! : [action.meta_data!.skill!];
+      for (const sss of skills) {
+        for (const ss of sss.split(',')) {
+          const skill = ss.trim();
+          if (!skillActions[skill]) {
+            skillActions[skill] = [];
+          }
+          skillActions[skill].push(action);
+        }
+      }
+    }
+    const sortedSkillActions: { [key: string]: AbilityBlock[] } = {};
+    Object.keys(skillActions)
+      .sort()
+      .forEach((key) => {
+        sortedSkillActions[key] = skillActions[key];
+      });
+    return sortedSkillActions;
+  }, [actions]);
+
+  const explorationActions = useMemo(() => {
+    return actions.filter((a) => hasTraitType('EXPLORATION', a.traits));
+  }, [actions]);
+
+  const downtimeActions = useMemo(() => {
+    return actions.filter((a) => hasTraitType('DOWNTIME', a.traits));
+  }, [actions]);
+
+  console.log(actions, skillActions);
 
   return (
     <Group gap={10} align='flex-start' style={{ height: props.panelHeight }}>
@@ -1647,8 +1626,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 size='lg'
                 aria-label='Filter One Action'
                 style={{
-                  backgroundColor:
-                    actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
+                  backgroundColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
                   borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
@@ -1664,10 +1642,8 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 size='lg'
                 aria-label='Filter Two Actions'
                 style={{
-                  backgroundColor:
-                    actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
-                  borderColor:
-                    actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[4] : undefined,
+                  backgroundColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
+                  borderColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('TWO-ACTIONS');
@@ -1682,10 +1658,8 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 size='lg'
                 aria-label='Filter Three Actions'
                 style={{
-                  backgroundColor:
-                    actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
-                  borderColor:
-                    actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[4] : undefined,
+                  backgroundColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
+                  borderColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('THREE-ACTIONS');
@@ -1700,10 +1674,8 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 size='lg'
                 aria-label='Filter Free Action'
                 style={{
-                  backgroundColor:
-                    actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
-                  borderColor:
-                    actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[4] : undefined,
+                  backgroundColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
+                  borderColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('FREE-ACTION');
@@ -1718,8 +1690,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 size='lg'
                 aria-label='Filter Reaction'
                 style={{
-                  backgroundColor:
-                    actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
+                  backgroundColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
                   borderColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[4] : undefined,
                 }}
                 onClick={() => {
@@ -1806,12 +1777,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
   );
 }
 
-function ActionAccordionItem(props: {
-  id: string;
-  title: string;
-  opened: boolean;
-  actions: ActionItem[];
-}) {
+function ActionAccordionItem(props: { id: string; title: string; opened: boolean; actions: ActionItem[] }) {
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
   const { hovered, ref } = useHover();
@@ -1845,10 +1811,7 @@ function ActionAccordionItem(props: {
   );
 }
 
-function ActionSelectionOption(props: {
-  action: ActionItem;
-  onClick: (action: ActionItem) => void;
-}) {
+function ActionSelectionOption(props: { action: ActionItem; onClick: (action: ActionItem) => void }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -1947,8 +1910,7 @@ function PanelInventory(props: {
         };
 
         if (checkInvItem(invItem)) return true;
-        if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem)))
-          return true;
+        if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
         return false;
       })
     : props.inventory.items;
@@ -2086,10 +2048,7 @@ function PanelInventory(props: {
                                   handleDeleteItem(props.setInventory, newInvItem);
                                   openDrawer(null);
                                 },
-                                onItemMove: (
-                                  invItem: InventoryItem,
-                                  containerItem: InventoryItem | null
-                                ) => {
+                                onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
                                   handleMoveItem(props.setInventory, invItem, containerItem);
                                 },
                               },
@@ -2115,10 +2074,7 @@ function PanelInventory(props: {
                                       handleDeleteItem(props.setInventory, newInvItem);
                                       openDrawer(null);
                                     },
-                                    onItemMove: (
-                                      invItem: InventoryItem,
-                                      containerItem: InventoryItem | null
-                                    ) => {
+                                    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
                                       handleMoveItem(props.setInventory, invItem, containerItem);
                                     },
                                   },
@@ -2166,10 +2122,7 @@ function PanelInventory(props: {
                                 handleDeleteItem(props.setInventory, newInvItem);
                                 openDrawer(null);
                               },
-                              onItemMove: (
-                                invItem: InventoryItem,
-                                containerItem: InventoryItem | null
-                              ) => {
+                              onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
                                 handleMoveItem(props.setInventory, invItem, containerItem);
                               },
                             },
@@ -2310,9 +2263,7 @@ function InvItemOption(props: {
 }) {
   const theme = useMantineTheme();
 
-  const weaponStats = isItemWeapon(props.invItem.item)
-    ? getWeaponStats('CHARACTER', props.invItem.item)
-    : null;
+  const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats('CHARACTER', props.invItem.item) : null;
 
   return (
     <Grid w={'100%'}>
@@ -2344,9 +2295,7 @@ function InvItemOption(props: {
               <Text c='gray.6' fz='xs' fs='italic' span>
                 {weaponStats.damage.dice}
                 {weaponStats.damage.die}
-                {weaponStats.damage.bonus.total > 0
-                  ? ` + ${weaponStats.damage.bonus.total}`
-                  : ``}{' '}
+                {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
                 {weaponStats.damage.damageType}
               </Text>
             </Group>
@@ -2471,9 +2420,7 @@ function PanelSpells(props: { panelHeight: number }) {
     search.current.addDocuments(spells);
   }, [spells]);
 
-  const allSpells = searchQuery.trim()
-    ? (search.current?.search(searchQuery.trim()) as Spell[])
-    : spells ?? [];
+  const allSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
 
   return (
     <Box h='100%'>
@@ -2548,9 +2495,7 @@ function PanelSpells(props: { panelHeight: number }) {
                         <SpellList
                           index={`spontaneous-${source.name}`}
                           source={source}
-                          spellIds={charData.list
-                            .filter((d) => d.source === source.name)
-                            .map((d) => d.spell_id)}
+                          spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='SPONTANEOUS'
                           extra={{ slots: charData.slots }}
@@ -2564,9 +2509,7 @@ function PanelSpells(props: { panelHeight: number }) {
                         <SpellList
                           index={`prepared-${source.name}`}
                           source={source}
-                          spellIds={charData.list
-                            .filter((d) => d.source === source.name)
-                            .map((d) => d.spell_id)}
+                          spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='PREPARED'
                           extra={{ slots: charData.slots }}
@@ -2579,9 +2522,7 @@ function PanelSpells(props: { panelHeight: number }) {
                     <SpellList
                       index={`focus-${source.name}`}
                       source={source}
-                      spellIds={charData.focus
-                        .filter((d) => d.source === source.name)
-                        .map((d) => d.spell_id)}
+                      spellIds={charData.focus.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                       allSpells={allSpells}
                       type='FOCUS'
                       extra={{ focusPoints: charData.focus_points }}
@@ -2641,13 +2582,12 @@ function SpellList(props: {
   };
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
 }) {
-
   const [character, setCharacter] = useRecoilState(characterState);
 
   const castSpell = (cast: boolean, spell: Spell) => {
-    if(!character) return;
+    if (!character) return;
 
-    if((props.type === 'PREPARED' ||  props.type === 'SPONTANEOUS') && props.source) {
+    if ((props.type === 'PREPARED' || props.type === 'SPONTANEOUS') && props.source) {
       setCharacter((c) => {
         if (!c) return c;
         let slots = c.spells?.slots ?? [];
@@ -2676,7 +2616,7 @@ function SpellList(props: {
       });
     }
 
-    if(props.type === 'FOCUS') {
+    if (props.type === 'FOCUS') {
       setCharacter((c) => {
         if (!c) return c;
         return {
@@ -2689,12 +2629,12 @@ function SpellList(props: {
               focus_point_current: 0,
               innate_casts: [],
             }),
-            focus_point_current: Math.max((c.spells?.focus_point_current ?? 0) + (cast ? - 1 : 1), 0),
+            focus_point_current: Math.max((c.spells?.focus_point_current ?? 0) + (cast ? -1 : 1), 0),
           },
         };
       });
     }
-  }
+  };
 
   // Display spells in an ordered list by rank
   const spells = useMemo(() => {
@@ -2799,14 +2739,20 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {slots[rank].map((slot, index) => (
-                            <SpellListEntry key={index} spell={slot.spell} exhausted={!!slot.exhausted} onCastSpell={(cast: boolean) => {
-                              if(slot.spell) castSpell(cast, slot.spell);
-                            }} onOpenManageSpells={() => {
-                              props.openManageSpells?.(
-                                props.source!.name,
-                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                              );
-                            }} />
+                            <SpellListEntry
+                              key={index}
+                              spell={slot.spell}
+                              exhausted={!!slot.exhausted}
+                              onCastSpell={(cast: boolean) => {
+                                if (slot.spell) castSpell(cast, slot.spell);
+                              }}
+                              onOpenManageSpells={() => {
+                                props.openManageSpells?.(
+                                  props.source!.name,
+                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                                );
+                              }}
+                            />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -2897,14 +2843,20 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {spells[rank].map((spell, index) => (
-                            <SpellListEntry key={index} spell={spell} exhausted={!!slots[rank].find((s) => !s.exhausted)} onCastSpell={(cast: boolean) => {
-                              castSpell(cast, spell);
-                            }} onOpenManageSpells={() => {
-                              props.openManageSpells?.(
-                                props.source!.name,
-                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                              );
-                            }} />
+                            <SpellListEntry
+                              key={index}
+                              spell={spell}
+                              exhausted={!!slots[rank].find((s) => !s.exhausted)}
+                              onCastSpell={(cast: boolean) => {
+                                castSpell(cast, spell);
+                              }}
+                              onOpenManageSpells={() => {
+                                props.openManageSpells?.(
+                                  props.source!.name,
+                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                                );
+                              }}
+                            />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -2979,14 +2931,20 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {spells[rank].map((spell, index) => (
-                            <SpellListEntry key={index} spell={spell} exhausted={!character?.spells?.focus_point_current} onCastSpell={(cast: boolean) => {
-                              castSpell(cast, spell);
-                            }} onOpenManageSpells={() => {
-                              props.openManageSpells?.(
-                                props.source!.name,
-                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                              );
-                            }} />
+                            <SpellListEntry
+                              key={index}
+                              spell={spell}
+                              exhausted={!character?.spells?.focus_point_current}
+                              onCastSpell={(cast: boolean) => {
+                                castSpell(cast, spell);
+                              }}
+                              onOpenManageSpells={() => {
+                                props.openManageSpells?.(
+                                  props.source!.name,
+                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                                );
+                              }}
+                            />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -3058,14 +3016,20 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {innateSpells[rank].map((innate, index) => (
-                            <SpellListEntry key={index} spell={innate.spell} exhausted={innate.casts_current >= innate.casts_max} onCastSpell={(cast: boolean) => {
-                              if (innate.spell) castSpell(cast, innate.spell);
-                            }} onOpenManageSpells={() => {
-                              props.openManageSpells?.(
-                                props.source!.name,
-                                props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                              );
-                            }} />
+                            <SpellListEntry
+                              key={index}
+                              spell={innate.spell}
+                              exhausted={innate.casts_current >= innate.casts_max}
+                              onCastSpell={(cast: boolean) => {
+                                if (innate.spell) castSpell(cast, innate.spell);
+                              }}
+                              onOpenManageSpells={() => {
+                                props.openManageSpells?.(
+                                  props.source!.name,
+                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                                );
+                              }}
+                            />
                           ))}
                         </Stack>
                       </Accordion.Panel>
@@ -3120,14 +3084,22 @@ function SpellList(props: {
             {spells &&
               Object.keys(spells)
                 .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])
-                .map((spell, index) => <SpellListEntry key={index} spell={spell} exhausted={false} onCastSpell={(cast: boolean) => {
-                  castSpell(cast, spell);
-                }} onOpenManageSpells={() => {
-                  props.openManageSpells?.(
-                    props.source!.name,
-                    props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                  );
-                }} />)}
+                .map((spell, index) => (
+                  <SpellListEntry
+                    key={index}
+                    spell={spell}
+                    exhausted={false}
+                    onCastSpell={(cast: boolean) => {
+                      castSpell(cast, spell);
+                    }}
+                    onOpenManageSpells={() => {
+                      props.openManageSpells?.(
+                        props.source!.name,
+                        props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                      );
+                    }}
+                  />
+                ))}
 
             {props.spellIds.length === 0 && (
               <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
@@ -3143,31 +3115,39 @@ function SpellList(props: {
   return null;
 }
 
-function SpellListEntry(props: { spell?: Spell, exhausted: boolean, onCastSpell: (cast: boolean) => void, onOpenManageSpells?: () => void}) {
+function SpellListEntry(props: {
+  spell?: Spell;
+  exhausted: boolean;
+  onCastSpell: (cast: boolean) => void;
+  onOpenManageSpells?: () => void;
+}) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   if (props.spell) {
     return (
       <StatButton
-    
-      onClick={() => {
-        if(!props.spell) return;
-        openDrawer({
-          type: 'cast-spell',
-          data: { spell: props.spell, exhausted: props.exhausted, onCastSpell: (cast: boolean) => {
-            props.onCastSpell(cast);
-          } },
-          extra: { addToHistory: true },
-        });
-      }}
+        onClick={() => {
+          if (!props.spell) return;
+          openDrawer({
+            type: 'cast-spell',
+            data: {
+              spell: props.spell,
+              exhausted: props.exhausted,
+              onCastSpell: (cast: boolean) => {
+                props.onCastSpell(cast);
+              },
+            },
+            extra: { addToHistory: true },
+          });
+        }}
       >
-      <SpellSelectionOption
-        noBackground
-        hideRank
-        exhausted={props.exhausted}
-        spell={props.spell}
-        onClick={() => {}}
-      />
+        <SpellSelectionOption
+          noBackground
+          hideRank
+          exhausted={props.exhausted}
+          spell={props.spell}
+          onClick={() => {}}
+        />
       </StatButton>
     );
   }
@@ -3284,9 +3264,7 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
     } as typeof rawData;
   };
 
-  const data = searchQuery.trim()
-    ? constructData(search.current.search(searchQuery.trim()))
-    : rawData;
+  const data = searchQuery.trim() ? constructData(search.current.search(searchQuery.trim())) : rawData;
 
   return (
     <Box h='100%'>
@@ -3582,21 +3560,15 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
 
   const [character, setCharacter] = useRecoilState(characterState);
 
-  const languages = (getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map(
-    (langId) => {
-      const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
-      return lang;
-    }
-  );
+  const languages = (getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
+    const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
+    return lang;
+  });
 
-  const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter(
-    (prof) => prof.value.value !== 'U'
-  );
+  const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
   const weaponProfs = getAllWeaponVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
 
-  const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter(
-    (prof) => prof.value.value !== 'U'
-  );
+  const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
   const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
 
   return (
@@ -4023,10 +3995,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {
-                              getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value
-                                .value
-                            }
+                            {getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -4132,10 +4101,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                         </Box>
                         <Group>
                           <Badge variant='default'>
-                            {
-                              getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value
-                                .value
-                            }
+                            {getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value.value}
                           </Badge>
                         </Group>
                       </StatButton>
@@ -4164,9 +4130,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                           </Text>
                         </Box>
                         <Group>
-                          <Text c='gray.0'>
-                            {displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}
-                          </Text>
+                          <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
                           <Badge variant='default'>
                             {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
                           </Badge>
@@ -4345,9 +4309,7 @@ function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
                   </Box>
                   <Group>
                     <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-                    <Badge variant='default'>
-                      {getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}
-                    </Badge>
+                    <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}</Badge>
                   </Group>
                 </StatButton>
               </Accordion>
@@ -4380,12 +4342,7 @@ function PanelNotes(props: { panelHeight: number }) {
             key={index}
             value={`${index}`}
             leftSection={
-              <ActionIcon
-                variant='transparent'
-                aria-label={`${page.name}`}
-                color={page.color}
-                size='xs'
-              >
+              <ActionIcon variant='transparent' aria-label={`${page.name}`} color={page.color} size='xs'>
                 <Icon name={page.icon} size='1rem' />
               </ActionIcon>
             }
