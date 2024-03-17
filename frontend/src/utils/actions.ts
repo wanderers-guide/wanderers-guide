@@ -29,3 +29,8 @@ export function convertCastToActionCost(cast: string): ActionCost | string {
     return cast;
   }
 }
+
+export function findActions(text: string): ActionCost[] {
+  const regex = /cost="([^"]*)"/g;
+  return Array.from(text.matchAll(regex), (m) => m[1]) as ActionCost[];
+}

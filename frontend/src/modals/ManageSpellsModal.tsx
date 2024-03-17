@@ -1,9 +1,5 @@
 import { characterState } from '@atoms/characterAtoms';
-import {
-  SelectContentButton,
-  SpellSelectionOption,
-  selectContent,
-} from '@common/select/SelectContent';
+import { SelectContentButton, SpellSelectionOption, selectContent } from '@common/select/SelectContent';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { collectCharacterSpellcasting } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
@@ -80,9 +76,8 @@ export default function ManageSpellsModal(props: {
   }, [character]);
 
   const allFilteredSpells =
-    (searchQuery.trim()
-      ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined)
-      : allRawSpells ?? []) ?? [];
+    (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined) : allRawSpells ?? []) ??
+    [];
 
   const spells = useMemo(() => {
     const filteredSpells = charData?.list
@@ -168,11 +163,7 @@ export default function ManageSpellsModal(props: {
   );
 }
 
-const SlotsSection = (props: {
-  slots: Record<string, SpellSlot[]>;
-  spells?: Spell[];
-  source: string;
-}) => {
+const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spell[]; source: string }) => {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
@@ -273,7 +264,7 @@ const SlotsSection = (props: {
                           if (rank === '0') {
                             return isNormalSpell(spell) && isCantrip(spell);
                           } else {
-                            return isNormalSpell(spell) && spell.rank <= parseInt(rank);
+                            return isNormalSpell(spell) && spell.rank <= parseInt(rank) && !isCantrip(spell);
                           }
                         },
                         filterOptions: {

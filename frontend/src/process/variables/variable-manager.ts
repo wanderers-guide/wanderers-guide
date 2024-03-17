@@ -257,7 +257,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // ARMOR____: newVariable('prof', 'ARMOR____'),
 
   PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
-  PRIMARY_BUILDER_TABS: newVariable('list-str', 'PRIMARY_BUILDER_TABS', [
+  PRIMARY_SHEET_TABS: newVariable('list-str', 'PRIMARY_SHEET_TABS', [
     'skills-actions',
     'inventory',
     'feats-features',
@@ -348,13 +348,7 @@ export function getVariableHistory(id: StoreID, name: string) {
   return _.cloneDeep(getVariableStore(id).history[name]) ?? [];
 }
 
-function addVariableHistory(
-  id: StoreID,
-  name: string,
-  to: VariableValue,
-  from: VariableValue,
-  source: string
-) {
+function addVariableHistory(id: StoreID, name: string, to: VariableValue, from: VariableValue, source: string) {
   if (from === to) return;
   if (!getVariableStore(id).history[name]) {
     getVariableStore(id).history[name] = [];
@@ -484,9 +478,7 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue, so
     if (_.isNumber(+amount.value)) {
       const value = parseInt(`${amount.value}`);
       if (value !== 0 && value !== 1 && value !== -1) {
-        throwError(
-          `Invalid variable adjustment amount for attribute: ${value} (must be 0, 1, or -1)`
-        );
+        throwError(`Invalid variable adjustment amount for attribute: ${value} (must be 0, 1, or -1)`);
       }
       // Add boosts or flaws, use partial if it's a boost and value is 4+
       if (variable.value.value >= 4 && value === 1) {
@@ -572,11 +564,7 @@ export function getAllArmorGroupVariables(id: StoreID): VariableProf[] {
 export function getAllWeaponVariables(id: StoreID): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {
-    if (
-      variable.name.startsWith('WEAPON_') &&
-      !variable.name.startsWith('WEAPON_GROUP_') &&
-      variable.type === 'prof'
-    ) {
+    if (variable.name.startsWith('WEAPON_') && !variable.name.startsWith('WEAPON_GROUP_') && variable.type === 'prof') {
       variables.push(variable);
     }
   }
@@ -586,11 +574,7 @@ export function getAllWeaponVariables(id: StoreID): VariableProf[] {
 export function getAllArmorVariables(id: StoreID): VariableProf[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {
-    if (
-      variable.name.startsWith('ARMOR_') &&
-      !variable.name.startsWith('ARMOR_GROUP_') &&
-      variable.type === 'prof'
-    ) {
+    if (variable.name.startsWith('ARMOR_') && !variable.name.startsWith('ARMOR_GROUP_') && variable.type === 'prof') {
       variables.push(variable);
     }
   }
@@ -600,10 +584,7 @@ export function getAllArmorVariables(id: StoreID): VariableProf[] {
 export function getAllSpeedVariables(id: StoreID): VariableNum[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {
-    if (
-      (variable.name.startsWith('SPEED_') || variable.name === 'SPEED') &&
-      variable.type === 'num'
-    ) {
+    if ((variable.name.startsWith('SPEED_') || variable.name === 'SPEED') && variable.type === 'num') {
       variables.push(variable);
     }
   }

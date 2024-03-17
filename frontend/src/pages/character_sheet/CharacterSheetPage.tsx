@@ -128,9 +128,11 @@ import {
   SpellInnateEntry,
   SpellSlot,
 } from '@typing/content';
+import { DrawerType } from '@typing/index';
 import { OperationResultPackage } from '@typing/operations';
 import { JSendResponse } from '@typing/requests';
 import { VariableAttr, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
+import { findActions } from '@utils/actions';
 import { interpolateHealth } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
 import { rankNumber, sign } from '@utils/numbers';
@@ -1319,7 +1321,7 @@ function SectionPanels(props: {
   const panelHeight = 550;
 
   const iconStyle = { width: rem(12), height: rem(12) };
-  const allBuilderTabs = [
+  const allSheetTabs = [
     'skills-actions',
     'inventory',
     'spells',
@@ -1329,8 +1331,8 @@ function SectionPanels(props: {
     'notes',
     'extras',
   ];
-  const primaryBuilderTabs = getVariable<VariableListStr>('CHARACTER', 'PRIMARY_BUILDER_TABS')?.value ?? [];
-  const tabOptions = allBuilderTabs.filter((tab) => !primaryBuilderTabs.includes(tab));
+  const primarySheetTabs = getVariable<VariableListStr>('CHARACTER', 'PRIMARY_SHEET_TABS')?.value ?? [];
+  const tabOptions = allSheetTabs.filter((tab) => !primarySheetTabs.includes(tab));
   const openedTabOption = tabOptions.find((tab) => tab === activeTab);
   const getTabIcon = (tab: string) => {
     switch (tab) {
@@ -1359,37 +1361,37 @@ function SectionPanels(props: {
     <BlurBox blur={10} p='sm'>
       <Tabs color='dark.6' variant='pills' radius='xl' keepMounted={false} value={activeTab} onChange={setActiveTab}>
         <Tabs.List pb={10} grow>
-          {primaryBuilderTabs.includes('skills-actions') && (
+          {primarySheetTabs.includes('skills-actions') && (
             <Tabs.Tab value='skills-actions' leftSection={getTabIcon('skills-actions')}>
               Skills & Actions
             </Tabs.Tab>
           )}
-          {primaryBuilderTabs.includes('inventory') && (
+          {primarySheetTabs.includes('inventory') && (
             <Tabs.Tab value='inventory' leftSection={getTabIcon('inventory')}>
               Inventory
             </Tabs.Tab>
           )}
-          {primaryBuilderTabs.includes('spells') && (
+          {primarySheetTabs.includes('spells') && (
             <Tabs.Tab value='spells' leftSection={getTabIcon('spells')}>
               Spells
             </Tabs.Tab>
           )}
-          {primaryBuilderTabs.includes('feats-features') && (
+          {primarySheetTabs.includes('feats-features') && (
             <Tabs.Tab value='feats-features' leftSection={getTabIcon('feats-features')}>
               Feats & Features
             </Tabs.Tab>
           )}
-          {primaryBuilderTabs.includes('companions') && (
+          {primarySheetTabs.includes('companions') && (
             <Tabs.Tab value='companions' leftSection={getTabIcon('companions')}>
               Companions
             </Tabs.Tab>
           )}
-          {primaryBuilderTabs.includes('details') && (
+          {primarySheetTabs.includes('details') && (
             <Tabs.Tab value='details' leftSection={getTabIcon('details')}>
               Details
             </Tabs.Tab>
           )}
-          {primaryBuilderTabs.includes('notes') && (
+          {primarySheetTabs.includes('notes') && (
             <Tabs.Tab value='notes' leftSection={getTabIcon('notes')}>
               Notes
             </Tabs.Tab>
@@ -1434,7 +1436,12 @@ function SectionPanels(props: {
         </Tabs.List>
 
         <Tabs.Panel value='skills-actions'>
-          <PanelSkillsActions content={props.content} panelHeight={panelHeight} />
+          <PanelSkillsActions
+            content={props.content}
+            panelHeight={panelHeight}
+            inventory={props.inventory}
+            setInventory={props.setInventory}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value='inventory'>
@@ -1477,43 +1484,103 @@ function SectionPanels(props: {
 interface ActionItem {
   id: number;
   name: string;
-  type: string;
+  drawerType: DrawerType;
+  drawerData: any;
   cost: ActionCost;
   level?: number;
   traits?: number[];
   rarity?: Rarity;
+  skill?: string | string[] | undefined;
 }
-function PanelSkillsActions(props: { content: ContentPackage; panelHeight: number }) {
+function PanelSkillsActions(props: {
+  content: ContentPackage;
+  panelHeight: number;
+  inventory: Inventory;
+  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+}) {
   const theme = useMantineTheme();
   const [skillsSearch, setSkillsSearch] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
   const [actionSectionValue, setActionSectionValue] = useState<string | null>(null);
 
-  const actions = props.content.abilityBlocks.filter((ab) => ab.type === 'action');
+  const actions = useMemo(() => {
+    const allActions = props.content.abilityBlocks.filter((ab) => ab.type === 'action');
+
+    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+      ? allActions.filter((action) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQuery.trim().toLowerCase();
+
+          const checkAction = (action: AbilityBlock) => {
+            if (actionTypeFilter !== 'ALL' && action.actions !== actionTypeFilter) return false;
+
+            if (action.name.toLowerCase().includes(query)) return true;
+            //if (action.description.toLowerCase().includes(query)) return true;
+            return false;
+          };
+
+          if (checkAction(action)) return true;
+          return false;
+        })
+      : allActions;
+  }, [props.content.abilityBlocks, actionTypeFilter, searchQuery]);
+
+  const weaponAttacks = useMemo(() => {
+    // Weapons in inventory, plus unarmed attacks
+  }, []);
+
+  const basicActions = useMemo(() => {
+    return actions.filter(
+      (a) =>
+        !a.meta_data?.skill &&
+        (!a.requirements || a.requirements.trim().length === 0) &&
+        !hasTraitType('EXPLORATION', a.traits) &&
+        !hasTraitType('DOWNTIME', a.traits)
+    );
+  }, [actions]);
+
+  const basicSpecialityActions = useMemo(() => {
+    return actions.filter((a) => !a.meta_data?.skill && a.requirements && a.requirements.trim().length > 0);
+  }, [actions]);
 
   const skillActions = useMemo(() => {
-    const skillActions: { [key: string]: AbilityBlock[] } = {};
-    for (const action of actions.filter((a) => a.meta_data?.skill)) {
-      const skills = Array.isArray(action.meta_data!.skill!) ? action.meta_data!.skill! : [action.meta_data!.skill!];
-      for (const sss of skills) {
-        for (const ss of sss.split(',')) {
-          const skill = ss.trim();
-          if (!skillActions[skill]) {
-            skillActions[skill] = [];
-          }
-          skillActions[skill].push(action);
-        }
-      }
-    }
-    const sortedSkillActions: { [key: string]: AbilityBlock[] } = {};
-    Object.keys(skillActions)
-      .sort()
-      .forEach((key) => {
-        sortedSkillActions[key] = skillActions[key];
-      });
-    return sortedSkillActions;
+    // const skillActions: { [key: string]: AbilityBlock[] } = {};
+    // for (const action of actions.filter((a) => a.meta_data?.skill)) {
+    //   const skills = Array.isArray(action.meta_data!.skill!) ? action.meta_data!.skill! : [action.meta_data!.skill!];
+    //   for (const sss of skills) {
+    //     for (const ss of sss.split(',')) {
+    //       const skill = ss.trim();
+    //       if (!skillActions[skill]) {
+    //         skillActions[skill] = [];
+    //       }
+    //       skillActions[skill].push(action);
+    //     }
+    //   }
+    // }
+
+    // // Sort by skill name
+    // const sortedSkillActions: { [key: string]: AbilityBlock[] } = {};
+    // Object.keys(skillActions)
+    //   .sort()
+    //   .forEach((key) => {
+    //     sortedSkillActions[key] = skillActions[key];
+    //   });
+
+    // // Merge to single array
+    // const mergedSkillActions: AbilityBlock[] = [];
+    // for (const key in sortedSkillActions) {
+    //   mergedSkillActions.push(...sortedSkillActions[key]);
+    // }
+
+    // // Remove dupes
+    // const uniqueMergedSkillActions = mergedSkillActions.filter(
+    //   (action, index, self) => index === self.findIndex((t) => t.id === action.id)
+    // );
+
+    return actions.filter((a) => a.meta_data?.skill);
   }, [actions]);
 
   const explorationActions = useMemo(() => {
@@ -1524,7 +1591,34 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
     return actions.filter((a) => hasTraitType('DOWNTIME', a.traits));
   }, [actions]);
 
-  console.log(actions, skillActions);
+  const itemsWithActions = useMemo(() => {
+    const actionItems = props.inventory.items.filter((invItem) => {
+      return findActions(invItem.item.description).length > 0;
+    });
+
+    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+      ? actionItems.filter((invItem) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQuery.trim().toLowerCase();
+
+          const checkInvItem = (invItem: InventoryItem) => {
+            if (actionTypeFilter !== 'ALL') {
+              const actions = findActions(invItem.item.description);
+              const hasAction = actions.find((action) => action === actionTypeFilter);
+              if (!hasAction) return false;
+            }
+            if (invItem.item.name.toLowerCase().includes(query)) return true;
+            if (invItem.item.description.toLowerCase().includes(query)) return true;
+            if (invItem.item.group.toLowerCase().includes(query)) return true;
+            return false;
+          };
+
+          if (checkInvItem(invItem)) return true;
+          if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
+          return false;
+        })
+      : actionItems;
+  }, [props.inventory.items, actionTypeFilter, searchQuery]);
 
   return (
     <Group gap={10} align='flex-start' style={{ height: props.panelHeight }}>
@@ -1595,7 +1689,7 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
               style={{ flex: 1 }}
               leftSection={<IconSearch size='0.9rem' />}
               placeholder={`Search actions & activities`}
-              onChange={(event) => setSkillsSearch(event.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               styles={{
                 input: {
                   backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -1737,37 +1831,116 @@ function PanelSkillsActions(props: { content: ContentPackage; panelHeight: numbe
                 id='items'
                 title='Items (with Actions)'
                 opened={actionSectionValue === 'items'}
-                actions={[]}
+                actions={itemsWithActions.map((invItem) => {
+                  const actions = findActions(invItem.item.description);
+                  return {
+                    id: parseInt(invItem.id),
+                    name: invItem.item.name,
+                    drawerType: 'inv-item',
+                    drawerData: {
+                      zIndex: 100,
+                      invItem: _.cloneDeep(invItem),
+                      onItemUpdate: (newInvItem: InventoryItem) => {
+                        handleUpdateItem(props.setInventory, newInvItem);
+                      },
+                      onItemDelete: (newInvItem: InventoryItem) => {
+                        handleDeleteItem(props.setInventory, newInvItem);
+                        openDrawer(null);
+                      },
+                      onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
+                        handleMoveItem(props.setInventory, invItem, containerItem);
+                      },
+                    },
+                    cost: actions.length > 0 ? actions[0] : 'ONE-ACTION',
+                    traits: invItem.item.traits,
+                    rarity: invItem.item.rarity,
+                  };
+                })}
               />
               <ActionAccordionItem
                 id='basic-actions'
                 title='Basic Actions'
                 opened={actionSectionValue === 'basic-actions'}
-                actions={[]}
+                actions={basicActions.map((action) => {
+                  return {
+                    id: action.id,
+                    name: action.name,
+                    drawerType: 'action',
+                    drawerData: { id: action.id },
+                    cost: action.actions,
+                    traits: action.traits,
+                    rarity: action.rarity,
+                    skill: action.meta_data?.skill,
+                  };
+                })}
               />
               <ActionAccordionItem
                 id='skill-actions'
                 title='Skill Actions'
                 opened={actionSectionValue === 'skill-actions'}
-                actions={[]}
+                actions={skillActions.map((action) => {
+                  return {
+                    id: action.id,
+                    name: action.name,
+                    drawerType: 'action',
+                    drawerData: { id: action.id },
+                    cost: action.actions,
+                    traits: action.traits,
+                    rarity: action.rarity,
+                    skill: action.meta_data?.skill,
+                  };
+                })}
               />
               <ActionAccordionItem
                 id='speciality-basic-actions'
                 title='Speciality Basics'
                 opened={actionSectionValue === 'speciality-basic-actions'}
-                actions={[]}
+                actions={basicSpecialityActions.map((action) => {
+                  return {
+                    id: action.id,
+                    name: action.name,
+                    drawerType: 'action',
+                    drawerData: { id: action.id },
+                    cost: action.actions,
+                    traits: action.traits,
+                    rarity: action.rarity,
+                    skill: action.meta_data?.skill,
+                  };
+                })}
               />
               <ActionAccordionItem
                 id='exploration-activities'
                 title='Exploration Activities'
                 opened={actionSectionValue === 'exploration-activities'}
-                actions={[]}
+                actions={explorationActions.map((action) => {
+                  return {
+                    id: action.id,
+                    name: action.name,
+                    drawerType: 'action',
+                    drawerData: { id: action.id },
+                    cost: action.actions,
+                    traits: action.traits,
+                    rarity: action.rarity,
+                    skill: action.meta_data?.skill,
+                  };
+                })}
               />
               <ActionAccordionItem
                 id='downtime-activities'
                 title='Downtime Activities'
                 opened={actionSectionValue === 'downtime-activities'}
-                actions={[]}
+                actions={downtimeActions.map((action) => {
+                  return {
+                    id: action.id,
+                    name: action.name,
+                    drawerType: 'action',
+                    drawerData: { id: action.id },
+                    cost: action.actions,
+                    traits: action.traits,
+                    rarity: action.rarity,
+                    skill: action.meta_data?.skill,
+                  };
+                })}
               />
             </Accordion>
           </ScrollArea>
@@ -1781,6 +1954,8 @@ function ActionAccordionItem(props: { id: string; title: string; opened: boolean
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
   const { hovered, ref } = useHover();
+
+  if (props.actions.length === 0) return null;
 
   return (
     <Accordion.Item
@@ -1803,9 +1978,11 @@ function ActionAccordionItem(props: { id: string; title: string; opened: boolean
         </Group>
       </Accordion.Control>
       <Accordion.Panel>
-        {props.actions.map((action, index) => (
-          <ActionSelectionOption key={index} action={action} onClick={() => {}} />
-        ))}
+        <Stack gap={5}>
+          {props.actions.map((action, index) => (
+            <ActionSelectionOption key={index} action={action} onClick={() => {}} />
+          ))}
+        </Stack>
       </Accordion.Panel>
     </Accordion.Item>
   );
@@ -1817,70 +1994,62 @@ function ActionSelectionOption(props: { action: ActionItem; onClick: (action: Ac
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
+    <StatButton
+      darkVersion
+      onClick={() => {
+        openDrawer({ type: props.action.drawerType, data: props.action.drawerData });
       }}
-      onClick={() => props.onClick(props.action)}
-      justify='space-between'
     >
-      {props.action.level && (
-        <Text
-          fz={10}
-          c='dimmed'
-          ta='right'
-          w={14}
-          style={{
-            position: 'absolute',
-            top: 15,
-            left: 1,
-          }}
-        >
-          {props.action.level}.
-        </Text>
-      )}
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.action.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.action.cost} />
-        </Box>
+      <Group
+        ref={ref}
+        py='sm'
+        style={{
+          cursor: 'pointer',
+          borderBottom: '1px solid ' + theme.colors.dark[6],
+          // backgroundColor: hovered ? theme.colors.dark[6] : 'transparent',
+          position: 'relative',
+        }}
+        onClick={() => props.onClick(props.action)}
+        justify='space-between'
+        w='100%'
+        wrap='nowrap'
+      >
+        {props.action.level && (
+          <Text
+            fz={10}
+            c='dimmed'
+            ta='right'
+            w={14}
+            style={{
+              position: 'absolute',
+              top: 15,
+              left: 1,
+            }}
+          >
+            {props.action.level}.
+          </Text>
+        )}
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.action.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.action.cost} />
+          </Box>
+        </Group>
+        <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+          <Box>
+            <TraitsDisplay
+              justify='flex-end'
+              size='xs'
+              traitIds={props.action.traits ?? []}
+              rarity={props.action.rarity}
+              skill={props.action.skill}
+            />
+          </Box>
+        </Group>
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.action.traits ?? []}
-            rarity={props.action.rarity}
-          />
-        </Box>
-        {true && <Box w={50}></Box>}
-      </Group>
-      {true && (
-        <Button
-          size='compact-xs'
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({ type: 'feat', data: { id: props.action.id } });
-          }}
-        >
-          Details
-        </Button>
-      )}
-    </Group>
+    </StatButton>
   );
 }
 
@@ -2500,6 +2669,7 @@ function PanelSpells(props: { panelHeight: number }) {
                           type='SPONTANEOUS'
                           extra={{ slots: charData.slots }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
+                          hasFilters={!!searchQuery.trim()}
                         />
                       )}
                     </>
@@ -2514,6 +2684,7 @@ function PanelSpells(props: { panelHeight: number }) {
                           type='PREPARED'
                           extra={{ slots: charData.slots }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
+                          hasFilters={!!searchQuery.trim()}
                         />
                       )}
                     </>
@@ -2526,6 +2697,7 @@ function PanelSpells(props: { panelHeight: number }) {
                       allSpells={allSpells}
                       type='FOCUS'
                       extra={{ focusPoints: charData.focus_points }}
+                      hasFilters={!!searchQuery.trim()}
                     />
                   )}
                 </div>
@@ -2538,6 +2710,7 @@ function PanelSpells(props: { panelHeight: number }) {
                   allSpells={allSpells}
                   type='INNATE'
                   extra={{ innates: charData.innate }}
+                  hasFilters={!!searchQuery.trim()}
                 />
               )}
               {/* Always display ritual section */}
@@ -2548,6 +2721,7 @@ function PanelSpells(props: { panelHeight: number }) {
                   allSpells={allSpells}
                   type='RITUAL'
                   openManageSpells={(source, type) => setManageSpells({ source, type })}
+                  hasFilters={!!searchQuery.trim()}
                 />
               )}
             </Accordion>
@@ -2580,6 +2754,7 @@ function SpellList(props: {
       max: number;
     };
   };
+  hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
 }) {
   const [character, setCharacter] = useRecoilState(characterState);
@@ -2665,6 +2840,15 @@ function SpellList(props: {
   }, [props.extra?.innates, props.allSpells]);
 
   if (props.type === 'PREPARED' && props.source) {
+    // If there are no spells to display, and there are filters, return null
+    if (
+      props.hasFilters &&
+      slots &&
+      Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0
+    ) {
+      return null;
+    }
+
     return (
       <Accordion.Item value={props.index}>
         <Accordion.Control>
@@ -2721,7 +2905,9 @@ function SpellList(props: {
             >
               {slots &&
                 Object.keys(slots)
-                  .filter((rank) => slots[rank].length > 0)
+                  .filter((rank) =>
+                    slots[rank].length > 0 && props.hasFilters ? slots[rank].find((s) => s.spell) : true
+                  )
                   .map((rank, index) => (
                     <Accordion.Item key={index} value={`rank-group-${index}`}>
                       <Accordion.Control>
@@ -2731,7 +2917,7 @@ function SpellList(props: {
                           </Text>
                           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                             <Text fz='sm' c='gray.5' span>
-                              {slots[rank].length}
+                              {props.hasFilters ? slots[rank].filter((s) => s.spell).length : slots[rank].length}
                             </Text>
                           </Badge>
                         </Group>
@@ -2752,6 +2938,7 @@ function SpellList(props: {
                                   props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
                                 );
                               }}
+                              hasFilters={props.hasFilters}
                             />
                           ))}
                         </Stack>
@@ -2766,6 +2953,15 @@ function SpellList(props: {
   }
 
   if (props.type === 'SPONTANEOUS' && props.source) {
+    // If there are no spells to display, and there are filters, return null
+    if (
+      props.hasFilters &&
+      slots &&
+      Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0
+    ) {
+      return null;
+    }
+
     return (
       <Accordion.Item value={props.index}>
         <Accordion.Control>
@@ -2856,6 +3052,7 @@ function SpellList(props: {
                                   props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
                                 );
                               }}
+                              hasFilters={props.hasFilters}
                             />
                           ))}
                         </Stack>
@@ -2870,6 +3067,11 @@ function SpellList(props: {
   }
 
   if (props.type === 'FOCUS' && props.source && props.extra?.focusPoints) {
+    // If there are no spells to display, and there are filters, return null
+    if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
+      return null;
+    }
+
     return (
       <Accordion.Item value={props.index}>
         <Accordion.Control>
@@ -2944,6 +3146,7 @@ function SpellList(props: {
                                   props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
                                 );
                               }}
+                              hasFilters={props.hasFilters}
                             />
                           ))}
                         </Stack>
@@ -2958,6 +3161,15 @@ function SpellList(props: {
   }
 
   if (props.type === 'INNATE' && props.extra?.innates) {
+    // If there are no spells to display, and there are filters, return null
+    if (
+      props.hasFilters &&
+      innateSpells &&
+      Object.keys(innateSpells).filter((rank) => innateSpells[rank].find((s) => s.spell)).length === 0
+    ) {
+      return null;
+    }
+
     return (
       <Accordion.Item value={props.index}>
         <Accordion.Control>
@@ -2998,7 +3210,9 @@ function SpellList(props: {
             >
               {innateSpells &&
                 Object.keys(innateSpells)
-                  .filter((rank) => innateSpells[rank].length > 0)
+                  .filter((rank) =>
+                    innateSpells[rank].length > 0 && props.hasFilters ? innateSpells[rank].find((s) => s.spell) : true
+                  )
                   .map((rank, index) => (
                     <Accordion.Item value={`rank-group-${index}`}>
                       <Accordion.Control>
@@ -3008,7 +3222,9 @@ function SpellList(props: {
                           </Text>
                           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                             <Text fz='sm' c='gray.5' span>
-                              {innateSpells[rank].length}
+                              {props.hasFilters
+                                ? innateSpells[rank].filter((s) => s.spell).length
+                                : innateSpells[rank].length}
                             </Text>
                           </Badge>
                         </Group>
@@ -3029,6 +3245,7 @@ function SpellList(props: {
                                   props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
                                 );
                               }}
+                              hasFilters={props.hasFilters}
                             />
                           ))}
                         </Stack>
@@ -3043,6 +3260,11 @@ function SpellList(props: {
   }
 
   if (props.type === 'RITUAL') {
+    // If there are no spells to display, and there are filters, return null
+    if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
+      return null;
+    }
+
     return (
       <Accordion.Item value={props.index}>
         <Accordion.Control>
@@ -3098,6 +3320,7 @@ function SpellList(props: {
                         props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
                       );
                     }}
+                    hasFilters={props.hasFilters}
                   />
                 ))}
 
@@ -3120,6 +3343,7 @@ function SpellListEntry(props: {
   exhausted: boolean;
   onCastSpell: (cast: boolean) => void;
   onOpenManageSpells?: () => void;
+  hasFilters: boolean;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -3147,9 +3371,14 @@ function SpellListEntry(props: {
           exhausted={props.exhausted}
           spell={props.spell}
           onClick={() => {}}
+          px={0}
         />
       </StatButton>
     );
+  }
+
+  if (props.hasFilters) {
+    return null;
   }
 
   return (
@@ -3158,7 +3387,7 @@ function SpellListEntry(props: {
         props.onOpenManageSpells?.();
       }}
     >
-      <Text fz='xs' fs='italic' c='dimmed' fw={500} pl={20}>
+      <Text fz='xs' fs='italic' c='dimmed' fw={500} pl={7}>
         No Spell Prepared
       </Text>
     </StatButton>

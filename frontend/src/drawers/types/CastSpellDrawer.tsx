@@ -14,7 +14,9 @@ import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
-export function CastSpellDrawerTitle(props: { data: { spell: Spell, exhausted: boolean, onCastSpell: (cast: boolean) => void } }) {
+export function CastSpellDrawerTitle(props: {
+  data: { spell: Spell; exhausted: boolean; onCastSpell: (cast: boolean) => void };
+}) {
   const spell = props.data.spell;
 
   const character = useRecoilValue(characterState);
@@ -45,35 +47,31 @@ export function CastSpellDrawerTitle(props: { data: { spell: Spell, exhausted: b
           </Group>
           {props.data.exhausted ? (
             <Button
-                                  variant='outline'
-                                  radius='xl'
-                                  mb={3}
-                                  
-                                  size='compact-sm'
-                                  onClick={() => {
-                                    props.data.onCastSpell(false);
-                                    openDrawer(null);
-                                  }}
-                                  >
-Recover {rankTitle} {rank}
-                                  </Button>
+              variant='outline'
+              radius='xl'
+              mb={3}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onCastSpell(false);
+                openDrawer(null);
+              }}
+            >
+              Recover {rankTitle} {rank}
+            </Button>
           ) : (
-<Button
-                                  variant='filled'
-                                  radius='xl'
-                                  mb={3}
-                                  
-                                  size='compact-sm'
-                                  onClick={() => {
-                                    props.data.onCastSpell(true);
-                                    openDrawer(null);
-                                  }}
-                                  >
-Cast {rankTitle} {rank}
-                                  </Button>
+            <Button
+              variant='filled'
+              radius='xl'
+              mb={3}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onCastSpell(true);
+                openDrawer(null);
+              }}
+            >
+              Cast {rankTitle} {rank}
+            </Button>
           )}
-          
-          
         </Group>
       )}
     </>
@@ -233,7 +231,9 @@ export function CastSpellDrawerContent(props: { data: { spell: Spell } }) {
           </IndentedText>
         )}
         {true && <Divider />}
-        <RichText ta='justify' py={5}>{spell.description}</RichText>
+        <RichText ta='justify' py={5}>
+          {spell.description}
+        </RichText>
 
         {spell.heightened && spell.heightened.text && (
           <Box>

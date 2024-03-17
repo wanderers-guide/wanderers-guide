@@ -22,6 +22,7 @@ import {
   ScrollArea,
   Select,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -59,8 +60,7 @@ export function CreateItemModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
-  const editing =
-    (props.editId !== undefined && props.editId !== -1) || props.editItem !== undefined;
+  const editing = (props.editId !== undefined && props.editId !== -1) || props.editItem !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -72,10 +72,7 @@ export function CreateItemModal(props: {
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId, editItem }] = queryKey as [
-        string,
-        { editId?: number; editItem?: Item }
-      ];
+      const [_key, { editId, editItem }] = queryKey as [string, { editId?: number; editItem?: Item }];
 
       const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
       if (!item) return null;
@@ -171,6 +168,7 @@ export function CreateItemModal(props: {
         hp_max: undefined,
         broken_threshold: undefined,
         is_shoddy: false,
+        unselectable: false,
         quantity: 1,
         material: {
           grade: undefined,
@@ -192,8 +190,7 @@ export function CreateItemModal(props: {
 
     validate: {
       level: (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level'),
-      rarity: (value) =>
-        ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
+      rarity: (value) => (['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity'),
     },
   });
 
@@ -235,15 +232,9 @@ export function CreateItemModal(props: {
   const miscSectionCount =
     (baseItem && baseItem.length > 0 ? 1 : 0) +
     (form.values.meta_data?.damage?.die && form.values.meta_data.damage.die.length > 0 ? 1 : 0) +
-    (form.values.meta_data?.damage?.damageType && form.values.meta_data.damage.damageType.length > 0
-      ? 1
-      : 0) +
-    (form.values.meta_data?.damage?.extra && form.values.meta_data.damage.extra.length > 0
-      ? 1
-      : 0) +
-    ((weaponCategory || armorCategory) && (weaponCategory.length > 0 || armorCategory.length > 0)
-      ? 1
-      : 0) +
+    (form.values.meta_data?.damage?.damageType && form.values.meta_data.damage.damageType.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.damage?.extra && form.values.meta_data.damage.extra.length > 0 ? 1 : 0) +
+    ((weaponCategory || armorCategory) && (weaponCategory.length > 0 || armorCategory.length > 0) ? 1 : 0) +
     ((weaponGroup || armorGroup) && (weaponGroup.length > 0 || armorGroup.length > 0) ? 1 : 0) +
     (form.values.meta_data?.range && form.values.meta_data.range > 0 ? 1 : 0) +
     (form.values.meta_data?.reload && form.values.meta_data.reload.length > 0 ? 1 : 0) +
@@ -253,23 +244,18 @@ export function CreateItemModal(props: {
     (form.values.meta_data?.dex_cap && form.values.meta_data.dex_cap > 0 ? 1 : 0) +
     (form.values.meta_data?.strength && form.values.meta_data.strength > 0 ? 1 : 0) +
     (form.values.meta_data?.bulk?.capacity && form.values.meta_data.bulk.capacity > 0 ? 1 : 0) +
-    (form.values.meta_data?.bulk?.held_or_stowed && form.values.meta_data.bulk.held_or_stowed > 0
-      ? 1
-      : 0) +
+    (form.values.meta_data?.bulk?.held_or_stowed && form.values.meta_data.bulk.held_or_stowed > 0 ? 1 : 0) +
     (form.values.meta_data?.bulk?.ignored && form.values.meta_data.bulk.ignored > 0 ? 1 : 0) +
     (strikingRune && strikingRune > 0 ? 1 : 0) +
     (potencyRune && potencyRune > 0 ? 1 : 0) +
     (propertyRunes && propertyRunes.length > 0 ? 1 : 0) +
     (materialType && materialType.length > 0 ? 1 : 0) +
-    (form.values.meta_data?.material?.grade && form.values.meta_data.material.grade.length > 0
-      ? 1
-      : 0) +
+    (form.values.meta_data?.material?.grade && form.values.meta_data.material.grade.length > 0 ? 1 : 0) +
     (form.values.meta_data?.hardness && form.values.meta_data.hardness > 0 ? 1 : 0) +
     (form.values.meta_data?.hp_max && form.values.meta_data.hp_max > 0 ? 1 : 0) +
-    (form.values.meta_data?.broken_threshold && form.values.meta_data.broken_threshold > 0
-      ? 1
-      : 0) +
+    (form.values.meta_data?.broken_threshold && form.values.meta_data.broken_threshold > 0 ? 1 : 0) +
     (form.values.meta_data?.is_shoddy ? 1 : 0) +
+    (form.values.meta_data?.unselectable ? 1 : 0) +
     (form.values.meta_data?.quantity && form.values.meta_data.quantity > 0 ? 1 : 0) +
     (form.values.meta_data?.image_url && form.values.meta_data.image_url.length > 0 ? 1 : 0);
 
@@ -334,30 +320,10 @@ export function CreateItemModal(props: {
               />
             </Group>
             <Group wrap='nowrap'>
-              <NumberInput
-                label='PP'
-                placeholder='Price'
-                min={0}
-                {...form.getInputProps('price.pp')}
-              />
-              <NumberInput
-                label='GP'
-                placeholder='Price'
-                min={0}
-                {...form.getInputProps('price.gp')}
-              />
-              <NumberInput
-                label='SP'
-                placeholder='Price'
-                min={0}
-                {...form.getInputProps('price.sp')}
-              />
-              <NumberInput
-                label='CP'
-                placeholder='Price'
-                min={0}
-                {...form.getInputProps('price.cp')}
-              />
+              <NumberInput label='PP' placeholder='Price' min={0} {...form.getInputProps('price.pp')} />
+              <NumberInput label='GP' placeholder='Price' min={0} {...form.getInputProps('price.gp')} />
+              <NumberInput label='SP' placeholder='Price' min={0} {...form.getInputProps('price.sp')} />
+              <NumberInput label='CP' placeholder='Price' min={0} {...form.getInputProps('price.cp')} />
             </Group>
             <Group wrap='nowrap'>
               <Select
@@ -373,13 +339,7 @@ export function CreateItemModal(props: {
                 ]}
                 {...form.getInputProps('size')}
               />
-              <TextInput
-                type='number'
-                label='Bulk'
-                placeholder='Bulk'
-                min={0}
-                {...form.getInputProps('bulk')}
-              />
+              <NumberInput label='Bulk' placeholder='Bulk' min={0} decimalScale={1} {...form.getInputProps('bulk')} />
             </Group>
             <Group wrap='nowrap'>
               <Select
@@ -415,11 +375,7 @@ export function CreateItemModal(props: {
                 my='xs'
                 label={
                   <Group gap={3} wrap='nowrap'>
-                    <Button
-                      variant={openedAdditional ? 'light' : 'subtle'}
-                      size='compact-sm'
-                      color='gray.6'
-                    >
+                    <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                       Misc. Sections
                     </Button>
                     {miscSectionCount && miscSectionCount > 0 && (
@@ -442,8 +398,7 @@ export function CreateItemModal(props: {
                       filter={(item) => {
                         return (
                           !item.meta_data?.base_item ||
-                          item.meta_data?.base_item ===
-                            item.name.trim().replace(/\s/g, '-').toLowerCase()
+                          item.meta_data?.base_item === item.name.trim().replace(/\s/g, '-').toLowerCase()
                         );
                       }}
                       onChange={(item, name) => {
@@ -762,9 +717,18 @@ export function CreateItemModal(props: {
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap={10}>
-                          <Checkbox
+                          <Switch
                             label='Is Shoddy'
+                            labelPosition='left'
                             {...form.getInputProps('meta_data.is_shoddy', {
+                              type: 'checkbox',
+                            })}
+                          />
+
+                          <Switch
+                            label='Unselectable'
+                            labelPosition='left'
+                            {...form.getInputProps('meta_data.unselectable', {
                               type: 'checkbox',
                             })}
                           />
@@ -787,9 +751,7 @@ export function CreateItemModal(props: {
                             defaultValue={form.values.meta_data?.image_url ?? ''}
                             label='Image URL'
                             onChange={async (e) => {
-                              setIsValidImageURL(
-                                e.target.value.trim() ? await isValidImage(e.target.value) : true
-                              );
+                              setIsValidImageURL(e.target.value.trim() ? await isValidImage(e.target.value) : true);
                               setImageURL(e.target.value ?? '');
                             }}
                             error={isValidImageURL ? false : 'Invalid URL'}
@@ -823,11 +785,7 @@ export function CreateItemModal(props: {
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedOperations ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Operations
                   </Button>
                   {form.values.operations && form.values.operations.length > 0 && (
@@ -852,20 +810,16 @@ export function CreateItemModal(props: {
                       </HoverCard.Target>
                       <HoverCard.Dropdown>
                         <Text size='sm'>
-                          Operations are used to make changes to a character. They can give feats,
-                          spells, and more, as well as change stats, skills, and other values.
+                          Operations are used to make changes to a character. They can give feats, spells, and more, as
+                          well as change stats, skills, and other values.
                         </Text>
                         <Text size='sm'>
-                          Use conditionals to apply operations only when certain conditions are met
-                          and selections whenever a choice needs to be made.
+                          Use conditionals to apply operations only when certain conditions are met and selections
+                          whenever a choice needs to be made.
                         </Text>
                         <Text size='xs' fs='italic'>
                           For more help, see{' '}
-                          <Anchor
-                            href='https://discord.gg/kxCpa6G'
-                            target='_blank'
-                            underline='hover'
-                          >
+                          <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
                             our Discord server
                           </Anchor>
                           .

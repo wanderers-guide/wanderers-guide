@@ -9,14 +9,8 @@ import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { fetchContentPackage } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
-import {
-  AncestryInitialOverview,
-  convertAncestryOperationsIntoUI,
-} from '@drawers/types/AncestryDrawer';
-import {
-  BackgroundInitialOverview,
-  convertBackgroundOperationsIntoUI,
-} from '@drawers/types/BackgroundDrawer';
+import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
+import { BackgroundInitialOverview, convertBackgroundOperationsIntoUI } from '@drawers/types/BackgroundDrawer';
 import { ClassInitialOverview, convertClassOperationsIntoUI } from '@drawers/types/ClassDrawer';
 import {
   Accordion,
@@ -43,11 +37,7 @@ import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typi
 import { OperationResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import {
-  displayAttributeValue,
-  displayFinalHealthValue,
-  displayFinalProfValue,
-} from '@variables/variable-display';
+import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -144,19 +134,17 @@ export function CharBuilderCreationInner(props: {
     }, CHOICE_COUNT_INTERVAL + 500);
   }, []);
 
-  const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map(
-    (level) => {
-      return (
-        <LevelSection
-          key={level}
-          level={level}
-          opened={levelItemValue === `${level}`}
-          content={props.content}
-          operationResults={operationResults}
-        />
-      );
-    }
-  );
+  const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
+    return (
+      <LevelSection
+        key={level}
+        level={level}
+        opened={levelItemValue === `${level}`}
+        content={props.content}
+        operationResults={operationResults}
+      />
+    );
+  });
 
   return (
     <Group gap={0}>
@@ -417,9 +405,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Box>
             <Group>
               <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-              <Badge variant='default'>
-                {getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}
-              </Badge>
+              <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}</Badge>
             </Group>
           </StatButton>
           <StatButton
@@ -437,9 +423,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Box>
             <Group>
               <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'PERCEPTION')}</Text>
-              <Badge variant='default'>
-                {getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value.value}
-              </Badge>
+              <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value.value}</Badge>
             </Group>
           </StatButton>
           <Accordion
@@ -781,9 +765,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
-                      <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}
-                      </Badge>
+                      <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}</Badge>
                     </Group>
                   </StatButton>
                 </Stack>
@@ -797,30 +779,24 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               </Accordion.Control>
               <Accordion.Panel>
                 <Stack gap={5}>
-                  {(getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map(
-                    (languageId, index) => (
-                      <StatButton
-                        key={index}
-                        onClick={() => {
-                          openDrawer({
-                            type: 'language',
-                            data: { id: parseInt(languageId) },
-                          });
-                        }}
-                      >
-                        <Box>
-                          <Text c='gray.0' fz='sm'>
-                            {
-                              props.content.languages.find(
-                                (lang) => lang.id === parseInt(languageId)
-                              )?.name
-                            }
-                          </Text>
-                        </Box>
-                        <Group></Group>
-                      </StatButton>
-                    )
-                  )}
+                  {(getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map((languageId, index) => (
+                    <StatButton
+                      key={index}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'language',
+                          data: { id: parseInt(languageId) },
+                        });
+                      }}
+                    >
+                      <Box>
+                        <Text c='gray.0' fz='sm'>
+                          {props.content.languages.find((lang) => lang.id === parseInt(languageId))?.name}
+                        </Text>
+                      </Box>
+                      <Group></Group>
+                    </StatButton>
+                  ))}
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
@@ -857,14 +833,26 @@ function AttributeModPart(props: { attribute: string; variableName: string }) {
   );
 }
 
-export function StatButton(props: { children: React.ReactNode; onClick?: () => void, disabled?: boolean }) {
+export function StatButton(props: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  darkVersion?: boolean;
+}) {
+  const theme = useMantineTheme();
+  const { hovered, ref } = useHover<HTMLButtonElement>();
+
   return (
     <Box>
       <Button
+        ref={ref}
         disabled={props.disabled}
         variant='default'
         size='compact-lg'
         styles={{
+          root: {
+            backgroundColor: props.darkVersion ? (hovered ? `#28292e` : `#212226`) : undefined,
+          },
           inner: {
             width: '100%',
           },
@@ -908,10 +896,7 @@ function LevelSection(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (
-          newChoiceCounts.current !== choiceCounts.current ||
-          newChoiceCounts.max !== choiceCounts.max
-        )
+        if (newChoiceCounts.current !== choiceCounts.current || newChoiceCounts.max !== choiceCounts.max)
           setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
@@ -978,11 +963,7 @@ function LevelSection(props: {
             <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
               <Text
                 fz='sm'
-                c={
-                  choiceCounts.current === choiceCounts.max
-                    ? 'gray.5'
-                    : theme.colors[theme.primaryColor][5]
-                }
+                c={choiceCounts.current === choiceCounts.max ? 'gray.5' : theme.colors[theme.primaryColor][5]}
                 fw={choiceCounts.current === choiceCounts.max ? undefined : 600}
                 span
               >
@@ -1183,12 +1164,8 @@ function InitialStatsLevelSection(props: {
   const [character, setCharacter] = useRecoilState(characterState);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const class_ = props.content.classes.find(
-    (class_) => class_.id === character?.details?.class?.id
-  );
-  const ancestry = props.content.ancestries.find(
-    (ancestry) => ancestry.id === character?.details?.ancestry?.id
-  );
+  const class_ = props.content.classes.find((class_) => class_.id === character?.details?.class?.id);
+  const ancestry = props.content.ancestries.find((ancestry) => ancestry.id === character?.details?.ancestry?.id);
   const background = props.content.backgrounds.find(
     (background) => background.id === character?.details?.background?.id
   );
@@ -1299,9 +1276,7 @@ function AncestryAccordionItem(props: {
   }, []);
 
   // Only display the operation results that aren't already displayed in the ancestry overview
-  const physicalFeatures = (props.content.abilityBlocks ?? []).filter(
-    (block) => block.type === 'physical-feature'
-  );
+  const physicalFeatures = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'physical-feature');
   const senses = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'sense');
   const languages = (props.content.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
   const heritages = (props.content.abilityBlocks ?? []).filter(
@@ -1337,8 +1312,7 @@ function AncestryAccordionItem(props: {
     // Filter operation results
     ancestryOperationResults = ancestryOperationResults.filter((result: OperationResult) => {
       return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+        (record) => result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
       );
     });
   }
@@ -1352,10 +1326,7 @@ function AncestryAccordionItem(props: {
       }}
       mt={3}
     >
-      <Accordion.Control
-        disabled={!props.ancestry}
-        icon={getIconFromContentType('ancestry', '1rem')}
-      >
+      <Accordion.Control disabled={!props.ancestry} icon={getIconFromContentType('ancestry', '1rem')}>
         <Group gap={5}>
           <Box>Ancestry</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
@@ -1452,8 +1423,7 @@ function BackgroundAccordionItem(props: {
     // Filter operation results
     backgroundOperationResults = backgroundOperationResults.filter((result: OperationResult) => {
       return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+        (record) => result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
       );
     });
   }
@@ -1467,10 +1437,7 @@ function BackgroundAccordionItem(props: {
       }}
       mt={3}
     >
-      <Accordion.Control
-        disabled={!props.background}
-        icon={getIconFromContentType('background', '1rem')}
-      >
+      <Accordion.Control disabled={!props.background} icon={getIconFromContentType('background', '1rem')}>
         <Group gap={5}>
           <Box>Background</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
@@ -1538,12 +1505,10 @@ function ClassAccordionItem(props: {
   // Only display the operation results that aren't already displayed in the class overview
   let classOperationResults = props.operationResults?.classResults ?? [];
   const classInitialOverviewDisplay = props.class_
-    ? convertClassOperationsIntoUI(
-        props.class_,
-        'READ/WRITE',
-        props.operationResults?.classResults ?? [],
-        [character, setCharacter]
-      )
+    ? convertClassOperationsIntoUI(props.class_, 'READ/WRITE', props.operationResults?.classResults ?? [], [
+        character,
+        setCharacter,
+      ])
     : null;
   if (classInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the class overview
@@ -1562,8 +1527,7 @@ function ClassAccordionItem(props: {
     // Filter operation results
     classOperationResults = classOperationResults.filter((result: OperationResult) => {
       return !displayRecords.find(
-        (record) =>
-          result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
+        (record) => result?.selection?.id !== undefined && record.operation?.id === result?.selection?.id
       );
     });
   }
@@ -1846,9 +1810,7 @@ function DisplayOperationResult(props: {
                     })),
                     overrideLabel: result?.selection?.title || 'Select an Option',
                     abilityBlockType:
-                      (result?.selection?.options ?? []).length > 0
-                        ? result?.selection?.options[0].type
-                        : undefined,
+                      (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
                     skillAdjustment: result?.selection?.skillAdjustment,
                   }}
                 />

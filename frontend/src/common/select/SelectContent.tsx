@@ -406,9 +406,7 @@ export default function SelectContentModal({
                     name={source.name}
                     description={`${source.meta_data!.counts![
                       innerProps.options?.abilityBlockType ?? innerProps.type
-                    ].toLocaleString()} ${pluralize(
-                      innerProps.options?.abilityBlockType ?? innerProps.type
-                    )}`}
+                    ].toLocaleString()} ${pluralize(innerProps.options?.abilityBlockType ?? innerProps.type)}`}
                     onClick={() => {
                       setSelectedSource(source.id);
                       setOpenedDrawer(false);
@@ -540,12 +538,7 @@ export default function SelectContentModal({
   );
 }
 
-function ContentSourceOption(props: {
-  name: string;
-  description: string;
-  onClick: () => void;
-  selected?: boolean;
-}) {
+function ContentSourceOption(props: { name: string; description: string; onClick: () => void; selected?: boolean }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
 
@@ -602,12 +595,7 @@ function SelectionOptions(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { sourceId }] = queryKey;
-      return (
-        (await fetchContentAll(
-          props.type,
-          sourceId === 'all' || !sourceId ? undefined : [sourceId]
-        )) ?? null
-      );
+      return (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? undefined : [sourceId])) ?? null;
     },
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
@@ -626,10 +614,7 @@ function SelectionOptions(props: {
     options = options.filter((option) => option.type === props.abilityBlockType);
   } else {
     // An ability block type is required for ability blocks
-    if (
-      props.type === 'ability-block' &&
-      (!props.overrideOptions || props.overrideOptions.length === 0)
-    ) {
+    if (props.type === 'ability-block' && (!props.overrideOptions || props.overrideOptions.length === 0)) {
       options = [];
     }
   }
@@ -713,12 +698,7 @@ export function SelectionOptionsInner(props: {
 
   return (
     <>
-      <ScrollArea
-        viewportRef={viewport}
-        h={props.h ?? 372}
-        scrollbars='y'
-        style={{ position: 'relative' }}
-      >
+      <ScrollArea viewportRef={viewport} h={props.h ?? 372} scrollbars='y' style={{ position: 'relative' }}>
         {props.isLoading ? (
           <Loader
             type='bars'
@@ -731,10 +711,7 @@ export function SelectionOptionsInner(props: {
           />
         ) : (
           <SelectionOptionsRoot
-            options={props.options.slice(
-              (activePage - 1) * NUM_PER_PAGE,
-              activePage * NUM_PER_PAGE
-            )}
+            options={props.options.slice((activePage - 1) * NUM_PER_PAGE, activePage * NUM_PER_PAGE)}
             type={props.type}
             skillAdjustment={props.skillAdjustment}
             abilityBlockType={props.abilityBlockType}
@@ -1019,8 +996,7 @@ function SelectionOptionsRoot(props: {
   }
 
   // Skill increase with lore support
-  const isSkillIncreaseWithLore =
-    props.skillAdjustment && props.options.find((o) => o.variable === 'SKILL_LORE____');
+  const isSkillIncreaseWithLore = props.skillAdjustment && props.options.find((o) => o.variable === 'SKILL_LORE____');
   if (isSkillIncreaseWithLore) {
     const addNewLore = (option: AbilityBlock) => {
       openContextModal({
@@ -1038,10 +1014,7 @@ function SelectionOptionsRoot(props: {
     };
 
     // If the only options are lores, it's adding a new lore. Just shortcut to that.
-    if (
-      props.options.filter((o) => o.variable.startsWith('SKILL_LORE_')).length ===
-      props.options.length
-    ) {
+    if (props.options.filter((o) => o.variable.startsWith('SKILL_LORE_')).length === props.options.length) {
       modals.closeAll();
       addNewLore(isSkillIncreaseWithLore as AbilityBlock);
       return null;
@@ -1131,8 +1104,8 @@ export function GenericSelectionOption(props: {
     props.skillAdjustment === '1'
       ? nextProficiencyType(currentProf ?? 'U')
       : props.skillAdjustment === '-1'
-      ? prevProficiencyType(currentProf ?? 'U')
-      : props.skillAdjustment;
+        ? prevProficiencyType(currentProf ?? 'U')
+        : props.skillAdjustment;
 
   // If selected already, show the previous data to reflect the change
   if (props.selected && currentProf) {
@@ -1141,8 +1114,8 @@ export function GenericSelectionOption(props: {
       props.skillAdjustment === '1'
         ? prevProficiencyType(currentProf)
         : props.skillAdjustment === '-1'
-        ? nextProficiencyType(currentProf)
-        : props.skillAdjustment;
+          ? nextProficiencyType(currentProf)
+          : props.skillAdjustment;
   }
 
   let limitedByLevel = false;
@@ -1173,8 +1146,8 @@ export function GenericSelectionOption(props: {
         backgroundColor: disabled
           ? theme.colors.dark[8]
           : hovered || props.selected
-          ? theme.colors.dark[6]
-          : 'transparent',
+            ? theme.colors.dark[6]
+            : 'transparent',
         position: 'relative',
       }}
       onClick={() => {
@@ -1415,16 +1388,9 @@ export function FeatSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.feat.traits ?? []}
-            rarity={props.feat.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
         </Box>
-        {(props.includeDetails || props.includeOptions) && (
-          <Box w={props.includeOptions ? 80 : 50}></Box>
-        )}
+        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
       </Group>
       {props.includeDetails && (
         <Button
@@ -1542,9 +1508,7 @@ export function ActionSelectionOption(props: {
             skill={props.action.meta_data?.skill}
           />
         </Box>
-        {(props.includeDetails || props.includeOptions) && (
-          <Box w={props.includeOptions ? 80 : 50}></Box>
-        )}
+        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
       </Group>
       {props.includeDetails && (
         <Button
@@ -1674,9 +1638,7 @@ export function ClassFeatureSelectionOption(props: {
             rarity={props.classFeature.rarity}
           />
         </Box>
-        {(props.includeDetails || props.includeOptions) && (
-          <Box w={props.includeOptions ? 80 : 50}></Box>
-        )}
+        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
       </Group>
       {props.includeDetails && (
         <Button
@@ -1796,9 +1758,7 @@ export function HeritageSelectionOption(props: {
             rarity={props.heritage.rarity}
           />
         </Box>
-        {(props.includeDetails || props.includeOptions) && (
-          <Box w={props.includeOptions ? 80 : 50}></Box>
-        )}
+        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
       </Group>
       {props.includeDetails && (
         <Button
@@ -2024,12 +1984,7 @@ export function SenseSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.sense.traits ?? []}
-            rarity={props.sense.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.sense.traits ?? []} rarity={props.sense.rarity} />
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
@@ -2116,12 +2071,7 @@ export function ClassSelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const classHp = getStatDisplay(
-    'CHARACTER',
-    'MAX_HEALTH_CLASS_PER_LEVEL',
-    props.class_.operations ?? [],
-    'READ'
-  );
+  const classHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_CLASS_PER_LEVEL', props.class_.operations ?? [], 'READ');
   const attributes = getStatBlockDisplay(
     'CHARACTER',
     getAllAttributeVariables('CHARACTER').map((v) => v.name),
@@ -2141,9 +2091,7 @@ export function ClassSelectionOption(props: {
       id: 'change-option',
       title: <Title order={4}>Change Class</Title>,
       children: (
-        <Text size='sm'>
-          Are you sure you want to change your class? Any previous class selections will be erased.
-        </Text>
+        <Text size='sm'>Are you sure you want to change your class? Any previous class selections will be erased.</Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
       onCancel: () => {},
@@ -2304,12 +2252,7 @@ export function AncestrySelectionOption(props: {
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const ancestryHp = getStatDisplay(
-    'CHARACTER',
-    'MAX_HEALTH_ANCESTRY',
-    props.ancestry.operations ?? [],
-    'READ'
-  );
+  const ancestryHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_ANCESTRY', props.ancestry.operations ?? [], 'READ');
   const attributes = getStatBlockDisplay(
     'CHARACTER',
     getAllAttributeVariables('CHARACTER').map((v) => v.name),
@@ -2332,8 +2275,7 @@ export function AncestrySelectionOption(props: {
       title: <Title order={4}>Change Ancestry</Title>,
       children: (
         <Text size='sm'>
-          Are you sure you want to change your ancestry? Any previous ancestry selections will be
-          erased.
+          Are you sure you want to change your ancestry? Any previous ancestry selections will be erased.
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
@@ -2429,12 +2371,7 @@ export function AncestrySelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={[]}
-            rarity={props.ancestry.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.ancestry.rarity} />
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
@@ -2527,8 +2464,7 @@ export function BackgroundSelectionOption(props: {
       title: <Title order={4}>Change Background</Title>,
       children: (
         <Text size='sm'>
-          Are you sure you want to change your background? Any previous background selections will
-          be erased.
+          Are you sure you want to change your background? Any previous background selections will be erased.
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
@@ -2590,12 +2526,7 @@ export function BackgroundSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={[]}
-            rarity={props.background.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.background.rarity} />
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
@@ -2717,12 +2648,7 @@ export function ItemSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.item.traits ?? []}
-            rarity={props.item.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.item.traits ?? []} rarity={props.item.rarity} />
         </Box>
         {(props.includeDetails || props.includeOptions || props.includeAdd) && (
           <Box w={props.includeOptions ? 80 : 55}></Box>
@@ -2826,6 +2752,7 @@ export function SpellSelectionOption(props: {
   noBackground?: boolean;
   hideRank?: boolean;
   exhausted?: boolean;
+  px?: number;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
@@ -2834,7 +2761,8 @@ export function SpellSelectionOption(props: {
   return (
     <Group
       ref={ref}
-      p='sm'
+      py='sm'
+      px={props.px ?? 'sm'}
       style={{
         cursor: 'pointer',
         borderBottom: '1px solid ' + theme.colors.dark[6],
@@ -2847,25 +2775,25 @@ export function SpellSelectionOption(props: {
       justify='space-between'
     >
       {!props.hideRank && (
-
-      
-      <Text
-        fz={10}
-        c='dimmed'
-        ta='right'
-        w={14}
-        style={{
-          position: 'absolute',
-          top: 15,
-          left: 1,
-        }}
-      >
-        {props.spell.rank}.
-      </Text>
+        <Text
+          fz={10}
+          c='dimmed'
+          ta='right'
+          w={14}
+          style={{
+            position: 'absolute',
+            top: 15,
+            left: 1,
+          }}
+        >
+          {props.spell.rank}.
+        </Text>
       )}
       <Group wrap='nowrap' gap={5}>
         <Box pl={8}>
-          <Text fz='sm' td={props.exhausted ? "line-through" : undefined}>{props.spell.name}</Text>
+          <Text fz='sm' td={props.exhausted ? 'line-through' : undefined}>
+            {props.spell.name}
+          </Text>
         </Box>
         {isActionCost(props.spell.cast) && (
           <Box>
@@ -2875,12 +2803,7 @@ export function SpellSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.spell.traits ?? []}
-            rarity={props.spell.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
@@ -3100,12 +3023,7 @@ export function LanguageSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={[]}
-            rarity={props.language.rarity}
-          />
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />
         </Box>
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>

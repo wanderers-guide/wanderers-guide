@@ -29,13 +29,7 @@ type ActionCost =
   | 'THREE-TO-TWO-ROUNDS'
   | 'THREE-TO-THREE-ROUNDS'
   | null;
-type AbilityBlockType =
-  | 'action'
-  | 'feat'
-  | 'physical-feature'
-  | 'sense'
-  | 'class-feature'
-  | 'heritage';
+type AbilityBlockType = 'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage';
 type ContentType =
   | 'trait'
   | 'item'
@@ -149,6 +143,7 @@ interface Item {
     hp_max?: number;
     broken_threshold?: number;
     is_shoddy?: boolean; // TODO: Rules for this
+    unselectable?: boolean;
     quantity?: number;
     material?: {
       grade?: string;

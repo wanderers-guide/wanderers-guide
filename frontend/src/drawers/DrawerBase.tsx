@@ -1,16 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { convertToContentType } from '@content/content-utils';
-import {
-  ActionIcon,
-  Box,
-  Divider,
-  Drawer,
-  Group,
-  HoverCard,
-  ScrollArea,
-  Text,
-  Title,
-} from '@mantine/core';
+import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, ScrollArea, Text, Title } from '@mantine/core';
 import { useElementSize, useLocalStorage } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
@@ -127,14 +117,9 @@ export default function DrawerBase() {
     >
       {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
       {/* This "fix" will still have the bug on titles that are multiline */}
-      <ScrollArea
-        viewportRef={viewport}
-        h={`calc(100vh - (${titleHeight || 30}px + 50px))`}
-        pr={14}
-        scrollbars='y'
-      >
+      <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 44px))`} pr={14} scrollbars='y'>
         <Box
-          pt={8}
+          pt={2}
           style={{
             overflowX: 'hidden',
           }}
