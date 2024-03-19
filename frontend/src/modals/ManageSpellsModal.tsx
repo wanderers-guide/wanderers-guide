@@ -365,6 +365,7 @@ const ListSection = (props: {
           styles={{
             input: {
               backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              borderColor: props.searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
             },
           }}
         />

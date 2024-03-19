@@ -22,6 +22,7 @@ import {
   Pagination,
   Center,
   ScrollArea,
+  useMantineTheme,
 } from '@mantine/core';
 import { IconAdjustments, IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -54,6 +55,7 @@ export function AddItemDrawerContent(props: {
   const [searchQuery, setSearchQuery] = useState('');
   const NUM_PER_PAGE = 20;
   const [activePage, setPage] = useState(1);
+  const theme = useMantineTheme();
 
   const { data: rawItems, isFetching } = useQuery({
     queryKey: [`find-items`],
@@ -71,9 +73,7 @@ export function AddItemDrawerContent(props: {
     search.current.addDocuments(rawItems);
   }, [rawItems]);
 
-  const items = searchQuery.trim()
-    ? (search.current.search(searchQuery.trim()) as Item[])
-    : rawItems ?? [];
+  const items = searchQuery.trim() ? (search.current.search(searchQuery.trim()) as Item[]) : rawItems ?? [];
 
   useEffect(() => {
     setPage(1);
@@ -92,6 +92,11 @@ export function AddItemDrawerContent(props: {
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search all items`}
             onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+              },
+            }}
           />
           <HoverCard shadow='md' position='top' openDelay={250} zIndex={10000} withinPortal>
             <HoverCard.Target>
@@ -158,10 +163,7 @@ export function AddItemDrawerContent(props: {
   );
 }
 
-function ItemsList(props: {
-  options: Item[];
-  onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
-}) {
+function ItemsList(props: { options: Item[]; onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (

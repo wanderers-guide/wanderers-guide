@@ -67,11 +67,7 @@ import { CreateSpellModal } from './CreateSpellModal';
 import { CreateTraitModal } from './CreateTraitModal';
 import { CreateLanguageModal } from './CreateLanguageModal';
 
-export function CreateContentSourceModal(props: {
-  opened: boolean;
-  sourceId: number;
-  onClose: () => void;
-}) {
+export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
   const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState<JSONContent>();
@@ -200,11 +196,7 @@ export function CreateContentSourceModal(props: {
                 my='xs'
                 label={
                   <Group gap={3} wrap='nowrap'>
-                    <Button
-                      variant={openedOperations ? 'light' : 'subtle'}
-                      size='compact-sm'
-                      color='gray.6'
-                    >
+                    <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                       Operations
                     </Button>
                     {form.values.operations && form.values.operations.length > 0 && (
@@ -229,20 +221,16 @@ export function CreateContentSourceModal(props: {
                         </HoverCard.Target>
                         <HoverCard.Dropdown>
                           <Text size='sm'>
-                            Operations are used to make changes to a character. They can give feats,
-                            spells, and more, as well as change stats, skills, and other values.
+                            Operations are used to make changes to a character. They can give feats, spells, and more,
+                            as well as change stats, skills, and other values.
                           </Text>
                           <Text size='sm'>
-                            Use conditionals to apply operations only when certain conditions are
-                            met and selections whenever a choice needs to be made.
+                            Use conditionals to apply operations only when certain conditions are met and selections
+                            whenever a choice needs to be made.
                           </Text>
                           <Text size='xs' fs='italic'>
                             For more help, see{' '}
-                            <Anchor
-                              href='https://discord.gg/kxCpa6G'
-                              target='_blank'
-                              underline='hover'
-                            >
+                            <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
                               our Discord server
                             </Anchor>
                             .
@@ -272,13 +260,7 @@ export function CreateContentSourceModal(props: {
           </Center>
         </form>
         <Center style={{ flex: 1 }}>
-          <Tabs
-            w='100%'
-            variant='outline'
-            defaultValue='feats'
-            orientation='vertical'
-            keepMounted={false}
-          >
+          <Tabs w='100%' variant='outline' defaultValue='feats' orientation='vertical' keepMounted={false}>
             <Tabs.List>
               <Tabs.Tab
                 value='actions'
@@ -408,8 +390,7 @@ export function CreateContentSourceModal(props: {
                 rightSection={
                   <>
                     {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length >
-                        0 && (
+                      data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
                           {data?.content.abilityBlocks.filter((i) => i.type === 'heritage').length}
                         </Badge>
@@ -441,13 +422,9 @@ export function CreateContentSourceModal(props: {
                 rightSection={
                   <>
                     {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature')
-                        .length > 0 && (
+                      data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature').length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {
-                            data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature')
-                              .length
-                          }
+                          {data?.content.abilityBlocks.filter((i) => i.type === 'physical-feature').length}
                         </Badge>
                       )}
                   </>
@@ -491,13 +468,9 @@ export function CreateContentSourceModal(props: {
                 rightSection={
                   <>
                     {data?.content.abilityBlocks &&
-                      data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length >
-                        0 && (
+                      data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length > 0 && (
                         <Badge variant='light' color={theme.primaryColor} size='xs'>
-                          {
-                            data?.content.abilityBlocks.filter((i) => i.type === 'class-feature')
-                              .length
-                          }
+                          {data?.content.abilityBlocks.filter((i) => i.type === 'class-feature').length}
                         </Badge>
                       )}
                   </>
@@ -519,9 +492,7 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='action'
-                content={(data?.content.abilityBlocks ?? []).filter(
-                  (item) => item.type === 'action'
-                )}
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'action')}
               />
             </Tabs.Panel>
 
@@ -535,27 +506,15 @@ export function CreateContentSourceModal(props: {
             </Tabs.Panel>
 
             <Tabs.Panel value='items'>
-              <ContentList<Item>
-                sourceId={props.sourceId}
-                type='item'
-                content={data?.content.items ?? []}
-              />
+              <ContentList<Item> sourceId={props.sourceId} type='item' content={data?.content.items ?? []} />
             </Tabs.Panel>
 
             <Tabs.Panel value='spells'>
-              <ContentList<Spell>
-                sourceId={props.sourceId}
-                type='spell'
-                content={data?.content.spells ?? []}
-              />
+              <ContentList<Spell> sourceId={props.sourceId} type='spell' content={data?.content.spells ?? []} />
             </Tabs.Panel>
 
             <Tabs.Panel value='traits'>
-              <ContentList<Trait>
-                sourceId={props.sourceId}
-                type='trait'
-                content={data?.content.traits ?? []}
-              />
+              <ContentList<Trait> sourceId={props.sourceId} type='trait' content={data?.content.traits ?? []} />
             </Tabs.Panel>
 
             <Tabs.Panel value='languages'>
@@ -587,9 +546,7 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='heritage'
-                content={(data?.content.abilityBlocks ?? []).filter(
-                  (item) => item.type === 'heritage'
-                )}
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'heritage')}
               />
             </Tabs.Panel>
 
@@ -598,9 +555,7 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='sense'
-                content={(data?.content.abilityBlocks ?? []).filter(
-                  (item) => item.type === 'sense'
-                )}
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'sense')}
               />
             </Tabs.Panel>
 
@@ -609,9 +564,7 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='physical-feature'
-                content={(data?.content.abilityBlocks ?? []).filter(
-                  (item) => item.type === 'physical-feature'
-                )}
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'physical-feature')}
               />
             </Tabs.Panel>
 
@@ -624,11 +577,7 @@ export function CreateContentSourceModal(props: {
             </Tabs.Panel>
 
             <Tabs.Panel value='classes'>
-              <ContentList<Class>
-                sourceId={props.sourceId}
-                type='class'
-                content={data?.content.classes ?? []}
-              />
+              <ContentList<Class> sourceId={props.sourceId} type='class' content={data?.content.classes ?? []} />
             </Tabs.Panel>
 
             <Tabs.Panel value='class-features'>
@@ -636,9 +585,7 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='ability-block'
                 abilityBlockType='class-feature'
-                content={(data?.content.abilityBlocks ?? []).filter(
-                  (item) => item.type === 'class-feature'
-                )}
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'class-feature')}
               />
             </Tabs.Panel>
 
@@ -664,14 +611,10 @@ function ContentList<
     level?: number;
     rank?: number;
     type?: AbilityBlockType;
-  }
->(props: {
-  sourceId: number;
-  type: ContentType;
-  content: T[];
-  abilityBlockType?: AbilityBlockType;
-}) {
+  },
+>(props: { sourceId: number; type: ContentType; content: T[]; abilityBlockType?: AbilityBlockType }) {
   const queryClient = useQueryClient();
+  const theme = useMantineTheme();
   const [openedId, setOpenedId] = useState<number | undefined>();
 
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
@@ -729,10 +672,13 @@ function ContentList<
           <TextInput
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search ${pluralize(
-              (props.abilityBlockType ?? props.type).replace('-', ' ').toLowerCase()
-            )}`}
+            placeholder={`Search ${pluralize((props.abilityBlockType ?? props.type).replace('-', ' ').toLowerCase())}`}
             onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+              },
+            }}
           />
           <Button
             size='compact-lg'
@@ -763,9 +709,7 @@ function ContentList<
               includeOptions
               onCopy={async (itemId) => {
                 if (props.type === 'ability-block') {
-                  const item = (props.content as unknown as AbilityBlock[]).find(
-                    (i) => i.id === itemId
-                  );
+                  const item = (props.content as unknown as AbilityBlock[]).find((i) => i.id === itemId);
                   if (item) {
                     const newItem = _.cloneDeep(item);
                     newItem.id = -1;
@@ -792,9 +736,7 @@ function ContentList<
                     upsertClass(newItem);
                   }
                 } else if (props.type === 'ancestry') {
-                  const item = (props.content as unknown as Ancestry[]).find(
-                    (i) => i.id === itemId
-                  );
+                  const item = (props.content as unknown as Ancestry[]).find((i) => i.id === itemId);
                   if (item) {
                     const newItem = _.cloneDeep(item);
                     newItem.id = -1;
@@ -803,9 +745,7 @@ function ContentList<
                     upsertAncestry(newItem);
                   }
                 } else if (props.type === 'background') {
-                  const item = (props.content as unknown as Background[]).find(
-                    (i) => i.id === itemId
-                  );
+                  const item = (props.content as unknown as Background[]).find((i) => i.id === itemId);
                   if (item) {
                     const newItem = _.cloneDeep(item);
                     newItem.id = -1;

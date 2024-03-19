@@ -1640,6 +1640,7 @@ function PanelSkillsActions(props: {
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderColor: skillsSearch.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
           />
@@ -1693,6 +1694,7 @@ function PanelSkillsActions(props: {
               styles={{
                 input: {
                   backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
                 },
               }}
             />
@@ -1721,7 +1723,7 @@ function PanelSkillsActions(props: {
                 aria-label='Filter One Action'
                 style={{
                   backgroundColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
-                  borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[4] : undefined,
+                  borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors['guide'][8] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('ONE-ACTION');
@@ -1737,7 +1739,7 @@ function PanelSkillsActions(props: {
                 aria-label='Filter Two Actions'
                 style={{
                   backgroundColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
-                  borderColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[4] : undefined,
+                  borderColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors['guide'][8] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('TWO-ACTIONS');
@@ -1753,7 +1755,7 @@ function PanelSkillsActions(props: {
                 aria-label='Filter Three Actions'
                 style={{
                   backgroundColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
-                  borderColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[4] : undefined,
+                  borderColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors['guide'][8] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('THREE-ACTIONS');
@@ -1769,7 +1771,7 @@ function PanelSkillsActions(props: {
                 aria-label='Filter Free Action'
                 style={{
                   backgroundColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
-                  borderColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[4] : undefined,
+                  borderColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors['guide'][8] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('FREE-ACTION');
@@ -1785,7 +1787,7 @@ function PanelSkillsActions(props: {
                 aria-label='Filter Reaction'
                 style={{
                   backgroundColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
-                  borderColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[4] : undefined,
+                  borderColor: actionTypeFilter === 'REACTION' ? theme.colors['guide'][8] : undefined,
                 }}
                 onClick={() => {
                   setActionTypeFilter('REACTION');
@@ -2096,6 +2098,7 @@ function PanelInventory(props: {
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
           />
@@ -2113,9 +2116,10 @@ function PanelInventory(props: {
           </Badge>
           <CurrencySection character={character} />
           <Button
-            color='dark.6'
+            color='dark.5'
             style={{ borderColor: theme.colors.dark[4] }}
-            radius='md'
+            radius='xl'
+            size='sm'
             fw={500}
             rightSection={<IconPlus size='1.0rem' />}
             onClick={() => {
@@ -2603,6 +2607,7 @@ function PanelSpells(props: { panelHeight: number }) {
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
           />
@@ -3507,6 +3512,7 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
           />

@@ -49,12 +49,8 @@ export default function TraitsDisplay(props: {
 
   return (
     <Group gap={3} justify={props.justify}>
-      {props.rarity && (
-        <RarityDisplay interactable={props.interactable} size={props.size} rarity={props.rarity} />
-      )}
-      {props.skill && (
-        <SkillDisplay interactable={props.interactable} size={props.size} skill={props.skill} />
-      )}
+      {props.rarity && <RarityDisplay interactable={props.interactable} size={props.size} rarity={props.rarity} />}
+      {props.skill && <SkillDisplay interactable={props.interactable} size={props.size} skill={props.skill} />}
       {props.broken && <BrokenDisplay interactable={props.interactable} size={props.size} />}
       {traits.map((trait, index) => (
         <HoverCard
@@ -70,6 +66,7 @@ export default function TraitsDisplay(props: {
           <HoverCard.Target>
             <Badge
               variant='dot'
+              color='gray.5'
               size={props.size ?? 'md'}
               styles={{
                 root: {
@@ -94,11 +91,7 @@ export default function TraitsDisplay(props: {
             </Badge>
           </HoverCard.Target>
           <HoverCard.Dropdown>
-            <TraitOverview
-              name={trait.name}
-              description={trait.description}
-              important={!!trait.meta_data?.important}
-            />
+            <TraitOverview name={trait.name} description={trait.description} important={!!trait.meta_data?.important} />
           </HoverCard.Dropdown>
         </HoverCard>
       ))}
@@ -106,11 +99,7 @@ export default function TraitsDisplay(props: {
   );
 }
 
-export function RarityDisplay(props: {
-  rarity: Rarity;
-  interactable?: boolean;
-  size?: MantineSize;
-}) {
+export function RarityDisplay(props: { rarity: Rarity; interactable?: boolean; size?: MantineSize }) {
   if (props.rarity === 'COMMON') return null;
 
   let color: MantineColor = 'gray';
@@ -133,11 +122,7 @@ export function RarityDisplay(props: {
   );
 }
 
-export function SkillDisplay(props: {
-  skill: string | string[];
-  interactable?: boolean;
-  size?: MantineSize;
-}) {
+export function SkillDisplay(props: { skill: string | string[]; interactable?: boolean; size?: MantineSize }) {
   const theme = useMantineTheme();
   const skills = Array.isArray(props.skill) ? props.skill : [props.skill];
 
@@ -148,6 +133,7 @@ export function SkillDisplay(props: {
           key={index}
           size={props.size ?? 'md'}
           variant='dot'
+          color='gray.0'
           styles={{
             root: {
               // @ts-ignore
@@ -247,6 +233,7 @@ export function TraitOverview(props: { name: string; description: string; import
     <Stack gap={5}>
       <Badge
         variant='dot'
+        color='gray.0'
         size={'xl'}
         styles={{
           root: {

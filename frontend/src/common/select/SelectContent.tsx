@@ -436,6 +436,11 @@ export default function SelectContentModal({
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
             onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+              },
+            }}
           />
           {innerProps.options?.groupBySource && (
             <Button
@@ -2913,7 +2918,7 @@ export function TraitSelectionOption(props: {
           size={12}
           offset={-10}
           position='middle-end'
-          color={theme.primaryColor}
+          color={theme.colors.gray[5]}
           withBorder
         >
           <Box pl={8}>

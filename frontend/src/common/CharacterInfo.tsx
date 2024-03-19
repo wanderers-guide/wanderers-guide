@@ -1,18 +1,9 @@
-import classes from "@css/UserInfoIcons.module.css";
-import {
-  Avatar,
-  Box,
-  Button,
-  Group,
-  HoverCard,
-  Stack,
-  Text,
-  useMantineTheme,
-} from "@mantine/core";
-import { IconTree, IconVocabulary, IconWindow } from "@tabler/icons-react";
-import { Character } from "@typing/content";
-import { truncate } from "lodash-es";
-import { LegacyRef, forwardRef } from "react";
+import classes from '@css/UserInfoIcons.module.css';
+import { Avatar, Box, Button, Group, HoverCard, Stack, Text, useMantineTheme } from '@mantine/core';
+import { IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
+import { Character } from '@typing/content';
+import { truncate } from 'lodash-es';
+import { LegacyRef, forwardRef } from 'react';
 
 export const CharacterInfo = forwardRef(
   (
@@ -32,36 +23,31 @@ export const CharacterInfo = forwardRef(
 
     const hasClass = props.character?.details?.class?.name !== undefined;
     const hasAncestry = props.character?.details?.ancestry?.name !== undefined;
-    const hasBackground =
-      props.character?.details?.background?.name !== undefined;
+    const hasBackground = props.character?.details?.background?.name !== undefined;
 
     return (
       <div ref={ref} style={{ width: 240 }}>
-        <Group wrap="nowrap" align="flex-start" gap={0}>
+        <Group wrap='nowrap' align='flex-start' gap={0}>
           {!props.hideImage && (
             <Avatar
               src={props.character?.details?.image_url}
-              alt="Character Portrait"
+              alt='Character Portrait'
               size={75}
               radius={75}
               mt={10}
               ml={5}
               mr={10}
-              variant="transparent"
-              color="dark.3"
+              variant='transparent'
+              color='dark.3'
               bg={theme.colors.dark[6]}
             />
           )}
           <div style={{ flex: 1 }}>
-            <HoverCard shadow="md" openDelay={1000} position="top" withinPortal>
+            <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
               <HoverCard.Target>
                 <Text
-                  c="gray.0"
-                  fz={
-                    props.character && props.character.name.length >= 16
-                      ? "0.95rem"
-                      : "lg"
-                  }
+                  c='gray.0'
+                  fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
                   className={classes.name}
                 >
@@ -71,7 +57,7 @@ export const CharacterInfo = forwardRef(
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown py={5} px={10}>
-                <Text c="gray.0" size="sm">
+                <Text c='gray.0' size='sm'>
                   {props.character?.name}
                 </Text>
               </HoverCard.Dropdown>
@@ -81,24 +67,19 @@ export const CharacterInfo = forwardRef(
               <Box>
                 {props.onClickAncestry ? (
                   <Button
-                    variant={hasAncestry ? "subtle" : "filled"}
+                    variant={hasAncestry ? 'subtle' : 'filled'}
                     color={props.color}
-                    size="compact-xs"
-                    leftSection={<IconTree size="0.9rem" />}
+                    size='compact-xs'
+                    leftSection={<IconTree size='0.9rem' />}
                     onClick={props.onClickAncestry}
                     fw={400}
                   >
-                    {props.character?.details?.ancestry?.name ??
-                      "Select Ancestry"}
+                    {props.character?.details?.ancestry?.name ?? 'Select Ancestry'}
                   </Button>
                 ) : (
-                  <Group wrap="nowrap" gap={10}>
-                    <IconTree
-                      stroke={1.5}
-                      size="1rem"
-                      className={classes.icon}
-                    />
-                    <Text fz="xs" c="gray.3">
+                  <Group wrap='nowrap' gap={10}>
+                    <IconTree stroke={1.5} size='1rem' className={classes.icon} />
+                    <Text fz='xs' c='gray.3'>
                       {props.character?.details?.ancestry?.name ? (
                         <>
                           {/* {props.character?.details?.heritage?.name ?? ''}{' '} */}
@@ -114,26 +95,20 @@ export const CharacterInfo = forwardRef(
               <Box>
                 {props.onClickBackground ? (
                   <Button
-                    variant={hasBackground ? "subtle" : "filled"}
-                    size="compact-xs"
+                    variant={hasBackground ? 'subtle' : 'filled'}
+                    size='compact-xs'
                     color={props.color}
-                    leftSection={<IconWindow size="0.9rem" />}
+                    leftSection={<IconWindow size='0.9rem' />}
                     onClick={props.onClickBackground}
                     fw={400}
                   >
-                    {props.character?.details?.background?.name ??
-                      "Select Background"}
+                    {props.character?.details?.background?.name ?? 'Select Background'}
                   </Button>
                 ) : (
-                  <Group wrap="nowrap" gap={10}>
-                    <IconWindow
-                      stroke={1.5}
-                      size="1rem"
-                      className={classes.icon}
-                    />
-                    <Text fz="xs" c="gray.3">
-                      {props.character?.details?.background?.name ??
-                        "Missing Background"}
+                  <Group wrap='nowrap' gap={10}>
+                    <IconWindow stroke={1.5} size='1rem' className={classes.icon} />
+                    <Text fz='xs' c='gray.3'>
+                      {props.character?.details?.background?.name ?? 'Missing Background'}
                     </Text>
                   </Group>
                 )}
@@ -141,24 +116,20 @@ export const CharacterInfo = forwardRef(
               <Box>
                 {props.onClickClass ? (
                   <Button
-                    variant={hasClass ? "subtle" : "filled"}
-                    size="compact-xs"
+                    variant={hasClass ? 'subtle' : 'filled'}
+                    size='compact-xs'
                     color={props.color}
-                    leftSection={<IconVocabulary size="0.9rem" />}
+                    leftSection={<IconVocabulary size='0.9rem' />}
                     onClick={props.onClickClass}
                     fw={400}
                   >
-                    {props.character?.details?.class?.name ?? "Select Class"}
+                    {props.character?.details?.class?.name ?? 'Select Class'}
                   </Button>
                 ) : (
-                  <Group wrap="nowrap" gap={10}>
-                    <IconVocabulary
-                      stroke={1.5}
-                      size="1rem"
-                      className={classes.icon}
-                    />
-                    <Text fz="xs" c="gray.3">
-                      {props.character?.details?.class?.name ?? "Missing Class"}
+                  <Group wrap='nowrap' gap={10}>
+                    <IconVocabulary stroke={1.5} size='1rem' className={classes.icon} />
+                    <Text fz='xs' c='gray.3'>
+                      {props.character?.details?.class?.name ?? 'Missing Class'}
                     </Text>
                   </Group>
                 )}

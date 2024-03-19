@@ -1,15 +1,12 @@
-import { characterState } from "@atoms/characterAtoms";
-import { drawerState } from "@atoms/navAtoms";
-import IndentedText from "@common/IndentedText";
-import RichText from "@common/RichText";
-import TraitsDisplay from "@common/TraitsDisplay";
-import {
-  FeatSelectionOption,
-  HeritageSelectionOption,
-} from "@common/select/SelectContent";
-import { fetchContentAll, fetchContentById } from "@content/content-store";
-import { getIconFromContentType } from "@content/content-utils";
-import { getMetadataOpenedDict } from "@drawers/drawer-utils";
+import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
+import IndentedText from '@common/IndentedText';
+import RichText from '@common/RichText';
+import TraitsDisplay from '@common/TraitsDisplay';
+import { FeatSelectionOption, HeritageSelectionOption } from '@common/select/SelectContent';
+import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { getIconFromContentType } from '@content/content-utils';
+import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Accordion,
   ActionIcon,
@@ -25,26 +22,18 @@ import {
   Text,
   Title,
   useMantineTheme,
-} from "@mantine/core";
-import { addedAncestryLanguages } from "@operations/operation-controller";
-import { OperationResult } from "@operations/operation-runner";
-import {
-  IconChevronsDown,
-  IconChevronsUp,
-  IconHelpCircle,
-} from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
-import { AbilityBlock, Ancestry, Character, Language } from "@typing/content";
-import { DrawerType } from "@typing/index";
-import {
-  getDisplay,
-  getStatBlockDisplay,
-  getStatDisplay,
-} from "@variables/initial-stats-display";
-import { getAllAttributeVariables } from "@variables/variable-manager";
-import * as _ from "lodash-es";
-import { useState } from "react";
-import { SetterOrUpdater, useRecoilState } from "recoil";
+} from '@mantine/core';
+import { addedAncestryLanguages } from '@operations/operation-controller';
+import { OperationResult } from '@operations/operation-runner';
+import { IconChevronsDown, IconChevronsUp, IconHelpCircle } from '@tabler/icons-react';
+import { useQuery } from '@tanstack/react-query';
+import { AbilityBlock, Ancestry, Character, Language } from '@typing/content';
+import { DrawerType } from '@typing/index';
+import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
+import { getAllAttributeVariables } from '@variables/variable-manager';
+import * as _ from 'lodash-es';
+import { useState } from 'react';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export function AncestryDrawerTitle(props: { data: { id: number } }) {
   const id = props.data.id;
@@ -55,15 +44,15 @@ export function AncestryDrawerTitle(props: { data: { id: number } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await fetchContentById<Ancestry>("ancestry", id);
+      return await fetchContentById<Ancestry>('ancestry', id);
     },
   });
 
   return (
     <>
       {ancestry && (
-        <Group justify="space-between" wrap="nowrap">
-          <Group wrap="nowrap" gap={10}>
+        <Group justify='space-between' wrap='nowrap'>
+          <Group wrap='nowrap' gap={10}>
             <Box>
               <Title order={3}>{ancestry.name}</Title>
             </Box>
@@ -87,11 +76,9 @@ export function AncestryDrawerContent(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      const ancestry = await fetchContentById<Ancestry>("ancestry", id);
-      const abilityBlocks = await fetchContentAll<AbilityBlock>(
-        "ability-block"
-      );
-      const languages = await fetchContentAll<Language>("language");
+      const ancestry = await fetchContentById<Ancestry>('ancestry', id);
+      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      const languages = await fetchContentAll<Language>('language');
       return {
         ancestry,
         abilityBlocks,
@@ -103,27 +90,17 @@ export function AncestryDrawerContent(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const heritages = (data?.abilityBlocks ?? []).filter(
-    (block) =>
-      block.type === "heritage" &&
-      block.traits?.includes(data?.ancestry?.trait_id ?? -1)
+    (block) => block.type === 'heritage' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
   );
   const feats = _.groupBy(
     (data?.abilityBlocks ?? []).filter(
-      (block) =>
-        block.type === "feat" &&
-        block.traits?.includes(data?.ancestry?.trait_id ?? -1)
+      (block) => block.type === 'feat' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
     ),
-    "level"
+    'level'
   );
-  const physicalFeatures = (data?.abilityBlocks ?? []).filter(
-    (block) => block.type === "physical-feature"
-  );
-  const senses = (data?.abilityBlocks ?? []).filter(
-    (block) => block.type === "sense"
-  );
-  const languages = (data?.languages ?? []).sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  const physicalFeatures = (data?.abilityBlocks ?? []).filter((block) => block.type === 'physical-feature');
+  const senses = (data?.abilityBlocks ?? []).filter((block) => block.type === 'sense');
+  const languages = (data?.languages ?? []).sort((a, b) => a.name.localeCompare(b.name));
 
   const featSections = Object.keys(feats).map((level) => (
     <Accordion.Item key={level} value={level}>
@@ -136,7 +113,7 @@ export function AncestryDrawerContent(props: {
         }}
       >
         <Stack gap={0}>
-          <Divider color="dark.6" />
+          <Divider color='dark.6' />
           {feats[level].map((feat, index) => (
             <FeatSelectionOption
               key={index}
@@ -144,7 +121,7 @@ export function AncestryDrawerContent(props: {
               onClick={() => {
                 props.onMetadataChange?.();
                 openDrawer({
-                  type: "feat",
+                  type: 'feat',
                   data: { id: feat.id },
                   extra: { addToHistory: true },
                 });
@@ -159,12 +136,12 @@ export function AncestryDrawerContent(props: {
   if (!data || !data.ancestry || !data.abilityBlocks) {
     return (
       <Loader
-        type="bars"
+        type='bars'
         style={{
-          position: "absolute",
-          top: "35%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          position: 'absolute',
+          top: '35%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
         }}
       />
     );
@@ -174,7 +151,7 @@ export function AncestryDrawerContent(props: {
     <Stack>
       <AncestryInitialOverview
         ancestry={data.ancestry}
-        mode="READ"
+        mode='READ'
         physicalFeatures={physicalFeatures}
         senses={senses}
         heritages={heritages}
@@ -183,16 +160,16 @@ export function AncestryDrawerContent(props: {
       <Box>
         <Title order={3}>Heritages</Title>
         <Accordion
-          variant="separated"
+          variant='separated'
           // Save opened state in drawer metadata (so it persists when opening links and going back)
           defaultValue={getMetadataOpenedDict().heritages_opened}
           onChange={(value) => {
             props.onMetadataChange?.({
-              heritages_opened: value ?? "",
+              heritages_opened: value ?? '',
             });
           }}
         >
-          <Accordion.Item value={"heritages"}>
+          <Accordion.Item value={'heritages'}>
             <Accordion.Control>View Options</Accordion.Control>
             <Accordion.Panel
               styles={{
@@ -202,7 +179,7 @@ export function AncestryDrawerContent(props: {
               }}
             >
               <Stack gap={0}>
-                <Divider color="dark.6" />
+                <Divider color='dark.6' />
                 {heritages.map((heritage, index) => (
                   <HeritageSelectionOption
                     key={index}
@@ -210,7 +187,7 @@ export function AncestryDrawerContent(props: {
                     onClick={() => {
                       props.onMetadataChange?.();
                       openDrawer({
-                        type: "heritage",
+                        type: 'heritage',
                         data: { id: heritage.id },
                         extra: { addToHistory: true },
                       });
@@ -227,12 +204,12 @@ export function AncestryDrawerContent(props: {
         <Title order={3}>Feats</Title>
 
         <Accordion
-          variant="separated"
+          variant='separated'
           // Save opened state in drawer metadata (so it persists when opening links and going back)
           defaultValue={getMetadataOpenedDict().feat_section}
           onChange={(value) => {
             props.onMetadataChange?.({
-              feat_section: value ?? "",
+              feat_section: value ?? '',
             });
           }}
         >
@@ -249,7 +226,7 @@ export function AncestryInitialOverview(props: {
   senses: AbilityBlock[];
   heritages: AbilityBlock[];
   languages: Language[];
-  mode: "READ" | "READ/WRITE";
+  mode: 'READ' | 'READ/WRITE';
   operationResults?: OperationResult[];
 }) {
   const theme = useMantineTheme();
@@ -274,228 +251,176 @@ export function AncestryInitialOverview(props: {
     <>
       <Box
         style={{
-          position: "relative",
+          position: 'relative',
         }}
       >
         <Box
           mah={descHidden ? 400 : undefined}
           style={{
-            WebkitMaskImage: descHidden
-              ? "linear-gradient(to bottom, black 60%, transparent 100%)"
-              : undefined,
-            maskImage: descHidden
-              ? "linear-gradient(to bottom, black 60%, transparent 100%)"
-              : undefined,
-            overflowY: descHidden ? "hidden" : undefined,
+            WebkitMaskImage: descHidden ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : undefined,
+            maskImage: descHidden ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : undefined,
+            overflowY: descHidden ? 'hidden' : undefined,
           }}
         >
           {props.ancestry.artwork_url && (
             <Image
               style={{
-                float: "right",
+                float: 'right',
                 maxWidth: 150,
-                height: "auto",
+                height: 'auto',
               }}
-              ml="sm"
-              radius="md"
-              fit="contain"
+              ml='sm'
+              radius='md'
+              fit='contain'
               src={props.ancestry.artwork_url}
             />
           )}
-          <RichText ta="justify">{props.ancestry.description}</RichText>
+          <RichText ta='justify'>{props.ancestry.description}</RichText>
         </Box>
         <Anchor
-          size="sm"
+          size='sm'
           style={{
-            position: "absolute",
+            position: 'absolute',
             bottom: 5,
             right: 20,
           }}
           onClick={() => setDescHidden(!descHidden)}
         >
-          {descHidden ? "Show more" : "Show less"}
+          {descHidden ? 'Show more' : 'Show less'}
         </Anchor>
       </Box>
-      <Group align="flex-start" grow>
+      <Group align='flex-start' grow>
         <Paper
-          shadow="xs"
-          p="sm"
-          radius="md"
+          shadow='xs'
+          p='sm'
+          radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
-            position: "relative",
+            position: 'relative',
           }}
         >
-          <HoverCard
-            shadow="md"
-            openDelay={250}
-            width={200}
-            zIndex={1000}
-            position="top"
-            withinPortal
-          >
+          <HoverCard shadow='md' openDelay={250} width={200} zIndex={1000} position='top' withinPortal>
             <HoverCard.Target>
               <ActionIcon
-                variant="subtle"
-                aria-label="Help"
-                radius="xl"
-                size="sm"
+                variant='subtle'
+                aria-label='Help'
+                radius='xl'
+                size='sm'
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   top: 5,
                   right: 5,
                 }}
               >
-                <IconHelpCircle
-                  style={{ width: "80%", height: "80%" }}
-                  stroke={1.5}
-                />
+                <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text fz="xs">
-                You increase your maximum number of HP by this number at 1st
-                level.
-              </Text>
+              <Text fz='xs'>You increase your maximum number of HP by this number at 1st level.</Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c="gray.5" ta="center">
+          <Text c='gray.5' ta='center'>
             Hit Points
           </Text>
-          <Text c="gray.4" fw={700} ta="center">
-            {display.ancestryHp.ui ?? "Varies"}
+          <Text c='gray.4' fw={700} ta='center'>
+            {display.ancestryHp.ui ?? 'Varies'}
           </Text>
         </Paper>
         <Paper
-          shadow="xs"
-          p="sm"
-          radius="md"
+          shadow='xs'
+          p='sm'
+          radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
-            position: "relative",
+            position: 'relative',
           }}
         >
-          <HoverCard
-            shadow="md"
-            openDelay={250}
-            width={200}
-            zIndex={1000}
-            position="top"
-            withinPortal
-          >
+          <HoverCard shadow='md' openDelay={250} width={200} zIndex={1000} position='top' withinPortal>
             <HoverCard.Target>
               <ActionIcon
-                variant="subtle"
-                aria-label="Help"
-                radius="xl"
-                size="sm"
+                variant='subtle'
+                aria-label='Help'
+                radius='xl'
+                size='sm'
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   top: 5,
                   right: 5,
                 }}
               >
-                <IconHelpCircle
-                  style={{ width: "80%", height: "80%" }}
-                  stroke={1.5}
-                />
+                <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text fz="xs">
-                This tells you the physical size of members of your ancestry.
-                Medium corresponds roughly to the height and weight of a human
-                adult, and Small is roughly half that.
+              <Text fz='xs'>
+                This tells you the physical size of members of your ancestry. Medium corresponds roughly to the height
+                and weight of a human adult, and Small is roughly half that.
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c="gray.5" ta="center">
+          <Text c='gray.5' ta='center'>
             Size
           </Text>
-          <Text
-            c="gray.4"
-            fw={700}
-            ta="center"
-            style={{ display: "flex", justifyContent: "center" }}
-          >
-            {display.size.ui ?? "Varies"}
+          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+            {display.size.ui ?? 'Varies'}
           </Text>
         </Paper>
         <Paper
-          shadow="xs"
-          p="sm"
-          radius="md"
+          shadow='xs'
+          p='sm'
+          radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
-            position: "relative",
+            position: 'relative',
           }}
         >
-          <HoverCard
-            shadow="md"
-            openDelay={250}
-            width={200}
-            zIndex={1000}
-            position="top"
-            withinPortal
-          >
+          <HoverCard shadow='md' openDelay={250} width={200} zIndex={1000} position='top' withinPortal>
             <HoverCard.Target>
               <ActionIcon
-                variant="subtle"
-                aria-label="Help"
-                radius="xl"
-                size="sm"
+                variant='subtle'
+                aria-label='Help'
+                radius='xl'
+                size='sm'
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   top: 5,
                   right: 5,
                 }}
               >
-                <IconHelpCircle
-                  style={{ width: "80%", height: "80%" }}
-                  stroke={1.5}
-                />
+                <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
               </ActionIcon>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>
-              <Text fz="xs">
-                This is your base speed, it determines how far you can move each
-                time you spend an action (such as Stride) to do so.
+              <Text fz='xs'>
+                This is your base speed, it determines how far you can move each time you spend an action (such as
+                Stride) to do so.
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c="gray.5" ta="center">
+          <Text c='gray.5' ta='center'>
             Speed
           </Text>
-          <Text
-            c="gray.4"
-            fw={700}
-            ta="center"
-            style={{ display: "flex", justifyContent: "center" }}
-          >
-            {display.speed.ui ?? "Varies"}
+          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+            {display.speed.ui ?? 'Varies'}
           </Text>
         </Paper>
       </Group>
       {display.boostAttributes.length > 0 && (
         <Box>
           <Divider
-            px="xs"
+            px='xs'
             label={
-              <Group gap={5}>
-                <IconChevronsUp size="0.8rem" />
-                <Box>Attribute Boosts</Box>
-              </Group>
+              <Text fz='xs' c='gray.6'>
+                <Group gap={5}>
+                  <IconChevronsUp size='0.8rem' />
+                  <Box>Attribute Boosts</Box>
+                </Group>
+              </Text>
             }
-            labelPosition="left"
+            labelPosition='left'
           />
           {display.boostAttributes.map((attribute, index) => (
-            <IndentedText
-              key={index}
-              disabled={MODE !== "READ"}
-              px="xs"
-              c="gray.5"
-              fz="sm"
-            >
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
               {attribute.ui}
             </IndentedText>
           ))}
@@ -504,23 +429,19 @@ export function AncestryInitialOverview(props: {
       {display.flawAttributes.length > 0 && (
         <Box>
           <Divider
-            px="xs"
+            px='xs'
             label={
-              <Group gap={5}>
-                <IconChevronsDown size="0.8rem" />
-                <Box>Attribute Flaws</Box>
-              </Group>
+              <Text fz='xs' c='gray.6'>
+                <Group gap={5}>
+                  <IconChevronsDown size='0.8rem' />
+                  <Box>Attribute Flaws</Box>
+                </Group>
+              </Text>
             }
-            labelPosition="left"
+            labelPosition='left'
           />
           {display.flawAttributes.map((skill, index) => (
-            <IndentedText
-              key={index}
-              disabled={MODE !== "READ"}
-              px="xs"
-              c="gray.5"
-              fz="sm"
-            >
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
               {skill.ui}
             </IndentedText>
           ))}
@@ -528,34 +449,24 @@ export function AncestryInitialOverview(props: {
       )}
       <Box>
         <Divider
-          px="xs"
+          px='xs'
           label={
-            <Group gap={5}>
-              {getIconFromContentType("language", "0.8rem")}
-              <Box>Languages</Box>
-            </Group>
+            <Text fz='xs' c='gray.6'>
+              <Group gap={5}>
+                {getIconFromContentType('language', '0.8rem')}
+                <Box>Languages</Box>
+              </Group>
+            </Text>
           }
-          labelPosition="left"
+          labelPosition='left'
         />
         {display.languages.map((language, index) => (
-          <IndentedText
-            key={index}
-            disabled={MODE !== "READ"}
-            px="xs"
-            c="gray.5"
-            fz="sm"
-          >
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {language.ui}
           </IndentedText>
         ))}
         {display.additionalLanguages.map((record, index) => (
-          <IndentedText
-            key={index}
-            disabled={MODE !== "READ"}
-            px="xs"
-            c="gray.5"
-            fz="sm"
-          >
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
             {record.ui}
           </IndentedText>
         ))}
@@ -563,34 +474,24 @@ export function AncestryInitialOverview(props: {
       {(display.senses.length > 0 || display.physicalFeatures.length) && (
         <Box>
           <Divider
-            px="xs"
+            px='xs'
             label={
-              <Group gap={5}>
-                {getIconFromContentType("ability-block", "0.8rem")}
-                <Box>Special Abilities</Box>
-              </Group>
+              <Text fz='xs' c='gray.6'>
+                <Group gap={5}>
+                  {getIconFromContentType('ability-block', '0.8rem')}
+                  <Box>Special Abilities</Box>
+                </Group>
+              </Text>
             }
-            labelPosition="left"
+            labelPosition='left'
           />
           {display.senses.map((sense, index) => (
-            <IndentedText
-              key={index}
-              disabled={MODE !== "READ"}
-              px="xs"
-              c="gray.5"
-              fz="sm"
-            >
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
               {sense.ui}
             </IndentedText>
           ))}
           {display.physicalFeatures.map((physicalFeature, index) => (
-            <IndentedText
-              key={index}
-              disabled={MODE !== "READ"}
-              px="xs"
-              c="gray.5"
-              fz="sm"
-            >
+            <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
               {physicalFeature.ui}
             </IndentedText>
           ))}
@@ -605,7 +506,7 @@ export function convertAncestryOperationsIntoUI(
   allPhysicalFeatures: AbilityBlock[],
   allSenses: AbilityBlock[],
   allLanguages: Language[],
-  mode: "READ" | "READ/WRITE",
+  mode: 'READ' | 'READ/WRITE',
   operationResults: OperationResult[],
   charState: [Character | null, SetterOrUpdater<Character | null>],
   openDrawer: SetterOrUpdater<{
@@ -617,17 +518,17 @@ export function convertAncestryOperationsIntoUI(
   const ancestryOperations = ancestry.operations ?? [];
   const MODE = mode;
   const writeDetails =
-    MODE === "READ/WRITE"
+    MODE === 'READ/WRITE'
       ? {
           operationResults: operationResults,
           characterState: charState,
-          primarySource: "ancestry",
+          primarySource: 'ancestry',
         }
       : undefined;
 
   const boostAttributes = getStatBlockDisplay(
-    "CHARACTER",
-    getAllAttributeVariables("CHARACTER").map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     ancestryOperations,
     MODE,
     writeDetails,
@@ -635,40 +536,22 @@ export function convertAncestryOperationsIntoUI(
   );
 
   const flawAttributes = getStatBlockDisplay(
-    "CHARACTER",
-    getAllAttributeVariables("CHARACTER").map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     ancestryOperations,
     MODE,
     writeDetails,
     { onlyNegatives: true, fullNames: true }
   );
 
-  const ancestryHp = getStatDisplay(
-    "CHARACTER",
-    "MAX_HEALTH_ANCESTRY",
-    ancestryOperations,
-    MODE,
-    writeDetails
-  );
+  const ancestryHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_ANCESTRY', ancestryOperations, MODE, writeDetails);
 
-  const size = getStatDisplay(
-    "CHARACTER",
-    "SIZE",
-    ancestryOperations,
-    MODE,
-    writeDetails
-  );
-  const speed = getStatDisplay(
-    "CHARACTER",
-    "SPEED",
-    ancestryOperations,
-    MODE,
-    writeDetails
-  );
+  const size = getStatDisplay('CHARACTER', 'SIZE', ancestryOperations, MODE, writeDetails);
+  const speed = getStatDisplay('CHARACTER', 'SPEED', ancestryOperations, MODE, writeDetails);
 
   let coreLanguages = [];
   for (const op of ancestryOperations) {
-    if (op.type === "setValue") {
+    if (op.type === 'setValue') {
       try {
         coreLanguages = JSON.parse(op.data.value as string);
       } catch (e) {}
@@ -676,31 +559,23 @@ export function convertAncestryOperationsIntoUI(
   }
 
   let additionalLanguages = [];
-  if (MODE === "READ") {
+  if (MODE === 'READ') {
     additionalLanguages = [
       {
         ui: (
           <>
-            Additional languages equal to your Intelligence modifier (if it's
-            positive). Choose from {coreLanguages.join(", ")}, and any other
-            languages to which you have access (such as the languages prevalent
-            in your region).
+            Additional languages equal to your Intelligence modifier (if it's positive). Choose from{' '}
+            {coreLanguages.join(', ')}, and any other languages to which you have access (such as the languages
+            prevalent in your region).
           </>
         ),
         operation: null,
       },
     ];
-  } else if (MODE === "READ/WRITE") {
+  } else if (MODE === 'READ/WRITE') {
     const languageOps = addedAncestryLanguages(ancestry);
     for (const op of languageOps) {
-      const result = getDisplay(
-        "CHARACTER",
-        { value: "T" },
-        op,
-        undefined,
-        "READ/WRITE",
-        writeDetails
-      );
+      const result = getDisplay('CHARACTER', { value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
       additionalLanguages.push({
         ui: result,
         operation: op,
@@ -710,16 +585,16 @@ export function convertAncestryOperationsIntoUI(
 
   const languages = [];
   for (const op of ancestryOperations) {
-    if (op.type === "giveLanguage") {
+    if (op.type === 'giveLanguage') {
       const lang = allLanguages.find((l) => l.id === op.data.languageId);
       if (lang) {
         languages.push({
           ui: (
             <Anchor
-              fz="sm"
+              fz='sm'
               onClick={() => {
                 openDrawer({
-                  type: "language",
+                  type: 'language',
                   data: { id: lang.id },
                   extra: { addToHistory: true },
                 });
@@ -736,18 +611,16 @@ export function convertAncestryOperationsIntoUI(
 
   const physicalFeatures = [];
   for (const op of ancestryOperations) {
-    if (op.type === "giveAbilityBlock") {
-      const feature = allPhysicalFeatures.find(
-        (l) => l.id === op.data.abilityBlockId
-      );
+    if (op.type === 'giveAbilityBlock') {
+      const feature = allPhysicalFeatures.find((l) => l.id === op.data.abilityBlockId);
       if (feature) {
         physicalFeatures.push({
           ui: (
             <Anchor
-              fz="sm"
+              fz='sm'
               onClick={() => {
                 openDrawer({
-                  type: "physical-feature",
+                  type: 'physical-feature',
                   data: { id: feature.id },
                   extra: { addToHistory: true },
                 });
@@ -764,16 +637,16 @@ export function convertAncestryOperationsIntoUI(
 
   const senses = [];
   for (const op of ancestryOperations) {
-    if (op.type === "giveAbilityBlock") {
+    if (op.type === 'giveAbilityBlock') {
       const sense = allSenses.find((l) => l.id === op.data.abilityBlockId);
       if (sense) {
         senses.push({
           ui: (
             <Anchor
-              fz="sm"
+              fz='sm'
               onClick={() => {
                 openDrawer({
-                  type: "sense",
+                  type: 'sense',
                   data: { id: sense.id },
                   extra: { addToHistory: true },
                 });
