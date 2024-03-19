@@ -10,9 +10,7 @@ export function getFinalProfValue(id: StoreID, variableName: string, isDC: boole
   const parts = getProfValueParts(id, variableName);
   if (!parts) return isDC ? '10' : '+0';
   return isDC
-    ? `${
-        10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue
-      }`
+    ? `${10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue}`
     : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue);
 }
 
@@ -53,10 +51,7 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
     value = variable.value.value;
   }
 
-  const bMap = new Map<
-    string,
-    { value: number; composition: { amount: number; source: string }[] }
-  >();
+  const bMap = new Map<string, { value: number; composition: { amount: number; source: string }[] }>();
   /*
     If there's no display text, we add the number and compare against type.
     If there's display text, we don't add the value.
@@ -77,10 +72,7 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
             key === 'untyped'
               ? bMapValue.value + (bonus.value ?? 0)
               : (adj === 'bonus' ? Math.max : Math.min)(bMapValue.value, bonus.value ?? 0),
-          composition: [
-            ...bMapValue.composition,
-            { amount: bonus.value ?? 0, source: bonus.source },
-          ],
+          composition: [...bMapValue.composition, { amount: bonus.value ?? 0, source: bonus.source }],
         });
       } else {
         bMap.set(key, {
@@ -95,6 +87,7 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
 
   return {
     total: value + totalBonusValue,
+    value: value,
     bonus: totalBonusValue,
     bmap: bMap,
   };
@@ -103,15 +96,12 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
 export function getProfValueParts(id: StoreID, variableName: string) {
   const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
-  const breakdown = getProfBreakdown(id, variableName);
+  const breakdown = getVariableBreakdown(id, variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
 
-  const level =
-    variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
+  const level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
   const profValue = getProficiencyTypeValue(variable.value.value);
-  const attributeMod = variable.value.attribute
-    ? getFinalVariableValue(id, variable.value.attribute).total
-    : null;
+  const attributeMod = variable.value.attribute ? getFinalVariableValue(id, variable.value.attribute).total : null;
 
   return {
     level,
@@ -122,7 +112,7 @@ export function getProfValueParts(id: StoreID, variableName: string) {
   };
 }
 
-function getProfBreakdown(id: StoreID, variableName: string) {
+export function getVariableBreakdown(id: StoreID, variableName: string) {
   const bonuses = getVariableBonuses(id, variableName);
 
   const conditionals: { text: string; source: string }[] = [];

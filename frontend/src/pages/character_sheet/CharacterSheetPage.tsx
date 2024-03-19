@@ -143,6 +143,7 @@ import {
   displayFinalProfValue,
   getFinalAcValue,
   getFinalHealthValue,
+  getFinalVariableValue,
 } from '@variables/variable-display';
 import {
   getAllArmorGroupVariables,
@@ -1083,7 +1084,31 @@ function ArmorSection(props: { inventory: Inventory; setInventory: React.Dispatc
               style={{ position: 'relative', cursor: 'pointer' }}
               ref={armorRef}
               onClick={() => {
-                //openDrawer({ type: 'armor' });
+                openDrawer({
+                  type: 'stat-ac',
+                  data: {
+                    onViewItem: (invItem: InventoryItem) => {
+                      openDrawer({
+                        type: 'inv-item',
+                        data: {
+                          zIndex: 100,
+                          invItem: _.cloneDeep(invItem),
+                          onItemUpdate: (newInvItem: InventoryItem) => {
+                            handleUpdateItem(props.setInventory, newInvItem);
+                          },
+                          onItemDelete: (newInvItem: InventoryItem) => {
+                            handleDeleteItem(props.setInventory, newInvItem);
+                            openDrawer(null);
+                          },
+                          onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
+                            handleMoveItem(props.setInventory, invItem, containerItem);
+                          },
+                        },
+                        extra: { addToHistory: true },
+                      });
+                    },
+                  },
+                });
               }}
             >
               <ArmorIcon size={85} color={armorHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
@@ -1213,6 +1238,10 @@ function SpeedSection() {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
+  const { hovered: perceptionHovered, ref: perceptionRef } = useHover();
+  const { hovered: speedHovered, ref: speedRef } = useHover();
+  const { hovered: classDcHovered, ref: classDcRef } = useHover();
+
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
 
@@ -1230,7 +1259,16 @@ function SpeedSection() {
         h='100%'
       >
         <Group wrap='nowrap' gap={5} align='flex-start' grow>
-          <Box style={{ position: 'relative' }}>
+          <Box
+            ref={perceptionRef}
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => {
+              openDrawer({
+                type: 'stat-perception',
+                data: {},
+              });
+            }}
+          >
             <Box
               style={{
                 position: 'absolute',
@@ -1239,7 +1277,7 @@ function SpeedSection() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <PerceptionIcon size={80} color={ICON_BG_COLOR} />
+              <PerceptionIcon size={80} color={perceptionHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
             </Box>
             <Stack gap={10}>
               <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -1253,7 +1291,16 @@ function SpeedSection() {
               </Text>
             </Stack>
           </Box>
-          <Box style={{ position: 'relative' }}>
+          <Box
+            ref={speedRef}
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => {
+              openDrawer({
+                type: 'stat-speed',
+                data: {},
+              });
+            }}
+          >
             <Box
               style={{
                 position: 'absolute',
@@ -1262,14 +1309,14 @@ function SpeedSection() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <SpeedIcon size={75} color={ICON_BG_COLOR} />
+              <SpeedIcon size={75} color={speedHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
             </Box>
             <Stack gap={10}>
               <Text ta='center' fz='sm' fw={500} c='gray.0'>
                 Speed
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
-                {25}
+                {getFinalVariableValue('CHARACTER', 'SPEED').total}
                 <Text fz='xs' c='gray.3' span>
                   {' '}
                   ft.
@@ -1280,7 +1327,16 @@ function SpeedSection() {
               </Text>
             </Stack>
           </Box>
-          <Box style={{ position: 'relative' }}>
+          <Box
+            ref={classDcRef}
+            style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => {
+              openDrawer({
+                type: 'stat-prof',
+                data: { variableName: 'CLASS_DC', isDC: true },
+              });
+            }}
+          >
             <Box
               style={{
                 position: 'absolute',
@@ -1289,7 +1345,7 @@ function SpeedSection() {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <BoxIcon size={50} color={ICON_BG_COLOR} />
+              <BoxIcon size={50} color={classDcHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
             </Box>
             <Stack gap={10}>
               <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -1298,9 +1354,6 @@ function SpeedSection() {
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
                 {displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}
               </Text>
-              {/* <Text fz='xs' c='gray.5' ta='center'>
-                And Others
-              </Text> */}
             </Stack>
           </Box>
         </Group>

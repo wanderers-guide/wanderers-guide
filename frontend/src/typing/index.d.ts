@@ -19,6 +19,9 @@ export type DrawerType =
   | 'stat-prof'
   | 'stat-attr'
   | 'stat-hp'
+  | 'stat-ac'
+  | 'stat-speed'
+  | 'stat-perception'
   | 'stat-resist-weak';
 
 export type UploadResult = {

@@ -53,9 +53,7 @@ function emptyIdStore() {
 function getStoredIds(type: ContentType, data: Record<string, any>) {
   if (!data.id) return null;
   if (Array.isArray(data.id)) {
-    const results = data.id
-      .map((id) => idStore.get(type)?.get(parseInt(id)))
-      .filter((result) => result);
+    const results = data.id.map((id) => idStore.get(type)?.get(parseInt(id))).filter((result) => result);
     if (results.length !== data.id.length) return null;
     return results;
   } else {
@@ -88,18 +86,11 @@ export function defineDefaultSources(sources?: number[]) {
   defaultSources = sources;
 }
 
-export async function fetchContentById<T = Record<string, any>>(
-  type: ContentType,
-  id: number,
-  sources?: number[]
-) {
+export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {
   return await fetchContent<T>(type, { id, content_sources: sources });
 }
 
-export async function fetchContentAll<T = Record<string, any>>(
-  type: ContentType,
-  sources?: number[]
-) {
+export async function fetchContentAll<T = Record<string, any>>(type: ContentType, sources?: number[]) {
   const result = await fetchContent<T>(type, { content_sources: sources });
   if (result) {
     return result as T[];
@@ -177,10 +168,7 @@ export async function fetchContentSources(options?: {
   return sources.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function fetchContentPackage(
-  sources?: number[],
-  fetchSources?: boolean
-): Promise<ContentPackage> {
+export async function fetchContentPackage(sources?: number[], fetchSources?: boolean): Promise<ContentPackage> {
   const content = await Promise.all([
     fetchContentAll<Ancestry>('ancestry', sources),
     fetchContentAll<Background>('background', sources),
@@ -217,7 +205,7 @@ export async function fetchTraitByName(name?: string, sources?: number[], id?: n
   return await fetchContent<Trait>('trait', {
     id,
     name,
-    content_sources: sources,
+    content_sources: sources ?? defaultSources,
   });
 }
 export async function fetchTraits(ids?: number[]) {
@@ -229,9 +217,9 @@ export async function fetchTraits(ids?: number[]) {
   );
 }
 export async function fetchAbilityBlockByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<AbilityBlock>('ability-block', {
+  return await fetchContent<AbilityBlock[]>('ability-block', {
     id,
     name,
-    content_sources: sources,
+    content_sources: sources ?? defaultSources,
   });
 }
