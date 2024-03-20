@@ -1,15 +1,14 @@
-import { Character } from "@typing/content";
+import { Character } from '@typing/content';
 import options from './name-set/options';
-import { generateCompletion } from "@ai/open-ai-handler";
+import { generateCompletion } from '@ai/open-ai-handler';
 
 export async function generateNames(character: Character, amount: number): Promise<string[]> {
-
   const className = character.details?.class?.name;
   const ancestryName = character.details?.ancestry?.name;
   const backgroundName = character.details?.background?.name;
 
   let nameSet = null;
-  for(const option of options) {
+  for (const option of options) {
     if (option.title.toLowerCase() === className?.toLowerCase()) {
       nameSet = option;
       break;
@@ -22,12 +21,21 @@ export async function generateNames(character: Character, amount: number): Promi
     nameSet = options.find((option) => option.title.toLowerCase() === 'hero')!;
   }
 
-  let additional = undefined;
-  if(backgroundName) additional = `Background: ${backgroundName}`;
+  // Extra details to improve the name generation
+  let additional = ``;
+  if (backgroundName) additional += `Background: ${backgroundName}\n\n`;
+  if (character.details?.info?.gender?.trim()) additional += `Gender: ${character.details.info.gender}\n\n`;
+  if (character.details?.info?.pronouns?.trim()) additional += `Pronouns: ${character.details.info.pronouns}\n\n`;
+  if (character.details?.info?.personality?.trim())
+    additional += `Personality: ${character.details.info.personality}\n\n`;
+  if (character.details?.info?.ethnicity?.trim()) additional += `Ethnicity: ${character.details.info.ethnicity}\n\n`;
+  if (character.details?.info?.nationality?.trim())
+    additional += `Nationality: ${character.details.info.nationality}\n\n`;
+  if (character.details?.info?.birthplace?.trim()) additional += `Birthplace: ${character.details.info.birthplace}\n\n`;
+  if (character.details?.info?.faction?.trim()) additional += `Faction: ${character.details.info.faction}\n\n`;
 
-  return await _generateNames(nameSet, amount, additional);
+  return await _generateNames(nameSet, amount, additional.trim() ? additional.trim() : undefined);
 }
-
 
 async function _generateNames(nameSet: any, amount: number, extra?: string) {
   const prompt = `

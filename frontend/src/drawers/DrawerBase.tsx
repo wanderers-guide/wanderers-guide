@@ -5,13 +5,29 @@ import { useElementSize, useLocalStorage } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { lazy, useRef } from 'react';
+import { lazy, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
+import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
 const DrawerTitle = lazy(() => import('./DrawerTitle'));
+
+// No feedback drawers
+const NO_FEEDBACK_DRAWERS = [
+  'character',
+  'stat-prof',
+  'stat-attr',
+  'stat-hp',
+  'stat-ac',
+  'stat-speed',
+  'stat-perception',
+  'stat-resist-weak',
+  'add-item',
+  'add-spell',
+  'inv-item',
+];
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -23,6 +39,7 @@ export default function DrawerBase() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { ref, height: titleHeight } = useElementSize();
+  const [feedbackData, setFeedbackData] = useState<{ type: ContentType; data: { id?: number } } | null>(null);
 
   const viewport = useRef<HTMLDivElement>(null);
   const [value, setValue] = useLocalStorage<PrevMetadata>({
@@ -64,120 +81,123 @@ export default function DrawerBase() {
   };
 
   return (
-    <Drawer
-      opened={!!_drawer}
-      onClose={handleDrawerClose}
-      title={
-        <Box ref={ref}>
-          <Group gap={12} justify='space-between'>
-            <Box style={{ flex: 1 }}>
-              <DrawerTitle />
-              <Divider />
-            </Box>
-            {!!_drawer?.extra?.history?.length ? (
-              <ActionIcon
-                variant='light'
-                color='gray.4'
-                radius='xl'
-                size='md'
-                onClick={handleDrawerGoBack}
-                aria-label='Go back to previous drawer'
-              >
-                <IconArrowLeft size='1.2rem' stroke={1.5} />
-              </ActionIcon>
-            ) : (
-              <ActionIcon
-                variant='light'
-                color='gray.4'
-                radius='xl'
-                size='md'
-                onClick={handleDrawerClose}
-                aria-label='Close drawer'
-              >
-                <IconX size='1.2rem' stroke={1.5} />
-              </ActionIcon>
-            )}
-          </Group>
-        </Box>
-      }
-      withCloseButton={false}
-      position='right'
-      zIndex={_drawer?.data.zIndex ?? 1000}
-      styles={{
-        title: {
-          width: '100%',
-        },
-        header: {
-          paddingBottom: 0,
-        },
-        body: {
-          paddingRight: 2,
-        },
-      }}
-    >
-      {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
-      {/* This "fix" will still have the bug on titles that are multiline */}
-      <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={14} scrollbars='y'>
-        <Box
-          pt={2}
-          style={{
-            overflowX: 'hidden',
-          }}
-        >
-          <DrawerContent
-            onMetadataChange={(openedDict) => {
-              saveMetadata(openedDict);
+    <>
+      <Drawer
+        opened={!!_drawer}
+        onClose={handleDrawerClose}
+        title={
+          <Box ref={ref}>
+            <Group gap={12} justify='space-between'>
+              <Box style={{ flex: 1 }}>
+                <DrawerTitle />
+                <Divider />
+              </Box>
+              {!!_drawer?.extra?.history?.length ? (
+                <ActionIcon
+                  variant='light'
+                  color='gray.4'
+                  radius='xl'
+                  size='md'
+                  onClick={handleDrawerGoBack}
+                  aria-label='Go back to previous drawer'
+                >
+                  <IconArrowLeft size='1.2rem' stroke={1.5} />
+                </ActionIcon>
+              ) : (
+                <ActionIcon
+                  variant='light'
+                  color='gray.4'
+                  radius='xl'
+                  size='md'
+                  onClick={handleDrawerClose}
+                  aria-label='Close drawer'
+                >
+                  <IconX size='1.2rem' stroke={1.5} />
+                </ActionIcon>
+              )}
+            </Group>
+          </Box>
+        }
+        withCloseButton={false}
+        position='right'
+        zIndex={_drawer?.data.zIndex ?? 1000}
+        styles={{
+          title: {
+            width: '100%',
+          },
+          header: {
+            paddingBottom: 0,
+          },
+          body: {
+            paddingRight: 2,
+          },
+        }}
+      >
+        {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
+        {/* This "fix" will still have the bug on titles that are multiline */}
+        <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={14} scrollbars='y'>
+          <Box
+            pt={2}
+            style={{
+              overflowX: 'hidden',
             }}
-          />
-        </Box>
-      </ScrollArea>
+          >
+            <DrawerContent
+              onMetadataChange={(openedDict) => {
+                saveMetadata(openedDict);
+              }}
+            />
+          </Box>
+        </ScrollArea>
 
-      {_drawer &&
-        ![
-          'character',
-          'stat-prof',
-          'stat-attr',
-          'stat-hp',
-          'stat-ac',
-          'stat-speed',
-          'stat-perception',
-          'stat-resist-weak',
-          'add-item',
-          'add-spell',
-          'inv-item',
-        ].includes(_drawer.type) && (
-          <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
-            <HoverCard.Target>
-              <ActionIcon
-                variant='subtle'
-                aria-label='Help and Feedback'
-                radius='xl'
-                color='dark.3'
-                style={{
-                  position: 'absolute',
-                  bottom: 5,
-                  right: 5,
-                }}
-                onClick={() => {
-                  handleDrawerClose();
-                  openContextModal({
-                    modal: 'contentFeedback',
-                    title: <Title order={3}>Content Details</Title>,
-                    innerProps: {
+        {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && (
+          <>
+            <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
+              <HoverCard.Target>
+                <ActionIcon
+                  variant='subtle'
+                  aria-label='Help and Feedback'
+                  radius='xl'
+                  color='dark.3'
+                  style={{
+                    position: 'absolute',
+                    bottom: 5,
+                    right: 5,
+                  }}
+                  onClick={() => {
+                    setFeedbackData({
                       type: convertToContentType(_drawer.type as ContentType | AbilityBlockType),
                       data: _drawer.data,
-                    },
-                  });
-                }}
-              >
-                <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
-              </ActionIcon>
-            </HoverCard.Target>
-            <HoverCard.Dropdown py={0} px={10}>
-              <Text size='sm'>Something wrong?</Text>
-            </HoverCard.Dropdown>
-          </HoverCard>
+                    });
+                  }}
+                >
+                  <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown py={0} px={10}>
+                <Text size='sm'>Something wrong?</Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          </>
         )}
-    </Drawer>
+      </Drawer>
+      {feedbackData && (
+        <ContentFeedbackModal
+          opened={true}
+          onCancel={() => {
+            setFeedbackData(null);
+          }}
+          onStartFeedback={() => {
+            openDrawer(null);
+          }}
+          onCompleteFeedback={() => {
+            handleDrawerClose();
+            setFeedbackData(null);
+          }}
+          type={feedbackData.type}
+          data={feedbackData.data}
+        />
+      )}
+    </>
   );
 }

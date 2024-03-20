@@ -1212,7 +1212,7 @@ function ArmorSection(props: { inventory: Inventory; setInventory: React.Dispatc
                   variant='light'
                   color='dark.2'
                   size='compact-xs'
-                  w={50}
+                  w={55}
                   style={{ position: 'relative' }}
                   onClick={() => handleSaveOpen(save)}
                 >
@@ -2259,12 +2259,12 @@ function PanelInventory(props: {
                         <InvItemOption
                           hideSections
                           invItem={invItem}
-                          onEquip={() => {
+                          onEquip={(invItem) => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_equipped = !newInvItem.is_equipped;
                             handleUpdateItem(props.setInventory, newInvItem);
                           }}
-                          onInvest={() => {
+                          onInvest={(invItem) => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_invested = !newInvItem.is_invested;
                             handleUpdateItem(props.setInventory, newInvItem);
@@ -2318,13 +2318,13 @@ function PanelInventory(props: {
                               <InvItemOption
                                 invItem={containedItem}
                                 preventEquip
-                                onEquip={() => {
-                                  const newInvItem = _.cloneDeep(containedItem);
+                                onEquip={(invItem) => {
+                                  const newInvItem = _.cloneDeep(invItem);
                                   newInvItem.is_equipped = !newInvItem.is_equipped;
                                   handleUpdateItem(props.setInventory, newInvItem);
                                 }}
-                                onInvest={() => {
-                                  const newInvItem = _.cloneDeep(containedItem);
+                                onInvest={(invItem) => {
+                                  const newInvItem = _.cloneDeep(invItem);
                                   newInvItem.is_invested = !newInvItem.is_invested;
                                   handleUpdateItem(props.setInventory, newInvItem);
                                 }}
@@ -2365,12 +2365,12 @@ function PanelInventory(props: {
                       >
                         <InvItemOption
                           invItem={invItem}
-                          onEquip={() => {
+                          onEquip={(invItem) => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_equipped = !newInvItem.is_equipped;
                             handleUpdateItem(props.setInventory, newInvItem);
                           }}
-                          onInvest={() => {
+                          onInvest={(invItem) => {
                             const newInvItem = _.cloneDeep(invItem);
                             newInvItem.is_invested = !newInvItem.is_invested;
                             handleUpdateItem(props.setInventory, newInvItem);
@@ -2578,9 +2578,10 @@ function InvItemOption(props: {
             <Button
               size='compact-xs'
               variant={props.invItem.is_invested ? 'subtle' : 'outline'}
-              color={props.invItem.is_equipped ? 'gray.7' : undefined}
+              color={props.invItem.is_invested ? 'gray.7' : undefined}
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 props.onInvest?.(props.invItem);
               }}
               w={80}
@@ -2595,6 +2596,7 @@ function InvItemOption(props: {
               color={props.invItem.is_equipped ? 'gray.7' : undefined}
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 props.onEquip?.(props.invItem);
               }}
               w={80}
@@ -3421,6 +3423,7 @@ function SpellListEntry(props: {
           openDrawer({
             type: 'cast-spell',
             data: {
+              id: props.spell.id,
               spell: props.spell,
               exhausted: props.exhausted,
               onCastSpell: (cast: boolean) => {

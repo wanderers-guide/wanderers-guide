@@ -26,11 +26,9 @@ const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
 const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
 const SelectIconModal = lazy(() => import('@modals/SelectIconModal'));
 const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterPortraitModal'));
-const ContentFeedbackModal = lazy(() => import('@modals/ContentFeedbackModal'));
 const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
 const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
 const ConditionModal = lazy(() => import('@modals/ConditionModal'));
-const SelectSpellRankModal = lazy(() => import('@modals/SelectSpellRankModal'));
 // const ManageSpellsModal = lazy(() => import('@modals/ManageSpellsModal'));
 
 const modals = {
@@ -38,11 +36,9 @@ const modals = {
   selectImage: SelectImageModal,
   selectIcon: SelectIconModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
-  contentFeedback: ContentFeedbackModal,
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
-  selectSpellRank: SelectSpellRankModal,
   // manageSpells: ManageSpellsModal,
 };
 declare module '@mantine/modals' {
@@ -96,10 +92,7 @@ export default function App() {
   const [background, setBackground] = useState<ImageOption>();
   useEffect(() => {
     (async () => {
-      if (
-        prevCharacer?.details?.background_image_url ===
-        activeCharacer?.details?.background_image_url
-      ) {
+      if (prevCharacer?.details?.background_image_url === activeCharacer?.details?.background_image_url) {
         if (!background?.url) {
           // Use cached customization if available
           const cache = getCachedCustomization();

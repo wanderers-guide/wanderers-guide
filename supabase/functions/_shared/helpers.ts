@@ -59,6 +59,7 @@ export async function connect(
 export type TableName =
   | 'ability_block'
   | 'content_source'
+  | 'content_update'
   | 'character'
   | 'ancestry'
   | 'trait'

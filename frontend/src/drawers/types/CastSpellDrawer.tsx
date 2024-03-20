@@ -15,7 +15,7 @@ import { convertCastToActionCost } from '@utils/actions';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function CastSpellDrawerTitle(props: {
-  data: { spell: Spell; exhausted: boolean; onCastSpell: (cast: boolean) => void };
+  data: { id: number; spell: Spell; exhausted: boolean; onCastSpell: (cast: boolean) => void };
 }) {
   const spell = props.data.spell;
 
@@ -78,7 +78,7 @@ export function CastSpellDrawerTitle(props: {
   );
 }
 
-export function CastSpellDrawerContent(props: { data: { spell: Spell } }) {
+export function CastSpellDrawerContent(props: { data: { id: number; spell: Spell } }) {
   const spell = props.data.spell;
 
   const CR = [];

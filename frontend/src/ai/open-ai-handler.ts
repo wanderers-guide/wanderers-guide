@@ -3,12 +3,11 @@ import { makeRequest } from '@requests/request-manager';
 export async function generateCompletion(prompt?: string) {
   if (!prompt) return null;
   const result = await makeRequest<string>('open-ai-request', {
-    content: prompt,
+    content: prompt.trim(),
     model: 'gpt-4',
   });
   return result;
 }
-
 
 export async function classifySkillForAction(description: string) {
   const prompt = `
@@ -41,11 +40,10 @@ export async function classifySkillForAction(description: string) {
   return await generateCompletion(prompt);
 }
 
-
 /**
  * Uses AI to detect potential content links.
  * - Potential content links are wrapped in double square brackets.
- * @param text 
+ * @param text
  */
 export async function detectPotentialContentLinks(description: string) {
   const prompt = `

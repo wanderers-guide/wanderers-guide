@@ -1,13 +1,5 @@
 import { FileWithPath } from '@mantine/dropzone';
-import {
-  AbilityBlock,
-  AbilityBlockType,
-  Background,
-  ContentSource,
-  ContentType,
-  Item,
-  Spell,
-} from '@typing/content';
+import { AbilityBlock, AbilityBlockType, Background, ContentSource, ContentType, Item, Spell } from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -63,10 +55,7 @@ export function resetUploadStats() {
   uploadStats = emptyUploadStats();
 }
 
-export async function uploadContentList(
-  type: ContentType | AbilityBlockType,
-  files: FileWithPath[]
-) {
+export async function uploadContentList(type: ContentType | AbilityBlockType, files: FileWithPath[]) {
   resetUploadStats();
 
   uploadStats.total = files.length;
@@ -165,9 +154,7 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
     if (!uploadStats.uploads.has(type)) {
       uploadStats.uploads.set(type, new Map<string, number>());
     }
-    uploadStats.uploads
-      .get(type)!
-      .set(foundryId, (uploadStats.uploads.get(type)!.get(foundryId) ?? 0) + 1);
+    uploadStats.uploads.get(type)!.set(foundryId, (uploadStats.uploads.get(type)!.get(foundryId) ?? 0) + 1);
   } else {
     if (DEBUG) {
       console.error(`Failed to upload ${type} from ${foundryId}`);
@@ -176,9 +163,7 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
     if (!uploadStats.failedUploads.has(type)) {
       uploadStats.failedUploads.set(type, new Map<string, number>());
     }
-    uploadStats.failedUploads
-      .get(type)!
-      .set(foundryId, (uploadStats.failedUploads.get(type)!.get(foundryId) ?? 0) + 1);
+    uploadStats.failedUploads.get(type)!.set(foundryId, (uploadStats.failedUploads.get(type)!.get(foundryId) ?? 0) + 1);
   }
   if (DEBUG) {
     console.log(json);
@@ -187,10 +172,7 @@ async function uploadContent(type: string, file: FileWithPath): Promise<UploadRe
   return result;
 }
 
-async function uploadAction(
-  source: ContentSource,
-  json: Record<string, any>
-): Promise<UploadResult> {
+async function uploadAction(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type !== 'action') {
     if (DEBUG) {
       console.error(`Not an action, it's a "${json.type}"!`);
@@ -264,8 +246,7 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
     stripFoundryLinking(json.system?.description?.value, json.system?.level?.value)
   );
   const prerequisites =
-    json.system?.prerequisites?.value?.map((prereq: { value: string }) => toText(prereq.value)) ??
-    undefined;
+    json.system?.prerequisites?.value?.map((prereq: { value: string }) => toText(prereq.value)) ?? undefined;
   const description = await performAutoContentLinking(descValues.description);
 
   const action = {
@@ -305,10 +286,7 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
   };
 }
 
-async function uploadClassFeature(
-  source: ContentSource,
-  json: Record<string, any>
-): Promise<UploadResult> {
+async function uploadClassFeature(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type === 'feat' && json.system?.category === 'classfeature') {
   } else {
     if (DEBUG) {
@@ -358,10 +336,7 @@ async function uploadClassFeature(
   };
 }
 
-async function uploadSpell(
-  source: ContentSource,
-  json: Record<string, any>
-): Promise<UploadResult> {
+async function uploadSpell(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type !== 'spell') {
     if (DEBUG) {
       console.error(`Not a spell, it's a "${json.type}"!`);
@@ -390,9 +365,7 @@ async function uploadSpell(
     trigger: descValues?.trigger || toText(json.system?.trigger?.value),
     requirements: toText(descValues?.requirements) || json.system?.materials?.value,
     range: json.system?.range?.value,
-    area:
-      descValues?.area ||
-      (json.system?.area && `${json.system?.area?.value}-foot ${json.system?.area?.type}`),
+    area: descValues?.area || (json.system?.area && `${json.system?.area?.value}-foot ${json.system?.area?.type}`),
     targets: json.system?.target?.value,
     duration: json.system?.duration?.value,
     description: toMarkdown(description) ?? '',
@@ -521,10 +494,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
   };
 }
 
-async function uploadCreature(
-  source: ContentSource,
-  json: Record<string, any>
-): Promise<UploadResult> {
+async function uploadCreature(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type !== 'npc') {
     if (DEBUG) {
       console.error(`Not a creature, it's a "${json.type}"!`);
@@ -561,10 +531,7 @@ async function uploadCreature(
   }
 }
 
-async function uploadHeritage(
-  source: ContentSource,
-  json: Record<string, any>
-): Promise<UploadResult> {
+async function uploadHeritage(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type !== 'heritage') {
     if (DEBUG) {
       console.error(`Not a heritage, it's a "${json.type}"!`);
@@ -602,9 +569,7 @@ async function uploadHeritage(
 
   // Add ancestry trait
   if (json.system?.ancestry?.name) {
-    heritage.traits = heritage.traits.concat(
-      await getTraitIds([json.system.ancestry.name], source)
-    );
+    heritage.traits = heritage.traits.concat(await getTraitIds([json.system.ancestry.name], source));
   }
 
   const createdHeritage = await upsertAbilityBlock(heritage);
@@ -618,10 +583,7 @@ async function uploadHeritage(
   };
 }
 
-async function uploadBackground(
-  source: ContentSource,
-  json: Record<string, any>
-): Promise<UploadResult> {
+async function uploadBackground(source: ContentSource, json: Record<string, any>): Promise<UploadResult> {
   if (json.type !== 'background') {
     if (DEBUG) {
       console.error(`Not a background, it's a "${json.type}"!`);

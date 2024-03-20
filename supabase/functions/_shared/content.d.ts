@@ -57,6 +57,20 @@ interface Trait {
   content_source_id: number;
 }
 
+interface ContentUpdate {
+  id: number;
+  created_at: string;
+  user_id: number;
+  type: ContentType;
+  ref_id?: number;
+  action: 'UPDATE' | 'CREATE' | 'DELETE';
+  data: Record<string, any>;
+  content_source_id: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  upvotes: number;
+  downvotes: number;
+}
+
 interface Item {
   id: number;
   created_at: string;

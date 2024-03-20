@@ -87,8 +87,8 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       ),
       children: (
         <Text size='sm'>
-          Are you sure you want to decrease your character's level? Any selections you've made at
-          levels higher than the new level will be erased.
+          Are you sure you want to decrease your character's level? Any selections you've made at levels higher than the
+          new level will be erased.
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
@@ -145,7 +145,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                             ...prev,
                             details: {
                               ...prev.details,
-                              image_url: option.url,
+                              image_url: prev.details?.image_url === option.url ? undefined : option.url,
                             },
                           };
                         });
@@ -217,10 +217,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                             }
                           }}
                         >
-                          <IconRefreshDot
-                            style={{ width: rem(18), height: rem(18) }}
-                            stroke={1.5}
-                          />
+                          <IconRefreshDot style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                         </ActionIcon>
                       </HoverCard.Target>
                       <HoverCard.Dropdown>

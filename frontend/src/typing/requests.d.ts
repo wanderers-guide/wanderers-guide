@@ -26,6 +26,8 @@ export type RequestType =
   | 'create-character'
   | 'find-character'
   | 'update-character'
+  | 'create-content-update'
+  | 'find-content-update'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 
