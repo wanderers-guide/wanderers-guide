@@ -17,10 +17,12 @@ import {
 } from '@mantine/core';
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import {
+  IconChefHat,
   IconChevronDown,
   IconLayersIntersect,
   IconLogout,
   IconSettings,
+  IconSoup,
   IconSpeakerphone,
   IconSwords,
   IconUsers,
@@ -190,9 +192,9 @@ export default function Layout(props: { children: React.ReactNode }) {
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
-                          <IconSpeakerphone
+                          <IconSoup
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.violet[4]}
+                            color={theme.colors.yellow[6]}
                             stroke={1.5}
                           />
                         }
@@ -200,7 +202,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           displayComingSoon();
                         }}
                       >
-                        Campaigns
+                        Homebrew
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
@@ -218,9 +220,23 @@ export default function Layout(props: { children: React.ReactNode }) {
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
+                          <IconSpeakerphone
+                            style={{ width: rem(16), height: rem(16) }}
+                            color={theme.colors.violet[4]}
+                            stroke={1.5}
+                          />
+                        }
+                        onClick={() => {
+                          displayComingSoon();
+                        }}
+                      >
+                        Campaigns
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={
                           <IconLayersIntersect
                             style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.yellow[6]}
+                            color={theme.colors.pink[6]}
                             stroke={1.5}
                           />
                         }
