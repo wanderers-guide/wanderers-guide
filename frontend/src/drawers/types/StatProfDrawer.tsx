@@ -117,9 +117,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' pb={10}>
-              {getProfDescription(props.data.variableName)}
-            </RichText>
+            <RichText ta='justify'>{getProfDescription(props.data.variableName)}</RichText>
           </Accordion.Panel>
         </Accordion.Item>
 
@@ -136,7 +134,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
           <Accordion.Item value='breakdown'>
             <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
             <Accordion.Panel>
-              <Group gap={8} wrap='nowrap' align='center'>
+              <Group gap={8} align='center'>
                 {displayFinalProfValue('CHARACTER', variable.name, props.data.isDC)} = {props.data.isDC && <>10 + </>}
                 <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                   <HoverCard.Target>
@@ -195,13 +193,13 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
                         <Text c='gray.0' size='xs'>
-                          Your {key} bonus. Use the highest from the following:
+                          Your {key}. Use the greatest from the following:
                           <Divider pb={5} />
                           <List size='xs'>
                             {bonus.composition.map((item, i) => (
                               <List.Item key={i}>
                                 {sign(item.amount)}{' '}
-                                <Text c='dimmed' span>
+                                <Text pl={5} c='dimmed' span>
                                   {'['}from {item.source}
                                   {']'}
                                 </Text>
@@ -224,7 +222,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
                         <Text c='gray.0' size='xs'>
-                          You have conditional bonuses! These will only apply situationally:
+                          You have some conditionals! These will only apply situationally:
                           <Divider pb={5} />
                           <List size='xs'>
                             {parts.breakdown.conditionals.map((item, i) => (

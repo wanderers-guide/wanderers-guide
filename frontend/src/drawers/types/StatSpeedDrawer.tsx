@@ -185,7 +185,7 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
               <Accordion.Item value='breakdown'>
                 <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
                 <Accordion.Panel>
-                  <Group gap={8} wrap='nowrap' align='center'>
+                  <Group gap={8} align='center'>
                     {finalTotal} ={' '}
                     <>
                       <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
@@ -208,13 +208,13 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
                           </HoverCard.Target>
                           <HoverCard.Dropdown py={5} px={10}>
                             <Text c='gray.0' size='xs'>
-                              Your {key} bonus. Use the highest from the following:
+                              Your {key}. Use the greatest from the following:
                               <Divider pb={5} />
                               <List size='xs'>
                                 {bonus.composition.map((item, i) => (
                                   <List.Item key={i}>
                                     {sign(item.amount)}{' '}
-                                    <Text c='dimmed' span>
+                                    <Text pl={5} c='dimmed' span>
                                       {'['}from {item.source}
                                       {']'}
                                     </Text>
@@ -237,7 +237,7 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
                           </HoverCard.Target>
                           <HoverCard.Dropdown py={5} px={10}>
                             <Text c='gray.0' size='xs'>
-                              You have conditional bonuses! These will only apply situationally:
+                              You have some conditionals! These will only apply situationally:
                               <Divider pb={5} />
                               <List size='xs'>
                                 {breakdown.conditionals.map((item, i) => (

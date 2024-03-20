@@ -740,7 +740,15 @@ function HealthSection() {
               />
             </Box>
           </Group>
-          <Button variant='subtle' color='gray.5' size='compact-xs' fw={400}>
+          <Button
+            variant='subtle'
+            color='gray.5'
+            size='compact-xs'
+            fw={400}
+            onClick={() => {
+              openDrawer({ type: 'stat-resist-weak', data: {} });
+            }}
+          >
             Resistances & Weaknesses
           </Button>
         </Group>

@@ -21,6 +21,7 @@ import { CastSpellDrawerTitle } from './types/CastSpellDrawer';
 import { StatAcDrawerTitle } from './types/StatAcDrawer';
 import { StatSpeedDrawerTitle } from './types/StatSpeedDrawer';
 import { StatPerceptionDrawerTitle } from './types/StatPerceptionDrawer';
+import { StatResistWeakDrawerTitle } from './types/StatResistWeakDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
@@ -48,6 +49,7 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'stat-ac' && <StatAcDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-speed' && <StatSpeedDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'add-item' && <AddItemDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'inv-item' && <InvItemDrawerTitle data={_drawer.data} />}

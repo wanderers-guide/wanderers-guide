@@ -20,6 +20,7 @@ import { CastSpellDrawerContent } from './types/CastSpellDrawer';
 import { StatAcDrawerContent } from './types/StatAcDrawer';
 import { StatSpeedDrawerContent } from './types/StatSpeedDrawer';
 import { StatPerceptionDrawerContent } from './types/StatPerceptionDrawer';
+import { StatResistWeakDrawerContent } from './types/StatResistWeakDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
@@ -53,6 +54,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'stat-ac' && <StatAcDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-speed' && <StatSpeedDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'add-item' && <AddItemDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'inv-item' && <InvItemDrawerContent data={_drawer.data} />}

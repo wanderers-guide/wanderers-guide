@@ -1,18 +1,11 @@
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
+import { getBestArmor } from '@items/inv-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { Character } from '@typing/content';
 import { VariableAttr, VariableNum, VariableProf, VariableStr } from '@typing/variables';
-import { getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
-import {
-  getAllAttributeVariables,
-  getAllSkillVariables,
-  getVariable,
-} from '@variables/variable-manager';
-import {
-  isProficiencyTypeGreaterOrEqual,
-  maxProficiencyType,
-  variableNameToLabel,
-} from '@variables/variable-utils';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
+import { getAllAttributeVariables, getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import { isProficiencyTypeGreaterOrEqual, maxProficiencyType, variableNameToLabel } from '@variables/variable-utils';
 import { PDFDocument, PDFForm, StandardFonts, rgb } from 'pdf-lib';
 
 const VERSION = 1;
@@ -118,12 +111,10 @@ async function fillPDF(form: PDFForm, character: Character) {
     }
   }
   if (firstPartialIndex > -1) {
-    form
-      .getRadioGroup('Strength')
-      .select(form.getRadioGroup('Strength').getOptions()[firstPartialIndex]);
+    form.getRadioGroup('Strength').select(form.getRadioGroup('Strength').getOptions()[firstPartialIndex]);
   }
 
-  form.getTextField('AC').setText(getVariable<VariableNum>(STORE_ID, 'AC')?.value + '');
+  form.getTextField('AC').setText(getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, character.inventory)?.item) + '');
   form.getTextField('SHIELD').setText('TODO');
   form.getTextField('Hardness Max HP').setText('TODO');
   form.getTextField('HP').setText('TODO');
@@ -196,15 +187,9 @@ async function fillPDF(form: PDFForm, character: Character) {
   }
 
   // For save calcs
-  form
-    .getTextField('DEXTERITY')
-    .setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_DEX')?.value.value + '');
-  form
-    .getTextField('CONSTITUTION')
-    .setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_CON')?.value.value + '');
-  form
-    .getTextField('WISDOM')
-    .setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_WIS')?.value.value + '');
+  form.getTextField('DEXTERITY').setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_DEX')?.value.value + '');
+  form.getTextField('CONSTITUTION').setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_CON')?.value.value + '');
+  form.getTextField('WISDOM').setText(getVariable<VariableAttr>(STORE_ID, 'ATTRIBUTE_WIS')?.value.value + '');
 
   // Dying & Wounded
   // form.getRadioGroup('DYING 1')

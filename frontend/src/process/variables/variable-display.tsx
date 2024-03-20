@@ -118,7 +118,7 @@ export function getVariableBreakdown(id: StoreID, variableName: string) {
   const conditionals: { text: string; source: string }[] = [];
   for (const bonus of bonuses) {
     if (bonus.text) {
-      conditionals.push({ text: bonus.text, source: bonus.source });
+      conditionals.push({ text: getBonusText(bonus), source: bonus.source });
     }
   }
 
@@ -134,20 +134,16 @@ export function getBonusText(bonus: {
   source: string;
   timestamp: number;
 }) {
-  if (bonus.text) {
-    return bonus.text;
-  }
-
   if (bonus.value) {
     const suffix = bonus.value > 0 ? 'bonus' : 'penalty';
     if (bonus.type) {
-      return `${sign(bonus.value)} ${bonus.type} ${suffix}`;
+      return `${sign(bonus.value)} ${bonus.type} ${suffix} ${bonus.text}`.trim();
     } else {
-      return `${sign(bonus.value)} ${suffix}`;
+      return `${sign(bonus.value)} ${suffix} ${bonus.text}`.trim();
     }
   }
 
-  return '';
+  return `${bonus.text}`.trim();
 }
 
 export function getHealthValueParts(id: StoreID) {

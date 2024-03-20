@@ -44,7 +44,13 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, InventoryItem } from '@typing/content';
 import { VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
-import { displayFinalProfValue, getBonusText, getFinalAcValue, getProfValueParts } from '@variables/variable-display';
+import {
+  displayFinalProfValue,
+  getBonusText,
+  getFinalAcValue,
+  getProfValueParts,
+  getVariableBreakdown,
+} from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
   getProficiencyTypeValue,
@@ -99,6 +105,8 @@ export function StatAcDrawerContent(props: { data: {} }) {
   const parts = getAcParts('CHARACTER', bestArmor?.item);
   const armorName = bestArmor?.item.name ?? 'nothing';
 
+  const acBonusParts = getVariableBreakdown('CHARACTER', 'AC_BONUS')!;
+
   return (
     <Box>
       <Accordion variant='separated' defaultValue=''>
@@ -116,7 +124,7 @@ export function StatAcDrawerContent(props: { data: {} }) {
         <Accordion.Item value='breakdown'>
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
           <Accordion.Panel>
-            <Group gap={8} wrap='nowrap' align='center'>
+            <Group gap={8} align='center'>
               {getFinalAcValue('CHARACTER', bestArmor?.item)} ={' '}
               <>
                 <>10 + </>
@@ -127,19 +135,6 @@ export function StatAcDrawerContent(props: { data: {} }) {
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
                       Your proficiency bonus from wearing {armorName}.
-                    </Text>
-                  </HoverCard.Dropdown>
-                </HoverCard>
-              </>
-              <>
-                +
-                <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
-                  <HoverCard.Target>
-                    <Kbd style={{ cursor: 'pointer' }}>{parts.bonusAc}</Kbd>
-                  </HoverCard.Target>
-                  <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.0' size='xs'>
-                      The bonus to your Armor Class from various other sources.
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>
@@ -171,6 +166,62 @@ export function StatAcDrawerContent(props: { data: {} }) {
                   </HoverCard.Dropdown>
                 </HoverCard>
               </>
+              {[...acBonusParts.bonuses.entries()].map(([key, bonus], index) => (
+                <>
+                  +
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }}>{bonus.value}</Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        Your {key}. Use the greatest from the following:
+                        <Divider pb={5} />
+                        <List size='xs'>
+                          {bonus.composition.map((item, i) => (
+                            <List.Item key={i}>
+                              {sign(item.amount)}{' '}
+                              <Text pl={5} c='dimmed' span>
+                                {'['}from {item.source}
+                                {']'}
+                              </Text>
+                            </List.Item>
+                          ))}
+                        </List>
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </>
+              ))}
+              {acBonusParts.conditionals.length > 0 && (
+                <>
+                  +
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }} c='guide.5'>
+                        *
+                      </Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        You have some conditionals! These will only apply situationally:
+                        <Divider pb={5} />
+                        <List size='xs'>
+                          {acBonusParts.conditionals.map((item, i) => (
+                            <List.Item key={i}>
+                              {item.text}{' '}
+                              <Text c='dimmed' span>
+                                {'['}from {item.source}
+                                {']'}
+                              </Text>
+                            </List.Item>
+                          ))}
+                        </List>
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </>
+              )}
             </Group>
           </Accordion.Panel>
         </Accordion.Item>
