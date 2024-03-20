@@ -4,7 +4,7 @@ import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { getIconFromContentType } from '@content/content-utils';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
-import { Spotlight, SpotlightActionData } from '@mantine/spotlight';
+import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconAdjustments,
@@ -19,6 +19,7 @@ import {
 import { AbilityBlockType, Character, ContentType } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
+import { displayComingSoon } from '@utils/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
@@ -146,6 +147,8 @@ export default function SearchSpotlight() {
                 aria-label='Advanced Search'
                 onClick={() => {
                   console.log('Advanced Search');
+                  spotlight.close();
+                  displayComingSoon();
                 }}
                 style={{
                   pointerEvents: 'auto',

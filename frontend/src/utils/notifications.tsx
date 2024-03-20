@@ -1,5 +1,5 @@
 import { hideNotification, showNotification, updateNotification } from '@mantine/notifications';
-import { IconCheck, IconX } from '@tabler/icons-react';
+import { IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
 
 type NotificationDetails = {
   title: string;
@@ -55,8 +55,7 @@ export default async function displayNotification(
   }
 }
 
-
-export function throwError(message: string){
+export function throwError(message: string) {
   displayError(message);
   throw new Error(message);
 }
@@ -71,5 +70,17 @@ export function displayError(message: string) {
     autoClose: false,
     color: 'red',
     icon: <IconX />,
+  });
+}
+
+export function displayComingSoon() {
+  const id = 'coming-soon';
+  hideNotification(id);
+  showNotification({
+    id: id,
+    title: 'Coming Soon',
+    message: 'This feature is coming soon!',
+    color: 'blue',
+    icon: <IconCubeSend />,
   });
 }

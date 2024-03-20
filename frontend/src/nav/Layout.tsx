@@ -33,6 +33,7 @@ import { supabase } from '../main';
 import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
+import { displayComingSoon } from '@utils/notifications';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
@@ -81,18 +82,32 @@ export default function Layout(props: { children: React.ReactNode }) {
           <Burger opened={opened} onClick={toggle} hiddenFrom='md' size='sm' />
           <Group style={{ flex: 1 }}>
             <WanderersGuideLogo size={30} />
-            <Group
-              gap={0}
-              style={{ flex: 1 }}
-              visibleFrom='md'
-              justify='space-between'
-              wrap='nowrap'
-            >
+            <Group gap={0} style={{ flex: 1 }} visibleFrom='md' justify='space-between' wrap='nowrap'>
               {width >= 1050 ? (
                 <Group gap={0}>
-                  <UnstyledButton className={classes.control}>About</UnstyledButton>
-                  <UnstyledButton className={classes.control}>Community</UnstyledButton>
                   <UnstyledButton
+                    component='a'
+                    href={`/`}
+                    className={classes.control}
+                    onClick={() => {
+                      window.location.href = '/';
+                    }}
+                  >
+                    About
+                  </UnstyledButton>
+                  <UnstyledButton
+                    component='a'
+                    href={`https://discord.gg/FxsFZVvedr`}
+                    className={classes.control}
+                    onClick={() => {
+                      window.location.href = 'https://discord.gg/FxsFZVvedr';
+                    }}
+                  >
+                    Community
+                  </UnstyledButton>
+                  <UnstyledButton
+                    component='a'
+                    href={`https://www.patreon.com/wanderersguide`}
                     className={classes.control}
                     onClick={() => {
                       window.location.href = 'https://www.patreon.com/wanderersguide';
@@ -101,9 +116,11 @@ export default function Layout(props: { children: React.ReactNode }) {
                     Support
                   </UnstyledButton>
                   <UnstyledButton
+                    component='a'
+                    href={`https://legacy.wanderersguide.app`}
                     className={classes.control}
                     onClick={() => {
-                      window.location.href = 'https://wanderersguide.app';
+                      window.location.href = 'https://legacy.wanderersguide.app';
                     }}
                   >
                     Legacy Site
@@ -144,11 +161,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                       >
                         <Group gap={7}>
                           <Avatar
-                            src={
-                              userIcon
-                                ? `data:image/svg+xml;utf8,${encodeURIComponent(userIcon)}`
-                                : undefined
-                            }
+                            src={userIcon ? `data:image/svg+xml;utf8,${encodeURIComponent(userIcon)}` : undefined}
                             alt={'Account Dropdown'}
                             radius='xl'
                             size={30}
@@ -156,10 +169,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           <Text fw={500} size='sm' c='gray.4' lh={1} mr={3}>
                             {'Account'}
                           </Text>
-                          <IconChevronDown
-                            style={{ width: rem(12), height: rem(12) }}
-                            stroke={1.5}
-                          />
+                          <IconChevronDown style={{ width: rem(12), height: rem(12) }} stroke={1.5} />
                         </Group>
                       </UnstyledButton>
                     </Menu.Target>
@@ -186,6 +196,9 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
+                        onClick={() => {
+                          displayComingSoon();
+                        }}
                       >
                         Campaigns
                       </Menu.Item>
@@ -197,6 +210,9 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
+                        onClick={() => {
+                          displayComingSoon();
+                        }}
                       >
                         Encounters
                       </Menu.Item>
@@ -217,9 +233,7 @@ export default function Layout(props: { children: React.ReactNode }) {
 
                       <Menu.Label>Settings</Menu.Label>
                       <Menu.Item
-                        leftSection={
-                          <IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
-                        }
+                        leftSection={<IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
                       >
                         Account
                       </Menu.Item>
@@ -234,9 +248,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         Change account
                       </Menu.Item> */}
                       <Menu.Item
-                        leftSection={
-                          <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
-                        }
+                        leftSection={<IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
                         onClick={async () => {
                           supabase.auth.signOut();
                         }}
@@ -308,9 +320,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           }
         }}
       >
-        <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>
-          {props.children}
-        </AppShell.Main>
+        <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>{props.children}</AppShell.Main>
       </ScrollArea>
     </AppShell>
   );

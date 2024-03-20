@@ -59,6 +59,7 @@ import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContentSources } from '@content/content-store';
+import { displayComingSoon } from '@utils/notifications';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -462,6 +463,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     <IconUsersPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                   </ActionIcon>
                 }
+                onClick={() => {
+                  displayComingSoon();
+                }}
               />
               <ColorInput
                 radius='xl'

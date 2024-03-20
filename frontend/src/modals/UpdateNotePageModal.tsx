@@ -1,5 +1,5 @@
-import { Icon } from "@common/Icon";
-import { GUIDE_BLUE } from "@constants/data";
+import { Icon } from '@common/Icon';
+import { GUIDE_BLUE } from '@constants/data';
 import {
   ActionIcon,
   Box,
@@ -12,10 +12,10 @@ import {
   TextInput,
   Title,
   UnstyledButton,
-} from "@mantine/core";
-import { ContextModalProps, modals } from "@mantine/modals";
-import { useState } from "react";
-import { SelectIconModalContents } from "./SelectIconModal";
+} from '@mantine/core';
+import { ContextModalProps, modals } from '@mantine/modals';
+import { useState } from 'react';
+import { SelectIconModalContents } from './SelectIconModal';
 
 export default function UpdateNotePageModal({
   context,
@@ -35,10 +35,8 @@ export default function UpdateNotePageModal({
   const openConfirmModal = () =>
     modals.openConfirmModal({
       title: <Title order={4}>Delete Page</Title>,
-      children: (
-        <Text size="sm">Are you sure you want to delete this page?</Text>
-      ),
-      labels: { confirm: "Confirm", cancel: "Cancel" },
+      children: <Text size='sm'>Are you sure you want to delete this page?</Text>,
+      labels: { confirm: 'Confirm', cancel: 'Cancel' },
       onCancel: () => {},
       onConfirm: () => {
         innerProps.onDelete();
@@ -47,13 +45,8 @@ export default function UpdateNotePageModal({
     });
 
   return (
-    <Stack style={{ position: "relative" }}>
-      <Modal
-        opened={openedModal}
-        onClose={() => setOpenedModal(false)}
-        title="Select Icon"
-        zIndex={1000}
-      >
+    <Stack style={{ position: 'relative' }}>
+      <Modal opened={openedModal} onClose={() => setOpenedModal(false)} title='Select Icon' zIndex={1000}>
         <SelectIconModalContents
           onSelect={(option) => {
             console.log(option);
@@ -64,59 +57,49 @@ export default function UpdateNotePageModal({
       </Modal>
 
       <TextInput
-        label="Title"
+        label='Title'
         defaultValue={title}
-        placeholder="Title"
+        placeholder='Title'
         onChange={async (e) => {
           setTitle(e.currentTarget.value);
         }}
         w={150}
       />
 
-      <Group wrap="nowrap" align="flex-start">
+      <Group wrap='nowrap' align='flex-start'>
         <Box pt={2}>
-          <Text fz="xs" c="gray.4">
+          <Text fz='xs' c='gray.4'>
             Icon
           </Text>
           <UnstyledButton
-            w={"50%"}
+            w={'50%'}
             onClick={() => {
               setOpenedModal(true);
             }}
           >
-            <ActionIcon
-              variant="light"
-              aria-label="Icon"
-              size="lg"
-              radius="xl"
-              color={color}
-            >
-              <Icon
-                name={icon}
-                style={{ width: "70%", height: "70%" }}
-                stroke={1.5}
-              />
+            <ActionIcon variant='light' aria-label='Icon' size='lg' radius='xl' color={color}>
+              <Icon name={icon} style={{ width: '70%', height: '70%' }} stroke={1.5} />
             </ActionIcon>
           </UnstyledButton>
         </Box>
 
         <ColorInput
-          radius="xl"
-          size="xs"
-          label="Color"
-          placeholder="Color"
+          radius='xl'
+          size='xs'
+          label='Color'
+          placeholder='Color'
           defaultValue={color}
           swatches={[
-            "#25262b",
-            "#868e96",
-            "#fa5252",
-            "#e64980",
-            "#be4bdb",
-            "#8d69f5",
-            "#577deb",
+            '#25262b',
+            '#868e96',
+            '#fa5252',
+            '#e64980',
+            '#be4bdb',
+            '#8d69f5',
+            '#577deb',
             GUIDE_BLUE,
-            "#15aabf",
-            "#12b886",
+            '#15aabf',
+            '#12b886',
           ]}
           onChange={(color) => {
             setColor(color);
@@ -124,17 +107,12 @@ export default function UpdateNotePageModal({
         />
       </Group>
 
-      <Group justify="space-between">
-        <Button
-          variant="outline"
-          size="compact-xs"
-          color="red"
-          onClick={() => openConfirmModal()}
-        >
+      <Group justify='space-between'>
+        <Button variant='light' size='compact-xs' color='red' onClick={() => openConfirmModal()}>
           Delete Page
         </Button>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={() => context.closeModal(id)}>
+        <Group justify='flex-end'>
+          <Button variant='default' onClick={() => context.closeModal(id)}>
             Cancel
           </Button>
           <Button

@@ -33,6 +33,7 @@ import * as JsSearch from 'js-search';
 import { ItemSelectionOption } from '@common/select/SelectContent';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
+import { displayComingSoon } from '@utils/notifications';
 
 export function AddItemDrawerTitle(props: { data: {} }) {
   return (
@@ -108,6 +109,7 @@ export function AddItemDrawerContent(props: {
                 aria-label='Advanced Search'
                 onClick={() => {
                   console.log('Advanced Search');
+                  displayComingSoon();
                 }}
                 style={{
                   pointerEvents: 'auto',
