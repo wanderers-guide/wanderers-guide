@@ -1,6 +1,8 @@
 import { queryByName } from '@ai/vector-db/vector-manager';
 import { drawerState } from '@atoms/navAtoms';
+import { sessionState } from '@atoms/supabaseAtoms';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
+import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getIconFromContentType } from '@content/content-utils';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
@@ -9,10 +11,17 @@ import { makeRequest } from '@requests/request-manager';
 import {
   IconAdjustments,
   IconArchive,
+  IconAsset,
   IconBrandDiscord,
   IconBrandPatreon,
   IconFileText,
+  IconFlag,
+  IconHome,
   IconSearch,
+  IconSettings,
+  IconSoup,
+  IconSpeakerphone,
+  IconSwords,
   IconUser,
   IconUsers,
 } from '@tabler/icons-react';
@@ -25,7 +34,7 @@ import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
 import { useEffect, useRef, useState } from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 const MAX_QUERY_LENGTH = 100;
 
@@ -51,23 +60,63 @@ export default function SearchSpotlight() {
     }
   }, [query]);
 
+  const session = useRecoilValue(sessionState);
+  const LOGGED_IN_ACTIONS = session
+    ? [
+        {
+          id: 'page-characters',
+          label: 'Characters',
+          description: 'View and edit your characters',
+          onClick: () => navigate(`/characters`),
+          leftSection: <IconUsers style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+          keywords: ['page'],
+        },
+        {
+          id: 'page-homebrew',
+          label: 'Homebrew',
+          description: 'View and create homebrew content',
+          onClick: () => navigate(`/homebrew`),
+          leftSection: <IconAsset style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+          keywords: ['page'],
+        },
+        {
+          id: 'page-encounters',
+          label: 'Encounters',
+          description: 'Create and manage encounters for your games',
+          onClick: () => navigate(`/encounters`),
+          leftSection: <IconSwords style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+          keywords: ['page'],
+        },
+        {
+          id: 'page-campaigns',
+          label: 'Campaigns',
+          description: 'View your campaigns and manage your players',
+          onClick: () => navigate(`/campaigns`),
+          leftSection: <IconFlag style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+          keywords: ['page'],
+        },
+        {
+          id: 'page-account',
+          label: 'Account',
+          description: 'View your account details and settings',
+          onClick: () => navigate(`/account`),
+          leftSection: <IconSettings style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+          highlightColor: theme.colors[theme.primaryColor][2],
+          keywords: ['page'],
+        },
+      ]
+    : ([] satisfies SpotlightActionData[]);
+
   const defaultActions = {
     group: 'Pages',
     actions: [
+      ...LOGGED_IN_ACTIONS,
       {
-        id: 'page-characters',
-        label: 'Characters',
-        description: 'View and edit your characters',
-        onClick: () => navigate(`/characters`),
-        leftSection: <IconUsers style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
-        keywords: ['page'],
-      },
-      {
-        id: 'page-account',
-        label: 'Account',
-        description: 'View your account details and settings',
-        onClick: () => navigate(`/account`),
-        leftSection: <IconUser style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
+        id: 'page-home',
+        label: 'Home',
+        description: 'Go to the home page',
+        onClick: () => navigate(`/`),
+        leftSection: <IconHome style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
         highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
       },
@@ -75,7 +124,9 @@ export default function SearchSpotlight() {
         id: 'page-community',
         label: 'Community',
         description: 'View the community forums and discussions',
-        onClick: () => navigate(`/community`),
+        onClick: () => {
+          window.open(DISCORD_URL, '_blank');
+        },
         leftSection: <IconBrandDiscord style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
         highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
@@ -84,7 +135,9 @@ export default function SearchSpotlight() {
         id: 'page-support',
         label: 'Support',
         description: 'Support the site on Patreon and get access to additional features',
-        onClick: () => navigate(`/support`),
+        onClick: () => {
+          window.open(PATREON_URL, '_blank');
+        },
         leftSection: <IconBrandPatreon style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
         highlightColor: theme.colors[theme.primaryColor][2],
         keywords: ['page'],
@@ -94,7 +147,7 @@ export default function SearchSpotlight() {
         label: 'Legacy Site',
         description: `Go to the legacy site for original Pathfinder 2e`,
         onClick: () => {
-          window.location.href = `https://legacy.wanderersguide.app/`;
+          window.open(LEGACY_URL, '_blank');
         },
         leftSection: <IconArchive style={{ width: rem(24), height: rem(24) }} stroke={1.5} />,
         highlightColor: theme.colors[theme.primaryColor][2],
@@ -162,7 +215,7 @@ export default function SearchSpotlight() {
             </HoverCard.Dropdown>
           </HoverCard>
         ),
-        placeholder: 'Search anything...',
+        placeholder: 'Search anything Pathfinder...',
       }}
       filter={(query, actions) => {
         if (!query) return actions;

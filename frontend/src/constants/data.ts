@@ -17,3 +17,7 @@ export const GUIDE_BLUE = '#359fdf';
 
 export const ICON_BG_COLOR = '#dee2e625'; // E9ECEF19
 export const ICON_BG_COLOR_HOVER = '#C1C2C51A';
+
+export const PATREON_URL = 'https://www.patreon.com/wanderersguide';
+export const DISCORD_URL = 'https://discord.gg/FxsFZVvedr';
+export const LEGACY_URL = 'https://legacy.wanderersguide.app/';

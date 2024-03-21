@@ -17,8 +17,10 @@ import {
 } from '@mantine/core';
 import { useDisclosure, useViewportSize } from '@mantine/hooks';
 import {
+  IconAsset,
   IconChefHat,
   IconChevronDown,
+  IconFlag,
   IconLayersIntersect,
   IconLogout,
   IconSettings,
@@ -36,6 +38,7 @@ import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
 import { displayComingSoon } from '@utils/notifications';
+import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
@@ -99,30 +102,30 @@ export default function Layout(props: { children: React.ReactNode }) {
                   </UnstyledButton>
                   <UnstyledButton
                     component='a'
-                    href={`https://discord.gg/FxsFZVvedr`}
+                    href={DISCORD_URL}
                     className={classes.control}
                     onClick={() => {
-                      window.location.href = 'https://discord.gg/FxsFZVvedr';
+                      window.location.href = DISCORD_URL;
                     }}
                   >
                     Community
                   </UnstyledButton>
                   <UnstyledButton
                     component='a'
-                    href={`https://www.patreon.com/wanderersguide`}
+                    href={PATREON_URL}
                     className={classes.control}
                     onClick={() => {
-                      window.location.href = 'https://www.patreon.com/wanderersguide';
+                      window.location.href = PATREON_URL;
                     }}
                   >
                     Support
                   </UnstyledButton>
                   <UnstyledButton
                     component='a'
-                    href={`https://legacy.wanderersguide.app`}
+                    href={LEGACY_URL}
                     className={classes.control}
                     onClick={() => {
-                      window.location.href = 'https://legacy.wanderersguide.app';
+                      window.location.href = LEGACY_URL;
                     }}
                   >
                     Legacy Site
@@ -192,7 +195,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
-                          <IconSoup
+                          <IconAsset
                             style={{ width: rem(16), height: rem(16) }}
                             color={theme.colors.yellow[6]}
                             stroke={1.5}
@@ -220,7 +223,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
-                          <IconSpeakerphone
+                          <IconFlag
                             style={{ width: rem(16), height: rem(16) }}
                             color={theme.colors.violet[4]}
                             stroke={1.5}

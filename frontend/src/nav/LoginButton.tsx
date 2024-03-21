@@ -1,7 +1,7 @@
-import { Group, Text, UnstyledButton, useMantineTheme } from '@mantine/core';
+import { ActionIcon, Group, Text, UnstyledButton, useMantineTheme } from '@mantine/core';
 import { useFocusWithin, useHover, useOs } from '@mantine/hooks';
 import { spotlight } from '@mantine/spotlight';
-import { IconSearch, IconUsers } from '@tabler/icons-react';
+import { IconLogin2, IconSearch, IconUsers } from '@tabler/icons-react';
 
 export function LoginButton(props: { onClick: () => void }) {
   const os = useOs();
@@ -23,11 +23,17 @@ export function LoginButton(props: { onClick: () => void }) {
         backgroundColor: hovered ? theme.colors.dark[8] + '20' : theme.colors.dark[8] + '00',
       }}
     >
-      <Group gap='xs' wrap='nowrap'>
+      <Group gap={2} wrap='nowrap'>
         <Text fz='sm' c='gray.3' fw={500} style={{ textWrap: 'nowrap' }}>
-          Characters
+          Sign in{' '}
+          <Text fz='sm' c='dimmed' span>
+            |
+          </Text>{' '}
+          Register
         </Text>
-        <IconUsers size={14} stroke={2} />
+        <ActionIcon size='sm' color='gray.4' variant='transparent'>
+          <IconLogin2 size={18} stroke={2} />
+        </ActionIcon>
       </Group>
     </UnstyledButton>
   );

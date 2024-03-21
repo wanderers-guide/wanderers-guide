@@ -2,6 +2,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
+import { DISCORD_URL } from '@constants/data';
 import { fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
 import { mapToDrawerData } from '@drawers/drawer-utils';
@@ -298,7 +299,7 @@ export function Component(props: {}) {
                   </Group>
                   <Text ta='center' fz='xs' fs='italic'>
                     See{' '}
-                    <Anchor fz='sm' fs='italic' href='https://discord.gg/FxsFZVvedr' target='_blank'>
+                    <Anchor fz='sm' fs='italic' href={DISCORD_URL} target='_blank'>
                       Discord
                     </Anchor>{' '}
                     to approve / vote on this change.
