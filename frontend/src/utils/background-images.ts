@@ -485,11 +485,11 @@ async function getBackgroundImageInternal(background?: ImageOption) {
   }
 }
 
-function getOfflineBackgroundImage() {
+export function getOfflineBackgroundImage() {
   return _.cloneDeep(imageStore.animated_svgs[0]);
 }
 
-function getDefaultBackgroundImage() {
+export function getDefaultBackgroundImage() {
   return _.cloneDeep(imageStore.generic[0]);
 }
 

@@ -54,6 +54,10 @@ const router = createBrowserRouter([
             lazy: () => import('@pages/CharactersPage.tsx'),
           },
           {
+            path: 'account',
+            lazy: () => import('@pages/AccountPage.tsx'),
+          },
+          {
             path: 'admin',
             lazy: async () => import('@pages/admin_panel/AdminPage.tsx'),
           },

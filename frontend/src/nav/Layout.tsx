@@ -39,6 +39,8 @@ import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
 import { displayComingSoon } from '@utils/notifications';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
+import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
+import { PublicUser } from '@typing/content';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
@@ -46,16 +48,22 @@ export default function Layout(props: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
 
-  const [userIcon, setUserIcon] = useRecoilState(userIconState);
+  const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());
+  //const [userIcon, setUserIcon] = useRecoilState(userIconState);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
 
   const { width } = useViewportSize();
 
   useEffect(() => {
     if (!session) return;
-    if (userIcon) return;
-    getIcon(session.user.id).then((svg) => {
-      setUserIcon(svg);
+    //if (userIcon) return;
+    // getIcon(session.user.id).then((svg) => {
+    //   setUserIcon(svg);
+    // });
+    getPublicUser().then((user) => {
+      if (user) {
+        setUser(user);
+      }
     });
   }, [session]);
 
@@ -156,6 +164,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                       <UnstyledButton
                         py={1}
                         pr='xs'
+                        w={160}
                         style={{
                           borderTopLeftRadius: theme.radius.xl,
                           borderBottomLeftRadius: theme.radius.xl,
@@ -164,16 +173,26 @@ export default function Layout(props: { children: React.ReactNode }) {
                           backgroundColor: userMenuOpened ? '#14151750' : undefined,
                         }}
                       >
-                        <Group gap={7}>
-                          <Avatar
-                            src={userIcon ? `data:image/svg+xml;utf8,${encodeURIComponent(userIcon)}` : undefined}
-                            alt={'Account Dropdown'}
-                            radius='xl'
-                            size={30}
-                          />
-                          <Text fw={500} size='sm' c='gray.4' lh={1} mr={3}>
-                            {'Account'}
-                          </Text>
+                        <Group gap={7} wrap='nowrap' justify='space-between'>
+                          <Group gap={7} wrap='nowrap'>
+                            <Avatar
+                              src={
+                                user
+                                  ? user?.image_url
+                                    ? user.image_url
+                                    : // : userIcon
+                                      //   ? `data:image/svg+xml;utf8,${encodeURIComponent(userIcon)}`
+                                      undefined
+                                  : undefined
+                              }
+                              alt={'Account Dropdown'}
+                              radius='xl'
+                              size={30}
+                            />
+                            <Text fw={500} size='sm' c='gray.4' lh={1} mr={3} truncate>
+                              {user?.display_name || 'Account'}
+                            </Text>
+                          </Group>
                           <IconChevronDown style={{ width: rem(12), height: rem(12) }} stroke={1.5} />
                         </Group>
                       </UnstyledButton>
@@ -253,6 +272,9 @@ export default function Layout(props: { children: React.ReactNode }) {
                       <Menu.Label>Settings</Menu.Label>
                       <Menu.Item
                         leftSection={<IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
+                        onClick={() => {
+                          navigate('/account');
+                        }}
                       >
                         Account
                       </Menu.Item>
