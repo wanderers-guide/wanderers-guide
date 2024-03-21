@@ -5,6 +5,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Accordion,
@@ -74,7 +75,7 @@ export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class } 
 }
 
 export function ClassDrawerContent(props: {
-  data: { id?: number; class_?: Class };
+  data: { id?: number; class_?: Class; showOperations?: boolean };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -235,6 +236,9 @@ export function ClassDrawerContent(props: {
           {featSections}
         </Accordion>
       </Box>
+      {props.data.showOperations && (
+        <ShowOperationsButton name={data.class_.name} operations={data.class_.operations} />
+      )}
     </Stack>
   );
 }

@@ -6,6 +6,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption, HeritageSelectionOption } from '@common/select/SelectContent';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Accordion,
@@ -67,7 +68,7 @@ export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Anc
 }
 
 export function AncestryDrawerContent(props: {
-  data: { id?: number; ancestry?: Ancestry };
+  data: { id?: number; ancestry?: Ancestry; showOperations?: boolean };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -218,6 +219,9 @@ export function AncestryDrawerContent(props: {
           {featSections}
         </Accordion>
       </Box>
+      {props.data.showOperations && (
+        <ShowOperationsButton name={data.ancestry.name} operations={data.ancestry.operations} />
+      )}
     </Stack>
   );
 }

@@ -55,8 +55,7 @@ export function CreateSpellModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
-  const editing =
-    (props.editId !== undefined && props.editId !== -1) || props.editSpell !== undefined;
+  const editing = (props.editId !== undefined && props.editId !== -1) || props.editSpell !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -68,10 +67,7 @@ export function CreateSpellModal(props: {
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId, editSpell }] = queryKey as [
-        string,
-        { editId?: number; editSpell?: Spell }
-      ];
+      const [_key, { editId, editSpell }] = queryKey as [string, { editId?: number; editSpell?: Spell }];
 
       const spell = editId ? await fetchContentById<Spell>('spell', editId) : editSpell;
       if (!spell) return null;
@@ -80,6 +76,7 @@ export function CreateSpellModal(props: {
         ..._.merge(form.values, spell),
         // @ts-ignore
         rank: spell.rank.toString(),
+        traditions: spell.traditions ?? [],
       });
       form.reset();
       setTraits(await fetchTraits(spell.traits));
@@ -130,8 +127,7 @@ export function CreateSpellModal(props: {
 
     validate: {
       rank: (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid rank'),
-      rarity: (value) =>
-        ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
+      rarity: (value) => (['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity'),
     },
   });
 
@@ -194,6 +190,7 @@ export function CreateSpellModal(props: {
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
                 <TextInput label='Name' required {...form.getInputProps('name')} />
+
                 <Select
                   label='Cast'
                   clearable
@@ -259,15 +256,12 @@ export function CreateSpellModal(props: {
               {...form.getInputProps('traditions')}
               data={['arcane', 'divine', 'occult', 'primal']}
             />
+
             <Divider
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedAdditional ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Misc. Sections
                   </Button>
                   {miscSectionCount && miscSectionCount > 0 && (
@@ -282,21 +276,9 @@ export function CreateSpellModal(props: {
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
-                <Textarea
-                  label='Cost'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('cost')}
-                />
+                <Textarea label='Cost' minRows={1} maxRows={4} autosize {...form.getInputProps('cost')} />
 
-                <Textarea
-                  label='Trigger'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('trigger')}
-                />
+                <Textarea label='Trigger' minRows={1} maxRows={4} autosize {...form.getInputProps('trigger')} />
 
                 <Textarea
                   label='Requirements'
@@ -306,51 +288,19 @@ export function CreateSpellModal(props: {
                   {...form.getInputProps('requirements')}
                 />
 
-                <Textarea
-                  label='Range'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('range')}
-                />
+                <Textarea label='Range' minRows={1} maxRows={4} autosize {...form.getInputProps('range')} />
 
-                <Textarea
-                  label='Area'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('area')}
-                />
+                <Textarea label='Area' minRows={1} maxRows={4} autosize {...form.getInputProps('area')} />
 
-                <Textarea
-                  label='Targets'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('targets')}
-                />
+                <Textarea label='Targets' minRows={1} maxRows={4} autosize {...form.getInputProps('targets')} />
 
                 <Autocomplete
                   label='Defense'
-                  data={[
-                    'AC',
-                    'Fortitude',
-                    'Reflex',
-                    'Will',
-                    'basic Fortitude',
-                    'basic Reflex',
-                    'basic Will',
-                  ]}
+                  data={['AC', 'Fortitude', 'Reflex', 'Will', 'basic Fortitude', 'basic Reflex', 'basic Will']}
                   {...form.getInputProps('defense')}
                 />
 
-                <Textarea
-                  label='Duration'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('duration')}
-                />
+                <Textarea label='Duration' minRows={1} maxRows={4} autosize {...form.getInputProps('duration')} />
 
                 <Divider mx='lg' label='Advanced' labelPosition='center' />
 
@@ -372,9 +322,7 @@ export function CreateSpellModal(props: {
                   defaultValue={metaData.image_url ?? ''}
                   label='Image URL'
                   onChange={async (e) => {
-                    setIsValidImageURL(
-                      !e.target?.value ? true : await isValidImage(e.target?.value)
-                    );
+                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
                     setMetaData({
                       ...metaData,
                       image_url: e.target?.value,
@@ -402,11 +350,7 @@ export function CreateSpellModal(props: {
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedHeightened ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedHeightened ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Heightened
                   </Button>
                   {form.values.heightened?.text && form.values.heightened.text.length > 0 && (

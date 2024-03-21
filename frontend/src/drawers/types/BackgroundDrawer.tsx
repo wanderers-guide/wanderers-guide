@@ -3,6 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentById } from '@content/content-store';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Anchor, Box, Group, Image, Loader, Paper, Stack, Text, Title, useMantineTheme } from '@mantine/core';
 import { OperationResult } from '@operations/operation-runner';
 import { useQuery } from '@tanstack/react-query';
@@ -45,7 +46,7 @@ export function BackgroundDrawerTitle(props: { data: { id?: number; background?:
 }
 
 export function BackgroundDrawerContent(props: {
-  data: { id?: number; background?: Background };
+  data: { id?: number; background?: Background; showOperations?: boolean };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -82,6 +83,9 @@ export function BackgroundDrawerContent(props: {
   return (
     <Stack>
       <BackgroundInitialOverview background={data.background} mode='READ' />
+      {props.data.showOperations && (
+        <ShowOperationsButton name={data.background.name} operations={data.background.operations} />
+      )}
     </Stack>
   );
 }

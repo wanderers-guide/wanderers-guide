@@ -4,6 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
@@ -42,7 +43,9 @@ export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeatu
   );
 }
 
-export function ClassFeatureDrawerContent(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
+export function ClassFeatureDrawerContent(props: {
+  data: { id?: number; classFeature?: AbilityBlock; showOperations?: boolean };
+}) {
   const id = props.data.id;
 
   const { data: _classFeature } = useQuery({
@@ -158,6 +161,9 @@ export function ClassFeatureDrawerContent(props: { data: { id?: number; classFea
           </Text>
         )}
       </Box>
+      {props.data.showOperations && (
+        <ShowOperationsButton name={classFeature.name} operations={classFeature.operations} />
+      )}
     </Box>
   );
 }

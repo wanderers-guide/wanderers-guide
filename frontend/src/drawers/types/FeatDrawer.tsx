@@ -5,6 +5,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchAllPrereqs, fetchContentById } from '@content/content-store';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import {
   Title,
   Text,
@@ -63,7 +64,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
 
 const DISPLAY_PREREQUS = true;
 
-export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBlock } }) {
+export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBlock; showOperations?: boolean } }) {
   const id = props.data.id;
   const theme = useMantineTheme();
 
@@ -250,6 +251,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
 
         {DISPLAY_PREREQUS && <PrerequisiteForSection name={feat.name} />}
       </Box>
+      {props.data.showOperations && <ShowOperationsButton name={feat.name} operations={feat.operations} />}
     </Box>
   );
 }

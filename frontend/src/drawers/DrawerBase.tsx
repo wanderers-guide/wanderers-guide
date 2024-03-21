@@ -150,7 +150,7 @@ export default function DrawerBase() {
           </Box>
         </ScrollArea>
 
-        {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && (
+        {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
           <>
             <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
               <HoverCard.Target>

@@ -29,7 +29,6 @@ const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterP
 const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
 const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
 const ConditionModal = lazy(() => import('@modals/ConditionModal'));
-// const ManageSpellsModal = lazy(() => import('@modals/ManageSpellsModal'));
 
 const modals = {
   selectContent: SelectContentModal,
@@ -39,7 +38,6 @@ const modals = {
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
-  // manageSpells: ManageSpellsModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {

@@ -28,7 +28,8 @@ export function getMetadataOpenedDict() {
 
 export function mapToDrawerData(
   type: ContentType,
-  data: Record<string, any> | number
+  data: Record<string, any> | number,
+  dataInject?: Record<string, any>
 ): { type: DrawerType; data: any } {
   let drawerType: DrawerType = type;
   if (data instanceof Object && isAbilityBlockType(data.type)) {
@@ -39,7 +40,21 @@ export function mapToDrawerData(
   if (typeof data === 'number') {
     drawerData = { id: data };
   } else {
-    drawerData = data;
+    let key = '';
+    if (drawerType === 'action' || isAbilityBlockType(drawerType)) key = 'action';
+    if (drawerType === 'ancestry') key = 'ancestry';
+    if (drawerType === 'background') key = 'background';
+    if (drawerType === 'class') key = 'class_';
+    if (drawerType === 'class-feature') key = 'classFeature';
+    if (drawerType === 'feat') key = 'feat';
+    if (drawerType === 'item') key = 'item';
+    if (drawerType === 'language') key = 'language';
+    if (drawerType === 'spell') key = 'spell';
+    if (drawerType === 'trait') key = 'trait';
+    drawerData = {
+      [key]: data,
+      ...(dataInject ?? {}),
+    };
   }
 
   return { type: drawerType, data: drawerData };

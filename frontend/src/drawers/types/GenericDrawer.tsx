@@ -4,6 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
@@ -13,6 +14,7 @@ export type GenericData = {
   title: string;
   description: string;
   operations?: Operation[];
+  showOperations?: boolean;
 };
 export function GenericDrawerTitle(props: { data: GenericData }) {
   return (
@@ -46,6 +48,7 @@ export function GenericDrawerContent(props: { data: GenericData }) {
         />
       )} */}
       <RichText ta='justify'>{props.data.description}</RichText>
+      {props.data.showOperations && <ShowOperationsButton name={props.data.title} operations={props.data.operations} />}
     </Box>
   );
 }

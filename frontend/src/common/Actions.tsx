@@ -1,4 +1,4 @@
-import { Text, TextProps } from '@mantine/core';
+import { Group, Text, TextProps } from '@mantine/core';
 import { ActionCost } from '@typing/content';
 
 interface ActionStructureProps extends TextProps {
@@ -8,7 +8,7 @@ interface ActionStructureProps extends TextProps {
 function ActionStructure(props: ActionStructureProps) {
   const size = props.size || 25;
 
-  const defaultMx = props.symbol === 2 ? 12 : (props.symbol === 3 ? 17 : 8);
+  const defaultMx = props.symbol === 2 ? 12 : props.symbol === 3 ? 17 : 8;
   const mx = props.mx || defaultMx;
   return (
     <Text pos='relative' mx={mx}>
@@ -32,6 +32,7 @@ function ActionStructure(props: ActionStructureProps) {
 
 interface ActionSymbolProps extends TextProps {
   cost: ActionCost;
+  textProps?: TextProps;
 }
 
 export function ActionSymbol(props: ActionSymbolProps) {
@@ -49,45 +50,55 @@ export function ActionSymbol(props: ActionSymbolProps) {
       return <ActionStructure symbol={5} {...rest} />;
     case 'ONE-TO-TWO-ACTIONS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={1} {...rest} /> to <ActionStructure symbol={2} {...rest} />
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={1} {...rest} />
+          <Text {...props.textProps}> to </Text>
+          <ActionStructure symbol={2} {...rest} />
+        </Group>
       );
     case 'ONE-TO-THREE-ACTIONS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={1} {...rest} /> to <ActionStructure symbol={3} {...rest} />
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={1} {...rest} />
+          <Text {...props.textProps}> to </Text>
+          <ActionStructure symbol={3} {...rest} />
+        </Group>
       );
     case 'TWO-TO-THREE-ACTIONS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={2} {...rest} /> to <ActionStructure symbol={3} {...rest} />
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={2} {...rest} />
+          <Text {...props.textProps}> to </Text>
+          <ActionStructure symbol={3} {...rest} />
+        </Group>
       );
     case 'TWO-TO-TWO-ROUNDS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={2} {...rest} /> to 2 rounds
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={2} {...rest} />
+          <Text {...props.textProps}> to 2 rounds</Text>
+        </Group>
       );
     case 'THREE-TO-TWO-ROUNDS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={3} {...rest} /> to 2 rounds
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={3} {...rest} />
+          <Text {...props.textProps}> to 2 rounds</Text>
+        </Group>
       );
     case 'TWO-TO-THREE-ROUNDS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={2} {...rest} /> to 3 rounds
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={2} {...rest} />
+          <Text {...props.textProps}> to 3 rounds</Text>
+        </Group>
       );
     case 'THREE-TO-THREE-ROUNDS':
       return (
-        <Text {...rest}>
-          <ActionStructure symbol={3} {...rest} /> to 3 rounds
-        </Text>
+        <Group wrap='nowrap' gap={10}>
+          <ActionStructure symbol={3} {...rest} />
+          <Text {...props.textProps}> to 3 rounds</Text>
+        </Group>
       );
     default:
       return null;

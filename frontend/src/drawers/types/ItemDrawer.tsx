@@ -5,6 +5,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
+import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
 import { labelizeBulk } from '@items/inv-utils';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
@@ -42,7 +43,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   );
 }
 
-export function ItemDrawerContent(props: { data: { id?: number; item?: Item } }) {
+export function ItemDrawerContent(props: { data: { id?: number; item?: Item; showOperations?: boolean } }) {
   const id = props.data.id;
 
   const { data: _item } = useQuery({
@@ -165,6 +166,7 @@ export function ItemDrawerContent(props: { data: { id?: number; item?: Item } })
           </>
         )}
       </Box>
+      {props.data.showOperations && <ShowOperationsButton name={item.name} operations={item.operations} />}
     </Box>
   );
 }

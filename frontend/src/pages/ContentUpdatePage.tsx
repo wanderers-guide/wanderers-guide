@@ -30,6 +30,7 @@ import {
   Paper,
   Badge,
 } from '@mantine/core';
+import { openContextModal } from '@mantine/modals';
 import {
   IconUserPlus,
   IconUpload,
@@ -163,11 +164,11 @@ export function Component(props: {}) {
                       fw={500}
                       onClick={() => {
                         if (!data.contentUpdate.ref_id) return;
-                        console.log(data.contentUpdate);
                         openDrawer(
                           mapToDrawerData(
                             data.contentUpdate.data?.type ?? data.contentUpdate.type,
-                            data.contentUpdate.ref_id
+                            data.contentUpdate.ref_id,
+                            { noFeedback: true, showOperations: true }
                           )
                         );
                       }}
@@ -207,7 +208,12 @@ export function Component(props: {}) {
                       size='compact-md'
                       fw={500}
                       onClick={() => {
-                        openDrawer(mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data));
+                        openDrawer(
+                          mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                            noFeedback: true,
+                            showOperations: true,
+                          })
+                        );
                       }}
                     >
                       View Updated
@@ -219,11 +225,23 @@ export function Component(props: {}) {
                   <Paper w={`min(450px, 50vw)`} withBorder>
                     <Text ta='center'>Detected Field Changes</Text>
 
-                    {changedFields.map((field, index) => (
-                      <Badge variant='light' color='blue' fullWidth key={index}>
-                        {toLabel(field)}
-                      </Badge>
-                    ))}
+                    <Stack gap={8} pb={8}>
+                      {changedFields.map((field, index) => (
+                        <Box key={index} mx={8}>
+                          <Badge
+                            variant='light'
+                            fullWidth
+                            styles={{
+                              root: {
+                                textTransform: 'initial',
+                              },
+                            }}
+                          >
+                            {toLabel(field)}
+                          </Badge>
+                        </Box>
+                      ))}
+                    </Stack>
                     {changedFields.length === 0 && (
                       <Text fz='xs' fs='italic' c='dimmed' ta='center'>
                         No changes detected?

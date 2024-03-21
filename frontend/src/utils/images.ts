@@ -3,7 +3,8 @@ export async function getIcon(content: string) {
   return res.ok ? await res.text() : '';
 }
 
-export async function isValidImage(url: string): Promise<boolean> {
+export async function isValidImage(url?: string): Promise<boolean> {
+  if (!url) return false;
   const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}(\S*)$/;
   if (url.match(urlPattern)) {
     return new Promise((resolve, reject) => {
