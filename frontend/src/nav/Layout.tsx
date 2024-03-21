@@ -142,7 +142,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                   />
                 ) : (
                   <Menu
-                    width={260}
+                    width={160}
                     position='bottom-end'
                     transitionProps={{ transition: 'pop-top-right' }}
                     onClose={() => setUserMenuOpened(false)}

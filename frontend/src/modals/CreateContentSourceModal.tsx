@@ -115,7 +115,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
     await upsertContentSource({
       id: props.sourceId,
       created_at: data?.source.created_at ?? '',
-      user_id: data?.source.user_id ?? -1,
+      user_id: data?.source.user_id ?? '',
       name: values.name,
       foundry_id: values.foundry_id,
       url: values.url,

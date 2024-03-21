@@ -164,7 +164,7 @@ export function CharBuilderCreationInner(props: {
           <CharacterStatSidebar content={props.content} pageHeight={props.pageHeight} />
         </Box>
       )}
-      <Box style={{ flexBasis: isMobile ? '100%' : '65%' }}>
+      <Box style={{ flexBasis: isMobile ? '100%' : '64%' }}>
         {isMobile && (
           <>
             <Group justify='space-between' align='flex-start' wrap='nowrap'>
@@ -366,7 +366,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 openDrawer({ type: 'stat-attr', data: {} });
               }}
             >
-              <Group>
+              <Group wrap='nowrap'>
                 <AttributeModPart attribute='Str' variableName='ATTRIBUTE_STR' />
                 <AttributeModPart attribute='Dex' variableName='ATTRIBUTE_DEX' />
                 <AttributeModPart attribute='Con' variableName='ATTRIBUTE_CON' />
