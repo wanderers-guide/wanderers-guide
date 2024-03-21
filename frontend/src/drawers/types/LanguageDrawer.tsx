@@ -7,10 +7,10 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Language } from '@typing/content';
 
-export function LanguageDrawerTitle(props: { data: { id: number } }) {
+export function LanguageDrawerTitle(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;
 
-  const { data: language } = useQuery({
+  const { data: _language } = useQuery({
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -18,7 +18,9 @@ export function LanguageDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Language>('language', id);
     },
+    enabled: !!id,
   });
+  const language = props.data.language ?? _language;
 
   return (
     <>
@@ -38,10 +40,10 @@ export function LanguageDrawerTitle(props: { data: { id: number } }) {
   );
 }
 
-export function LanguageDrawerContent(props: { data: { id: number } }) {
+export function LanguageDrawerContent(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;
 
-  const { data: language } = useQuery({
+  const { data: _language } = useQuery({
     queryKey: [`find-language-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -49,7 +51,9 @@ export function LanguageDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Language>('language', id);
     },
+    enabled: !!id,
   });
+  const language = props.data.language ?? _language;
 
   if (!language) {
     return (

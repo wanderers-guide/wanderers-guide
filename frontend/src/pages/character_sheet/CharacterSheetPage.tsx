@@ -1568,7 +1568,9 @@ function PanelSkillsActions(props: {
   const [actionSectionValue, setActionSectionValue] = useState<string | null>(null);
 
   const actions = useMemo(() => {
-    const allActions = props.content.abilityBlocks.filter((ab) => ab.type === 'action');
+    const allActions = props.content.abilityBlocks
+      .filter((ab) => ab.type === 'action')
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? allActions.filter((action) => {

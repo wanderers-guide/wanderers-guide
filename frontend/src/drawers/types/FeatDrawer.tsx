@@ -27,10 +27,10 @@ import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
 import { useRecoilState } from 'recoil';
 
-export function FeatDrawerTitle(props: { data: { id: number } }) {
+export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: feat } = useQuery({
+  const { data: _feat } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -38,7 +38,9 @@ export function FeatDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
+    enabled: !!id,
   });
+  const feat = props.data.feat ?? _feat;
 
   return (
     <>
@@ -61,11 +63,11 @@ export function FeatDrawerTitle(props: { data: { id: number } }) {
 
 const DISPLAY_PREREQUS = true;
 
-export function FeatDrawerContent(props: { data: { id: number } }) {
+export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBlock } }) {
   const id = props.data.id;
   const theme = useMantineTheme();
 
-  const { data: feat } = useQuery({
+  const { data: _feat } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -73,7 +75,9 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
+    enabled: !!id,
   });
+  const feat = props.data.feat ?? _feat;
 
   if (!feat) {
     return (
@@ -190,9 +194,7 @@ export function FeatDrawerContent(props: { data: { id: number } }) {
             <Text fw={600} c='gray.5' span>
               Prerequisites
             </Text>{' '}
-            {prereqUI.flatMap((node, index) =>
-              index < prereqUI.length - 1 ? [node, '; '] : [node]
-            )}
+            {prereqUI.flatMap((node, index) => (index < prereqUI.length - 1 ? [node, '; '] : [node]))}
           </IndentedText>
         )}
         {feat.frequency && (

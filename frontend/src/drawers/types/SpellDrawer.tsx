@@ -13,12 +13,12 @@ import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
 import { useRecoilValue } from 'recoil';
 
-export function SpellDrawerTitle(props: { data: { id: number } }) {
+export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }) {
   const id = props.data.id;
 
   const character = useRecoilValue(characterState);
 
-  const { data: spell } = useQuery({
+  const { data: _spell } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -26,7 +26,9 @@ export function SpellDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Spell>('spell', id);
     },
+    enabled: !!id,
   });
+  const spell = props.data.spell ?? _spell;
 
   const cast = spell?.cast ?? '';
 
@@ -51,17 +53,19 @@ export function SpellDrawerTitle(props: { data: { id: number } }) {
               </Box>
             )}
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>{rankTitle} {rank}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>
+            {rankTitle} {rank}
+          </Text>
         </Group>
       )}
     </>
   );
 }
 
-export function SpellDrawerContent(props: { data: { id: number } }) {
+export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell } }) {
   const id = props.data.id;
 
-  const { data: spell } = useQuery({
+  const { data: _spell } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -69,7 +73,9 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Spell>('spell', id);
     },
+    enabled: !!id,
   });
+  const spell = props.data.spell ?? _spell;
 
   if (!spell) {
     return (
@@ -235,7 +241,9 @@ export function SpellDrawerContent(props: { data: { id: number } }) {
           </IndentedText>
         )}
         {true && <Divider />}
-        <RichText ta='justify' py={5}>{spell.description}</RichText>
+        <RichText ta='justify' py={5}>
+          {spell.description}
+        </RichText>
 
         {spell.heightened && spell.heightened.text && (
           <Box>

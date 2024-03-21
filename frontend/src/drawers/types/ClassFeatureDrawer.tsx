@@ -8,10 +8,10 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 
-export function ClassFeatureDrawerTitle(props: { data: { id: number } }) {
+export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: classFeature } = useQuery({
+  const { data: _classFeature } = useQuery({
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -19,7 +19,9 @@ export function ClassFeatureDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
+    enabled: !!id,
   });
+  const classFeature = props.data.classFeature ?? _classFeature;
 
   return (
     <>
@@ -33,19 +35,17 @@ export function ClassFeatureDrawerTitle(props: { data: { id: number } }) {
               <ActionSymbol cost={classFeature.actions} size={'2.1rem'} />
             </Box>
           </Group>
-          {classFeature.level && (
-            <Text style={{ textWrap: 'nowrap' }}>Class Feature {classFeature.level}</Text>
-          )}
+          {classFeature.level && <Text style={{ textWrap: 'nowrap' }}>Class Feature {classFeature.level}</Text>}
         </Group>
       )}
     </>
   );
 }
 
-export function ClassFeatureDrawerContent(props: { data: { id: number } }) {
+export function ClassFeatureDrawerContent(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: classFeature } = useQuery({
+  const { data: _classFeature } = useQuery({
     queryKey: [`find-class-feature-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -53,7 +53,9 @@ export function ClassFeatureDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
+    enabled: !!id,
   });
+  const classFeature = props.data.classFeature ?? _classFeature;
 
   if (!classFeature) {
     return (
@@ -95,11 +97,7 @@ export function ClassFeatureDrawerContent(props: { data: { id: number } }) {
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay
-            traitIds={classFeature.traits ?? []}
-            rarity={classFeature.rarity}
-            interactable
-          />
+          <TraitsDisplay traitIds={classFeature.traits ?? []} rarity={classFeature.rarity} interactable />
         </Box>
         {classFeature.prerequisites && classFeature.prerequisites.length > 0 && (
           <IndentedText ta='justify'>

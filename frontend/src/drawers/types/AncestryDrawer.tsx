@@ -35,10 +35,10 @@ import * as _ from 'lodash-es';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export function AncestryDrawerTitle(props: { data: { id: number } }) {
+export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Ancestry } }) {
   const id = props.data.id;
 
-  const { data: ancestry } = useQuery({
+  const { data: _ancestry } = useQuery({
     queryKey: [`find-ancestry-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -46,7 +46,9 @@ export function AncestryDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Ancestry>('ancestry', id);
     },
+    enabled: !!id,
   });
+  const ancestry = props.data.ancestry ?? _ancestry;
 
   return (
     <>
@@ -65,7 +67,7 @@ export function AncestryDrawerTitle(props: { data: { id: number } }) {
 }
 
 export function AncestryDrawerContent(props: {
-  data: { id: number };
+  data: { id?: number; ancestry?: Ancestry };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -80,7 +82,7 @@ export function AncestryDrawerContent(props: {
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
       const languages = await fetchContentAll<Language>('language');
       return {
-        ancestry,
+        ancestry: props.data.ancestry ?? ancestry,
         abilityBlocks,
         languages,
       };

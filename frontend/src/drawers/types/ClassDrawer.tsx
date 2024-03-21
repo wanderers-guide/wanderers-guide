@@ -42,10 +42,10 @@ import * as _ from 'lodash-es';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export function ClassDrawerTitle(props: { data: { id: number } }) {
+export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class } }) {
   const id = props.data.id;
 
-  const { data: class_ } = useQuery({
+  const { data: _class_ } = useQuery({
     queryKey: [`find-class-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -53,7 +53,9 @@ export function ClassDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Class>('class', id);
     },
+    enabled: !!id,
   });
+  const class_ = props.data.class_ ?? _class_;
 
   return (
     <>
@@ -72,7 +74,7 @@ export function ClassDrawerTitle(props: { data: { id: number } }) {
 }
 
 export function ClassDrawerContent(props: {
-  data: { id: number };
+  data: { id?: number; class_?: Class };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -86,7 +88,7 @@ export function ClassDrawerContent(props: {
       const class_ = await fetchContentById<Class>('class', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
       return {
-        class_,
+        class_: props.data.class_ ?? class_,
         abilityBlocks,
       };
     },

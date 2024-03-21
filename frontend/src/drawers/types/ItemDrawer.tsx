@@ -11,10 +11,10 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@typing/content';
 
-export function ItemDrawerTitle(props: { data: { id: number } }) {
+export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
-  const { data: item } = useQuery({
+  const { data: _item } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -22,7 +22,9 @@ export function ItemDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Item>('item', id);
     },
+    enabled: !!id,
   });
+  const item = props.data.item ?? _item;
 
   return (
     <>
@@ -40,10 +42,10 @@ export function ItemDrawerTitle(props: { data: { id: number } }) {
   );
 }
 
-export function ItemDrawerContent(props: { data: { id: number } }) {
+export function ItemDrawerContent(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
-  const { data: item } = useQuery({
+  const { data: _item } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -51,7 +53,9 @@ export function ItemDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Item>('item', id);
     },
+    enabled: !!id,
   });
+  const item = props.data.item ?? _item;
 
   if (!item) {
     return (

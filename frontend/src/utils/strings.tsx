@@ -1,20 +1,20 @@
-import * as _ from "lodash-es";
-import { ReactNode } from "react";
+import * as _ from 'lodash-es';
+import { ReactNode } from 'react';
 
 export function pluralize(word: string): string {
-  if (word[word.length - 1] === "y") {
-    return word.substring(0, word.length - 1) + "ies";
-  } else if (word[word.length - 1] === "s") {
-    return word + "es";
+  if (word[word.length - 1] === 'y') {
+    return word.substring(0, word.length - 1) + 'ies';
+  } else if (word[word.length - 1] === 's') {
+    return word + 'es';
   } else {
-    return word + "s";
+    return word + 's';
   }
 }
 
 export function toLabel(text?: string | null) {
-  if (!text) return "";
-  text = text.replace("ability-block", "option");
-  return _.startCase(text.toLowerCase().replace("-", " "));
+  if (!text) return '';
+  text = text.replace('ability-block', 'option');
+  return _.startCase(text.toLowerCase().replace('_', ' ').replace('-', ' '));
 }
 
 // export function listToLabel(strings: string[], endingWord: string): string {
@@ -27,7 +27,7 @@ export function toLabel(text?: string | null) {
 
 export function listToLabel(nodes: ReactNode[], endingWord: string): ReactNode {
   if (nodes.length === 0) {
-    return "";
+    return '';
   } else if (nodes.length === 1) {
     return nodes[0];
   } else {
@@ -35,7 +35,7 @@ export function listToLabel(nodes: ReactNode[], endingWord: string): ReactNode {
       (acc, node, index) => (
         <>
           {acc}
-          {index > 0 && ", "}
+          {index > 0 && ', '}
           {node}
         </>
       ),

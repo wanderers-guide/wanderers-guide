@@ -1,8 +1,10 @@
+import { drawerState } from '@atoms/navAtoms';
 import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
+import { mapToDrawerData } from '@drawers/drawer-utils';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import importFromJSON from '@import/json/import-from-json';
 import {
@@ -25,14 +27,26 @@ import {
   Container,
   List,
   Anchor,
+  Paper,
+  Badge,
 } from '@mantine/core';
-import { IconUserPlus, IconUpload, IconCodeDots, IconArchive, IconArrowBigRightLine } from '@tabler/icons-react';
+import {
+  IconUserPlus,
+  IconUpload,
+  IconCodeDots,
+  IconArchive,
+  IconArrowBigRightLine,
+  IconThumbUp,
+  IconThumbDown,
+} from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { setPageTitle } from '@utils/document-change';
-import { hashData } from '@utils/numbers';
+import { hashData, sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import _ from 'lodash-es';
 import { useMemo } from 'react';
 import { useLoaderData } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
 
 export function Component(props: {}) {
   const { updateId } = useLoaderData() as {
@@ -40,7 +54,9 @@ export function Component(props: {}) {
   };
   setPageTitle(`Content Update #${updateId}`);
 
-  const { data, isFetching } = useQuery({
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  const { data } = useQuery({
     queryKey: [`find-content-update-${updateId}`],
     queryFn: async () => {
       const contentUpdate = await findContentUpdate(updateId);
@@ -68,10 +84,8 @@ export function Component(props: {}) {
         originalContent,
       };
     },
-    refetchOnWindowFocus: false,
+    refetchInterval: 1000,
   });
-
-  console.log(data);
 
   const changedFields = useMemo(() => {
     if (!data || !data.originalContent) return [];
@@ -83,17 +97,29 @@ export function Component(props: {}) {
     for (const key of Object.keys(updated)) {
       if (key === 'meta_data') {
         for (const metaKey of Object.keys(updated.meta_data)) {
-          if (original.meta_data[metaKey] !== updated.meta_data[metaKey]) {
+          if (JSON.stringify(original.meta_data[metaKey] ?? '') !== JSON.stringify(updated.meta_data[metaKey] ?? '')) {
             changedFields.push(metaKey);
           }
         }
       } else {
-        if (original[key] !== updated[key]) {
+        if (JSON.stringify(original[key] ?? '') !== JSON.stringify(updated[key] ?? '')) {
           changedFields.push(key);
         }
       }
     }
     return changedFields;
+  }, [data]);
+
+  const sizeDiff = useMemo(() => {
+    if (!data || !data.originalContent) return 0;
+
+    const byteDiff = JSON.stringify(data.contentUpdate.data).length - JSON.stringify(data.originalContent).length;
+
+    if (byteDiff > 300) {
+      return sign((byteDiff / 1000).toFixed(2)) + ' kb';
+    } else {
+      return sign(byteDiff) + ' bytes';
+    }
   }, [data]);
 
   return (
@@ -102,17 +128,17 @@ export function Component(props: {}) {
         <Box>
           <Group wrap='nowrap' align='center' justify='center' gap={10}>
             <Title order={1} c='gray.0'>
-              {isFetching || !data ? 'Loading Update Request...' : `Content Update by ${data?.user.display_name}`}
+              {!data ? 'Loading Update Request...' : `Content Update by ${data?.user.display_name}`}
             </Title>
             <Text fz='xl' fw={500} c='gray.2' span>
-              {isFetching || !data ? `` : `(#${data?.user.id})`}
+              {!data ? `` : `(#${data?.user.id})`}
             </Text>
           </Group>
 
           <Divider color='gray.2' />
         </Box>
         <Group pt='sm'>
-          {isFetching || !data ? (
+          {!data ? (
             <Loader
               size='lg'
               type='bars'
@@ -132,48 +158,134 @@ export function Component(props: {}) {
                 </Text>
                 <Group wrap='nowrap' align='center' justify='center'>
                   <Box>
-                    <BlurButton size='compact-md' fw={500}>
+                    <BlurButton
+                      size='compact-md'
+                      fw={500}
+                      onClick={() => {
+                        if (!data.contentUpdate.ref_id) return;
+                        console.log(data.contentUpdate);
+                        openDrawer(
+                          mapToDrawerData(
+                            data.contentUpdate.data?.type ?? data.contentUpdate.type,
+                            data.contentUpdate.ref_id
+                          )
+                        );
+                      }}
+                    >
                       View Original
                     </BlurButton>
                   </Box>
-                  <ActionIcon
-                    variant='transparent'
-                    color='gray.5'
-                    style={{ cursor: 'default' }}
-                    aria-label='Arrow Right'
-                    aria-readonly
-                    size='lg'
-                  >
-                    <IconArrowBigRightLine size='1.5rem' stroke={1.5} />
-                  </ActionIcon>
+                  <Box style={{ position: 'relative' }}>
+                    <ActionIcon
+                      variant='transparent'
+                      color='gray.5'
+                      style={{ cursor: 'default' }}
+                      aria-label='Arrow Right'
+                      aria-readonly
+                      size='lg'
+                    >
+                      <IconArrowBigRightLine size='1.5rem' stroke={1.5} />
+                    </ActionIcon>
+                    <Text
+                      fz={10}
+                      ta='center'
+                      fs='italic'
+                      style={{
+                        position: 'absolute',
+                        bottom: -20,
+                        whiteSpace: 'nowrap',
+
+                        left: '40%',
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    >
+                      {sizeDiff}
+                    </Text>
+                  </Box>
                   <Box>
-                    <BlurButton size='compact-md' fw={500}>
+                    <BlurButton
+                      size='compact-md'
+                      fw={500}
+                      onClick={() => {
+                        openDrawer(mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data));
+                      }}
+                    >
                       View Updated
                     </BlurButton>
                   </Box>
                 </Group>
-                {/* <Container w={`min(450px, 50vw)`}>
-                  <Group>
-                    <Box>
-                      <Text>Changed Fields:</Text>
-                      <List>
-                        {changedFields.map((field, index) => (
-                          <List.Item key={index}>{field}</List.Item>
-                        ))}
-                      </List>
-                    </Box>
-                    <Box>
-                      <Text ta='center'>See Discord to approve / vote on this change.</Text>
-                    </Box>
+
+                <Container pt={15}>
+                  <Paper w={`min(450px, 50vw)`} withBorder>
+                    <Text ta='center'>Detected Field Changes</Text>
+
+                    {changedFields.map((field, index) => (
+                      <Badge variant='light' color='blue' fullWidth key={index}>
+                        {toLabel(field)}
+                      </Badge>
+                    ))}
+                    {changedFields.length === 0 && (
+                      <Text fz='xs' fs='italic' c='dimmed' ta='center'>
+                        No changes detected?
+                      </Text>
+                    )}
+                  </Paper>
+                </Container>
+
+                <Stack pt={10} gap={0}>
+                  <Group wrap='nowrap' justify='center' align='center' gap={10}>
+                    <Badge
+                      size='sm'
+                      variant='light'
+                      color={
+                        data.contentUpdate.status === 'PENDING'
+                          ? 'yellow'
+                          : data.contentUpdate.status === 'APPROVED'
+                            ? 'green'
+                            : 'red'
+                      }
+                    >
+                      {data.contentUpdate.status}
+                    </Badge>
+                    <Group wrap='nowrap' gap={10}>
+                      <Group wrap='nowrap' gap={0}>
+                        <ActionIcon
+                          variant='transparent'
+                          style={{ cursor: 'default' }}
+                          color='gray.5'
+                          aria-label='Upvote'
+                          size='sm'
+                        >
+                          <IconThumbUp style={{ width: '85%', height: '85%' }} stroke={1.5} />
+                        </ActionIcon>
+                        <Text fz='sm' fw={600}>
+                          {data.contentUpdate.upvotes.toLocaleString()}
+                        </Text>
+                      </Group>
+                      <Group wrap='nowrap' gap={0}>
+                        <ActionIcon
+                          variant='transparent'
+                          style={{ cursor: 'default' }}
+                          color='gray.5'
+                          aria-label='Downvote'
+                          size='sm'
+                        >
+                          <IconThumbDown style={{ width: '85%', height: '85%' }} stroke={1.5} />
+                        </ActionIcon>
+                        <Text fz='sm' fw={600}>
+                          {data.contentUpdate.downvotes.toLocaleString()}
+                        </Text>
+                      </Group>
+                    </Group>
                   </Group>
-                </Container> */}
-                <Text ta='center' fz='sm' fs='italic' pt={20}>
-                  See{' '}
-                  <Anchor fz='sm' fs='italic' href='https://discord.gg/FxsFZVvedr' target='_blank'>
-                    Discord
-                  </Anchor>{' '}
-                  to approve / vote on this change.
-                </Text>
+                  <Text ta='center' fz='xs' fs='italic'>
+                    See{' '}
+                    <Anchor fz='sm' fs='italic' href='https://discord.gg/FxsFZVvedr' target='_blank'>
+                      Discord
+                    </Anchor>{' '}
+                    to approve / vote on this change.
+                  </Text>
+                </Stack>
               </Stack>
             </BlurBox>
           )}

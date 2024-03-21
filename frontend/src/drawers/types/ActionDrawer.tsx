@@ -8,10 +8,10 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 
-export function ActionDrawerTitle(props: { data: { id: number } }) {
+export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: action } = useQuery({
+  const { data: _action } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -19,7 +19,9 @@ export function ActionDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
+    enabled: !!id,
   });
+  const action = props.data.action ?? _action;
 
   return (
     <>
@@ -39,10 +41,10 @@ export function ActionDrawerTitle(props: { data: { id: number } }) {
   );
 }
 
-export function ActionDrawerContent(props: { data: { id: number } }) {
+export function ActionDrawerContent(props: { data: { id?: number; action?: AbilityBlock } }) {
   const id = props.data.id;
 
-  const { data: action } = useQuery({
+  const { data: _action } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -50,7 +52,9 @@ export function ActionDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<AbilityBlock>('ability-block', id);
     },
+    enabled: !!id,
   });
+  const action = props.data.action ?? _action;
 
   if (!action) {
     return (

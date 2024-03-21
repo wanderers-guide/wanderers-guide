@@ -9,10 +9,10 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Trait } from '@typing/content';
 import { Operation } from '@typing/operations';
 
-export function TraitDrawerTitle(props: { data: { id: number } }) {
+export function TraitDrawerTitle(props: { data: { id?: number; trait?: Trait } }) {
   const id = props.data.id;
 
-  const { data: trait } = useQuery({
+  const { data: _trait } = useQuery({
     queryKey: [`find-trait-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -20,7 +20,9 @@ export function TraitDrawerTitle(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Trait>('trait', id);
     },
+    enabled: !!id,
   });
+  const trait = props.data.trait ?? _trait;
 
   return (
     <>
@@ -38,10 +40,10 @@ export function TraitDrawerTitle(props: { data: { id: number } }) {
   );
 }
 
-export function TraitDrawerContent(props: { data: { id: number } }) {
+export function TraitDrawerContent(props: { data: { id?: number; trait?: Trait } }) {
   const id = props.data.id;
 
-  const { data: trait } = useQuery({
+  const { data: _trait } = useQuery({
     queryKey: [`find-trait-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
@@ -49,7 +51,9 @@ export function TraitDrawerContent(props: { data: { id: number } }) {
       const [_key, { id }] = queryKey;
       return await fetchContentById<Trait>('trait', id);
     },
+    enabled: !!id,
   });
+  const trait = props.data.trait ?? _trait;
 
   if (!trait) {
     return (

@@ -1,47 +1,38 @@
-import { characterState } from "@atoms/characterAtoms";
-import { drawerState } from "@atoms/navAtoms";
-import RichText from "@common/RichText";
-import TraitsDisplay from "@common/TraitsDisplay";
-import { fetchContentById } from "@content/content-store";
-import {
-  Anchor,
-  Box,
-  Group,
-  Image,
-  Loader,
-  Paper,
-  Stack,
-  Text,
-  Title,
-  useMantineTheme,
-} from "@mantine/core";
-import { OperationResult } from "@operations/operation-runner";
-import { useQuery } from "@tanstack/react-query";
-import { Background, Character } from "@typing/content";
-import { DrawerType } from "@typing/index";
-import { getStatBlockDisplay } from "@variables/initial-stats-display";
-import { getAllAttributeVariables } from "@variables/variable-manager";
-import { useState } from "react";
-import { SetterOrUpdater, useRecoilState } from "recoil";
+import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
+import RichText from '@common/RichText';
+import TraitsDisplay from '@common/TraitsDisplay';
+import { fetchContentById } from '@content/content-store';
+import { Anchor, Box, Group, Image, Loader, Paper, Stack, Text, Title, useMantineTheme } from '@mantine/core';
+import { OperationResult } from '@operations/operation-runner';
+import { useQuery } from '@tanstack/react-query';
+import { Background, Character } from '@typing/content';
+import { DrawerType } from '@typing/index';
+import { getStatBlockDisplay } from '@variables/initial-stats-display';
+import { getAllAttributeVariables } from '@variables/variable-manager';
+import { useState } from 'react';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export function BackgroundDrawerTitle(props: { data: { id: number } }) {
+export function BackgroundDrawerTitle(props: { data: { id?: number; background?: Background } }) {
   const id = props.data.id;
 
-  const { data: background } = useQuery({
+  const { data: _background } = useQuery({
     queryKey: [`find-background-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await fetchContentById<Background>("background", id);
+      return await fetchContentById<Background>('background', id);
     },
+    enabled: !!id,
   });
+  const background = props.data.background ?? _background;
 
   return (
     <>
       {background && (
-        <Group justify="space-between" wrap="nowrap">
-          <Group wrap="nowrap" gap={10}>
+        <Group justify='space-between' wrap='nowrap'>
+          <Group wrap='nowrap' gap={10}>
             <Box>
               <Title order={3}>{background.name}</Title>
             </Box>
@@ -54,7 +45,7 @@ export function BackgroundDrawerTitle(props: { data: { id: number } }) {
 }
 
 export function BackgroundDrawerContent(props: {
-  data: { id: number };
+  data: { id?: number; background?: Background };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -65,9 +56,9 @@ export function BackgroundDrawerContent(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      const background = await fetchContentById<Background>("background", id);
+      const background = await fetchContentById<Background>('background', id);
       return {
-        background,
+        background: props.data.background ?? background,
       };
     },
   });
@@ -77,12 +68,12 @@ export function BackgroundDrawerContent(props: {
   if (!data || !data.background) {
     return (
       <Loader
-        type="bars"
+        type='bars'
         style={{
-          position: "absolute",
-          top: "35%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
+          position: 'absolute',
+          top: '35%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
         }}
       />
     );
@@ -90,14 +81,14 @@ export function BackgroundDrawerContent(props: {
 
   return (
     <Stack>
-      <BackgroundInitialOverview background={data.background} mode="READ" />
+      <BackgroundInitialOverview background={data.background} mode='READ' />
     </Stack>
   );
 }
 
 export function BackgroundInitialOverview(props: {
   background: Background;
-  mode: "READ" | "READ/WRITE";
+  mode: 'READ' | 'READ/WRITE';
   operationResults?: OperationResult[];
 }) {
   const theme = useMantineTheme();
@@ -128,88 +119,79 @@ export function BackgroundInitialOverview(props: {
     <>
       <Box
         style={{
-          position: "relative",
+          position: 'relative',
         }}
       >
         <Box
           mah={descHidden ? 400 : undefined}
           style={{
-            WebkitMaskImage: descHidden
-              ? "linear-gradient(to bottom, black 60%, transparent 100%)"
-              : undefined,
-            maskImage: descHidden
-              ? "linear-gradient(to bottom, black 60%, transparent 100%)"
-              : undefined,
-            overflowY: descHidden ? "hidden" : undefined,
+            WebkitMaskImage: descHidden ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : undefined,
+            maskImage: descHidden ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : undefined,
+            overflowY: descHidden ? 'hidden' : undefined,
           }}
         >
           {props.background.artwork_url && (
             <Image
               style={{
-                float: "right",
+                float: 'right',
                 maxWidth: 150,
-                height: "auto",
+                height: 'auto',
               }}
-              ml="sm"
-              radius="md"
-              fit="contain"
+              ml='sm'
+              radius='md'
+              fit='contain'
               src={props.background.artwork_url}
             />
           )}
-          <RichText ta="justify">{introParagraph || description}</RichText>
+          <RichText ta='justify'>{introParagraph || description}</RichText>
         </Box>
         <Anchor
-          size="sm"
+          size='sm'
           style={{
-            position: "absolute",
+            position: 'absolute',
             bottom: 5,
             right: 20,
           }}
           onClick={() => setDescHidden(!descHidden)}
         >
-          {descHidden ? "Show more" : "Show less"}
+          {descHidden ? 'Show more' : 'Show less'}
         </Anchor>
       </Box>
       <Box>
-        <Group align="flex-start" grow>
+        <Group align='flex-start' grow>
           {display.attributes
             .sort((a, b) => {
-              return (a.uuid ?? "").localeCompare(b.uuid ?? "");
+              return (a.uuid ?? '').localeCompare(b.uuid ?? '');
             })
             .map((attribute, index) => (
               <Paper
                 key={index}
-                shadow="xs"
-                p="sm"
-                radius="md"
+                shadow='xs'
+                p='sm'
+                radius='md'
                 style={{
                   backgroundColor: theme.colors.dark[8],
-                  position: "relative",
+                  position: 'relative',
                 }}
               >
-                <Text c="gray.5" ta="center">
+                <Text c='gray.5' ta='center'>
                   Attribute Boost
                 </Text>
-                <Text
-                  c="gray.4"
-                  fw={700}
-                  ta="center"
-                  style={{ display: "flex", justifyContent: "center" }}
-                >
+                <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
                   {attribute.ui}
                 </Text>
               </Paper>
             ))}
         </Group>
       </Box>
-      {introParagraph && <RichText ta="justify">{description}</RichText>}
+      {introParagraph && <RichText ta='justify'>{description}</RichText>}
     </>
   );
 }
 
 export function convertBackgroundOperationsIntoUI(
   background: Background,
-  mode: "READ" | "READ/WRITE",
+  mode: 'READ' | 'READ/WRITE',
   operationResults: OperationResult[],
   charState: [Character | null, SetterOrUpdater<Character | null>],
   openDrawer: SetterOrUpdater<{
@@ -221,17 +203,17 @@ export function convertBackgroundOperationsIntoUI(
   const backgroundOperations = background.operations ?? [];
   const MODE = mode;
   const writeDetails =
-    MODE === "READ/WRITE"
+    MODE === 'READ/WRITE'
       ? {
           operationResults: operationResults,
           characterState: charState,
-          primarySource: "background",
+          primarySource: 'background',
         }
       : undefined;
 
   const attributes = getStatBlockDisplay(
-    "CHARACTER",
-    getAllAttributeVariables("CHARACTER").map((v) => v.name),
+    'CHARACTER',
+    getAllAttributeVariables('CHARACTER').map((v) => v.name),
     backgroundOperations,
     MODE,
     writeDetails
