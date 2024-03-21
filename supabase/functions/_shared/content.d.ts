@@ -42,6 +42,23 @@ interface JSendResponseError {
   code?: number;
 }
 
+interface PublicUser {
+  id: number;
+  user_id: string;
+  created_at: string;
+  display_name: string;
+  image_url?: string;
+  background_image_url?: string;
+  site_theme?: {
+    color: string;
+  };
+  is_admin: boolean;
+  is_mod: boolean;
+  patreon_tier?: string;
+  deactivated: boolean;
+  summary?: string;
+}
+
 interface Trait {
   id: number;
   created_at: string;
@@ -60,7 +77,7 @@ interface Trait {
 interface ContentUpdate {
   id: number;
   created_at: string;
-  user_id: number;
+  user_id: string;
   type: ContentType;
   ref_id?: number;
   action: 'UPDATE' | 'CREATE' | 'DELETE';
@@ -198,7 +215,7 @@ interface AbilityBlock {
 interface Character {
   id: number;
   created_at: string;
-  user_id: number;
+  user_id: string;
   name: string;
   level: number;
   experience: number;
@@ -229,7 +246,7 @@ interface ContentSource {
   url: string;
   description: string;
   operations: Operation[];
-  user_id: number;
+  user_id: string;
   contact_info: string;
   require_key: boolean;
   is_published: boolean;

@@ -2,7 +2,13 @@ import { corsHeaders } from './cors.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { uniqueId } from './upload-utils.ts';
 import _ from 'lodash';
-import type { AbilityBlockType, ContentSource, ContentType, JSendResponse } from './content';
+import type {
+  AbilityBlockType,
+  ContentSource,
+  ContentType,
+  JSendResponse,
+  PublicUser,
+} from './content';
 
 export async function connect(
   req: Request,
@@ -56,7 +62,26 @@ export async function connect(
   }
 }
 
+export async function getPublicUser(
+  client: SupabaseClient<any, 'public', any>
+): Promise<PublicUser | null> {
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const results = await fetchData<PublicUser>(client, 'public_user', [
+    { column: 'user_id', value: user?.id },
+  ]);
+
+  return results.length > 0 ? results[0] : null;
+}
+
 export type TableName =
+  | 'public_user'
   | 'ability_block'
   | 'content_source'
   | 'content_update'
