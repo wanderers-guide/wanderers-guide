@@ -28,6 +28,7 @@ import { useLoaderData, useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
+import { getCachedPublicUser } from '@auth/user-manager';
 
 export function Component() {
   setPageTitle(`Builder`);
@@ -79,8 +80,9 @@ export function Component() {
 
         // Cache character customization for fast loading
         saveCustomization({
-          background_image_url: resultCharacter.details?.background_image_url,
-          sheet_theme: resultCharacter.details?.sheet_theme,
+          background_image_url:
+            resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
+          sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
         });
       } else {
         // Character not found, redirect to characters
@@ -108,6 +110,7 @@ export function Component() {
       details: debouncedCharacter.details,
       content_sources: debouncedCharacter.content_sources,
       operation_data: debouncedCharacter.operation_data,
+      meta_data: debouncedCharacter.meta_data,
     });
   }, [debouncedCharacter]);
 
@@ -119,6 +122,7 @@ export function Component() {
       details?: any;
       content_sources?: any;
       operation_data?: any;
+      meta_data?: any;
     }) => {
       const response = await makeRequest<JSendResponse>('update-character', {
         id: characterId,

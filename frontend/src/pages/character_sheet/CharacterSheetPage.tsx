@@ -11,6 +11,7 @@ import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
+import { getCachedPublicUser } from '@auth/user-manager';
 import { ActionSymbol } from '@common/Actions';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
@@ -271,6 +272,10 @@ function confirmHealth(hp: string, character: Character, setCharacter: SetterOrU
         ...c.details,
         conditions: newConditions,
       },
+      meta_data: {
+        ...c.meta_data,
+        reset_hp: false,
+      },
     };
   });
   return result;
@@ -322,8 +327,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
         // Cache character customization for fast loading
         saveCustomization({
-          background_image_url: resultCharacter.details?.background_image_url,
-          sheet_theme: resultCharacter.details?.sheet_theme,
+          background_image_url:
+            resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
+          sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
         });
       } else {
         // Character not found, redirect to characters
@@ -344,8 +350,13 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
       // Apply conditions after everything else
       applyConditions('CHARACTER', character.details?.conditions ?? []);
-      // Because of the drained condition, let's confirm health
-      confirmHealth(`${character.hp_current}`, character, setCharacter);
+      if (character.meta_data?.reset_hp !== false) {
+        // To reset hp, we need to confirm health
+        confirmHealth(`${getFinalHealthValue('CHARACTER')}`, character, setCharacter);
+      } else {
+        // Because of the drained condition, let's confirm health
+        confirmHealth(`${character.hp_current}`, character, setCharacter);
+      }
 
       setOperationResults(results);
       executingOperations.current = false;

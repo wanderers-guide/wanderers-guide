@@ -1004,6 +1004,7 @@ function SelectionOptionsRoot(props: {
   const isSkillIncreaseWithLore = props.skillAdjustment && props.options.find((o) => o.variable === 'SKILL_LORE____');
   if (isSkillIncreaseWithLore) {
     const addNewLore = (option: AbilityBlock) => {
+      console.log('Adding new lore', option);
       openContextModal({
         modal: 'addNewLore',
         title: <Title order={3}>Add New Lore</Title>,

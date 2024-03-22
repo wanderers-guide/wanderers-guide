@@ -360,7 +360,9 @@ interface Character {
   };
   roll_history?: Record<string, any>; // TODO
   custom_operations?: Operation[];
-  meta_data?: Record<string, any>; // TODO
+  meta_data?: {
+    reset_hp?: boolean;
+  };
   options?: Record<string, any>; // TODO
   variants?: Record<string, any>; // TODO
   content_sources?: {
@@ -395,7 +397,7 @@ interface PublicUser {
   };
   is_admin: boolean;
   is_mod: boolean;
-  patreon_tier?: string;
+  patreon_tier?: 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER';
   deactivated: boolean;
   summary?: string;
 }

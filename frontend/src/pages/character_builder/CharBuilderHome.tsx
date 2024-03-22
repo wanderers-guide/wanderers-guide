@@ -59,7 +59,8 @@ import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContentSources } from '@content/content-store';
-import { displayComingSoon } from '@utils/notifications';
+import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
+import { getCachedPublicUser, hasPatronPermission } from '@auth/user-manager';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -100,6 +101,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           return {
             ...prev,
             level: newLevel,
+            meta_data: {
+              ...prev.meta_data,
+              reset_hp: true,
+            },
           };
         });
       },
@@ -298,6 +303,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       return {
                         ...prev,
                         level: newLevel,
+                        meta_data: {
+                          ...prev.meta_data,
+                          reset_hp: true,
+                        },
                       };
                     });
                   }
@@ -459,7 +468,18 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 rightSectionWidth={28}
                 leftSection={<IconUsers style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
                 rightSection={
-                  <ActionIcon size={22} radius='xl' color={theme.primaryColor} variant='light'>
+                  <ActionIcon
+                    size={22}
+                    radius='xl'
+                    color={theme.primaryColor}
+                    variant='light'
+                    onClick={() => {
+                      if (!hasPatronPermission(getCachedPublicUser())) {
+                        displayPatronOnly();
+                        return;
+                      }
+                    }}
+                  >
                     <IconUsersPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                   </ActionIcon>
                 }
@@ -484,8 +504,17 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   GUIDE_BLUE,
                   '#15aabf',
                   '#12b886',
+                  '#40c057',
+                  '#82c91e',
+                  '#fab005',
+                  '#fd7e14',
                 ]}
+                swatchesPerRow={7}
                 onChange={(color) => {
+                  if (!hasPatronPermission(getCachedPublicUser())) {
+                    displayPatronOnly();
+                    return;
+                  }
                   setCharacter((prev) => {
                     if (!prev) return prev;
                     return {
@@ -512,6 +541,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       innerProps: {
                         options: getAllBackgroundImages(),
                         onSelect: (option) => {
+                          if (!hasPatronPermission(getCachedPublicUser())) {
+                            displayPatronOnly();
+                            return;
+                          }
                           setCharacter((prev) => {
                             if (!prev) return prev;
                             return {

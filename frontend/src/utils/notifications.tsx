@@ -1,5 +1,7 @@
+import { PATREON_URL } from '@constants/data';
+import { Anchor, Title } from '@mantine/core';
 import { hideNotification, showNotification, updateNotification } from '@mantine/notifications';
-import { IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
+import { IconBrandPatreon, IconBrandPatreonFilled, IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
 
 type NotificationDetails = {
   title: string;
@@ -82,5 +84,26 @@ export function displayComingSoon() {
     message: 'This feature is coming soon!',
     color: 'blue',
     icon: <IconCubeSend />,
+  });
+}
+
+export function displayPatronOnly() {
+  const id = 'patron-only';
+  hideNotification(id);
+  showNotification({
+    id: id,
+    title: <Title order={5}>Patron Only</Title>,
+    message: (
+      <>
+        This feature is only available to patrons! Consider supporting me on{' '}
+        <Anchor href={PATREON_URL} target='_blank'>
+          Patreon
+        </Anchor>{' '}
+        :)
+      </>
+    ),
+    color: 'guide',
+    icon: <IconBrandPatreonFilled />,
+    autoClose: false,
   });
 }

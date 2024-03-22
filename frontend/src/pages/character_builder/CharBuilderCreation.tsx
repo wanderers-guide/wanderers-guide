@@ -1782,57 +1782,58 @@ function DisplayOperationResult(props: {
     return false;
   };
 
+  const selections = props.results.filter((result) => hasSelection(result));
+  if (selections.length === 0) return null;
+
   return (
     <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>
       <Stack gap={10}>
-        {props.results
-          .filter((result) => hasSelection(result))
-          .map((result, i) => (
-            <Stack key={i} gap={10}>
-              {result?.selection && (
-                <SelectContentButton
-                  type={
-                    (result?.selection?.options ?? []).length > 0
-                      ? result?.selection?.options[0]._content_type
-                      : 'ability-block'
-                  }
-                  onClick={(option) => {
-                    props.onChange(result.selection?.id ?? '', option._select_uuid);
-                  }}
-                  onClear={() => {
-                    props.onChange(result.selection?.id ?? '', '');
-                  }}
-                  selectedId={result.result?.source?.id}
-                  options={{
-                    overrideOptions: result?.selection?.options.map((option) => ({
-                      ...option,
-                      _source_level: props.level,
-                    })),
-                    overrideLabel: result?.selection?.title || 'Select an Option',
-                    abilityBlockType:
-                      (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
-                    skillAdjustment: result?.selection?.skillAdjustment,
-                  }}
-                />
-              )}
-              {result?.result?.results && result.result.results.length > 0 && (
-                <DisplayOperationResult
-                  source={result.result.source}
-                  level={props.level}
-                  results={result.result.results}
-                  onChange={(path, value) => {
-                    let selectionUUID = result.selection?.id ?? '';
-                    let resultUUID = result.result?.source?._select_uuid ?? '';
+        {selections.map((result, i) => (
+          <Stack key={i} gap={10}>
+            {result?.selection && (
+              <SelectContentButton
+                type={
+                  (result?.selection?.options ?? []).length > 0
+                    ? result?.selection?.options[0]._content_type
+                    : 'ability-block'
+                }
+                onClick={(option) => {
+                  props.onChange(result.selection?.id ?? '', option._select_uuid);
+                }}
+                onClear={() => {
+                  props.onChange(result.selection?.id ?? '', '');
+                }}
+                selectedId={result.result?.source?.id}
+                options={{
+                  overrideOptions: result?.selection?.options.map((option) => ({
+                    ...option,
+                    _source_level: props.level,
+                  })),
+                  overrideLabel: result?.selection?.title || 'Select an Option',
+                  abilityBlockType:
+                    (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
+                  skillAdjustment: result?.selection?.skillAdjustment,
+                }}
+              />
+            )}
+            {result?.result?.results && result.result.results.length > 0 && (
+              <DisplayOperationResult
+                source={result.result.source}
+                level={props.level}
+                results={result.result.results}
+                onChange={(path, value) => {
+                  let selectionUUID = result.selection?.id ?? '';
+                  let resultUUID = result.result?.source?._select_uuid ?? '';
 
-                    let newPath = path;
-                    if (resultUUID) newPath = `${resultUUID}_${newPath}`;
-                    if (selectionUUID) newPath = `${selectionUUID}_${newPath}`;
-                    props.onChange(newPath, value);
-                  }}
-                />
-              )}
-            </Stack>
-          ))}
+                  let newPath = path;
+                  if (resultUUID) newPath = `${resultUUID}_${newPath}`;
+                  if (selectionUUID) newPath = `${selectionUUID}_${newPath}`;
+                  props.onChange(newPath, value);
+                }}
+              />
+            )}
+          </Stack>
+        ))}
       </Stack>
     </ResultWrapper>
   );

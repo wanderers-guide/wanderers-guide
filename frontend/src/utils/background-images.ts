@@ -405,12 +405,12 @@ const imageStore: Record<string, ImageOption[]> = {
     {
       name: 'Stand Off',
       url: 'https://www.pixelstalk.net/wp-content/uploads/2016/11/Pictures-Fantasy-Art.png',
-      source: 'Unknown',
+      //source: 'Unknown',
     },
     {
       name: 'Brilliant Dragon',
       url: 'https://www.pixelstalk.net/wp-content/uploads/2016/11/Fantasy-landscapes-art.jpg',
-      source: 'Unknown',
+      //source: 'Unknown',
     },
   ],
   animated_svgs: [

@@ -21,12 +21,13 @@ import tinycolor from 'tinycolor2';
 import { supabase } from './main';
 import Layout from './nav/Layout';
 import { ImageOption } from './typing';
+import AddNewLoreModal from '@modals/AddNewLoreModal';
 
 const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
 const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
 const SelectIconModal = lazy(() => import('@modals/SelectIconModal'));
 const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterPortraitModal'));
-const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
+//const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
 const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
 const ConditionModal = lazy(() => import('@modals/ConditionModal'));
 

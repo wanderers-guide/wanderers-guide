@@ -16,30 +16,44 @@ import {
   Badge,
   MantineColor,
   ColorInput,
+  ColorSwatch,
+  Popover,
+  ColorPicker,
+  ActionIcon,
+  FileButton,
+  LoadingOverlay,
+  TextInput,
+  FocusTrap,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
 import { useNavigate } from 'react-router-dom';
 import BlurBox from '@common/BlurBox';
-import { useQuery } from '@tanstack/react-query';
-import { getPublicUser } from '@auth/user-manager';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getPublicUser, hasPatronPermission } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE } from '@constants/data';
-import { IconBrandPatreon } from '@tabler/icons-react';
+import { IconAdjustments, IconBrandPatreon, IconReload, IconUpload } from '@tabler/icons-react';
+import { Character, PublicUser } from '@typing/content';
+import { useEffect, useState } from 'react';
+import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
+import { makeRequest } from '@requests/request-manager';
+import { JSendResponse } from '@typing/requests';
+import { uploadImage } from '@upload/image-upload';
+import { displayPatronOnly } from '@utils/notifications';
 
 export function Component() {
   setPageTitle(`Account`);
 
-  const { data: user } = useQuery({
+  const { data } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
-      return await getPublicUser();
+      const user = await getPublicUser();
+      return user;
     },
   });
 
-  const theme = useMantineTheme();
-
-  if (!user)
+  if (!data)
     return (
       <Loader
         size='lg'
@@ -53,6 +67,28 @@ export function Component() {
       />
     );
 
+  return <ProfileSection user={data} />;
+}
+
+function ProfileSection(props: { user: PublicUser }) {
+  const theme = useMantineTheme();
+  //const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<PublicUser>(props.user);
+
+  const { hovered: hoveredPfp, ref: refPfp } = useHover();
+  const { hovered: hoveredBck, ref: refBck } = useHover();
+
+  const [editingName, setEditingName] = useState(false);
+
+  // Get character count
+  const { data: characters } = useQuery({
+    queryKey: [`find-character`],
+    queryFn: async () => {
+      return await makeRequest<Character[]>('find-character', {});
+    },
+  });
+
   const patronTier = toLabel(user.patreon_tier) || 'Non-Patron';
   let patronColor: MantineColor = 'gray';
   if (patronTier === 'Non-Patron') patronColor = 'gray';
@@ -61,40 +97,273 @@ export function Component() {
   if (patronTier === 'Legend') patronColor = 'grape';
   if (patronTier === 'Game Master') patronColor = 'orange';
 
+  const { mutate: mutateUser } = useMutation(
+    async (data: Record<string, any>) => {
+      const response = await makeRequest<JSendResponse>('update-user', {
+        ...data,
+      });
+      return response ? response.status === 'success' : false;
+    },
+    {
+      onSuccess: () => {
+        //queryClient.invalidateQueries([`find-account-self`]);
+      },
+    }
+  );
+
+  // Update user in db when state changed
+  const [debouncedUser] = useDebouncedValue(user, 500);
+  useDidUpdate(() => {
+    if (!debouncedUser) return;
+    mutateUser({
+      display_name: debouncedUser.display_name,
+      summary: debouncedUser.summary,
+      image_url: debouncedUser.image_url,
+      background_image_url: debouncedUser.background_image_url,
+      site_theme: debouncedUser.site_theme,
+    });
+  }, [debouncedUser]);
+
   return (
     <Center>
       <Box maw={400} w='100%'>
         <BlurBox w={'100%'}>
-          <Card padding='xl' radius='md' style={{ backgroundColor: 'transparent' }}>
-            <Card.Section
-              h={140}
-              style={{
-                backgroundImage: `url(${user.background_image_url ?? getDefaultBackgroundImage().url})`,
-                backgroundSize: 'cover',
-              }}
-            />
+          <LoadingOverlay visible={loading} />
+          <Card pt={0} pb={'md'} radius='md' style={{ backgroundColor: 'transparent' }}>
+            <FileButton
+              onChange={async (file) => {
+                if (!hasPatronPermission(user)) {
+                  displayPatronOnly();
+                  return;
+                }
 
-            <Avatar
-              src={user.image_url}
-              size={80}
-              radius={80}
-              mx='auto'
-              mt={-30}
-              style={{
-                backgroundColor: theme.colors.dark[7],
-                border: `2px solid ${theme.colors.dark[7] + 'D3'}`,
+                // Upload file to server
+                let path = '';
+                if (file) {
+                  setLoading(true);
+                  path = await uploadImage(file, 'backgrounds');
+                }
+                setUser((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, background_image_url: path };
+                });
+
+                setLoading(false);
               }}
-            />
-            <Text ta='center' fz='lg' fw={500} mt={5}>
-              {user.display_name}
-            </Text>
+              accept='image/png,image/jpeg,image/jpg,image/webp'
+            >
+              {(subProps) => (
+                <Box {...subProps}>
+                  <Card.Section
+                    h={140}
+                    ref={refBck}
+                    style={{
+                      backgroundImage: `url(${user.background_image_url ?? getDefaultBackgroundImage().url})`,
+                      backgroundSize: 'cover',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <ActionIcon
+                    variant='transparent'
+                    color='gray.1'
+                    aria-label='Upload Background Image'
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+
+                      visibility: hoveredBck ? 'visible' : 'hidden',
+                    }}
+                    size={40}
+                  >
+                    <IconUpload size='1.2rem' stroke={1.5} />
+                  </ActionIcon>
+                </Box>
+              )}
+            </FileButton>
+
+            {/* <Box
+              style={{
+                position: 'absolute',
+                top: 142,
+                left: 2,
+              }}
+            >
+              <ActionIcon
+                size='xs'
+                color='gray.5'
+                variant='transparent'
+                aria-label='Reload Webpage'
+                onClick={() => {
+                  window.location.reload();
+                }}
+              >
+                <IconReload size='1rem' stroke={1.5} />
+              </ActionIcon>
+            </Box> */}
+
+            <Box
+              style={{
+                position: 'absolute',
+                top: 145,
+                right: 5,
+              }}
+            >
+              <Popover position='bottom' withArrow shadow='md'>
+                <Popover.Target>
+                  <ColorSwatch style={{ cursor: 'pointer' }} color={user.site_theme?.color || GUIDE_BLUE} size={15} />
+                </Popover.Target>
+                <Popover.Dropdown p={5}>
+                  <ColorPicker
+                    format='hex'
+                    value={user.site_theme?.color || GUIDE_BLUE}
+                    onChange={(value) => {
+                      if (!hasPatronPermission(user)) {
+                        displayPatronOnly();
+                        return;
+                      }
+
+                      setUser((prev) => {
+                        if (!prev) return prev;
+                        return { ...prev, site_theme: { ...prev.site_theme, color: value } };
+                      });
+                    }}
+                    swatches={[
+                      '#25262b',
+                      '#868e96',
+                      '#fa5252',
+                      '#e64980',
+                      '#be4bdb',
+                      '#8d69f5',
+                      '#577deb',
+                      GUIDE_BLUE,
+                      '#15aabf',
+                      '#12b886',
+                      '#40c057',
+                      '#82c91e',
+                      '#fab005',
+                      '#fd7e14',
+                    ]}
+                    swatchesPerRow={7}
+                  />
+                </Popover.Dropdown>
+              </Popover>
+            </Box>
+
+            <Center>
+              <FileButton
+                onChange={async (file) => {
+                  if (!hasPatronPermission(user)) {
+                    displayPatronOnly();
+                    return;
+                  }
+
+                  // Upload file to server
+                  let path = '';
+                  if (file) {
+                    setLoading(true);
+                    path = await uploadImage(file, 'portraits');
+                  }
+                  setUser((prev) => {
+                    if (!prev) return prev;
+                    return { ...prev, image_url: path };
+                  });
+
+                  setLoading(false);
+                }}
+                accept='image/png,image/jpeg,image/jpg,image/webp'
+              >
+                {(subProps) => (
+                  <Box {...subProps} style={{ position: 'relative' }}>
+                    <Avatar
+                      ref={refPfp}
+                      src={user.image_url}
+                      size={80}
+                      radius={80}
+                      mt={-30}
+                      style={{
+                        backgroundColor: theme.colors.dark[7],
+                        border: `2px solid ${theme.colors.dark[7] + 'D3'}`,
+                        cursor: 'pointer',
+                      }}
+                    />
+
+                    <ActionIcon
+                      variant='transparent'
+                      color='gray.1'
+                      aria-label='Upload Profile Picture'
+                      style={{
+                        position: 'absolute',
+                        top: '25%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+
+                        visibility: hoveredPfp ? 'visible' : 'hidden',
+                      }}
+                      size={40}
+                    >
+                      <IconUpload size='2.2rem' stroke={1.5} />
+                    </ActionIcon>
+                  </Box>
+                )}
+              </FileButton>
+            </Center>
+
+            <Box mt={5}>
+              {editingName ? (
+                <Center>
+                  <FocusTrap active={true}>
+                    <TextInput
+                      size='sm'
+                      w={160}
+                      styles={{
+                        input: {
+                          textAlign: 'center',
+                        },
+                      }}
+                      spellCheck={false}
+                      placeholder='Display Name'
+                      value={user.display_name}
+                      onChange={(e) => {
+                        setUser((prev) => {
+                          if (!prev) return prev;
+                          return { ...prev, display_name: e.target.value };
+                        });
+                      }}
+                      onKeyDown={getHotkeyHandler([
+                        ['mod+Enter', () => setEditingName(false)],
+                        ['Enter', () => setEditingName(false)],
+                      ])}
+                      onBlur={() => {
+                        setEditingName(false);
+                      }}
+                    />
+                  </FocusTrap>
+                </Center>
+              ) : (
+                <Text
+                  ta='center'
+                  fz='lg'
+                  fw={500}
+                  onClick={() => {
+                    setEditingName(true);
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                >
+                  {user.display_name}
+                </Text>
+              )}
+            </Box>
+
             <Text ta='center' fz='xs' c='dimmed' fs='italic'>
               {user.summary}
             </Text>
             <Group mt='md' justify='center' gap={30}>
               <Box>
                 <Text ta='center' fz='lg' fw={500}>
-                  X
+                  {characters ? characters.length : '...'}
                 </Text>
                 <Text ta='center' fz='sm' c='dimmed' lh={1}>
                   Characters
@@ -102,7 +371,7 @@ export function Component() {
               </Box>
               <Box>
                 <Text ta='center' fz='lg' fw={500}>
-                  X
+                  0
                 </Text>
                 <Text ta='center' fz='sm' c='dimmed' lh={1}>
                   Bundles
@@ -110,7 +379,7 @@ export function Component() {
               </Box>
               <Box>
                 <Text ta='center' fz='lg' fw={500}>
-                  X
+                  0
                 </Text>
                 <Text ta='center' fz='sm' c='dimmed' lh={1}>
                   Campaigns
@@ -122,7 +391,7 @@ export function Component() {
               {user.deactivated && (
                 <Badge
                   variant='light'
-                  size='lg'
+                  size='md'
                   color='red'
                   styles={{
                     root: {
@@ -136,7 +405,7 @@ export function Component() {
               {user.is_admin && (
                 <Badge
                   variant='light'
-                  size='lg'
+                  size='md'
                   color='cyan'
                   styles={{
                     root: {
@@ -150,7 +419,7 @@ export function Component() {
               {user.is_mod && (
                 <Badge
                   variant='light'
-                  size='lg'
+                  size='md'
                   color='green'
                   styles={{
                     root: {
@@ -164,7 +433,7 @@ export function Component() {
 
               <Badge
                 variant='light'
-                size='lg'
+                size='md'
                 color={patronColor}
                 styles={{
                   root: {
@@ -177,7 +446,7 @@ export function Component() {
 
               <Badge
                 variant='light'
-                size='lg'
+                size='md'
                 color='yellow'
                 styles={{
                   root: {
@@ -192,33 +461,10 @@ export function Component() {
             <Divider />
 
             <Group align='center' justify='center' pt={10}>
-              <Button size='xs' variant='light' leftSection={<IconBrandPatreon size={18} />} fullWidth>
+              <Button size='sm' variant='light' leftSection={<IconBrandPatreon size={18} />} fullWidth>
                 Connect to Patreon
               </Button>
             </Group>
-
-            {/* <Group align='center' justify='center' pt={10}>
-              <ColorInput
-                radius='xl'
-                size='xs'
-                w={250}
-                placeholder='Site Color Theme'
-                defaultValue={user.site_theme?.color || GUIDE_BLUE}
-                swatches={[
-                  '#25262b',
-                  '#868e96',
-                  '#fa5252',
-                  '#e64980',
-                  '#be4bdb',
-                  '#8d69f5',
-                  '#577deb',
-                  GUIDE_BLUE,
-                  '#15aabf',
-                  '#12b886',
-                ]}
-                onChange={(color) => {}}
-              />
-            </Group> */}
           </Card>
         </BlurBox>
       </Box>

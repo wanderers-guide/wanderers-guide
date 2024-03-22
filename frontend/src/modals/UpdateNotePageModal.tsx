@@ -100,7 +100,12 @@ export default function UpdateNotePageModal({
             GUIDE_BLUE,
             '#15aabf',
             '#12b886',
+            '#40c057',
+            '#82c91e',
+            '#fab005',
+            '#fd7e14',
           ]}
+          swatchesPerRow={7}
           onChange={(color) => {
             setColor(color);
           }}
