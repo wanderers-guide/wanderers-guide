@@ -1,6 +1,13 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, fetchData, updateData } from '../_shared/helpers.ts';
+import {
+  connect,
+  convertContentTypeToTableName,
+  deleteData,
+  fetchData,
+  insertData,
+  updateData,
+} from '../_shared/helpers.ts';
 import type { ContentUpdate } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -44,7 +51,26 @@ serve(async (req: Request) => {
       });
 
       // If the update was approved, apply the changes
-      console.log('Applying update:', update);
+      const tableName = convertContentTypeToTableName(update.type);
+      if (!tableName)
+        return {
+          status: 'error',
+          message: 'Invalid content type',
+        };
+
+      if (update.action === 'UPDATE' && update.ref_id) {
+        result = await updateData(client, tableName, update.ref_id, update.data);
+      } else if (update.action === 'CREATE') {
+        const newData = await insertData(client, tableName, update.data, update.data?.type);
+        result = newData ? 'SUCCESS' : 'ERROR_UNKNOWN';
+      } else if (update.action === 'DELETE' && update.ref_id) {
+        result = await deleteData(client, tableName, update.ref_id);
+      } else {
+        return {
+          status: 'error',
+          message: 'Invalid update action',
+        };
+      }
     } else if (state === 'REJECT') {
       result = await updateData(client, 'content_update', update.id, {
         status: {
