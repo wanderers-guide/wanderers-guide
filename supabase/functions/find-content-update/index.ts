@@ -13,12 +13,7 @@ serve(async (req: Request) => {
       { column: 'id', value: id },
     ]);
 
-    const data =
-      (id === undefined || Array.isArray(id)) && name === undefined
-        ? results
-        : results.length > 0
-        ? results[0]
-        : null;
+    const data = results.length > 0 ? results[0] : null;
     return {
       status: 'success',
       data,

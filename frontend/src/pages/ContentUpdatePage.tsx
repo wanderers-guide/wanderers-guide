@@ -231,6 +231,7 @@ export function Component(props: {}) {
                         <Box key={index} mx={8}>
                           <Badge
                             variant='light'
+                            color='gray'
                             fullWidth
                             styles={{
                               root: {
@@ -257,14 +258,14 @@ export function Component(props: {}) {
                       size='sm'
                       variant='light'
                       color={
-                        data.contentUpdate.status === 'PENDING'
+                        data.contentUpdate.status.state === 'PENDING'
                           ? 'yellow'
-                          : data.contentUpdate.status === 'APPROVED'
+                          : data.contentUpdate.status.state === 'APPROVED'
                             ? 'green'
                             : 'red'
                       }
                     >
-                      {data.contentUpdate.status}
+                      {data.contentUpdate.status.state}
                     </Badge>
                     <Group wrap='nowrap' gap={10}>
                       <Group wrap='nowrap' gap={0}>
@@ -278,7 +279,7 @@ export function Component(props: {}) {
                           <IconThumbUp style={{ width: '85%', height: '85%' }} stroke={1.5} />
                         </ActionIcon>
                         <Text fz='sm' fw={600}>
-                          {data.contentUpdate.upvotes.toLocaleString()}
+                          {data.contentUpdate.upvotes.length.toLocaleString()}
                         </Text>
                       </Group>
                       <Group wrap='nowrap' gap={0}>
@@ -292,7 +293,7 @@ export function Component(props: {}) {
                           <IconThumbDown style={{ width: '85%', height: '85%' }} stroke={1.5} />
                         </ActionIcon>
                         <Text fz='sm' fw={600}>
-                          {data.contentUpdate.downvotes.toLocaleString()}
+                          {data.contentUpdate.downvotes.length.toLocaleString()}
                         </Text>
                       </Group>
                     </Group>

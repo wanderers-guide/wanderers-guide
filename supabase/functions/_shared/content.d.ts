@@ -83,9 +83,18 @@ interface ContentUpdate {
   action: 'UPDATE' | 'CREATE' | 'DELETE';
   data: Record<string, any>;
   content_source_id: number;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  upvotes: number;
-  downvotes: number;
+  status: {
+    state: 'PENDING' | 'APPROVED' | 'REJECTED';
+    discord_user_id?: string;
+    discord_user_name?: string;
+  };
+  upvotes: {
+    discord_user_id: string;
+  }[];
+  downvotes: {
+    discord_user_id: string;
+  }[];
+  discord_msg_id?: string;
 }
 
 interface Item {
