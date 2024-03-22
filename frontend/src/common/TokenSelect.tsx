@@ -5,10 +5,11 @@ export default function TokenSelect(props: {
   emptySymbol?: JSX.Element;
   fullSymbol?: JSX.Element;
   count: number;
+  value?: number;
   onChange?: (value: number) => void;
   size?: MantineSize;
 }) {
-  const [value, setValue] = useState(props.count);
+  const [value, setValue] = useState(props.value ?? props.count);
 
   return (
     <Rating

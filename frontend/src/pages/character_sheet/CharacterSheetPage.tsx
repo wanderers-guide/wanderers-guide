@@ -950,41 +950,44 @@ function ConditionSection() {
                 Hero Points
               </Text>
               <Group justify='center'>
-                <TokenSelect
-                  count={3}
-                  onChange={(v) => {
-                    setCharacter((c) => {
-                      if (!c) return c;
-                      return {
-                        ...c,
-                        hero_points: v,
-                      };
-                    });
-                  }}
-                  size='xs'
-                  emptySymbol={
-                    <ActionIcon
-                      variant='transparent'
-                      color='gray.1'
-                      aria-label='Hero Point, Empty'
-                      size='xs'
-                      style={{ opacity: 0.7 }}
-                    >
-                      <IconJewishStar size='0.8rem' />
-                    </ActionIcon>
-                  }
-                  fullSymbol={
-                    <ActionIcon
-                      variant='transparent'
-                      color='gray.1'
-                      aria-label='Hero Point, Full'
-                      size='xs'
-                      style={{ opacity: 0.7 }}
-                    >
-                      <IconJewishStarFilled size='0.8rem' />
-                    </ActionIcon>
-                  }
-                />
+                {character && (
+                  <TokenSelect
+                    count={3}
+                    value={character.hero_points ?? 0}
+                    onChange={(v) => {
+                      setCharacter((c) => {
+                        if (!c) return c;
+                        return {
+                          ...c,
+                          hero_points: v,
+                        };
+                      });
+                    }}
+                    size='xs'
+                    emptySymbol={
+                      <ActionIcon
+                        variant='transparent'
+                        color='gray.1'
+                        aria-label='Hero Point, Empty'
+                        size='xs'
+                        style={{ opacity: 0.7 }}
+                      >
+                        <IconJewishStar size='0.8rem' />
+                      </ActionIcon>
+                    }
+                    fullSymbol={
+                      <ActionIcon
+                        variant='transparent'
+                        color='gray.1'
+                        aria-label='Hero Point, Full'
+                        size='xs'
+                        style={{ opacity: 0.7 }}
+                      >
+                        <IconJewishStarFilled size='0.8rem' />
+                      </ActionIcon>
+                    }
+                  />
+                )}
               </Group>
             </Group>
           </Box>
