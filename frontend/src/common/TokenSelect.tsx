@@ -19,14 +19,14 @@ export default function TokenSelect(props: {
       fullSymbol={props.fullSymbol}
       value={value}
       onChange={(v) => {
-        let value;
+        let newVal;
         if (v === value) {
-          value = v - 1;
+          newVal = v - 1;
         } else {
-          value = v;
+          newVal = v;
         }
-        setValue(value);
-        props.onChange?.(value);
+        setValue(newVal);
+        props.onChange?.(newVal);
       }}
     />
   );

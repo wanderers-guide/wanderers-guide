@@ -625,7 +625,7 @@ function CharacterInfoSection() {
             <Stack gap={0}>
               <Box>
                 <Text fz='xs' ta='center' c='gray.3'>
-                  Lvl. 1
+                  Lvl. {character?.level}
                 </Text>
               </Box>
               <Box>
