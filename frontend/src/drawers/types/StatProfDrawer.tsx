@@ -275,6 +275,10 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
 }
 
 function getProfDescription(variableName: string) {
+  if (variableName === 'CLASS_DC') {
+    return `A class DC sets the difficulty for certain abilities granted by your character’s class.`;
+  }
+
   if (variableName === 'SAVE_FORT') {
     return `A Fortitude saving throw is used when your character’s health or vitality is under attack, such as from poison or disease.`;
   }
