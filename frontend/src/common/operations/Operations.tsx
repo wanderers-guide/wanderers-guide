@@ -51,11 +51,7 @@ import { AddBonusToValOperation } from './variables/AddBonusToValOperation';
 import { GiveSpellSlotOperation } from './spell/GiveSpellSlotOperation';
 import { DefineCastingSourceOperation } from './spell/DefineCastingSourceOperation';
 
-export function OperationWrapper(props: {
-  children: React.ReactNode;
-  title: string;
-  onRemove: () => void;
-}) {
+export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
 
   const openConfirmModal = () =>
@@ -139,8 +135,7 @@ export function OperationSection(props: {
   useDidUpdate(() => {
     setOperations(props.value ?? []);
 
-    // Reset variable store
-    resetVariables();
+    // Make sure all the variables are created
     for (let op of props.value ?? []) {
       if (op.type === 'createValue') {
         addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value);
@@ -200,8 +195,7 @@ export function OperationSection(props: {
 
               if (newOp) {
                 if (abilBlockType) {
-                  (newOp as OperationGiveAbilityBlock).data.type =
-                    abilBlockType as AbilityBlockType;
+                  (newOp as OperationGiveAbilityBlock).data.type = abilBlockType as AbilityBlockType;
                 }
 
                 setOperations((prev) => {

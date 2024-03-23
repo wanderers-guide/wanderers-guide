@@ -192,6 +192,25 @@ export function getFinalAcValue(id: StoreID, item?: Item) {
   return 10 + profBonus + bonusAc + dexBonus + armorBonus;
 }
 
-export function displayFinalAcValue(id: StoreID, item: Item) {
-  return <span>{getFinalAcValue(id, item)}</span>;
+export function displayFinalAcValue(id: StoreID, item?: Item) {
+  const parts = getAcParts(id, item);
+  const value = getFinalAcValue(id, item);
+
+  return (
+    <span style={{ position: 'relative' }}>
+      {<>{value}</>}
+      {parts.hasConditionals ? (
+        <Text
+          c='guide.5'
+          style={{
+            position: 'absolute',
+            top: -6,
+            right: -7,
+          }}
+        >
+          *
+        </Text>
+      ) : null}
+    </span>
+  );
 }

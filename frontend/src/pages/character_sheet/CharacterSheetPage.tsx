@@ -141,6 +141,7 @@ import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import {
   displayAttributeValue,
+  displayFinalAcValue,
   displayFinalProfValue,
   getFinalAcValue,
   getFinalHealthValue,
@@ -1144,7 +1145,7 @@ function ArmorSection(props: { inventory: Inventory; setInventory: React.Dispatc
                 }}
               >
                 <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em'>
-                  {getFinalAcValue('CHARACTER', bestArmor?.item)}
+                  {displayFinalAcValue('CHARACTER', bestArmor?.item)}
                 </Text>
                 <Text ta='center' c='gray.5' fz='xs'>
                   AC

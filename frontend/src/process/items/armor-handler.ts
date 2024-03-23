@@ -1,6 +1,6 @@
 import { Item } from '@typing/content';
 import { StoreID, VariableNum } from '@typing/variables';
-import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
+import { getFinalProfValue, getFinalVariableValue, getVariableBreakdown } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 
@@ -29,14 +29,15 @@ function getProfTotal(id: StoreID, item: Item) {
     groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_PLATE`));
   }
 
-  const individualProfTotal = parseInt(
-    getFinalProfValue(id, `ARMOR_${labelToVariable(item.name)}`)
-  );
+  const individualProfTotal = parseInt(getFinalProfValue(id, `ARMOR_${labelToVariable(item.name)}`));
 
   return Math.max(categoryProfTotal, groupProfTotal, individualProfTotal);
 }
 
 export function getAcParts(id: StoreID, item?: Item) {
+  const breakdown = getVariableBreakdown(id, 'AC_BONUS');
+  const hasConditionals = breakdown.conditionals.length > 0;
+
   if (!item) {
     // If wearing nothing, that's 10 + dex + prof + bonus
     const categoryProfTotal = parseInt(getFinalProfValue(id, `UNARMORED_DEFENSE`));
@@ -52,6 +53,8 @@ export function getAcParts(id: StoreID, item?: Item) {
       armorBonus: 0,
       checkPenalty: 0,
       speedPenalty: 0,
+      hasConditionals,
+      breakdown,
     };
   }
 
@@ -84,5 +87,7 @@ export function getAcParts(id: StoreID, item?: Item) {
     armorBonus,
     checkPenalty,
     speedPenalty,
+    hasConditionals,
+    breakdown,
   };
 }

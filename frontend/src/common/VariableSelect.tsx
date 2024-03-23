@@ -7,6 +7,8 @@ export default function VariableSelect(props: {
   variableType?: VariableType;
   onChange: (value: string, variable?: Variable) => void;
 }) {
+  console.log(getVariables('CHARACTER'));
+
   return (
     <Autocomplete
       ff='Ubuntu Mono, monospace'
