@@ -231,7 +231,7 @@ export function CastSpellDrawerContent(props: { data: { id: number; spell: Spell
           </IndentedText>
         )}
         {true && <Divider />}
-        <RichText ta='justify' py={5}>
+        <RichText ta='justify' storeID='CHARACTER' py={5}>
           {spell.description}
         </RichText>
 

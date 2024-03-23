@@ -20,6 +20,7 @@
       "@upload/*": ["src/process/upload/*"],
       "@content/*": ["src/process/content/*"],
       "@items/*": ["src/process/items/*"],
+      "@specializations/*": ["src/process/specializations/*"],
       "@import/*": ["src/process/import/*"],
       "@export/*": ["src/process/export/*"],
       "@conditions/*": ["src/process/conditions/*"],

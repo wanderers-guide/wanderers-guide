@@ -44,9 +44,7 @@ export function getInvBulk(inv: Inventory) {
       let containerTotalBulk = 0;
       for (const containerItem of invItem.container_contents) {
         const innerBulk =
-          containerItem.item.meta_data?.bulk?.held_or_stowed ??
-          parseFloat(containerItem.item.bulk ?? '0') ??
-          0;
+          containerItem.item.meta_data?.bulk?.held_or_stowed ?? parseFloat(containerItem.item.bulk ?? '0') ?? 0;
         containerTotalBulk += innerBulk * getItemQuantity(containerItem.item);
       }
       containerTotalBulk -= ignoredBulk;
@@ -100,9 +98,7 @@ export const handleDeleteItem = (
     // Remove from all containers
     newItems.forEach((item) => {
       if (isItemContainer(item.item)) {
-        item.container_contents = item.container_contents.filter(
-          (containedItem) => containedItem.id !== invItem.id
-        );
+        item.container_contents = item.container_contents.filter((containedItem) => containedItem.id !== invItem.id);
       }
     });
     return {
@@ -296,7 +292,7 @@ export function isItemWithQuantity(item: Item) {
  * @returns - Whether the item is a weapon
  */
 export function isItemWeapon(item: Item) {
-  return !!item.meta_data?.damage?.die;
+  return !!item.meta_data?.damage?.damageType;
 }
 
 /**

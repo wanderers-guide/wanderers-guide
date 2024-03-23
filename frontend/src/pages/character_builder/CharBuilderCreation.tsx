@@ -1078,7 +1078,9 @@ function ClassFeatureAccordionItem(props: {
       </Accordion.Control>
       <Accordion.Panel ref={featureChoiceCountRef}>
         <Stack gap={5}>
-          <RichText ta='justify'>{props.feature.description}</RichText>
+          <RichText ta='justify' storeID='CHARACTER'>
+            {props.feature.description}
+          </RichText>
           <DisplayOperationResult
             source={undefined}
             level={props.feature.level}
@@ -1140,7 +1142,9 @@ function AncestrySectionAccordionItem(props: {
       </Accordion.Control>
       <Accordion.Panel ref={featureChoiceCountRef}>
         <Stack gap={5}>
-          <RichText ta='justify'>{props.section.description}</RichText>
+          <RichText ta='justify' storeID='CHARACTER'>
+            {props.section.description}
+          </RichText>
           <DisplayOperationResult
             source={undefined}
             level={props.section.level}

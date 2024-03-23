@@ -167,7 +167,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SENSES_IMPRECISE: newVariable('list-str', 'SENSES_IMPRECISE', ['HEARING']),
   SENSES_VAGUE: newVariable('list-str', 'SENSES_VAGUE', ['SMELL']),
 
-  // Resistances, Weaknesses, and Immunities // use <NAME>-30 to indicate an amount, TODO: can include variable math
+  // Resistances, Weaknesses, and Immunities // use `<NAME> 30` to indicate an amount, Can include variable math
   RESISTANCES: newVariable('list-str', 'RESISTANCES'),
   WEAKNESSES: newVariable('list-str', 'WEAKNESSES'),
   IMMUNITIES: newVariable('list-str', 'IMMUNITIES'),

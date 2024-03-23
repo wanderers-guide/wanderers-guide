@@ -7,10 +7,34 @@ import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
-import { labelizeBulk } from '@items/inv-utils';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { isItemArmor, isItemShield, isItemWeapon, isItemWithQuantity, labelizeBulk } from '@items/inv-utils';
+import { getWeaponStats } from '@items/weapon-handler';
+import {
+  Title,
+  Text,
+  Image,
+  Loader,
+  Group,
+  Divider,
+  Stack,
+  Box,
+  Flex,
+  ActionIcon,
+  HoverCard,
+  NumberInput,
+  Paper,
+  ScrollArea,
+  TextInput,
+} from '@mantine/core';
+import { getHotkeyHandler } from '@mantine/hooks';
+import { IconHelpCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@typing/content';
+import { StoreID } from '@typing/variables';
+import { sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
+import { getArmorSpecialization } from '@specializations/armor-specializations';
+import { getWeaponSpecialization } from '@specializations/weapon-specializations';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -43,7 +67,10 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   );
 }
 
-export function ItemDrawerContent(props: { data: { id?: number; item?: Item; showOperations?: boolean } }) {
+export function ItemDrawerContent(props: {
+  data: { id?: number; item?: Item; showOperations?: boolean; storeID?: StoreID };
+}) {
+  const storeID = props.data.storeID ?? 'CHARACTER';
   const id = props.data.id;
 
   const { data: _item } = useQuery({
@@ -148,6 +175,9 @@ export function ItemDrawerContent(props: { data: { id?: number; item?: Item; sho
         <Box pb={2}>
           <TraitsDisplay traitIds={item.traits ?? []} rarity={item.rarity} interactable />
         </Box>
+
+        <MiscItemSections item={item} storeID={storeID} />
+
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
           <IndentedText ta='justify'>
@@ -168,5 +198,379 @@ export function ItemDrawerContent(props: { data: { id?: number; item?: Item; sho
       </Box>
       {props.data.showOperations && <ShowOperationsButton name={item.name} operations={item.operations} />}
     </Box>
+  );
+}
+
+function MiscItemSections(props: { item: Item; storeID: StoreID }) {
+  const ac = props.item.meta_data?.ac_bonus;
+  const dexCap = props.item.meta_data?.dex_cap;
+  const strength = props.item.meta_data?.strength;
+  const checkPenalty = props.item.meta_data?.check_penalty;
+  const speedPenalty = props.item.meta_data?.speed_penalty;
+
+  const bt = props.item.meta_data?.broken_threshold ?? 0;
+  const hardness = props.item.meta_data?.hardness ?? 0;
+  const maxHp = props.item.meta_data?.hp_max ?? 0;
+
+  ///
+
+  const hasQuantity = isItemWithQuantity(props.item);
+  const hasHealth = !!maxHp;
+  const hasAttackAndDamage = isItemWeapon(props.item);
+  const hasArmor = isItemArmor(props.item) || isItemShield(props.item);
+
+  ///
+
+  let quantitySection = null;
+  if (hasQuantity && props.item.meta_data?.quantity !== 1) {
+    quantitySection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap'>
+          <Text fw={600} c='gray.5' span>
+            Quantity
+          </Text>{' '}
+          <Text span>{props.item.meta_data?.quantity}</Text>
+        </Group>
+      </Paper>
+    );
+  }
+
+  let healthSection = null;
+  if (hasHealth) {
+    healthSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
+        <Group wrap='nowrap' justify='space-between'>
+          <Group wrap='nowrap'>
+            <Text fw={600} c='gray.5' span>
+              Hit Points
+            </Text>{' '}
+            <Group>
+              <Text>{maxHp}</Text>
+            </Group>
+          </Group>
+          <Group gap={5} pr={60}>
+            <Stack gap={0}>
+              <Text ta='right' fz={10}>
+                Hardness
+              </Text>
+              <Text ta='right' fz={10}>
+                Broken Threshold
+              </Text>
+            </Stack>
+            <Stack gap={0}>
+              <Text ta='left' fw={500} c='gray.4' fz={10}>
+                {hardness}
+              </Text>
+              <Text ta='left' fw={500} c='gray.4' fz={10}>
+                {bt}
+              </Text>
+            </Stack>
+          </Group>
+        </Group>
+        <HoverCard shadow='md' openDelay={250} width={200} zIndex={1000} position='top' withinPortal>
+          <HoverCard.Target>
+            <ActionIcon
+              variant='subtle'
+              aria-label='Help'
+              radius='xl'
+              size='sm'
+              style={{
+                position: 'absolute',
+                top: 5,
+                right: 5,
+              }}
+            >
+              <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+            </ActionIcon>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={5} px={10}>
+            <Text fz='xs'>
+              An item can be broken or destroyed if it takes enough damage. Each time an item takes damage, reduce any
+              damage by its Hardness value.
+            </Text>
+            <Text fz='xs'>
+              It becomes broken when its Hit Points are equal to or lower than its Broken Threshold (BT); once its HP is
+              reduced to 0, it is destroyed.
+            </Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      </Paper>
+    );
+  }
+
+  let attackAndDamageSection = null;
+  if (hasAttackAndDamage) {
+    const weaponStats = getWeaponStats(props.storeID, props.item);
+
+    const damageBonus = weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
+
+    attackAndDamageSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap' grow>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Attack
+            </Text>
+            <Text c='gray.5' span>
+              {sign(weaponStats.attack_bonus.total[0])} / {sign(weaponStats.attack_bonus.total[1])} /{' '}
+              {sign(weaponStats.attack_bonus.total[2])}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Damage
+            </Text>
+            <Text c='gray.5' span>
+              {weaponStats.damage.dice}
+              {weaponStats.damage.die}
+              {damageBonus} {weaponStats.damage.damageType}{' '}
+              {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+            </Text>
+          </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
+  let rangeAndReloadSection = null;
+  if (props.item.meta_data?.range || props.item.meta_data?.reload) {
+    rangeAndReloadSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap' grow>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Range
+            </Text>
+            <Text c='gray.5' span>
+              {props.item.meta_data?.range} ft.
+            </Text>
+          </Group>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Reload
+            </Text>
+            <Text c='gray.5' span>
+              {props.item.meta_data?.reload ?? '—'}
+            </Text>
+          </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
+  let categoryAndGroupSection = null;
+  if (props.item.meta_data?.category || props.item.meta_data?.group) {
+    let groupDesc =
+      getWeaponSpecialization(props.item.meta_data?.group ?? '') ??
+      getArmorSpecialization(props.item.meta_data?.group ?? '');
+    if (groupDesc) {
+      if (hasAttackAndDamage) {
+        groupDesc = {
+          ...groupDesc,
+          description: `**Critical Specialization Effect**\n\n${groupDesc.description}`,
+        };
+      } else {
+        groupDesc = {
+          ...groupDesc,
+          description: `**Armor Specialization Effect**\n\n${groupDesc.description}`,
+        };
+      }
+    }
+
+    categoryAndGroupSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap' grow>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Category
+            </Text>
+            <Text c='gray.5' span>
+              {toLabel(props.item.meta_data?.category)}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Group
+            </Text>
+            <HoverCard
+              disabled={!groupDesc}
+              width={265}
+              shadow='md'
+              zIndex={2000}
+              openDelay={250}
+              withinPortal
+              withArrow
+            >
+              <HoverCard.Target>
+                <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
+                  {toLabel(props.item.meta_data?.group)}
+                </Text>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <RichText ta='justify' fz='xs' storeID={props.storeID}>
+                  {groupDesc?.description}
+                </RichText>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
+  let armorSection = null;
+  if (hasArmor) {
+    armorSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
+        <Group wrap='nowrap'>
+          <Group wrap='nowrap' mr={20}>
+            <Text fw={600} c='gray.5' span>
+              AC Bonus
+            </Text>{' '}
+            <Text c='gray.5' span>
+              {sign(ac ?? 0)}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' align='flex-start'>
+            {(dexCap !== undefined || strength !== undefined) && (
+              <Group gap={5}>
+                <Stack gap={0}>
+                  {dexCap !== undefined && (
+                    <Text ta='right' fz={10}>
+                      Dex Cap
+                    </Text>
+                  )}
+                  {strength !== undefined && (
+                    <Text ta='right' fz={10}>
+                      Strength
+                    </Text>
+                  )}
+                </Stack>
+                <Stack gap={0}>
+                  {dexCap !== undefined && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(dexCap)}
+                    </Text>
+                  )}
+                  {strength !== undefined && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(strength)}
+                    </Text>
+                  )}
+                </Stack>
+              </Group>
+            )}
+            {(!!checkPenalty || !!speedPenalty) && (
+              <Group gap={5}>
+                <Stack gap={0}>
+                  {!!checkPenalty && (
+                    <Text ta='right' fz={10}>
+                      Check Penalty
+                    </Text>
+                  )}
+                  {!!speedPenalty && (
+                    <Text ta='right' fz={10}>
+                      Speed Penalty
+                    </Text>
+                  )}
+                </Stack>
+                <Stack gap={0}>
+                  {!!checkPenalty && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(checkPenalty)}
+                    </Text>
+                  )}
+                  {!!speedPenalty && (
+                    <Text ta='left' fw={500} c='gray.4' fz={10}>
+                      {sign(speedPenalty)}
+                    </Text>
+                  )}
+                </Stack>
+              </Group>
+            )}
+          </Group>
+        </Group>
+        <HoverCard shadow='md' openDelay={250} width={200} zIndex={1000} position='top' withinPortal>
+          <HoverCard.Target>
+            <ActionIcon
+              variant='subtle'
+              aria-label='Help'
+              radius='xl'
+              size='sm'
+              style={{
+                position: 'absolute',
+                top: 5,
+                right: 5,
+              }}
+            >
+              <IconHelpCircle style={{ width: '80%', height: '80%' }} stroke={1.5} />
+            </ActionIcon>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={5} px={10}>
+            <ScrollArea h={dexCap ? 250 : undefined} pr={14} scrollbars='y'>
+              {ac !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    AC Bonus:
+                  </Text>{' '}
+                  This is the item bonus you add for the armor when determining AC.
+                </Text>
+              )}
+              {dexCap !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Dex Cap:
+                  </Text>{' '}
+                  This is the maximum Dexterity modifier you can benefit from towards your AC while wearing the armor.
+                </Text>
+              )}
+              {strength !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Strength:
+                  </Text>{' '}
+                  This is the Strength modifier at which you are strong enough to overcome some of the armor’s
+                  penalties. If your Strength modifier is equal to or greater than this value, you no longer take the
+                  armor’s check penalty, and you decrease the Speed penalty by 5 feet.
+                </Text>
+              )}
+              {checkPenalty !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Check Penalty:
+                  </Text>{' '}
+                  While wearing your armor, you take this penalty to Strength- and Dexterity-based skill checks, except
+                  for those that have the attack trait. If you meet the armor’s Strength threshold, you don’t take this
+                  penalty.
+                </Text>
+              )}
+              {speedPenalty !== undefined && (
+                <Text fz='xs'>
+                  <Text fz='xs' fw={600} span>
+                    Speed Penalty:
+                  </Text>{' '}
+                  While wearing a suit of armor, you take the penalty listed in this entry to your Speed, as well as to
+                  any other movement types you have, such as a climb Speed or swim Speed, to a minimum Speed of 5 feet.
+                  If you meet the armor’s Strength threshold, you reduce the penalty by 5 feet.
+                </Text>
+              )}
+            </ScrollArea>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      </Paper>
+    );
+  }
+
+  return (
+    <>
+      <Stack gap={0}>
+        <>{attackAndDamageSection}</>
+        <>{rangeAndReloadSection}</>
+        <>{armorSection}</>
+        <>{categoryAndGroupSection}</>
+        <>{quantitySection}</>
+        <>{healthSection}</>
+      </Stack>
+    </>
   );
 }

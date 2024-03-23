@@ -2548,6 +2548,7 @@ function InvItemOption(props: {
                 {weaponStats.damage.die}
                 {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
                 {weaponStats.damage.damageType}
+                {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
               </Text>
             </Group>
           )}

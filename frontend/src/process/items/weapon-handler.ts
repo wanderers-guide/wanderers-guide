@@ -14,8 +14,9 @@ export function getWeaponStats(id: StoreID, item: Item) {
   // TODO: Runes
 
   const dice = item.meta_data?.damage?.dice ?? 1;
-  const die = item.meta_data?.damage?.die ?? 'd6';
-  const damageType = item.meta_data?.damage?.damageType ?? 'slashing';
+  const die = item.meta_data?.damage?.die ?? '';
+  const damageType = item.meta_data?.damage?.damageType ?? '';
+  const extra = item.meta_data?.damage?.extra;
 
   const other: {
     dice: number;
@@ -32,6 +33,7 @@ export function getWeaponStats(id: StoreID, item: Item) {
       damageType: damageType,
       bonus: getAttackDamage(id, item),
       other: other,
+      extra: extra,
     },
   };
 }
@@ -209,10 +211,7 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   }
 
   if (dexAttackDamage) {
-    parts.set(
-      'This is a bonus you receive to damage for Dexterity-based attacks.',
-      dexAttackDamage
-    );
+    parts.set('This is a bonus you receive to damage for Dexterity-based attacks.', dexAttackDamage);
   }
 
   if (strAttackDamage) {
@@ -272,10 +271,7 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
   }
 
   if (dexAttackDamage) {
-    parts.set(
-      'This is a bonus you receive to damage for Dexterity-based attacks.',
-      dexAttackDamage
-    );
+    parts.set('This is a bonus you receive to damage for Dexterity-based attacks.', dexAttackDamage);
   }
 
   if (strAttackDamage) {
@@ -308,13 +304,9 @@ function getProfTotal(id: StoreID, item: Item) {
   }
 
   const group = item.meta_data?.group ?? 'brawling';
-  const groupProfTotal = parseInt(
-    getFinalProfValue(id, `WEAPON_GROUP_${group.trim().toUpperCase()}`)
-  );
+  const groupProfTotal = parseInt(getFinalProfValue(id, `WEAPON_GROUP_${group.trim().toUpperCase()}`));
 
-  const individualProfTotal = parseInt(
-    getFinalProfValue(id, `WEAPON_${labelToVariable(item.name)}`)
-  );
+  const individualProfTotal = parseInt(getFinalProfValue(id, `WEAPON_${labelToVariable(item.name)}`));
 
   return Math.max(categoryProfTotal, groupProfTotal, individualProfTotal);
 }

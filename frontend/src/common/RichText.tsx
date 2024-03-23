@@ -9,15 +9,22 @@ import React from 'react';
 import IndentedText from './IndentedText';
 import { IconQuote } from '@tabler/icons-react';
 import { getAllConditions } from '@conditions/condition-handler';
+import { compileExpressions } from '@variables/variable-utils';
+import { StoreID } from '@typing/variables';
 
 interface RichTextProps extends TextProps {
   children: any;
   conditionBlacklist?: string[];
+  storeID?: StoreID;
 }
 
 export default function RichText(props: RichTextProps) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   let convertedChildren = props.children as string | undefined;
+
+  if (convertedChildren && props.storeID) {
+    convertedChildren = compileExpressions(props.storeID, convertedChildren, true);
+  }
 
   // Convert action symbol text of abbr to code markdown (then convert it back)
   // This is a hack to get around the fact that markdown doesn't really support abbr
@@ -74,7 +81,7 @@ export default function RichText(props: RichTextProps) {
           const { children, className } = innerProps;
           return (
             <List.Item className={className}>
-              <Text>{children}</Text>
+              <Text {...props}>{children}</Text>
             </List.Item>
           );
         },
@@ -111,6 +118,7 @@ export default function RichText(props: RichTextProps) {
               target='_blank'
               underline='hover'
               className={className}
+              {...props}
             >
               {children}
             </Anchor>
