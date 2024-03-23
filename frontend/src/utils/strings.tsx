@@ -14,7 +14,14 @@ export function pluralize(word: string): string {
 export function toLabel(text?: string | null) {
   if (!text) return '';
   text = text.replace('ability-block', 'option');
-  return _.startCase(text.toLowerCase().replace('_', ' ').replace('-', ' '));
+  text = _.startCase(text.toLowerCase().replace('_', ' ').replace('-', ' '));
+  if (text.endsWith('Ac')) {
+    text = text.slice(0, -2) + 'AC';
+  }
+  if (text.endsWith('Dc')) {
+    text = text.slice(0, -2) + 'DC';
+  }
+  return text;
 }
 
 // export function listToLabel(strings: string[], endingWord: string): string {

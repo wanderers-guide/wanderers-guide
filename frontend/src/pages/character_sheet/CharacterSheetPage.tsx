@@ -45,8 +45,10 @@ import classes from '@css/FaqSimple.module.css';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { priceToString } from '@items/currency-handler';
 import {
+  checkBulkLimit,
   getBestArmor,
   getBestShield,
+  getBulkLimit,
   getInvBulk,
   getItemQuantity,
   handleAddItem,
@@ -59,11 +61,13 @@ import {
   isItemWeapon,
   isItemWithQuantity,
   labelizeBulk,
+  reachedInvestedLimit,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import {
   Accordion,
   ActionIcon,
+  Anchor,
   Avatar,
   Badge,
   Box,
@@ -177,6 +181,13 @@ export function Component(props: {}) {
   const { data: content, isFetching } = useQuery({
     queryKey: [`find-content-${characterId}`],
     queryFn: async () => {
+      // Set default sources
+      // const character = await makeRequest<Character>('find-character', {
+      //   id: characterId,
+      // });
+      // defineDefaultSources(character?.content_sources?.enabled);
+
+      // Fetch content
       const content = await fetchContentPackage(undefined, true);
       interval.stop();
       return content;
@@ -349,6 +360,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
     executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
+      // Check bulk limits
+      checkBulkLimit(character, setCharacter);
+
       // Apply conditions after everything else
       applyConditions('CHARACTER', character.details?.conditions ?? []);
       if (character.meta_data?.reset_hp !== false) {
@@ -413,7 +427,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries([`find-character-${props.characterId}`]);
+        //queryClient.invalidateQueries([`find-character-${props.characterId}`]);
       },
     }
   );
@@ -520,14 +534,45 @@ function CharacterInfoSection() {
       newCharacter.resolve_current = newResolve;
     }
 
+    // Set spells to default
+    const spellData = collectCharacterSpellcasting(newCharacter);
+    newCharacter.spells = newCharacter.spells ?? {
+      slots: [],
+      list: [],
+      rituals: [],
+      focus_point_current: 0,
+      innate_casts: [],
+    };
+
     // Reset Innate Spells
-    // TODO:
+    newCharacter.spells = {
+      ...newCharacter.spells,
+      innate_casts:
+        newCharacter.spells?.innate_casts.map((casts) => {
+          return {
+            ...casts,
+            casts_current: 0,
+          };
+        }) ?? [],
+    };
 
     // Reset Focus Points
-    // TODO:
+    newCharacter.spells = {
+      ...newCharacter.spells,
+      focus_point_current: spellData.focus_points.max,
+    };
 
     // Reset Spell Slots
-    // TODO:
+    newCharacter.spells = {
+      ...newCharacter.spells,
+      slots:
+        newCharacter.spells?.slots.map((slot) => {
+          return {
+            ...slot,
+            exhausted: false,
+          };
+        }) ?? [],
+    };
 
     // Remove Fatigued Condition
     let newConditions = _.cloneDeep(character?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
@@ -846,14 +891,25 @@ function ConditionSection() {
                     text={condition.name}
                     amount={condition.value}
                     onClick={() => {
+                      let source = condition.source;
+
+                      // Check if the condition is from being over bulk limit
+                      const isEncumberedFromBulk =
+                        condition.name === 'Encumbered' &&
+                        character?.inventory &&
+                        getInvBulk(character.inventory) > getBulkLimit('CHARACTER');
+                      if (isEncumberedFromBulk) {
+                        source = 'Over Bulk Limit';
+                      }
+
                       openContextModal({
                         modal: 'condition',
                         title: (
                           <Group justify='space-between'>
                             <Title order={3}>{condition.name}</Title>
-                            {condition.source ? (
+                            {source ? (
                               <Text fs='italic' fz='sm' mr={15}>
-                                From: <Text span>{condition.source}</Text>
+                                From: <Text span>{source}</Text>
                               </Text>
                             ) : (
                               <Button
@@ -2164,6 +2220,22 @@ function PanelInventory(props: {
       })
     : props.inventory.items;
 
+  const openAddItemDrawer = () => {
+    openDrawer({
+      type: 'add-item',
+      data: {
+        onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
+          if (!character) return;
+          if (type === 'BUY') {
+            setConfirmBuyItem({ item });
+          } else {
+            handleAddItem(props.setInventory, item, type === 'FORMULA');
+          }
+        },
+      },
+    });
+  };
+
   return (
     <Box h='100%'>
       <Stack gap={5}>
@@ -2190,7 +2262,7 @@ function PanelInventory(props: {
               },
             }}
           >
-            Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / 8
+            Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}
           </Badge>
           <CurrencySection character={character} />
           <Button
@@ -2200,55 +2272,43 @@ function PanelInventory(props: {
             size='sm'
             fw={500}
             rightSection={<IconPlus size='1.0rem' />}
-            onClick={() => {
-              openDrawer({
-                type: 'add-item',
-                data: {
-                  onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
-                    if (!character) return;
-                    if (type === 'BUY') {
-                      setConfirmBuyItem({ item });
-                    } else {
-                      handleAddItem(props.setInventory, item, type === 'FORMULA');
-                    }
-                  },
-                },
-              });
-            }}
+            onClick={() => openAddItemDrawer()}
           >
             Add Item
           </Button>
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-          <Grid w={'100%'}>
-            <Grid.Col span='auto'>
-              <Text ta='left' fz='xs' pl={5}>
-                Name
-              </Text>
-            </Grid.Col>
-            <Grid.Col span={3}>
-              <Grid>
-                <Grid.Col span={2}>
-                  <Text ta='center' fz='xs'>
-                    Qty
-                  </Text>
-                </Grid.Col>
-                <Grid.Col span={3}>
-                  <Text ta='center' fz='xs'>
-                    Bulk
-                  </Text>
-                </Grid.Col>
-                <Grid.Col span={7}>
-                  <Text ta='left' fz='xs'>
-                    Price
-                  </Text>
-                </Grid.Col>
-              </Grid>
-            </Grid.Col>
-            <Grid.Col span={2} offset={1}>
-              <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}></Group>
-            </Grid.Col>
-          </Grid>
+          {invItems.length !== 0 && (
+            <Grid w={'100%'}>
+              <Grid.Col span='auto'>
+                <Text ta='left' fz='xs' pl={5}>
+                  Name
+                </Text>
+              </Grid.Col>
+              <Grid.Col span={3}>
+                <Grid>
+                  <Grid.Col span={2}>
+                    <Text ta='center' fz='xs'>
+                      Qty
+                    </Text>
+                  </Grid.Col>
+                  <Grid.Col span={3}>
+                    <Text ta='center' fz='xs'>
+                      Bulk
+                    </Text>
+                  </Grid.Col>
+                  <Grid.Col span={7}>
+                    <Text ta='left' fz='xs'>
+                      Price
+                    </Text>
+                  </Grid.Col>
+                </Grid>
+              </Grid.Col>
+              <Grid.Col span={2} offset={1}>
+                <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}></Group>
+              </Grid.Col>
+            </Grid>
+          )}
           <Accordion
             variant='separated'
             styles={{
@@ -2400,7 +2460,11 @@ function PanelInventory(props: {
               ))}
             {invItems.length === 0 && (
               <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
-                Your inventory is empty, add some items!
+                Your inventory is empty,{' '}
+                <Anchor fz='sm' fs='italic' onClick={() => openAddItemDrawer()}>
+                  add some items
+                </Anchor>
+                !
               </Text>
             )}
           </Accordion>
@@ -2513,6 +2577,7 @@ function InvItemOption(props: {
   preventEquip?: boolean;
 }) {
   const theme = useMantineTheme();
+  const character = useRecoilValue(characterState);
 
   const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats('CHARACTER', props.invItem.item) : null;
 
@@ -2597,6 +2662,7 @@ function InvItemOption(props: {
               size='compact-xs'
               variant={props.invItem.is_invested ? 'subtle' : 'outline'}
               color={props.invItem.is_invested ? 'gray.7' : undefined}
+              disabled={!props.invItem.is_invested && reachedInvestedLimit('CHARACTER', character?.inventory)}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -2891,6 +2957,38 @@ function SpellList(props: {
               innate_casts: [],
             }),
             focus_point_current: Math.max((c.spells?.focus_point_current ?? 0) + (cast ? -1 : 1), 0),
+          },
+        };
+      });
+    }
+
+    if (props.type === 'INNATE') {
+      setCharacter((c) => {
+        if (!c) return c;
+        let innates = c.spells?.innate_casts ?? [];
+        innates = innates.map((innate) => {
+          if (innate.spell_id === spell.id && innate.rank === spell.rank) {
+            return {
+              ...innate,
+              casts_current: cast
+                ? Math.min(innate.casts_current + 1, innate.casts_max)
+                : Math.max(innate.casts_current - 1, 0),
+            };
+          }
+          return innate;
+        });
+
+        return {
+          ...c,
+          spells: {
+            ...(c.spells ?? {
+              slots: [],
+              list: [],
+              rituals: [],
+              focus_point_current: 0,
+              innate_casts: [],
+            }),
+            innate_casts: innates,
           },
         };
       });
@@ -3609,6 +3707,19 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
           />
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+          {data &&
+            data.ancestryFeats.length === 0 &&
+            data.classFeats.length === 0 &&
+            data.generalAndSkillFeats.length === 0 &&
+            data.otherFeats.length === 0 &&
+            data.classFeatures.length === 0 &&
+            data.heritages.length === 0 &&
+            data.physicalFeatures.length === 0 && (
+              <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+                No feats or features found.
+              </Text>
+            )}
+
           {data && (section === 'FEATS' || searchQuery.trim()) && (
             <Accordion
               variant='separated'

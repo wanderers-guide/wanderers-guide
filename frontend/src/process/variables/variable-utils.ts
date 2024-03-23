@@ -134,6 +134,14 @@ export function variableNameToLabel(variableName: string) {
     label = `${label} Lore`;
   }
 
+  // Capitalize AC and DC
+  if (label.endsWith('Ac')) {
+    label = label.slice(0, -2) + 'AC';
+  }
+  if (label.endsWith('Dc')) {
+    label = label.slice(0, -2) + 'DC';
+  }
+
   return label.trim();
 }
 

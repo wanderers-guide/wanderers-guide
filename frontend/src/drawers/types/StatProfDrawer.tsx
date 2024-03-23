@@ -6,6 +6,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { ActionSelectionOption, FeatSelectionOption } from '@common/select/SelectContent';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
   Text,
@@ -279,6 +280,40 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
 function getProfDescription(variableName: string) {
   if (variableName === 'CLASS_DC') {
     return `A class DC sets the difficulty for certain abilities granted by your character’s class.`;
+  }
+
+  if (variableName === 'SPELL_ATTACK') {
+    return `Some spells require you to succeed at a spell attack roll to affect the target. This is usually because they require you to precisely aim a ray or otherwise make an accurate attack. A spell attack roll is compared to the target’s AC. Spell attack rolls benefit from any bonuses or penalties to attack rolls, including your multiple attack penalty, but not any special benefits or penalties that apply only to weapon or unarmed attacks. Spell attacks don’t deal any damage beyond what’s listed in the spell description.
+    \n\nIn rare cases, a spell might have you make some other type of attack, such as a weapon ${convertToHardcodedLink('Strike', 'action')}. Such attacks use the normal rules and attack bonus for that type of attack.`;
+  }
+  if (variableName === 'SPELL_DC') {
+    return `Many times, instead of requiring you to make a spell attack roll, the spells you cast will require those within the area or targeted by the spell to attempt a saving throw against your spell DC to determine how the spell affects them.`;
+  }
+
+  if (variableName === 'LIGHT_ARMOR') {
+    return `Made from supple and thin materials, light armor favors agile adventurers since it offers some protection without sacrificing much mobility.`;
+  }
+  if (variableName === 'MEDIUM_ARMOR') {
+    return `Medium armor offers more protection than light armor, but it also impairs movement more.`;
+  }
+  if (variableName === 'HEAVY_ARMOR') {
+    return `Of all the armor categories, heavy armor offers the best protection. These suits of armor cover the entire body and are designed to stop a wide range of attacks.`;
+  }
+  if (variableName === 'UNARMORED_DEFENSE') {
+    return `Clothing or simple robes offer little protection, but they don’t hinder your movement.`;
+  }
+
+  if (variableName === 'SIMPLE_WEAPONS') {
+    return `These weapons are basic armaments that most characters can wield effectively, regardless of their class or skill level.`;
+  }
+  if (variableName === 'MARTIAL_WEAPONS') {
+    return `These weapons typically offer higher damage outputs and more diverse combat features but require further training.`;
+  }
+  if (variableName === 'ADVANCED_WEAPONS') {
+    return `These weapons are rare and exotic, and they often have special abilities that set them apart from other weapons.`;
+  }
+  if (variableName === 'UNARMED_ATTACKS') {
+    return `Almost all characters start out trained in unarmed attacks. You can ${convertToHardcodedLink('Strike', 'action')} with your fist or another body part, calculating your attack and damage rolls in the same way you would with a weapon. Unarmed attacks can belong to a weapon group, and they might have weapon traits. However, unarmed attacks aren’t weapons, and effects and abilities that work with weapons never work with unarmed attacks unless they specifically say so.`;
   }
 
   if (variableName === 'SAVE_FORT') {

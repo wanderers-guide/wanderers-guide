@@ -1,8 +1,10 @@
-import { Inventory, InventoryItem, Item } from '@typing/content';
+import { getConditionByName } from '@conditions/condition-handler';
+import { Character, Inventory, InventoryItem, Item } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
-import { getFinalAcValue } from '@variables/variable-display';
+import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import * as _ from 'lodash-es';
+import { SetterOrUpdater } from 'recoil';
 
 /**
  * Get all items in the inventory, including items in containers, as a single array
@@ -83,6 +85,55 @@ export const handleAddItem = (
     };
   });
 };
+
+export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+  setTimeout(() => {
+    if (!character.inventory) return;
+    if (getInvBulk(character.inventory) > getBulkLimit('CHARACTER')) {
+      // Add encumbered condition
+      const newConditions = _.cloneDeep(character.details?.conditions ?? []);
+      const encumbered = newConditions.find((c) => c.name === 'Encumbered');
+      if (!encumbered) {
+        newConditions.push(getConditionByName('Encumbered')!);
+
+        // if (getInvBulk(character.inventory) > getBulkLimitImmobile('CHARACTER')) {
+        //   const immobilized = newConditions.find((c) => c.name === 'Immobilized');
+        //   if (!immobilized) {
+        //     newConditions.push(getConditionByName('Immobilized')!);
+        //   }
+        // }
+
+        setCharacter((c) => {
+          if (!c) return c;
+          return {
+            ...c,
+            details: {
+              ...c.details,
+              conditions: newConditions,
+            },
+          };
+        });
+      }
+    } else {
+      // Remove encumbered condition
+      // const newConditions = _.cloneDeep(character.details?.conditions ?? []);
+      // const encumbered = newConditions.find((c) => c.name === 'Encumbered');
+      // if (encumbered) {
+      //   newConditions.splice(newConditions.indexOf(encumbered), 1);
+      //   setCharacter((c) => {
+      //     if (!c) return c;
+      //     return {
+      //       ...c,
+      //       details: {
+      //         ...c.details,
+      //         conditions: newConditions,
+      //       },
+      //     };
+      //   });
+      // }
+    }
+  }, 100);
+}
 
 /**
  * Utility function to handle deleting an item from the inventory
@@ -339,4 +390,27 @@ export function labelizeBulk(bulk?: number | string, displayZero = false) {
     return 'L';
   }
   return `${parseFloat(bulk.toFixed(1))}`;
+}
+
+export function getBulkLimit(id: StoreID) {
+  const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
+  const bonus = getFinalVariableValue(id, 'BULK_LIMIT_BONUS').total;
+  return 5 + strMod + bonus;
+}
+
+export function getBulkLimitImmobile(id: StoreID) {
+  return getBulkLimit(id) + 5;
+}
+
+export function reachedInvestedLimit(id: StoreID, inv?: Inventory) {
+  if (!inv) {
+    return false;
+  }
+  const invItems = getFlatInvItems(inv);
+  const investedItems = invItems.filter((item) => item.is_invested);
+  return investedItems.length >= getInvestedLimit(id);
+}
+
+export function getInvestedLimit(id: StoreID) {
+  return 10 + getFinalVariableValue(id, 'INVEST_LIMIT_BONUS').total;
 }

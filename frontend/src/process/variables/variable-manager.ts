@@ -198,8 +198,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   SPELL_DATA: newVariable('list-str', 'SPELL_DATA'),
 
-  // BULK_LIMIT: newVariable("num", "BULK_LIMIT"),
-  // INVEST_LIMIT: newVariable("num", "INVEST_LIMIT"),
+  BULK_LIMIT_BONUS: newVariable('num', 'BULK_LIMIT_BONUS'),
+  INVEST_LIMIT_BONUS: newVariable('num', 'INVEST_LIMIT_BONUS'),
 
   // ATTACKS: newVariable("num", "ATTACKS"),
   // ATTACKS_DMG_DICE: newVariable("str", "ATTACKS_DMG_DICE"),
