@@ -331,7 +331,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   <Tabs.Tab value='books' leftSection={<IconBooks style={iconStyle} />}>
                     Books
                   </Tabs.Tab>
-                  <Tabs.Tab value='homebrew' leftSection={<IconAsset style={iconStyle} />}>
+                  <Tabs.Tab value='homebrew' leftSection={<IconAsset style={iconStyle} />} disabled>
                     Homebrew
                   </Tabs.Tab>
                   <Tabs.Tab value='variants' leftSection={<IconVocabulary style={iconStyle} />}>

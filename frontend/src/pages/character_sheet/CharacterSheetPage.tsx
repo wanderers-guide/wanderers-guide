@@ -752,14 +752,22 @@ function HealthSection() {
                   }}
                 />
                 <Box>
-                  <Text size='md' c='gray.4'>
+                  <Text size='md' c='gray.4' style={{ cursor: 'default' }}>
                     /
                   </Text>
                 </Box>
                 <Box>
-                  <Text size='lg' c='gray.3'>
+                  <Anchor
+                    size='lg'
+                    c='gray.3'
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      openDrawer({ type: 'stat-hp', data: {} });
+                    }}
+                    underline='hover'
+                  >
                     {maxHealth}
-                  </Text>
+                  </Anchor>
                 </Box>
               </Group>
             </Box>
