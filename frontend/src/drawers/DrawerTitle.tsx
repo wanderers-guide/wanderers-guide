@@ -40,11 +40,8 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'background' && <BackgroundDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'language' && <LanguageDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'heritage' && <ActionDrawerTitle data={_drawer.data} />}
-      {/* TODO */}
       {_drawer?.type === 'sense' && <ActionDrawerTitle data={_drawer.data} />}
-      {/* TODO */}
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}
-      {/* TODO */}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}

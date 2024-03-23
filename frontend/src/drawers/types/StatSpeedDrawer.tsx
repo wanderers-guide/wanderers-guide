@@ -28,6 +28,7 @@ import {
   IconBadgesFilled,
   IconBlockquote,
   IconCaretLeftRight,
+  IconChartDots3,
   IconFrame,
   IconGitBranch,
   IconGitCommit,
@@ -149,7 +150,7 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
     const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
     timeline.push({
       type: 'ADJUSTMENT',
-      title: `${from} → ${to}`,
+      title: from ? `${from} → ${to}` : `${to}`,
       description: `From ${hist.source}`,
       timestamp: hist.timestamp,
     });
@@ -266,7 +267,7 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
                   <Timeline active={timeline.length - 1} bulletSize={24} lineWidth={2}>
                     {timeline.map((item, index) => (
                       <Timeline.Item
-                        bullet={item.type === 'ADJUSTMENT' ? <IconPlusMinus size={12} /> : <IconFrame size={12} />}
+                        bullet={item.type === 'ADJUSTMENT' ? <IconChartDots3 size={12} /> : <IconFrame size={12} />}
                         title={item.title}
                         key={index}
                       >

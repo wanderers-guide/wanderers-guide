@@ -5,7 +5,9 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ActionSelectionOption, FeatSelectionOption } from '@common/select/SelectContent';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
+import { collectCharacterSenses } from '@content/collect-content';
 import { fetchAbilityBlockByName, fetchContentAll, fetchContentById } from '@content/content-store';
+import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
   Text,
@@ -22,6 +24,7 @@ import {
   Timeline,
   HoverCard,
   List,
+  Anchor,
 } from '@mantine/core';
 import {
   IconBadgesFilled,
@@ -52,6 +55,7 @@ import {
   variableToLabel,
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
+import { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function StatPerceptionDrawerTitle(props: { data: {} }) {
@@ -76,12 +80,19 @@ export function StatPerceptionDrawerTitle(props: { data: {} }) {
 }
 
 export function StatPerceptionDrawerContent(props: { data: {} }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Collect senses info
+  const { data: abilityBlocks } = useQuery({
+    queryKey: [`find-ability-blocks`],
+    queryFn: async () => {
+      return await fetchContentAll<AbilityBlock>('ability-block');
+    },
+  });
+  const senses = useMemo(() => collectCharacterSenses('CHARACTER', abilityBlocks ?? []), [abilityBlocks]);
+
   const variable = getVariable<VariableProf>('CHARACTER', 'PERCEPTION');
   if (!variable) return null;
-
-  const perciseSenses = getVariable<VariableListStr>('CHARACTER', 'SENSES_PRECISE')?.value ?? [];
-  const impreciseSenses = getVariable<VariableListStr>('CHARACTER', 'SENSES_IMPRECISE')?.value ?? [];
-  const vagueSenses = getVariable<VariableListStr>('CHARACTER', 'SENSES_VAGUE')?.value ?? [];
 
   // Breakdown
   const parts = getProfValueParts('CHARACTER', variable.name)!;
@@ -101,7 +112,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
     const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
     timeline.push({
       type: 'ADJUSTMENT',
-      title: `${from} → ${to}`,
+      title: from ? `${from} → ${to}` : `${to}`,
       description: `From ${hist.source}`,
       timestamp: hist.timestamp,
     });
@@ -156,7 +167,8 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         A precise sense is one that can be used to perceive the world in nuanced detail. The only way to
                         target a creature without having drawbacks is to use a precise sense. You can usually detect a
                         creature automatically with a precise sense unless that creature is hiding or obscured by the
-                        environment, in which case you can use the Seek basic action to better detect the creature.
+                        environment, in which case you can use the {convertToHardcodedLink('Seek', 'action')} basic
+                        action to better detect the creature.
                       </RichText>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -168,18 +180,34 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                           <Text fz='sm' c='gray.5' span>
-                            {perciseSenses.length}
+                            {senses.precise.length}
                           </Text>
                         </Badge>
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
                       <List>
-                        {perciseSenses.map((sense, index) => (
+                        {senses.precise.map((sense, index) => (
                           <List.Item key={index}>
-                            <Text c='gray.5' size='md' span>
-                              {variableNameToLabel(sense)}
-                            </Text>
+                            {sense.sense ? (
+                              <Anchor
+                                size='md'
+                                onClick={() => {
+                                  if (!sense.sense) return;
+                                  openDrawer({
+                                    type: 'sense',
+                                    data: { id: sense.sense.id },
+                                    extra: { addToHistory: true },
+                                  });
+                                }}
+                              >
+                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                              </Anchor>
+                            ) : (
+                              <Text c='gray.5' size='md' span>
+                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                              </Text>
+                            )}
                           </List.Item>
                         ))}
                       </List>
@@ -221,9 +249,9 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         usually sense a creature automatically with an imprecise sense, but it has the hidden condition
                         instead of the observed condition. It might be undetected by you if it's using Stealth or is in
                         an environment that distorts the sense, such as a noisy room in the case of hearing. In those
-                        cases, you have to use the Seek basic action to detect the creature. At best, an imprecise sense
-                        can be used to make an undetected creature (or one you didn't even know was there) merely
-                        hidden—it can't make the creature observed.
+                        cases, you have to use the {convertToHardcodedLink('Seek', 'action')} basic action to detect the
+                        creature. At best, an imprecise sense can be used to make an undetected creature (or one you
+                        didn't even know was there) merely hidden—it can't make the creature observed.
                       </RichText>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -235,18 +263,34 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                           <Text fz='sm' c='gray.5' span>
-                            {impreciseSenses.length}
+                            {senses.imprecise.length}
                           </Text>
                         </Badge>
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
                       <List>
-                        {impreciseSenses.map((sense, index) => (
+                        {senses.imprecise.map((sense, index) => (
                           <List.Item key={index}>
-                            <Text c='gray.5' size='md' span>
-                              {variableNameToLabel(sense)}
-                            </Text>
+                            {sense.sense ? (
+                              <Anchor
+                                size='md'
+                                onClick={() => {
+                                  if (!sense.sense) return;
+                                  openDrawer({
+                                    type: 'sense',
+                                    data: { id: sense.sense.id },
+                                    extra: { addToHistory: true },
+                                  });
+                                }}
+                              >
+                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                              </Anchor>
+                            ) : (
+                              <Text c='gray.5' size='md' span>
+                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                              </Text>
+                            )}
                           </List.Item>
                         ))}
                       </List>
@@ -299,18 +343,34 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                           <Text fz='sm' c='gray.5' span>
-                            {vagueSenses.length}
+                            {senses.vague.length}
                           </Text>
                         </Badge>
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
                       <List>
-                        {vagueSenses.map((sense, index) => (
+                        {senses.vague.map((sense, index) => (
                           <List.Item key={index}>
-                            <Text c='gray.5' size='md' span>
-                              {variableNameToLabel(sense)}
-                            </Text>
+                            {sense.sense ? (
+                              <Anchor
+                                size='md'
+                                onClick={() => {
+                                  if (!sense.sense) return;
+                                  openDrawer({
+                                    type: 'sense',
+                                    data: { id: sense.sense.id },
+                                    extra: { addToHistory: true },
+                                  });
+                                }}
+                              >
+                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                              </Anchor>
+                            ) : (
+                              <Text c='gray.5' size='md' span>
+                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                              </Text>
+                            )}
                           </List.Item>
                         ))}
                       </List>

@@ -96,8 +96,6 @@ export default function App() {
           // Use cached customization if available
           const cache = getCachedCustomization();
 
-          // TODO: Use account default if no character default
-
           setBackground(await getBackgroundImageFromURL(cache?.background_image_url ?? undefined));
         }
         return;

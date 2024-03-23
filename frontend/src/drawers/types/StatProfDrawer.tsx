@@ -97,7 +97,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
     const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
     timeline.push({
       type: 'ADJUSTMENT',
-      title: `${from} → ${to}`,
+      title: from ? `${from} → ${to}` : `${to}`,
       description: `From ${hist.source}`,
       timestamp: hist.timestamp,
     });
@@ -284,7 +284,7 @@ function getProfDescription(variableName: string) {
 
   if (variableName === 'SPELL_ATTACK') {
     return `Some spells require you to succeed at a spell attack roll to affect the target. This is usually because they require you to precisely aim a ray or otherwise make an accurate attack. A spell attack roll is compared to the target’s AC. Spell attack rolls benefit from any bonuses or penalties to attack rolls, including your multiple attack penalty, but not any special benefits or penalties that apply only to weapon or unarmed attacks. Spell attacks don’t deal any damage beyond what’s listed in the spell description.
-    \n\nIn rare cases, a spell might have you make some other type of attack, such as a weapon ${convertToHardcodedLink('Strike', 'action')}. Such attacks use the normal rules and attack bonus for that type of attack.`;
+    \n\nIn rare cases, a spell might have you make some other type of attack, such as a weapon ${convertToHardcodedLink('action', 'Strike')}. Such attacks use the normal rules and attack bonus for that type of attack.`;
   }
   if (variableName === 'SPELL_DC') {
     return `Many times, instead of requiring you to make a spell attack roll, the spells you cast will require those within the area or targeted by the spell to attempt a saving throw against your spell DC to determine how the spell affects them.`;
@@ -313,7 +313,7 @@ function getProfDescription(variableName: string) {
     return `These weapons are rare and exotic, and they often have special abilities that set them apart from other weapons.`;
   }
   if (variableName === 'UNARMED_ATTACKS') {
-    return `Almost all characters start out trained in unarmed attacks. You can ${convertToHardcodedLink('Strike', 'action')} with your fist or another body part, calculating your attack and damage rolls in the same way you would with a weapon. Unarmed attacks can belong to a weapon group, and they might have weapon traits. However, unarmed attacks aren’t weapons, and effects and abilities that work with weapons never work with unarmed attacks unless they specifically say so.`;
+    return `Almost all characters start out trained in unarmed attacks. You can ${convertToHardcodedLink('action', 'Strike')} with your fist or another body part, calculating your attack and damage rolls in the same way you would with a weapon. Unarmed attacks can belong to a weapon group, and they might have weapon traits. However, unarmed attacks aren’t weapons, and effects and abilities that work with weapons never work with unarmed attacks unless they specifically say so.`;
   }
 
   if (variableName === 'SAVE_FORT') {
@@ -327,16 +327,16 @@ function getProfDescription(variableName: string) {
   }
 
   if (variableName === 'SKILL_ACROBATICS') {
-    return `Acrobatics measures your ability to perform tasks requiring coordination and grace. When you use the Escape basic action (page 416), you can use your Acrobatics modifier instead of your unarmed attack modifier. You can also use it for the basic actions Arrest a Fall (page 418) and Grab an Edge (page 418) instead of Reflex.`;
+    return `Acrobatics measures your ability to perform tasks requiring coordination and grace. When you use the ${convertToHardcodedLink('action', 'Escape')} basic action, you can use your Acrobatics modifier instead of your unarmed attack modifier. You can also use it for the basic actions Arrest a Fall (page 418) and Grab an Edge (page 418) instead of Reflex.`;
   }
   if (variableName === 'SKILL_ARCANA') {
-    return `Arcana measures how much you know about arcane magic and creatures. Even if you’re untrained, you can Recall Knowledge.`;
+    return `Arcana measures how much you know about arcane magic and creatures. Even if you’re untrained, you can ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_ATHLETICS') {
     return `Athletics allows you to perform deeds of physical prowess. Most Athletics actions let you move about the environment or control your opponent’s movement in combat. When you use the Escape basic action (page 416), you can use your Athletics modifier instead of your unarmed attack modifier.`;
   }
   if (variableName === 'SKILL_CRAFTING') {
-    return `You can use this skill to create and repair items. Even if you’re untrained, you can Recall Knowledge.`;
+    return `You can use this skill to create and repair items. Even if you’re untrained, you can ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_DECEPTION') {
     return `You can trick and mislead others using disguises, lies, and other forms of subterfuge. Deception often has a drawback if you get found out, and it’s often best to be out of town by the time this happens.`;
@@ -348,38 +348,38 @@ function getProfDescription(variableName: string) {
     return `You bend others to your will using threats. Unlike Deception or Diplomacy, Intimidation is typically a blunt instrument with little room for nuance or care.`;
   }
   if (variableName === 'SKILL_MEDICINE') {
-    return `You can patch up wounds and help people recover from diseases and poisons. Treat Wounds is especially useful, allowing your adventuring party to heal up between fights. It can be made more efficient with skill feats like Continual Recovery (page 254) and Ward Medic (page 265). Even if you’re untrained in Medicine, you can use it to Recall Knowledge.`;
+    return `You can patch up wounds and help people recover from diseases and poisons. ${convertToHardcodedLink('action', 'Treat Wounds')} is especially useful, allowing your adventuring party to heal up between fights. It can be made more efficient with skill feats like Continual Recovery (page 254) and Ward Medic (page 265). Even if you’re untrained in Medicine, you can use it to ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_NATURE') {
-    return `You know about the natural world, and you command and train animals and magical beasts. Even if you’re untrained in Nature, you can use it to Recall Knowledge.`;
+    return `You know about the natural world, and you command and train animals and magical beasts. Even if you’re untrained in Nature, you can use it to ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_OCCULTISM') {
-    return `You know a great deal about ancient philosophies, esoteric lore, obscure mysticism, and supernatural creatures. Even if you’re untrained in Occultism, you can use it to Recall Knowledge.`;
+    return `You know a great deal about ancient philosophies, esoteric lore, obscure mysticism, and supernatural creatures. Even if you’re untrained in Occultism, you can use it to ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_PERFORMANCE') {
     return `You are skilled at a form of performance, using your talents to impress a crowd or make a living.
     Some performances require you to be more than just charismatic, and if you don’t meet the demands of the art form or the audience, the GM might apply a penalty based on the relevant attribute. For example, if you’re dancing and have a negative Dexterity modifier, you might take a penalty to your attempt at dancing. Likewise, if you are orating and have a negative Intelligence modifier, you might have to hope your raw Charisma can overcome the penalties from your intellectual shortcomings—or ask someone to help write your speeches!`;
   }
   if (variableName === 'SKILL_RELIGION') {
-    return `The secrets of deities, dogma, faith, and the realms of divine creatures both sublime and sinister are open to you. You also understand how magic works, though your training imparts a religious slant to that knowledge. Even if you’re untrained in Religion, you can use it to Recall Knowledge.`;
+    return `The secrets of deities, dogma, faith, and the realms of divine creatures both sublime and sinister are open to you. You also understand how magic works, though your training imparts a religious slant to that knowledge. Even if you’re untrained in Religion, you can use it to ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_SOCIETY') {
-    return `You understand the people and systems that make civilization run, and you know the historical events that make societies what they are today. Further, you can use that knowledge to navigate the complex physical, societal, and economic workings of settlements. Even if you’re untrained in Society, you can use it to Recall Knowledge and Subsist.`;
+    return `You understand the people and systems that make civilization run, and you know the historical events that make societies what they are today. Further, you can use that knowledge to navigate the complex physical, societal, and economic workings of settlements. Even if you’re untrained in Society, you can use it to ${convertToHardcodedLink('action', 'Recall Knowledge')} and ${convertToHardcodedLink('action', 'Subsist')}.`;
   }
   if (variableName === 'SKILL_STEALTH') {
     return `You are skilled at avoiding detection, allowing you to slip past foes, hide, or conceal an item.`;
   }
   if (variableName === 'SKILL_SURVIVAL') {
-    return `You are adept at living in the wilderness, foraging for food and building shelter, and with training you discover the secrets of tracking and hiding your trail. Even if you’re untrained, you can still use Survival to Subsist.`;
+    return `You are adept at living in the wilderness, foraging for food and building shelter, and with training you discover the secrets of tracking and hiding your trail. Even if you’re untrained, you can still use Survival to ${convertToHardcodedLink('action', 'Subsist')}.`;
   }
   if (variableName === 'SKILL_THIEVERY') {
     return `You are trained in a particular set of skills favored by thieves and miscreants.`;
   }
   if (variableName.startsWith('SKILL_LORE_')) {
     return `You have specialized information on a narrow topic. Lore features many subcategories.
-    The GM determines what other subcategories they’ll allow as Lore skills, though these categories are always less broad than any of the other skills that allow you to Recall Knowledge, and they should never be able to take the place of another skill’s Recall Knowledge action. For instance, you couldn’t choose Magic Lore to recall the breadth of knowledge about magic covered by Arcana, Nature, Occultism, and Religion, or choose Adventuring Lore to give you all the information an adventurer needs, or choose Planar Lore to gain all the information spread across various skills and subcategories such as Heaven Lore. 
+    The GM determines what other subcategories they’ll allow as Lore skills, though these categories are always less broad than any of the other skills that allow you to ${convertToHardcodedLink('action', 'Recall Knowledge')}, and they should never be able to take the place of another skill’s ${convertToHardcodedLink('action', 'Recall Knowledge')} action. For instance, you couldn’t choose Magic Lore to recall the breadth of knowledge about magic covered by Arcana, Nature, Occultism, and Religion, or choose Adventuring Lore to give you all the information an adventurer needs, or choose Planar Lore to gain all the information spread across various skills and subcategories such as Heaven Lore. 
     If you’re making a check and multiple subcategories of Lore could apply, or a non-Lore skill could apply, you can use whichever skill you prefer. If there’s any doubt whether a Lore skill applies to a specific topic or action, the GM decides whether it can be used or not. 
-    Even if you’re untrained in Lore, you can use it to Recall Knowledge.`;
+    Even if you’re untrained in Lore, you can use it to ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   return '_No description available for this proficiency._';
 }

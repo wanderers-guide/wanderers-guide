@@ -162,12 +162,12 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SPEED_BURROW: newVariable('num', 'SPEED_BURROW'),
   SPEED_SWIM: newVariable('num', 'SPEED_SWIM'),
 
-  // Senses // use <NAME>-30 to indicate a range
+  // Senses // use `<NAME>, 30` to indicate a range. Can include variable math
   SENSES_PRECISE: newVariable('list-str', 'SENSES_PRECISE', ['NORMAL_VISION']),
   SENSES_IMPRECISE: newVariable('list-str', 'SENSES_IMPRECISE', ['HEARING']),
   SENSES_VAGUE: newVariable('list-str', 'SENSES_VAGUE', ['SMELL']),
 
-  // Resistances, Weaknesses, and Immunities // use `<NAME> 30` to indicate an amount, Can include variable math
+  // Resistances, Weaknesses, and Immunities // use `<NAME>, {{level/2}}` to indicate an amount. Can include variable math
   RESISTANCES: newVariable('list-str', 'RESISTANCES'),
   WEAKNESSES: newVariable('list-str', 'WEAKNESSES'),
   IMMUNITIES: newVariable('list-str', 'IMMUNITIES'),

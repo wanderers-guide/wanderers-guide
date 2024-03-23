@@ -1062,7 +1062,6 @@ function SelectionOptionsRoot(props: {
     );
   }
 
-  console.log(props.options, `${props.type} (${props.abilityBlockType}) TODO`);
   // Generic ability block. Probably used for variables.
   return (
     <>

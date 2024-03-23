@@ -9,6 +9,7 @@ import {
   getAllSpeedVariables,
   getVariable,
 } from '../variables/variable-manager';
+import { convertToHardcodedLink } from '@content/hardcoded-links';
 
 const CONDITIONS: Condition[] = [
   {
@@ -115,7 +116,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Fascinated',
-    description: `You’re compelled to focus your attention on something, distracting you from whatever else is going on around you. You take a –2 status penalty to Perception and skill checks, and you can’t use concentrate actions unless they (or their intended consequences) are related to the subject of your fascination, as determined by the GM. For instance, you might be able to Seek and Recall Knowledge about the subject, but you likely couldn’t cast a spell targeting a different creature. This condition ends if a creature uses hostile actions against you or any of your allies.`,
+    description: `You’re compelled to focus your attention on something, distracting you from whatever else is going on around you. You take a –2 status penalty to Perception and skill checks, and you can’t use concentrate actions unless they (or their intended consequences) are related to the subject of your fascination, as determined by the GM. For instance, you might be able to ${convertToHardcodedLink('action', 'Seek')} and ${convertToHardcodedLink('action', 'Recall Knowledge')} about the subject, but you likely couldn’t cast a spell targeting a different creature. This condition ends if a creature uses hostile actions against you or any of your allies.`,
     for_character: true,
     for_creature: true,
     for_object: false,
@@ -166,7 +167,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Hidden',
-    description: `While you’re hidden from a creature, that creature knows the space you’re in but can’t tell precisely where you are. You typically become hidden by using Stealth to Hide. When Seeking a creature using only imprecise senses, it remains hidden, rather than observed. A creature you’re hidden from is off-guard to you, and it must succeed at a DC 11 flat check when targeting you with an attack, spell, or other effect or it fails to affect you. Area effects aren’t subject to this flat check.`,
+    description: `While you’re hidden from a creature, that creature knows the space you’re in but can’t tell precisely where you are. You typically become hidden by using Stealth to ${convertToHardcodedLink('action', 'Hide')}. When ${convertToHardcodedLink('action', 'Seek', 'Seeking')} a creature using only imprecise senses, it remains hidden, rather than observed. A creature you’re hidden from is off-guard to you, and it must succeed at a DC 11 flat check when targeting you with an attack, spell, or other effect or it fails to affect you. Area effects aren’t subject to this flat check.`,
     value: 1,
     for_character: true,
     for_creature: true,
@@ -195,15 +196,15 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Invisible',
-    description: `You can’t be seen. You’re undetected to everyone. Creatures can Seek to detect you; if a creature succeeds at its Perception check against your Stealth DC, you become hidden to that creature until you Sneak to become undetected again. If you become invisible while someone can already see you, you start out hidden to them (instead of undetected) until you successfully Sneak. You can’t become observed while invisible except via special abilities or magic.`,
+    description: `You can’t be seen. You’re undetected to everyone. Creatures can ${convertToHardcodedLink('action', 'Seek')} to detect you; if a creature succeeds at its Perception check against your Stealth DC, you become hidden to that creature until you ${convertToHardcodedLink('action', 'Sneak')} to become undetected again. If you become invisible while someone can already see you, you start out hidden to them (instead of undetected) until you successfully ${convertToHardcodedLink('action', 'Sneak')}. You can’t become observed while invisible except via special abilities or magic.`,
     for_character: true,
     for_creature: true,
     for_object: false,
   },
   {
     name: 'Observed',
-    description: `Anything in plain view is observed by you. If a creature takes measures to avoid detection, such as by using Stealth to Hide,
-    it can become hidden or undetected instead of observed. If you have another precise sense besides sight, you might be able to observe a creature or object using that sense instead. You can observe a creature with only your precise senses. When Seeking a creature using only imprecise senses, it remains hidden, rather than observed.`,
+    description: `Anything in plain view is observed by you. If a creature takes measures to avoid detection, such as by using Stealth to ${convertToHardcodedLink('action', 'Hide')},
+    it can become hidden or undetected instead of observed. If you have another precise sense besides sight, you might be able to observe a creature or object using that sense instead. You can observe a creature with only your precise senses. When ${convertToHardcodedLink('action', 'Seek', 'Seeking')} a creature using only imprecise senses, it remains hidden, rather than observed.`,
     for_character: true,
     for_creature: true,
     for_object: false,
@@ -217,7 +218,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Paralyzed',
-    description: `You’re frozen in place. You have the off-guard condition and can’t act except to Recall Knowledge and use actions that require only your mind (as determined by the GM). Your senses still function, but only in the areas you can perceive without moving, so you can’t Seek.`,
+    description: `You’re frozen in place. You have the off-guard condition and can’t act except to ${convertToHardcodedLink('action', 'Recall Knowledge')} and use actions that require only your mind (as determined by the GM). Your senses still function, but only in the areas you can perceive without moving, so you can’t ${convertToHardcodedLink('action', 'Seek')}.`,
     for_character: true,
     for_creature: true,
     for_object: false,
@@ -238,8 +239,8 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Prone',
-    description: `You’re lying on the ground. You are off-guard and take a –2 circumstance penalty to attack rolls. The only move actions you can use while you’re prone are Crawl and Stand. Standing up ends the prone condition. You can Take Cover while prone to hunker down and gain greater cover against ranged attacks, even if you don’t have an object to get behind, which grants you a +4 circumstance bonus to AC against ranged attacks (but you remain off-guard).
-    If you would be knocked prone while you’re Climbing or Flying, you fall (see page 421 for the rules on falling). You can’t be knocked prone when Swimming.`,
+    description: `You’re lying on the ground. You are off-guard and take a –2 circumstance penalty to attack rolls. The only move actions you can use while you’re prone are ${convertToHardcodedLink('action', 'Crawl')} and ${convertToHardcodedLink('action', 'Stand')}. Standing up ends the prone condition. You can ${convertToHardcodedLink('action', 'Take Cover')} while prone to hunker down and gain greater cover against ranged attacks, even if you don’t have an object to get behind, which grants you a +4 circumstance bonus to AC against ranged attacks (but you remain off-guard).
+    If you would be knocked prone while you’re Climbing or Flying, you fall (see page 421 for the rules on falling). You can’t be knocked prone when ${convertToHardcodedLink('action', 'Swim', 'Swimming')}.`,
     for_character: true,
     for_creature: true,
     for_object: false,
@@ -312,7 +313,7 @@ const CONDITIONS: Condition[] = [
   {
     name: 'Undetected',
     description: `When you are undetected by a creature, that creature can’t see you at all, has no idea what space you occupy, and can’t target you, though you still can be affected by abilities that target an area. When you’re undetected by a creature, that creature is off-guard to you.
-    A creature you’re undetected by can guess which square you’re in to try targeting you. It must pick a square and attempt an attack. This works like targeting a hidden creature (requiring a DC 11 flat check, as described on page 434), but the flat check and attack roll are rolled in secret by the GM, who doesn’t reveal whether the attack missed due to failing the flat check, failing the attack roll, or choosing the wrong square. They can Seek to try to find you, as described on page 417.`,
+    A creature you’re undetected by can guess which square you’re in to try targeting you. It must pick a square and attempt an attack. This works like targeting a hidden creature (requiring a DC 11 flat check, as described on page 434), but the flat check and attack roll are rolled in secret by the GM, who doesn’t reveal whether the attack missed due to failing the flat check, failing the attack roll, or choosing the wrong square. They can ${convertToHardcodedLink('action', 'Seek')} to try to find you.`,
     for_character: true,
     for_creature: true,
     for_object: false,
@@ -334,7 +335,7 @@ const CONDITIONS: Condition[] = [
   {
     name: 'Wounded',
     description: `You have been seriously injured. If you lose the dying condition and do not already have the wounded condition, you become wounded 1. If you already have the wounded condition when you lose the dying condition, your wounded condition value increases by 1. If you gain the dying condition while wounded, increase your dying condition value by your wounded value.
-    The wounded condition ends if someone successfully restores Hit Points to you using Treat Wounds, or if you are restored to full Hit Points by any means and rest for 10 minutes.`,
+    The wounded condition ends if someone successfully restores Hit Points to you using ${convertToHardcodedLink('action', 'Treat Wounds')}, or if you are restored to full Hit Points by any means and rest for 10 minutes.`,
     value: 1,
     for_character: true,
     for_creature: true,

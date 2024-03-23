@@ -8,10 +8,11 @@ import {
   CastingSource,
 } from '@typing/content';
 import { GiveSpellData, SpellMetadata } from '@typing/operations';
-import { VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr } from '@typing/variables';
+import { toLabel } from '@utils/strings';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getVariable } from '@variables/variable-manager';
-import { labelToVariable } from '@variables/variable-utils';
+import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 
 export function collectCharacterAbilityBlocks(character: Character, blocks: AbilityBlock[]) {
@@ -42,31 +43,23 @@ export function collectCharacterAbilityBlocks(character: Character, blocks: Abil
   });
 
   const otherFeats = feats.filter((feat) => {
-    return (
-      !classFeats.includes(feat) &&
-      !ancestryFeats.includes(feat) &&
-      !generalAndSkillFeats.includes(feat)
-    );
+    return !classFeats.includes(feat) && !ancestryFeats.includes(feat) && !generalAndSkillFeats.includes(feat);
   });
 
   // Features ////////////////////////////
 
-  const classFeatureIds =
-    getVariable<VariableListStr>('CHARACTER', 'CLASS_FEATURE_IDS')?.value ?? [];
+  const classFeatureIds = getVariable<VariableListStr>('CHARACTER', 'CLASS_FEATURE_IDS')?.value ?? [];
   const classFeatures = blocks.filter(
     (block) => block.type === 'class-feature' && classFeatureIds.includes(`${block.id}`)
   );
 
-  const physicalFeatureIds =
-    getVariable<VariableListStr>('CHARACTER', 'PHYSICAL_FEATURE_IDS')?.value ?? [];
+  const physicalFeatureIds = getVariable<VariableListStr>('CHARACTER', 'PHYSICAL_FEATURE_IDS')?.value ?? [];
   const physicalFeatures = blocks.filter(
     (block) => block.type === 'physical-feature' && physicalFeatureIds.includes(`${block.id}`)
   );
 
   const heritageIds = getVariable<VariableListStr>('CHARACTER', 'HERITAGE_IDS')?.value ?? [];
-  const heritages = blocks.filter(
-    (block) => block.type === 'heritage' && heritageIds.includes(`${block.id}`)
-  );
+  const heritages = blocks.filter((block) => block.type === 'heritage' && heritageIds.includes(`${block.id}`));
 
   // Base class features (default by the class)
   const baseClassFeatures = blocks.filter(
@@ -95,34 +88,32 @@ export function collectCharacterAbilityBlocks(character: Character, blocks: Abil
   };
 }
 
-export function collectCharacterSenses(character: Character, blocks: AbilityBlock[]) {
+export function collectCharacterSenses(id: StoreID, blocks: AbilityBlock[]) {
   const allSenses = blocks.filter((block) => block.type === 'sense');
 
-  const precise = getVariable<VariableListStr>('CHARACTER', 'SENSES_PRECISE')?.value ?? [];
-  const imprecise = getVariable<VariableListStr>('CHARACTER', 'SENSES_IMPRECISE')?.value ?? [];
-  const vague = getVariable<VariableListStr>('CHARACTER', 'SENSES_VAGUE')?.value ?? [];
+  const precise = getVariable<VariableListStr>(id, 'SENSES_PRECISE')?.value ?? [];
+  const imprecise = getVariable<VariableListStr>(id, 'SENSES_IMPRECISE')?.value ?? [];
+  const vague = getVariable<VariableListStr>(id, 'SENSES_VAGUE')?.value ?? [];
 
   const findSense = (varTitle: string) => {
     let range: string | null = null;
-    if (varTitle.includes('-')) {
-      const parts = varTitle.split('-');
+    if (varTitle.includes(',')) {
+      const parts = varTitle.split(',');
       varTitle = parts[0];
       range = parts[parts.length - 1];
     }
 
-    const sense = allSenses.find((sense) => labelToVariable(sense.name) === varTitle);
-    if (sense) {
-      return {
-        sense,
-        range, // TODO: include variable math
-      };
-    }
-    return null;
+    return {
+      sense: allSenses.find((sense) => labelToVariable(sense.name) === labelToVariable(varTitle)),
+      senseName: toLabel(varTitle),
+      range: compileExpressions(id, range?.trim() ?? '', true),
+    };
   };
 
   type SenseWithRange = {
-    sense: AbilityBlock;
-    range: string | null;
+    sense?: AbilityBlock;
+    senseName: string;
+    range: string;
   };
 
   return {
@@ -238,10 +229,7 @@ function mergeSpellSlots(emptySlots: SpellSlot[], characterSlots: SpellSlot[]): 
   });
 }
 
-function mergeInnateSpells(
-  emptyCasts: SpellInnateEntry[],
-  characterCasts: SpellInnateEntry[]
-): SpellInnateEntry[] {
+function mergeInnateSpells(emptyCasts: SpellInnateEntry[], characterCasts: SpellInnateEntry[]): SpellInnateEntry[] {
   const castMap = new Map();
   for (const cast of emptyCasts) {
     castMap.set(`${cast.spell_id}-${cast.tradition}-${cast.rank}`, 0);

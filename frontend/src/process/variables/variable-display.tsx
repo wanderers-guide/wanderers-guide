@@ -153,12 +153,17 @@ export function getHealthValueParts(id: StoreID) {
   const conMod = getFinalVariableValue(id, 'ATTRIBUTE_CON').total;
   const level = getVariable<VariableNum>(id, 'LEVEL')!.value;
 
+  const breakdown = getVariableBreakdown(id, 'MAX_HEALTH_BONUS');
+  const hasConditionals = breakdown.conditionals.length > 0;
+
   return {
     level,
     ancestryHp,
     classHp,
     bonusHp,
     conMod,
+    breakdown,
+    hasConditionals,
   };
 }
 

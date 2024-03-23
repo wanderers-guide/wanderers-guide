@@ -141,7 +141,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {resistVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {compileExpressions('CHARACTER', opt, true)}
+                        {compileExpressions('CHARACTER', opt.replace(',', ' '), true)}
                       </Text>
                     </List.Item>
                   ))}

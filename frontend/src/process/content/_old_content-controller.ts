@@ -359,7 +359,7 @@
 // export async function getTraits(ids?: number[]) {
 //   let traits: Trait[] = [];
 //   for (const traitId of ids ?? []) {
-//     // TODO: If this was 1 request, it would be so much faster!
+//     // If this was 1 request, it would be so much faster!
 //     // But gotta make sure it caches too
 //     const trait = await getContent<Trait>('trait', traitId);
 //     if (trait) {
