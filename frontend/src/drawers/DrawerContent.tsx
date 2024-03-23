@@ -21,12 +21,14 @@ import { StatAcDrawerContent } from './types/StatAcDrawer';
 import { StatSpeedDrawerContent } from './types/StatSpeedDrawer';
 import { StatPerceptionDrawerContent } from './types/StatPerceptionDrawer';
 import { StatResistWeakDrawerContent } from './types/StatResistWeakDrawer';
+import { ConditionDrawerContent } from './types/ConditionDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
   return (
     <>
       {_drawer?.type === 'generic' && <GenericDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'condition' && <ConditionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}

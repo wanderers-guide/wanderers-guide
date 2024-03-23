@@ -2,14 +2,13 @@ import { DrawerType } from '@typing/index';
 import { ContentType, AbilityBlockType } from '@typing/content';
 import { isAbilityBlockType } from '@content/content-utils';
 
-export function convertContentLink(input: { type: ContentType | AbilityBlockType; id: number }): {
+export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition'; id: string }): {
   type: DrawerType;
   data: any;
 } {
-  // TODO: Add support for other drawer types
   return {
     type: input.type,
-    data: { id: input.id },
+    data: { id: parseInt(input.id) ? parseInt(input.id) : input.id },
   };
 }
 

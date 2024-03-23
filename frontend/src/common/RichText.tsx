@@ -8,9 +8,11 @@ import { useRecoilState } from 'recoil';
 import React from 'react';
 import IndentedText from './IndentedText';
 import { IconQuote } from '@tabler/icons-react';
+import { getAllConditions } from '@conditions/condition-handler';
 
 interface RichTextProps extends TextProps {
   children: any;
+  conditionBlacklist?: string[];
 }
 
 export default function RichText(props: RichTextProps) {
@@ -24,6 +26,15 @@ export default function RichText(props: RichTextProps) {
 
   // Convert the string output from editor table format to be read by react-markdown
   convertedChildren = convertedChildren?.replace(/\|\n\n\|/g, '|\n|');
+
+  // Auto-detect conditions and convert to content links
+  const conditions = getAllConditions()
+    .map((c) => c.name.toLowerCase())
+    .filter((c) => !props.conditionBlacklist?.includes(c));
+  const conditionRegex = new RegExp(`\\b(${conditions.join('|')})\\b`, 'g');
+  convertedChildren = convertedChildren?.replace(conditionRegex, (match) => {
+    return `[${match}](link_condition_${match})`;
+  });
 
   return (
     <Markdown
@@ -112,13 +123,7 @@ export default function RichText(props: RichTextProps) {
         blockquote(innerProps) {
           const { children, className } = innerProps;
           return (
-            <Blockquote
-              className={className}
-              icon={<IconQuote size='1.3rem' />}
-              iconSize={40}
-              ml={5}
-              my={10}
-            >
+            <Blockquote className={className} icon={<IconQuote size='1.3rem' />} iconSize={40} ml={5} my={10}>
               {children}
             </Blockquote>
           );

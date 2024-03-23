@@ -11,6 +11,7 @@ export type DrawerType =
   | ContentType
   | AbilityBlockType
   | 'generic'
+  | 'condition'
   | 'character'
   | 'inv-item'
   | 'cast-spell'

@@ -62,10 +62,10 @@ export default function ContentLinkControl() {
   useEffect(() => {
     (async () => {
       const contentData = getContentDataFromHref(url);
-      if (!contentData) return;
+      if (!contentData || contentData.type === 'condition') return;
 
       const type = convertToContentType(contentData.type);
-      const content = await fetchContentById(type, contentData.id);
+      const content = await fetchContentById(type, parseInt(contentData.id));
       if (content) {
         setContent(content);
       }
@@ -77,21 +77,9 @@ export default function ContentLinkControl() {
   const selectedContentName = content?.name ?? '';
 
   return (
-    <Menu
-      shadow='md'
-      position='top'
-      width={180}
-      withinPortal
-      withArrow
-      opened={opened}
-      onClose={handleClose}
-    >
+    <Menu shadow='md' position='top' width={180} withinPortal withArrow opened={opened} onClose={handleClose}>
       <Menu.Target>
-        <RichTextEditor.Control
-          onClick={handleOpen}
-          active={editor?.isActive('link')}
-          aria-label='Link Content'
-        >
+        <RichTextEditor.Control onClick={handleOpen} active={editor?.isActive('link')} aria-label='Link Content'>
           <IconLink size='1.0rem' stroke={1.5} />
         </RichTextEditor.Control>
       </Menu.Target>
@@ -120,16 +108,10 @@ export default function ContentLinkControl() {
           )}
           <Menu.Item onClick={() => onSelectContent('ability-block', 'action')}>Action</Menu.Item>
           <Menu.Item onClick={() => onSelectContent('ability-block', 'feat')}>Feat</Menu.Item>
-          <Menu.Item onClick={() => onSelectContent('ability-block', 'physical-feature')}>
-            Physical Feature
-          </Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'physical-feature')}>Physical Feature</Menu.Item>
           <Menu.Item onClick={() => onSelectContent('ability-block', 'sense')}>Sense</Menu.Item>
-          <Menu.Item onClick={() => onSelectContent('ability-block', 'class-feature')}>
-            Class Feature
-          </Menu.Item>
-          <Menu.Item onClick={() => onSelectContent('ability-block', 'heritage')}>
-            Heritage
-          </Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'class-feature')}>Class Feature</Menu.Item>
+          <Menu.Item onClick={() => onSelectContent('ability-block', 'heritage')}>Heritage</Menu.Item>
           <Menu.Item onClick={() => onSelectContent('trait')}>Trait</Menu.Item>
           <Menu.Item onClick={() => onSelectContent('item')}>Item</Menu.Item>
           <Menu.Item onClick={() => onSelectContent('spell')}>Spell</Menu.Item>

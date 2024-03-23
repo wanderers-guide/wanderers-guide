@@ -17,6 +17,7 @@ const DrawerTitle = lazy(() => import('./DrawerTitle'));
 // No feedback drawers
 const NO_FEEDBACK_DRAWERS = [
   'character',
+  'condition',
   'stat-prof',
   'stat-attr',
   'stat-hp',

@@ -22,12 +22,14 @@ import { StatAcDrawerTitle } from './types/StatAcDrawer';
 import { StatSpeedDrawerTitle } from './types/StatSpeedDrawer';
 import { StatPerceptionDrawerTitle } from './types/StatPerceptionDrawer';
 import { StatResistWeakDrawerTitle } from './types/StatResistWeakDrawer';
+import { ConditionDrawerTitle } from './types/ConditionDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
   return (
     <div ref={ref}>
       {_drawer?.type === 'generic' && <GenericDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'condition' && <ConditionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'action' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'spell' && <SpellDrawerTitle data={_drawer.data} />}
