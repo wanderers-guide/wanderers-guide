@@ -15,6 +15,7 @@ import { toMarkdown } from '@content/content-utils';
 import { ActionSymbol } from './ActionSymbolExtension';
 import ActionSymbolControl from './ActionSymbolControl';
 import Placeholder from '@tiptap/extension-placeholder';
+import { useElementSize } from '@mantine/hooks';
 
 interface RichTextInputProps {
   label?: string;
@@ -22,6 +23,7 @@ interface RichTextInputProps {
   value?: string | JSONContent;
   onChange?: (text: string, json: JSONContent) => void;
   placeholder?: string;
+  minHeight?: number;
 }
 
 export default function RichTextInput(props: RichTextInputProps) {
@@ -71,6 +73,7 @@ export default function RichTextInput(props: RichTextInputProps) {
             backgroundColor: theme.colors.dark[6],
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
+            minHeight: props.minHeight ? props.minHeight - 50 : undefined,
           },
         }}
       >

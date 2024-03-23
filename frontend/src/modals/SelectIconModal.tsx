@@ -8,10 +8,12 @@ export default function SelectIconModal({
   id,
   innerProps,
 }: ContextModalProps<{
+  color?: string;
   onSelect: (option: string) => void;
 }>) {
   return (
     <SelectIconModalContents
+      color={innerProps.color}
       onSelect={innerProps.onSelect}
       onClose={() => context.closeModal(id)}
     />
@@ -19,6 +21,7 @@ export default function SelectIconModal({
 }
 
 export function SelectIconModalContents(props: {
+  color?: string;
   onSelect: (option: string) => void;
   onClose: () => void;
 }) {
@@ -32,7 +35,7 @@ export function SelectIconModalContents(props: {
           props.onClose();
         }}
       >
-        <ActionIcon variant='transparent' aria-label={`${name} Icon`}>
+        <ActionIcon variant='transparent' aria-label={`${name} Icon`} color={props.color}>
           <Icon name={name} style={{ width: '70%', height: '70%' }} stroke={1.5} />
         </ActionIcon>
       </UnstyledButton>

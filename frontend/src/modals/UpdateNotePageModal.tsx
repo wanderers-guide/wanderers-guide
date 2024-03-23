@@ -48,6 +48,7 @@ export default function UpdateNotePageModal({
     <Stack style={{ position: 'relative' }}>
       <Modal opened={openedModal} onClose={() => setOpenedModal(false)} title='Select Icon' zIndex={1000}>
         <SelectIconModalContents
+          color={color}
           onSelect={(option) => {
             console.log(option);
             setIcon(option);

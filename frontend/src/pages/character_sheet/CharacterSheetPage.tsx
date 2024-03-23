@@ -37,7 +37,7 @@ import {
   getAllConditions,
   getConditionByName,
 } from '@conditions/condition-handler';
-import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER } from '@constants/data';
+import { GUIDE_BLUE, ICON_BG_COLOR, ICON_BG_COLOR_HOVER, LEGACY_URL } from '@constants/data';
 import { collectCharacterAbilityBlocks, collectCharacterSpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentAll, fetchContentPackage } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
@@ -2593,7 +2593,7 @@ function InvItemOption(props: {
     <Grid w={'100%'}>
       <Grid.Col span='auto'>
         <Group wrap='nowrap' gap={10}>
-          <ItemIcon group={props.invItem.item.group} size='1.2rem' color={theme.colors.gray[6]} />
+          <ItemIcon group={props.invItem.item.group} size='1.0rem' color={theme.colors.gray[6]} />
           <Text c='gray.0' fz='sm'>
             {props.invItem.item.name}
           </Text>
@@ -3987,7 +3987,28 @@ function PanelFeatsFeatures(props: { panelHeight: number }) {
 }
 
 function PanelCompanions(props: { panelHeight: number }) {
-  return null;
+  return (
+    <Box h={props.panelHeight}>
+      <Center pt={50}>
+        <Stack>
+          <Title ta='center' fs='italic' order={2}>
+            Coming soon!
+          </Title>
+          <Text c='dimmed' ta='center' fz='sm' maw={500}>
+            Companions will be added in future update. You can expect to see support for animal companions, familiars,
+            pets, condition tracking, inventory management, in-depth stat breakdowns, and more! 🎉
+          </Text>
+          <Text c='dimmed' ta='center' fz='xs' maw={500} fs='italic'>
+            If you <b>really</b> want companions, you can still use the{' '}
+            <Anchor fz='xs' fs='italic' target='_blank' href={LEGACY_URL}>
+              legacy site
+            </Anchor>{' '}
+            :)
+          </Text>
+        </Stack>
+      </Center>
+    </Box>
+  );
 }
 
 function PanelDetails(props: { content: ContentPackage; panelHeight: number }) {
@@ -4833,6 +4854,7 @@ function PanelNotes(props: { panelHeight: number }) {
                   },
                 });
               }}
+              minHeight={props.panelHeight}
             />
             <ActionIcon
               variant='subtle'
@@ -4895,5 +4917,19 @@ function PanelNotes(props: { panelHeight: number }) {
 }
 
 function PanelExtras(props: { panelHeight: number }) {
-  return null;
+  return (
+    <Box h={props.panelHeight}>
+      <Center pt={50}>
+        <Stack>
+          <Title ta='center' fs='italic' order={2}>
+            More to come!
+          </Title>
+          <Text c='dimmed' ta='center' fz='sm' maw={500}>
+            This miscellaneous section will be updated with more features in the future. You can expect to see support
+            for vehicles, snares, and whatever other awesome stuff Paizo comes up with! 🔥
+          </Text>
+        </Stack>
+      </Center>
+    </Box>
+  );
 }
