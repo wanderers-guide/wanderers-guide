@@ -37,7 +37,7 @@ export function mapToDrawerData(
 
   let drawerData: Record<string, any> = {};
   if (typeof data === 'number') {
-    drawerData = { id: data };
+    drawerData = { id: data, ...(dataInject ?? {}) };
   } else {
     let key = '';
     if (drawerType === 'action' || isAbilityBlockType(drawerType)) key = 'action';

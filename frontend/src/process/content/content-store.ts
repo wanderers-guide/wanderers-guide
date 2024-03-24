@@ -184,15 +184,15 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
   const contentSources = fetchSources ? await fetchContentSources({ ids: sources }) : null;
 
   return {
-    ancestries: (content[0] ?? []) as Ancestry[],
-    backgrounds: (content[1] ?? []) as Background[],
-    classes: (content[2] ?? []) as Class[],
-    abilityBlocks: (content[3] ?? []) as AbilityBlock[],
-    items: (content[4] ?? []) as Item[],
-    languages: (content[5] ?? []) as Language[],
-    spells: (content[6] ?? []) as Spell[],
-    traits: (content[7] ?? []) as Trait[],
-    creatures: (content[8] ?? []) as Creature[],
+    ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => a.name.localeCompare(b.name)),
+    backgrounds: ((content[1] ?? []) as Background[]).sort((a, b) => a.name.localeCompare(b.name)),
+    classes: ((content[2] ?? []) as Class[]).sort((a, b) => a.name.localeCompare(b.name)),
+    abilityBlocks: ((content[3] ?? []) as AbilityBlock[]).sort((a, b) => a.name.localeCompare(b.name)),
+    items: ((content[4] ?? []) as Item[]).sort((a, b) => a.name.localeCompare(b.name)),
+    languages: ((content[5] ?? []) as Language[]).sort((a, b) => a.name.localeCompare(b.name)),
+    spells: ((content[6] ?? []) as Spell[]).sort((a, b) => a.name.localeCompare(b.name)),
+    traits: ((content[7] ?? []) as Trait[]).sort((a, b) => a.name.localeCompare(b.name)),
+    creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => a.name.localeCompare(b.name)),
     sources: contentSources ?? undefined,
   } satisfies ContentPackage;
 }

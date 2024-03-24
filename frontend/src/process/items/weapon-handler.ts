@@ -55,6 +55,7 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
   const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
   const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
   const rangedAttackBonus = getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total;
+  const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
 
   const hasBrutal = false; //TODO: hasTraitType('BRUTAL', item.traits);
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
@@ -93,6 +94,10 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
     parts.set('This is a bonus you receive to ranged attack rolls.', rangedAttackBonus);
   }
 
+  if (extraItemBonus) {
+    parts.set('This is an item bonus you receive from the item itself.', extraItemBonus);
+  }
+
   return {
     total: getMAPedTotal(
       id,
@@ -108,6 +113,7 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
   const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
   const meleeAttackBonus = getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total;
+  const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
 
   const hasFinesse = hasTraitType('FINESSE', item.traits);
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
@@ -144,6 +150,10 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
 
   if (meleeAttackBonus) {
     parts.set('This is a bonus you receive to melee attack rolls.', meleeAttackBonus);
+  }
+
+  if (extraItemBonus) {
+    parts.set('This is an item bonus you receive from the item itself.', extraItemBonus);
   }
 
   return {

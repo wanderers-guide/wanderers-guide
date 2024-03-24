@@ -464,6 +464,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
       range: json.system?.range,
       reload: json.system?.reload?.value,
       runes: {
+        resilient: json.system?.runes?.resilient,
         striking: json.system?.runes?.striking,
         potency: json.system?.runes?.potency,
         property: json.system?.runes?.property,

@@ -1,7 +1,7 @@
 import { detectPotentialContentLinks } from '@ai/open-ai-handler';
 import { queryByName } from '@ai/vector-db/vector-manager';
 
-const ENABLED = true;
+const ENABLED = false;
 
 /**
  * Finds potential content links and attempts to convert them to actual content links.
@@ -33,21 +33,17 @@ export async function performAutoContentLinking(text: string) {
     });
 
     let potentialContent = potentialContentList.find(
-      (content) =>
-        `${content.name}`.trim().toLowerCase() === potentialContentName.trim().toLowerCase()
+      (content) => `${content.name}`.trim().toLowerCase() === potentialContentName.trim().toLowerCase()
     );
     if (!potentialContent && potentialContentList.length > 0) {
       potentialContent = potentialContentList[0];
     }
 
     if (potentialContent) {
-      const type =
-        potentialContent._type === 'ability-block' ? potentialContent.type : potentialContent._type;
+      const type = potentialContent._type === 'ability-block' ? potentialContent.type : potentialContent._type;
       detectedText = detectedText.replace(
         potentialLink,
-        `<a href="link_${type}_${potentialContent.id}">${stripPotentialContentLinks(
-          potentialLink
-        )}</a>`
+        `<a href="link_${type}_${potentialContent.id}">${stripPotentialContentLinks(potentialLink)}</a>`
       );
     }
   }

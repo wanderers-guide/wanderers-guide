@@ -1499,40 +1499,86 @@ function SectionPanels(props: {
 
   return (
     <BlurBox blur={10} p='sm'>
-      <Tabs color='dark.6' variant='pills' radius='xl' keepMounted={false} value={activeTab} onChange={setActiveTab}>
+      <Tabs
+        color='dark.6'
+        variant='pills'
+        radius='xl'
+        keepMounted={false}
+        value={activeTab}
+        onChange={setActiveTab}
+        activateTabWithKeyboard={false}
+      >
         <Tabs.List pb={10} grow>
           {primarySheetTabs.includes('skills-actions') && (
-            <Tabs.Tab value='skills-actions' leftSection={getTabIcon('skills-actions')}>
+            <Tabs.Tab
+              value='skills-actions'
+              style={{
+                border: activeTab === 'skills-actions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+              }}
+              leftSection={getTabIcon('skills-actions')}
+            >
               Skills & Actions
             </Tabs.Tab>
           )}
           {primarySheetTabs.includes('inventory') && (
-            <Tabs.Tab value='inventory' leftSection={getTabIcon('inventory')}>
+            <Tabs.Tab
+              value='inventory'
+              style={{
+                border: activeTab === 'inventory' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+              }}
+              leftSection={getTabIcon('inventory')}
+            >
               Inventory
             </Tabs.Tab>
           )}
           {primarySheetTabs.includes('spells') && (
-            <Tabs.Tab value='spells' leftSection={getTabIcon('spells')}>
+            <Tabs.Tab
+              value='spells'
+              style={{ border: activeTab === 'spells' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent` }}
+              leftSection={getTabIcon('spells')}
+            >
               Spells
             </Tabs.Tab>
           )}
           {primarySheetTabs.includes('feats-features') && (
-            <Tabs.Tab value='feats-features' leftSection={getTabIcon('feats-features')}>
+            <Tabs.Tab
+              value='feats-features'
+              style={{
+                border: activeTab === 'feats-features' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+              }}
+              leftSection={getTabIcon('feats-features')}
+            >
               Feats & Features
             </Tabs.Tab>
           )}
           {primarySheetTabs.includes('companions') && (
-            <Tabs.Tab value='companions' leftSection={getTabIcon('companions')}>
+            <Tabs.Tab
+              value='companions'
+              style={{
+                border: activeTab === 'companions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+              }}
+              leftSection={getTabIcon('companions')}
+            >
               Companions
             </Tabs.Tab>
           )}
           {primarySheetTabs.includes('details') && (
-            <Tabs.Tab value='details' leftSection={getTabIcon('details')}>
+            <Tabs.Tab
+              value='details'
+              style={{
+                border: activeTab === 'details' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+              }}
+              leftSection={getTabIcon('details')}
+            >
               Details
             </Tabs.Tab>
           )}
           {primarySheetTabs.includes('notes') && (
-            <Tabs.Tab value='notes' leftSection={getTabIcon('notes')}>
+            <Tabs.Tab
+              value='notes'
+              style={{ border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent` }}
+              leftSection={getTabIcon('notes')}
+            >
               Notes
             </Tabs.Tab>
           )}
@@ -1548,6 +1594,7 @@ function SectionPanels(props: {
                 style={{
                   backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
                   color: openedTabOption ? theme.colors.gray[0] : undefined,
+                  border: openedTabOption ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
                 }}
               >
                 <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
@@ -2341,39 +2388,41 @@ function PanelInventory(props: {
                   {isItemContainer(invItem.item) ? (
                     <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
                       <Accordion.Control>
-                        <InvItemOption
-                          hideSections
-                          invItem={invItem}
-                          onEquip={(invItem) => {
-                            const newInvItem = _.cloneDeep(invItem);
-                            newInvItem.is_equipped = !newInvItem.is_equipped;
-                            handleUpdateItem(props.setInventory, newInvItem);
-                          }}
-                          onInvest={(invItem) => {
-                            const newInvItem = _.cloneDeep(invItem);
-                            newInvItem.is_invested = !newInvItem.is_invested;
-                            handleUpdateItem(props.setInventory, newInvItem);
-                          }}
-                          onViewItem={() => {
-                            openDrawer({
-                              type: 'inv-item',
-                              data: {
-                                zIndex: 100,
-                                invItem: _.cloneDeep(invItem),
-                                onItemUpdate: (newInvItem: InventoryItem) => {
-                                  handleUpdateItem(props.setInventory, newInvItem);
+                        <Box pr={5}>
+                          <InvItemOption
+                            hideSections
+                            invItem={invItem}
+                            onEquip={(invItem) => {
+                              const newInvItem = _.cloneDeep(invItem);
+                              newInvItem.is_equipped = !newInvItem.is_equipped;
+                              handleUpdateItem(props.setInventory, newInvItem);
+                            }}
+                            onInvest={(invItem) => {
+                              const newInvItem = _.cloneDeep(invItem);
+                              newInvItem.is_invested = !newInvItem.is_invested;
+                              handleUpdateItem(props.setInventory, newInvItem);
+                            }}
+                            onViewItem={() => {
+                              openDrawer({
+                                type: 'inv-item',
+                                data: {
+                                  zIndex: 100,
+                                  invItem: _.cloneDeep(invItem),
+                                  onItemUpdate: (newInvItem: InventoryItem) => {
+                                    handleUpdateItem(props.setInventory, newInvItem);
+                                  },
+                                  onItemDelete: (newInvItem: InventoryItem) => {
+                                    handleDeleteItem(props.setInventory, newInvItem);
+                                    openDrawer(null);
+                                  },
+                                  onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
+                                    handleMoveItem(props.setInventory, invItem, containerItem);
+                                  },
                                 },
-                                onItemDelete: (newInvItem: InventoryItem) => {
-                                  handleDeleteItem(props.setInventory, newInvItem);
-                                  openDrawer(null);
-                                },
-                                onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                  handleMoveItem(props.setInventory, invItem, containerItem);
-                                },
-                              },
-                            });
-                          }}
-                        />
+                              });
+                            }}
+                          />
+                        </Box>
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap={5}>
@@ -3479,6 +3528,8 @@ function SpellList(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
+
+                  props.openManageSpells?.('rituals', 'LIST-ONLY');
                 }}
               >
                 Manage

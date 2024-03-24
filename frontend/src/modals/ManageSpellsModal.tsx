@@ -27,7 +27,7 @@ import { labelToVariable, variableNameToLabel } from '@variables/variable-utils'
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { isCantrip, isNormalSpell } from '@spells/spell-utils';
+import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { drawerState } from '@atoms/navAtoms';
 import * as JsSearch from 'js-search';
@@ -41,6 +41,8 @@ export default function ManageSpellsModal(props: {
   source: string;
   type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
 }) {
+  const isRituals = props.source === 'rituals';
+
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -115,7 +117,7 @@ export default function ManageSpellsModal(props: {
     <Modal
       opened={props.opened}
       onClose={props.onClose}
-      title={<Title order={3}>Manage Spells - {variableNameToLabel(props.source)}</Title>}
+      title={<Title order={3}>Manage {isRituals ? 'Rituals' : `Spells - ${variableNameToLabel(props.source)}`}</Title>}
       styles={{
         body: {
           paddingRight: 2,
@@ -309,6 +311,8 @@ const ListSection = (props: {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
 }) => {
+  const isRituals = props.source === 'rituals';
+
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
@@ -359,7 +363,7 @@ const ListSection = (props: {
         <TextInput
           style={{ flex: 1 }}
           leftSection={<IconSearch size='0.9rem' />}
-          placeholder={`Search spell list`}
+          placeholder={`Search ${isRituals ? 'ritual' : 'spell'} list`}
           defaultValue={props.searchQuery}
           onChange={(e) => props.setSearchQuery(e.target.value)}
           styles={{
@@ -392,10 +396,14 @@ const ListSection = (props: {
               {
                 includeDetails: true,
                 groupBySource: true,
-                overrideLabel: 'Add Spell',
+                overrideLabel: `Add ${isRituals ? 'Ritual' : 'Spell'}`,
 
                 filterFn: (spellRec: Record<string, any>) => {
-                  return isNormalSpell(spellRec as Spell);
+                  if (isRituals) {
+                    return isRitual(spellRec as Spell);
+                  } else {
+                    return isNormalSpell(spellRec as Spell);
+                  }
                 },
 
                 filterOptions: {
@@ -424,7 +432,7 @@ const ListSection = (props: {
             );
           }}
         >
-          Add Spell
+          Add {isRituals ? 'Ritual' : 'Spell'}
         </Button>
       </Group>
       <Stack>

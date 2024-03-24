@@ -15,7 +15,13 @@ import {
   Tooltip,
   HoverCard,
 } from '@mantine/core';
-import { IconChevronRight, IconExternalLink, IconInfoCircle, IconInfoCircleFilled, IconInfoSmall } from '@tabler/icons-react';
+import {
+  IconChevronRight,
+  IconExternalLink,
+  IconInfoCircle,
+  IconInfoCircleFilled,
+  IconInfoSmall,
+} from '@tabler/icons-react';
 import classes from '@css/LinksGroup.module.css';
 import switchClasses from '@css/CustomSwitch.module.css';
 import { drawerState } from '@atoms/navAtoms';
@@ -25,7 +31,7 @@ interface LinksGroupProps {
   icon: React.FC<any>;
   label: string;
   initiallyOpened?: boolean;
-  links?: { label: string; id: number; url: string, enabled?: boolean }[];
+  links?: { label: string; id: number; url: string; enabled?: boolean }[];
   onLinkChange?: (id: number, enabled: boolean) => void;
   onEnableAll?: () => void;
 }
@@ -58,7 +64,7 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
               radius='xl'
               aria-label='Source Info'
               onClick={() => {
-                openDrawer({ type: 'content-source', data: { id: link.id } });
+                openDrawer({ type: 'content-source', data: { id: link.id, showOperations: true } });
               }}
             >
               <IconExternalLink size='0.6rem' stroke={1.5} />

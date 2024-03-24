@@ -89,6 +89,7 @@ export function CreateItemModal(props: {
       setWeaponCategory(item.meta_data?.category ?? '');
       setWeaponGroup(item.meta_data?.group ?? '');
       setStrikingRune(item.meta_data?.runes?.striking);
+      setResilientRune(item.meta_data?.runes?.resilient);
       setPotencyRune(item.meta_data?.runes?.potency);
       setPropertyRunes(item.meta_data?.runes?.property);
       setBaseItem(item.meta_data?.base_item);
@@ -114,6 +115,7 @@ export function CreateItemModal(props: {
   const [weaponGroup, setWeaponGroup] = useState('');
 
   const [strikingRune, setStrikingRune] = useState<number | undefined>(0);
+  const [resilientRune, setResilientRune] = useState<number | undefined>(0);
   const [potencyRune, setPotencyRune] = useState<number | undefined>(0);
   const [propertyRunes, setPropertyRunes] = useState<string[] | undefined>([]);
 
@@ -209,6 +211,7 @@ export function CreateItemModal(props: {
         },
         runes: {
           striking: strikingRune,
+          resilient: resilientRune,
           potency: potencyRune,
           property: propertyRunes,
         },
@@ -437,12 +440,6 @@ export function CreateItemModal(props: {
                             />
                           </Group>
 
-                          <TextInput
-                            label='Extra Damage'
-                            placeholder='ex. 1d4 fire'
-                            {...form.getInputProps('meta_data.damage.extra')}
-                          />
-
                           <Group wrap='nowrap'>
                             <Select
                               label='Category'
@@ -495,6 +492,24 @@ export function CreateItemModal(props: {
                               label='Reload'
                               placeholder='Reload'
                               {...form.getInputProps('meta_data.reload')}
+                            />
+                          </Group>
+
+                          <Divider mt={10} />
+
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Extra Attack Bonus'
+                              placeholder='(as item bonus)'
+                              prefix={(form.values.meta_data?.attack_bonus ?? 0) >= 0 ? '+' : undefined}
+                              // suffix={(form.values.meta_data?.attack_bonus ?? 0) >= 0 ? ' item bonus' : ' item penalty'}
+                              allowDecimal={false}
+                              {...form.getInputProps('meta_data.attack_bonus')}
+                            />
+                            <TextInput
+                              label='Extra Damage'
+                              placeholder='ex. 1d4 fire'
+                              {...form.getInputProps('meta_data.damage.extra')}
                             />
                           </Group>
                         </Stack>
@@ -574,30 +589,6 @@ export function CreateItemModal(props: {
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>
-                    <Accordion.Item value={'container'}>
-                      <Accordion.Control>
-                        <Text fz='sm'>Container</Text>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <Stack gap={10}>
-                          <Group wrap='nowrap'>
-                            <NumberInput
-                              label='Bulk Capacity'
-                              placeholder='Bulk Capacity'
-                              min={0}
-                              {...form.getInputProps('meta_data.bulk.capacity')}
-                            />
-
-                            <NumberInput
-                              label='Bulk Ignored'
-                              placeholder='Bulk Ignored'
-                              min={0}
-                              {...form.getInputProps('meta_data.bulk.ignored')}
-                            />
-                          </Group>
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
                     <Accordion.Item value={'runes'}>
                       <Accordion.Control>
                         <Text fz='sm'>Runes</Text>
@@ -610,12 +601,26 @@ export function CreateItemModal(props: {
                               clearable
                               data={[
                                 { value: '1', label: 'Striking' },
-                                { value: '2', label: 'Greater Striking' },
-                                { value: '3', label: 'Major Striking' },
+                                { value: '2', label: 'Greater S.' },
+                                { value: '3', label: 'Major S.' },
                               ]}
                               value={strikingRune !== undefined ? `${strikingRune}` : undefined}
                               onChange={(value) => {
                                 setStrikingRune(value ? +value : undefined);
+                              }}
+                            />
+
+                            <Select
+                              label='Resilient Rune'
+                              clearable
+                              data={[
+                                { value: '1', label: 'Resilient' },
+                                { value: '2', label: 'Greater R.' },
+                                { value: '3', label: 'Major R.' },
+                              ]}
+                              value={resilientRune !== undefined ? `${resilientRune}` : undefined}
+                              onChange={(value) => {
+                                setResilientRune(value ? +value : undefined);
                               }}
                             />
 
@@ -646,6 +651,30 @@ export function CreateItemModal(props: {
                               setPropertyRunes(names);
                             }}
                           />
+                        </Stack>
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                    <Accordion.Item value={'container'}>
+                      <Accordion.Control>
+                        <Text fz='sm'>Container</Text>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap={10}>
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Bulk Capacity'
+                              placeholder='Bulk Capacity'
+                              min={0}
+                              {...form.getInputProps('meta_data.bulk.capacity')}
+                            />
+
+                            <NumberInput
+                              label='Bulk Ignored'
+                              placeholder='Bulk Ignored'
+                              min={0}
+                              {...form.getInputProps('meta_data.bulk.ignored')}
+                            />
+                          </Group>
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>

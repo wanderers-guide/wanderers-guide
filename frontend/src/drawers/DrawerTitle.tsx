@@ -23,11 +23,13 @@ import { StatSpeedDrawerTitle } from './types/StatSpeedDrawer';
 import { StatPerceptionDrawerTitle } from './types/StatPerceptionDrawer';
 import { StatResistWeakDrawerTitle } from './types/StatResistWeakDrawer';
 import { ConditionDrawerTitle } from './types/ConditionDrawer';
+import { ContentSourceDrawerTitle } from './types/ContentSourceDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
   return (
     <div ref={ref}>
+      {_drawer?.type === 'content-source' && <ContentSourceDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'generic' && <GenericDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'condition' && <ConditionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'feat' && <FeatDrawerTitle data={_drawer.data} />}

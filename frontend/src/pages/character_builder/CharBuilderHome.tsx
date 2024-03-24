@@ -47,6 +47,7 @@ import {
   IconUserPlus,
   IconUsersPlus,
   IconPhoto,
+  IconArchive,
 } from '@tabler/icons-react';
 import { Character, ContentSource } from '@typing/content';
 import { uploadImage } from '@upload/image-upload';
@@ -444,6 +445,26 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                           });
                       }}
                     />
+                    {/* <LinksGroup
+                      icon={IconArchive}
+                      label={'Legacy Backports'}
+                      links={books
+                        .filter((book) => book.group === 'legacy')
+                        .map((book) => ({
+                          label: book.name,
+                          id: book.id,
+                          url: book.url,
+                          enabled: hasBookEnabled(book.id),
+                        }))}
+                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                      onEnableAll={() => {
+                        books
+                          .filter((book) => book.group === 'legacy')
+                          .forEach((book) => {
+                            setBookEnabled(book.id, true);
+                          });
+                      }}
+                    /> */}
                   </Stack>
                 </Tabs.Panel>
               </Tabs>

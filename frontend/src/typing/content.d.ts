@@ -127,6 +127,7 @@ interface Item {
       die: string;
       extra?: string;
     };
+    attack_bonus?: number; // For weapons
     ac_bonus?: number; // For armor & shield
     check_penalty?: number; // For armor
     speed_penalty?: number; // For armor
@@ -153,6 +154,7 @@ interface Item {
     reload?: string;
     runes?: {
       striking?: number;
+      resilient?: number;
       potency?: number;
       property?: string[];
     };
