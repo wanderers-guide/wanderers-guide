@@ -303,8 +303,8 @@ export function isVariableListStr(value: Variable | any): value is VariableListS
  * @param text - The text to compile.
  * @param round - Whether to round the final value down.
  */
-export function compileExpressions(id: StoreID, text: string, round = false) {
-  if (!text.trim()) return text;
+export function compileExpressions(id: StoreID, text?: string, round = false) {
+  if (!text?.trim()) return text;
   const expressions = text.match(/{{[^}]+}}/g);
   if (!expressions) return text;
 

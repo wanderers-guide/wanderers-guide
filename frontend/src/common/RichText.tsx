@@ -20,7 +20,10 @@ interface RichTextProps extends TextProps {
 
 export default function RichText(props: RichTextProps) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  let convertedChildren = props.children as string | undefined;
+  let convertedChildren = props.children as string | undefined | null;
+  if (typeof convertedChildren !== 'string') {
+    return null;
+  }
 
   if (convertedChildren && props.storeID) {
     convertedChildren = compileExpressions(props.storeID, convertedChildren, true);
