@@ -2494,7 +2494,23 @@ function PanelInventory(props: {
           >
             Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}
           </Badge>
-          <CurrencySection character={character} />
+          <CurrencySection
+            character={character}
+            onClick={() => {
+              openDrawer({
+                type: 'manage-coins',
+                data: {
+                  coins: character?.inventory?.coins,
+                  onUpdate: (coins: { cp: number; sp: number; gp: number; pp: number }) => {
+                    props.setInventory((prev) => ({
+                      ...prev,
+                      coins: coins,
+                    }));
+                  },
+                },
+              });
+            }}
+          />
           <Button
             color='dark.5'
             style={{ borderColor: theme.colors.dark[4] }}

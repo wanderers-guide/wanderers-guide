@@ -24,6 +24,7 @@ import { StatPerceptionDrawerTitle } from './types/StatPerceptionDrawer';
 import { StatResistWeakDrawerTitle } from './types/StatResistWeakDrawer';
 import { ConditionDrawerTitle } from './types/ConditionDrawer';
 import { ContentSourceDrawerTitle } from './types/ContentSourceDrawer';
+import { ManageCoinsDrawerTitle } from './types/ManageCoinsDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
@@ -44,6 +45,7 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'heritage' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'sense' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}

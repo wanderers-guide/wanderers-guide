@@ -19,6 +19,7 @@ const NO_FEEDBACK_DRAWERS = [
   'character',
   'condition',
   'content-source',
+  'manage-coins',
   'stat-prof',
   'stat-attr',
   'stat-hp',

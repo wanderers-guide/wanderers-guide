@@ -42,13 +42,13 @@ export function BuyItemModal(props: {
           {resultingCoins ? (
             <>
               {convertToCp(props.item.price) > 0 && (
-                <Group wrap='nowrap'>
-                  <Text>Your resulting balance would be</Text>
+                <Group gap={5}>
+                  <Text>Your resulting balance would be: </Text>
                   <CoinSection
-                    cp={props.item.price?.cp}
-                    sp={props.item.price?.sp}
-                    gp={props.item.price?.gp}
-                    pp={props.item.price?.pp}
+                    cp={resultingCoins?.cp}
+                    sp={resultingCoins?.sp}
+                    gp={resultingCoins?.gp}
+                    pp={resultingCoins?.pp}
                     justify='center'
                   />
                 </Group>

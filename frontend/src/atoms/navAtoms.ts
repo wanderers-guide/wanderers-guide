@@ -1,16 +1,15 @@
-import { DrawerType } from "@typing/index";
-import { isDefaultValue } from "@utils/type-fixing";
-import { DefaultValue, atom, selector } from "recoil";
+import { DrawerType } from '@typing/index';
+import { isDefaultValue } from '@utils/type-fixing';
+import { DefaultValue, atom, selector } from 'recoil';
 
 const userIconState = atom({
-  key: "user-svg-icon",
+  key: 'user-svg-icon',
   default: null as string | null,
 });
 
-
 const _internal_drawerHistoryState = atom({
   key: 'drawer-history-internal',
-  default: [] as { type: DrawerType, data: any }[]
+  default: [] as { type: DrawerType; data: any }[],
 });
 
 const _internal_drawerState = atom({
@@ -44,7 +43,7 @@ const drawerState = selector({
     const history = get(_internal_drawerHistoryState);
 
     // If new value is null, reset everything
-    if(!newValue){
+    if (!newValue) {
       set(_internal_drawerHistoryState, []);
       set(_internal_drawerState, null);
       return;

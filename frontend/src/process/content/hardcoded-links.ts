@@ -14,6 +14,7 @@ const actionMap: Record<string, number> = {
   'Take Cover': 19860,
   Sneak: 19850,
   Hide: 19726,
+  Craft: 19617,
 };
 
 export function convertToHardcodedLink(type: ContentType | AbilityBlockType, text: string, displayText?: string) {

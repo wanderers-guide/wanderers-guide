@@ -81,7 +81,9 @@ export default function RichText(props: RichTextProps) {
           const { children, className } = innerProps;
           return (
             <List.Item className={className}>
-              <Text {...props}>{children}</Text>
+              <Text {...props} mr={25}>
+                {children}
+              </Text>
             </List.Item>
           );
         },
