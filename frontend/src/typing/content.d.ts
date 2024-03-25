@@ -189,9 +189,9 @@ interface Inventory {
     gp: number;
     pp: number;
   };
-  unarmed_attacks: {
-    item: Item;
-  }[];
+  // unarmed_attacks: {
+  //   item: Item;
+  // }[];
   items: InventoryItem[];
 }
 

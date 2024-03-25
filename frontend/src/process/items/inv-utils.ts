@@ -1,8 +1,9 @@
 import { getConditionByName } from '@conditions/condition-handler';
 import { Character, Inventory, InventoryItem, Item } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { StoreID, VariableListStr } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
+import { getVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
 import { SetterOrUpdater } from 'recoil';
 
@@ -132,6 +133,41 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
       //   });
       // }
     }
+  }, 200);
+}
+
+export function addExtraItems(items: Item[], character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+  setTimeout(() => {
+    if (!character.inventory) return;
+
+    const extraItems: InventoryItem[] = [];
+    (getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []).forEach((itemId) => {
+      const item = items.find((item) => `${item.id}` === itemId);
+      if (item) {
+        extraItems.push({
+          id: 'extra-item-' + itemId,
+          item: item,
+          is_formula: false,
+          is_equipped: isItemEquippable(item),
+          is_invested: isItemInvestable(item),
+          container_contents: [],
+        });
+      }
+    });
+
+    const mergedItems = _.unionBy(character.inventory.items, extraItems, 'id');
+    if (mergedItems.length === character.inventory.items.length) return;
+
+    setCharacter((c) => {
+      if (!c) return c;
+      return {
+        ...c,
+        inventory: {
+          ...c.inventory!,
+          items: mergedItems,
+        },
+      };
+    });
   }, 100);
 }
 
@@ -371,11 +407,11 @@ export function isItemShield(item: Item) {
  * @returns - Bulk label
  */
 export function labelizeBulk(bulk?: number | string, displayZero = false) {
-  if (bulk === undefined) {
+  if (bulk === undefined || bulk === null || bulk === '') {
     if (displayZero) {
       return '0';
     } else {
-      return '–';
+      return '—';
     }
   }
   bulk = parseFloat(bulk as string);
@@ -383,7 +419,7 @@ export function labelizeBulk(bulk?: number | string, displayZero = false) {
     if (displayZero) {
       return '0';
     } else {
-      return '–';
+      return '—';
     }
   }
   if (bulk === 0.1) {

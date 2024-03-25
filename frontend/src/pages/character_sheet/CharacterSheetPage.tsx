@@ -45,6 +45,7 @@ import classes from '@css/FaqSimple.module.css';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { priceToString } from '@items/currency-handler';
 import {
+  addExtraItems,
   checkBulkLimit,
   getBestArmor,
   getBestShield,
@@ -360,6 +361,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
     executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
+      // Add the extra items to the inventory from variables
+      addExtraItems(props.content.items, character, setCharacter);
+
       // Check bulk limits
       checkBulkLimit(character, setCharacter);
 
@@ -1678,6 +1682,7 @@ interface ActionItem {
   traits?: number[];
   rarity?: Rarity;
   skill?: string | string[] | undefined;
+  leftSection?: React.ReactNode;
 }
 function PanelSkillsActions(props: {
   content: ContentPackage;
@@ -1686,6 +1691,7 @@ function PanelSkillsActions(props: {
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
   const theme = useMantineTheme();
+  const character = useRecoilValue(characterState);
   const [skillsSearch, setSkillsSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -1698,6 +1704,7 @@ function PanelSkillsActions(props: {
       .filter((ab) => ab.type === 'action')
       .sort((a, b) => a.name.localeCompare(b.name));
 
+    // Filter actions
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? allActions.filter((action) => {
           // Custom search, alt could be to use JsSearch here
@@ -1717,9 +1724,52 @@ function PanelSkillsActions(props: {
       : allActions;
   }, [props.content.abilityBlocks, actionTypeFilter, searchQuery]);
 
+  const weapons = useMemo(() => {
+    const weapons = props.inventory.items
+      .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
+      .sort((a, b) => a.item.name.localeCompare(b.item.name));
+
+    // Filter weapons
+    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+      ? weapons.filter((invItem) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQuery.trim().toLowerCase();
+
+          const checkInvItem = (invItem: InventoryItem) => {
+            if (actionTypeFilter !== 'ALL') return false;
+
+            if (invItem.item.name.toLowerCase().includes(query)) return true;
+            return false;
+          };
+
+          if (checkInvItem(invItem)) return true;
+          return false;
+        })
+      : weapons;
+  }, [props.inventory.items, actionTypeFilter, searchQuery]);
+
   const weaponAttacks = useMemo(() => {
-    // Weapons in inventory, plus unarmed attacks
-  }, []);
+    return weapons.map((invItem) => {
+      const weaponStats = getWeaponStats('CHARACTER', invItem.item);
+      return {
+        invItem: invItem,
+        leftSection: (
+          <Group wrap='nowrap' gap={10}>
+            <Text c='gray.6' fz='xs' fs='italic' span>
+              {sign(weaponStats.attack_bonus.total[0])}
+            </Text>
+            <Text c='gray.6' fz='xs' fs='italic' span>
+              {weaponStats.damage.dice}
+              {weaponStats.damage.die}
+              {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
+              {weaponStats.damage.damageType}
+              {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+            </Text>
+          </Group>
+        ),
+      };
+    });
+  }, [weapons]);
 
   const basicActions = useMemo(() => {
     return actions.filter(
@@ -1785,6 +1835,7 @@ function PanelSkillsActions(props: {
       return findActions(invItem.item.description).length > 0;
     });
 
+    // Filter items
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? actionItems.filter((invItem) => {
           // Custom search, alt could be to use JsSearch here
@@ -1808,6 +1859,30 @@ function PanelSkillsActions(props: {
         })
       : actionItems;
   }, [props.inventory.items, actionTypeFilter, searchQuery]);
+
+  const featsWithActions = useMemo(() => {
+    if (!character) return [];
+    const results = collectCharacterAbilityBlocks(character, props.content.abilityBlocks);
+    const feats = _.flattenDeep(Object.values(results)).filter((ab) => ab.actions !== null);
+
+    // Filter feats
+    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+      ? feats.filter((feat) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQuery.trim().toLowerCase();
+
+          const checkFeat = (feat: AbilityBlock) => {
+            if (actionTypeFilter !== 'ALL' && feat.actions !== actionTypeFilter) return false;
+
+            if (feat.name.toLowerCase().includes(query)) return true;
+            return false;
+          };
+
+          if (checkFeat(feat)) return true;
+          return false;
+        })
+      : feats;
+  }, [character, props.content.abilityBlocks, actionTypeFilter, searchQuery]);
 
   return (
     <Group gap={10} align='flex-start' style={{ height: props.panelHeight }}>
@@ -2010,27 +2085,14 @@ function PanelSkillsActions(props: {
                 id='weapon-attacks'
                 title='Weapon Attacks'
                 opened={actionSectionValue === 'weapon-attacks'}
-                actions={[]}
-              />
-              <ActionAccordionItem
-                id='feats'
-                title='Feats (with Actions)'
-                opened={actionSectionValue === 'feats'}
-                actions={[]}
-              />
-              <ActionAccordionItem
-                id='items'
-                title='Items (with Actions)'
-                opened={actionSectionValue === 'items'}
-                actions={itemsWithActions.map((invItem) => {
-                  const actions = findActions(invItem.item.description);
+                actions={weaponAttacks.map((weapon) => {
                   return {
-                    id: parseInt(invItem.id),
-                    name: invItem.item.name,
+                    id: parseInt(weapon.invItem.id),
+                    name: weapon.invItem.item.name,
                     drawerType: 'inv-item',
                     drawerData: {
                       zIndex: 100,
-                      invItem: _.cloneDeep(invItem),
+                      invItem: _.cloneDeep(weapon.invItem),
                       onItemUpdate: (newInvItem: InventoryItem) => {
                         handleUpdateItem(props.setInventory, newInvItem);
                       },
@@ -2042,11 +2104,70 @@ function PanelSkillsActions(props: {
                         handleMoveItem(props.setInventory, invItem, containerItem);
                       },
                     },
-                    cost: actions.length > 0 ? actions[0] : 'ONE-ACTION',
-                    traits: invItem.item.traits,
-                    rarity: invItem.item.rarity,
+                    cost: null,
+                    traits: weapon.invItem.item.traits,
+                    rarity: weapon.invItem.item.rarity,
+                    leftSection: weapon.leftSection,
                   };
                 })}
+              />
+              <ActionAccordionItem
+                id='feats'
+                title='Feats (with Actions)'
+                opened={actionSectionValue === 'feats'}
+                actions={featsWithActions.map((feat) => {
+                  return {
+                    id: feat.id,
+                    name: feat.name,
+                    drawerType: feat.type,
+                    drawerData: { id: feat.id },
+                    cost: feat.actions,
+                    traits: feat.traits,
+                    rarity: feat.rarity,
+                    skill: feat.meta_data?.skill,
+                  };
+                })}
+              />
+              <ActionAccordionItem
+                id='items'
+                title='Items (with Actions)'
+                opened={actionSectionValue === 'items'}
+                actions={
+                  itemsWithActions
+                    .map((invItem) => {
+                      const actions = findActions(invItem.item.description);
+                      const action = actions.length > 0 ? actions[0] : 'ONE-ACTION';
+
+                      // if (action === 'ONE-ACTION' && isItemWeapon(invItem.item) && invItem.is_equipped) {
+                      //   // It's a weapon with one action, we already have a section for weapons
+                      //   return null;
+                      // }
+
+                      return {
+                        id: parseInt(invItem.id),
+                        name: invItem.item.name,
+                        drawerType: 'inv-item',
+                        drawerData: {
+                          zIndex: 100,
+                          invItem: _.cloneDeep(invItem),
+                          onItemUpdate: (newInvItem: InventoryItem) => {
+                            handleUpdateItem(props.setInventory, newInvItem);
+                          },
+                          onItemDelete: (newInvItem: InventoryItem) => {
+                            handleDeleteItem(props.setInventory, newInvItem);
+                            openDrawer(null);
+                          },
+                          onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
+                            handleMoveItem(props.setInventory, invItem, containerItem);
+                          },
+                        },
+                        cost: action,
+                        traits: invItem.item.traits,
+                        rarity: invItem.item.rarity,
+                      };
+                    })
+                    .filter((a) => a) as ActionItem[]
+                }
               />
               <ActionAccordionItem
                 id='basic-actions'
@@ -2227,6 +2348,7 @@ function ActionSelectionOption(props: { action: ActionItem; onClick: (action: Ac
           <Box>
             <ActionSymbol cost={props.action.cost} />
           </Box>
+          {props.action.leftSection && <Box>{props.action.leftSection}</Box>}
         </Group>
         <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
           <Box>
@@ -2257,8 +2379,11 @@ function PanelInventory(props: {
 
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
 
+  const visibleInvItems = props.inventory.items.filter(
+    (invItem) => !(invItem.item.meta_data?.unselectable === true && invItem.is_equipped && isItemWeapon(invItem.item))
+  );
   const invItems = searchQuery.trim()
-    ? props.inventory.items.filter((invItem) => {
+    ? visibleInvItems.filter((invItem) => {
         // Custom search, alt could be to use JsSearch here
         const query = searchQuery.trim().toLowerCase();
 
@@ -2273,7 +2398,7 @@ function PanelInventory(props: {
         if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
         return false;
       })
-    : props.inventory.items;
+    : visibleInvItems;
 
   const openAddItemDrawer = () => {
     openDrawer({
@@ -2642,7 +2767,7 @@ function InvItemOption(props: {
     <Grid w={'100%'}>
       <Grid.Col span='auto'>
         <Group wrap='nowrap' gap={10}>
-          <ItemIcon group={props.invItem.item.group} size='1.0rem' color={theme.colors.gray[6]} />
+          <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
           <Text c='gray.0' fz='sm'>
             {props.invItem.item.name}
           </Text>

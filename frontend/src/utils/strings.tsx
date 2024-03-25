@@ -14,6 +14,7 @@ export function pluralize(word: string): string {
 export function toLabel(text?: string | null) {
   if (!text) return '';
   text = text.replace('ability-block', 'option');
+  text = text.replace('unarmed_attack', 'unarmed');
   text = _.startCase(text.toLowerCase().replace('_', ' ').replace('-', ' '));
   if (text.endsWith('Ac')) {
     text = text.slice(0, -2) + 'AC';

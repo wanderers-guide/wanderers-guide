@@ -629,7 +629,7 @@ function SelectionOptions(props: {
   useEffect(() => {
     if (!options) return;
     search.current.addIndex('name');
-    search.current.addIndex('description');
+    //search.current.addIndex('description');
     search.current.addDocuments(options);
   }, [data]);
   let filteredOptions = props.searchQuery

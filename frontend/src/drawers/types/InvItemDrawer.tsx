@@ -79,7 +79,7 @@ export function InvItemDrawerContent(props: {
   );
 
   let price = null;
-  if (invItem.item.price) {
+  if (invItem.item.price && priceToString(invItem.item.price) !== '—') {
     price = (
       <>
         <Text key={1} fw={600} c='gray.5' span>
@@ -101,7 +101,7 @@ export function InvItemDrawerContent(props: {
       </>
     );
   }
-  if (invItem.item.bulk !== undefined) {
+  if (invItem.item.bulk !== undefined && invItem.item.bulk !== null && invItem.item.bulk?.trim() !== '') {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>
@@ -197,9 +197,8 @@ export function InvItemDrawerContent(props: {
           width: '100%',
         }}
       >
-        {/* <Divider mr={15} mb={10} /> */}
         <Group justify='flex-end' wrap='nowrap' mr={15} gap={15}>
-          {containerItems.length > 0 && (
+          {!invItem.item.meta_data?.unselectable && containerItems.length > 0 && (
             <Menu
               transitionProps={{ transition: 'pop-top-right' }}
               position='top-end'
@@ -257,17 +256,19 @@ export function InvItemDrawerContent(props: {
           >
             <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
-          <ActionIcon
-            variant='light'
-            color='red'
-            radius='xl'
-            aria-label='Remove Item'
-            onClick={() => {
-              props.data.onItemDelete(invItem);
-            }}
-          >
-            <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
-          </ActionIcon>
+          {!invItem.item.meta_data?.unselectable && (
+            <ActionIcon
+              variant='light'
+              color='red'
+              radius='xl'
+              aria-label='Remove Item'
+              onClick={() => {
+                props.data.onItemDelete(invItem);
+              }}
+            >
+              <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+            </ActionIcon>
+          )}
         </Group>
         {editingItem && (
           <CreateItemModal

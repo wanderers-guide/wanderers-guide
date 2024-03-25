@@ -52,5 +52,13 @@ export function priceToString(price?: { cp?: number; sp?: number; gp?: number; p
   if (price.pp) {
     priceString += (priceString ? ', ' : '') + price.pp.toLocaleString() + ' pp';
   }
-  return priceString || '—';
+  return priceString.trim() || '—';
+}
+
+export function convertToCp(price?: { cp?: number; sp?: number; gp?: number; pp?: number }) {
+  if (!price) {
+    return 0;
+  }
+
+  return (price.cp ?? 0) + (price.sp ?? 0) * 10 + (price.gp ?? 0) * 100 + (price.pp ?? 0) * 1000;
 }

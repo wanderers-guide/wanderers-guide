@@ -206,7 +206,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
-                        onClick={() => {
+                        component='a'
+                        href='/characters'
+                        onClick={(e) => {
+                          e.preventDefault();
                           navigate('/characters');
                         }}
                       >
@@ -220,7 +223,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
-                        onClick={() => {
+                        component='a'
+                        href='/homebrew'
+                        onClick={(e) => {
+                          e.preventDefault();
                           displayComingSoon();
                         }}
                       >
@@ -234,7 +240,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
-                        onClick={() => {
+                        component='a'
+                        href='/encounters'
+                        onClick={(e) => {
+                          e.preventDefault();
                           displayComingSoon();
                         }}
                       >
@@ -248,7 +257,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
-                        onClick={() => {
+                        component='a'
+                        href='/campaigns'
+                        onClick={(e) => {
+                          e.preventDefault();
                           displayComingSoon();
                         }}
                       >
@@ -262,7 +274,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                             stroke={1.5}
                           />
                         }
-                        onClick={() => {
+                        component='a'
+                        href='/admin'
+                        onClick={(e) => {
+                          e.preventDefault();
                           navigate('/admin');
                         }}
                       >
@@ -272,7 +287,10 @@ export default function Layout(props: { children: React.ReactNode }) {
                       <Menu.Label>Settings</Menu.Label>
                       <Menu.Item
                         leftSection={<IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
-                        onClick={() => {
+                        component='a'
+                        href='/account'
+                        onClick={(e) => {
+                          e.preventDefault();
                           navigate('/account');
                         }}
                       >

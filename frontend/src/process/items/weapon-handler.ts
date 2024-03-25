@@ -15,7 +15,7 @@ export function getWeaponStats(id: StoreID, item: Item) {
 
   const dice = item.meta_data?.damage?.dice ?? 1;
   const die = item.meta_data?.damage?.die ?? '';
-  const damageType = item.meta_data?.damage?.damageType ?? '';
+  const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
   const extra = item.meta_data?.damage?.extra;
 
   const other: {
@@ -329,4 +329,17 @@ function getMAPedTotal(id: StoreID, item: Item, total: number): [number, number,
   const third = hasAgile ? total - 8 : total - 10;
 
   return [first, second, third];
+}
+
+function convertDamageType(damageType: string) {
+  damageType = damageType.trim();
+  if (damageType.toLowerCase() === 'bludgeoning' || damageType === 'b') {
+    return 'B';
+  } else if (damageType.toLowerCase() === 'piercing' || damageType === 'p') {
+    return 'P';
+  } else if (damageType.toLowerCase() === 'slashing' || damageType === 's') {
+    return 'S';
+  } else {
+    return damageType;
+  }
 }

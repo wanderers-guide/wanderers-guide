@@ -12,6 +12,7 @@ type TraitType =
   | 'PROPULSIVE'
   | 'FOCUS'
   | 'CANTRIP'
+  | 'BOMB'
   | 'AGILE'
   | 'FINESSE';
 const traitMap: Record<number, TraitType> = {
@@ -29,6 +30,7 @@ const traitMap: Record<number, TraitType> = {
   1579: 'PROPULSIVE',
   1856: 'FOCUS',
   1858: 'CANTRIP',
+  1530: 'BOMB',
   1569: 'AGILE',
   1570: 'FINESSE',
 };

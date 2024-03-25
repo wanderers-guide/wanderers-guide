@@ -8,6 +8,7 @@ import {
   OperationCreateValue,
   OperationDefineCastingSource,
   OperationGiveAbilityBlock,
+  OperationGiveItem,
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
@@ -182,6 +183,14 @@ export const createDefaultOperation = (type: OperationType) => {
         languageId: -1,
       },
     } satisfies OperationRemoveLanguage;
+  } else if (type === 'giveItem') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        itemId: -1,
+      },
+    } satisfies OperationGiveItem;
   } else {
     throw new Error(`Unknown operation type: ${type}`);
   }
@@ -211,10 +220,7 @@ export async function determineFilteredSelectionList(
   return [];
 }
 
-async function getAbilityBlockList(
-  operationUUID: string,
-  filters: OperationSelectFiltersAbilityBlock
-) {
+async function getAbilityBlockList(operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
   if (filters.abilityBlockType !== undefined) {
@@ -222,14 +228,10 @@ async function getAbilityBlockList(
   }
 
   if (filters.level.min !== undefined) {
-    abilityBlocks = abilityBlocks.filter(
-      (ab) => ab.level !== undefined && ab.level >= filters.level.min!
-    );
+    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== undefined && ab.level >= filters.level.min!);
   }
   if (filters.level.max !== undefined) {
-    abilityBlocks = abilityBlocks.filter(
-      (ab) => ab.level !== undefined && ab.level <= filters.level.max!
-    );
+    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== undefined && ab.level <= filters.level.max!);
   }
   if (filters.traits !== undefined) {
     const traits = await Promise.all(
@@ -245,10 +247,7 @@ async function getAbilityBlockList(
       if (!ab.traits && traitIds.length > 0) {
         return false;
       }
-      if (
-        (!ab.traits && traitIds.length === 0) ||
-        (ab.traits && ab.traits.length === 0 && traitIds.length === 0)
-      ) {
+      if ((!ab.traits && traitIds.length === 0) || (ab.traits && ab.traits.length === 0 && traitIds.length === 0)) {
         return true;
       }
       const intersection = _.intersection(ab.traits ?? [], traitIds);
@@ -312,11 +311,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
   });
 }
 
-async function getLanguageList(
-  id: StoreID,
-  operationUUID: string,
-  filters: OperationSelectFiltersLanguage
-) {
+async function getLanguageList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersLanguage) {
   let languages = await fetchContentAll<Language>('language');
 
   if (filters.rarity) {
@@ -340,20 +335,14 @@ async function getLanguageList(
   });
 }
 
-async function getAdjValueList(
-  id: StoreID,
-  operationUUID: string,
-  filters: OperationSelectFiltersAdjValue
-) {
+async function getAdjValueList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAdjValue) {
   let variables: Variable[] = [];
 
   if (filters.group === 'SKILL') {
     variables = getAllSkillVariables(id);
   }
   if (filters.group === 'ADD-LORE') {
-    variables = getAllSkillVariables(id).filter((variable) =>
-      variable.name.startsWith('SKILL_LORE_')
-    );
+    variables = getAllSkillVariables(id).filter((variable) => variable.name.startsWith('SKILL_LORE_'));
   }
   if (filters.group === 'ATTRIBUTE') {
     variables = getAllAttributeVariables(id);
@@ -420,17 +409,13 @@ export async function determinePredefinedSelectionList(
 
 async function getAbilityBlockPredefinedList(options: OperationSelectOptionAbilityBlock[]) {
   const abilityBlocks = await Promise.all(
-    options.map((option) =>
-      fetchContentById<AbilityBlock>('ability-block', option.operation.data.abilityBlockId)
-    )
+    options.map((option) => fetchContentById<AbilityBlock>('ability-block', option.operation.data.abilityBlockId))
   );
 
   const result = [];
   for (const abilityBlock of abilityBlocks) {
     if (abilityBlock) {
-      const option = options.find(
-        (option) => option.operation.data.abilityBlockId === abilityBlock.id
-      );
+      const option = options.find((option) => option.operation.data.abilityBlockId === abilityBlock.id);
       result.push({
         ...abilityBlock,
         _select_uuid: option!.id,
@@ -466,9 +451,7 @@ async function getSpellPredefinedList(options: OperationSelectOptionSpell[]) {
 
 async function getLanguagePredefinedList(options: OperationSelectOptionLanguage[]) {
   const languages = await Promise.all(
-    options.map((option) =>
-      fetchContentById<Language>('language', option.operation.data.languageId)
-    )
+    options.map((option) => fetchContentById<Language>('language', option.operation.data.languageId))
   );
 
   const result = [];

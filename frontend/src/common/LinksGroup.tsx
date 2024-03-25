@@ -54,7 +54,7 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
             classNames={switchClasses}
           />
         </Text>
-        <HoverCard shadow='md' position='top' openDelay={1000} withinPortal withArrow>
+        <HoverCard shadow='md' position='top' openDelay={500} withinPortal withArrow>
           <HoverCard.Target>
             <ActionIcon
               mr={40}

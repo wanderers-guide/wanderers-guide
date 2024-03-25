@@ -23,6 +23,7 @@ import {
   OperationCreateValue,
   OperationDefineCastingSource,
   OperationGiveAbilityBlock,
+  OperationGiveItem,
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
@@ -50,6 +51,7 @@ import { GiveHeritageOperation } from './ability_block/GiveHeritageOperation';
 import { AddBonusToValOperation } from './variables/AddBonusToValOperation';
 import { GiveSpellSlotOperation } from './spell/GiveSpellSlotOperation';
 import { DefineCastingSourceOperation } from './spell/DefineCastingSourceOperation';
+import { GiveItemOperation } from './item/GiveItemOperation';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -175,6 +177,7 @@ export function OperationSection(props: {
             { value: 'defineCastingSource', label: 'Define Casting Source' },
             { value: 'giveLanguage', label: 'Give Language' },
             { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
+            { value: 'giveItem', label: 'Give Item' },
             { value: 'adjValue', label: 'Adjust Value' },
             { value: 'addBonusToValue', label: 'Add Bonus to Value' },
             { value: 'createValue', label: 'Create Value' },
@@ -368,6 +371,18 @@ export function OperationDisplay(props: {
           onSelect={(option) => {
             opGiveLanguage.data.languageId = option.id;
             props.onChange(_.cloneDeep(opGiveLanguage));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'giveItem':
+      let opGiveItem = props.operation as OperationGiveItem;
+      return (
+        <GiveItemOperation
+          selectedId={opGiveItem.data.itemId}
+          onSelect={(option) => {
+            opGiveItem.data.itemId = option.id;
+            props.onChange(_.cloneDeep(opGiveItem));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

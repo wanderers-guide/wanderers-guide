@@ -9,6 +9,7 @@ import {
   OperationCreateValue,
   OperationDefineCastingSource,
   OperationGiveAbilityBlock,
+  OperationGiveItem,
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
@@ -18,21 +19,11 @@ import {
   OperationSelect,
   OperationSetValue,
 } from '@typing/operations';
-import {
-  addVariable,
-  addVariableBonus,
-  adjVariable,
-  getVariable,
-  setVariable,
-} from '@variables/variable-manager';
+import { addVariable, addVariableBonus, adjVariable, getVariable, setVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
 import { SelectionTreeNode } from './selection-tree';
 import { displayError, throwError } from '@utils/notifications';
-import {
-  ObjectWithUUID,
-  determineFilteredSelectionList,
-  determinePredefinedSelectionList,
-} from './operation-utils';
+import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSelectionList } from './operation-utils';
 import { maxProficiencyType } from '@variables/variable-utils';
 import { ExtendedProficiencyType, ProficiencyType, StoreID } from '@typing/variables';
 import { fetchContentById } from '@content/content-store';
@@ -97,6 +88,8 @@ export async function runOperations(
       return await runGiveAbilityBlock(varId, selectionNode, operation, options, sourceLabel);
     } else if (operation.type === 'giveLanguage') {
       return await runGiveLanguage(varId, operation, sourceLabel);
+    } else if (operation.type === 'giveItem') {
+      return await runGiveItem(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpell') {
       return await runGiveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpellSlot') {
@@ -136,11 +129,7 @@ async function runSelect(
   let optionList: ObjectWithUUID[] = [];
 
   if (operation.data.modeType === 'FILTERED' && operation.data.optionsFilters) {
-    optionList = await determineFilteredSelectionList(
-      'CHARACTER',
-      operation.id,
-      operation.data.optionsFilters
-    );
+    optionList = await determineFilteredSelectionList('CHARACTER', operation.id, operation.data.optionsFilters);
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
     optionList = await determinePredefinedSelectionList(
       'CHARACTER',
@@ -185,9 +174,7 @@ async function runSelect(
     }
   }
   const skillAdjustment =
-    optionList.length > 0 && foundSkills.length === optionList.length
-      ? optionList[0]?.value?.value
-      : undefined;
+    optionList.length > 0 && foundSkills.length === optionList.length ? optionList[0]?.value?.value : undefined;
 
   return {
     selection: {
@@ -245,7 +232,7 @@ async function updateVariables(
         spellId: selectedOption.id,
         type: selectedOption._meta_data?.type,
         castingSource: selectedOption._meta_data?.castingSource,
-        level: selectedOption._meta_data?.level,
+        rank: selectedOption._meta_data?.rank,
         tradition: selectedOption._meta_data?.tradition,
         casts: selectedOption._meta_data?.casts,
       } satisfies GiveSpellData),
@@ -281,13 +268,7 @@ async function runCreateValue(
   operation: OperationCreateValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  addVariable(
-    varId,
-    operation.data.type,
-    operation.data.variable,
-    operation.data.value,
-    sourceLabel
-  );
+  addVariable(varId, operation.data.type, operation.data.variable, operation.data.value, sourceLabel);
   return null;
 }
 
@@ -314,10 +295,7 @@ async function runGiveAbilityBlock(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const abilityBlock = await fetchContentById<AbilityBlock>(
-    'ability-block',
-    operation.data.abilityBlockId
-  );
+  const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
     displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
     return null;
@@ -381,6 +359,22 @@ async function runGiveLanguage(
   return null;
 }
 
+async function runGiveItem(
+  varId: StoreID,
+  operation: OperationGiveItem,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  const item = await fetchContentById<Language>('item', operation.data.itemId);
+  if (!item) {
+    displayError('Item not found');
+    return null;
+  }
+
+  adjVariable(varId, 'EXTRA_ITEM_IDS', `${item.id}`, sourceLabel);
+  adjVariable(varId, 'EXTRA_ITEM_NAMES', item.name, sourceLabel);
+  return null;
+}
+
 async function runGiveSpell(
   varId: StoreID,
   operation: OperationGiveSpell,
@@ -402,7 +396,7 @@ async function runGiveSpell(
       spellId: spell.id,
       type: operation.data.type,
       castingSource: operation.data.castingSource,
-      level: operation.data.level,
+      rank: operation.data.rank,
       tradition: operation.data.tradition,
       casts: operation.data.casts,
     } satisfies GiveSpellData),
@@ -445,10 +439,7 @@ async function runRemoveAbilityBlock(
   operation: OperationRemoveAbilityBlock,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const abilityBlock = await fetchContentById<AbilityBlock>(
-    'ability-block',
-    operation.data.abilityBlockId
-  );
+  const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
     displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
     return null;

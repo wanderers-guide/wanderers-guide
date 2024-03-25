@@ -100,7 +100,7 @@ export function ItemDrawerContent(props: {
   }
 
   let price = null;
-  if (item.price) {
+  if (item.price && priceToString(item.price) !== '—') {
     price = (
       <>
         <Text key={1} fw={600} c='gray.5' span>
@@ -122,7 +122,7 @@ export function ItemDrawerContent(props: {
       </>
     );
   }
-  if (item.bulk !== undefined) {
+  if (item.bulk !== undefined && item.bulk !== null && item.bulk?.trim() !== '') {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>

@@ -46,6 +46,7 @@ export type Operation =
   | OperationGiveSpell
   | OperationRemoveSpell
   | OperationGiveSpellSlot
+  | OperationGiveItem
   | OperationDefineCastingSource;
 
 export type OperationType =
@@ -61,6 +62,7 @@ export type OperationType =
   | 'select'
   | 'giveSpell'
   | 'removeSpell'
+  | 'giveItem'
   | 'giveSpellSlot'
   | 'defineCastingSource';
 
@@ -138,13 +140,7 @@ export type ConditionCheckData = {
   value: string;
 };
 
-export type ConditionOperator =
-  | ''
-  | 'INCLUDES'
-  | 'EQUALS'
-  | 'NOT_EQUALS'
-  | 'LESS_THAN'
-  | 'GREATER_THAN';
+export type ConditionOperator = '' | 'INCLUDES' | 'EQUALS' | 'NOT_EQUALS' | 'LESS_THAN' | 'GREATER_THAN';
 
 export interface GiveSpellData extends SpellMetadata {
   spellId: number;
@@ -193,6 +189,13 @@ export interface OperationGiveLanguage extends OperationBase {
   };
 }
 
+export interface OperationGiveItem extends OperationBase {
+  readonly type: 'giveItem';
+  data: {
+    itemId: number;
+  };
+}
+
 export interface OperationRemoveLanguage extends OperationBase {
   readonly type: 'removeLanguage';
   data: {
@@ -212,12 +215,7 @@ export interface OperationSelect extends OperationBase {
   };
 }
 
-export type OperationSelectOptionType =
-  | 'CUSTOM'
-  | 'ABILITY_BLOCK'
-  | 'SPELL'
-  | 'LANGUAGE'
-  | 'ADJ_VALUE';
+export type OperationSelectOptionType = 'CUSTOM' | 'ABILITY_BLOCK' | 'SPELL' | 'LANGUAGE' | 'ADJ_VALUE';
 
 /**
  * OperationSelectOption
