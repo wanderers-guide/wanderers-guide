@@ -4,7 +4,7 @@ import { saveCustomization } from '@content/customization-cache';
 
 export function setPageTitle(title?: string) {
   // This is a hack to make it so the builder and sheets user character customization
-  if (!title?.startsWith('Builder') && !title?.startsWith('Sheet')) {
+  if (!title?.includes('Builder') && !title?.includes('Sheet')) {
     saveCustomization({
       background_image_url: getCachedPublicUser()?.background_image_url,
       sheet_theme: getCachedPublicUser()?.site_theme,
@@ -15,6 +15,7 @@ export function setPageTitle(title?: string) {
     document.title = SITE_NAME;
     return;
   }
+  title = title.trim();
   const newTitle = `${title} | ${SITE_NAME}`;
   if (document.title !== newTitle) {
     document.title = newTitle;

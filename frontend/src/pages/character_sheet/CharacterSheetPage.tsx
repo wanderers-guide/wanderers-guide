@@ -324,11 +324,10 @@ function confirmExperience(exp: string, character: Character, setCharacter: Sett
 }
 
 function CharacterSheetInner(props: { content: ContentPackage; characterId: number; onFinishLoading: () => void }) {
-  setPageTitle(`Sheet`);
-
   const queryClient = useQueryClient();
 
   const [character, setCharacter] = useRecoilState(characterState);
+  setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
   // Fetch character from db
   const {
