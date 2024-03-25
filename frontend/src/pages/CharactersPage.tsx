@@ -1,4 +1,5 @@
 import { characterState } from '@atoms/characterAtoms';
+import { sessionState } from '@atoms/supabaseAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
@@ -46,10 +47,11 @@ import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function Component() {
   setPageTitle(`Characters`);
+  const session = useRecoilValue(sessionState);
 
   const {
     data: characters,
@@ -58,8 +60,11 @@ export function Component() {
   } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
-      return await makeRequest<Character[]>('find-character', {});
+      return await makeRequest<Character[]>('find-character', {
+        user_id: session?.user.id,
+      });
     },
+    enabled: !!session,
   });
 
   const [_character, setCharacter] = useRecoilState(characterState);

@@ -68,14 +68,18 @@ const router = createBrowserRouter([
               return { characterId: params.characterId };
             },
           },
-          {
-            path: 'sheet/:characterId',
-            lazy: () => import('@pages/character_sheet/CharacterSheetPage.tsx'),
-            loader: async ({ params }: { params: any }) => {
-              return { characterId: params.characterId };
-            },
-          },
         ],
+      },
+      {
+        path: 'sheet/:characterId',
+        lazy: () => import('@pages/character_sheet/CharacterSheetPage.tsx'),
+        loader: async ({ params }: { params: any }) => {
+          return { characterId: params.characterId };
+        },
+      },
+      {
+        path: 'sheet-unauthorized',
+        lazy: () => import('@pages/character_sheet/UnauthorizedSheetPage.tsx'),
       },
       {
         path: '',

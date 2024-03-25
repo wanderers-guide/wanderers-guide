@@ -360,6 +360,7 @@ interface Character {
     };
     conditions?: Condition[];
   };
+  campaign_id?: number;
   roll_history?: Record<string, any>; // TODO
   custom_operations?: Operation[];
   meta_data?: {
@@ -387,6 +388,31 @@ interface Character {
   companions?: Record<string, any>; // TODO
 }
 
+interface Campaign {
+  id: number;
+  created_at: string;
+  user_id: string;
+  name: string;
+  description: string;
+  notes?: {
+    pages: {
+      name: string;
+      icon: string;
+      color: string;
+      contents: JSONContent;
+    }[];
+  };
+  recommended_options?: Record<string, any>; // TODO
+  recommended_variants?: Record<string, any>; // TODO
+  recommended_content_sources?: {
+    enabled?: number[];
+  };
+  custom_operations?: Operation[];
+  meta_data?: {
+    image_url?: string;
+  };
+}
+
 interface PublicUser {
   id: number;
   user_id: string;
@@ -402,6 +428,7 @@ interface PublicUser {
   patreon_tier?: 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER';
   deactivated: boolean;
   summary?: string;
+  subscribed_content_sources?: { source_id: number; source_name: string; added_at: string }[];
 }
 
 interface ContentSource {

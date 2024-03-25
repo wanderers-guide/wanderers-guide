@@ -206,7 +206,7 @@ export function Component(props: {}) {
 
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 80);
+  const interval = useInterval(() => setPercentage((p) => p + 2), 50);
   useEffect(() => {
     interval.start();
     return interval.stop;
@@ -353,8 +353,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
         });
       } else {
-        // Character not found, redirect to characters
-        window.location.href = '/characters';
+        // Character not found, probably due to unauthorized access
+        window.location.href = '/sheet-unauthorized';
       }
 
       return resultCharacter;
