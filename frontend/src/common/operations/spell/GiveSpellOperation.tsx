@@ -15,7 +15,7 @@ export function GiveSpellOperation(props: {
   const [spellId, setSpellId] = useState(props.data.spellId);
   const [type, setType] = useState(props.data.type);
   const [castingSource, setCastingSource] = useState(props.data.castingSource);
-  const [level, setLevel] = useState(props.data.level);
+  const [rank, setRank] = useState(props.data.rank);
   const [tradition, setTradition] = useState(props.data.tradition);
   const [casts, setCasts] = useState(props.data.casts);
 
@@ -24,11 +24,11 @@ export function GiveSpellOperation(props: {
       spellId,
       type,
       castingSource,
-      level,
+      rank,
       tradition,
       casts,
     });
-  }, [spellId, type, castingSource, level, tradition, casts]);
+  }, [spellId, type, castingSource, rank, tradition, casts]);
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Give Spell'>
@@ -66,12 +66,12 @@ export function GiveSpellOperation(props: {
             />
             <NumberInput
               size='xs'
-              placeholder='Level'
+              placeholder='Rank'
               min={0}
               max={10}
               w={70}
-              value={level}
-              onChange={(val) => setLevel(parseInt(`${val}`))}
+              value={rank}
+              onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
           </Group>
@@ -105,12 +105,12 @@ export function GiveSpellOperation(props: {
             />
             <NumberInput
               size='xs'
-              placeholder='Level'
+              placeholder='Rank'
               min={0}
               max={10}
               w={70}
-              value={level}
-              onChange={(val) => setLevel(parseInt(`${val}`))}
+              value={rank}
+              onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
             <NumberInput

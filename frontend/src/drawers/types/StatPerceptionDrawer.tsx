@@ -167,7 +167,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         A precise sense is one that can be used to perceive the world in nuanced detail. The only way to
                         target a creature without having drawbacks is to use a precise sense. You can usually detect a
                         creature automatically with a precise sense unless that creature is hiding or obscured by the
-                        environment, in which case you can use the {convertToHardcodedLink('Seek', 'action')} basic
+                        environment, in which case you can use the {convertToHardcodedLink('action', 'Seek')} basic
                         action to better detect the creature.
                       </RichText>
                     </Accordion.Panel>
@@ -249,7 +249,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                         usually sense a creature automatically with an imprecise sense, but it has the hidden condition
                         instead of the observed condition. It might be undetected by you if it's using Stealth or is in
                         an environment that distorts the sense, such as a noisy room in the case of hearing. In those
-                        cases, you have to use the {convertToHardcodedLink('Seek', 'action')} basic action to detect the
+                        cases, you have to use the {convertToHardcodedLink('action', 'Seek')} basic action to detect the
                         creature. At best, an imprecise sense can be used to make an undetected creature (or one you
                         didn't even know was there) merely hidden—it can't make the creature observed.
                       </RichText>

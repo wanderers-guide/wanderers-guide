@@ -80,7 +80,7 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
         justifyContent: 'center',
       }}
     >
-      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} />
+      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} status='Loading...' />
     </Box>
   );
 
