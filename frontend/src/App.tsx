@@ -6,7 +6,7 @@ import { GUIDE_BLUE } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
-import { Anchor, BackgroundImage, MantineProvider, Text, createTheme } from '@mantine/core';
+import { Anchor, BackgroundImage, Button, MantineProvider, Text, createTheme } from '@mantine/core';
 import { usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
@@ -124,6 +124,15 @@ export default function App() {
           '#101113',
         ],
       },
+      // components: {
+      //   Button: Button.extend({
+      //     defaultProps: {
+      //       style: {
+      //       },
+      //     },
+      //   }),
+      // },
+      cursorType: 'pointer',
       primaryColor: 'guide',
       defaultRadius: 'md',
       fontFamily: 'Montserrat, sans-serif',

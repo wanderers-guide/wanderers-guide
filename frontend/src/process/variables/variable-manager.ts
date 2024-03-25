@@ -331,6 +331,16 @@ export function addVariableBonus(
   if (!getVariableStore(id).bonuses[name]) {
     getVariableStore(id).bonuses[name] = [];
   }
+
+  // If there's already a bonus with the same value, type, text, and source, don't add it
+  if (
+    getVariableStore(id).bonuses[name].some(
+      (bonus) => bonus.value === value && bonus.type === type && bonus.text === text && bonus.source === source
+    )
+  ) {
+    return;
+  }
+
   getVariableStore(id).bonuses[name].push({
     value,
     type,

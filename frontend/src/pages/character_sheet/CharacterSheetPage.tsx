@@ -93,7 +93,14 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover, useInterval } from '@mantine/hooks';
+import {
+  getHotkeyHandler,
+  useDebouncedValue,
+  useDidUpdate,
+  useForceUpdate,
+  useHover,
+  useInterval,
+} from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
@@ -153,6 +160,7 @@ import {
   getFinalVariableValue,
 } from '@variables/variable-display';
 import {
+  addVariableBonus,
   getAllArmorGroupVariables,
   getAllArmorVariables,
   getAllSaveVariables,
@@ -198,7 +206,7 @@ export function Component(props: {}) {
 
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 30);
+  const interval = useInterval(() => setPercentage((p) => p + 2), 80);
   useEffect(() => {
     interval.start();
     return interval.stop;
@@ -214,7 +222,7 @@ export function Component(props: {}) {
         justifyContent: 'center',
       }}
     >
-      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} />
+      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} status='Loading...' />
     </Box>
   );
 
@@ -379,7 +387,10 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
       setOperationResults(results);
       executingOperations.current = false;
-      props.onFinishLoading?.();
+
+      setTimeout(() => {
+        props.onFinishLoading?.();
+      }, 100);
     });
   }, [character]);
 
@@ -476,7 +487,12 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
             <ArmorSection inventory={inventory} setInventory={setInventory} />
             <SpeedSection />
           </SimpleGrid>
-          <SectionPanels content={props.content} inventory={inventory} setInventory={setInventory} />
+          <SectionPanels
+            content={props.content}
+            inventory={inventory}
+            setInventory={setInventory}
+            isLoaded={!!operationResults}
+          />
         </Stack>
       </Box>
     </Center>
@@ -1156,6 +1172,23 @@ function ArmorSection(props: { inventory: Inventory; setInventory: React.Dispatc
   const bestArmor = getBestArmor('CHARACTER', props.inventory);
   const bestShield = getBestShield('CHARACTER', props.inventory);
 
+  if (bestArmor?.item.meta_data?.runes?.resilient) {
+    const resilientRune = bestArmor?.item.meta_data?.runes?.resilient;
+    let resilientLabel = '';
+    if (resilientRune === 1) {
+      resilientLabel = 'Resilient';
+    } else if (resilientRune === 2) {
+      resilientLabel = 'Greater Resilient';
+    } else if (resilientRune === 3) {
+      resilientLabel = 'Major Resilient';
+    }
+
+    addVariableBonus('CHARACTER', 'AC_BONUS', resilientRune, 'item', '', resilientLabel + ' Rune');
+    for (const save of getAllSaveVariables('CHARACTER')) {
+      addVariableBonus('CHARACTER', save.name, resilientRune, 'item', '', resilientLabel + ' Rune');
+    }
+  }
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -1457,9 +1490,10 @@ function SectionPanels(props: {
   content: ContentPackage;
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+  isLoaded: boolean;
 }) {
   const theme = useMantineTheme();
-  const [activeTab, setActiveTab] = useState<string | null>('skills-actions');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const { hovered: hoveredTabOptions, ref: tabOptionsRef } = useHover<HTMLButtonElement>();
 
   const panelHeight = 550;
@@ -1500,6 +1534,13 @@ function SectionPanels(props: {
         return null;
     }
   };
+
+  useEffect(() => {
+    // Open first tab when finished loading
+    if (props.isLoaded && activeTab === null) {
+      setActiveTab('skills-actions');
+    }
+  }, [props.isLoaded, activeTab]);
 
   return (
     <BlurBox blur={10} p='sm'>
@@ -1698,6 +1739,15 @@ function PanelSkillsActions(props: {
 
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
   const [actionSectionValue, setActionSectionValue] = useState<string | null>(null);
+
+  // This is a hack to fix a big where variables are updated on init load but the sheet state hasn't updated yet
+  // const forceUpdate = useForceUpdate();
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     forceUpdate();
+  //   }, 1000);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   const actions = useMemo(() => {
     const allActions = props.content.abilityBlocks

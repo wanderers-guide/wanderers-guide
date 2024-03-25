@@ -48,6 +48,7 @@ export function ItemMultiSelect(props: {
   label?: string;
   placeholder?: string;
   valueName?: string[];
+  disabled?: boolean;
   filter: (item: Item) => boolean;
   onChange: (items?: Item[], names?: string[]) => void;
 }) {
@@ -58,19 +59,25 @@ export function ItemMultiSelect(props: {
     },
   });
 
+  const names = props.valueName?.map((name) => cleanName(name));
+
   return (
     <>
       {isFetching || !data ? (
-        <TagsInput label={props.label} placeholder={props.placeholder} readOnly />
+        <TagsInput disabled={props.disabled} label={props.label} placeholder={props.placeholder} readOnly />
       ) : (
         <>
           <TagsInput
+            disabled={props.disabled}
             label={props.label}
             placeholder={props.placeholder}
             value={data
               .filter((item) => {
-                if (props.valueName && Array.isArray(props.valueName)) {
-                  return props.valueName.includes(cleanName(item.name) ?? '');
+                if (names && Array.isArray(names)) {
+                  const itemName = cleanName(item.name);
+                  if (itemName) {
+                    return names.includes(itemName);
+                  }
                 }
                 return false;
               })
@@ -79,7 +86,7 @@ export function ItemMultiSelect(props: {
             limit={1000}
             onChange={(value) => {
               const items = value
-                .map((id) => data.find((item) => `${item.id}` === id))
+                .map((name) => data.find((item) => item.name === name))
                 .filter((item) => !!item) as Item[];
               props.onChange(
                 items,

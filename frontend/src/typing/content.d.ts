@@ -156,7 +156,7 @@ interface Item {
       striking?: number;
       resilient?: number;
       potency?: number;
-      property?: string[];
+      property?: { name: string; id: number }[];
     };
     foundry: {
       rules?: Record<string, any>;

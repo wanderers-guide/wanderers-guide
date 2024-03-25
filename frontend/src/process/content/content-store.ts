@@ -224,3 +224,11 @@ export async function fetchAbilityBlockByName(name?: string, sources?: number[],
     content_sources: sources ?? defaultSources,
   });
 }
+
+export async function fetchItemByName(name?: string, sources?: number[], id?: number) {
+  return await fetchContent<Item[]>('item', {
+    id,
+    name,
+    content_sources: sources ?? defaultSources,
+  });
+}

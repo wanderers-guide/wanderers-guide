@@ -1,7 +1,7 @@
 import { Box, Text, Group, Stack } from '@mantine/core';
 import { motion } from 'framer-motion';
 
-export default function D20Loader(props: { size: number; color: string; percentage: number }) {
+export default function D20Loader(props: { size: number; color: string; percentage: number; status: string }) {
   const percent = Math.min(Math.max(props.percentage, 0), 100);
   return (
     <Stack gap={10}>
@@ -27,7 +27,7 @@ export default function D20Loader(props: { size: number; color: string; percenta
         </motion.svg>
       </Group>
       <Text fz='sm' ta='center' fs='italic' c='gray.2'>
-        Loading...
+        {props.status}
       </Text>
     </Stack>
   );

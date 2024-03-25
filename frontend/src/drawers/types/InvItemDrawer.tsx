@@ -9,12 +9,15 @@ import {
   isItemContainer,
   isItemShield,
   isItemWeapon,
+  isItemWithPropertyRunes,
   isItemWithQuantity,
+  isItemWithRunes,
   labelizeBulk,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import {
   ActionIcon,
+  Badge,
   Box,
   Button,
   Divider,
@@ -41,9 +44,10 @@ import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilValue } from 'recoil';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
+import { drawerState } from '@atoms/navAtoms';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   return (
@@ -68,6 +72,7 @@ export function InvItemDrawerContent(props: {
     onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
   };
 }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [invItem, setInvItem] = useState(props.data.invItem);
   const [editingItem, setEditingItem] = useState(false);
 
@@ -168,6 +173,7 @@ export function InvItemDrawerContent(props: {
               setInvItem(invItem);
               props.data.onItemUpdate(invItem);
             }}
+            openDrawer={openDrawer}
           />
         )}
 
@@ -218,6 +224,9 @@ export function InvItemDrawerContent(props: {
                       marginLeft: 5,
                     },
                   }}
+                  style={{
+                    backdropFilter: 'blur(8px)',
+                  }}
                   pr={5}
                 >
                   Move Item
@@ -250,6 +259,9 @@ export function InvItemDrawerContent(props: {
             color='cyan'
             radius='xl'
             aria-label='Edit Item'
+            style={{
+              backdropFilter: 'blur(8px)',
+            }}
             onClick={() => {
               setEditingItem(true);
             }}
@@ -262,6 +274,9 @@ export function InvItemDrawerContent(props: {
               color='red'
               radius='xl'
               aria-label='Remove Item'
+              style={{
+                backdropFilter: 'blur(8px)',
+              }}
               onClick={() => {
                 props.data.onItemDelete(invItem);
               }}
@@ -295,7 +310,11 @@ export function InvItemDrawerContent(props: {
   );
 }
 
-function InvItemSections(props: { invItem: InventoryItem; onItemUpdate: (invItem: InventoryItem) => void }) {
+function InvItemSections(props: {
+  invItem: InventoryItem;
+  onItemUpdate: (invItem: InventoryItem) => void;
+  openDrawer: SetterOrUpdater<any>;
+}) {
   const ac = props.invItem.item.meta_data?.ac_bonus;
   const dexCap = props.invItem.item.meta_data?.dex_cap;
   const strength = props.invItem.item.meta_data?.strength;
@@ -486,6 +505,77 @@ function InvItemSections(props: { invItem: InventoryItem; onItemUpdate: (invItem
               {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
             </Text>
           </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
+  let runesSection = null;
+  if (isItemWithRunes(props.invItem.item)) {
+    let strikingLabel = '';
+    if (props.invItem.item.meta_data!.runes!.striking === 1) {
+      strikingLabel = 'Striking';
+    } else if (props.invItem.item.meta_data!.runes!.striking === 2) {
+      strikingLabel = 'Greater Striking';
+    } else if (props.invItem.item.meta_data!.runes!.striking === 3) {
+      strikingLabel = 'Major Striking';
+    }
+
+    let resilientLabel = '';
+    if (props.invItem.item.meta_data!.runes!.resilient === 1) {
+      resilientLabel = 'Resilient';
+    } else if (props.invItem.item.meta_data!.runes!.resilient === 2) {
+      resilientLabel = 'Greater Resilient';
+    } else if (props.invItem.item.meta_data!.runes!.resilient === 3) {
+      resilientLabel = 'Major Resilient';
+    }
+
+    let potencyLabel = '';
+    if (props.invItem.item.meta_data!.runes!.potency) {
+      potencyLabel = `+${props.invItem.item.meta_data!.runes!.potency} `;
+    }
+
+    const rightLabel = strikingLabel || resilientLabel;
+
+    runesSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group gap={10}>
+          {potencyLabel && (
+            <Text fw={600} c='gray.5' span>
+              {potencyLabel}
+            </Text>
+          )}
+          <Text fw={600} c='gray.5' span>
+            {rightLabel}
+          </Text>
+
+          {isItemWithPropertyRunes(props.invItem.item) && (
+            <>
+              {props.invItem.item.meta_data!.runes!.property?.map((rune, index) => (
+                <Badge
+                  key={index}
+                  variant='light'
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                  onClick={() => {
+                    props.openDrawer({
+                      type: 'item',
+                      data: { id: rune.id },
+                      extra: { addToHistory: true },
+                    });
+                  }}
+                >
+                  {toLabel(rune.name)}
+                </Badge>
+              ))}
+            </>
+          )}
         </Group>
       </Paper>
     );
@@ -723,6 +813,7 @@ function InvItemSections(props: { invItem: InventoryItem; onItemUpdate: (invItem
   return (
     <>
       <Stack gap={0}>
+        <>{runesSection}</>
         <>{attackAndDamageSection}</>
         <>{rangeAndReloadSection}</>
         <>{armorSection}</>

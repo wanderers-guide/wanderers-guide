@@ -117,7 +117,7 @@ export function CreateItemModal(props: {
   const [strikingRune, setStrikingRune] = useState<number | undefined>(0);
   const [resilientRune, setResilientRune] = useState<number | undefined>(0);
   const [potencyRune, setPotencyRune] = useState<number | undefined>(0);
-  const [propertyRunes, setPropertyRunes] = useState<string[] | undefined>([]);
+  const [propertyRunes, setPropertyRunes] = useState<{ name: string; id: number }[] | undefined>([]);
 
   const [baseItem, setBaseItem] = useState<string | undefined>();
 
@@ -250,6 +250,7 @@ export function CreateItemModal(props: {
     (form.values.meta_data?.bulk?.held_or_stowed && form.values.meta_data.bulk.held_or_stowed > 0 ? 1 : 0) +
     (form.values.meta_data?.bulk?.ignored && form.values.meta_data.bulk.ignored > 0 ? 1 : 0) +
     (strikingRune && strikingRune > 0 ? 1 : 0) +
+    (resilientRune && resilientRune > 0 ? 1 : 0) +
     (potencyRune && potencyRune > 0 ? 1 : 0) +
     (propertyRunes && propertyRunes.length > 0 ? 1 : 0) +
     (materialType && materialType.length > 0 ? 1 : 0) +
@@ -597,6 +598,20 @@ export function CreateItemModal(props: {
                         <Stack gap={10}>
                           <Group wrap='nowrap'>
                             <Select
+                              label='Potency Rune'
+                              clearable
+                              data={[
+                                { value: '1', label: '+1 Potency' },
+                                { value: '2', label: '+2 Potency' },
+                                { value: '3', label: '+3 Potency' },
+                                { value: '4', label: '+4 Potency' },
+                              ]}
+                              value={potencyRune !== undefined ? `${potencyRune}` : undefined}
+                              onChange={(value) => {
+                                setPotencyRune(value ? +value : undefined);
+                              }}
+                            />
+                            <Select
                               label='Striking Rune'
                               clearable
                               data={[
@@ -623,32 +638,22 @@ export function CreateItemModal(props: {
                                 setResilientRune(value ? +value : undefined);
                               }}
                             />
-
-                            <Select
-                              label='Potency Rune'
-                              clearable
-                              data={[
-                                { value: '1', label: '+1 Potency' },
-                                { value: '2', label: '+2 Potency' },
-                                { value: '3', label: '+3 Potency' },
-                                { value: '4', label: '+4 Potency' },
-                              ]}
-                              value={potencyRune !== undefined ? `${potencyRune}` : undefined}
-                              onChange={(value) => {
-                                setPotencyRune(value ? +value : undefined);
-                              }}
-                            />
                           </Group>
 
                           <ItemMultiSelect
                             label='Property Runes'
                             placeholder='(limited to potency rune #)'
-                            valueName={propertyRunes}
+                            valueName={propertyRunes?.map((rune) => rune.name)}
                             filter={(item) => {
                               return item.group === 'RUNE';
                             }}
                             onChange={(items, names) => {
-                              setPropertyRunes(names);
+                              console.log('items', items, names);
+
+                              if ((items ?? []).length > (potencyRune ?? 0)) {
+                                return;
+                              }
+                              setPropertyRunes(items?.map((item) => ({ name: item.name, id: item.id })) ?? []);
                             }}
                           />
                         </Stack>

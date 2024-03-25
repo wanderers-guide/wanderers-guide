@@ -11,9 +11,7 @@ import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-di
 import { labelToVariable } from '@variables/variable-utils';
 
 export function getWeaponStats(id: StoreID, item: Item) {
-  // TODO: Runes
-
-  const dice = item.meta_data?.damage?.dice ?? 1;
+  const dice = (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0);
   const die = item.meta_data?.damage?.die ?? '';
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
   const extra = item.meta_data?.damage?.extra;
@@ -78,6 +76,10 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
     );
   }
 
+  if (item.meta_data?.runes?.potency) {
+    parts.set("This is the bonus you receive from the weapon's potency rune.", item.meta_data.runes.potency);
+  }
+
   if (attackBonus) {
     parts.set('This is a bonus you receive to all attack rolls.', attackBonus);
   }
@@ -134,6 +136,10 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
       'This is your Strength modifier. You add your Strength modifier to attack rolls with most melee weapons.',
       strMod
     );
+  }
+
+  if (item.meta_data?.runes?.potency) {
+    parts.set("This is the bonus you receive from the weapon's potency rune.", item.meta_data.runes.potency);
   }
 
   if (attackBonus) {

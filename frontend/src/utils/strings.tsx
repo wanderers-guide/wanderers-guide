@@ -15,7 +15,15 @@ export function toLabel(text?: string | null) {
   if (!text) return '';
   text = text.replace('ability-block', 'option');
   text = text.replace('unarmed_attack', 'unarmed');
-  text = _.startCase(text.toLowerCase().replace('_', ' ').replace('-', ' '));
+
+  // Replace parentheses with a unique placeholder
+  text = text.replace(/\(/g, '_lp_').replace(/\)/g, '_rp_');
+
+  text = _.startCase(text.toLowerCase());
+
+  // Replace the unique placeholder with parentheses
+  text = text.replace(/Lp/g, '(').replace(/Rp/g, ')');
+
   if (text.endsWith('Ac')) {
     text = text.slice(0, -2) + 'AC';
   }

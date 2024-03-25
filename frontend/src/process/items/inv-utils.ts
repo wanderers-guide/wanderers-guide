@@ -365,6 +365,28 @@ export function isItemEquippable(item: Item) {
 }
 
 /**
+ * Utility function to determine if an item has runes
+ * @param item - Item
+ * @returns - Whether the item has runes
+ */
+export function isItemWithRunes(item: Item) {
+  if (!item.meta_data?.runes) return false;
+
+  return item.meta_data.runes.potency || item.meta_data.runes.striking || item.meta_data.runes.resilient;
+}
+
+/**
+ * Utility function to determine if an item has property runes
+ * @param item - Item
+ * @returns - Whether the item has property runes
+ */
+export function isItemWithPropertyRunes(item: Item) {
+  if (!item.meta_data?.runes) return false;
+
+  return item.meta_data.runes.property && item.meta_data.runes.property.length > 0;
+}
+
+/**
  * Utility function to determine if an item should indicate quantity
  * @param item - Item
  * @returns - Whether the item is consumable

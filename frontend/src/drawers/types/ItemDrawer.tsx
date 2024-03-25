@@ -7,7 +7,15 @@ import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
-import { isItemArmor, isItemShield, isItemWeapon, isItemWithQuantity, labelizeBulk } from '@items/inv-utils';
+import {
+  isItemArmor,
+  isItemShield,
+  isItemWeapon,
+  isItemWithPropertyRunes,
+  isItemWithQuantity,
+  isItemWithRunes,
+  labelizeBulk,
+} from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import {
   Title,
@@ -25,6 +33,7 @@ import {
   Paper,
   ScrollArea,
   TextInput,
+  Badge,
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { IconHelpCircle } from '@tabler/icons-react';
@@ -35,6 +44,8 @@ import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { drawerState } from '@atoms/navAtoms';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -72,6 +83,7 @@ export function ItemDrawerContent(props: {
 }) {
   const storeID = props.data.storeID ?? 'CHARACTER';
   const id = props.data.id;
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _item } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
@@ -176,7 +188,7 @@ export function ItemDrawerContent(props: {
           <TraitsDisplay traitIds={item.traits ?? []} rarity={item.rarity} interactable />
         </Box>
 
-        <MiscItemSections item={item} storeID={storeID} />
+        <MiscItemSections item={item} storeID={storeID} openDrawer={openDrawer} />
 
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
@@ -201,7 +213,7 @@ export function ItemDrawerContent(props: {
   );
 }
 
-function MiscItemSections(props: { item: Item; storeID: StoreID }) {
+function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: SetterOrUpdater<any> }) {
   const ac = props.item.meta_data?.ac_bonus;
   const dexCap = props.item.meta_data?.dex_cap;
   const strength = props.item.meta_data?.strength;
@@ -327,6 +339,77 @@ function MiscItemSections(props: { item: Item; storeID: StoreID }) {
               {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
             </Text>
           </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
+  let runesSection = null;
+  if (isItemWithRunes(props.item)) {
+    let strikingLabel = '';
+    if (props.item.meta_data!.runes!.striking === 1) {
+      strikingLabel = 'Striking';
+    } else if (props.item.meta_data!.runes!.striking === 2) {
+      strikingLabel = 'Greater Striking';
+    } else if (props.item.meta_data!.runes!.striking === 3) {
+      strikingLabel = 'Major Striking';
+    }
+
+    let resilientLabel = '';
+    if (props.item.meta_data!.runes!.resilient === 1) {
+      resilientLabel = 'Resilient';
+    } else if (props.item.meta_data!.runes!.resilient === 2) {
+      resilientLabel = 'Greater Resilient';
+    } else if (props.item.meta_data!.runes!.resilient === 3) {
+      resilientLabel = 'Major Resilient';
+    }
+
+    let potencyLabel = '';
+    if (props.item.meta_data!.runes!.potency) {
+      potencyLabel = `+${props.item.meta_data!.runes!.potency} `;
+    }
+
+    const rightLabel = strikingLabel || resilientLabel;
+
+    runesSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group gap={10}>
+          {potencyLabel && (
+            <Text fw={600} c='gray.5' span>
+              {potencyLabel}
+            </Text>
+          )}
+          <Text fw={600} c='gray.5' span>
+            {rightLabel}
+          </Text>
+
+          {isItemWithPropertyRunes(props.item) && (
+            <>
+              {props.item.meta_data!.runes!.property?.map((rune, index) => (
+                <Badge
+                  key={index}
+                  variant='light'
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                  onClick={() => {
+                    props.openDrawer({
+                      type: 'item',
+                      data: { id: rune.id },
+                      extra: { addToHistory: true },
+                    });
+                  }}
+                >
+                  {toLabel(rune.name)}
+                </Badge>
+              ))}
+            </>
+          )}
         </Group>
       </Paper>
     );
@@ -565,8 +648,9 @@ function MiscItemSections(props: { item: Item; storeID: StoreID }) {
     <>
       <Stack gap={0}>
         <>{attackAndDamageSection}</>
-        <>{rangeAndReloadSection}</>
         <>{armorSection}</>
+        <>{runesSection}</>
+        <>{rangeAndReloadSection}</>
         <>{categoryAndGroupSection}</>
         <>{quantitySection}</>
         <>{healthSection}</>
