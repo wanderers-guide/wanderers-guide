@@ -111,6 +111,9 @@ export function Component() {
       content_sources: debouncedCharacter.content_sources,
       operation_data: debouncedCharacter.operation_data,
       meta_data: debouncedCharacter.meta_data,
+      variants: debouncedCharacter.variants,
+      options: debouncedCharacter.options,
+      custom_operations: debouncedCharacter.custom_operations,
     });
   }, [debouncedCharacter]);
 
@@ -123,6 +126,9 @@ export function Component() {
       content_sources?: any;
       operation_data?: any;
       meta_data?: any;
+      variants?: any;
+      options?: any;
+      custom_operations?: any;
     }) => {
       const response = await makeRequest<JSendResponse>('update-character', {
         id: characterId,

@@ -1,6 +1,6 @@
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { characterState } from '@atoms/characterAtoms';
-import { LinksGroup } from '@common/LinksGroup';
+import { LinkSwitch, LinksGroup } from '@common/LinksGroup';
 import { GUIDE_BLUE } from '@constants/data';
 import {
   Stack,
@@ -62,6 +62,8 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchContentSources } from '@content/content-store';
 import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
 import { getCachedPublicUser, hasPatronPermission } from '@auth/user-manager';
+import BlurButton from '@common/BlurButton';
+import CustomOperationsModal from '@modals/CustomOperationsModal';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -72,6 +74,8 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();
+
+  const [openedOperations, setOpenedOperations] = useState(false);
 
   const { data: fetchedBooks } = useQuery({
     queryKey: [`get-content-sources`],
@@ -465,6 +469,241 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                           });
                       }}
                     /> */}
+                  </Stack>
+                </Tabs.Panel>
+
+                <Tabs.Panel value='variants'>
+                  <Stack gap={0} pt='sm'>
+                    <LinkSwitch
+                      label='Ancestry Paragon'
+                      info={`Most characters have some elements that connect them to their ancestry but identify more strongly with their class or unique personality. Sometimes, though, a character is the embodiment of their ancestry to the point that it’s of equal importance to their class. For a game where an ancestral background is a major theme and such characters are the norm, your group might consider using the ancestry paragon variant.`}
+                      url='https://2e.aonprd.com/Rules.aspx?ID=1336'
+                      enabled={character?.variants?.ancestry_paragon}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            variants: {
+                              ...prev.variants,
+                              ancestry_paragon: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
+                      label='Dual Class'
+                      info={`Sometimes, especially when you have a particularly small play group or want to play incredibly versatile characters, you might want to allow dual-class characters that have the full benefits of two different classes.`}
+                      url='https://2e.aonprd.com/Rules.aspx?ID=1328'
+                      enabled={character?.variants?.dual_class}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            variants: {
+                              ...prev.variants,
+                              dual_class: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
+                      label='Free Archetype'
+                      info={`Sometimes the story of your game calls for a group where everyone is a pirate or an apprentice at a magic school. The free archetype variant introduces a shared aspect to every character without taking away any of that character’s existing choices.`}
+                      url='https://2e.aonprd.com/Rules.aspx?ID=2751'
+                      enabled={character?.variants?.free_archetype}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            variants: {
+                              ...prev.variants,
+                              free_archetype: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
+                      label='Proficiency without Level'
+                      info={`This variant removes a character's level from their proficiency bonus, scaling it differently for a style of game that's outside the norm. This is a significant change to the system. The proficiency rank progression in Player Core is designed for heroic fantasy games where heroes rise from humble origins to world-shattering strength. For some games, this narrative arc doesn't fit. Such games are about hedging bets in an uncertain and gritty world, in which even the world's best fighter can't guarantee a win against a large group of moderately skilled brigands.`}
+                      url='https://2e.aonprd.com/Rules.aspx?ID=2762'
+                      enabled={character?.variants?.proficiency_without_level}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            variants: {
+                              ...prev.variants,
+                              proficiency_without_level: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
+                      label='Stamina'
+                      info={`In some fantasy stories, the heroes are able to avoid any serious injury until the situation gets dire, getting by with a graze or a flesh wound and needing nothing more than a quick rest to get back on their feet. If your group wants to tell tales like those, you can use the stamina variant to help make that happen.`}
+                      url='https://2e.aonprd.com/Rules.aspx?ID=1378'
+                      enabled={character?.variants?.stamina}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            variants: {
+                              ...prev.variants,
+                              stamina: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                  </Stack>
+                </Tabs.Panel>
+
+                <Tabs.Panel value='options'>
+                  <Stack gap={0} pt='sm'>
+                    <LinkSwitch
+                      label='Auto Detect Prerequisites'
+                      info={`**[Beta]** Automatically determine if a feat or feature has its prerequisites met in order to be taken. This is a beta feature and may not always work correctly.`}
+                      enabled={character?.options?.auto_detect_prerequisites}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              auto_detect_prerequisites: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    {/* <LinkSwitch
+                      label='Auto Heighten Spells'
+                      info={`**[Beta]** Automatically apply the heightened effects of a spell to its stat block. This is a beta feature and may not always work correctly.`}
+                      enabled={character?.options?.auto_heighten_spells}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              auto_heighten_spells: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    /> */}
+                    {/* <LinkSwitch
+                      label='Class Archetypes'
+                      info={``}
+                      enabled={character?.options?.class_archetypes}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              class_archetypes: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    /> */}
+                    <LinkSwitch
+                      label='Ignore Bulk Limit'
+                      info={`Disables the negative effects of carrying too much bulk, such as adding the encumbered condition.`}
+                      enabled={character?.options?.ignore_bulk_limit}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              ignore_bulk_limit: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
+                      label='Public Character'
+                      info={`Makes your character public and viewable by anyone with your sheet link: \n\n _https://wanderersguide.app/sheet/${character?.id}_`}
+                      enabled={character?.options?.is_public}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              is_public: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
+                      label='Custom Operations'
+                      info={`Enables an area to add custom operations to your character. These are executed before most other operations.`}
+                      enabled={character?.options?.custom_operations}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              custom_operations: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    {character?.options?.custom_operations && (
+                      <Box pl={15}>
+                        <BlurButton
+                          size='compact-xs'
+                          fw={400}
+                          w={180}
+                          onClick={() => {
+                            setOpenedOperations(true);
+                          }}
+                        >
+                          Open Operations{' '}
+                          {character.custom_operations && character.custom_operations.length > 0
+                            ? `(${character.custom_operations.length})`
+                            : ''}
+                        </BlurButton>
+                        <CustomOperationsModal
+                          opened={openedOperations}
+                          onClose={() => setOpenedOperations(false)}
+                          operations={_.cloneDeep(character.custom_operations ?? [])}
+                          onChange={(operations) => {
+                            if (_.isEqual(character.custom_operations, operations)) return;
+
+                            setCharacter((prev) => {
+                              if (!prev) return prev;
+                              return {
+                                ...prev,
+                                custom_operations: operations,
+                              };
+                            });
+                          }}
+                        />
+                      </Box>
+                    )}
                   </Stack>
                 </Tabs.Panel>
               </Tabs>

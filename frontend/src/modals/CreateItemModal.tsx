@@ -2,7 +2,7 @@ import { ItemMultiSelect, ItemSelect } from '@common/ItemSelect';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
@@ -853,7 +853,7 @@ export function CreateItemModal(props: {
                         </Text>
                         <Text size='xs' fs='italic'>
                           For more help, see{' '}
-                          <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
+                          <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
                             our Discord server
                           </Anchor>
                           .

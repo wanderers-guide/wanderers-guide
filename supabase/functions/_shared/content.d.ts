@@ -57,6 +57,7 @@ interface PublicUser {
   patreon_tier?: string;
   deactivated: boolean;
   summary?: string;
+  subscribed_content_sources?: { source_id: number; source_name: string; added_at: string }[];
 }
 
 interface Trait {
@@ -236,6 +237,7 @@ interface Character {
   inventory: Record<string, any>; // TODO
   notes: Record<string, any>; // TODO
   details: Record<string, any>; // TODO
+  campaign_id?: number;
   roll_history: Record<string, any>; // TODO
   custom_operations: Operation[];
   meta_data: Record<string, any>; // TODO
@@ -245,6 +247,47 @@ interface Character {
   operation_data: Record<string, any>; // TODO
   spells: Record<string, any>; // TODO
   companions: Record<string, any>; // TODO
+}
+
+interface Campaign {
+  id: number;
+  created_at: string;
+  user_id: string;
+  name: string;
+  description: string;
+  notes?: {
+    pages: {
+      name: string;
+      icon: string;
+      color: string;
+      contents: JSONContent;
+    }[];
+  };
+  recommended_options?: Record<string, any>; // TODO
+  recommended_variants?: Record<string, any>; // TODO
+  recommended_content_sources?: {
+    enabled?: number[];
+  };
+  custom_operations?: Operation[];
+  meta_data?: {
+    image_url?: string;
+  };
+}
+
+interface Encounter {
+  id: number;
+  created_at: string;
+  user_id: string;
+  name: string;
+  campaign_id?: number;
+  combatants: {
+    list: (Creature | Character)[];
+  };
+  meta_data: {
+    description?: string;
+    party_level?: number;
+    party_size?: number;
+  };
 }
 
 interface ContentSource {

@@ -2,7 +2,7 @@ import ActionsInput from '@common/ActionsInput';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
@@ -60,8 +60,7 @@ export function CreateAbilityBlockModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
-  const editing =
-    (props.editId !== undefined && props.editId !== -1) || props.editAbilityBlock !== undefined;
+  const editing = (props.editId !== undefined && props.editId !== -1) || props.editAbilityBlock !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -69,21 +68,16 @@ export function CreateAbilityBlockModal(props: {
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [
-      `get-ability-block-${props.editId}`,
-      { editId: props.editId, editAbilityBlock: props.editAbilityBlock },
-    ],
+    queryKey: [`get-ability-block-${props.editId}`, { editId: props.editId, editAbilityBlock: props.editAbilityBlock }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { editId, editAbilityBlock }] = queryKey as [
         string,
-        { editId: number | undefined; editAbilityBlock: AbilityBlock | undefined }
+        { editId: number | undefined; editAbilityBlock: AbilityBlock | undefined },
       ];
 
-      const abilityBlock = editId
-        ? await fetchContentById<AbilityBlock>('ability-block', editId)
-        : editAbilityBlock;
+      const abilityBlock = editId ? await fetchContentById<AbilityBlock>('ability-block', editId) : editAbilityBlock;
       if (abilityBlock && abilityBlock.type !== props.type) return null;
       if (!abilityBlock) return null;
 
@@ -139,8 +133,7 @@ export function CreateAbilityBlockModal(props: {
         props.type === 'feat' || props.type === 'class-feature'
           ? (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level')
           : undefined,
-      rarity: (value) =>
-        ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
+      rarity: (value) => (['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity'),
     },
   });
 
@@ -234,21 +227,13 @@ export function CreateAbilityBlockModal(props: {
               />
             </Group>
 
-            <TagsInput
-              label='Prerequisites'
-              splitChars={[',', ';', '|']}
-              {...form.getInputProps('prerequisites')}
-            />
+            <TagsInput label='Prerequisites' splitChars={[',', ';', '|']} {...form.getInputProps('prerequisites')} />
 
             <Divider
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedAdditional ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Misc. Sections
                   </Button>
                   {miscSectionCount && miscSectionCount > 0 && (
@@ -263,29 +248,11 @@ export function CreateAbilityBlockModal(props: {
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
-                <Textarea
-                  label='Frequency'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('frequency')}
-                />
+                <Textarea label='Frequency' minRows={1} maxRows={4} autosize {...form.getInputProps('frequency')} />
 
-                <Textarea
-                  label='Cost'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('cost')}
-                />
+                <Textarea label='Cost' minRows={1} maxRows={4} autosize {...form.getInputProps('cost')} />
 
-                <Textarea
-                  label='Trigger'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('trigger')}
-                />
+                <Textarea label='Trigger' minRows={1} maxRows={4} autosize {...form.getInputProps('trigger')} />
 
                 <Textarea
                   label='Requirements'
@@ -295,13 +262,7 @@ export function CreateAbilityBlockModal(props: {
                   {...form.getInputProps('requirements')}
                 />
 
-                <Textarea
-                  label='Access'
-                  minRows={1}
-                  maxRows={4}
-                  autosize
-                  {...form.getInputProps('access')}
-                />
+                <Textarea label='Access' minRows={1} maxRows={4} autosize {...form.getInputProps('access')} />
 
                 <Divider mx='lg' label='Advanced' labelPosition='center' />
 
@@ -309,9 +270,7 @@ export function CreateAbilityBlockModal(props: {
                   defaultValue={metaData.image_url ?? ''}
                   label='Image URL'
                   onChange={async (e) => {
-                    setIsValidImageURL(
-                      !e.target?.value ? true : await isValidImage(e.target?.value)
-                    );
+                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
                     setMetaData({
                       ...metaData,
                       image_url: e.target?.value,
@@ -361,23 +320,13 @@ export function CreateAbilityBlockModal(props: {
               />
             )}
 
-            <Textarea
-              label='Special'
-              minRows={1}
-              maxRows={4}
-              autosize
-              {...form.getInputProps('special')}
-            />
+            <Textarea label='Special' minRows={1} maxRows={4} autosize {...form.getInputProps('special')} />
 
             <Divider
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedOperations ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Operations
                   </Button>
                   {form.values.operations && form.values.operations.length > 0 && (
@@ -402,20 +351,16 @@ export function CreateAbilityBlockModal(props: {
                       </HoverCard.Target>
                       <HoverCard.Dropdown>
                         <Text size='sm'>
-                          Operations are used to make changes to a character. They can give feats,
-                          spells, and more, as well as change stats, skills, and other values.
+                          Operations are used to make changes to a character. They can give feats, spells, and more, as
+                          well as change stats, skills, and other values.
                         </Text>
                         <Text size='sm'>
-                          Use conditionals to apply operations only when certain conditions are met
-                          and selections whenever a choice needs to be made.
+                          Use conditionals to apply operations only when certain conditions are met and selections
+                          whenever a choice needs to be made.
                         </Text>
                         <Text size='xs' fs='italic'>
                           For more help, see{' '}
-                          <Anchor
-                            href='https://discord.gg/kxCpa6G'
-                            target='_blank'
-                            underline='hover'
-                          >
+                          <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
                             our Discord server
                           </Anchor>
                           .

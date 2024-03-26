@@ -1,6 +1,6 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps } from '@mantine/core';
+import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps, Title } from '@mantine/core';
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
@@ -74,6 +74,38 @@ export default function RichText(props: RichTextProps) {
             <Text {...props} className={className} span>
               {children}
             </Text>
+          );
+        },
+        h1(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Title order={1} pt={5} className={className}>
+              {children}
+            </Title>
+          );
+        },
+        h2(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Title order={2} pt={5} className={className}>
+              {children}
+            </Title>
+          );
+        },
+        h3(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Title order={3} pt={5} className={className}>
+              {children}
+            </Title>
+          );
+        },
+        h4(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <Title order={4} pt={5} className={className}>
+              {children}
+            </Title>
           );
         },
         ul(innerProps) {

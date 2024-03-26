@@ -1739,6 +1739,8 @@ function CustomAccordionItem(props: {
     return () => clearInterval(intervalId);
   }, []);
 
+  const selections = props.operationResults.characterResults.filter((result) => hasSelection(result));
+
   return (
     <Accordion.Item
       value='custom'
@@ -1765,6 +1767,11 @@ function CustomAccordionItem(props: {
             props.onSaveChanges(`character_${path}`, value);
           }}
         />
+        {selections.length === 0 && (
+          <Text c='gray.6' fz='sm' ta='center' fs='italic'>
+            No selections found for the {props.operationResults.characterResults.length} executed operation(s).
+          </Text>
+        )}
       </Accordion.Panel>
     </Accordion.Item>
   );
@@ -1772,20 +1779,20 @@ function CustomAccordionItem(props: {
 
 //////////////////////////////////////////
 
+const hasSelection = (result: OperationResult) => {
+  if (result?.selection) return true;
+  for (const subResult of result?.result?.results ?? []) {
+    if (hasSelection(subResult)) return true;
+  }
+  return false;
+};
+
 function DisplayOperationResult(props: {
   source?: ObjectWithUUID;
   level?: number;
   results: OperationResult[];
   onChange: (path: string, value: string) => void;
 }) {
-  const hasSelection = (result: OperationResult) => {
-    if (result?.selection) return true;
-    for (const subResult of result?.result?.results ?? []) {
-      if (hasSelection(subResult)) return true;
-    }
-    return false;
-  };
-
   const selections = props.results.filter((result) => hasSelection(result));
   if (selections.length === 0) return null;
 

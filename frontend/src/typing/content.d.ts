@@ -366,8 +366,22 @@ interface Character {
   meta_data?: {
     reset_hp?: boolean;
   };
-  options?: Record<string, any>; // TODO
-  variants?: Record<string, any>; // TODO
+  options?: {
+    is_public?: boolean;
+    auto_detect_prerequisites?: boolean;
+    auto_heighten_spells?: boolean;
+    class_archetypes?: boolean;
+    custom_operations?: boolean;
+    ignore_bulk_limit?: boolean;
+  };
+  variants?: {
+    ancestry_paragon?: boolean;
+    proficiency_without_level?: boolean;
+    proficiency_half_level?: boolean;
+    stamina?: boolean;
+    free_archetype?: boolean;
+    dual_class?: boolean;
+  };
   content_sources?: {
     enabled?: number[];
   };
@@ -410,6 +424,22 @@ interface Campaign {
   custom_operations?: Operation[];
   meta_data?: {
     image_url?: string;
+  };
+}
+
+interface Encounter {
+  id: number;
+  created_at: string;
+  user_id: string;
+  name: string;
+  campaign_id?: number;
+  combatants: {
+    list: (Creature | Character)[];
+  };
+  meta_data: {
+    description?: string;
+    party_level?: number;
+    party_size?: number;
   };
 }
 

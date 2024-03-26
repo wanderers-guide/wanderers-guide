@@ -66,6 +66,7 @@ import { CreateItemModal } from './CreateItemModal';
 import { CreateSpellModal } from './CreateSpellModal';
 import { CreateTraitModal } from './CreateTraitModal';
 import { CreateLanguageModal } from './CreateLanguageModal';
+import { DISCORD_URL } from '@constants/data';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -230,7 +231,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                           </Text>
                           <Text size='xs' fs='italic'>
                             For more help, see{' '}
-                            <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
+                            <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
                               our Discord server
                             </Anchor>
                             .

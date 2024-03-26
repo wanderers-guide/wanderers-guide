@@ -65,7 +65,7 @@ import {
 import * as JsSearch from 'js-search';
 import * as _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   AbilityBlock,
   AbilityBlockType,
@@ -80,6 +80,7 @@ import {
   Trait,
 } from '../../typing/content';
 import { re } from 'mathjs';
+import { characterState } from '@atoms/characterAtoms';
 
 interface FilterOptions {
   options: {
@@ -1328,8 +1329,10 @@ export function FeatSelectionOption(props: {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
+  const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
 
-  const prereqMet = meetsPrerequisites('CHARACTER', props.feat.prerequisites);
+  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', props.feat.prerequisites);
 
   return (
     <Group
@@ -1366,7 +1369,7 @@ export function FeatSelectionOption(props: {
         <Box>
           <ActionSymbol cost={props.feat.actions} />
         </Box>
-        {prereqMet.result && (
+        {prereqMet && prereqMet.result && (
           <>
             {prereqMet.result === 'FULLY' && (
               <ThemeIcon variant='light' size='xs' radius='xl'>

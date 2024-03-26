@@ -377,7 +377,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       addExtraItems(props.content.items, character, setCharacter);
 
       // Check bulk limits
-      checkBulkLimit(character, setCharacter);
+      if (character.options?.ignore_bulk_limit !== true) {
+        checkBulkLimit(character, setCharacter);
+      }
 
       // Apply conditions after everything else
       applyConditions('CHARACTER', character.details?.conditions ?? []);
@@ -930,7 +932,7 @@ function ConditionSection() {
                         condition.name === 'Encumbered' &&
                         character?.inventory &&
                         getInvBulk(character.inventory) > getBulkLimit('CHARACTER');
-                      if (isEncumberedFromBulk) {
+                      if (character?.options?.ignore_bulk_limit !== true && isEncumberedFromBulk) {
                         source = 'Over Bulk Limit';
                       }
 

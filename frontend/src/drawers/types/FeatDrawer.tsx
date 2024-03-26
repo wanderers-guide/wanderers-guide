@@ -1,3 +1,4 @@
+import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
@@ -26,7 +27,7 @@ import { AbilityBlock } from '@typing/content';
 import { listToLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock } }) {
   const id = props.data.id;
@@ -62,11 +63,12 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
   );
 }
 
-const DISPLAY_PREREQUS = true;
-
 export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBlock; showOperations?: boolean } }) {
   const id = props.data.id;
   const theme = useMantineTheme();
+
+  const character = useRecoilValue(characterState);
+  const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
 
   const { data: _feat } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
@@ -94,7 +96,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
     );
   }
 
-  const prereqMet = DISPLAY_PREREQUS && meetsPrerequisites('CHARACTER', feat.prerequisites);
+  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', feat.prerequisites);
   const prereqUI: ReactNode[] = [];
   if (prereqMet && prereqMet.meetMap.size > 0) {
     for (const [prereq, met] of prereqMet.meetMap.entries()) {
@@ -190,7 +192,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         <Box pb={2}>
           <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
         </Box>
-        {DISPLAY_PREREQUS && prereqUI && prereqUI.length > 0 && (
+        {prereqUI && prereqUI.length > 0 && (
           <IndentedText ta='justify'>
             <Text fw={600} c='gray.5' span>
               Prerequisites
@@ -249,7 +251,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
           </Text>
         )}
 
-        {DISPLAY_PREREQUS && <PrerequisiteForSection name={feat.name} />}
+        {<PrerequisiteForSection name={feat.name} />}
       </Box>
       {props.data.showOperations && <ShowOperationsButton name={feat.name} operations={feat.operations} />}
     </Box>

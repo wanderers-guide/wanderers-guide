@@ -1,6 +1,6 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
@@ -80,8 +80,7 @@ export function CreateAncestryModal(props: {
     },
 
     validate: {
-      rarity: (value) =>
-        ['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity',
+      rarity: (value) => (['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity'),
     },
   });
 
@@ -170,11 +169,7 @@ export function CreateAncestryModal(props: {
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedOperations ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Operations
                   </Button>
                   {form.values.operations && form.values.operations.length > 0 && (
@@ -199,20 +194,16 @@ export function CreateAncestryModal(props: {
                       </HoverCard.Target>
                       <HoverCard.Dropdown>
                         <Text size='sm'>
-                          Operations are used to make changes to a character. They can give feats,
-                          spells, and more, as well as change stats, skills, and other values.
+                          Operations are used to make changes to a character. They can give feats, spells, and more, as
+                          well as change stats, skills, and other values.
                         </Text>
                         <Text size='sm'>
-                          Use conditionals to apply operations only when certain conditions are met
-                          and selections whenever a choice needs to be made.
+                          Use conditionals to apply operations only when certain conditions are met and selections
+                          whenever a choice needs to be made.
                         </Text>
                         <Text size='xs' fs='italic'>
                           For more help, see{' '}
-                          <Anchor
-                            href='https://discord.gg/kxCpa6G'
-                            target='_blank'
-                            underline='hover'
-                          >
+                          <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
                             our Discord server
                           </Anchor>
                           .
@@ -237,9 +228,7 @@ export function CreateAncestryModal(props: {
               >
                 Cancel
               </Button>
-              <Button type='submit'>
-                {props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}
-              </Button>
+              <Button type='submit'>{props.editId === undefined || props.editId === -1 ? 'Create' : 'Update'}</Button>
             </Group>
           </Stack>
         </form>

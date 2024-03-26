@@ -5,15 +5,14 @@ import type { Character } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id } = body as {
+    let { id, user_id } = body as {
       id?: number | number[];
+      user_id?: string;
     };
-
-    const { data: { user } } = await client.auth.getUser();
 
     const results = await fetchData<Character>(client, 'character', [
       { column: 'id', value: id },
-      { column: 'user_id', value: user?.id },
+      { column: 'user_id', value: user_id },
     ]);
 
     const data =

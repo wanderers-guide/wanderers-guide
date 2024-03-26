@@ -1,12 +1,4 @@
-import {
-  AbilityBlock,
-  Ancestry,
-  Character,
-  Class,
-  ContentPackage,
-  ContentSource,
-  Item,
-} from '@typing/content';
+import { AbilityBlock, Ancestry, Character, Class, ContentPackage, ContentSource, Item } from '@typing/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
@@ -38,13 +30,7 @@ async function executeOperations(
   sourceLabel?: string
 ) {
   const selectionNode = getRootSelection().children[primarySource];
-  let results = await runOperations(
-    varId,
-    selectionNode,
-    operations,
-    _.cloneDeep(options),
-    sourceLabel
-  );
+  let results = await runOperations(varId, selectionNode, operations, _.cloneDeep(options), sourceLabel);
 
   // Make it so you can only select boosts that haven't been selected (or given) yet
   results = limitBoostOptions(operations, results);
@@ -115,7 +101,7 @@ export async function executeCharacterOperations(
     let characterResults = await executeOperations(
       'CHARACTER',
       'character',
-      character.custom_operations ?? [],
+      character.options?.custom_operations ? character.custom_operations ?? [] : [],
       options,
       'Custom'
     );
@@ -303,10 +289,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
   return merged;
 }
 
-function limitBoostOptions(
-  operations: Operation[],
-  operationResults: OperationResult[]
-): OperationResult[] {
+function limitBoostOptions(operations: Operation[], operationResults: OperationResult[]): OperationResult[] {
   operationResults = _.cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
 

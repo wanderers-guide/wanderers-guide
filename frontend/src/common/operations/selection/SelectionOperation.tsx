@@ -52,6 +52,7 @@ import { useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { labelToVariable } from '@variables/variable-utils';
+import { DISCORD_URL } from '@constants/data';
 
 export function SelectionOperation(props: {
   data: {
@@ -72,19 +73,13 @@ export function SelectionOperation(props: {
   }) => void;
   onRemove: () => void;
 }) {
-  const [optionType, setOptionType] = useState<OperationSelectOptionType | null>(
-    props.data.optionType
-  );
+  const [optionType, setOptionType] = useState<OperationSelectOptionType | null>(props.data.optionType);
 
   const [title, setTitle] = useState<string | undefined>(props.data.title);
   const [modeType, setModeType] = useState(props.data.modeType);
 
-  const [filters, setFilters] = useState<OperationSelectFilters | undefined>(
-    props.data.optionsFilters
-  );
-  const [options, setOptions] = useState<OperationSelectOption[] | undefined>(
-    props.data.optionsPredefined
-  );
+  const [filters, setFilters] = useState<OperationSelectFilters | undefined>(props.data.optionsFilters);
+  const [options, setOptions] = useState<OperationSelectOption[] | undefined>(props.data.optionsPredefined);
 
   useDidUpdate(() => {
     props.onChange({
@@ -138,9 +133,7 @@ export function SelectionOperation(props: {
             <Divider
               label={
                 <>
-                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE'].includes(
-                    optionType ?? ''
-                  ) && (
+                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE'].includes(optionType ?? '') && (
                     <SegmentedControl
                       size='xs'
                       value={modeType}
@@ -230,12 +223,8 @@ function SelectionFilteredAbilityBlock(props: {
   onChange: (filters: OperationSelectFiltersAbilityBlock) => void;
 }) {
   const [type, setType] = useState<AbilityBlockType | undefined>(props.filters?.abilityBlockType);
-  const [minLevel, setMinLevel] = useState<number | undefined>(
-    props.filters?.level.min ?? undefined
-  );
-  const [maxLevel, setMaxLevel] = useState<number | undefined>(
-    props.filters?.level.max ?? undefined
-  );
+  const [minLevel, setMinLevel] = useState<number | undefined>(props.filters?.level.min ?? undefined);
+  const [maxLevel, setMaxLevel] = useState<number | undefined>(props.filters?.level.max ?? undefined);
   const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
 
   useDidUpdate(() => {
@@ -311,12 +300,8 @@ function SelectionFilteredSpell(props: {
   filters?: OperationSelectFiltersSpell;
   onChange: (filters: OperationSelectFiltersSpell) => void;
 }) {
-  const [minLevel, setMinLevel] = useState<number | undefined>(
-    props.filters?.level.min ?? undefined
-  );
-  const [maxLevel, setMaxLevel] = useState<number | undefined>(
-    props.filters?.level.max ?? undefined
-  );
+  const [minLevel, setMinLevel] = useState<number | undefined>(props.filters?.level.min ?? undefined);
+  const [maxLevel, setMaxLevel] = useState<number | undefined>(props.filters?.level.max ?? undefined);
   const [traits, setTraits] = useState<string[]>(props.filters?.traits ?? []);
   const [traditions, setTraditions] = useState<string[]>(props.filters?.traditions ?? []);
 
@@ -758,9 +743,7 @@ function SelectionPredefinedAbilityBlock(props: {
                     ops.push({
                       id: crypto.randomUUID(),
                       type: 'ABILITY_BLOCK',
-                      operation: createDefaultOperation(
-                        'giveAbilityBlock'
-                      ) as OperationGiveAbilityBlock,
+                      operation: createDefaultOperation('giveAbilityBlock') as OperationGiveAbilityBlock,
                     });
                     return ops;
                   });
@@ -1404,11 +1387,7 @@ function SelectionPredefinedCustomOption(props: {
         my='xs'
         label={
           <Group gap={3} wrap='nowrap'>
-            <Button
-              variant={openedOperations ? 'light' : 'subtle'}
-              size='compact-sm'
-              color='gray.6'
-            >
+            <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
               Operations
             </Button>
             {props.option.operations && props.option.operations.length > 0 && (
@@ -1433,16 +1412,16 @@ function SelectionPredefinedCustomOption(props: {
                 </HoverCard.Target>
                 <HoverCard.Dropdown>
                   <Text size='sm'>
-                    Operations are used to make changes to a character. They can give feats, spells,
-                    and more, as well as change stats, skills, and other values.
+                    Operations are used to make changes to a character. They can give feats, spells, and more, as well
+                    as change stats, skills, and other values.
                   </Text>
                   <Text size='sm'>
-                    Use conditionals to apply operations only when certain conditions are met and
-                    selections whenever a choice needs to be made.
+                    Use conditionals to apply operations only when certain conditions are met and selections whenever a
+                    choice needs to be made.
                   </Text>
                   <Text size='xs' fs='italic'>
                     For more help, see{' '}
-                    <Anchor href='https://discord.gg/kxCpa6G' target='_blank' underline='hover'>
+                    <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
                       our Discord server
                     </Anchor>
                     .

@@ -135,3 +135,57 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
     </>
   );
 }
+
+export function LinkSwitch(props: {
+  label: string;
+  info?: string;
+  url?: string;
+  enabled?: boolean;
+  onLinkChange: (enabled: boolean) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group gap={0}>
+      <Text<'a'> component='a'>
+        <Switch
+          label={props.label}
+          size='xs'
+          checked={!!props.enabled}
+          onChange={(event) => props.onLinkChange && props.onLinkChange(event.target.checked)}
+          classNames={switchClasses}
+        />
+      </Text>
+      {props.info && (
+        <HoverCard shadow='md' position='top' openDelay={500} withinPortal withArrow>
+          <HoverCard.Target>
+            <ActionIcon
+              mr={40}
+              color='gray.9'
+              variant='transparent'
+              size='xs'
+              radius='xl'
+              aria-label='Info'
+              onClick={() => {
+                if (!props.info) return;
+                openDrawer({
+                  type: 'generic',
+                  data: {
+                    title: props.label,
+                    description:
+                      props.info.trim() + (props.url ? `\n\n[[Archives of Nethys Rules Page](${props.url})]` : ''),
+                  },
+                });
+              }}
+            >
+              <IconExternalLink size='0.6rem' stroke={1.5} />
+            </ActionIcon>
+          </HoverCard.Target>
+          <HoverCard.Dropdown px={10} py={5}>
+            <Text size='sm'>Open Info</Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      )}
+    </Group>
+  );
+}
