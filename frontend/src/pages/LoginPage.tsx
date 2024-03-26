@@ -1,16 +1,17 @@
-import BlurBox from "@common/BlurBox";
-import { Box, Center, Text, useMantineTheme } from "@mantine/core";
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { supabase } from "../main";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { sessionState } from "@atoms/supabaseAtoms";
-import { useRecoilValue } from "recoil";
-import { useEffect } from "react";
-import { setPageTitle } from "@utils/document-change";
+import BlurBox from '@common/BlurBox';
+import { Box, Center, Text, useMantineTheme } from '@mantine/core';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '../main';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { sessionState } from '@atoms/supabaseAtoms';
+import { useRecoilValue } from 'recoil';
+import { useEffect } from 'react';
+import { setPageTitle } from '@utils/document-change';
+import { clearUserData } from '@auth/user-manager';
 
 export function Component() {
-  setPageTitle("Login");
+  setPageTitle('Login');
 
   const theme = useMantineTheme();
   const navigate = useNavigate();
@@ -19,26 +20,30 @@ export function Component() {
   const [searchParams] = useSearchParams();
   useEffect(() => {
     if (!session) return;
-    const redirect = searchParams.get("redirect");
+    const redirect = searchParams.get('redirect');
     if (redirect) {
       navigate(`/${redirect}`);
     } else {
-      navigate("/");
+      navigate('/');
     }
   }, [session]);
+
+  useEffect(() => {
+    clearUserData();
+  }, []);
 
   return (
     <>
       <Center>
-        <BlurBox w={350} p="lg">
+        <BlurBox w={350} p='lg'>
           <Center>
             <Box w={250}>
-              <Text fz="sm" pb="md" ta="center">
+              <Text fz='sm' pb='md' ta='center'>
                 Sign in to continue
               </Text>
               <Auth
                 supabaseClient={supabase}
-                providers={["google", "discord", "github"]}
+                providers={['google', 'discord', 'github']}
                 appearance={{
                   theme: ThemeSupa,
                   variables: {
@@ -68,8 +73,8 @@ export function Component() {
                     },
                   },
                 }}
-                theme="dark"
-                socialLayout={"horizontal"}
+                theme='dark'
+                socialLayout={'horizontal'}
               />
             </Box>
           </Center>

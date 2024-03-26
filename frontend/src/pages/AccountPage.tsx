@@ -41,6 +41,8 @@ import { makeRequest } from '@requests/request-manager';
 import { JSendResponse } from '@typing/requests';
 import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
+import { useRecoilValue } from 'recoil';
+import { sessionState } from '@atoms/supabaseAtoms';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -82,11 +84,15 @@ function ProfileSection(props: { user: PublicUser }) {
   const [editingName, setEditingName] = useState(false);
 
   // Get character count
+  const session = useRecoilValue(sessionState);
   const { data: characters } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
-      return await makeRequest<Character[]>('find-character', {});
+      return await makeRequest<Character[]>('find-character', {
+        user_id: session?.user.id,
+      });
     },
+    enabled: !!session,
   });
 
   const patronTier = toLabel(user.patreon_tier) || 'Non-Patron';
@@ -352,7 +358,7 @@ function ProfileSection(props: { user: PublicUser }) {
                     cursor: 'pointer',
                   }}
                 >
-                  {user.display_name}
+                  {user.display_name ?? 'Unknown User'}
                 </Text>
               )}
             </Box>

@@ -100,6 +100,7 @@ import {
   useForceUpdate,
   useHover,
   useInterval,
+  useMediaQuery,
 } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
@@ -148,6 +149,7 @@ import { VariableAttr, VariableListStr, VariableNum, VariableProf } from '@typin
 import { findActions } from '@utils/actions';
 import { interpolateHealth } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
+import { mobileQuery, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
@@ -326,6 +328,9 @@ function confirmExperience(exp: string, character: Character, setCharacter: Sett
 function CharacterSheetInner(props: { content: ContentPackage; characterId: number; onFinishLoading: () => void }) {
   const queryClient = useQueryClient();
 
+  const isTablet = useMediaQuery(tabletQuery());
+  const isPhone = useMediaQuery(phoneQuery());
+
   const [character, setCharacter] = useRecoilState(characterState);
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -478,7 +483,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     <Center>
       <Box maw={1000} w='100%'>
         <Stack gap='xs' style={{ position: 'relative' }}>
-          <SimpleGrid cols={3} spacing='xs' verticalSpacing='xs'>
+          <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>
             <CharacterInfoSection />
             <HealthSection />
             <ConditionSection />
@@ -861,7 +866,7 @@ function ConditionSection() {
         }}
         h='100%'
       >
-        <Group align='flex-start' justify='space-between' gap={0}>
+        <Group align='flex-start' justify='space-between' wrap='nowrap' gap={0}>
           <Box w={200}>
             <Group wrap='nowrap' gap={5} justify='center'>
               <Text ta='center' fz='md' fw={500} c='gray.0'>
@@ -1106,6 +1111,7 @@ function AttributeSection() {
     <BlurBox blur={10}>
       <Box
         px='xs'
+        py={10}
         style={{
           borderTopLeftRadius: theme.radius.md,
           borderTopRightRadius: theme.radius.md,
@@ -1730,6 +1736,8 @@ function PanelSkillsActions(props: {
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
+  const isMobile = useMediaQuery(mobileQuery());
+
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
   const [skillsSearch, setSkillsSearch] = useState<string>('');
@@ -1934,8 +1942,8 @@ function PanelSkillsActions(props: {
   }, [character, props.content.abilityBlocks, actionTypeFilter, searchQuery]);
 
   return (
-    <Group gap={10} align='flex-start' style={{ height: props.panelHeight }}>
-      <Box style={{ flexBasis: 'calc(30% - 10px)' }} h='100%'>
+    <Group gap={10} align='flex-start' style={{ minHeight: props.panelHeight }}>
+      <Box style={{ flexBasis: isMobile ? undefined : 'calc(30% - 10px)' }} h='100%'>
         {/* <Paper
           shadow='sm'
           h='100%'
@@ -1996,7 +2004,7 @@ function PanelSkillsActions(props: {
           </ScrollArea>
         </Stack>
       </Box>
-      <Box style={{ flexBasis: '70%' }} h='100%'>
+      <Box style={{ flexBasis: isMobile ? undefined : '70%' }} h='100%'>
         <Stack gap={5}>
           <Group>
             <TextInput

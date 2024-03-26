@@ -15,6 +15,10 @@ export function getCachedPublicUser(): PublicUser | null {
   return data ? JSON.parse(data) : null;
 }
 
+export function clearUserData() {
+  localStorage.removeItem('user-data');
+}
+
 export function hasPatronPermission(user: PublicUser | null) {
   if (!user) {
     return false;

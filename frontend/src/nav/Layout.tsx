@@ -10,6 +10,7 @@ import {
   Group,
   Menu,
   ScrollArea,
+  Stack,
   Text,
   UnstyledButton,
   rem,
@@ -266,23 +267,26 @@ export default function Layout(props: { children: React.ReactNode }) {
                       >
                         Campaigns
                       </Menu.Item>
-                      <Menu.Item
-                        leftSection={
-                          <IconLayersIntersect
-                            style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.pink[6]}
-                            stroke={1.5}
-                          />
-                        }
-                        component='a'
-                        href='/admin'
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate('/admin');
-                        }}
-                      >
-                        Admin Panel
-                      </Menu.Item>
+
+                      {user?.is_admin && (
+                        <Menu.Item
+                          leftSection={
+                            <IconLayersIntersect
+                              style={{ width: rem(16), height: rem(16) }}
+                              color={theme.colors.pink[6]}
+                              stroke={1.5}
+                            />
+                          }
+                          component='a'
+                          href='/admin'
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate('/admin');
+                          }}
+                        >
+                          Admin Panel
+                        </Menu.Item>
+                      )}
 
                       <Menu.Label>Settings</Menu.Label>
                       <Menu.Item
@@ -296,16 +300,6 @@ export default function Layout(props: { children: React.ReactNode }) {
                       >
                         Account
                       </Menu.Item>
-                      {/* <Menu.Item
-                        leftSection={
-                          <IconSwitchHorizontal
-                            style={{ width: rem(16), height: rem(16) }}
-                            stroke={1.5}
-                          />
-                        }
-                      >
-                        Change account
-                      </Menu.Item> */}
                       <Menu.Item
                         leftSection={<IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
                         onClick={async () => {
@@ -334,37 +328,109 @@ export default function Layout(props: { children: React.ReactNode }) {
           backgroundColor: theme.colors.dark[8] + '75',
         }}
       >
-        <UnstyledButton
-          className={classes.control}
-          onClick={() => {
-            navigate('/characters');
-            close();
-          }}
-        >
-          Characters
-        </UnstyledButton>
-        <UnstyledButton className={classes.control}>Campaigns</UnstyledButton>
-        <UnstyledButton className={classes.control}>Encounters</UnstyledButton>
-        <UnstyledButton
-          className={classes.control}
-          onClick={() => {
-            navigate('/admin');
-            close();
-          }}
-        >
-          Admin Panel
-        </UnstyledButton>
-        <Divider />
-        <UnstyledButton className={classes.control}>Account</UnstyledButton>
-        <UnstyledButton
-          className={classes.control}
-          onClick={async () => {
-            supabase.auth.signOut();
-            close();
-          }}
-        >
-          Logout
-        </UnstyledButton>
+        {session ? (
+          <Stack gap={5}>
+            <SearchBar />
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href='/characters'
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/characters');
+                close();
+              }}
+            >
+              Characters
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href='/homebrew'
+              onClick={(e) => {
+                e.preventDefault();
+                displayComingSoon();
+                close();
+              }}
+            >
+              Homebrew
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href='/encounters'
+              onClick={(e) => {
+                e.preventDefault();
+                displayComingSoon();
+                close();
+              }}
+            >
+              Encounters
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href='/campaigns'
+              onClick={(e) => {
+                e.preventDefault();
+                displayComingSoon();
+                close();
+              }}
+            >
+              Campaigns
+            </UnstyledButton>
+
+            {user?.is_admin && (
+              <UnstyledButton
+                className={classes.control}
+                component='a'
+                href='/admin'
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/admin');
+                  close();
+                }}
+              >
+                Admin Panel
+              </UnstyledButton>
+            )}
+            <Divider />
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href='/account'
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/account');
+                close();
+              }}
+            >
+              Account
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              onClick={async () => {
+                supabase.auth.signOut();
+                close();
+              }}
+            >
+              Logout
+            </UnstyledButton>
+          </Stack>
+        ) : (
+          <Stack gap={5}>
+            <SearchBar />
+            <UnstyledButton
+              className={classes.control}
+              onClick={async () => {
+                navigate('/login');
+                close();
+              }}
+            >
+              Sign in / Register
+            </UnstyledButton>
+          </Stack>
+        )}
       </AppShell.Navbar>
 
       <ScrollArea
