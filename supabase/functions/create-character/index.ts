@@ -1,7 +1,8 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, upsertResponseWrapper, upsertData } from '../_shared/helpers.ts';
+import { connect, upsertResponseWrapper, upsertData, getPublicUser } from '../_shared/helpers.ts';
 import type { Character } from '../_shared/content';
+import { hasPatreonAccess } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -29,14 +30,22 @@ serve(async (req: Request) => {
       companions,
     } = body as Character;
 
-    const {
-      data: { user },
-    } = await client.auth.getUser();
-    if (!user)
+    const user = await getPublicUser(client);
+    if (!user) {
       return {
         status: 'error',
-        message: 'Invalid user',
+        message: 'User not found',
       };
+    }
+
+    const access = await hasPatreonAccess(client, user, 2);
+    if (!access) {
+      console.log('User does not have access');
+      return {
+        status: 'error',
+        message: 'User does not have access',
+      };
+    }
 
     const { procedure, result } = await upsertData<Character>(
       client,
