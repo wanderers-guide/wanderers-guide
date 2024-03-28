@@ -8,7 +8,7 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button } from '@mantine/core';
-import { isCantrip } from '@spells/spell-utils';
+import { isCantrip, isFocusSpell } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
@@ -24,11 +24,30 @@ export function CastSpellDrawerTitle(props: {
 
   const cast = spell?.cast ?? '';
 
+  let disableCasting = false;
+
   let rankTitle = 'Spell';
   let rank = spell?.rank;
-  if (spell && character && isCantrip(spell)) {
+  if (spell && isCantrip(spell)) {
     rankTitle = 'Cantrip';
-    rank = Math.floor((character.level ?? 1) / 2);
+    if (character) {
+      rank = Math.ceil(character.level / 2);
+    } else {
+      rank = 1;
+    }
+  }
+
+  if (spell && character && isFocusSpell(spell)) {
+    // rankTitle = 'Focus';
+    rank = Math.max(Math.ceil(character.level / 2), spell.rank);
+
+    /*
+    "You can’t cast a focus spell if its minimum rank is greater than
+    half your level rounded up, even if you somehow gain access to it." (pg. 298)
+    */
+    if (spell.rank > Math.ceil(character.level / 2)) {
+      disableCasting = true;
+    }
   }
 
   return (
@@ -60,6 +79,7 @@ export function CastSpellDrawerTitle(props: {
             </Button>
           ) : (
             <Button
+              disabled={disableCasting}
               variant='filled'
               radius='xl'
               mb={3}

@@ -77,6 +77,7 @@ import {
   Divider,
   Grid,
   Group,
+  HoverCard,
   Menu,
   Paper,
   Pill,
@@ -108,6 +109,7 @@ import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { makeRequest } from '@requests/request-manager';
+import { isCantrip } from '@spells/spell-utils';
 import {
   IconBackpack,
   IconBadgesFilled,
@@ -152,7 +154,8 @@ import { setPageTitle } from '@utils/document-change';
 import { mobileQuery, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { hasTraitType } from '@utils/traits';
+import { getTraitIdByType, hasTraitType } from '@utils/traits';
+import useRefresh from '@utils/use-refresh';
 import {
   displayAttributeValue,
   displayFinalAcValue,
@@ -3171,6 +3174,11 @@ function SpellList(props: {
   const castSpell = (cast: boolean, spell: Spell) => {
     if (!character) return;
 
+    if (isCantrip(spell)) {
+      // Casting a cantrip doesn't change any spells state
+      return;
+    }
+
     if ((props.type === 'PREPARED' || props.type === 'SPONTANEOUS') && props.source) {
       setCharacter((c) => {
         if (!c) return c;
@@ -3222,8 +3230,8 @@ function SpellList(props: {
     if (props.type === 'INNATE') {
       setCharacter((c) => {
         if (!c) return c;
-        let innates = c.spells?.innate_casts ?? [];
-        innates = innates.map((innate) => {
+
+        const innates = (props.extra?.innates ?? []).map((innate) => {
           if (innate.spell_id === spell.id && innate.rank === spell.rank) {
             return {
               ...innate,
@@ -3272,10 +3280,19 @@ function SpellList(props: {
 
   const innateSpells = useMemo(() => {
     const filteredSpells = props.extra?.innates
-      ?.map((innate) => ({
-        ...innate,
-        spell: props.allSpells.find((spell) => spell.id === innate.spell_id),
-      }))
+      ?.map((innate) => {
+        let spell = props.allSpells.find((spell) => spell.id === innate.spell_id);
+        if (spell) {
+          spell = {
+            ...spell,
+            rank: innate.rank,
+          };
+        }
+        return {
+          ...innate,
+          spell: spell,
+        };
+      })
       .filter((innate) => innate.spell);
     return _.groupBy(filteredSpells, 'rank');
   }, [props.extra?.innates, props.allSpells]);
@@ -3466,7 +3483,9 @@ function SpellList(props: {
                               {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                             </Text>
                             <SpellSlotSelect
-                              count={slots[rank]?.filter((slot) => `${slot.rank}` === rank).length}
+                              text='Spell Slots'
+                              current={slots[rank]?.filter((slot) => `${slot.rank}` === rank && !slot.exhausted).length}
+                              max={slots[rank]?.filter((slot) => `${slot.rank}` === rank).length}
                               onChange={(v) => {}}
                             />
                           </Box>
@@ -3521,7 +3540,29 @@ function SpellList(props: {
               {variableNameToLabel(props.source.name)} Focus Spells
             </Text>
             <Box mr={10}>
-              <SpellSlotSelect count={props.extra?.focusPoints.max} onChange={(v) => {}} />
+              <SpellSlotSelect
+                text='Focus Points'
+                current={props.extra.focusPoints.max - props.extra.focusPoints.current}
+                max={props.extra.focusPoints.max}
+                onChange={(v) => {
+                  setCharacter((c) => {
+                    if (!c) return c;
+                    return {
+                      ...c,
+                      spells: {
+                        ...(c.spells ?? {
+                          slots: [],
+                          list: [],
+                          rituals: [],
+                          focus_point_current: 0,
+                          innate_casts: [],
+                        }),
+                        focus_point_current: Math.max(props.extra!.focusPoints!.max - v, 0),
+                      },
+                    };
+                  });
+                }}
+              />
             </Box>
           </Group>
         </Accordion.Control>
@@ -3576,7 +3617,11 @@ function SpellList(props: {
                           {spells[rank].map((spell, index) => (
                             <SpellListEntry
                               key={index}
-                              spell={spell}
+                              spell={{
+                                ...spell,
+                                // Add focus trait in case it doesn't have it
+                                traits: _.uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
+                              }}
                               exhausted={!character?.spells?.focus_point_current}
                               onCastSpell={(cast: boolean) => {
                                 castSpell(cast, spell);
@@ -3680,13 +3725,43 @@ function SpellList(props: {
                               onCastSpell={(cast: boolean) => {
                                 if (innate.spell) castSpell(cast, innate.spell);
                               }}
-                              onOpenManageSpells={() => {
-                                props.openManageSpells?.(
-                                  props.source!.name,
-                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                                );
-                              }}
                               hasFilters={props.hasFilters}
+                              leftSection={
+                                <SpellSlotSelect
+                                  text='Remaining Casts'
+                                  current={innate.casts_current}
+                                  max={innate.casts_max}
+                                  onChange={(v) => {
+                                    setCharacter((c) => {
+                                      if (!c) return c;
+
+                                      const innates = (props.extra?.innates ?? []).map((inn) => {
+                                        if (inn.spell_id === innate.spell_id && inn.rank === innate.rank) {
+                                          return {
+                                            ...inn,
+                                            casts_current: v,
+                                          };
+                                        }
+                                        return inn;
+                                      });
+
+                                      return {
+                                        ...c,
+                                        spells: {
+                                          ...(c.spells ?? {
+                                            slots: [],
+                                            list: [],
+                                            rituals: [],
+                                            focus_point_current: 0,
+                                            innate_casts: [],
+                                          }),
+                                          innate_casts: innates,
+                                        },
+                                      };
+                                    });
+                                  }}
+                                />
+                              }
                             />
                           ))}
                         </Stack>
@@ -3787,8 +3862,10 @@ function SpellListEntry(props: {
   onCastSpell: (cast: boolean) => void;
   onOpenManageSpells?: () => void;
   hasFilters: boolean;
+  leftSection?: React.ReactNode;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const exhausted = props.spell && isCantrip(props.spell) ? false : props.exhausted;
 
   if (props.spell) {
     return (
@@ -3800,7 +3877,7 @@ function SpellListEntry(props: {
             data: {
               id: props.spell.id,
               spell: props.spell,
-              exhausted: props.exhausted,
+              exhausted: exhausted,
               onCastSpell: (cast: boolean) => {
                 props.onCastSpell(cast);
               },
@@ -3812,8 +3889,9 @@ function SpellListEntry(props: {
         <SpellSelectionOption
           noBackground
           hideRank
-          exhausted={props.exhausted}
+          exhausted={exhausted}
           spell={props.spell}
+          leftSection={props.leftSection}
           onClick={() => {}}
           px={0}
         />
@@ -3838,35 +3916,55 @@ function SpellListEntry(props: {
   );
 }
 
-function SpellSlotSelect(props: { count: number; onChange: (v: number) => void }) {
+function SpellSlotSelect(props: { current: number; max: number; onChange: (v: number) => void; text: string }) {
+  const [displaySlots, refreshDisplaySlots] = useRefresh();
+
+  useEffect(() => {
+    refreshDisplaySlots();
+  }, [props.current, props.max]);
+
   return (
-    <TokenSelect
-      count={props.count}
-      onChange={props.onChange}
-      size='xs'
-      emptySymbol={
-        <ActionIcon
-          variant='transparent'
-          color='gray.1'
-          aria-label='Spell Slot, Unused'
-          size='xs'
-          style={{ opacity: 0.7 }}
-        >
-          <IconSquareRounded size='0.8rem' />
-        </ActionIcon>
-      }
-      fullSymbol={
-        <ActionIcon
-          variant='transparent'
-          color='gray.1'
-          aria-label='Spell Slot, Exhuasted'
-          size='xs'
-          style={{ opacity: 0.7 }}
-        >
-          <IconSquareRoundedFilled size='0.8rem' />
-        </ActionIcon>
-      }
-    />
+    <>
+      {displaySlots && (
+        <HoverCard width={280} shadow='md'>
+          <HoverCard.Target>
+            <TokenSelect
+              count={props.max}
+              value={props.current}
+              onChange={props.onChange}
+              size='xs'
+              emptySymbol={
+                <ActionIcon
+                  variant='transparent'
+                  color='gray.1'
+                  aria-label='Spell Slot, Unused'
+                  size='xs'
+                  style={{ opacity: 0.7 }}
+                >
+                  <IconSquareRounded size='1rem' />
+                </ActionIcon>
+              }
+              fullSymbol={
+                <ActionIcon
+                  variant='transparent'
+                  color='gray.1'
+                  aria-label='Spell Slot, Exhuasted'
+                  size='xs'
+                  style={{ opacity: 0.7 }}
+                >
+                  <IconSquareRoundedFilled size='1rem' />
+                </ActionIcon>
+              }
+            />
+          </HoverCard.Target>
+          <HoverCard.Dropdown>
+            <Text size='sm'>
+              {props.text}: {props.current}/{props.max}
+            </Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      )}
+    </>
   );
 }
 

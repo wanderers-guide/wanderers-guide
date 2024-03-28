@@ -148,7 +148,7 @@ export function collectCharacterSpellcasting(character: Character) {
 
   // List of character's spells
   let list = _.cloneDeep(character.spells?.list ?? []);
-  let focus: { spell_id: number; source: string }[] = [];
+  let focus: { spell_id: number; source: string; rank: number }[] = [];
   let innate: SpellInnateEntry[] = [];
   for (const strD of spellDatas) {
     const spellData = JSON.parse(strD) as GiveSpellData;
@@ -163,6 +163,7 @@ export function collectCharacterSpellcasting(character: Character) {
       focus.push({
         spell_id: spellData.spellId,
         source: spellData.castingSource ?? '',
+        rank: spellData.rank ?? 0,
       });
     } else if (spellData.type === 'INNATE') {
       innate.push({
@@ -190,7 +191,7 @@ export function collectCharacterSpellcasting(character: Character) {
     ritual: (character.spells?.rituals ?? []).map((spell_id) => ({ spell_id })),
     focus_points: {
       current: character.spells?.focus_point_current ?? 0,
-      max: Math.min(focus.length ?? 0, 3),
+      max: Math.min(focus.filter((f) => f.rank !== 0).length ?? 0, 3),
     },
     sources: castingSources.map((source) => {
       const parts = source.split(':::') || ['', '', '', ''];

@@ -1,9 +1,10 @@
 import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
@@ -45,6 +46,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character } from '@typing/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
+import { hasPatreonAccess } from '@utils/patreon';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -69,6 +71,9 @@ export function Component() {
 
   const [_character, setCharacter] = useRecoilState(characterState);
   const navigate = useNavigate();
+  const [loadingCreateCharacter, setLoadingCreateCharacter] = useState(false);
+  const [loadingImportCharacter, setLoadingImportCharacter] = useState(false);
+  const [loadingCreateZeroCharacter, setLoadingCreateZeroCharacter] = useState(false);
 
   const jsonImportRef = useRef<HTMLButtonElement>(null);
   const guidecharImportRef = useRef<HTMLButtonElement>(null);
@@ -77,17 +82,17 @@ export function Component() {
     setCharacter(null);
   }, []);
 
-  const CHARACTER_LIMIT = 3;
-
-  const [loadingCreateCharacter, setLoadingCreateCharacter] = useState(false);
   const handleCreateCharacter = async () => {
-    setLoadingCreateCharacter(true);
     const character = await createCharacter();
     if (character) {
       navigate(`/builder/${character.id}`);
     }
     setLoadingCreateCharacter(false);
+    setLoadingCreateZeroCharacter(false);
   };
+
+  const reachedCharacterLimit =
+    (characters?.length ?? 0) >= CHARACTER_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);
 
   return (
     <Center>
@@ -98,19 +103,25 @@ export function Component() {
               <Title order={1} c='gray.0'>
                 Characters
                 <Text pl={10} fz='xl' fw={500} c='gray.2' span>
-                  {characters && CHARACTER_LIMIT ? `(${characters.length}/${CHARACTER_LIMIT})` : ''}
+                  {characters && reachedCharacterLimit ? `(${characters.length}/${CHARACTER_SLOT_CAP})` : ''}
                 </Text>
               </Title>
             </Box>
             <Group gap={5} wrap='nowrap'>
               <Tooltip label='Create Character' openDelay={750}>
                 <ActionIcon
+                  disabled={reachedCharacterLimit}
+                  style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  loading={loadingCreateCharacter}
                   variant='subtle'
                   color='gray.0'
                   size='xl'
                   radius='xl'
                   aria-label='Create Character'
-                  onClick={handleCreateCharacter}
+                  onClick={() => {
+                    setLoadingCreateCharacter(true);
+                    handleCreateCharacter();
+                  }}
                 >
                   <IconUserPlus style={{ width: '70%', height: '70%' }} stroke={2.5} />
                 </ActionIcon>
@@ -118,7 +129,16 @@ export function Component() {
               <Menu shadow='md' width={220} withArrow withinPortal>
                 <Menu.Target>
                   <Tooltip label='Import Character' openDelay={750}>
-                    <ActionIcon variant='subtle' color='gray.0' size='xl' radius='xl' aria-label='Import Character'>
+                    <ActionIcon
+                      disabled={reachedCharacterLimit}
+                      style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                      loading={loadingImportCharacter}
+                      variant='subtle'
+                      color='gray.0'
+                      size='xl'
+                      radius='xl'
+                      aria-label='Import Character'
+                    >
                       <IconUpload style={{ width: '70%', height: '70%' }} stroke={2.5} />
                     </ActionIcon>
                   </Tooltip>
@@ -150,8 +170,10 @@ export function Component() {
               <FileButton
                 onChange={async (file) => {
                   if (!file) return;
+                  setLoadingImportCharacter(true);
                   const character = await importFromJSON(file);
                   refetch();
+                  setLoadingImportCharacter(false);
                 }}
                 accept='application/JSON'
               >
@@ -164,8 +186,10 @@ export function Component() {
               <FileButton
                 onChange={async (file) => {
                   if (!file) return;
+                  setLoadingImportCharacter(true);
                   const character = await importFromGUIDECHAR(file);
                   refetch();
+                  setLoadingImportCharacter(false);
                 }}
                 accept='.guidechar'
               >
@@ -193,7 +217,7 @@ export function Component() {
             />
           )}
           {(characters ?? []).map((character, index) => (
-            <CharacterCard key={index} character={character} />
+            <CharacterCard key={index} character={character} reachedCharacterLimit={reachedCharacterLimit} />
           ))}
           {!isLoading && (characters ?? []).length === 0 && (
             <BlurBox w={'100%'} h={200}>
@@ -203,7 +227,13 @@ export function Component() {
                 </Text>
                 <Center>
                   <Box>
-                    <BlurButton loading={loadingCreateCharacter} onClick={handleCreateCharacter}>
+                    <BlurButton
+                      loading={loadingCreateZeroCharacter}
+                      onClick={() => {
+                        setLoadingCreateZeroCharacter(true);
+                        handleCreateCharacter();
+                      }}
+                    >
                       Create Character
                     </BlurButton>
                   </Box>
@@ -217,7 +247,7 @@ export function Component() {
   );
 }
 
-function CharacterCard(props: { character: Character }) {
+function CharacterCard(props: { character: Character; reachedCharacterLimit: boolean }) {
   const theme = useMantineTheme();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -330,6 +360,7 @@ function CharacterCard(props: { character: Character }) {
               </Group>
             </Menu.Label>
             <Menu.Item
+              disabled={props.reachedCharacterLimit}
               leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
               onClick={async () => {
                 const newCharacter = await createCharacterCopy(props.character);

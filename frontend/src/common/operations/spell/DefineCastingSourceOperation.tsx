@@ -35,7 +35,7 @@ export function DefineCastingSourceOperation(props: {
           w={190}
           value={name}
           onChange={(e) => {
-            setName(e.target.value);
+            setName(labelToVariable(e.target.value, false));
           }}
         />
         <Group wrap='nowrap' align='flex-start'>
@@ -49,6 +49,7 @@ export function DefineCastingSourceOperation(props: {
               orientation='vertical'
               size='xs'
               data={[
+                { label: 'None', value: '-' },
                 { label: 'Spontaneous from Repertoire', value: 'SPONTANEOUS-REPERTOIRE' },
                 { label: 'Prepared from Sublist', value: 'PREPARED-LIST' },
                 { label: 'Prepared from Tradition', value: 'PREPARED-TRADITION' },

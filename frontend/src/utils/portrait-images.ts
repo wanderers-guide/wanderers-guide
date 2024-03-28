@@ -3,7 +3,7 @@ import * as _ from 'lodash-es';
 
 // TODO: Move this to the db?
 const imageStore: Record<string, ImageOption[]> = {
-  generic: [
+  general: [
     {
       name: 'Sanjay',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/portraits/default/4A5D933E-BD66-4B30-A757-604450FEFB68.jpeg',

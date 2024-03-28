@@ -34,9 +34,13 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }
 
   let rankTitle = 'Spell';
   let rank = spell?.rank;
-  if (spell && character && isCantrip(spell)) {
+  if (spell && isCantrip(spell)) {
     rankTitle = 'Cantrip';
-    rank = Math.floor((character.level ?? 1) / 2);
+    if (character) {
+      rank = Math.ceil(character.level / 2);
+    } else {
+      rank = 1;
+    }
   }
 
   return (

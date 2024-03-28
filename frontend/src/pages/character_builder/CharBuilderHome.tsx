@@ -61,9 +61,10 @@ import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContentSources } from '@content/content-store';
 import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
-import { getCachedPublicUser, hasPatronPermission } from '@auth/user-manager';
+import { getCachedPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
 import CustomOperationsModal from '@modals/CustomOperationsModal';
+import { hasPatreonAccess } from '@utils/patreon';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -734,10 +735,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     color={theme.primaryColor}
                     variant='light'
                     onClick={() => {
-                      if (!hasPatronPermission(getCachedPublicUser())) {
-                        displayPatronOnly();
-                        return;
-                      }
+                      //
                     }}
                   >
                     <IconUsersPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
@@ -771,7 +769,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 ]}
                 swatchesPerRow={7}
                 onChange={(color) => {
-                  if (!hasPatronPermission(getCachedPublicUser())) {
+                  if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
                     displayPatronOnly();
                     return;
                   }
@@ -801,7 +799,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       innerProps: {
                         options: getAllBackgroundImages(),
                         onSelect: (option) => {
-                          if (!hasPatronPermission(getCachedPublicUser())) {
+                          if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
                             displayPatronOnly();
                             return;
                           }

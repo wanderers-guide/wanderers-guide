@@ -3,18 +3,24 @@ import * as _ from 'lodash-es';
 
 // TODO: Move this to the db?
 const imageStore: Record<string, ImageOption[]> = {
-  generic: [
+  general: [
     {
       name: 'Coastal Port',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/1.png',
+      //source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
     },
     {
       name: 'Village Road',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/2.png',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
     },
     {
       name: 'Path to the Chapel',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/3.png',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
     },
   ],
   oliver_ryan: [
@@ -314,6 +320,30 @@ const imageStore: Record<string, ImageOption[]> = {
       source: 'Andreas Rocha',
       source_url: 'https://www.artstation.com/andreasrocha',
     },
+    {
+      name: `Occult Knowledge`,
+      url: 'https://cdnb.artstation.com/p/assets/images/images/033/064/779/large/andreas-rocha-occultknowledge01.jpg',
+      source: 'Andreas Rocha',
+      source_url: 'https://www.artstation.com/andreasrocha',
+    },
+    {
+      name: `The Book Club`,
+      url: 'https://cdnb.artstation.com/p/assets/images/images/026/268/905/large/andreas-rocha-thebookclub01.jpg',
+      source: 'Andreas Rocha',
+      source_url: 'https://www.artstation.com/andreasrocha',
+    },
+    {
+      name: `Cluttered Office`,
+      url: 'https://cdna.artstation.com/p/assets/images/images/027/648/396/large/andreas-rocha-clutteredofficenightversion02.jpg',
+      source: 'Andreas Rocha',
+      source_url: 'https://www.artstation.com/andreasrocha',
+    },
+    {
+      name: `The Ochre Valley`,
+      url: 'https://cdnb.artstation.com/p/assets/images/images/012/971/915/large/andreas-rocha-theochrevalley01.jpg',
+      source: 'Andreas Rocha',
+      source_url: 'https://www.artstation.com/andreasrocha',
+    },
   ],
   jorge_jacinto: [
     {
@@ -490,7 +520,7 @@ export function getOfflineBackgroundImage() {
 }
 
 export function getDefaultBackgroundImage() {
-  return _.cloneDeep(imageStore.generic[0]);
+  return _.cloneDeep(imageStore.general[0]);
 }
 
 async function isImageValid(src: string) {

@@ -147,7 +147,7 @@ export const createDefaultOperation = (type: OperationType) => {
       type: type,
       data: {
         variable: 'CASTING_SOURCES',
-        value: ':::SPONTANEOUS-REPERTOIRE:::ARCANE:::ATTRIBUTE_STR',
+        value: ':::-:::ARCANE:::ATTRIBUTE_STR',
       },
     } satisfies OperationDefineCastingSource;
   } else if (type === 'removeAbilityBlock') {

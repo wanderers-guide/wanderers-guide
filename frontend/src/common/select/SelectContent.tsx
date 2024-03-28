@@ -2755,6 +2755,7 @@ export function SpellSelectionOption(props: {
   selected?: boolean;
   includeOptions?: boolean;
   includeDetails?: boolean;
+  leftSection?: React.ReactNode;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
   noBackground?: boolean;
@@ -2808,6 +2809,7 @@ export function SpellSelectionOption(props: {
             <ActionSymbol cost={props.spell.cast} />
           </Box>
         )}
+        {props.leftSection && <Box>{props.leftSection}</Box>}
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>

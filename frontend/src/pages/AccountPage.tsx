@@ -34,7 +34,7 @@ import { setPageTitle } from '@utils/document-change';
 import { useNavigate } from 'react-router-dom';
 import BlurBox from '@common/BlurBox';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getPublicUser, hasPatronPermission } from '@auth/user-manager';
+import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
@@ -49,6 +49,7 @@ import { displayPatronOnly } from '@utils/notifications';
 import { useRecoilValue } from 'recoil';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { modals } from '@mantine/modals';
+import { hasPatreonAccess } from '@utils/patreon';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -179,7 +180,7 @@ function ProfileSection(props: { user: PublicUser }) {
           <Card pt={0} pb={'md'} radius='md' style={{ backgroundColor: 'transparent' }}>
             <FileButton
               onChange={async (file) => {
-                if (!hasPatronPermission(user)) {
+                if (!hasPatreonAccess(user, 2)) {
                   displayPatronOnly();
                   return;
                 }
@@ -265,7 +266,7 @@ function ProfileSection(props: { user: PublicUser }) {
                     format='hex'
                     value={user.site_theme?.color || GUIDE_BLUE}
                     onChange={(value) => {
-                      if (!hasPatronPermission(user)) {
+                      if (!hasPatreonAccess(user, 2)) {
                         displayPatronOnly();
                         return;
                       }
@@ -300,7 +301,7 @@ function ProfileSection(props: { user: PublicUser }) {
             <Center>
               <FileButton
                 onChange={async (file) => {
-                  if (!hasPatronPermission(user)) {
+                  if (!hasPatreonAccess(user, 2)) {
                     displayPatronOnly();
                     return;
                   }

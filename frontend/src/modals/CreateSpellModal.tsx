@@ -30,6 +30,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Spell, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
+import { hasTraitType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
@@ -132,9 +133,20 @@ export function CreateSpellModal(props: {
   });
 
   const onSubmit = async (values: typeof form.values) => {
+    let rank = values.rank ? +values.rank : 0;
+
+    if (
+      hasTraitType(
+        'CANTRIP',
+        traits.map((trait) => trait.id)
+      )
+    ) {
+      rank = 0;
+    }
+
     props.onComplete({
       ...values,
-      rank: values.rank ? +values.rank : 0,
+      rank: rank,
       traits: traits.map((trait) => trait.id),
       meta_data: metaData,
     });
@@ -222,13 +234,18 @@ export function CreateSpellModal(props: {
                 />
               </Group>
 
-              <Select
-                label='Rank'
-                required
-                data={Array.from({ length: 10 }, (_, i) => (i + 1).toString())}
-                w={70}
-                {...form.getInputProps('rank')}
-              />
+              {!hasTraitType(
+                'CANTRIP',
+                traits.map((trait) => trait.id)
+              ) && (
+                <Select
+                  label='Rank'
+                  required
+                  data={Array.from({ length: 10 }, (_, i) => (i + 1).toString())}
+                  w={70}
+                  {...form.getInputProps('rank')}
+                />
+              )}
             </Group>
             <Group wrap='nowrap' align='flex-start'>
               <Select

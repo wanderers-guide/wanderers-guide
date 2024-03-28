@@ -18,6 +18,7 @@ export default function TokenSelect(props: {
       emptySymbol={props.emptySymbol}
       fullSymbol={props.fullSymbol}
       value={value}
+      onClick={(e) => e.stopPropagation()}
       onChange={(v) => {
         let newVal;
         if (v === value) {

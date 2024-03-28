@@ -1,4 +1,4 @@
-import { hasPatronPermission, getCachedPublicUser } from '@auth/user-manager';
+import { getCachedPublicUser } from '@auth/user-manager';
 import classes from '@css/ActionsGrid.module.css';
 import {
   Avatar,
@@ -16,6 +16,7 @@ import { IconBrush, IconUpload } from '@tabler/icons-react';
 import { ImageOption } from '@typing/index';
 import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
+import { hasPatreonAccess } from '@utils/patreon';
 import { useState } from 'react';
 
 export default function SelectImageModal({
@@ -60,7 +61,7 @@ export default function SelectImageModal({
         <SimpleGrid cols={3} pl={5} py={5} pr={15}>
           <FileButton
             onChange={async (file) => {
-              if (!hasPatronPermission(getCachedPublicUser())) {
+              if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
                 displayPatronOnly();
                 return;
               }

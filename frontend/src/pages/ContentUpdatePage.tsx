@@ -97,6 +97,8 @@ export function Component(props: {}) {
     // Compare all fields in the original and updated content, and check all fields in meta_data if it exists
     const changedFields = [];
     for (const key of Object.keys(updated)) {
+      if (key.toLowerCase() === 'uuid') continue;
+
       if (key === 'meta_data') {
         for (const metaKey of Object.keys(updated.meta_data)) {
           if (JSON.stringify(original.meta_data[metaKey] ?? '') !== JSON.stringify(updated.meta_data[metaKey] ?? '')) {

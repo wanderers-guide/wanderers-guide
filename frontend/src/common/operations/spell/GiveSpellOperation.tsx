@@ -16,6 +16,7 @@ export function GiveSpellOperation(props: {
   const [type, setType] = useState(props.data.type);
   const [castingSource, setCastingSource] = useState(props.data.castingSource);
   const [rank, setRank] = useState(props.data.rank);
+  const [defaultRank, setDefaultRank] = useState(props.data.rank);
   const [tradition, setTradition] = useState(props.data.tradition);
   const [casts, setCasts] = useState(props.data.casts);
 
@@ -24,7 +25,7 @@ export function GiveSpellOperation(props: {
       spellId,
       type,
       castingSource,
-      rank,
+      rank: rank ?? defaultRank,
       tradition,
       casts,
     });
@@ -38,6 +39,7 @@ export function GiveSpellOperation(props: {
             type='spell'
             onClick={(option) => {
               setSpellId(option.id);
+              setDefaultRank(option.rank);
             }}
             selectedId={props.data.spellId}
           />
