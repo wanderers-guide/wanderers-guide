@@ -1,38 +1,66 @@
 import * as patreon from 'patreon';
 import type { PublicUser } from './content';
 import _ from 'lodash';
-import { updateData } from './helpers.ts';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { fetchData, updateData } from './helpers.ts';
+import { SupabaseClient, createClient } from '@supabase/supabase-js';
 
 const patreonAPI = patreon.patreon;
 const patreonOAuth = patreon.oauth;
 
-function checkAccessLevel(user: PublicUser, accessLevel: 0 | 1 | 2 | 3 | 4) {
+async function checkAccessLevel(
+  client: SupabaseClient<any, 'public', any>,
+  user: PublicUser,
+  accessLevel: 0 | 1 | 2 | 3 | 4
+) {
   if (accessLevel === 0) return true;
   if (accessLevel === 4) return user.patreon?.tier === 'GAME-MASTER';
   if (accessLevel === 3)
     return user.patreon?.tier === 'LEGEND' || user.patreon?.tier === 'GAME-MASTER';
 
-  const inGameMasterGroup = !!user.patreon?.game_master?.virtual_tier?.game_master_user_id;
+  if (
+    user.patreon?.game_master?.virtual_tier?.game_master_user_id &&
+    user.patreon?.tier !== 'GAME-MASTER'
+  ) {
+    // If in Game Master group (and it's implied that accessLevel is now a tier that we have access to)
+    const gmUsers = await fetchData<PublicUser>(client, 'public_user', [
+      { column: 'user_id', value: user.patreon.game_master.virtual_tier.game_master_user_id },
+    ]);
+    if (gmUsers.length > 0) {
+      const gmUser = gmUsers[0];
+
+      if (gmUser.user_id === user.user_id) {
+        // If someone is their own GM, corrupted, clear their data
+        await removePatreonData(client, user, true);
+        return false;
+      }
+
+      // Confirm the GM has updated access
+      return await hasPatreonAccess(gmUser, accessLevel);
+    }
+  }
+
   if (accessLevel === 2)
     return (
       user.patreon?.tier === 'WANDERER' ||
       user.patreon?.tier === 'LEGEND' ||
-      user.patreon?.tier === 'GAME-MASTER' ||
-      inGameMasterGroup
+      user.patreon?.tier === 'GAME-MASTER'
     );
   if (accessLevel === 1)
     return (
       user.patreon?.tier === 'ADVOCATE' ||
       user.patreon?.tier === 'WANDERER' ||
       user.patreon?.tier === 'LEGEND' ||
-      user.patreon?.tier === 'GAME-MASTER' ||
-      inGameMasterGroup
+      user.patreon?.tier === 'GAME-MASTER'
     );
+
   return false;
 }
 
-async function removePatreonData(client: SupabaseClient<any, 'public', any>, user: PublicUser) {
+async function removePatreonData(
+  client: SupabaseClient<any, 'public', any>,
+  user: PublicUser,
+  removeVirtualTier = false
+) {
   user = _.cloneDeep(user);
   user.patreon = {
     ...user.patreon,
@@ -42,6 +70,7 @@ async function removePatreonData(client: SupabaseClient<any, 'public', any>, use
     tier: undefined,
     access_token: undefined,
     refresh_token: undefined,
+    game_master: removeVirtualTier ? undefined : user.patreon?.game_master,
   };
   const status = await updateData(client, 'public_user', user.id, {
     patreon: user.patreon,
@@ -84,10 +113,17 @@ async function addPatreonData(
 }
 
 export async function hasPatreonAccess(
-  client: SupabaseClient<any, 'public', any>,
   user: PublicUser,
   accessLevel: 0 | 1 | 2 | 3 | 4
-) {
+): Promise<boolean> {
+  // Use unrestricted client access because we're only updating Patreon data under strict conditions
+  const client = createClient(
+    // @ts-ignore
+    Deno.env.get('SUPABASE_URL') ?? '',
+    // @ts-ignore
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
   user = _.cloneDeep(user);
   if (user.patreon?.access_token) {
     const apiClient = patreonAPI(user.patreon?.access_token);
@@ -106,12 +142,158 @@ export async function hasPatreonAccess(
         user = result.user;
       }
     }
-    return checkAccessLevel(user, accessLevel);
+    return await checkAccessLevel(client, user, accessLevel);
   } else {
     // Update user to not have a tier
     const result = await removePatreonData(client, user);
-    return checkAccessLevel(result.user, accessLevel);
+    return await checkAccessLevel(client, result.user, accessLevel);
   }
+}
+
+export async function addToGameMasterGroup(
+  client: SupabaseClient<any, 'public', any>,
+  user: PublicUser,
+  gmUserID: string,
+  accessCode: string
+) {
+  user = _.cloneDeep(user);
+  if (user.patreon?.tier === 'GAME-MASTER') {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+
+  const gmUsers = await fetchData<PublicUser>(client, 'public_user', [
+    { column: 'user_id', value: gmUserID },
+  ]);
+  const gmUser = gmUsers.length > 0 ? gmUsers[0] : null;
+  if (!gmUser) {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+  if (gmUser.patreon?.game_master?.access_code !== accessCode) {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+
+  user.patreon = {
+    ...user.patreon,
+    game_master: {
+      virtual_tier: {
+        game_master_user_id: gmUserID,
+        game_master_name: gmUser.display_name,
+        added_at: new Date().toISOString(),
+      },
+    },
+  };
+  const status = await updateData(client, 'public_user', user.id, {
+    patreon: user.patreon,
+  });
+  return {
+    status,
+    user,
+  };
+}
+
+export async function removeFromGameMasterGroup(currentUser: PublicUser, userId: string) {
+  const client = createClient(
+    // @ts-ignore
+    Deno.env.get('SUPABASE_URL') ?? '',
+    // @ts-ignore
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  const users = await fetchData<PublicUser>(client, 'public_user', [
+    { column: 'user_id', value: userId },
+  ]);
+  const user = users.length > 0 ? users[0] : null;
+  if (!user || !currentUser) {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+
+  // Only way the virtual_tier can be removed is if the person triggering this is the GM
+  if (user.patreon?.game_master?.virtual_tier?.game_master_user_id !== currentUser.user_id) {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+
+  user.patreon = {
+    ...user.patreon,
+    game_master: {
+      access_code: user.patreon?.game_master?.access_code,
+      virtual_tier: undefined,
+    },
+  };
+  const status = await updateData(client, 'public_user', user.id, {
+    patreon: user.patreon,
+  });
+  return {
+    status,
+    user,
+  };
+}
+
+export async function getAllUsersInGameMasterGroup(user: PublicUser) {
+  if (user.patreon?.tier !== 'GAME-MASTER') {
+    return [];
+  }
+
+  const client = createClient(
+    // @ts-ignore
+    Deno.env.get('SUPABASE_URL') ?? '',
+    // @ts-ignore
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  const { data, error } = await client
+    .from('public_user')
+    .select('*')
+    .eq('patreon->game_master->virtual_tier->>game_master_user_id', user.user_id);
+
+  if (error) {
+    return [];
+  }
+
+  return (data as PublicUser[]) ?? [];
+}
+
+export async function regenerateGameMasterAccessCode(
+  client: SupabaseClient<any, 'public', any>,
+  user: PublicUser
+) {
+  if (user.patreon?.tier !== 'GAME-MASTER') {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+
+  user = _.cloneDeep(user);
+  user.patreon = {
+    ...user.patreon,
+    game_master: {
+      access_code:
+        Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8),
+      virtual_tier: user.patreon?.game_master?.virtual_tier,
+    },
+  };
+  const status = await updateData(client, 'public_user', user.id, {
+    patreon: user.patreon,
+  });
+  return {
+    status,
+    user,
+  };
 }
 
 export async function handlePatreonRedirect(
@@ -159,14 +341,20 @@ export async function handlePatreonRedirect(
   const pledgeData = store.findAll('pledge').map((pledge: any) => pledge.serialize());
   //console.log(pledgeData[0].data.relationships.reward);
 
+  const tier = findPatronTier(pledgeData);
   await addPatreonData(client, user, {
     patreon_user_id: patreonUserID,
     patreon_name: patreonName,
     patreon_email: patreonEmail,
-    tier: findPatronTier(pledgeData),
+    tier: tier,
     access_token: tokenResult.access_token,
     refresh_token: tokenResult.refresh_token,
   });
+
+  if (tier === 'GAME-MASTER') {
+    await regenerateGameMasterAccessCode(client, user);
+  }
+
   return true;
 }
 

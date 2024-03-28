@@ -62,7 +62,7 @@ interface PublicUser {
     access_token?: string;
     refresh_token?: string;
     game_master?: {
-      access_key: string;
+      access_code?: string;
       virtual_tier?: {
         game_master_user_id: string;
         game_master_name: string;

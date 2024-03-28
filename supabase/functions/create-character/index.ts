@@ -38,7 +38,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const access = await hasPatreonAccess(client, user, 2);
+    const access = await hasPatreonAccess(user, 2);
     if (!access) {
       console.log('User does not have access');
       return {
