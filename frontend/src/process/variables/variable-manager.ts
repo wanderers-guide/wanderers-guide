@@ -119,8 +119,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
     attribute: 'ATTRIBUTE_INT',
   }),
 
-  SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'), // TODO: add attribute
-  SPELL_DC: newVariable('prof', 'SPELL_DC'), // TODO: add attribute
+  SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'),
+  SPELL_DC: newVariable('prof', 'SPELL_DC'),
   CASTING_SOURCES: newVariable('list-str', 'CASTING_SOURCES'),
   SPELL_SLOTS: newVariable('list-str', 'SPELL_SLOTS'),
 

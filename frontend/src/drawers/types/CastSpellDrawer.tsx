@@ -7,15 +7,24 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button } from '@mantine/core';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, Paper } from '@mantine/core';
+import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isFocusSpell } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
+import { sign } from '@utils/numbers';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function CastSpellDrawerTitle(props: {
-  data: { id: number; spell: Spell; exhausted: boolean; onCastSpell: (cast: boolean) => void };
+  data: {
+    id: number;
+    spell: Spell;
+    exhausted: boolean;
+    tradition: string;
+    attribute: string;
+    onCastSpell: (cast: boolean) => void;
+  };
 }) {
   const spell = props.data.spell;
 
@@ -98,7 +107,9 @@ export function CastSpellDrawerTitle(props: {
   );
 }
 
-export function CastSpellDrawerContent(props: { data: { id: number; spell: Spell } }) {
+export function CastSpellDrawerContent(props: {
+  data: { id: number; spell: Spell; exhausted: boolean; tradition: string; attribute: string };
+}) {
   const spell = props.data.spell;
 
   const CR = [];
@@ -200,7 +211,48 @@ export function CastSpellDrawerContent(props: { data: { id: number; spell: Spell
     );
   }
 
-  const heightened = spell.heightened;
+  // Highlight the tradition of the spell
+  const TRADITIONS = [];
+  if (spell.traditions) {
+    for (const tradition of spell.traditions) {
+      if (tradition.toLowerCase() === props.data.tradition.toLowerCase()) {
+        TRADITIONS.push(
+          <Text key={tradition} td='underline' span>
+            {tradition}
+          </Text>
+        );
+      } else {
+        TRADITIONS.push(<>{tradition}</>);
+      }
+    }
+  }
+
+  // Spell Attack and DC
+  const spellStats = getSpellStats('CHARACTER', spell, props.data.tradition, props.data.attribute);
+
+  const attackAndDcSection = (
+    <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+      <Group wrap='nowrap' grow>
+        <Group wrap='nowrap' gap={10}>
+          <Text fw={600} c='gray.5' span>
+            Attack
+          </Text>
+          <Text c='gray.5' span>
+            {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
+            {sign(spellStats.spell_attack.total[2])}
+          </Text>
+        </Group>
+        <Group wrap='nowrap' gap={10}>
+          <Text fw={600} c='gray.5' span>
+            DC
+          </Text>
+          <Text c='gray.5' span>
+            {spellStats.spell_dc.total}
+          </Text>
+        </Group>
+      </Group>
+    </Paper>
+  );
 
   return (
     <Box>
@@ -222,12 +274,13 @@ export function CastSpellDrawerContent(props: { data: { id: number; spell: Spell
         <Box pb={2}>
           <TraitsDisplay traitIds={spell.traits ?? []} rarity={spell.rarity} interactable />
         </Box>
+        {attackAndDcSection}
         {spell.traditions && spell.traditions.length > 0 && (
           <IndentedText ta='justify'>
             <Text fw={600} c='gray.5' span>
               Traditions
             </Text>{' '}
-            {spell.traditions.join(', ')}
+            {TRADITIONS.flatMap((node, index) => (index < TRADITIONS.length - 1 ? [node, ', '] : [node]))}
           </IndentedText>
         )}
         {CR.length > 0 && (

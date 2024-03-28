@@ -3004,7 +3004,7 @@ function PanelSpells(props: { panelHeight: number }) {
 
   return (
     <Box h='100%'>
-      <Stack gap={5}>
+      <Stack gap={10}>
         <Group>
           <TextInput
             style={{ flex: 1 }}
@@ -3064,7 +3064,7 @@ function PanelSpells(props: { panelHeight: number }) {
                 },
                 item: {
                   marginTop: 0,
-                  marginBottom: 5,
+                  marginBottom: 10,
                 },
               }}
             >
@@ -3072,35 +3072,35 @@ function PanelSpells(props: { panelHeight: number }) {
                 <div key={index}>
                   {source.type.startsWith('SPONTANEOUS-') ? (
                     <>
-                      {charData.list.filter((d) => d.source === source.name).length > 0 && (
+                      {
                         <SpellList
                           index={`spontaneous-${source.name}`}
                           source={source}
                           spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='SPONTANEOUS'
-                          extra={{ slots: charData.slots }}
+                          extra={{ slots: charData.slots.filter((s) => s.source === source.name) }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
                           hasFilters={!!searchQuery.trim()}
                         />
-                      )}
+                      }
                     </>
-                  ) : (
+                  ) : source.type.startsWith('PREPARED-') ? (
                     <>
-                      {charData.list.filter((d) => d.source === source.name).length > 0 && (
+                      {
                         <SpellList
                           index={`prepared-${source.name}`}
                           source={source}
                           spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='PREPARED'
-                          extra={{ slots: charData.slots }}
+                          extra={{ slots: charData.slots.filter((s) => s.source === source.name) }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
                           hasFilters={!!searchQuery.trim()}
                         />
-                      )}
+                      }
                     </>
-                  )}
+                  ) : null}
                   {charData.focus.filter((d) => d.source === source.name).length > 0 && (
                     <SpellList
                       index={`focus-${source.name}`}
@@ -3343,6 +3343,7 @@ function SpellList(props: {
             <Divider color='dark.6' />
             <Accordion
               px={10}
+              pb={5}
               variant='separated'
               multiple
               defaultValue={[]}
@@ -3387,6 +3388,8 @@ function SpellList(props: {
                               key={index}
                               spell={slot.spell}
                               exhausted={!!slot.exhausted}
+                              tradition={props.source!.tradition}
+                              attribute={props.source!.attribute}
                               onCastSpell={(cast: boolean) => {
                                 if (slot.spell) castSpell(cast, slot.spell);
                               }}
@@ -3453,6 +3456,7 @@ function SpellList(props: {
             <Divider color='dark.6' />
             <Accordion
               px={10}
+              pb={5}
               variant='separated'
               multiple
               defaultValue={[]}
@@ -3503,6 +3507,8 @@ function SpellList(props: {
                               key={index}
                               spell={spell}
                               exhausted={!!slots[rank].find((s) => !s.exhausted)}
+                              tradition={props.source!.tradition}
+                              attribute={props.source!.attribute}
                               onCastSpell={(cast: boolean) => {
                                 castSpell(cast, spell);
                               }}
@@ -3577,6 +3583,7 @@ function SpellList(props: {
             <Divider color='dark.6' />
             <Accordion
               px={10}
+              pb={5}
               variant='separated'
               multiple
               defaultValue={[]}
@@ -3623,6 +3630,8 @@ function SpellList(props: {
                                 traits: _.uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
                               }}
                               exhausted={!character?.spells?.focus_point_current}
+                              tradition={props.source!.tradition}
+                              attribute={props.source!.attribute}
                               onCastSpell={(cast: boolean) => {
                                 castSpell(cast, spell);
                               }}
@@ -3676,6 +3685,7 @@ function SpellList(props: {
             <Divider color='dark.6' />
             <Accordion
               px={10}
+              pb={5}
               variant='separated'
               multiple
               defaultValue={[]}
@@ -3722,6 +3732,8 @@ function SpellList(props: {
                               key={index}
                               spell={innate.spell}
                               exhausted={innate.casts_current >= innate.casts_max}
+                              tradition={innate.tradition}
+                              attribute={'ATTRIBUTE_CHA'}
                               onCastSpell={(cast: boolean) => {
                                 if (innate.spell) castSpell(cast, innate.spell);
                               }}
@@ -3829,6 +3841,8 @@ function SpellList(props: {
                     key={index}
                     spell={spell}
                     exhausted={false}
+                    tradition={'NONE'}
+                    attribute={'ATTRIBUTE_CHA'}
                     onCastSpell={(cast: boolean) => {
                       castSpell(cast, spell);
                     }}
@@ -3859,6 +3873,8 @@ function SpellList(props: {
 function SpellListEntry(props: {
   spell?: Spell;
   exhausted: boolean;
+  tradition: string;
+  attribute: string;
   onCastSpell: (cast: boolean) => void;
   onOpenManageSpells?: () => void;
   hasFilters: boolean;
@@ -3878,6 +3894,8 @@ function SpellListEntry(props: {
               id: props.spell.id,
               spell: props.spell,
               exhausted: exhausted,
+              tradition: props.tradition,
+              attribute: props.attribute,
               onCastSpell: (cast: boolean) => {
                 props.onCastSpell(cast);
               },

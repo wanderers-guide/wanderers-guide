@@ -82,6 +82,8 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
   // Breakdown
   const parts = getProfValueParts('CHARACTER', variable.name)!;
 
+  console.log(parts);
+
   // Timeline
   const history = getVariableHistory('CHARACTER', variable.name);
   const bonuses = getVariableBonuses('CHARACTER', variable.name);
@@ -133,7 +135,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
           </Accordion.Item>
         )}
 
-        {variable.value.attribute && (
+        {(variable.value.attribute || parts.attributeMod) && (
           <Accordion.Item value='breakdown'>
             <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
             <Accordion.Panel>

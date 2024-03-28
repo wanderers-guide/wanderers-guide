@@ -1,25 +1,35 @@
-import { VariableAttr, StoreID, VariableNum, VariableProf } from '@typing/variables';
+import { VariableAttr, StoreID, VariableNum, VariableProf, VariableListStr } from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
 import { getProficiencyTypeValue } from './variable-utils';
-import { Item } from '@typing/content';
+import { CastingSource, Item } from '@typing/content';
 import { getAcParts } from '@items/armor-handler';
 
-export function getFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
-  const parts = getProfValueParts(id, variableName);
+export function getFinalProfValue(
+  id: StoreID,
+  variableName: string,
+  isDC: boolean = false,
+  overrideAttribute?: string
+) {
+  const parts = getProfValueParts(id, variableName, overrideAttribute);
   if (!parts) return isDC ? '10' : '+0';
   return isDC
     ? `${10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue}`
     : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue);
 }
 
-export function displayFinalProfValue(id: StoreID, variableName: string, isDC: boolean = false) {
+export function displayFinalProfValue(
+  id: StoreID,
+  variableName: string,
+  isDC: boolean = false,
+  overrideAttribute?: string
+) {
   const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
 
-  const parts = getProfValueParts(id, variableName)!;
-  const value = getFinalProfValue(id, variableName, isDC);
+  const parts = getProfValueParts(id, variableName, overrideAttribute)!;
+  const value = getFinalProfValue(id, variableName, isDC, overrideAttribute);
 
   return (
     <span style={{ position: 'relative' }}>
@@ -93,7 +103,7 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
   };
 }
 
-export function getProfValueParts(id: StoreID, variableName: string) {
+export function getProfValueParts(id: StoreID, variableName: string, overrideAttribute?: string) {
   const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
   const breakdown = getVariableBreakdown(id, variableName);
@@ -101,7 +111,26 @@ export function getProfValueParts(id: StoreID, variableName: string) {
 
   const level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
   const profValue = getProficiencyTypeValue(variable.value.value);
-  const attributeMod = variable.value.attribute ? getFinalVariableValue(id, variable.value.attribute).total : null;
+
+  let attribute = overrideAttribute ? overrideAttribute : variable.value.attribute;
+  if (!attribute && (variableName === 'SPELL_ATTACK' || variableName === 'SPELL_DC')) {
+    // If we don't have an attribute for spellcasting, take the first one from the casting sources
+    const rawCastingSources = getVariable<VariableListStr>(id, 'CASTING_SOURCES')?.value ?? [];
+    const castingSources = rawCastingSources.map((source) => {
+      const parts = source.split(':::') || ['', '', '', ''];
+      return {
+        name: parts[0],
+        type: parts[1],
+        tradition: parts[2],
+        attribute: parts[3],
+      } satisfies CastingSource as CastingSource;
+    });
+    if (castingSources.length > 0) {
+      attribute = castingSources[0].attribute;
+    }
+  }
+
+  const attributeMod = attribute ? getFinalVariableValue(id, attribute).total : null;
 
   return {
     level,

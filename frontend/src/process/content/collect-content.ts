@@ -193,15 +193,22 @@ export function collectCharacterSpellcasting(character: Character) {
       current: character.spells?.focus_point_current ?? 0,
       max: Math.min(focus.filter((f) => f.rank !== 0).length ?? 0, 3),
     },
-    sources: castingSources.map((source) => {
-      const parts = source.split(':::') || ['', '', '', ''];
-      return {
-        name: parts[0],
-        type: parts[1],
-        tradition: parts[2],
-        attribute: parts[3],
-      } satisfies CastingSource as CastingSource;
-    }),
+    sources: castingSources
+      .map((source) => {
+        const parts = source.split(':::') || ['', '', '', ''];
+        return {
+          name: parts[0],
+          type: parts[1],
+          tradition: parts[2],
+          attribute: parts[3],
+        } satisfies CastingSource as CastingSource;
+      })
+      .sort((a, b) => {
+        if (a.type !== b.type) {
+          return b.type.localeCompare(a.type);
+        }
+        return a.name.localeCompare(b.name);
+      }),
   };
 }
 
