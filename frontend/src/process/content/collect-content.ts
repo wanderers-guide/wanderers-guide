@@ -143,6 +143,7 @@ export function collectCharacterSpellcasting(character: Character) {
       });
     }
   }
+
   // Fill slot data from saved character data
   slots = mergeSpellSlots(slots, character.spells?.slots ?? []);
 

@@ -3002,6 +3002,8 @@ function PanelSpells(props: { panelHeight: number }) {
 
   const allSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
 
+  console.log(getVariable('CHARACTER', 'SPELL_SLOTS'));
+
   return (
     <Box h='100%'>
       <Stack gap={10}>
@@ -3179,11 +3181,10 @@ function SpellList(props: {
       return;
     }
 
-    if ((props.type === 'PREPARED' || props.type === 'SPONTANEOUS') && props.source) {
+    if (props.type === 'PREPARED' && props.source) {
       setCharacter((c) => {
         if (!c) return c;
-        let slots = c.spells?.slots ?? [];
-        const newUpdatedSlots = slots.map((slot) => {
+        const newUpdatedSlots = collectCharacterSpellcasting(c).slots.map((slot) => {
           if (slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name) {
             return {
               ...slot,
@@ -3192,6 +3193,37 @@ function SpellList(props: {
           }
           return slot;
         });
+        return {
+          ...c,
+          spells: {
+            ...(c.spells ?? {
+              slots: [],
+              list: [],
+              rituals: [],
+              focus_point_current: 0,
+              innate_casts: [],
+            }),
+            slots: newUpdatedSlots,
+          },
+        };
+      });
+    }
+
+    if (props.type === 'SPONTANEOUS' && props.source) {
+      setCharacter((c) => {
+        if (!c) return c;
+        let added = false;
+        const newUpdatedSlots = collectCharacterSpellcasting(c).slots.map((slot) => {
+          if (!added && slot.rank === spell.rank && slot.source === props.source!.name && !slot.exhausted === cast) {
+            added = true;
+            return {
+              ...slot,
+              exhausted: cast,
+            };
+          }
+          return slot;
+        });
+
         return {
           ...c,
           spells: {
@@ -3231,7 +3263,7 @@ function SpellList(props: {
       setCharacter((c) => {
         if (!c) return c;
 
-        const innates = (props.extra?.innates ?? []).map((innate) => {
+        const innates = collectCharacterSpellcasting(c).innate.map((innate) => {
           if (innate.spell_id === spell.id && innate.rank === spell.rank) {
             return {
               ...innate,
@@ -3271,10 +3303,19 @@ function SpellList(props: {
   const slots = useMemo(() => {
     if (!props.extra?.slots || props.extra.slots.length === 0) return null;
 
-    const mappedSlots = props.extra.slots.map((slot) => ({
-      ...slot,
-      spell: props.allSpells.find((spell) => spell.id === slot.spell_id),
-    }));
+    const mappedSlots = props.extra.slots.map((slot) => {
+      let spell = props.allSpells.find((spell) => spell.id === slot.spell_id);
+      if (spell) {
+        spell = {
+          ...spell,
+          rank: slot.rank,
+        };
+      }
+      return {
+        ...slot,
+        spell: spell,
+      };
+    });
     return _.groupBy(mappedSlots, 'rank');
   }, [props.extra?.slots, props.allSpells]);
 
@@ -3477,36 +3518,68 @@ function SpellList(props: {
             >
               {slots &&
                 Object.keys(slots)
-                  .filter((rank) => slots[rank].length > 0)
+                  .filter((rank) => slots[rank] && slots[rank].length > 0)
                   .map((rank, index) => (
                     <Accordion.Item value={`rank-group-${index}`}>
                       <Accordion.Control>
                         <Group wrap='nowrap' justify='space-between' gap={0}>
-                          <Box>
-                            <Text c='gray.5' fw={700} fz='sm' w={100}>
+                          <Group wrap='nowrap'>
+                            <Text c='gray.5' fw={700} fz='sm' w={70}>
                               {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                             </Text>
-                            <SpellSlotSelect
-                              text='Spell Slots'
-                              current={slots[rank]?.filter((slot) => `${slot.rank}` === rank && !slot.exhausted).length}
-                              max={slots[rank]?.filter((slot) => `${slot.rank}` === rank).length}
-                              onChange={(v) => {}}
-                            />
-                          </Box>
+                            {rank !== '0' && (
+                              <SpellSlotSelect
+                                text='Spell Slots'
+                                current={slots[rank].filter((slot) => `${slot.rank}` === rank && slot.exhausted).length}
+                                max={slots[rank].filter((slot) => `${slot.rank}` === rank).length}
+                                onChange={(v) => {
+                                  setCharacter((c) => {
+                                    if (!c) return c;
+
+                                    let count = 0;
+                                    const slots = collectCharacterSpellcasting(c).slots;
+                                    for (const slot of slots) {
+                                      if (slot.rank === parseInt(rank) && slot.source === props.source?.name) {
+                                        slot.exhausted = count < v;
+                                        count++;
+                                      }
+                                    }
+
+                                    console.log(slots);
+
+                                    return {
+                                      ...c,
+                                      spells: {
+                                        ...(c.spells ?? {
+                                          slots: [],
+                                          list: [],
+                                          rituals: [],
+                                          focus_point_current: 0,
+                                          innate_casts: [],
+                                        }),
+                                        slots: slots,
+                                      },
+                                    };
+                                  });
+                                }}
+                              />
+                            )}
+                          </Group>
                           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                             <Text fz='sm' c='gray.5' span>
-                              {spells[rank].length}
+                              {spells[rank]?.length ?? 0}
                             </Text>
                           </Badge>
                         </Group>
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap={5}>
-                          {spells[rank].map((spell, index) => (
+                          <Divider color='dark.6' />
+                          {spells[rank]?.map((spell, index) => (
                             <SpellListEntry
                               key={index}
                               spell={spell}
-                              exhausted={!!slots[rank].find((s) => !s.exhausted)}
+                              exhausted={!slots[rank].find((s) => !s.exhausted)}
                               tradition={props.source!.tradition}
                               attribute={props.source!.attribute}
                               onCastSpell={(cast: boolean) => {
@@ -3521,6 +3594,11 @@ function SpellList(props: {
                               hasFilters={props.hasFilters}
                             />
                           ))}
+                          {(!spells[rank] || spells[rank].length === 0) && (
+                            <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
+                              No spells known
+                            </Text>
+                          )}
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>
@@ -3830,6 +3908,8 @@ function SpellList(props: {
               padding: 0,
             },
           }}
+          px={10}
+          pb={5}
         >
           <Stack gap={5}>
             <Divider color='dark.6' />
@@ -3942,7 +4022,7 @@ function SpellSlotSelect(props: { current: number; max: number; onChange: (v: nu
   }, [props.current, props.max]);
 
   return (
-    <>
+    <Box pt={3}>
       {displaySlots && (
         <HoverCard width={280} shadow='md'>
           <HoverCard.Target>
@@ -3982,7 +4062,7 @@ function SpellSlotSelect(props: { current: number; max: number; onChange: (v: nu
           </HoverCard.Dropdown>
         </HoverCard>
       )}
-    </>
+    </Box>
   );
 }
 
