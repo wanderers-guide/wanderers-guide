@@ -35,7 +35,11 @@ async function checkAccessLevel(
       }
 
       // Confirm the GM has updated access
-      return await hasPatreonAccess(gmUser, accessLevel);
+      const access = await hasPatreonAccess(gmUser, accessLevel);
+      if (!access) {
+        removePatreonData(client, user, true);
+      }
+      return access;
     }
   }
 

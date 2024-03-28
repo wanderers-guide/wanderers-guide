@@ -455,7 +455,22 @@ interface PublicUser {
   };
   is_admin: boolean;
   is_mod: boolean;
-  patreon_tier?: 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER';
+  patreon?: {
+    patreon_user_id?: string;
+    patreon_name?: string;
+    patreon_email?: string;
+    tier?: 'ADVOCATE' | 'WANDERER' | 'LEGEND' | 'GAME-MASTER';
+    access_token?: string;
+    refresh_token?: string;
+    game_master?: {
+      access_code?: string;
+      virtual_tier?: {
+        game_master_user_id: string;
+        game_master_name: string;
+        added_at: string;
+      };
+    };
+  };
   deactivated: boolean;
   summary?: string;
   subscribed_content_sources?: { source_id: number; source_name: string; added_at: string }[];

@@ -1,6 +1,11 @@
 export type RequestType =
   | 'get-sheet-content'
   | 'upload-public-file'
+  | 'handle-patreon-redirect'
+  | 'gm-add-to-group'
+  | 'gm-remove-from-group'
+  | 'gm-regenerate-code'
+  | 'gm-users-in-group'
   | 'get-user'
   | 'update-user'
   | 'open-ai-request'

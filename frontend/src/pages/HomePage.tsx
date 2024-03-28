@@ -3,6 +3,8 @@ import { setPageTitle } from '@utils/document-change';
 import { supabase } from '../main';
 import { useRecoilValue } from 'recoil';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { useEffect } from 'react';
+import { makeRequest } from '@requests/request-manager';
 
 export function Component() {
   setPageTitle();

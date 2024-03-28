@@ -62,6 +62,17 @@ const router = createBrowserRouter([
             lazy: async () => import('@pages/admin_panel/AdminPage.tsx'),
           },
           {
+            path: 'auth/patreon/redirect',
+            lazy: async () => import('@pages/PatreonRedirectPage.tsx'),
+          },
+          {
+            path: 'gm-share/:gmUserId',
+            lazy: () => import('@pages/GmSharePage.tsx'),
+            loader: async ({ params }: { params: any }) => {
+              return { gmUserId: params.gmUserId };
+            },
+          },
+          {
             path: 'builder/:characterId',
             lazy: () => import('@pages/character_builder/CharacterBuilderPage.tsx'),
             loader: async ({ params }: { params: any }) => {

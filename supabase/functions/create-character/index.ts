@@ -52,7 +52,7 @@ serve(async (req: Request) => {
       'character',
       {
         id,
-        user_id: user.id,
+        user_id: user.user_id,
         name,
         level,
         experience,

@@ -33,7 +33,7 @@ export function SetValOperation(props: {
   }, [props.value, props.variable]);
 
   return (
-    <OperationWrapper onRemove={props.onRemove} title='Set Value'>
+    <OperationWrapper onRemove={props.onRemove} title='Override Value'>
       <VariableSelect
         value={variableName}
         onChange={(value, variable) => {
@@ -70,9 +70,7 @@ export function SetValueInput(props: {
           size='xs'
           placeholder='Number'
           value={value.value}
-          onChange={(val) =>
-            props.onChange({ value: parseInt(`${val}`), partial: value.partial } as AttributeValue)
-          }
+          onChange={(val) => props.onChange({ value: parseInt(`${val}`), partial: value.partial } as AttributeValue)}
           allowDecimal={false}
         />
         <Box>
@@ -140,9 +138,7 @@ export function SetValueInput(props: {
         <SegmentedControl
           size='xs'
           value={value.value}
-          onChange={(val) =>
-            props.onChange({ value: val, attribute: value.attribute } as ProficiencyValue)
-          }
+          onChange={(val) => props.onChange({ value: val, attribute: value.attribute } as ProficiencyValue)}
           data={[
             { label: 'U', value: 'U' },
             { label: 'T', value: 'T' },

@@ -24,6 +24,11 @@ import {
   LoadingOverlay,
   TextInput,
   FocusTrap,
+  Paper,
+  CloseButton,
+  Anchor,
+  CopyButton,
+  ScrollArea,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
 import { useNavigate } from 'react-router-dom';
@@ -32,7 +37,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublicUser, hasPatronPermission } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
-import { GUIDE_BLUE } from '@constants/data';
+import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
 import { IconAdjustments, IconBrandPatreon, IconReload, IconUpload } from '@tabler/icons-react';
 import { Character, PublicUser } from '@typing/content';
 import { useEffect, useState } from 'react';
@@ -43,6 +48,7 @@ import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
 import { useRecoilValue } from 'recoil';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { modals } from '@mantine/modals';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -74,7 +80,7 @@ export function Component() {
 
 function ProfileSection(props: { user: PublicUser }) {
   const theme = useMantineTheme();
-  //const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<PublicUser>(props.user);
 
@@ -95,13 +101,48 @@ function ProfileSection(props: { user: PublicUser }) {
     enabled: !!session,
   });
 
-  const patronTier = toLabel(user.patreon_tier) || 'Non-Patron';
+  // Get user's on GM tier
+  const { data: benefitingUsers, refetch: refetchBenefitingUsers } = useQuery({
+    queryKey: [`find-benefiting-users`],
+    queryFn: async () => {
+      return await makeRequest<PublicUser[]>('gm-users-in-group', {});
+    },
+    enabled: user.patreon?.tier === 'GAME-MASTER',
+  });
+  const gmShareURL = `${window.location.origin}/gm-share/${user.user_id}?code=${user.patreon?.game_master?.access_code}`;
+
+  const regenerateCode = async () => {
+    setLoading(true);
+    await makeRequest('gm-regenerate-code', {});
+    const newUser = await getPublicUser();
+    if (newUser) setUser(newUser);
+    setLoading(false);
+  };
+
+  const removeFromGroup = async (userId: string) => {
+    setLoading(true);
+    await makeRequest('gm-remove-from-group', {
+      user_id: userId,
+    });
+    refetchBenefitingUsers();
+    setLoading(false);
+  };
+
+  let patronTier = toLabel(user.patreon?.tier) || 'Non-Patron';
   let patronColor: MantineColor = 'gray';
   if (patronTier === 'Non-Patron') patronColor = 'gray';
   if (patronTier === 'Advocate') patronColor = 'teal';
   if (patronTier === 'Wanderer') patronColor = 'blue';
   if (patronTier === 'Legend') patronColor = 'grape';
   if (patronTier === 'Game Master') patronColor = 'orange';
+
+  if (
+    (patronTier === 'Non-Patron' || patronTier === 'Advocate') &&
+    user.patreon?.game_master?.virtual_tier?.game_master_user_id
+  ) {
+    patronTier = 'Wanderer (Virtual)';
+    patronColor = 'blue.3';
+  }
 
   const { mutate: mutateUser } = useMutation(
     async (data: Record<string, any>) => {
@@ -467,10 +508,98 @@ function ProfileSection(props: { user: PublicUser }) {
             <Divider />
 
             <Group align='center' justify='center' pt={10}>
-              <Button size='sm' variant='light' leftSection={<IconBrandPatreon size={18} />} fullWidth>
-                Connect to Patreon
+              <Button
+                size='sm'
+                variant={user.patreon?.tier ? 'outline' : 'light'}
+                leftSection={<IconBrandPatreon size={18} />}
+                fullWidth
+                component='a'
+                href={PATREON_AUTH_URL}
+              >
+                {user.patreon?.tier ? `Patreon Connected` : 'Connect to Patreon'}
               </Button>
             </Group>
+
+            {user.patreon?.tier === 'GAME-MASTER' && (
+              <Box pt={15}>
+                <Text ta='center' fw={500}>
+                  <Text fs='italic' pr={8} span>
+                    Users in your Group
+                  </Text>
+                  <Text fz='sm' span>
+                    ({benefitingUsers?.length ?? '...'} / 99)
+                  </Text>
+                </Text>
+                <Paper style={{ backgroundColor: 'transparent' }} withBorder>
+                  <ScrollArea.Autosize mah={200} py={5}>
+                    {benefitingUsers?.map((benefitingUser, index) => (
+                      <Group key={index} wrap='nowrap' justify='space-between' px={20}>
+                        <Text ta='center' fz='lg' fw={500}>
+                          {benefitingUser.display_name}
+                        </Text>
+                        <CloseButton
+                          onClick={() => {
+                            modals.openConfirmModal({
+                              id: 'remove-benefiting-user',
+                              title: <Title order={4}>Remove User</Title>,
+                              children: (
+                                <Text size='sm'>
+                                  Are you sure you want to remove this user from benefiting from your tier? They will
+                                  lose their virtual Wanderer tier.
+                                </Text>
+                              ),
+                              labels: { confirm: 'Remove', cancel: 'Cancel' },
+                              onCancel: () => {},
+                              onConfirm: async () => {
+                                await removeFromGroup(benefitingUser.user_id);
+                              },
+                            });
+                          }}
+                        />
+                      </Group>
+                    ))}
+                    {benefitingUsers?.length === 0 && (
+                      <Text ta='center' fz='sm' c='dimmed'>
+                        No one yet, share your link!
+                      </Text>
+                    )}
+                    {(benefitingUsers === undefined || benefitingUsers === null) && (
+                      <Center>
+                        <Loader size='lg' type='dots' />
+                      </Center>
+                    )}
+                  </ScrollArea.Autosize>
+                </Paper>
+                <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p={20}>
+                  <Group wrap='nowrap' justify='space-between'>
+                    <Text fz='sm'>Send them this link:</Text>
+                    <Group wrap='nowrap'>
+                      <CopyButton value={gmShareURL}>
+                        {({ copied, copy }) => (
+                          <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
+                            {copied ? 'Copied' : 'Copy'}
+                          </Button>
+                        )}
+                      </CopyButton>
+                      <Button color='teal' size='compact-xs' onClick={regenerateCode}>
+                        Regenerate
+                      </Button>
+                    </Group>
+                  </Group>
+                  <Anchor
+                    fz='xs'
+                    fs='italic'
+                    style={{
+                      wordBreak: 'break-all',
+                      overflowWrap: 'break-word',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {gmShareURL}
+                  </Anchor>
+                </Paper>
+              </Box>
+            )}
           </Card>
         </BlurBox>
       </Box>

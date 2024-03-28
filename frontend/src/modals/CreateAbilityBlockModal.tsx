@@ -129,20 +129,33 @@ export function CreateAbilityBlockModal(props: {
     },
 
     validate: {
-      level:
-        props.type === 'feat' || props.type === 'class-feature'
-          ? (value) => (value !== undefined && !isNaN(+value) ? null : 'Invalid level')
-          : undefined,
+      // level:
+      // props.type === 'feat' || props.type === 'class-feature'
+      //   ? // @ts-ignore
+      //     (value) => (value !== undefined && value !== '' && !isNaN(+value) ? null : 'Invalid level')
+      //   : undefined,
       rarity: (value) => (['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity'),
     },
   });
 
   const onSubmit = async (values: typeof form.values) => {
+    let unselectable = metaData?.unselectable;
+    let level = values.level;
+    if (values.level && !isNaN(+values.level)) {
+      level = +values.level;
+    } else {
+      level = 1;
+      unselectable = true;
+    }
+
     props.onComplete({
       ...values,
-      level: values.level ? +values.level : undefined,
+      level: level,
       traits: traits.map((trait) => trait.id),
-      meta_data: metaData,
+      meta_data: {
+        ...metaData,
+        unselectable,
+      },
     });
     setTimeout(() => {
       onReset();
@@ -195,7 +208,7 @@ export function CreateAbilityBlockModal(props: {
                 <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
               </Group>
 
-              {(props.type === 'feat' || props.type === 'class-feature') && (
+              {(props.type === 'feat' || props.type === 'class-feature') && !metaData?.unselectable && (
                 <Select
                   label='Level'
                   required
