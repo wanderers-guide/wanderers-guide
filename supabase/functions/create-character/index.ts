@@ -1,8 +1,16 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, upsertResponseWrapper, upsertData, getPublicUser } from '../_shared/helpers.ts';
+import {
+  connect,
+  upsertResponseWrapper,
+  upsertData,
+  getPublicUser,
+  fetchData,
+} from '../_shared/helpers.ts';
 import type { Character } from '../_shared/content';
 import { hasPatreonAccess } from '../_shared/patreon.ts';
+
+const CHARACTER_SLOT_CAP = 3;
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -38,13 +46,21 @@ serve(async (req: Request) => {
       };
     }
 
-    const access = await hasPatreonAccess(user, 2);
-    if (!access) {
-      console.log('User does not have access');
-      return {
-        status: 'error',
-        message: 'User does not have access',
-      };
+    if (!id || id === -1) {
+      // Creating new character
+      const characters = await fetchData<Character>(client, 'character', [
+        { column: 'user_id', value: user.user_id },
+      ]);
+      if (characters.length >= CHARACTER_SLOT_CAP) {
+        const access = await hasPatreonAccess(user, 2);
+        if (!access) {
+          console.log('User does not have access');
+          return {
+            status: 'error',
+            message: 'User does not have access',
+          };
+        }
+      }
     }
 
     const { procedure, result } = await upsertData<Character>(

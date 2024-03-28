@@ -7,6 +7,8 @@ import { SupabaseClient, createClient } from '@supabase/supabase-js';
 const patreonAPI = patreon.patreon;
 const patreonOAuth = patreon.oauth;
 
+const GM_GROUP_SIZE_CAP = 99;
+
 async function checkAccessLevel(
   client: SupabaseClient<any, 'public', any>,
   user: PublicUser,
@@ -178,7 +180,17 @@ export async function addToGameMasterGroup(
       user,
     };
   }
+  // Need to confirm the access code matches
   if (gmUser.patreon?.game_master?.access_code !== accessCode) {
+    return {
+      status: 'ERROR_UNKNOWN',
+      user,
+    };
+  }
+
+  // Have we met the group size cap
+  const usersInGroup = await getAllUsersInGameMasterGroup(gmUser);
+  if (usersInGroup.length >= GM_GROUP_SIZE_CAP) {
     return {
       status: 'ERROR_UNKNOWN',
       user,
