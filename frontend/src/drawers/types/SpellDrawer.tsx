@@ -7,7 +7,7 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
-import { isCantrip } from '@spells/spell-utils';
+import { isCantrip, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
@@ -41,6 +41,9 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }
     } else {
       rank = 1;
     }
+  }
+  if (spell && isRitual(spell)) {
+    rankTitle = 'Ritual';
   }
 
   return (

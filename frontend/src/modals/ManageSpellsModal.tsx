@@ -41,7 +41,7 @@ export default function ManageSpellsModal(props: {
   source: string;
   type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
 }) {
-  const isRituals = props.source === 'rituals';
+  const isRituals = props.source === 'RITUALS';
 
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,7 +94,7 @@ export default function ManageSpellsModal(props: {
         } as Spell;
       })
       .filter((spell) => spell)
-      .filter((spell) => isNormalSpell(spell!))
+      .filter((spell) => (isRituals ? isRitual(spell!) : isNormalSpell(spell!)))
       .sort((a, b) => {
         if (a!.rank === 0 && b!.rank === 0) {
           return a!.name.localeCompare(b!.name);
@@ -213,7 +213,6 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                               ...(c.spells ?? {
                                 slots: [],
                                 list: [],
-                                rituals: [],
                                 focus_point_current: 0,
                                 innate_casts: [],
                               }),
@@ -242,7 +241,6 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                               ...(c.spells ?? {
                                 slots: [],
                                 list: [],
-                                rituals: [],
                                 focus_point_current: 0,
                                 innate_casts: [],
                               }),
@@ -311,7 +309,7 @@ const ListSection = (props: {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
 }) => {
-  const isRituals = props.source === 'rituals';
+  const isRituals = props.source === 'RITUALS';
 
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -338,7 +336,6 @@ const ListSection = (props: {
           ...(c.spells ?? {
             slots: [],
             list: [],
-            rituals: [],
             focus_point_current: 0,
             innate_casts: [],
           }),
@@ -383,7 +380,7 @@ const ListSection = (props: {
             selectContent<Spell>(
               'spell',
               (option) => {
-                if (option.rank === 0 || option.rank === 10) {
+                if (option.rank === 0 || option.rank === 10 || isRitual(option)) {
                   addSpell(option, option.rank);
                 } else {
                   if (props.selectRank) {
@@ -456,7 +453,6 @@ const ListSection = (props: {
                     ...(c.spells ?? {
                       slots: [],
                       list: [],
-                      rituals: [],
                       focus_point_current: 0,
                       innate_casts: [],
                     }),
@@ -469,6 +465,11 @@ const ListSection = (props: {
             includeOptions={true}
           />
         ))}
+        {props.spells.length === 0 && (
+          <Text c='gray.6' fz='sm' fs='italic' ta='center' pt={20}>
+            No {isRituals ? 'rituals' : 'spells'} found
+          </Text>
+        )}
       </Stack>
     </ScrollArea>
   );

@@ -109,7 +109,7 @@ import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { makeRequest } from '@requests/request-manager';
-import { isCantrip } from '@spells/spell-utils';
+import { isCantrip, isRitual } from '@spells/spell-utils';
 import {
   IconBackpack,
   IconBadgesFilled,
@@ -568,7 +568,6 @@ function CharacterInfoSection() {
     newCharacter.spells = newCharacter.spells ?? {
       slots: [],
       list: [],
-      rituals: [],
       focus_point_current: 0,
       innate_casts: [],
     };
@@ -3002,8 +3001,6 @@ function PanelSpells(props: { panelHeight: number }) {
 
   const allSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
 
-  console.log(getVariable('CHARACTER', 'SPELL_SLOTS'));
-
   return (
     <Box h='100%'>
       <Stack gap={10}>
@@ -3131,7 +3128,7 @@ function PanelSpells(props: { panelHeight: number }) {
               {true && (
                 <SpellList
                   index={'ritual'}
-                  spellIds={charData.ritual.map((d) => d.spell_id)}
+                  spellIds={charData.list.filter((d) => d.source === 'RITUALS').map((d) => d.spell_id)}
                   allSpells={allSpells}
                   type='RITUAL'
                   openManageSpells={(source, type) => setManageSpells({ source, type })}
@@ -3199,7 +3196,6 @@ function SpellList(props: {
             ...(c.spells ?? {
               slots: [],
               list: [],
-              rituals: [],
               focus_point_current: 0,
               innate_casts: [],
             }),
@@ -3230,7 +3226,6 @@ function SpellList(props: {
             ...(c.spells ?? {
               slots: [],
               list: [],
-              rituals: [],
               focus_point_current: 0,
               innate_casts: [],
             }),
@@ -3249,7 +3244,6 @@ function SpellList(props: {
             ...(c.spells ?? {
               slots: [],
               list: [],
-              rituals: [],
               focus_point_current: 0,
               innate_casts: [],
             }),
@@ -3281,7 +3275,6 @@ function SpellList(props: {
             ...(c.spells ?? {
               slots: [],
               list: [],
-              rituals: [],
               focus_point_current: 0,
               innate_casts: [],
             }),
@@ -3545,15 +3538,12 @@ function SpellList(props: {
                                       }
                                     }
 
-                                    console.log(slots);
-
                                     return {
                                       ...c,
                                       spells: {
                                         ...(c.spells ?? {
                                           slots: [],
                                           list: [],
-                                          rituals: [],
                                           focus_point_current: 0,
                                           innate_casts: [],
                                         }),
@@ -3637,7 +3627,6 @@ function SpellList(props: {
                         ...(c.spells ?? {
                           slots: [],
                           list: [],
-                          rituals: [],
                           focus_point_current: 0,
                           innate_casts: [],
                         }),
@@ -3841,7 +3830,6 @@ function SpellList(props: {
                                           ...(c.spells ?? {
                                             slots: [],
                                             list: [],
-                                            rituals: [],
                                             focus_point_current: 0,
                                             innate_casts: [],
                                           }),
@@ -3894,7 +3882,7 @@ function SpellList(props: {
                   e.stopPropagation();
                   e.preventDefault();
 
-                  props.openManageSpells?.('rituals', 'LIST-ONLY');
+                  props.openManageSpells?.('RITUALS', 'LIST-ONLY');
                 }}
               >
                 Manage
@@ -3909,7 +3897,7 @@ function SpellList(props: {
             },
           }}
           px={10}
-          pb={5}
+          pb={10}
         >
           <Stack gap={5}>
             <Divider color='dark.6' />
@@ -3968,6 +3956,19 @@ function SpellListEntry(props: {
       <StatButton
         onClick={() => {
           if (!props.spell) return;
+
+          if (isRitual(props.spell)) {
+            openDrawer({
+              type: 'spell',
+              data: {
+                id: props.spell.id,
+                spell: props.spell,
+              },
+              extra: { addToHistory: true },
+            });
+            return;
+          }
+
           openDrawer({
             type: 'cast-spell',
             data: {

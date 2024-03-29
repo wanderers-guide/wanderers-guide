@@ -9,7 +9,7 @@ import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, Paper } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
-import { isCantrip, isFocusSpell } from '@spells/spell-utils';
+import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
@@ -44,6 +44,9 @@ export function CastSpellDrawerTitle(props: {
     } else {
       rank = 1;
     }
+  }
+  if (spell && isRitual(spell)) {
+    rankTitle = 'Ritual';
   }
 
   if (spell && character && isFocusSpell(spell)) {

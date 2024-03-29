@@ -387,13 +387,11 @@ interface Character {
   };
   operation_data?: {
     selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
-    notes?: Record<string, string>; // <op UUID> -> string
+    notes?: Record<string, string>; // TODO <op UUID> -> string
   };
   spells?: {
     slots: SpellSlot[];
     list: SpellListEntry[];
-    // List of ritual spells, by id
-    rituals: number[];
     // The number of focus points
     focus_point_current: number;
     // Used for tracking how many times an innate spell has been cast
