@@ -347,6 +347,12 @@ const imageStore: Record<string, ImageOption[]> = {
   ],
   jorge_jacinto: [
     {
+      name: `Wisp`,
+      url: 'https://cdna.artstation.com/p/assets/images/images/025/102/490/large/jorge-jacinto-wisp-red.jpg',
+      source: 'Jorge Jacinto',
+      source_url: 'https://www.jorgejacinto.com/',
+    },
+    {
       name: `The Maze`,
       url: 'https://cdna.artstation.com/p/assets/images/images/031/699/448/large/jorge-jacinto-the-maze.jpg',
       source: 'Jorge Jacinto',
@@ -361,12 +367,6 @@ const imageStore: Record<string, ImageOption[]> = {
     {
       name: `Synthwave Forest`,
       url: 'https://cdnb.artstation.com/p/assets/images/images/034/429/941/large/jorge-jacinto-synthwave-forest-1080.jpg',
-      source: 'Jorge Jacinto',
-      source_url: 'https://www.jorgejacinto.com/',
-    },
-    {
-      name: `Wisp`,
-      url: 'https://cdna.artstation.com/p/assets/images/images/025/102/490/large/jorge-jacinto-wisp-red.jpg',
       source: 'Jorge Jacinto',
       source_url: 'https://www.jorgejacinto.com/',
     },
@@ -521,6 +521,10 @@ export function getOfflineBackgroundImage() {
 
 export function getDefaultBackgroundImage() {
   return _.cloneDeep(imageStore.general[0]);
+}
+
+export function getHomeBackgroundImage() {
+  return _.cloneDeep(imageStore.jorge_jacinto[0]);
 }
 
 async function isImageValid(src: string) {

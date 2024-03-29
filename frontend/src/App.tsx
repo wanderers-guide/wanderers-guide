@@ -12,7 +12,7 @@ import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
-import { getBackgroundImageFromURL } from '@utils/background-images';
+import { getBackgroundImageFromURL, getHomeBackgroundImage } from '@utils/background-images';
 import { removeQueryParam } from '@utils/document-change';
 import { lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
@@ -207,6 +207,7 @@ export default function App() {
                 position: 'fixed',
                 bottom: 6,
                 right: 10,
+                zIndex: 1,
               }}
             >
               <IconBrush size='0.5rem' /> {background.source}
