@@ -14,16 +14,9 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
-import { supabase } from '../main';
-import { useRecoilValue } from 'recoil';
-import { sessionState } from '@atoms/supabaseAtoms';
-import { useEffect } from 'react';
-import { makeRequest } from '@requests/request-manager';
 import BlurBox from '@common/BlurBox';
-import { getDefaultBackgroundImage, getHomeBackgroundImage } from '@utils/background-images';
+import { getHomeBackgroundImage } from '@utils/background-images';
 import { IconBrush, IconExternalLink } from '@tabler/icons-react';
-import BlurButton from '@common/BlurButton';
-import WidgetBot from '@widgetbot/react-embed';
 import { DISCORD_URL } from '@constants/data';
 
 export function Component() {
