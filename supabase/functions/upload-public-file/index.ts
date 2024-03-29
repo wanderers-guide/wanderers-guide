@@ -1,8 +1,9 @@
 // @ts-ignore
 import { serve } from 'std/server';
 import { decode } from 'base64-arraybuffer';
-import { connect } from '../_shared/helpers.ts';
+import { connect, getPublicUser } from '../_shared/helpers.ts';
 import { uniqueId } from '../_shared/upload-utils.ts';
+import { hasPatreonAccess } from '../_shared/patreon.ts';
 
 const MAX_SIZE = 3_000_000; // roughly 0.8MB
 
@@ -25,18 +26,25 @@ serve(async (req: Request) => {
         message: 'Invalid category',
       };
 
-    const {
-      data: { user },
-    } = await client.auth.getUser();
-    if (!user)
+    const user = await getPublicUser(client);
+    if (!user) {
       return {
         status: 'error',
-        message: 'No user found',
+        message: 'User not found',
       };
+    }
+
+    const access = await hasPatreonAccess(user, 2);
+    if (!access) {
+      return {
+        status: 'error',
+        message: 'User does not have access',
+      };
+    }
 
     // const convertedImg = toArrayBuffer(await sharp(decode(data)).resize(512, 512).webp().toBuffer());
 
-    const path = `${user.id}/${uniqueId(data, '', 0, 0)}.${type}`;
+    const path = `${user.user_id}/${uniqueId(data, '', 0, 0)}.${type}`;
     const { data: uploadResult, error } = await client.storage
       .from(category)
       .upload(path, decode(data), {
