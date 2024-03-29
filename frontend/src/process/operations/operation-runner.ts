@@ -25,7 +25,7 @@ import { SelectionTreeNode } from './selection-tree';
 import { displayError, throwError } from '@utils/notifications';
 import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSelectionList } from './operation-utils';
 import { maxProficiencyType } from '@variables/variable-utils';
-import { ExtendedProficiencyType, ProficiencyType, StoreID } from '@typing/variables';
+import { ExtendedProficiencyType, ProficiencyType, StoreID, VariableNum } from '@typing/variables';
 import { fetchContentById } from '@content/content-store';
 
 export type OperationOptions = {
@@ -238,6 +238,20 @@ async function updateVariables(
       } satisfies GiveSpellData),
       sourceLabel
     );
+
+    if (selectedOption._meta_data?.type === 'INNATE') {
+      /*
+        When you gain an innate spell, you become trained in the spell attack modifier
+        and spell DC statistics. At 12th level, these proficiencies increase to expert.
+      */
+      adjVariable(varId, 'SPELL_ATTACK', { value: 'T' }, sourceLabel);
+      adjVariable(varId, 'SPELL_DC', { value: 'T' }, sourceLabel);
+      const level = getVariable<VariableNum>(varId, 'LEVEL')?.value;
+      if (level && level >= 12) {
+        adjVariable(varId, 'SPELL_ATTACK', { value: 'E' }, sourceLabel);
+        adjVariable(varId, 'SPELL_DC', { value: 'E' }, sourceLabel);
+      }
+    }
   } else if (operation.data.optionType === 'ADJ_VALUE') {
     adjVariable(varId, selectedOption.variable, selectedOption.value, sourceLabel);
   } else if (operation.data.optionType === 'CUSTOM') {
@@ -402,6 +416,20 @@ async function runGiveSpell(
     } satisfies GiveSpellData),
     sourceLabel
   );
+
+  if (operation.data.type === 'INNATE') {
+    /*
+      When you gain an innate spell, you become trained in the spell attack modifier
+      and spell DC statistics. At 12th level, these proficiencies increase to expert.
+    */
+    adjVariable(varId, 'SPELL_ATTACK', { value: 'T' }, sourceLabel);
+    adjVariable(varId, 'SPELL_DC', { value: 'T' }, sourceLabel);
+    const level = getVariable<VariableNum>(varId, 'LEVEL')?.value;
+    if (level && level >= 12) {
+      adjVariable(varId, 'SPELL_ATTACK', { value: 'E' }, sourceLabel);
+      adjVariable(varId, 'SPELL_DC', { value: 'E' }, sourceLabel);
+    }
+  }
 
   return null;
 }
