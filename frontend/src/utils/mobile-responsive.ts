@@ -7,7 +7,7 @@ export function tabletQuery() {
 }
 
 export function phoneQuery() {
-  return `(max-width: 32em)`;
+  return `(max-width: 36em)`;
 }
 
 export function usePhoneSized<T = any>(inputUseElementSize: any): { boundRef: React.RefObject<T>; isPhone: boolean } {
@@ -16,5 +16,5 @@ export function usePhoneSized<T = any>(inputUseElementSize: any): { boundRef: Re
 }
 
 export function isPhoneSized(width: number): boolean {
-  return width < 32 * 16;
+  return width < 36 * 16;
 }

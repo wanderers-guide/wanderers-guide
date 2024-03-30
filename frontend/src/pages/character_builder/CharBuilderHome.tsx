@@ -157,7 +157,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       >
         <ScrollArea h='100%' scrollbars='y'>
           <Tabs defaultValue='books'>
-            <Tabs.List>
+            <Tabs.List grow>
               <Tabs.Tab value='books' leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}>
                 <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
               </Tabs.Tab>
