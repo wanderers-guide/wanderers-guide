@@ -53,6 +53,8 @@ import {
   IconRocket,
   IconSword,
   IconServer,
+  IconFlagPlus,
+  IconKey,
 } from '@tabler/icons-react';
 import { Character, ContentSource } from '@typing/content';
 import { uploadImage } from '@upload/image-upload';
@@ -648,6 +650,23 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       }}
                     /> */}
                     <LinkSwitch
+                      label='Dice Roller'
+                      info={`Roll your dice directly from the character sheet! Integrated with all your character's stats and abilities.`}
+                      enabled={character?.options?.dice_roller}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              dice_roller: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    />
+                    <LinkSwitch
                       label='Ignore Bulk Limit'
                       info={`Disables the negative effects of carrying too much bulk, such as adding the encumbered condition.`}
                       enabled={character?.options?.ignore_bulk_limit}
@@ -753,7 +772,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 label={<Text fz='sm'>Campaign</Text>}
                 placeholder='Enter Join Key'
                 rightSectionWidth={28}
-                leftSection={<IconUsers style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
+                leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
                 rightSection={
                   <ActionIcon
                     size={22}
@@ -764,7 +783,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       //
                     }}
                   >
-                    <IconUsersPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                    <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                   </ActionIcon>
                 }
                 onClick={() => {

@@ -7,7 +7,21 @@ import { defineDefaultSources, fetchContentPackage } from '@content/content-stor
 import { saveCustomization } from '@content/customization-cache';
 
 import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
-import { ActionIcon, Box, Center, Menu, SimpleGrid, Stack, Tabs, rem, useMantineTheme } from '@mantine/core';
+import {
+  ActionIcon,
+  Box,
+  Button,
+  Center,
+  Grid,
+  Group,
+  Menu,
+  Popover,
+  SimpleGrid,
+  Stack,
+  Tabs,
+  rem,
+  useMantineTheme,
+} from '@mantine/core';
 import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { makeRequest } from '@requests/request-manager';
@@ -16,11 +30,15 @@ import {
   IconBadgesFilled,
   IconCaretLeftRight,
   IconDots,
+  IconFlag,
   IconFlare,
+  IconLayoutGrid,
+  IconLayoutList,
   IconListDetails,
   IconNotebook,
   IconNotes,
   IconPaw,
+  IconX,
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, ContentPackage, Inventory } from '@typing/content';
@@ -28,7 +46,7 @@ import { OperationResultPackage } from '@typing/operations';
 import { JSendResponse } from '@typing/requests';
 import { VariableListStr } from '@typing/variables';
 import { setPageTitle } from '@utils/document-change';
-import { phoneQuery, tabletQuery } from '@utils/mobile-responsive';
+import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { toLabel } from '@utils/strings';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
@@ -51,6 +69,8 @@ import CharacterInfoSection from './sections/CharacterInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
+import { GiDiceTwentyFacesTwenty, GiRollingDiceCup, GiRollingDices } from 'react-icons/gi';
+import { displayComingSoon } from '@utils/notifications';
 
 export function Component(props: {}) {
   setPageTitle(`Sheet`);
@@ -127,6 +147,11 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   const isTablet = useMediaQuery(tabletQuery());
   const isPhone = useMediaQuery(phoneQuery());
+  const { ref, width, height } = useElementSize();
+
+  const panelWidth = width ? width - 60 : 2000;
+  const panelHeight = height > 1000 ? 550 : 500;
+  const [hideSections, setHideSections] = useState(false);
 
   const [character, setCharacter] = useRecoilState(characterState);
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
@@ -281,23 +306,71 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   return (
     <Center>
       <Box maw={1000} w='100%'>
-        <Stack gap='xs' style={{ position: 'relative' }}>
-          <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>
-            <CharacterInfoSection />
-            <HealthSection />
-            <ConditionSection />
-            <AttributeSection />
-            <ArmorSection inventory={inventory} setInventory={setInventory} />
-            <SpeedSection />
-          </SimpleGrid>
-          <SectionPanels
-            content={props.content}
-            inventory={inventory}
-            setInventory={setInventory}
-            isLoaded={!!operationResults}
-          />
-        </Stack>
+        <Box ref={ref}>
+          <Stack gap='xs' style={{ position: 'relative' }}>
+            <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>
+              <CharacterInfoSection />
+              {!hideSections && (
+                <>
+                  <HealthSection />
+                  <ConditionSection />
+                  <AttributeSection />
+                  <ArmorSection inventory={inventory} setInventory={setInventory} />
+                  <SpeedSection />
+                </>
+              )}
+            </SimpleGrid>
+            <SectionPanels
+              content={props.content}
+              inventory={inventory}
+              setInventory={setInventory}
+              isLoaded={!!operationResults}
+              panelHeight={panelHeight}
+              panelWidth={panelWidth}
+              hideSections={hideSections}
+              onHideSections={(hide) => setHideSections(hide)}
+            />
+          </Stack>
+        </Box>
       </Box>
+      {true && (
+        <Box
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            left: 20,
+          }}
+        >
+          <Stack>
+            {character?.campaign_id && (
+              <ActionIcon
+                size={40}
+                variant='filled'
+                radius={100}
+                aria-label='Campaigns View'
+                onClick={() => {
+                  displayComingSoon();
+                }}
+              >
+                <IconFlag size='1.7rem' stroke={1.5} />
+              </ActionIcon>
+            )}
+            {character?.options?.dice_roller && (
+              <ActionIcon
+                size={40}
+                variant='filled'
+                radius={100}
+                aria-label='Dice Roller'
+                onClick={() => {
+                  displayComingSoon();
+                }}
+              >
+                <GiRollingDices size='1.8rem' stroke={1.5} />
+              </ActionIcon>
+            )}
+          </Stack>
+        </Box>
+      )}
     </Center>
   );
 }
@@ -307,14 +380,18 @@ function SectionPanels(props: {
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
   isLoaded: boolean;
+  hideSections: boolean;
+  onHideSections: (hide: boolean) => void;
+  panelHeight: number;
+  panelWidth: number;
 }) {
   const theme = useMantineTheme();
+  const isPhone = isPhoneSized(props.panelWidth);
+
+  const [openedPhonePanel, setOpenedPhonePanel] = useState(false);
+
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const { hovered: hoveredTabOptions, ref: tabOptionsRef } = useHover<HTMLButtonElement>();
-  const { ref, width, height } = useElementSize();
-
-  const panelWidth = width - 60;
-  const panelHeight = height > 1000 ? 550 : 500;
 
   const iconStyle = { width: rem(12), height: rem(12) };
   const allSheetTabs = [
@@ -360,183 +437,365 @@ function SectionPanels(props: {
     }
   }, [props.isLoaded, activeTab]);
 
-  return (
-    <Box ref={ref}>
-      <BlurBox blur={10} p='sm'>
-        <Tabs
-          color='dark.6'
-          variant='pills'
-          radius='xl'
-          keepMounted={false}
-          value={activeTab}
-          onChange={setActiveTab}
-          activateTabWithKeyboard={false}
-        >
-          <Tabs.List pb={10} grow>
-            {primarySheetTabs.includes('skills-actions') && (
-              <Tabs.Tab
-                value='skills-actions'
-                style={{
-                  border:
-                    activeTab === 'skills-actions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('skills-actions')}
-              >
-                Skills & Actions
-              </Tabs.Tab>
+  if (isPhone) {
+    return (
+      <Box>
+        {props.hideSections && (
+          <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+            {activeTab === 'skills-actions' && (
+              <SkillsActionsPanel
+                content={props.content}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                inventory={props.inventory}
+                setInventory={props.setInventory}
+              />
             )}
-            {primarySheetTabs.includes('inventory') && (
-              <Tabs.Tab
-                value='inventory'
-                style={{
-                  border: activeTab === 'inventory' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('inventory')}
-              >
-                Inventory
-              </Tabs.Tab>
-            )}
-            {primarySheetTabs.includes('spells') && (
-              <Tabs.Tab
-                value='spells'
-                style={{
-                  border: activeTab === 'spells' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('spells')}
-              >
-                Spells
-              </Tabs.Tab>
-            )}
-            {primarySheetTabs.includes('feats-features') && (
-              <Tabs.Tab
-                value='feats-features'
-                style={{
-                  border:
-                    activeTab === 'feats-features' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('feats-features')}
-              >
-                Feats & Features
-              </Tabs.Tab>
-            )}
-            {primarySheetTabs.includes('companions') && (
-              <Tabs.Tab
-                value='companions'
-                style={{
-                  border: activeTab === 'companions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('companions')}
-              >
-                Companions
-              </Tabs.Tab>
-            )}
-            {primarySheetTabs.includes('details') && (
-              <Tabs.Tab
-                value='details'
-                style={{
-                  border: activeTab === 'details' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('details')}
-              >
-                Details
-              </Tabs.Tab>
-            )}
-            {primarySheetTabs.includes('notes') && (
-              <Tabs.Tab
-                value='notes'
-                style={{
-                  border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                }}
-                leftSection={getTabIcon('notes')}
-              >
-                Notes
-              </Tabs.Tab>
-            )}
-            <Menu shadow='md' width={160} trigger='hover' openDelay={100} closeDelay={100}>
-              <Menu.Target>
-                <ActionIcon
-                  variant='subtle'
-                  color='gray.4'
-                  size='lg'
-                  radius='xl'
-                  aria-label='Tab Options'
-                  ref={tabOptionsRef}
-                  style={{
-                    backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
-                    color: openedTabOption ? theme.colors.gray[0] : undefined,
-                    border: openedTabOption ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-                  }}
-                >
-                  <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                </ActionIcon>
-              </Menu.Target>
 
-              <Menu.Dropdown>
-                <Menu.Label>Other sections</Menu.Label>
-                {tabOptions.map((tab, index) => (
-                  <Menu.Item
-                    key={index}
-                    leftSection={getTabIcon(tab)}
+            {activeTab === 'inventory' && (
+              <InventoryPanel
+                content={props.content}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                inventory={props.inventory}
+                setInventory={props.setInventory}
+              />
+            )}
+
+            {activeTab === 'spells' && <SpellsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />}
+
+            {activeTab === 'feats-features' && (
+              <FeatsFeaturesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            )}
+
+            {activeTab === 'companions' && (
+              <CompanionsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            )}
+
+            {activeTab === 'details' && (
+              <DetailsPanel content={props.content} panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            )}
+
+            {activeTab === 'notes' && <NotesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />}
+
+            {activeTab === 'extras' && <ExtrasPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />}
+          </BlurBox>
+        )}
+
+        <Box
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+          }}
+        >
+          <Popover position='top' shadow='md' withArrow opened={openedPhonePanel} onChange={setOpenedPhonePanel}>
+            <Popover.Target>
+              <ActionIcon
+                size={55}
+                variant='filled'
+                radius={100}
+                aria-label='Panel Grid'
+                onClick={() => setOpenedPhonePanel((o) => !o)}
+              >
+                {openedPhonePanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown w={'100vw'}>
+              <Box>
+                <Stack>
+                  <Button
+                    leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
+                    variant={!props.hideSections ? 'filled' : 'outline'}
                     onClick={() => {
-                      setActiveTab(tab);
-                    }}
-                    style={{
-                      backgroundColor: activeTab === tab ? theme.colors.dark[4] : undefined,
-                      color: activeTab === tab ? theme.colors.gray[0] : undefined,
+                      props.onHideSections(false);
+                      setOpenedPhonePanel(false);
                     }}
                   >
-                    {toLabel(tab)}
-                  </Menu.Item>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
-          </Tabs.List>
+                    Health, Attributes, Saves
+                  </Button>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'skills-actions' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('skills-actions');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Skills & Actions
+                    </Button>
+                    <Button
+                      leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'feats-features' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('feats-features');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Feats & Features
+                    </Button>
+                  </SimpleGrid>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconBackpack size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'inventory' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('inventory');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Inventory
+                    </Button>
+                    <Button
+                      leftSection={<IconFlare size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'spells' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('spells');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Spells
+                    </Button>
+                  </SimpleGrid>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconNotebook size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'notes' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('notes');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Notes
+                    </Button>
+                    <Button
+                      leftSection={<IconListDetails size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'details' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('details');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Details
+                    </Button>
+                  </SimpleGrid>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconPaw size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'companions' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('companions');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Companions
+                    </Button>
+                    <Button
+                      leftSection={<IconNotes size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'extras' && props.hideSections ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('extras');
+                        props.onHideSections(true);
+                        setOpenedPhonePanel(false);
+                      }}
+                    >
+                      Extras
+                    </Button>
+                  </SimpleGrid>
+                </Stack>
+              </Box>
+            </Popover.Dropdown>
+          </Popover>
+        </Box>
+      </Box>
+    );
+  } else {
+    return (
+      <Box>
+        <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+          <Tabs
+            color='dark.6'
+            variant='pills'
+            radius='xl'
+            keepMounted={false}
+            value={activeTab}
+            onChange={setActiveTab}
+            activateTabWithKeyboard={false}
+          >
+            <Tabs.List pb={10} grow>
+              {primarySheetTabs.includes('skills-actions') && (
+                <Tabs.Tab
+                  value='skills-actions'
+                  style={{
+                    border:
+                      activeTab === 'skills-actions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('skills-actions')}
+                >
+                  Skills & Actions
+                </Tabs.Tab>
+              )}
+              {primarySheetTabs.includes('inventory') && (
+                <Tabs.Tab
+                  value='inventory'
+                  style={{
+                    border: activeTab === 'inventory' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('inventory')}
+                >
+                  Inventory
+                </Tabs.Tab>
+              )}
+              {primarySheetTabs.includes('spells') && (
+                <Tabs.Tab
+                  value='spells'
+                  style={{
+                    border: activeTab === 'spells' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('spells')}
+                >
+                  Spells
+                </Tabs.Tab>
+              )}
+              {primarySheetTabs.includes('feats-features') && (
+                <Tabs.Tab
+                  value='feats-features'
+                  style={{
+                    border:
+                      activeTab === 'feats-features' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('feats-features')}
+                >
+                  Feats & Features
+                </Tabs.Tab>
+              )}
+              {primarySheetTabs.includes('companions') && (
+                <Tabs.Tab
+                  value='companions'
+                  style={{
+                    border: activeTab === 'companions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('companions')}
+                >
+                  Companions
+                </Tabs.Tab>
+              )}
+              {primarySheetTabs.includes('details') && (
+                <Tabs.Tab
+                  value='details'
+                  style={{
+                    border: activeTab === 'details' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('details')}
+                >
+                  Details
+                </Tabs.Tab>
+              )}
+              {primarySheetTabs.includes('notes') && (
+                <Tabs.Tab
+                  value='notes'
+                  style={{
+                    border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  }}
+                  leftSection={getTabIcon('notes')}
+                >
+                  Notes
+                </Tabs.Tab>
+              )}
+              <Menu shadow='md' width={160} trigger='hover' openDelay={100} closeDelay={100}>
+                <Menu.Target>
+                  <ActionIcon
+                    variant='subtle'
+                    color='gray.4'
+                    size='lg'
+                    radius='xl'
+                    aria-label='Tab Options'
+                    ref={tabOptionsRef}
+                    style={{
+                      backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
+                      color: openedTabOption ? theme.colors.gray[0] : undefined,
+                      border: openedTabOption ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    }}
+                  >
+                    <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon>
+                </Menu.Target>
 
-          <Tabs.Panel value='skills-actions'>
-            <SkillsActionsPanel
-              content={props.content}
-              panelHeight={panelHeight}
-              panelWidth={panelWidth}
-              inventory={props.inventory}
-              setInventory={props.setInventory}
-            />
-          </Tabs.Panel>
+                <Menu.Dropdown>
+                  <Menu.Label>Other sections</Menu.Label>
+                  {tabOptions.map((tab, index) => (
+                    <Menu.Item
+                      key={index}
+                      leftSection={getTabIcon(tab)}
+                      onClick={() => {
+                        setActiveTab(tab);
+                      }}
+                      style={{
+                        backgroundColor: activeTab === tab ? theme.colors.dark[4] : undefined,
+                        color: activeTab === tab ? theme.colors.gray[0] : undefined,
+                      }}
+                    >
+                      {toLabel(tab)}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
+            </Tabs.List>
 
-          <Tabs.Panel value='inventory'>
-            <InventoryPanel
-              content={props.content}
-              panelHeight={panelHeight}
-              panelWidth={panelWidth}
-              inventory={props.inventory}
-              setInventory={props.setInventory}
-            />
-          </Tabs.Panel>
+            <Tabs.Panel value='skills-actions'>
+              <SkillsActionsPanel
+                content={props.content}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                inventory={props.inventory}
+                setInventory={props.setInventory}
+              />
+            </Tabs.Panel>
 
-          <Tabs.Panel value='spells'>
-            <SpellsPanel panelHeight={panelHeight} panelWidth={panelWidth} />
-          </Tabs.Panel>
+            <Tabs.Panel value='inventory'>
+              <InventoryPanel
+                content={props.content}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                inventory={props.inventory}
+                setInventory={props.setInventory}
+              />
+            </Tabs.Panel>
 
-          <Tabs.Panel value='feats-features'>
-            <FeatsFeaturesPanel panelHeight={panelHeight} panelWidth={panelWidth} />
-          </Tabs.Panel>
+            <Tabs.Panel value='spells'>
+              <SpellsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            </Tabs.Panel>
 
-          <Tabs.Panel value='companions'>
-            <CompanionsPanel panelHeight={panelHeight} panelWidth={panelWidth} />
-          </Tabs.Panel>
+            <Tabs.Panel value='feats-features'>
+              <FeatsFeaturesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            </Tabs.Panel>
 
-          <Tabs.Panel value='details'>
-            <DetailsPanel content={props.content} panelHeight={panelHeight} panelWidth={panelWidth} />
-          </Tabs.Panel>
+            <Tabs.Panel value='companions'>
+              <CompanionsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            </Tabs.Panel>
 
-          <Tabs.Panel value='notes'>
-            <NotesPanel panelHeight={panelHeight} panelWidth={panelWidth} />
-          </Tabs.Panel>
+            <Tabs.Panel value='details'>
+              <DetailsPanel content={props.content} panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            </Tabs.Panel>
 
-          <Tabs.Panel value='extras'>
-            <ExtrasPanel panelHeight={panelHeight} panelWidth={panelWidth} />
-          </Tabs.Panel>
-        </Tabs>
-      </BlurBox>
-    </Box>
-  );
+            <Tabs.Panel value='notes'>
+              <NotesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            </Tabs.Panel>
+
+            <Tabs.Panel value='extras'>
+              <ExtrasPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+            </Tabs.Panel>
+          </Tabs>
+        </BlurBox>
+      </Box>
+    );
+  }
 }

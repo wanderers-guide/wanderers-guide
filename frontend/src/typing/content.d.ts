@@ -369,6 +369,7 @@ interface Character {
     auto_heighten_spells?: boolean;
     class_archetypes?: boolean;
     custom_operations?: boolean;
+    dice_roller?: boolean;
     ignore_bulk_limit?: boolean;
   };
   variants?: {
