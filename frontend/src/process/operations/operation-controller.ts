@@ -6,7 +6,7 @@ import { addVariable, getVariable, resetVariables, setVariable } from '@variable
 import { isAttributeValue } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { hashData } from '@utils/numbers';
-import { StoreID } from '@typing/variables';
+import { StoreID, VariableListStr } from '@typing/variables';
 import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
 
 function defineSelectionTree(character: Character) {
@@ -111,7 +111,7 @@ export async function executeCharacterOperations(
       classResults = await executeOperations(
         'CHARACTER',
         'class',
-        getExtendedClassOperations(class_),
+        getExtendedClassOperations('CHARACTER', class_),
         options,
         class_.name
       );
@@ -122,7 +122,7 @@ export async function executeCharacterOperations(
       ancestryResults = await executeOperations(
         'CHARACTER',
         'ancestry',
-        getExtendedAncestryOperations(ancestry),
+        getExtendedAncestryOperations('CHARACTER', ancestry),
         options,
         ancestry.name
       );
@@ -145,7 +145,7 @@ export async function executeCharacterOperations(
       baseResults: OperationResult[];
     }[] = [];
     if (ancestry) {
-      for (const section of getAncestrySections(ancestry)) {
+      for (const section of getAncestrySections('CHARACTER', ancestry)) {
         if (section.level === undefined || section.level <= character.level) {
           const results = await executeOperations(
             'CHARACTER',
@@ -244,8 +244,8 @@ export async function executeCharacterOperations(
   const conditionalResults = await operationsPassthrough({
     doOnlyConditionals: true,
     onlyConditionalsWhitelist: [
-      ...(class_ ? addedClassSkillTrainings(class_) : []).map((op) => op.id),
-      ...(ancestry ? addedAncestryLanguages(ancestry) : []).map((op) => op.id),
+      ...(class_ ? addedClassSkillTrainings('CHARACTER', class_) : []).map((op) => op.id),
+      ...(ancestry ? addedAncestryLanguages('CHARACTER', ancestry) : []).map((op) => op.id),
     ],
   });
 
@@ -333,20 +333,20 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   return operationResults;
 }
 
-export function getExtendedClassOperations(class_: Class) {
+export function getExtendedClassOperations(varId: StoreID, class_: Class) {
   let classOperations = [...(class_.operations ?? [])];
 
-  classOperations.push(...addedClassSkillTrainings(class_));
+  classOperations.push(...addedClassSkillTrainings(varId, class_));
 
   return classOperations;
 }
 
-export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
+export function addedClassSkillTrainings(varId: StoreID, class_: Class): OperationSelect[] {
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier
   const baseTrainings = class_.skill_training_base;
-  const intVariableValue = getVariable('CHARACTER', 'ATTRIBUTE_INT')?.value;
+  const intVariableValue = getVariable(varId, 'ATTRIBUTE_INT')?.value;
   const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
   for (let i = 0; i < baseTrainings + intValue; i++) {
     operations.push({
@@ -370,19 +370,19 @@ export function addedClassSkillTrainings(class_: Class): OperationSelect[] {
   return operations;
 }
 
-export function getExtendedAncestryOperations(ancestry: Ancestry) {
+export function getExtendedAncestryOperations(varId: StoreID, ancestry: Ancestry) {
   let ancestryOperations = [...(ancestry.operations ?? [])];
 
-  ancestryOperations.push(...addedAncestryLanguages(ancestry));
+  ancestryOperations.push(...addedAncestryLanguages(varId, ancestry));
 
   return ancestryOperations;
 }
 
-export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
+export function addedAncestryLanguages(varId: StoreID, ancestry: Ancestry): OperationSelect[] {
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier
-  const intVariableValue = getVariable('CHARACTER', 'ATTRIBUTE_INT')?.value;
+  const intVariableValue = getVariable(varId, 'ATTRIBUTE_INT')?.value;
   const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
   if (intValue <= 0) return operations;
   for (let i = 0; i < intValue; i++) {
@@ -406,7 +406,9 @@ export function addedAncestryLanguages(ancestry: Ancestry): OperationSelect[] {
   return operations;
 }
 
-export function getAncestrySections(ancestry: Ancestry): AbilityBlock[] {
+export function getAncestrySections(varId: StoreID, ancestry: Ancestry): AbilityBlock[] {
+  const extraTraitIds = getVariable<VariableListStr>(varId, 'EXTRA_TRAIT_IDS')?.value.map((v) => parseInt(v)) ?? [];
+
   const heritage: AbilityBlock = {
     id: hashData({ name: 'heritage' }),
     created_at: '',
@@ -423,7 +425,7 @@ export function getAncestrySections(ancestry: Ancestry): AbilityBlock[] {
             id: 'c8dc1601-4c97-4838-9bd5-31d0e6b87286',
             type: 'ABILITY_BLOCK',
             level: {},
-            traits: [ancestry.trait_id],
+            traits: [...extraTraitIds, ancestry.trait_id],
             abilityBlockType: 'heritage',
           },
         },
@@ -458,7 +460,7 @@ export function getAncestrySections(ancestry: Ancestry): AbilityBlock[] {
               level: {
                 max: level,
               },
-              traits: [ancestry.trait_id],
+              traits: [...extraTraitIds, ancestry.trait_id],
               abilityBlockType: 'feat',
             },
           },

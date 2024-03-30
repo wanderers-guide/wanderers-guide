@@ -184,6 +184,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CLASS_FEATURE_NAMES: newVariable('list-str', 'CLASS_FEATURE_NAMES'),
   PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
   EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['Fist']),
+  EXTRA_TRAIT_NAMES: newVariable('list-str', 'EXTRA_TRAIT_NAMES'),
   //
   // List variables, storing the IDs
   SENSE_IDS: newVariable('list-str', 'SENSE_IDS'),
@@ -197,6 +198,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CLASS_FEATURE_IDS: newVariable('list-str', 'CLASS_FEATURE_IDS'),
   PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
   EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', ['9252']), // Hardcoded Fist ID
+  EXTRA_TRAIT_IDS: newVariable('list-str', 'EXTRA_TRAIT_IDS'),
 
   SPELL_DATA: newVariable('list-str', 'SPELL_DATA'),
 

@@ -1,4 +1,4 @@
-import { AbilityBlock, Language, Spell } from '@typing/content';
+import { AbilityBlock, Item, Language, Spell, Trait } from '@typing/content';
 import {
   ConditionCheckData,
   GiveSpellData,
@@ -13,6 +13,7 @@ import {
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
+  OperationGiveTrait,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -90,6 +91,8 @@ export async function runOperations(
       return await runGiveLanguage(varId, operation, sourceLabel);
     } else if (operation.type === 'giveItem') {
       return await runGiveItem(varId, operation, sourceLabel);
+    } else if (operation.type === 'giveTrait') {
+      return await runGiveTrait(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpell') {
       return await runGiveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'giveSpellSlot') {
@@ -378,7 +381,7 @@ async function runGiveItem(
   operation: OperationGiveItem,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const item = await fetchContentById<Language>('item', operation.data.itemId);
+  const item = await fetchContentById<Item>('item', operation.data.itemId);
   if (!item) {
     displayError('Item not found');
     return null;
@@ -386,6 +389,22 @@ async function runGiveItem(
 
   adjVariable(varId, 'EXTRA_ITEM_IDS', `${item.id}`, sourceLabel);
   adjVariable(varId, 'EXTRA_ITEM_NAMES', item.name, sourceLabel);
+  return null;
+}
+
+async function runGiveTrait(
+  varId: StoreID,
+  operation: OperationGiveTrait,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  const trait = await fetchContentById<Trait>('trait', operation.data.traitId);
+  if (!trait) {
+    displayError('Trait not found');
+    return null;
+  }
+
+  adjVariable(varId, 'EXTRA_TRAIT_IDS', `${trait.id}`, sourceLabel);
+  adjVariable(varId, 'EXTRA_TRAIT_NAMES', trait.name, sourceLabel);
   return null;
 }
 

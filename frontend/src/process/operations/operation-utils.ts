@@ -2,6 +2,7 @@ import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/co
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { AbilityBlock, ContentType, Item, Language, Spell } from '@typing/content';
 import {
+  Operation,
   OperationAddBonusToValue,
   OperationAdjValue,
   OperationConditional,
@@ -12,6 +13,7 @@ import {
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
+  OperationGiveTrait,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -42,7 +44,7 @@ import {
 import { labelToVariable, variableToLabel } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 
-export const createDefaultOperation = (type: OperationType) => {
+export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
     return {
       id: crypto.randomUUID(),
@@ -51,7 +53,7 @@ export const createDefaultOperation = (type: OperationType) => {
         type: 'feat',
         abilityBlockId: -1,
       },
-    } satisfies OperationGiveAbilityBlock;
+    } satisfies OperationGiveAbilityBlock as T;
   } else if (type === 'adjValue') {
     return {
       id: crypto.randomUUID(),
@@ -60,7 +62,7 @@ export const createDefaultOperation = (type: OperationType) => {
         variable: '',
         value: 0,
       },
-    } satisfies OperationAdjValue;
+    } satisfies OperationAdjValue as T;
   } else if (type === 'addBonusToValue') {
     return {
       id: crypto.randomUUID(),
@@ -71,7 +73,7 @@ export const createDefaultOperation = (type: OperationType) => {
         type: undefined,
         text: '',
       },
-    } satisfies OperationAddBonusToValue;
+    } satisfies OperationAddBonusToValue as T;
   } else if (type === 'setValue') {
     return {
       id: crypto.randomUUID(),
@@ -80,7 +82,7 @@ export const createDefaultOperation = (type: OperationType) => {
         variable: '',
         value: false,
       },
-    } satisfies OperationSetValue;
+    } satisfies OperationSetValue as T;
   } else if (type === 'createValue') {
     return {
       id: crypto.randomUUID(),
@@ -90,7 +92,7 @@ export const createDefaultOperation = (type: OperationType) => {
         value: '',
         type: 'str',
       },
-    } satisfies OperationCreateValue;
+    } satisfies OperationCreateValue as T;
   } else if (type === 'conditional') {
     return {
       id: crypto.randomUUID(),
@@ -100,7 +102,7 @@ export const createDefaultOperation = (type: OperationType) => {
         trueOperations: undefined,
         falseOperations: undefined,
       },
-    } satisfies OperationConditional;
+    } satisfies OperationConditional as T;
   } else if (type === 'select') {
     return {
       id: crypto.randomUUID(),
@@ -122,7 +124,7 @@ export const createDefaultOperation = (type: OperationType) => {
         //   traits: undefined,
         // },
       },
-    } satisfies OperationSelect;
+    } satisfies OperationSelect as T;
   } else if (type === 'giveSpell') {
     return {
       id: crypto.randomUUID(),
@@ -131,7 +133,7 @@ export const createDefaultOperation = (type: OperationType) => {
         spellId: -1,
         type: 'NORMAL',
       },
-    } satisfies OperationGiveSpell;
+    } satisfies OperationGiveSpell as T;
   } else if (type === 'giveSpellSlot') {
     return {
       id: crypto.randomUUID(),
@@ -140,7 +142,7 @@ export const createDefaultOperation = (type: OperationType) => {
         castingSource: '',
         slots: [],
       },
-    } satisfies OperationGiveSpellSlot;
+    } satisfies OperationGiveSpellSlot as T;
   } else if (type === 'defineCastingSource') {
     return {
       id: crypto.randomUUID(),
@@ -149,7 +151,7 @@ export const createDefaultOperation = (type: OperationType) => {
         variable: 'CASTING_SOURCES',
         value: ':::-:::ARCANE:::ATTRIBUTE_STR',
       },
-    } satisfies OperationDefineCastingSource;
+    } satisfies OperationDefineCastingSource as T;
   } else if (type === 'removeAbilityBlock') {
     return {
       id: crypto.randomUUID(),
@@ -158,7 +160,7 @@ export const createDefaultOperation = (type: OperationType) => {
         type: 'feat',
         abilityBlockId: -1,
       },
-    } satisfies OperationRemoveAbilityBlock;
+    } satisfies OperationRemoveAbilityBlock as T;
   } else if (type === 'removeSpell') {
     return {
       id: crypto.randomUUID(),
@@ -166,7 +168,7 @@ export const createDefaultOperation = (type: OperationType) => {
       data: {
         spellId: -1,
       },
-    } satisfies OperationRemoveSpell;
+    } satisfies OperationRemoveSpell as T;
   } else if (type === 'giveLanguage') {
     return {
       id: crypto.randomUUID(),
@@ -174,7 +176,7 @@ export const createDefaultOperation = (type: OperationType) => {
       data: {
         languageId: -1,
       },
-    } satisfies OperationGiveLanguage;
+    } satisfies OperationGiveLanguage as T;
   } else if (type === 'removeLanguage') {
     return {
       id: crypto.randomUUID(),
@@ -182,7 +184,7 @@ export const createDefaultOperation = (type: OperationType) => {
       data: {
         languageId: -1,
       },
-    } satisfies OperationRemoveLanguage;
+    } satisfies OperationRemoveLanguage as T;
   } else if (type === 'giveItem') {
     return {
       id: crypto.randomUUID(),
@@ -190,11 +192,19 @@ export const createDefaultOperation = (type: OperationType) => {
       data: {
         itemId: -1,
       },
-    } satisfies OperationGiveItem;
+    } satisfies OperationGiveItem as T;
+  } else if (type === 'giveTrait') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        traitId: -1,
+      },
+    } satisfies OperationGiveTrait as T;
   } else {
     throw new Error(`Unknown operation type: ${type}`);
   }
-};
+}
 
 export interface ObjectWithUUID {
   [key: string]: any;

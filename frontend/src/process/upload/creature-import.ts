@@ -1,6 +1,69 @@
-import { ContentSource, Creature } from '@typing/content';
+import { AbilityBlock, ContentSource, Creature, Rarity, Size } from '@typing/content';
 import { EQUIPMENT_TYPES, convertToActionCost, convertToRarity, convertToSize, getTraitIds } from './foundry-utils';
 import { toMarkdown } from '@content/content-utils';
+
+export async function newImportHandler(source: ContentSource, importData: Record<string, any>): Promise<Creature> {
+  //createDefaultOperation<OperationGiveAbilityBlock>
+
+  // const creature = {
+  //   id: number;
+
+  // }
+
+  interface Creature {
+    id: number;
+    created_at: string;
+    name: string;
+
+    level: number;
+    rarity: Rarity;
+    size: Size;
+    traits: number[];
+    inventory?: Inventory;
+    notes?: {
+      contents: JSONContent;
+    };
+    details: {
+      image_url?: string;
+      background_image_url?: string;
+      conditions?: Condition[];
+      description: string;
+    };
+    roll_history?: Record<string, any>; // TODO
+    operations: Operation[] | undefined;
+
+    abilities?: AbilityBlock[];
+
+    spells?: {
+      slots: SpellSlot[];
+      list: SpellListEntry[];
+      // The number of focus points
+      focus_point_current: number;
+      // Used for tracking how many times an innate spell has been cast
+      innate_casts: SpellInnateEntry[];
+    };
+
+    meta_data?: Record<string, any>; // TODO
+    content_source_id: number;
+    version: string;
+  }
+
+  // attributes are ops
+  // ac is num
+  // ac.details is conditional on ac
+  // allSaves is conditional on each save
+  // hp is num
+  // hp.details is conditional on hp
+  // hp.temp is num
+  // immunities are ops
+  // weaknesses are ops
+  // resistances are ops
+  // speeds are ops
+  // languages are ops
+  // perception is num
+  // senses are ops
+  // saves are nums and conditionals
+}
 
 export async function uploadCreatureHandler(source: ContentSource, importData: Record<string, any>): Promise<Creature> {
   let creature = {

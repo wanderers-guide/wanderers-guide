@@ -47,6 +47,7 @@ export type Operation =
   | OperationRemoveSpell
   | OperationGiveSpellSlot
   | OperationGiveItem
+  | OperationGiveTrait
   | OperationDefineCastingSource;
 
 export type OperationType =
@@ -63,6 +64,7 @@ export type OperationType =
   | 'giveSpell'
   | 'removeSpell'
   | 'giveItem'
+  | 'giveTrait'
   | 'giveSpellSlot'
   | 'defineCastingSource';
 
@@ -193,6 +195,13 @@ export interface OperationGiveItem extends OperationBase {
   readonly type: 'giveItem';
   data: {
     itemId: number;
+  };
+}
+
+export interface OperationGiveTrait extends OperationBase {
+  readonly type: 'giveTrait';
+  data: {
+    traitId: number;
   };
 }
 
