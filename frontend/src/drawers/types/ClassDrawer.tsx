@@ -565,7 +565,7 @@ export function convertClassOperationsIntoUI(
       },
     ];
   } else if (MODE === 'READ/WRITE') {
-    const skillTrainingOps = addedClassSkillTrainings(class_);
+    const skillTrainingOps = addedClassSkillTrainings('CHARACTER', class_);
     for (const op of skillTrainingOps) {
       const result = getDisplay('CHARACTER', { value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
       additionalSkillTrainings.push({

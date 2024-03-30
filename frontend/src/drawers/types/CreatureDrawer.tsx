@@ -90,7 +90,7 @@ export function CreatureDrawerContent(props: { data: { id?: number; creature?: C
           <TraitsDisplay traitIds={creature.traits ?? []} rarity={creature.rarity} interactable />
         </Box>
 
-        <RichText ta='justify'>{creature.description}</RichText>
+        <RichText ta='justify'>{creature.details.description}</RichText>
       </Box>
     </Box>
   );

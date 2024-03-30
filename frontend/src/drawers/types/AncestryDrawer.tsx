@@ -579,7 +579,7 @@ export function convertAncestryOperationsIntoUI(
       },
     ];
   } else if (MODE === 'READ/WRITE') {
-    const languageOps = addedAncestryLanguages(ancestry);
+    const languageOps = addedAncestryLanguages('CHARACTER', ancestry);
     for (const op of languageOps) {
       const result = getDisplay('CHARACTER', { value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
       additionalLanguages.push({
