@@ -98,7 +98,7 @@ export function Component() {
         w='100vw'
         h='100vh'
       />
-      {background?.source?.trim() && (
+      {background?.source?.trim() && !isPhone && (
         <Anchor href={background.source_url} target='_blank' underline='hover'>
           <Text
             size='xs'
