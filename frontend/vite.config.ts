@@ -2,9 +2,47 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
+
+const manifestForPlugin: Partial<VitePWAOptions> = {
+  registerType: 'prompt',
+  includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
+  manifest: {
+    name: "Wanderer's Guide",
+    short_name: "Wanderer's Guide",
+    description: 'A character builder and digital toolbox for Pathfinder and Starfinder Second Edition.',
+    icons: [
+      {
+        src: '/apple-icon-180.png',
+        sizes: '180x180',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/maskable_icon.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/maskable_icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+    ],
+    theme_color: '#141517',
+    background_color: '#141517',
+    display: 'standalone',
+    scope: '/',
+    start_url: '/',
+    orientation: 'landscape',
+  },
+};
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './',
   resolve: {
     alias: {
       '@assets': path.resolve(__dirname, './src/assets'),
@@ -40,5 +78,6 @@ export default defineConfig({
       emitFile: true,
       filename: 'stats.html',
     }),
+    VitePWA(manifestForPlugin),
   ],
 });

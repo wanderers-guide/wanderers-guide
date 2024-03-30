@@ -1,0 +1,31 @@
+{
+  "name": "Wanderer's Guide",
+  "short_name": "Wanderer's Guide",
+  "description": "A character builder and digital toolbox for Pathfinder and Starfinder Second Edition.",
+  "icons": [
+    {
+      "src": "/apple-icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable_icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/maskable_icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "theme_color": "#141517",
+  "background_color": "#141517",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "orientation": "landscape"
+}
