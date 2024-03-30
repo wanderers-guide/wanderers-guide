@@ -8,7 +8,7 @@ import { saveCustomization } from '@content/customization-cache';
 
 import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
 import { ActionIcon, Box, Center, Menu, SimpleGrid, Stack, Tabs, rem, useMantineTheme } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { makeRequest } from '@requests/request-manager';
 import {
@@ -311,7 +311,9 @@ function SectionPanels(props: {
   const theme = useMantineTheme();
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const { hovered: hoveredTabOptions, ref: tabOptionsRef } = useHover<HTMLButtonElement>();
+  const { ref, width, height } = useElementSize();
 
+  const panelWidth = width - 60;
   const panelHeight = 550;
 
   const iconStyle = { width: rem(12), height: rem(12) };
@@ -359,172 +361,180 @@ function SectionPanels(props: {
   }, [props.isLoaded, activeTab]);
 
   return (
-    <BlurBox blur={10} p='sm'>
-      <Tabs
-        color='dark.6'
-        variant='pills'
-        radius='xl'
-        keepMounted={false}
-        value={activeTab}
-        onChange={setActiveTab}
-        activateTabWithKeyboard={false}
-      >
-        <Tabs.List pb={10} grow>
-          {primarySheetTabs.includes('skills-actions') && (
-            <Tabs.Tab
-              value='skills-actions'
-              style={{
-                border: activeTab === 'skills-actions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-              }}
-              leftSection={getTabIcon('skills-actions')}
-            >
-              Skills & Actions
-            </Tabs.Tab>
-          )}
-          {primarySheetTabs.includes('inventory') && (
-            <Tabs.Tab
-              value='inventory'
-              style={{
-                border: activeTab === 'inventory' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-              }}
-              leftSection={getTabIcon('inventory')}
-            >
-              Inventory
-            </Tabs.Tab>
-          )}
-          {primarySheetTabs.includes('spells') && (
-            <Tabs.Tab
-              value='spells'
-              style={{ border: activeTab === 'spells' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent` }}
-              leftSection={getTabIcon('spells')}
-            >
-              Spells
-            </Tabs.Tab>
-          )}
-          {primarySheetTabs.includes('feats-features') && (
-            <Tabs.Tab
-              value='feats-features'
-              style={{
-                border: activeTab === 'feats-features' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-              }}
-              leftSection={getTabIcon('feats-features')}
-            >
-              Feats & Features
-            </Tabs.Tab>
-          )}
-          {primarySheetTabs.includes('companions') && (
-            <Tabs.Tab
-              value='companions'
-              style={{
-                border: activeTab === 'companions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-              }}
-              leftSection={getTabIcon('companions')}
-            >
-              Companions
-            </Tabs.Tab>
-          )}
-          {primarySheetTabs.includes('details') && (
-            <Tabs.Tab
-              value='details'
-              style={{
-                border: activeTab === 'details' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
-              }}
-              leftSection={getTabIcon('details')}
-            >
-              Details
-            </Tabs.Tab>
-          )}
-          {primarySheetTabs.includes('notes') && (
-            <Tabs.Tab
-              value='notes'
-              style={{ border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent` }}
-              leftSection={getTabIcon('notes')}
-            >
-              Notes
-            </Tabs.Tab>
-          )}
-          <Menu shadow='md' width={160} trigger='hover' openDelay={100} closeDelay={100}>
-            <Menu.Target>
-              <ActionIcon
-                variant='subtle'
-                color='gray.4'
-                size='lg'
-                radius='xl'
-                aria-label='Tab Options'
-                ref={tabOptionsRef}
+    <Box ref={ref}>
+      <BlurBox blur={10} p='sm'>
+        <Tabs
+          color='dark.6'
+          variant='pills'
+          radius='xl'
+          keepMounted={false}
+          value={activeTab}
+          onChange={setActiveTab}
+          activateTabWithKeyboard={false}
+        >
+          <Tabs.List pb={10} grow>
+            {primarySheetTabs.includes('skills-actions') && (
+              <Tabs.Tab
+                value='skills-actions'
                 style={{
-                  backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
-                  color: openedTabOption ? theme.colors.gray[0] : undefined,
-                  border: openedTabOption ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                  border:
+                    activeTab === 'skills-actions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
                 }}
+                leftSection={getTabIcon('skills-actions')}
               >
-                <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
-              </ActionIcon>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Label>Other sections</Menu.Label>
-              {tabOptions.map((tab, index) => (
-                <Menu.Item
-                  key={index}
-                  leftSection={getTabIcon(tab)}
-                  onClick={() => {
-                    setActiveTab(tab);
-                  }}
+                Skills & Actions
+              </Tabs.Tab>
+            )}
+            {primarySheetTabs.includes('inventory') && (
+              <Tabs.Tab
+                value='inventory'
+                style={{
+                  border: activeTab === 'inventory' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                }}
+                leftSection={getTabIcon('inventory')}
+              >
+                Inventory
+              </Tabs.Tab>
+            )}
+            {primarySheetTabs.includes('spells') && (
+              <Tabs.Tab
+                value='spells'
+                style={{
+                  border: activeTab === 'spells' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                }}
+                leftSection={getTabIcon('spells')}
+              >
+                Spells
+              </Tabs.Tab>
+            )}
+            {primarySheetTabs.includes('feats-features') && (
+              <Tabs.Tab
+                value='feats-features'
+                style={{
+                  border:
+                    activeTab === 'feats-features' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                }}
+                leftSection={getTabIcon('feats-features')}
+              >
+                Feats & Features
+              </Tabs.Tab>
+            )}
+            {primarySheetTabs.includes('companions') && (
+              <Tabs.Tab
+                value='companions'
+                style={{
+                  border: activeTab === 'companions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                }}
+                leftSection={getTabIcon('companions')}
+              >
+                Companions
+              </Tabs.Tab>
+            )}
+            {primarySheetTabs.includes('details') && (
+              <Tabs.Tab
+                value='details'
+                style={{
+                  border: activeTab === 'details' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                }}
+                leftSection={getTabIcon('details')}
+              >
+                Details
+              </Tabs.Tab>
+            )}
+            {primarySheetTabs.includes('notes') && (
+              <Tabs.Tab
+                value='notes'
+                style={{
+                  border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                }}
+                leftSection={getTabIcon('notes')}
+              >
+                Notes
+              </Tabs.Tab>
+            )}
+            <Menu shadow='md' width={160} trigger='hover' openDelay={100} closeDelay={100}>
+              <Menu.Target>
+                <ActionIcon
+                  variant='subtle'
+                  color='gray.4'
+                  size='lg'
+                  radius='xl'
+                  aria-label='Tab Options'
+                  ref={tabOptionsRef}
                   style={{
-                    backgroundColor: activeTab === tab ? theme.colors.dark[4] : undefined,
-                    color: activeTab === tab ? theme.colors.gray[0] : undefined,
+                    backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
+                    color: openedTabOption ? theme.colors.gray[0] : undefined,
+                    border: openedTabOption ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
                   }}
                 >
-                  {toLabel(tab)}
-                </Menu.Item>
-              ))}
-            </Menu.Dropdown>
-          </Menu>
-        </Tabs.List>
+                  <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon>
+              </Menu.Target>
 
-        <Tabs.Panel value='skills-actions'>
-          <SkillsActionsPanel
-            content={props.content}
-            panelHeight={panelHeight}
-            inventory={props.inventory}
-            setInventory={props.setInventory}
-          />
-        </Tabs.Panel>
+              <Menu.Dropdown>
+                <Menu.Label>Other sections</Menu.Label>
+                {tabOptions.map((tab, index) => (
+                  <Menu.Item
+                    key={index}
+                    leftSection={getTabIcon(tab)}
+                    onClick={() => {
+                      setActiveTab(tab);
+                    }}
+                    style={{
+                      backgroundColor: activeTab === tab ? theme.colors.dark[4] : undefined,
+                      color: activeTab === tab ? theme.colors.gray[0] : undefined,
+                    }}
+                  >
+                    {toLabel(tab)}
+                  </Menu.Item>
+                ))}
+              </Menu.Dropdown>
+            </Menu>
+          </Tabs.List>
 
-        <Tabs.Panel value='inventory'>
-          <InventoryPanel
-            content={props.content}
-            panelHeight={panelHeight}
-            inventory={props.inventory}
-            setInventory={props.setInventory}
-          />
-        </Tabs.Panel>
+          <Tabs.Panel value='skills-actions'>
+            <SkillsActionsPanel
+              content={props.content}
+              panelHeight={panelHeight}
+              inventory={props.inventory}
+              setInventory={props.setInventory}
+            />
+          </Tabs.Panel>
 
-        <Tabs.Panel value='spells'>
-          <SpellsPanel panelHeight={panelHeight} />
-        </Tabs.Panel>
+          <Tabs.Panel value='inventory'>
+            <InventoryPanel
+              content={props.content}
+              panelHeight={panelHeight}
+              inventory={props.inventory}
+              setInventory={props.setInventory}
+            />
+          </Tabs.Panel>
 
-        <Tabs.Panel value='feats-features'>
-          <FeatsFeaturesPanel panelHeight={panelHeight} />
-        </Tabs.Panel>
+          <Tabs.Panel value='spells'>
+            <SpellsPanel panelHeight={panelHeight} />
+          </Tabs.Panel>
 
-        <Tabs.Panel value='companions'>
-          <CompanionsPanel panelHeight={panelHeight} />
-        </Tabs.Panel>
+          <Tabs.Panel value='feats-features'>
+            <FeatsFeaturesPanel panelHeight={panelHeight} />
+          </Tabs.Panel>
 
-        <Tabs.Panel value='details'>
-          <DetailsPanel content={props.content} panelHeight={panelHeight} />
-        </Tabs.Panel>
+          <Tabs.Panel value='companions'>
+            <CompanionsPanel panelHeight={panelHeight} />
+          </Tabs.Panel>
 
-        <Tabs.Panel value='notes'>
-          <NotesPanel panelHeight={panelHeight} />
-        </Tabs.Panel>
+          <Tabs.Panel value='details'>
+            <DetailsPanel content={props.content} panelHeight={panelHeight} />
+          </Tabs.Panel>
 
-        <Tabs.Panel value='extras'>
-          <ExtrasPanel panelHeight={panelHeight} />
-        </Tabs.Panel>
-      </Tabs>
-    </BlurBox>
+          <Tabs.Panel value='notes'>
+            <NotesPanel panelHeight={panelHeight} panelWidth={panelWidth} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value='extras'>
+            <ExtrasPanel panelHeight={panelHeight} />
+          </Tabs.Panel>
+        </Tabs>
+      </BlurBox>
+    </Box>
   );
 }

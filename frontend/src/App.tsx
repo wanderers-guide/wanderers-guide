@@ -7,7 +7,7 @@ import { getCachedCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
 import { Anchor, BackgroundImage, Button, MantineProvider, Text, createTheme } from '@mantine/core';
-import { usePrevious } from '@mantine/hooks';
+import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import SearchSpotlight from '@nav/SearchSpotlight';
@@ -22,6 +22,7 @@ import { supabase } from './main';
 import Layout from './nav/Layout';
 import { ImageOption } from './typing';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
 const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
@@ -68,6 +69,7 @@ function getShadesFromColor(color: string) {
 
 export default function App() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const isPhone = useMediaQuery(phoneQuery());
 
   const [session, setSession] = useRecoilState(sessionState);
   useEffect(() => {
@@ -198,7 +200,7 @@ export default function App() {
           w='100vw'
           h='100vh'
         />
-        {background?.source?.trim() && (
+        {background?.source?.trim() && !isPhone && (
           <Anchor href={background.source_url} target='_blank' underline='hover'>
             <Text
               size='xs'
