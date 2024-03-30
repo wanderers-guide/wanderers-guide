@@ -126,6 +126,7 @@ function UnderSection(props: { title: string; description: string; url: string; 
       <BlurBox p={20} h={175}>
         <Avatar
           style={{
+            cursor: 'pointer',
             position: 'absolute',
             top: 0,
             left: '50%',
@@ -134,6 +135,7 @@ function UnderSection(props: { title: string; description: string; url: string; 
           size={props.iconSize}
           src={props.iconURL}
           alt={props.title}
+          onClick={() => window.open(props.url, '_blank')}
         />
         <Stack gap={5}>
           <Anchor ta='center' c='gray.2' fz='lg' fw={500} target='_blank' href={props.url}>

@@ -1,10 +1,8 @@
-import { ContentSource, Creature } from "@typing/content";
-import { EQUIPMENT_TYPES, convertToActionCost, convertToRarity, convertToSize, getTraitIds } from "./foundry-utils";
-import { toMarkdown } from "@content/content-utils";
-
+import { ContentSource, Creature } from '@typing/content';
+import { EQUIPMENT_TYPES, convertToActionCost, convertToRarity, convertToSize, getTraitIds } from './foundry-utils';
+import { toMarkdown } from '@content/content-utils';
 
 export async function uploadCreatureHandler(source: ContentSource, importData: Record<string, any>): Promise<Creature> {
-
   let creature = {
     id: -1,
     created_at: '',
@@ -13,8 +11,8 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
     rarity: convertToRarity(importData.system?.traits?.rarity),
     size: convertToSize(importData.system?.traits?.size?.value),
     traits: await getTraitIds(importData.system?.traits?.value ?? [], source),
-    family_type: importData.system?.details?.creatureType,
-    senses: importData.system?.traits?.senses?.value,
+    family_type: importData.system?.details?.creatureType, // Not included anymore
+    senses: importData.system?.perception?.senses,
     languages: {
       value: importData.system?.traits?.languages?.value,
       custom: importData.system?.traits?.languages?.custom,
@@ -30,7 +28,10 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
       cha: importData.system.abilities.cha.mod,
     },
     stats: {
-      ac: importData.system.attributes.ac.value,
+      ac: {
+        value: importData.system.attributes.ac.value,
+        details: importData.system.attributes.ac.details,
+      },
       saves: {
         fort: importData.system.saves.fortitude.value,
         ref: importData.system.saves.reflex.value,
@@ -40,8 +41,12 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
       hp: {
         max: importData.system.attributes.hp.max,
         details: importData.system.attributes.hp.details,
+        temp: importData.system.attributes.hp.temp,
       },
-      perception: importData.system?.attributes?.perception?.value,
+      perception: {
+        value: importData.system.perception.mod,
+        details: importData.system.perception.details,
+      },
     },
     immunities: undefined as any,
     weaknesses: undefined as any,
@@ -51,6 +56,7 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
     defensive_abilities: undefined as any,
     speeds: {
       speed: importData.system.attributes.speed.value,
+      details: importData.system.attributes.speed.details,
       others: importData.system.attributes.speed.otherSpeeds,
     },
     attacks: undefined as any,
@@ -141,7 +147,7 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
   }
   if (importData.system.attributes.weaknesses) {
     creature.weaknesses = {
-      value: importData.system.attributes.weaknesses
+      value: importData.system.attributes.weaknesses,
     };
   } else {
     creature.weaknesses = {
@@ -172,7 +178,6 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
   }
   creature.defensive_abilities = { value: defensiveAbilitiesDataArray };
 
-
   let attacks = importData.items.filter((item: any) => {
     return item.type == `melee`;
   });
@@ -187,9 +192,7 @@ export async function uploadCreatureHandler(source: ContentSource, importData: R
       if (matchP != null) {
         damageEffects += `${matchP[2]} persistent ${matchP[1].toLowerCase()}`;
       } else {
-        let match = /@Localize\[PF2E\.PersistentDamage\.(\D+)(.+?)\.success]/g.exec(
-          attack.system.description.value
-        );
+        let match = /@Localize\[PF2E\.PersistentDamage\.(\D+)(.+?)\.success]/g.exec(attack.system.description.value);
         if (match != null) {
           damageEffects += `${match[2]} persistent ${match[1].toLowerCase()}`;
         }
