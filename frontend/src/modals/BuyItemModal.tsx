@@ -6,7 +6,7 @@ import { isValidImage } from '@utils/images';
 import { useState } from 'react';
 import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
 import { getHotkeyHandler } from '@mantine/hooks';
-import { CoinSection } from '@pages/character_sheet/CharacterSheetPage';
+import { CoinSection } from '@pages/character_sheet/panels/InventoryPanel';
 import { convertToCp, purchase } from '@items/currency-handler';
 
 export function BuyItemModal(props: {

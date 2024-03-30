@@ -365,9 +365,10 @@ async function runGiveLanguage(
   operation: OperationGiveLanguage,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.languageId === -1) return null;
   const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
-    displayError('Language not found');
+    displayError(`Language not found: ${operation.data.languageId}`);
     return null;
   }
 
@@ -381,9 +382,10 @@ async function runGiveItem(
   operation: OperationGiveItem,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.itemId === -1) return null;
   const item = await fetchContentById<Item>('item', operation.data.itemId);
   if (!item) {
-    displayError('Item not found');
+    displayError(`Item not found: ${operation.data.itemId}`);
     return null;
   }
 
@@ -397,9 +399,10 @@ async function runGiveTrait(
   operation: OperationGiveTrait,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.traitId === -1) return null;
   const trait = await fetchContentById<Trait>('trait', operation.data.traitId);
   if (!trait) {
-    displayError('Trait not found');
+    displayError(`Trait not found: ${operation.data.traitId}`);
     return null;
   }
 
@@ -413,9 +416,10 @@ async function runGiveSpell(
   operation: OperationGiveSpell,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.spellId === -1) return null;
   const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
-    displayError('Spell not found');
+    displayError(`Spell not found: ${operation.data.spellId}`);
     return null;
   }
 
