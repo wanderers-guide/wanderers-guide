@@ -189,7 +189,6 @@ export function collectCharacterSpellcasting(character: Character) {
     list,
     focus,
     innate,
-    ritual: (character.spells?.rituals ?? []).map((spell_id) => ({ spell_id })),
     focus_points: {
       current: character.spells?.focus_point_current ?? 0,
       max: Math.min(focus.filter((f) => f.rank !== 0).length ?? 0, 3),

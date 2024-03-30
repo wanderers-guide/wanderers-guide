@@ -75,7 +75,7 @@ export function Component() {
           />
           <UnderSection
             title='Paizo Inc.'
-            description='The creators of Pathfinder and Starfinder. Support them by purchasing your own hardcover rulebooks.'
+            description='The creators of Pathfinder and Starfinder. Please support them by purchasing your own hardcover rulebooks.'
             iconSize={50}
             url='https://paizo.com/'
             iconURL='https://i.imgur.com/H0eCdBX.png'
