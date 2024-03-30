@@ -863,7 +863,7 @@ export function StatButton(props: {
         fullWidth
         onClick={props.onClick}
       >
-        <Group w='100%' justify='space-between'>
+        <Group w='100%' justify='space-between' wrap='nowrap'>
           {props.children}
         </Group>
       </Button>
