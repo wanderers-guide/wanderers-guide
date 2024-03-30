@@ -215,7 +215,7 @@ export default function SearchSpotlight() {
             </HoverCard.Dropdown>
           </HoverCard>
         ),
-        placeholder: 'Search anything Pathfinder...',
+        placeholder: 'Search anything...',
       }}
       filter={(query, actions) => {
         if (!query) return actions;

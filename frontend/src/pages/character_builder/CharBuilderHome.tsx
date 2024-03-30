@@ -48,6 +48,11 @@ import {
   IconUsersPlus,
   IconPhoto,
   IconArchive,
+  IconNorthStar,
+  IconMoonStars,
+  IconRocket,
+  IconSword,
+  IconServer,
 } from '@tabler/icons-react';
 import { Character, ContentSource } from '@typing/content';
 import { uploadImage } from '@upload/image-upload';
@@ -352,9 +357,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   <Stack gap={0} pt='sm'>
                     <LinksGroup
                       icon={IconBook2}
-                      label={'Core'}
+                      label={'Pathfinder Core'}
                       links={books
-                        .filter((book) => book.group === 'core')
+                        .filter((book) => book.group === 'pathfinder-core')
                         .map((book) => ({
                           label: book.name,
                           id: book.id,
@@ -364,17 +369,17 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
                         books
-                          .filter((book) => book.group === 'core')
+                          .filter((book) => book.group === 'pathfinder-core')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
                           });
                       }}
                     />
                     <LinksGroup
-                      icon={IconWorld}
-                      label={'Lost Omens'}
+                      icon={IconServer}
+                      label={'Starfinder Core'}
                       links={books
-                        .filter((book) => book.group === 'lost-omens')
+                        .filter((book) => book.group === 'starfinder-core')
                         .map((book) => ({
                           label: book.name,
                           id: book.id,
@@ -384,12 +389,13 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
                       onEnableAll={() => {
                         books
-                          .filter((book) => book.group === 'lost-omens')
+                          .filter((book) => book.group === 'starfinder-core')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
                           });
                       }}
                     />
+                    <Box py={8}></Box>
                     <LinksGroup
                       icon={IconMap}
                       label={'Adventure Paths'}
@@ -425,6 +431,26 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       onEnableAll={() => {
                         books
                           .filter((book) => book.group === 'standalone-adventure')
+                          .forEach((book) => {
+                            setBookEnabled(book.id, true);
+                          });
+                      }}
+                    />
+                    <LinksGroup
+                      icon={IconWorld}
+                      label={'Lost Omens'}
+                      links={books
+                        .filter((book) => book.group === 'lost-omens')
+                        .map((book) => ({
+                          label: book.name,
+                          id: book.id,
+                          url: book.url,
+                          enabled: hasBookEnabled(book.id),
+                        }))}
+                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                      onEnableAll={() => {
+                        books
+                          .filter((book) => book.group === 'lost-omens')
                           .forEach((book) => {
                             setBookEnabled(book.id, true);
                           });
