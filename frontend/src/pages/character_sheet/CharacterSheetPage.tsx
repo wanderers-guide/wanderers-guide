@@ -314,7 +314,7 @@ function SectionPanels(props: {
   const { ref, width, height } = useElementSize();
 
   const panelWidth = width - 60;
-  const panelHeight = 550;
+  const panelHeight = height > 1000 ? 550 : 500;
 
   const iconStyle = { width: rem(12), height: rem(12) };
   const allSheetTabs = [
@@ -523,7 +523,7 @@ function SectionPanels(props: {
           </Tabs.Panel>
 
           <Tabs.Panel value='details'>
-            <DetailsPanel content={props.content} panelHeight={panelHeight} />
+            <DetailsPanel content={props.content} panelHeight={panelHeight} panelWidth={panelWidth} />
           </Tabs.Panel>
 
           <Tabs.Panel value='notes'>
