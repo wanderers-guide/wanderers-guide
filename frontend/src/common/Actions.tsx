@@ -16,7 +16,7 @@ function ActionStructure(props: ActionStructureProps) {
         {...props}
         fz={size}
         ff='ActionIcons, sans-serif'
-        c='gray.5'
+        c={props.c ?? 'gray.5'}
         style={{
           position: 'absolute',
           top: -1,
@@ -33,10 +33,11 @@ function ActionStructure(props: ActionStructureProps) {
 interface ActionSymbolProps extends TextProps {
   cost: ActionCost;
   textProps?: TextProps;
+  gap?: number;
 }
 
 export function ActionSymbol(props: ActionSymbolProps) {
-  const { cost, ...rest } = props;
+  const { cost, gap, ...rest } = props;
   switch (cost) {
     case 'ONE-ACTION':
       return <ActionStructure symbol={1} {...rest} />;
@@ -50,7 +51,7 @@ export function ActionSymbol(props: ActionSymbolProps) {
       return <ActionStructure symbol={5} {...rest} />;
     case 'ONE-TO-TWO-ACTIONS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={1} {...rest} />
           <Text {...props.textProps}> to </Text>
           <ActionStructure symbol={2} {...rest} />
@@ -58,7 +59,7 @@ export function ActionSymbol(props: ActionSymbolProps) {
       );
     case 'ONE-TO-THREE-ACTIONS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={1} {...rest} />
           <Text {...props.textProps}> to </Text>
           <ActionStructure symbol={3} {...rest} />
@@ -66,7 +67,7 @@ export function ActionSymbol(props: ActionSymbolProps) {
       );
     case 'TWO-TO-THREE-ACTIONS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={2} {...rest} />
           <Text {...props.textProps}> to </Text>
           <ActionStructure symbol={3} {...rest} />
@@ -74,28 +75,28 @@ export function ActionSymbol(props: ActionSymbolProps) {
       );
     case 'TWO-TO-TWO-ROUNDS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={2} {...rest} />
           <Text {...props.textProps}> to 2 rounds</Text>
         </Group>
       );
     case 'THREE-TO-TWO-ROUNDS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={3} {...rest} />
           <Text {...props.textProps}> to 2 rounds</Text>
         </Group>
       );
     case 'TWO-TO-THREE-ROUNDS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={2} {...rest} />
           <Text {...props.textProps}> to 3 rounds</Text>
         </Group>
       );
     case 'THREE-TO-THREE-ROUNDS':
       return (
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={gap ?? 10}>
           <ActionStructure symbol={3} {...rest} />
           <Text {...props.textProps}> to 3 rounds</Text>
         </Group>

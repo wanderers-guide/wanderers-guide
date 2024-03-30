@@ -41,6 +41,7 @@ import _ from 'lodash';
 import { useState } from 'react';
 import { json } from 'react-router-dom';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
+import { ActionSymbol } from '@common/Actions';
 
 /**
  * Modal for creating or editing a creature
@@ -278,7 +279,15 @@ export function CreateCreatureModal(props: {
                         setOpenedModal(ability);
                       }}
                     >
-                      {ability.name}
+                      {ability.name}{' '}
+                      <ActionSymbol
+                        pl={5}
+                        gap={5}
+                        textProps={{ size: 'xs', c: 'guide' }}
+                        c='guide'
+                        cost={ability.actions}
+                        size={'1.2rem'}
+                      />
                     </Button>
                   </Box>
                 ))}
