@@ -28,6 +28,7 @@ import { CreateSpellModal } from './CreateSpellModal';
 import { CreateTraitModal } from './CreateTraitModal';
 import { submitContentUpdate } from '@content/content-update';
 import { displayError } from '@utils/notifications';
+import { CreateCreatureModal } from './CreateCreatureModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -181,6 +182,17 @@ export default function ContentFeedbackModal(props: {
               editId={submitUpdate.id}
               onComplete={async (item) => {
                 await handleComplete(item.id, item.content_source_id, item);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
+
+          {props.type === 'creature' && (
+            <CreateCreatureModal
+              opened={true}
+              editId={submitUpdate.id}
+              onComplete={async (creature) => {
+                await handleComplete(creature.id, creature.content_source_id, creature);
               }}
               onCancel={() => handleReset()}
             />

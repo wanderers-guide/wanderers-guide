@@ -3150,7 +3150,7 @@ export function CreatureSelectionOption(props: {
       </Text>
       <Group ml={8} wrap='nowrap'>
         <Avatar
-          src={props.creature.meta_data?.image_url}
+          src={props.creature.details.image_url}
           radius='sm'
           styles={{
             image: {
@@ -3165,7 +3165,7 @@ export function CreatureSelectionOption(props: {
           </Text>
 
           <Group gap={5}>
-            {props.creature.family_type && (
+            {/* {props.creature.family_type && (
               <Badge
                 variant='dot'
                 size='xs'
@@ -3180,8 +3180,8 @@ export function CreatureSelectionOption(props: {
               >
                 {props.creature.family_type}
               </Badge>
-            )}
-            <Badge
+            )} */}
+            {/* <Badge
               variant='dot'
               size='xs'
               styles={{
@@ -3193,8 +3193,8 @@ export function CreatureSelectionOption(props: {
               c='gray.6'
             >
               AC {props.creature.stats?.ac}
-            </Badge>
-            <Badge
+            </Badge> */}
+            {/* <Badge
               variant='dot'
               size='xs'
               styles={{
@@ -3206,7 +3206,7 @@ export function CreatureSelectionOption(props: {
               c='gray.6'
             >
               {props.creature.stats?.hp.max} HP
-            </Badge>
+            </Badge> */}
           </Group>
         </div>
       </Group>

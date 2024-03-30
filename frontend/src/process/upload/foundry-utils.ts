@@ -232,8 +232,7 @@ export function stripFoundryLinking(text: string, level?: number) {
   text = stripCheckLinks(text, false);
   text = stripDistanceLinks(text);
   text = stripMathLinks(text);
-
-  console.log(text);
+  text = stripNpcLinks(text);
 
   return text;
 }
@@ -256,6 +255,22 @@ function stripDamageLinks(text: string) {
     }
 
     newText = newText.replace(match[0], `${result}d${diceType} ${damageType}`);
+  }
+
+  // Alt version
+  const regex2 = /@Damage\[([^\]]+)\[([^\]]+)\]\]/gm;
+  while ((match = regex2.exec(text)) !== null) {
+    const formula = match[1];
+    const damageType = match[2];
+
+    let result = formula;
+    try {
+      result = evaluate(formula);
+    } catch (e) {
+      console.warn(e, formula);
+    }
+
+    newText = newText.replace(match[0], `${result} ${damageType}`);
   }
 
   return newText;
@@ -299,6 +314,15 @@ function stripCheckLinks(text: string, basic: boolean) {
     newText = newText.replace(match[0], `basic ${_.startCase(type)}`);
   }
 
+  // Alt version
+  const regex2 = /@Check\[type:([^\]]+)\|dc:([^\]]+)\]/gm;
+  while ((match = regex2.exec(text)) !== null) {
+    const type = match[1];
+    const dc = match[2];
+
+    newText = newText.replace(match[0], `${_.startCase(type)} ${dc}`);
+  }
+
   return newText;
 }
 
@@ -328,6 +352,20 @@ function stripCompendiumLinks(text: string) {
 
     // We convert them to a potential content link for further processing
     newText = newText.replace(match[0], `[[${name}]]`);
+  }
+
+  return newText;
+}
+
+function stripNpcLinks(text: string) {
+  const regex = /@Localize\[PF2E\.NPC\.Abilities\.Glossary\.([^\]]+)\]/gm;
+
+  let newText = text;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const name = match[1];
+
+    newText = newText.replace(match[0], `${name}`);
   }
 
   return newText;

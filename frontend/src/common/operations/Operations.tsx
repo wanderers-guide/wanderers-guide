@@ -450,7 +450,6 @@ export function OperationDisplay(props: {
     case 'setValue':
       let opSetValue = props.operation as OperationSetValue;
       return (
-        // TODO: make it VariableValue
         <SetValOperation
           variable={opSetValue.data.variable}
           value={opSetValue.data.value}

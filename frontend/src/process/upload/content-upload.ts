@@ -508,7 +508,6 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>):
 
   try {
     const creature = await newImportHandler(source, json);
-    console.log(creature);
 
     const createdCreature = await upsertCreature(creature);
     if (DEBUG) {

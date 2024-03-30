@@ -12,6 +12,7 @@ import {
   upsertSpell,
   upsertTrait,
   upsertLanguage,
+  upsertCreature,
 } from '@content/content-creation';
 import { fetchContentPackage, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
@@ -67,6 +68,7 @@ import { CreateSpellModal } from './CreateSpellModal';
 import { CreateTraitModal } from './CreateTraitModal';
 import { CreateLanguageModal } from './CreateLanguageModal';
 import { DISCORD_URL } from '@constants/data';
+import { CreateCreatureModal } from './CreateCreatureModal';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -954,6 +956,30 @@ function ContentList<
               showNotification({
                 title: `Updated ${result.name}`,
                 message: `Successfully updated item.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'creature' && openedId && (
+        <CreateCreatureModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (creature) => {
+            creature.content_source_id = props.sourceId;
+
+            console.log(creature);
+            const result = await upsertCreature(creature);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated creature.`,
                 autoClose: 3000,
               });
             }

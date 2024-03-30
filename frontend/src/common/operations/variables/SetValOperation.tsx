@@ -19,6 +19,8 @@ export function SetValOperation(props: {
   onSelect: (variable: string) => void;
   onValueChange: (value: VariableValue) => void;
   onRemove: () => void;
+  showTotalVars?: boolean;
+  overrideTitle?: string;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
   const [variableData, setVariableData] = useState<Variable | undefined>(
@@ -33,7 +35,7 @@ export function SetValOperation(props: {
   }, [props.value, props.variable]);
 
   return (
-    <OperationWrapper onRemove={props.onRemove} title='Override Value'>
+    <OperationWrapper onRemove={props.onRemove} title={props.overrideTitle ? props.overrideTitle : 'Override Value'}>
       <VariableSelect
         value={variableName}
         onChange={(value, variable) => {
@@ -42,6 +44,7 @@ export function SetValOperation(props: {
           props.onSelect(value);
           setValue('');
         }}
+        showTotalVars={props.showTotalVars}
       />
       {variableData && (
         <SetValueInput
@@ -130,8 +133,6 @@ export function SetValueInput(props: {
     );
   } else if (props.variableType === 'prof') {
     const value = props.value as ProficiencyValue;
-
-    console.log(value.value);
 
     return (
       <>
