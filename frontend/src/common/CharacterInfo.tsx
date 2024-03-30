@@ -1,7 +1,9 @@
 import classes from '@css/UserInfoIcons.module.css';
 import { Avatar, Box, Button, Group, HoverCard, Stack, Text, useMantineTheme } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
 import { Character } from '@typing/content';
+import { phoneQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';
 import { LegacyRef, forwardRef } from 'react';
 
@@ -20,13 +22,14 @@ export const CharacterInfo = forwardRef(
     ref: LegacyRef<HTMLDivElement>
   ) => {
     const theme = useMantineTheme();
+    const isPhone = useMediaQuery(phoneQuery());
 
     const hasClass = props.character?.details?.class?.name !== undefined;
     const hasAncestry = props.character?.details?.ancestry?.name !== undefined;
     const hasBackground = props.character?.details?.background?.name !== undefined;
 
     return (
-      <div ref={ref} style={{ width: 240 }}>
+      <div ref={ref} style={{ width: isPhone ? undefined : 240 }}>
         <Group wrap='nowrap' align='flex-start' gap={0}>
           {!props.hideImage && (
             <Avatar
