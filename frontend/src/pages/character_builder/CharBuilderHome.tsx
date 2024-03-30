@@ -26,7 +26,7 @@ import {
   ColorInput,
   HoverCard,
 } from '@mantine/core';
-import { useElementSize } from '@mantine/hooks';
+import { useElementSize, useMediaQuery } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import {
@@ -72,12 +72,14 @@ import { getCachedPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
 import CustomOperationsModal from '@modals/CustomOperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
 
   const { ref, height } = useElementSize();
   const topGap = 30;
+  const isPhone = useMediaQuery(phoneQuery());
 
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
@@ -143,6 +145,558 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   };
 
   const iconStyle = { width: rem(12), height: rem(12) };
+
+  const getOptionsSection = () => (
+    <Box h='100%'>
+      <Paper
+        shadow='sm'
+        h='100%'
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.13)',
+        }}
+      >
+        <ScrollArea h='100%' scrollbars='y'>
+          <Tabs defaultValue='books'>
+            <Tabs.List grow>
+              <Tabs.Tab value='books' leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}>
+                <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
+              </Tabs.Tab>
+              <Tabs.Tab value='homebrew' leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />} disabled>
+                <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
+              </Tabs.Tab>
+              <Tabs.Tab value='variants' leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}>
+                <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
+              </Tabs.Tab>
+              <Tabs.Tab value='options' leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}>
+                <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
+              </Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value='books'>
+              <Stack gap={0} pt='sm'>
+                <LinksGroup
+                  icon={IconBook2}
+                  label={'Pathfinder Core'}
+                  links={books
+                    .filter((book) => book.group === 'pathfinder-core')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onEnableAll={() => {
+                    books
+                      .filter((book) => book.group === 'pathfinder-core')
+                      .forEach((book) => {
+                        setBookEnabled(book.id, true);
+                      });
+                  }}
+                />
+                <LinksGroup
+                  icon={IconServer}
+                  label={'Starfinder Core'}
+                  links={books
+                    .filter((book) => book.group === 'starfinder-core')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onEnableAll={() => {
+                    books
+                      .filter((book) => book.group === 'starfinder-core')
+                      .forEach((book) => {
+                        setBookEnabled(book.id, true);
+                      });
+                  }}
+                />
+                <Box py={8}></Box>
+                <LinksGroup
+                  icon={IconMap}
+                  label={'Adventure Paths'}
+                  links={books
+                    .filter((book) => book.group === 'adventure-path')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onEnableAll={() => {
+                    books
+                      .filter((book) => book.group === 'adventure-path')
+                      .forEach((book) => {
+                        setBookEnabled(book.id, true);
+                      });
+                  }}
+                />
+                <LinksGroup
+                  icon={IconBrandSafari}
+                  label={'Standalone Adventures'}
+                  links={books
+                    .filter((book) => book.group === 'standalone-adventure')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onEnableAll={() => {
+                    books
+                      .filter((book) => book.group === 'standalone-adventure')
+                      .forEach((book) => {
+                        setBookEnabled(book.id, true);
+                      });
+                  }}
+                />
+                <LinksGroup
+                  icon={IconWorld}
+                  label={'Lost Omens'}
+                  links={books
+                    .filter((book) => book.group === 'lost-omens')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onEnableAll={() => {
+                    books
+                      .filter((book) => book.group === 'lost-omens')
+                      .forEach((book) => {
+                        setBookEnabled(book.id, true);
+                      });
+                  }}
+                />
+                <LinksGroup
+                  icon={IconDots}
+                  label={'Miscellaneous'}
+                  links={books
+                    .filter((book) => book.group === 'misc')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onEnableAll={() => {
+                    books
+                      .filter((book) => book.group === 'misc')
+                      .forEach((book) => {
+                        setBookEnabled(book.id, true);
+                      });
+                  }}
+                />
+                {/* <LinksGroup
+                      icon={IconArchive}
+                      label={'Legacy Backports'}
+                      links={books
+                        .filter((book) => book.group === 'legacy')
+                        .map((book) => ({
+                          label: book.name,
+                          id: book.id,
+                          url: book.url,
+                          enabled: hasBookEnabled(book.id),
+                        }))}
+                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                      onEnableAll={() => {
+                        books
+                          .filter((book) => book.group === 'legacy')
+                          .forEach((book) => {
+                            setBookEnabled(book.id, true);
+                          });
+                      }}
+                    /> */}
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='variants'>
+              <Stack gap={0} pt='sm'>
+                <LinkSwitch
+                  label='Ancestry Paragon'
+                  info={`Most characters have some elements that connect them to their ancestry but identify more strongly with their class or unique personality. Sometimes, though, a character is the embodiment of their ancestry to the point that it’s of equal importance to their class. For a game where an ancestral background is a major theme and such characters are the norm, your group might consider using the ancestry paragon variant.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=1336'
+                  enabled={character?.variants?.ancestry_paragon}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          ancestry_paragon: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Dual Class'
+                  info={`Sometimes, especially when you have a particularly small play group or want to play incredibly versatile characters, you might want to allow dual-class characters that have the full benefits of two different classes.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=1328'
+                  enabled={character?.variants?.dual_class}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          dual_class: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Free Archetype'
+                  info={`Sometimes the story of your game calls for a group where everyone is a pirate or an apprentice at a magic school. The free archetype variant introduces a shared aspect to every character without taking away any of that character’s existing choices.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=2751'
+                  enabled={character?.variants?.free_archetype}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          free_archetype: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Proficiency without Level'
+                  info={`This variant removes a character's level from their proficiency bonus, scaling it differently for a style of game that's outside the norm. This is a significant change to the system. The proficiency rank progression in Player Core is designed for heroic fantasy games where heroes rise from humble origins to world-shattering strength. For some games, this narrative arc doesn't fit. Such games are about hedging bets in an uncertain and gritty world, in which even the world's best fighter can't guarantee a win against a large group of moderately skilled brigands.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=2762'
+                  enabled={character?.variants?.proficiency_without_level}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          proficiency_without_level: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Stamina'
+                  info={`In some fantasy stories, the heroes are able to avoid any serious injury until the situation gets dire, getting by with a graze or a flesh wound and needing nothing more than a quick rest to get back on their feet. If your group wants to tell tales like those, you can use the stamina variant to help make that happen.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=1378'
+                  enabled={character?.variants?.stamina}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          stamina: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='options'>
+              <Stack gap={0} pt='sm'>
+                <LinkSwitch
+                  label='Auto Detect Prerequisites'
+                  info={`**[Beta]** Automatically determine if a feat or feature has its prerequisites met in order to be taken. This is a beta feature and may not always work correctly.`}
+                  enabled={character?.options?.auto_detect_prerequisites}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          auto_detect_prerequisites: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                {/* <LinkSwitch
+                      label='Auto Heighten Spells'
+                      info={`**[Beta]** Automatically apply the heightened effects of a spell to its stat block. This is a beta feature and may not always work correctly.`}
+                      enabled={character?.options?.auto_heighten_spells}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              auto_heighten_spells: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    /> */}
+                {/* <LinkSwitch
+                      label='Class Archetypes'
+                      info={``}
+                      enabled={character?.options?.class_archetypes}
+                      onLinkChange={(enabled) => {
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            options: {
+                              ...prev.options,
+                              class_archetypes: enabled,
+                            },
+                          };
+                        });
+                      }}
+                    /> */}
+                <LinkSwitch
+                  label='Dice Roller'
+                  info={`Roll your dice directly from the character sheet! Integrated with all your character's stats and abilities.`}
+                  enabled={character?.options?.dice_roller}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          dice_roller: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Ignore Bulk Limit'
+                  info={`Disables the negative effects of carrying too much bulk, such as adding the encumbered condition.`}
+                  enabled={character?.options?.ignore_bulk_limit}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          ignore_bulk_limit: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Public Character'
+                  info={`Makes your character public and viewable by anyone with your sheet link: \n\n _https://wanderersguide.app/sheet/${character?.id}_`}
+                  enabled={character?.options?.is_public}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          is_public: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Custom Operations'
+                  info={`Enables an area to add custom operations to your character. These are executed before most other operations.`}
+                  enabled={character?.options?.custom_operations}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          custom_operations: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                {character?.options?.custom_operations && (
+                  <Box pl={15}>
+                    <BlurButton
+                      size='compact-xs'
+                      fw={400}
+                      w={180}
+                      onClick={() => {
+                        setOpenedOperations(true);
+                      }}
+                    >
+                      Open Operations{' '}
+                      {character.custom_operations && character.custom_operations.length > 0
+                        ? `(${character.custom_operations.length})`
+                        : ''}
+                    </BlurButton>
+                    <CustomOperationsModal
+                      opened={openedOperations}
+                      onClose={() => setOpenedOperations(false)}
+                      operations={_.cloneDeep(character.custom_operations ?? [])}
+                      onChange={(operations) => {
+                        if (_.isEqual(character.custom_operations, operations)) return;
+
+                        setCharacter((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            custom_operations: operations,
+                          };
+                        });
+                      }}
+                    />
+                  </Box>
+                )}
+              </Stack>
+            </Tabs.Panel>
+          </Tabs>
+        </ScrollArea>
+      </Paper>
+    </Box>
+  );
+
+  const getSidebarSection = () => (
+    <Box h='100%'>
+      <Paper
+        shadow='sm'
+        p='sm'
+        h='100%'
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.13)',
+        }}
+      >
+        <Stack>
+          <PasswordInput
+            radius='xl'
+            size='xs'
+            label={<Text fz='sm'>Campaign</Text>}
+            placeholder='Enter Join Key'
+            rightSectionWidth={28}
+            leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
+            rightSection={
+              <ActionIcon
+                size={22}
+                radius='xl'
+                color={theme.primaryColor}
+                variant='light'
+                onClick={() => {
+                  //
+                }}
+              >
+                <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+              </ActionIcon>
+            }
+            onClick={() => {
+              displayComingSoon();
+            }}
+          />
+          <ColorInput
+            radius='xl'
+            size='xs'
+            label={<Text fz='sm'>Color Theme</Text>}
+            placeholder='Character Color Theme'
+            defaultValue={character?.details?.sheet_theme?.color || GUIDE_BLUE}
+            swatches={[
+              '#25262b',
+              '#868e96',
+              '#fa5252',
+              '#e64980',
+              '#be4bdb',
+              '#8d69f5',
+              '#577deb',
+              GUIDE_BLUE,
+              '#15aabf',
+              '#12b886',
+              '#40c057',
+              '#82c91e',
+              '#fab005',
+              '#fd7e14',
+            ]}
+            swatchesPerRow={7}
+            onChange={(color) => {
+              if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+                displayPatronOnly();
+                return;
+              }
+              setCharacter((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  details: {
+                    ...prev.details,
+                    sheet_theme: {
+                      ...prev.details?.sheet_theme,
+                      color: color,
+                    },
+                  },
+                };
+              });
+            }}
+          />
+          <Box>
+            <Text fz='sm'>Background Artwork</Text>
+            <UnstyledButton
+              w={'50%'}
+              onClick={() => {
+                openContextModal({
+                  modal: 'selectImage',
+                  title: <Title order={3}>Select Background</Title>,
+                  innerProps: {
+                    options: getAllBackgroundImages(),
+                    onSelect: (option) => {
+                      if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+                        displayPatronOnly();
+                        return;
+                      }
+                      setCharacter((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          details: {
+                            ...prev.details,
+                            background_image_url: option.url,
+                          },
+                        };
+                      });
+                    },
+                    category: 'backgrounds',
+                  },
+                });
+              }}
+            >
+              <Image
+                radius='md'
+                h='auto'
+                fit='contain'
+                src={character?.details?.background_image_url}
+                fallbackSrc='/src/assets/images/backgrounds/placeholder.jpeg'
+              />
+            </UnstyledButton>
+          </Box>
+        </Stack>
+      </Paper>
+    </Box>
+  );
 
   return (
     <Stack gap={topGap}>
@@ -329,554 +883,21 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           </Box>
         </Stack>
       </Group>
-      <Group gap={10} align='flex-start' wrap='nowrap' h={props.pageHeight - height - topGap}>
-        <Box style={{ flexBasis: '65%' }} h='100%'>
-          <Paper
-            shadow='sm'
-            h='100%'
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.13)',
-            }}
-          >
-            <ScrollArea h='100%' scrollbars='y'>
-              <Tabs defaultValue='books'>
-                <Tabs.List>
-                  <Tabs.Tab value='books' leftSection={<IconBooks style={iconStyle} />}>
-                    Books
-                  </Tabs.Tab>
-                  <Tabs.Tab value='homebrew' leftSection={<IconAsset style={iconStyle} />} disabled>
-                    Homebrew
-                  </Tabs.Tab>
-                  <Tabs.Tab value='variants' leftSection={<IconVocabulary style={iconStyle} />}>
-                    Variant Rules
-                  </Tabs.Tab>
-                  <Tabs.Tab value='options' leftSection={<IconSettings style={iconStyle} />}>
-                    Options
-                  </Tabs.Tab>
-                </Tabs.List>
-
-                <Tabs.Panel value='books'>
-                  <Stack gap={0} pt='sm'>
-                    <LinksGroup
-                      icon={IconBook2}
-                      label={'Pathfinder Core'}
-                      links={books
-                        .filter((book) => book.group === 'pathfinder-core')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'pathfinder-core')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    />
-                    <LinksGroup
-                      icon={IconServer}
-                      label={'Starfinder Core'}
-                      links={books
-                        .filter((book) => book.group === 'starfinder-core')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'starfinder-core')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    />
-                    <Box py={8}></Box>
-                    <LinksGroup
-                      icon={IconMap}
-                      label={'Adventure Paths'}
-                      links={books
-                        .filter((book) => book.group === 'adventure-path')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'adventure-path')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    />
-                    <LinksGroup
-                      icon={IconBrandSafari}
-                      label={'Standalone Adventures'}
-                      links={books
-                        .filter((book) => book.group === 'standalone-adventure')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'standalone-adventure')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    />
-                    <LinksGroup
-                      icon={IconWorld}
-                      label={'Lost Omens'}
-                      links={books
-                        .filter((book) => book.group === 'lost-omens')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'lost-omens')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    />
-                    <LinksGroup
-                      icon={IconDots}
-                      label={'Miscellaneous'}
-                      links={books
-                        .filter((book) => book.group === 'misc')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'misc')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    />
-                    {/* <LinksGroup
-                      icon={IconArchive}
-                      label={'Legacy Backports'}
-                      links={books
-                        .filter((book) => book.group === 'legacy')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'legacy')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                    /> */}
-                  </Stack>
-                </Tabs.Panel>
-
-                <Tabs.Panel value='variants'>
-                  <Stack gap={0} pt='sm'>
-                    <LinkSwitch
-                      label='Ancestry Paragon'
-                      info={`Most characters have some elements that connect them to their ancestry but identify more strongly with their class or unique personality. Sometimes, though, a character is the embodiment of their ancestry to the point that it’s of equal importance to their class. For a game where an ancestral background is a major theme and such characters are the norm, your group might consider using the ancestry paragon variant.`}
-                      url='https://2e.aonprd.com/Rules.aspx?ID=1336'
-                      enabled={character?.variants?.ancestry_paragon}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            variants: {
-                              ...prev.variants,
-                              ancestry_paragon: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Dual Class'
-                      info={`Sometimes, especially when you have a particularly small play group or want to play incredibly versatile characters, you might want to allow dual-class characters that have the full benefits of two different classes.`}
-                      url='https://2e.aonprd.com/Rules.aspx?ID=1328'
-                      enabled={character?.variants?.dual_class}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            variants: {
-                              ...prev.variants,
-                              dual_class: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Free Archetype'
-                      info={`Sometimes the story of your game calls for a group where everyone is a pirate or an apprentice at a magic school. The free archetype variant introduces a shared aspect to every character without taking away any of that character’s existing choices.`}
-                      url='https://2e.aonprd.com/Rules.aspx?ID=2751'
-                      enabled={character?.variants?.free_archetype}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            variants: {
-                              ...prev.variants,
-                              free_archetype: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Proficiency without Level'
-                      info={`This variant removes a character's level from their proficiency bonus, scaling it differently for a style of game that's outside the norm. This is a significant change to the system. The proficiency rank progression in Player Core is designed for heroic fantasy games where heroes rise from humble origins to world-shattering strength. For some games, this narrative arc doesn't fit. Such games are about hedging bets in an uncertain and gritty world, in which even the world's best fighter can't guarantee a win against a large group of moderately skilled brigands.`}
-                      url='https://2e.aonprd.com/Rules.aspx?ID=2762'
-                      enabled={character?.variants?.proficiency_without_level}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            variants: {
-                              ...prev.variants,
-                              proficiency_without_level: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Stamina'
-                      info={`In some fantasy stories, the heroes are able to avoid any serious injury until the situation gets dire, getting by with a graze or a flesh wound and needing nothing more than a quick rest to get back on their feet. If your group wants to tell tales like those, you can use the stamina variant to help make that happen.`}
-                      url='https://2e.aonprd.com/Rules.aspx?ID=1378'
-                      enabled={character?.variants?.stamina}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            variants: {
-                              ...prev.variants,
-                              stamina: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                  </Stack>
-                </Tabs.Panel>
-
-                <Tabs.Panel value='options'>
-                  <Stack gap={0} pt='sm'>
-                    <LinkSwitch
-                      label='Auto Detect Prerequisites'
-                      info={`**[Beta]** Automatically determine if a feat or feature has its prerequisites met in order to be taken. This is a beta feature and may not always work correctly.`}
-                      enabled={character?.options?.auto_detect_prerequisites}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              auto_detect_prerequisites: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    {/* <LinkSwitch
-                      label='Auto Heighten Spells'
-                      info={`**[Beta]** Automatically apply the heightened effects of a spell to its stat block. This is a beta feature and may not always work correctly.`}
-                      enabled={character?.options?.auto_heighten_spells}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              auto_heighten_spells: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    /> */}
-                    {/* <LinkSwitch
-                      label='Class Archetypes'
-                      info={``}
-                      enabled={character?.options?.class_archetypes}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              class_archetypes: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    /> */}
-                    <LinkSwitch
-                      label='Dice Roller'
-                      info={`Roll your dice directly from the character sheet! Integrated with all your character's stats and abilities.`}
-                      enabled={character?.options?.dice_roller}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              dice_roller: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Ignore Bulk Limit'
-                      info={`Disables the negative effects of carrying too much bulk, such as adding the encumbered condition.`}
-                      enabled={character?.options?.ignore_bulk_limit}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              ignore_bulk_limit: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Public Character'
-                      info={`Makes your character public and viewable by anyone with your sheet link: \n\n _https://wanderersguide.app/sheet/${character?.id}_`}
-                      enabled={character?.options?.is_public}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              is_public: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    <LinkSwitch
-                      label='Custom Operations'
-                      info={`Enables an area to add custom operations to your character. These are executed before most other operations.`}
-                      enabled={character?.options?.custom_operations}
-                      onLinkChange={(enabled) => {
-                        setCharacter((prev) => {
-                          if (!prev) return prev;
-                          return {
-                            ...prev,
-                            options: {
-                              ...prev.options,
-                              custom_operations: enabled,
-                            },
-                          };
-                        });
-                      }}
-                    />
-                    {character?.options?.custom_operations && (
-                      <Box pl={15}>
-                        <BlurButton
-                          size='compact-xs'
-                          fw={400}
-                          w={180}
-                          onClick={() => {
-                            setOpenedOperations(true);
-                          }}
-                        >
-                          Open Operations{' '}
-                          {character.custom_operations && character.custom_operations.length > 0
-                            ? `(${character.custom_operations.length})`
-                            : ''}
-                        </BlurButton>
-                        <CustomOperationsModal
-                          opened={openedOperations}
-                          onClose={() => setOpenedOperations(false)}
-                          operations={_.cloneDeep(character.custom_operations ?? [])}
-                          onChange={(operations) => {
-                            if (_.isEqual(character.custom_operations, operations)) return;
-
-                            setCharacter((prev) => {
-                              if (!prev) return prev;
-                              return {
-                                ...prev,
-                                custom_operations: operations,
-                              };
-                            });
-                          }}
-                        />
-                      </Box>
-                    )}
-                  </Stack>
-                </Tabs.Panel>
-              </Tabs>
-            </ScrollArea>
-          </Paper>
-        </Box>
-        <Box style={{ flexBasis: 'calc(35% - 10px)' }} h='100%'>
-          <Paper
-            shadow='sm'
-            p='sm'
-            h='100%'
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.13)',
-            }}
-          >
-            <Stack>
-              <PasswordInput
-                radius='xl'
-                size='xs'
-                label={<Text fz='sm'>Campaign</Text>}
-                placeholder='Enter Join Key'
-                rightSectionWidth={28}
-                leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
-                rightSection={
-                  <ActionIcon
-                    size={22}
-                    radius='xl'
-                    color={theme.primaryColor}
-                    variant='light'
-                    onClick={() => {
-                      //
-                    }}
-                  >
-                    <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
-                  </ActionIcon>
-                }
-                onClick={() => {
-                  displayComingSoon();
-                }}
-              />
-              <ColorInput
-                radius='xl'
-                size='xs'
-                label={<Text fz='sm'>Color Theme</Text>}
-                placeholder='Character Color Theme'
-                defaultValue={character?.details?.sheet_theme?.color || GUIDE_BLUE}
-                swatches={[
-                  '#25262b',
-                  '#868e96',
-                  '#fa5252',
-                  '#e64980',
-                  '#be4bdb',
-                  '#8d69f5',
-                  '#577deb',
-                  GUIDE_BLUE,
-                  '#15aabf',
-                  '#12b886',
-                  '#40c057',
-                  '#82c91e',
-                  '#fab005',
-                  '#fd7e14',
-                ]}
-                swatchesPerRow={7}
-                onChange={(color) => {
-                  if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
-                    displayPatronOnly();
-                    return;
-                  }
-                  setCharacter((prev) => {
-                    if (!prev) return prev;
-                    return {
-                      ...prev,
-                      details: {
-                        ...prev.details,
-                        sheet_theme: {
-                          ...prev.details?.sheet_theme,
-                          color: color,
-                        },
-                      },
-                    };
-                  });
-                }}
-              />
-              <Box>
-                <Text fz='sm'>Background Artwork</Text>
-                <UnstyledButton
-                  w={'50%'}
-                  onClick={() => {
-                    openContextModal({
-                      modal: 'selectImage',
-                      title: <Title order={3}>Select Background</Title>,
-                      innerProps: {
-                        options: getAllBackgroundImages(),
-                        onSelect: (option) => {
-                          if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
-                            displayPatronOnly();
-                            return;
-                          }
-                          setCharacter((prev) => {
-                            if (!prev) return prev;
-                            return {
-                              ...prev,
-                              details: {
-                                ...prev.details,
-                                background_image_url: option.url,
-                              },
-                            };
-                          });
-                        },
-                        category: 'backgrounds',
-                      },
-                    });
-                  }}
-                >
-                  <Image
-                    radius='md'
-                    h='auto'
-                    fit='contain'
-                    src={character?.details?.background_image_url}
-                    fallbackSrc='/src/assets/images/backgrounds/placeholder.jpeg'
-                  />
-                </UnstyledButton>
-              </Box>
-            </Stack>
-          </Paper>
-        </Box>
-      </Group>
+      {isPhone ? (
+        <Stack h='100%'>
+          <Box h={390}>{getOptionsSection()}</Box>
+          {getSidebarSection()}
+        </Stack>
+      ) : (
+        <Group gap={10} align='flex-start' wrap='nowrap' h={props.pageHeight - height - topGap}>
+          <Box style={{ flexBasis: '65%' }} h='100%'>
+            {getOptionsSection()}
+          </Box>
+          <Box style={{ flexBasis: 'calc(35% - 10px)' }} h='100%'>
+            {getSidebarSection()}
+          </Box>
+        </Group>
+      )}
     </Stack>
   );
 }

@@ -26,6 +26,8 @@ import classes from '@css/LinksGroup.module.css';
 import switchClasses from '@css/CustomSwitch.module.css';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 interface LinksGroupProps {
   icon: React.FC<any>;
@@ -38,6 +40,7 @@ interface LinksGroupProps {
 
 export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkChange, onEnableAll }: LinksGroupProps) {
   const theme = useMantineTheme();
+  const isPhone = useMediaQuery(phoneQuery());
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const hasLinks = Array.isArray(links);
   const [opened, setOpened] = useState(initiallyOpened || false);
@@ -114,15 +117,17 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
             {items.length > 0 ? (
               <>
                 {items}
-                <Button
-                  style={{ position: 'absolute', top: -30, right: 45 }}
-                  variant='outline'
-                  color='gray.5'
-                  size='compact-xs'
-                  onClick={onEnableAll}
-                >
-                  Enable All
-                </Button>
+                {!isPhone && (
+                  <Button
+                    style={{ position: 'absolute', top: -30, right: 45 }}
+                    variant='outline'
+                    color='gray.5'
+                    size='compact-xs'
+                    onClick={onEnableAll}
+                  >
+                    Enable All
+                  </Button>
+                )}
               </>
             ) : (
               <Text pl={60} py={5} fz='sm' fs='italic' c='dimmed'>
