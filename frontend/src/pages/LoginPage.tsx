@@ -44,6 +44,7 @@ export function Component() {
               <Auth
                 supabaseClient={supabase}
                 providers={['google', 'discord', 'github']}
+                redirectTo={window.location.origin}
                 appearance={{
                   theme: ThemeSupa,
                   variables: {
