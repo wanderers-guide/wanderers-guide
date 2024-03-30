@@ -47,7 +47,6 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
   };
 
   const getPage = (page: { name: string; icon: string; color: string; contents: JSONContent }, index: number) => {
-    console.log('getPage', page, index);
     return (
       <ScrollArea h={props.panelHeight} scrollbars='y'>
         <RichTextInput
@@ -81,6 +80,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
                   bottom: 10,
                   left: 10,
                 }}
+                w={110}
               >
                 Open Pages
               </Button>
@@ -143,7 +143,8 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
             position: 'absolute',
             top: isPhone ? undefined : 10,
             bottom: isPhone ? 10 : undefined,
-            right: 10,
+            left: isPhone ? 130 : undefined,
+            right: isPhone ? undefined : 10,
           }}
           onClick={() => {
             openContextModal({

@@ -28,7 +28,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useHover } from '@mantine/hooks';
+import { useHover, useMediaQuery } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { makeRequest } from '@requests/request-manager';
@@ -46,6 +46,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character } from '@typing/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
+import { phoneQuery } from '@utils/mobile-responsive';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -250,6 +251,7 @@ export function Component() {
 function CharacterCard(props: { character: Character; reachedCharacterLimit: boolean }) {
   const theme = useMantineTheme();
   const navigate = useNavigate();
+  const isPhone = useMediaQuery(phoneQuery());
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
@@ -278,7 +280,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
     });
 
   return (
-    <BlurBox blur={10} w='100%'>
+    <BlurBox blur={10} w={isPhone ? '100%' : undefined}>
       <LoadingOverlay visible={loading} />
       <Box
         w='100%'
