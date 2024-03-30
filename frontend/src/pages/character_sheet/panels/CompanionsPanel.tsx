@@ -1,7 +1,7 @@
 import { LEGACY_URL } from '@constants/data';
 import { Center, Stack, Title, Anchor, Text, Box } from '@mantine/core';
 
-export default function CompanionsPanel(props: { panelHeight: number }) {
+export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   return (
     <Box h={props.panelHeight}>
       <Center pt={50}>

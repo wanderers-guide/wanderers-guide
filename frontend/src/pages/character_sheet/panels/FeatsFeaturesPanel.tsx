@@ -27,7 +27,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
 
-export default function FeatsFeaturesPanel(props: { panelHeight: number }) {
+export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
   const [searchQuery, setSearchQuery] = useState('');

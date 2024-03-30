@@ -49,6 +49,7 @@ interface ActionItem {
 export default function SkillsActionsPanel(props: {
   content: ContentPackage;
   panelHeight: number;
+  panelWidth: number;
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {

@@ -100,7 +100,7 @@ export function ManageCoinsDrawerContent(props: {
         <TextInput
           ref={ppRef}
           label={
-            <Group wrap='nowrap' gap={8}>
+            <Group wrap='nowrap' gap={8} style={{ textWrap: 'nowrap' }}>
               <Avatar src={PlatinumCoin} alt='Platinum Coin' radius='xs' size='xs' /> Platinum
             </Group>
           }
@@ -118,7 +118,7 @@ export function ManageCoinsDrawerContent(props: {
         <TextInput
           ref={gpRef}
           label={
-            <Group wrap='nowrap' gap={8}>
+            <Group wrap='nowrap' gap={8} style={{ textWrap: 'nowrap' }}>
               <Avatar src={GoldCoin} alt='Gold Coin' radius='xs' size='xs' /> Gold
             </Group>
           }
@@ -136,7 +136,7 @@ export function ManageCoinsDrawerContent(props: {
         <TextInput
           ref={spRef}
           label={
-            <Group wrap='nowrap' gap={8}>
+            <Group wrap='nowrap' gap={8} style={{ textWrap: 'nowrap' }}>
               <Avatar src={SilverCoin} alt='Silver Coin' radius='xs' size='xs' /> Silver
             </Group>
           }
@@ -154,7 +154,7 @@ export function ManageCoinsDrawerContent(props: {
         <TextInput
           ref={cpRef}
           label={
-            <Group wrap='nowrap' gap={8}>
+            <Group wrap='nowrap' gap={8} style={{ textWrap: 'nowrap' }}>
               <Avatar src={CopperCoin} alt='Copper Coin' radius='xs' size='xs' /> Copper
             </Group>
           }

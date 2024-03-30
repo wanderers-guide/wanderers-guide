@@ -496,6 +496,7 @@ function SectionPanels(props: {
             <SkillsActionsPanel
               content={props.content}
               panelHeight={panelHeight}
+              panelWidth={panelWidth}
               inventory={props.inventory}
               setInventory={props.setInventory}
             />
@@ -505,21 +506,22 @@ function SectionPanels(props: {
             <InventoryPanel
               content={props.content}
               panelHeight={panelHeight}
+              panelWidth={panelWidth}
               inventory={props.inventory}
               setInventory={props.setInventory}
             />
           </Tabs.Panel>
 
           <Tabs.Panel value='spells'>
-            <SpellsPanel panelHeight={panelHeight} />
+            <SpellsPanel panelHeight={panelHeight} panelWidth={panelWidth} />
           </Tabs.Panel>
 
           <Tabs.Panel value='feats-features'>
-            <FeatsFeaturesPanel panelHeight={panelHeight} />
+            <FeatsFeaturesPanel panelHeight={panelHeight} panelWidth={panelWidth} />
           </Tabs.Panel>
 
           <Tabs.Panel value='companions'>
-            <CompanionsPanel panelHeight={panelHeight} />
+            <CompanionsPanel panelHeight={panelHeight} panelWidth={panelWidth} />
           </Tabs.Panel>
 
           <Tabs.Panel value='details'>
@@ -531,7 +533,7 @@ function SectionPanels(props: {
           </Tabs.Panel>
 
           <Tabs.Panel value='extras'>
-            <ExtrasPanel panelHeight={panelHeight} />
+            <ExtrasPanel panelHeight={panelHeight} panelWidth={panelWidth} />
           </Tabs.Panel>
         </Tabs>
       </BlurBox>

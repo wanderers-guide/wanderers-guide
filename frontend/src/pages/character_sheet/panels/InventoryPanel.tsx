@@ -33,10 +33,23 @@ import {
   Avatar,
   Box,
   Text,
+  Menu,
+  ActionIcon,
+  rem,
 } from '@mantine/core';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import { IconSearch, IconPlus } from '@tabler/icons-react';
+import {
+  IconSearch,
+  IconPlus,
+  IconArrowsLeftRight,
+  IconMenu2,
+  IconMessageCircle,
+  IconPhoto,
+  IconSettings,
+  IconTrash,
+  IconCoins,
+} from '@tabler/icons-react';
 import { ContentPackage, Inventory, Item, InventoryItem, Character } from '@typing/content';
 import _ from 'lodash';
 import { useState } from 'react';
@@ -47,15 +60,18 @@ import GoldCoin from '@assets/images/currency/gold.png';
 import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
 import { sign } from '@utils/numbers';
+import { isPhoneSized } from '@utils/mobile-responsive';
 
 export default function InventoryPanel(props: {
   content: ContentPackage;
   panelHeight: number;
+  panelWidth: number;
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
   const theme = useMantineTheme();
   const [character, setCharacter] = useRecoilState(characterState);
+  const isPhone = isPhoneSized(props.panelWidth);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -98,6 +114,21 @@ export default function InventoryPanel(props: {
     });
   };
 
+  const openManageCoinsDrawer = () => {
+    openDrawer({
+      type: 'manage-coins',
+      data: {
+        coins: character?.inventory?.coins,
+        onUpdate: (coins: { cp: number; sp: number; gp: number; pp: number }) => {
+          props.setInventory((prev) => ({
+            ...prev,
+            coins: coins,
+          }));
+        },
+      },
+    });
+  };
+
   return (
     <Box h='100%'>
       <Stack gap={5}>
@@ -114,46 +145,60 @@ export default function InventoryPanel(props: {
               },
             }}
           />
-          <Badge
-            variant='light'
-            color='gray'
-            size='lg'
-            styles={{
-              root: {
-                textTransform: 'initial',
-              },
-            }}
-          >
-            Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}
-          </Badge>
-          <CurrencySection
-            character={character}
-            onClick={() => {
-              openDrawer({
-                type: 'manage-coins',
-                data: {
-                  coins: character?.inventory?.coins,
-                  onUpdate: (coins: { cp: number; sp: number; gp: number; pp: number }) => {
-                    props.setInventory((prev) => ({
-                      ...prev,
-                      coins: coins,
-                    }));
+          {isPhone ? (
+            <Menu shadow='md' width={160}>
+              <Menu.Target>
+                <ActionIcon variant='light' color='gray' size='lg' aria-label='Inventory Options'>
+                  <IconMenu2 style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Label>
+                  Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}{' '}
+                </Menu.Label>
+                <Menu.Item
+                  leftSection={<IconCoins style={{ width: rem(14), height: rem(14) }} />}
+                  onClick={() => openManageCoinsDrawer()}
+                >
+                  Manage Coins
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconPlus style={{ width: rem(14), height: rem(14) }} />}
+                  onClick={() => openAddItemDrawer()}
+                >
+                  Add Item
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          ) : (
+            <Group wrap='nowrap'>
+              <Badge
+                variant='light'
+                color='gray'
+                size='lg'
+                styles={{
+                  root: {
+                    textTransform: 'initial',
                   },
-                },
-              });
-            }}
-          />
-          <Button
-            color='dark.5'
-            style={{ borderColor: theme.colors.dark[4] }}
-            radius='xl'
-            size='sm'
-            fw={500}
-            rightSection={<IconPlus size='1.0rem' />}
-            onClick={() => openAddItemDrawer()}
-          >
-            Add Item
-          </Button>
+                }}
+              >
+                Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}
+              </Badge>
+              <CurrencySection character={character} onClick={() => openManageCoinsDrawer()} />
+              <Button
+                color='dark.5'
+                style={{ borderColor: theme.colors.dark[4] }}
+                radius='xl'
+                size='sm'
+                fw={500}
+                rightSection={<IconPlus size='1.0rem' />}
+                onClick={() => openAddItemDrawer()}
+              >
+                Add Item
+              </Button>
+            </Group>
+          )}
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {invItems.length !== 0 && (
@@ -163,25 +208,27 @@ export default function InventoryPanel(props: {
                   Name
                 </Text>
               </Grid.Col>
-              <Grid.Col span={3}>
-                <Grid>
-                  <Grid.Col span={2}>
-                    <Text ta='center' fz='xs'>
-                      Qty
-                    </Text>
-                  </Grid.Col>
-                  <Grid.Col span={3}>
-                    <Text ta='center' fz='xs'>
-                      Bulk
-                    </Text>
-                  </Grid.Col>
-                  <Grid.Col span={7}>
-                    <Text ta='left' fz='xs'>
-                      Price
-                    </Text>
-                  </Grid.Col>
-                </Grid>
-              </Grid.Col>
+              {!isPhone && (
+                <Grid.Col span={3}>
+                  <Grid>
+                    <Grid.Col span={2}>
+                      <Text ta='center' fz='xs'>
+                        Qty
+                      </Text>
+                    </Grid.Col>
+                    <Grid.Col span={3}>
+                      <Text ta='center' fz='xs'>
+                        Bulk
+                      </Text>
+                    </Grid.Col>
+                    <Grid.Col span={7}>
+                      <Text ta='left' fz='xs'>
+                        Price
+                      </Text>
+                    </Grid.Col>
+                  </Grid>
+                </Grid.Col>
+              )}
               <Grid.Col span={2} offset={1}>
                 <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}></Group>
               </Grid.Col>
@@ -213,6 +260,7 @@ export default function InventoryPanel(props: {
                       <Accordion.Control>
                         <Box pr={5}>
                           <InvItemOption
+                            isPhone={isPhone}
                             hideSections
                             invItem={invItem}
                             onEquip={(invItem) => {
@@ -273,6 +321,7 @@ export default function InventoryPanel(props: {
                               }}
                             >
                               <InvItemOption
+                                isPhone={isPhone}
                                 invItem={containedItem}
                                 preventEquip
                                 onEquip={(invItem) => {
@@ -321,6 +370,7 @@ export default function InventoryPanel(props: {
                         }}
                       >
                         <InvItemOption
+                          isPhone={isPhone}
                           invItem={invItem}
                           onEquip={(invItem) => {
                             const newInvItem = _.cloneDeep(invItem);
@@ -455,6 +505,7 @@ function InvItemOption(props: {
   onViewItem?: (invItem: InventoryItem) => void;
   hideSections?: boolean;
   preventEquip?: boolean;
+  isPhone?: boolean;
 }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
@@ -483,7 +534,8 @@ function InvItemOption(props: {
               View Item
             </Button>
           )}
-          {isItemWeapon(props.invItem.item) && weaponStats && (
+
+          {isItemWeapon(props.invItem.item) && !props.isPhone && weaponStats && (
             <Group wrap='nowrap' gap={10}>
               <Text c='gray.6' fz='xs' fs='italic' span>
                 {sign(weaponStats.attack_bonus.total[0])}
@@ -499,43 +551,45 @@ function InvItemOption(props: {
           )}
         </Group>
       </Grid.Col>
-      <Grid.Col span={3}>
-        <Grid>
-          <Grid.Col span={2}>
-            {!props.hideSections && (
-              <>
-                {' '}
-                {isItemWithQuantity(props.invItem.item) && (
+      {!props.isPhone && (
+        <Grid.Col span={3}>
+          <Grid>
+            <Grid.Col span={2}>
+              {!props.hideSections && (
+                <>
+                  {' '}
+                  {isItemWithQuantity(props.invItem.item) && (
+                    <Text ta='center' fz='xs'>
+                      {getItemQuantity(props.invItem.item)}
+                    </Text>
+                  )}
+                </>
+              )}
+            </Grid.Col>
+            <Grid.Col span={3}>
+              {!props.hideSections && (
+                <>
+                  {' '}
                   <Text ta='center' fz='xs'>
-                    {getItemQuantity(props.invItem.item)}
+                    {labelizeBulk(props.invItem.item.bulk)}
                   </Text>
-                )}
-              </>
-            )}
-          </Grid.Col>
-          <Grid.Col span={3}>
-            {!props.hideSections && (
-              <>
-                {' '}
-                <Text ta='center' fz='xs'>
-                  {labelizeBulk(props.invItem.item.bulk)}
-                </Text>
-              </>
-            )}
-          </Grid.Col>
-          <Grid.Col span={7}>
-            {!props.hideSections && (
-              <>
-                {' '}
-                <Text ta='left' fz='xs'>
-                  {priceToString(props.invItem.item.price)}
-                </Text>
-              </>
-            )}
-          </Grid.Col>
-        </Grid>
-      </Grid.Col>
-      <Grid.Col span={2} offset={1}>
+                </>
+              )}
+            </Grid.Col>
+            <Grid.Col span={7}>
+              {!props.hideSections && (
+                <>
+                  {' '}
+                  <Text ta='left' fz='xs'>
+                    {priceToString(props.invItem.item.price)}
+                  </Text>
+                </>
+              )}
+            </Grid.Col>
+          </Grid>
+        </Grid.Col>
+      )}
+      <Grid.Col span={props.isPhone ? 3 : 2} offset={1}>
         <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
           {isItemInvestable(props.invItem.item) && (
             <Button

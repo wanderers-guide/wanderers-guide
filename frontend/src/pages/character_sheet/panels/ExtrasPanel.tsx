@@ -1,6 +1,6 @@
 import { Center, Stack, Title, Box, Text } from '@mantine/core';
 
-export default function ExtrasPanel(props: { panelHeight: number }) {
+export default function ExtrasPanel(props: { panelHeight: number; panelWidth: number }) {
   return (
     <Box h={props.panelHeight}>
       <Center pt={50}>
