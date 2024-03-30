@@ -14,6 +14,10 @@ export function GiveTraitOperation(props: {
         onClick={(option) => {
           props.onSelect(option);
         }}
+        options={{
+          overrideLabel: 'Select Creature Trait',
+          filterFn: (trait: Trait) => !!trait.meta_data?.creature_trait,
+        }}
         selectedId={props.selectedId}
       />
     </OperationWrapper>
