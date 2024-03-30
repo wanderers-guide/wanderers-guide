@@ -7,7 +7,6 @@ import {
   BackgroundImage,
   Anchor,
   Center,
-  Group,
   SimpleGrid,
   Avatar,
   useMantineTheme,
@@ -18,11 +17,14 @@ import BlurBox from '@common/BlurBox';
 import { getHomeBackgroundImage } from '@utils/background-images';
 import { IconBrush, IconExternalLink } from '@tabler/icons-react';
 import { DISCORD_URL } from '@constants/data';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export function Component() {
   setPageTitle();
   const theme = useMantineTheme();
 
+  const isPhone = useMediaQuery(phoneQuery());
   const background = getHomeBackgroundImage();
 
   return (
@@ -65,7 +67,7 @@ export function Component() {
             />
           </Box>
         </Group> */}
-        <SimpleGrid cols={3} maw={800}>
+        <SimpleGrid cols={isPhone ? 1 : 3} maw={800}>
           <UnderSection
             title='Archives of Nethys'
             description='The official up-to-date, online resource and compendium for Pathfinder and Starfinder.'
