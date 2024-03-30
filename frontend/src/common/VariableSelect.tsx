@@ -19,7 +19,13 @@ export default function VariableSelect(props: {
         props.onChange(value, getVariables('CHARACTER')[variable]);
       }}
       data={Object.keys(getVariables('CHARACTER'))
-        .filter((variable) => !variable.endsWith('____'))
+        .filter(
+          (variable) =>
+            !variable.endsWith('____') &&
+            !variable.endsWith('_IDS') &&
+            !variable.endsWith('_NAMES') &&
+            !variable.endsWith('_TOTAL')
+        )
         .filter((variable) => {
           if (props.variableType) {
             return getVariables('CHARACTER')[variable].type === props.variableType;

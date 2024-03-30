@@ -329,7 +329,7 @@ async function getLanguageList(id: StoreID, operationUUID: string, filters: Oper
   }
   if (filters.core) {
     // Sort by core first
-    const coreLangs = (getVariable(id, 'CORE_LANGUAGE_NAMES')?.value ?? []) as string[];
+    const coreLangs = (getVariable(id, 'CORE_LANGUAGES')?.value ?? []) as string[];
     languages = languages.map((language) => ({
       ...language,
       _is_core: coreLangs.includes(language.name),

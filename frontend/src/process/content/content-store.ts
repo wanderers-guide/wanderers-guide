@@ -224,9 +224,22 @@ export async function fetchAbilityBlockByName(name?: string, sources?: number[],
     content_sources: sources ?? defaultSources,
   });
 }
-
 export async function fetchItemByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<Item[]>('item', {
+  return await fetchContent<Item>('item', {
+    id,
+    name,
+    content_sources: sources ?? defaultSources,
+  });
+}
+export async function fetchLanguageByName(name?: string, sources?: number[], id?: number) {
+  return await fetchContent<Language>('language', {
+    id,
+    name,
+    content_sources: sources ?? defaultSources,
+  });
+}
+export async function fetchSpellByName(name?: string, sources?: number[], id?: number) {
+  return await fetchContent<Spell>('spell', {
     id,
     name,
     content_sources: sources ?? defaultSources,

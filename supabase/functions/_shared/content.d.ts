@@ -170,31 +170,28 @@ interface Creature {
   level: number;
   rarity: Rarity;
   size: Size;
-  traits?: number[];
-  family_type?: string;
-  senses?: string;
-  languages?: Record<string, any>; // TODO
-  skills?: Record<string, any>; // TODO
-  items?: Record<string, any>; // TODO
-  attributes?: {
-    str: number;
-    dex: number;
-    con: number;
-    int: number;
-    wis: number;
-    cha: number;
+  traits: number[];
+  inventory?: Inventory;
+  notes?: {
+    contents: JSONContent;
   };
-  stats?: Record<string, any>; // TODO
-  immunities?: Record<string, any>; // TODO
-  weaknesses?: Record<string, any>; // TODO
-  resistances?: Record<string, any>; // TODO
-  interaction_abilities?: Record<string, any>; // TODO
-  offensive_abilities?: Record<string, any>; // TODO
-  defensive_abilities?: Record<string, any>; // TODO
-  speeds?: Record<string, any>; // TODO
-  attacks?: Record<string, any>; // TODO
-  spellcasting?: Record<string, any>; // TODO
-  description: string;
+  details: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+    description: string;
+  };
+  roll_history?: Record<string, any>; // TODO
+  operations: Operation[] | undefined;
+  abilities?: AbilityBlock[];
+  spells?: {
+    slots: SpellSlot[];
+    list: SpellListEntry[];
+    // The number of focus points
+    focus_point_current: number;
+    // Used for tracking how many times an innate spell has been cast
+    innate_casts: SpellInnateEntry[];
+  };
   meta_data?: Record<string, any>; // TODO
   content_source_id: number;
   version: string;

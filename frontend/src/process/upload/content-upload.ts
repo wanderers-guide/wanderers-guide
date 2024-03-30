@@ -11,7 +11,6 @@ import {
   stripFoundryLinking,
 } from './foundry-utils';
 import * as _ from 'lodash-es';
-import { uploadCreatureHandler } from './creature-import';
 import { throwError } from '@utils/notifications';
 import {
   upsertAbilityBlock,
@@ -28,6 +27,7 @@ import { hideNotification, showNotification } from '@mantine/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { performAutoContentLinking } from './auto-content-linking';
 import { convertCastToActionCost } from '@utils/actions';
+import { newImportHandler } from './creature-import';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -507,7 +507,8 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>):
   }
 
   try {
-    const creature = await uploadCreatureHandler(source, json);
+    const creature = await newImportHandler(source, json);
+    console.log(creature);
 
     const createdCreature = await upsertCreature(creature);
     if (DEBUG) {

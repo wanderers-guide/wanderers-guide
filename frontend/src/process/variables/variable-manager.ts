@@ -141,14 +141,11 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CLASS_DC: newVariable('prof', 'CLASS_DC'),
   LEVEL: newVariable('num', 'LEVEL'),
   SIZE: newVariable('str', 'SIZE'),
-  CORE_LANGUAGE_NAMES: newVariable('list-str', 'CORE_LANGUAGE_NAMES'),
-  //FOCUS_POINTS: newVariable('num', 'FOCUS_POINTS'),
+  CORE_LANGUAGES: newVariable('list-str', 'CORE_LANGUAGES'),
 
   MAX_HEALTH_ANCESTRY: newVariable('num', 'MAX_HEALTH_ANCESTRY'),
   MAX_HEALTH_CLASS_PER_LEVEL: newVariable('num', 'MAX_HEALTH_CLASS_PER_LEVEL'),
   MAX_HEALTH_BONUS: newVariable('num', 'MAX_HEALTH_BONUS'),
-  HEALTH: newVariable('num', 'HEALTH'),
-  TEMP_HEALTH: newVariable('num', 'TEMP_HEALTH'),
 
   AC_BONUS: newVariable('num', 'AC_BONUS'),
   // ARMOR_CHECK_PENALTY: newVariable('num', 'ARMOR_CHECK_PENALTY'),
@@ -267,6 +264,44 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
     'details',
     'notes',
   ]),
+
+  ///// ~~~~~ TOTALED VARIABLES ~~~~~ /////
+  /*
+    These variables are represent the final computed value of something,
+    they override the computed value if they're greater than the computed value.
+    They're used for things like creatures who are just given a total value.
+  */
+  AC_TOTAL: newVariable('num', 'AC_TOTAL'),
+
+  SAVE_FORT_TOTAL: newVariable('prof', 'SAVE_FORT_TOTAL'),
+  SAVE_REFLEX_TOTAL: newVariable('prof', 'SAVE_REFLEX_TOTAL'),
+  SAVE_WILL_TOTAL: newVariable('prof', 'SAVE_WILL_TOTAL'),
+
+  PERCEPTION_TOTAL: newVariable('prof', 'PERCEPTION_TOTAL'),
+
+  SKILL_ACROBATICS_TOTAL: newVariable('prof', 'SKILL_ACROBATICS_TOTAL'),
+  SKILL_ARCANA_TOTAL: newVariable('prof', 'SKILL_ARCANA_TOTAL'),
+  SKILL_ATHLETICS_TOTAL: newVariable('prof', 'SKILL_ATHLETICS_TOTAL'),
+  SKILL_CRAFTING_TOTAL: newVariable('prof', 'SKILL_CRAFTING_TOTAL'),
+  SKILL_DECEPTION_TOTAL: newVariable('prof', 'SKILL_DECEPTION_TOTAL'),
+  SKILL_DIPLOMACY_TOTAL: newVariable('prof', 'SKILL_DIPLOMACY_TOTAL'),
+  SKILL_INTIMIDATION_TOTAL: newVariable('prof', 'SKILL_INTIMIDATION_TOTAL'),
+  SKILL_MEDICINE_TOTAL: newVariable('prof', 'SKILL_MEDICINE_TOTAL'),
+  SKILL_NATURE_TOTAL: newVariable('prof', 'SKILL_NATURE_TOTAL'),
+  SKILL_OCCULTISM_TOTAL: newVariable('prof', 'SKILL_OCCULTISM_TOTAL'),
+  SKILL_PERFORMANCE_TOTAL: newVariable('prof', 'SKILL_PERFORMANCE_TOTAL'),
+  SKILL_RELIGION_TOTAL: newVariable('prof', 'SKILL_RELIGION_TOTAL'),
+  SKILL_SOCIETY_TOTAL: newVariable('prof', 'SKILL_SOCIETY_TOTAL'),
+  SKILL_STEALTH_TOTAL: newVariable('prof', 'SKILL_STEALTH_TOTAL'),
+  SKILL_SURVIVAL_TOTAL: newVariable('prof', 'SKILL_SURVIVAL_TOTAL'),
+  SKILL_THIEVERY_TOTAL: newVariable('prof', 'SKILL_THIEVERY_TOTAL'),
+  //SKILL_LORE_<>_TOTAL: newVariable('prof', 'SKILL_LORE_<>_TOTAL'),
+
+  HEALTH_MAX_TOTAL: newVariable('num', 'HEALTH_MAX_TOTAL'),
+  HEALTH_TEMP_TOTAL: newVariable('num', 'HEALTH_TEMP_TOTAL'),
+
+  SPELL_ATTACK_TOTAL: newVariable('num', 'SPELL_ATTACK_TOTAL'),
+  SPELL_DC_TOTAL: newVariable('num', 'SPELL_DC_TOTAL'),
 };
 
 const variableMap = new Map<string, VariableStore>();
