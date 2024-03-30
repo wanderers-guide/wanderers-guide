@@ -77,7 +77,7 @@ export default function RichTextInput(props: RichTextInputProps) {
           },
         }}
       >
-        <RichTextEditor.Toolbar style={{ gap: 8 }}>
+        <RichTextEditor.Toolbar style={{ gap: 5 }}>
           <RichTextEditor.ControlsGroup>
             <ActionSymbolControl />
           </RichTextEditor.ControlsGroup>
