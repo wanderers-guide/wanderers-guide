@@ -77,10 +77,20 @@ export function CreateItemModal(props: {
       const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
       if (!item) return null;
 
+      const mergeData = _.merge(form.values, item);
+      const damageData = _.merge(form.values.meta_data?.damage, item.meta_data?.damage);
+
       form.setInitialValues({
-        ..._.merge(form.values, item),
+        ...mergeData,
         // @ts-ignore
         level: item.level.toString(),
+        meta_data: {
+          ...(mergeData.meta_data ?? {
+            bulk: {},
+            foundry: {},
+          }),
+          damage: damageData,
+        },
       });
       form.reset();
       setTraits(await fetchTraits(item.traits));
@@ -452,7 +462,10 @@ export function CreateItemModal(props: {
                                 { value: 'unarmed_attack', label: 'Unarmed' },
                               ]}
                               value={weaponCategory}
-                              onChange={(value) => setWeaponCategory(value ?? '')}
+                              onChange={(value) => {
+                                setWeaponCategory(value ?? '');
+                                setArmorCategory('');
+                              }}
                             />
 
                             <Select
@@ -477,7 +490,10 @@ export function CreateItemModal(props: {
                                 { value: 'sword', label: 'Sword' },
                               ]}
                               value={weaponGroup}
-                              onChange={(value) => setWeaponGroup(value ?? '')}
+                              onChange={(value) => {
+                                setWeaponGroup(value ?? '');
+                                setArmorGroup('');
+                              }}
                             />
                           </Group>
 
@@ -539,7 +555,10 @@ export function CreateItemModal(props: {
                                 { value: 'unarmored_defense', label: 'Unarmored' },
                               ]}
                               value={armorCategory}
-                              onChange={(value) => setArmorCategory(value ?? '')}
+                              onChange={(value) => {
+                                setArmorCategory(value ?? '');
+                                setWeaponCategory('');
+                              }}
                             />
 
                             <Select
@@ -552,7 +571,10 @@ export function CreateItemModal(props: {
                                 { value: 'plate', label: 'Plate' },
                               ]}
                               value={armorGroup}
-                              onChange={(value) => setArmorGroup(value ?? '')}
+                              onChange={(value) => {
+                                setArmorGroup(value ?? '');
+                                setWeaponGroup('');
+                              }}
                             />
                           </Group>
 
