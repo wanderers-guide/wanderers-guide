@@ -23,10 +23,10 @@ export default function TraitsInput(props: TraitsInputProps) {
       data
         .filter((trait) => trait)
         .sort((a, b) => a.name.localeCompare(b.name))
-        .filter((trait) => !trait.meta_data?.unselectable)
-        .filter((trait) =>
-          props.includeCreatureTraits ? true : !trait.meta_data?.creature_trait
-        )) ??
+        .filter((trait) => !trait.meta_data?.unselectable)) ??
+    // .filter((trait) =>
+    //   props.includeCreatureTraits ? true : !trait.meta_data?.creature_trait
+    // ))
     [];
 
   // Remove the added props so they don't get passed to TagsInput
@@ -42,9 +42,7 @@ export default function TraitsInput(props: TraitsInputProps) {
       ) : (
         <TagsInput
           {...passedProps}
-          defaultValue={traits
-            .filter((trait) => props.defaultTraits?.includes(trait.id))
-            .map((trait) => trait.name)}
+          defaultValue={traits.filter((trait) => props.defaultTraits?.includes(trait.id)).map((trait) => trait.name)}
           data={_.uniq(traits.map((trait) => trait.name))}
           limit={1000}
           onChange={(value) => {

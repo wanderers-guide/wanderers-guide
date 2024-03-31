@@ -151,6 +151,8 @@ export default function RichText(props: RichTextProps) {
                   e.preventDefault();
                 }
               }}
+              // Italicize spell links as done in the books
+              fs={contentData?.type === 'spell' ? 'italic' : undefined}
               href={drawerData ? undefined : href}
               target='_blank'
               underline='hover'

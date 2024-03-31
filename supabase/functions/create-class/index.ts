@@ -32,6 +32,7 @@ serve(async (req: Request) => {
           },
         }
       );
+      console.log('Trait result', traitResult);
       if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
         trait_id = (traitResult as Trait).id;
       }

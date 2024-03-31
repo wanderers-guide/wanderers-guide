@@ -177,40 +177,42 @@ export function ClassDrawerContent(props: {
                 <Table.Td>
                   {classFeatures[`${level}`] && classFeatures[`${level}`].length > 0 && (
                     <>
-                      {classFeatures[`${level}`].flatMap((feature, index) =>
-                        index < classFeatures[`${level}`].length - 1
-                          ? [
-                              <Anchor
-                                fz='sm'
-                                onClick={() => {
-                                  props.onMetadataChange?.();
-                                  openDrawer({
-                                    type: 'class-feature',
-                                    data: { id: feature.id },
-                                    extra: { addToHistory: true },
-                                  });
-                                }}
-                              >
-                                {feature.name}
-                              </Anchor>,
-                              ', ',
-                            ]
-                          : [
-                              <Anchor
-                                fz='sm'
-                                onClick={() => {
-                                  props.onMetadataChange?.();
-                                  openDrawer({
-                                    type: 'class-feature',
-                                    data: { id: feature.id },
-                                    extra: { addToHistory: true },
-                                  });
-                                }}
-                              >
-                                {feature.name}
-                              </Anchor>,
-                            ]
-                      )}
+                      {classFeatures[`${level}`]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .flatMap((feature, index) =>
+                          index < classFeatures[`${level}`].length - 1
+                            ? [
+                                <Anchor
+                                  fz='sm'
+                                  onClick={() => {
+                                    props.onMetadataChange?.();
+                                    openDrawer({
+                                      type: 'class-feature',
+                                      data: { id: feature.id },
+                                      extra: { addToHistory: true },
+                                    });
+                                  }}
+                                >
+                                  {feature.name}
+                                </Anchor>,
+                                ', ',
+                              ]
+                            : [
+                                <Anchor
+                                  fz='sm'
+                                  onClick={() => {
+                                    props.onMetadataChange?.();
+                                    openDrawer({
+                                      type: 'class-feature',
+                                      data: { id: feature.id },
+                                      extra: { addToHistory: true },
+                                    });
+                                  }}
+                                >
+                                  {feature.name}
+                                </Anchor>,
+                              ]
+                        )}
                     </>
                   )}
                 </Table.Td>
