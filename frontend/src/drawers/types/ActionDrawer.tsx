@@ -185,7 +185,7 @@ export function DisplayOperationSelectionOptions(props: { operations?: Operation
       {operations.map((op, index) => (
         <Box key={index} pt={5}>
           <Text fz='md' fw={600}>
-            {op.data.title ?? 'Select an Option'}:
+            {op.data.title ?? 'Select an Option'}
           </Text>
           <List>
             {((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]).map((option, index) => (

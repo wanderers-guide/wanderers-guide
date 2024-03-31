@@ -15,6 +15,7 @@ import {
   Center,
   CloseButton,
   Divider,
+  FocusTrap,
   Group,
   Indicator,
   Loader,
@@ -432,17 +433,20 @@ export default function SelectContentModal({
       )}
       <Stack gap={10}>
         <Group wrap='nowrap'>
-          <TextInput
-            style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            styles={{
-              input: {
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
-              },
-            }}
-          />
+          <FocusTrap active={true}>
+            <TextInput
+              data-autofocus
+              style={{ flex: 1 }}
+              leftSection={<IconSearch size='0.9rem' />}
+              placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              styles={{
+                input: {
+                  borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+                },
+              }}
+            />
+          </FocusTrap>
           {innerProps.options?.groupBySource && (
             <Button
               size='compact-lg'

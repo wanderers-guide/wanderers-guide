@@ -223,7 +223,8 @@ function shouldBeIndented(children: React.ReactNode) {
   if (React.isValidElement(firstChild) && firstChild.type === 'strong') {
     // @ts-ignore
     const contents = (firstChild.props?.children ?? '') as string;
-    return ['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents);
+    if (['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents)) return true;
+    if (contents.length <= 20) return true;
   }
   return false;
 }
