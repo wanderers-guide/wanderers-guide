@@ -140,18 +140,17 @@ export function CreateClassModal(props: {
                   { value: 'RARE', label: 'Rare' },
                   { value: 'UNIQUE', label: 'Unique' },
                 ]}
-                w={140}
+                w={170}
                 {...form.getInputProps('rarity')}
               />
+              <NumberInput
+                label='Skill Training Base'
+                placeholder='Number + Int mod skills to be trained in'
+                min={0}
+                max={9}
+                {...form.getInputProps('skill_training_base')}
+              />
             </Group>
-
-            <NumberInput
-              label='Skill Training Base'
-              placeholder='Number + Int mod skills to be trained in'
-              min={0}
-              max={9}
-              {...form.getInputProps('skill_training_base')}
-            />
 
             <TextInput
               defaultValue={form.values.artwork_url ?? ''}

@@ -62,8 +62,11 @@ export async function executeCharacterOperations(
   setVariable('CHARACTER', 'LEVEL', character.level);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
+  const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
   const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
+
+  const baseClassTrainings = Math.max(class_?.skill_training_base ?? 0, class_2?.skill_training_base ?? 0);
 
   const classFeatures = content.abilityBlocks
     .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
@@ -111,9 +114,18 @@ export async function executeCharacterOperations(
       classResults = await executeOperations(
         'CHARACTER',
         'class',
-        getExtendedClassOperations('CHARACTER', class_),
+        getExtendedClassOperations('CHARACTER', class_, baseClassTrainings),
         options,
         class_.name
+      );
+    }
+    if (class_2) {
+      classResults = await executeOperations(
+        'CHARACTER',
+        'class',
+        getExtendedClassOperations('CHARACTER', class_2, null),
+        options,
+        class_2.name
       );
     }
 
@@ -244,7 +256,7 @@ export async function executeCharacterOperations(
   const conditionalResults = await operationsPassthrough({
     doOnlyConditionals: true,
     onlyConditionalsWhitelist: [
-      ...(class_ ? addedClassSkillTrainings('CHARACTER', class_) : []).map((op) => op.id),
+      ...(class_ ? addedClassSkillTrainings('CHARACTER', baseClassTrainings) : []).map((op) => op.id),
       ...(ancestry ? addedAncestryLanguages('CHARACTER', ancestry) : []).map((op) => op.id),
     ],
   });
@@ -333,19 +345,20 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   return operationResults;
 }
 
-export function getExtendedClassOperations(varId: StoreID, class_: Class) {
+export function getExtendedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
   let classOperations = [...(class_.operations ?? [])];
 
-  classOperations.push(...addedClassSkillTrainings(varId, class_));
+  if (baseTrainings !== null) {
+    classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));
+  }
 
   return classOperations;
 }
 
-export function addedClassSkillTrainings(varId: StoreID, class_: Class): OperationSelect[] {
+export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number): OperationSelect[] {
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier
-  const baseTrainings = class_.skill_training_base;
   const intVariableValue = getVariable(varId, 'ATTRIBUTE_INT')?.value;
   const intValue = isAttributeValue(intVariableValue) ? intVariableValue.value : 0;
   for (let i = 0; i < baseTrainings + intValue; i++) {
