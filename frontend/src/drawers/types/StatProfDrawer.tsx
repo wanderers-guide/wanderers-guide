@@ -39,7 +39,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { VariableProf } from '@typing/variables';
+import { VariableBool, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
@@ -114,6 +114,8 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
   }
   timeline = timeline.sort((a, b) => a.timestamp - b.timestamp);
 
+  const profWithoutLevel = !!getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value;
+
   return (
     <Box>
       <Accordion variant='separated' defaultValue=''>
@@ -159,15 +161,33 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      {variable.value.value === 'U' ? (
+                      {profWithoutLevel ? (
                         <>
-                          Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
-                          proficiency, you don't add your level.
+                          {variable.value.value === 'U' ? (
+                            <>
+                              Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              proficiency, you have a -2 modifier because of your variant rule.
+                            </>
+                          ) : (
+                            <>
+                              Even though you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              proficiency, you don't add your level because of your variant rule.
+                            </>
+                          )}
                         </>
                       ) : (
                         <>
-                          Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
-                          proficiency, you add your level.
+                          {variable.value.value === 'U' ? (
+                            <>
+                              Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              proficiency, you don't add your level.
+                            </>
+                          ) : (
+                            <>
+                              Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              proficiency, you add your level.
+                            </>
+                          )}
                         </>
                       )}
                     </Text>

@@ -49,7 +49,7 @@ import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { toLabel } from '@utils/strings';
 import { getFinalHealthValue } from '@variables/variable-display';
-import { getVariable } from '@variables/variable-manager';
+import { getVariable, setVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
@@ -195,6 +195,10 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
     executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
+      if (character.variants?.proficiency_without_level) {
+        setVariable('ALL', 'PROF_WITHOUT_LEVEL', true);
+      }
+
       // Add the extra items to the inventory from variables
       addExtraItems(props.content.items, character, setCharacter);
 

@@ -29,7 +29,13 @@ import {
 import * as _ from 'lodash-es';
 import { throwError } from '@utils/notifications';
 
-export const HIDDEN_VARIABLES = ['SKILL_LORE____', 'CASTING_SOURCES', 'SPELL_SLOTS', 'SPELL_DATA'];
+export const HIDDEN_VARIABLES = [
+  'SKILL_LORE____',
+  'CASTING_SOURCES',
+  'SPELL_SLOTS',
+  'SPELL_DATA',
+  'PROF_WITHOUT_LEVEL',
+];
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
   ATTRIBUTE_STR: newVariable('attr', 'ATTRIBUTE_STR'),
@@ -145,6 +151,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   LEVEL: newVariable('num', 'LEVEL'),
   SIZE: newVariable('str', 'SIZE'),
   CORE_LANGUAGES: newVariable('list-str', 'CORE_LANGUAGES'),
+
+  PROF_WITHOUT_LEVEL: newVariable('bool', 'PROF_WITHOUT_LEVEL', false), // Hidden
 
   MAX_HEALTH_ANCESTRY: newVariable('num', 'MAX_HEALTH_ANCESTRY'),
   MAX_HEALTH_CLASS_PER_LEVEL: newVariable('num', 'MAX_HEALTH_CLASS_PER_LEVEL'),

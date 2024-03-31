@@ -1,4 +1,4 @@
-import { VariableAttr, StoreID, VariableNum, VariableProf, VariableListStr } from '@typing/variables';
+import { VariableAttr, StoreID, VariableNum, VariableProf, VariableListStr, VariableBool } from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
@@ -109,7 +109,13 @@ export function getProfValueParts(id: StoreID, variableName: string, overrideAtt
   const breakdown = getVariableBreakdown(id, variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
 
-  const level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
+  let level = 0;
+  if (getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value) {
+    level = variable.value.value !== 'U' ? 0 : -2;
+  } else {
+    level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
+  }
+
   const profValue = getProficiencyTypeValue(variable.value.value);
 
   let attribute = overrideAttribute ? overrideAttribute : variable.value.attribute;
