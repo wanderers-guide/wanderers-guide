@@ -457,7 +457,16 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
 
   if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(+value)) {
-    variable.value = parseInt(`${value}`);
+    // Some variables have a special rule where we take the higher value instead of overwriting
+    // This is a hack for sure and hopefully won't be too confusing for homebrewers
+    // It's to make things like HP for dual-class PCs work
+    const SPECIAL_TAKE_HIGHER_VARS = ['MAX_HEALTH_CLASS_PER_LEVEL'];
+    //
+    if (SPECIAL_TAKE_HIGHER_VARS.includes(name)) {
+      variable.value = Math.max(variable.value, parseInt(`${value}`));
+    } else {
+      variable.value = parseInt(`${value}`);
+    }
   } else if (isVariableStr(variable) && _.isString(value)) {
     variable.value = value;
   } else if (isVariableBool(variable) && _.isBoolean(value)) {

@@ -12,6 +12,7 @@ import {
 import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';
+import _ from 'lodash';
 
 export function SetValOperation(props: {
   variable: string;
@@ -97,7 +98,8 @@ export function SetValueInput(props: {
       </>
     );
   } else if (props.variableType === 'num') {
-    const value = props.value as number;
+    const value = _.isNumber(props.value) ? props.value : undefined;
+
     return (
       <NumberInput
         size='xs'
@@ -108,7 +110,7 @@ export function SetValueInput(props: {
       />
     );
   } else if (props.variableType === 'bool') {
-    const value = props.value as boolean;
+    const value = _.isBoolean(props.value) ? props.value : false;
     return (
       <SegmentedControl
         size='xs'
@@ -122,7 +124,7 @@ export function SetValueInput(props: {
       />
     );
   } else if (props.variableType === 'str') {
-    const value = props.value as string;
+    const value = _.isString(props.value) ? props.value : '';
     return (
       <TextInput
         size='xs'
@@ -161,7 +163,7 @@ export function SetValueInput(props: {
       </>
     );
   } else if (props.variableType === 'list-str') {
-    const value = props.value as string;
+    const value = _.isString(props.value) ? props.value : '';
     return (
       <JsonInput
         size='xs'

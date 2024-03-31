@@ -57,7 +57,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
               <ActionSymbol cost={feat.actions} size={'2.1rem'} />
             </Box>
           </Group>
-          {feat.level && <Text style={{ textWrap: 'nowrap' }}>Feat {feat.level}</Text>}
+          <Text style={{ textWrap: 'nowrap' }}>{feat.meta_data?.unselectable ? 'Action' : `Feat ${feat.level}`}</Text>
         </Group>
       )}
     </>

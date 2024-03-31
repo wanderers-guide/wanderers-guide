@@ -340,6 +340,7 @@ interface Character {
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;
+    class_2?: Class;
     info?: {
       appearance?: string;
       personality?: string;

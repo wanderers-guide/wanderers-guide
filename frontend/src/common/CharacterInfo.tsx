@@ -15,6 +15,7 @@ export const CharacterInfo = forwardRef(
       onClickAncestry?: () => void;
       onClickBackground?: () => void;
       onClickClass?: () => void;
+      onClickClass2?: () => void;
       hideImage?: boolean;
       color?: string;
       nameCutOff?: number;
@@ -27,6 +28,7 @@ export const CharacterInfo = forwardRef(
     const hasClass = props.character?.details?.class?.name !== undefined;
     const hasAncestry = props.character?.details?.ancestry?.name !== undefined;
     const hasBackground = props.character?.details?.background?.name !== undefined;
+    const hasClass2 = props.character?.details?.class_2?.name !== undefined;
 
     return (
       <div ref={ref} style={{ width: isPhone ? undefined : 240 }}>
@@ -66,19 +68,21 @@ export const CharacterInfo = forwardRef(
               </HoverCard.Dropdown>
             </HoverCard>
 
-            <Stack gap={0}>
+            <Stack gap={3}>
               <Box>
                 {props.onClickAncestry ? (
-                  <Button
-                    variant={hasAncestry ? 'subtle' : 'filled'}
-                    color={props.color}
-                    size='compact-xs'
-                    leftSection={<IconTree size='0.9rem' />}
-                    onClick={props.onClickAncestry}
-                    fw={400}
-                  >
-                    {props.character?.details?.ancestry?.name ?? 'Select Ancestry'}
-                  </Button>
+                  <Group gap={0}>
+                    <Button
+                      variant={hasAncestry ? 'subtle' : 'filled'}
+                      color={props.color}
+                      size='compact-xs'
+                      leftSection={<IconTree size='0.9rem' />}
+                      onClick={props.onClickAncestry}
+                      fw={400}
+                    >
+                      {props.character?.details?.ancestry?.name ?? 'Select Ancestry'}
+                    </Button>
+                  </Group>
                 ) : (
                   <Group wrap='nowrap' gap={10}>
                     <IconTree stroke={1.5} size='1rem' className={classes.icon} />
@@ -97,16 +101,18 @@ export const CharacterInfo = forwardRef(
               </Box>
               <Box>
                 {props.onClickBackground ? (
-                  <Button
-                    variant={hasBackground ? 'subtle' : 'filled'}
-                    size='compact-xs'
-                    color={props.color}
-                    leftSection={<IconWindow size='0.9rem' />}
-                    onClick={props.onClickBackground}
-                    fw={400}
-                  >
-                    {props.character?.details?.background?.name ?? 'Select Background'}
-                  </Button>
+                  <Group gap={0}>
+                    <Button
+                      variant={hasBackground ? 'subtle' : 'filled'}
+                      size='compact-xs'
+                      color={props.color}
+                      leftSection={<IconWindow size='0.9rem' />}
+                      onClick={props.onClickBackground}
+                      fw={400}
+                    >
+                      {props.character?.details?.background?.name ?? 'Select Background'}
+                    </Button>
+                  </Group>
                 ) : (
                   <Group wrap='nowrap' gap={10}>
                     <IconWindow stroke={1.5} size='1rem' className={classes.icon} />
@@ -118,21 +124,42 @@ export const CharacterInfo = forwardRef(
               </Box>
               <Box>
                 {props.onClickClass ? (
-                  <Button
-                    variant={hasClass ? 'subtle' : 'filled'}
-                    size='compact-xs'
-                    color={props.color}
-                    leftSection={<IconVocabulary size='0.9rem' />}
-                    onClick={props.onClickClass}
-                    fw={400}
-                  >
-                    {props.character?.details?.class?.name ?? 'Select Class'}
-                  </Button>
+                  <Group gap={3}>
+                    <Button
+                      variant={hasClass ? 'subtle' : 'filled'}
+                      size='compact-xs'
+                      color={props.color}
+                      leftSection={<IconVocabulary size='0.9rem' />}
+                      onClick={props.onClickClass}
+                      fw={400}
+                    >
+                      {props.character?.details?.class?.name ?? 'Select Class'}
+                    </Button>
+                    {props.character?.variants?.dual_class && props.onClickClass2 && (
+                      <>
+                        <Text fz='xs' c='gray.5'>
+                          /
+                        </Text>
+                        <Button
+                          variant={hasClass2 ? 'subtle' : 'filled'}
+                          size='compact-xs'
+                          color={props.color}
+                          onClick={props.onClickClass2}
+                          fw={400}
+                        >
+                          {props.character?.details?.class_2?.name ?? 'Select Class'}
+                        </Button>
+                      </>
+                    )}
+                  </Group>
                 ) : (
                   <Group wrap='nowrap' gap={10}>
                     <IconVocabulary stroke={1.5} size='1rem' className={classes.icon} />
                     <Text fz='xs' c='gray.3'>
                       {props.character?.details?.class?.name ?? 'Missing Class'}
+                      {props.character?.variants?.dual_class && (
+                        <> / {props.character?.details?.class_2?.name ?? 'Missing Class'}</>
+                      )}
                     </Text>
                   </Group>
                 )}

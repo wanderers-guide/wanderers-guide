@@ -234,6 +234,7 @@ export function CharBuilderCreationInner(props: {
                     }
                   );
                 }}
+                onClickClass2={() => {}}
               />
               <Button
                 leftSection={<IconId size={14} />}
@@ -350,6 +351,29 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               {
                 groupBySource: true,
                 selectedId: character?.details?.class?.id,
+                filterFn: (option) => option.id !== character?.details?.class_2?.id,
+              }
+            );
+          }}
+          onClickClass2={() => {
+            selectContent<Class>(
+              'class',
+              (option) => {
+                setCharacter((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    details: {
+                      ...prev.details,
+                      class_2: option,
+                    },
+                  };
+                });
+              },
+              {
+                groupBySource: true,
+                selectedId: character?.details?.class_2?.id,
+                filterFn: (option) => option.id !== character?.details?.class?.id,
               }
             );
           }}

@@ -183,7 +183,8 @@ export function getHealthValueParts(id: StoreID) {
   const level = getVariable<VariableNum>(id, 'LEVEL')!.value;
 
   const breakdown = getVariableBreakdown(id, 'MAX_HEALTH_BONUS');
-  const hasConditionals = breakdown.conditionals.length > 0;
+  // const ancestryBreakdown = getVariableBreakdown(id, 'MAX_HEALTH_ANCESTRY');
+  // const classBreakdown = getVariableBreakdown(id, 'MAX_HEALTH_CLASS_PER_LEVEL');
 
   return {
     level,
@@ -192,7 +193,8 @@ export function getHealthValueParts(id: StoreID) {
     bonusHp,
     conMod,
     breakdown,
-    hasConditionals,
+    // ancestryBreakdown,
+    // classBreakdown,
   };
 }
 
