@@ -1,4 +1,14 @@
-import { MantineSize, Rating } from '@mantine/core';
+import { Box, Button, MantineSize, Menu, Rating, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import {
+  IconSettings,
+  IconMessageCircle,
+  IconPhoto,
+  IconSearch,
+  IconArrowsLeftRight,
+  IconTrash,
+} from '@tabler/icons-react';
+import { phoneQuery } from '@utils/mobile-responsive';
 import { useState } from 'react';
 
 export default function TokenSelect(props: {
@@ -10,25 +20,28 @@ export default function TokenSelect(props: {
   size?: MantineSize;
 }) {
   const [value, setValue] = useState(props.value ?? props.count);
+  const isPhone = useMediaQuery(phoneQuery());
 
   return (
-    <Rating
-      count={props.count}
-      size={props.size}
-      emptySymbol={props.emptySymbol}
-      fullSymbol={props.fullSymbol}
-      value={value}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(v) => {
-        let newVal;
-        if (v === value) {
-          newVal = v - 1;
-        } else {
-          newVal = v;
-        }
-        setValue(newVal);
-        props.onChange?.(newVal);
-      }}
-    />
+    <>
+      <Rating
+        count={props.count}
+        size={props.size}
+        emptySymbol={props.emptySymbol}
+        fullSymbol={props.fullSymbol}
+        value={value}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(v) => {
+          let newVal;
+          if (v === value) {
+            newVal = v - 1;
+          } else {
+            newVal = v;
+          }
+          setValue(newVal);
+          props.onChange?.(newVal);
+        }}
+      />
+    </>
   );
 }

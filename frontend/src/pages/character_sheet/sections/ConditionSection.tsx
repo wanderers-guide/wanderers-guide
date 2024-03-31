@@ -9,8 +9,10 @@ import { getConditionByName, getAllConditions, compiledConditions } from '@condi
 import { ICON_BG_COLOR } from '@constants/data';
 import { getInvBulk, getBulkLimit } from '@items/inv-utils';
 import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { openContextModal, modals } from '@mantine/modals';
 import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-react';
+import { phoneQuery } from '@utils/mobile-responsive';
 import _ from 'lodash';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
