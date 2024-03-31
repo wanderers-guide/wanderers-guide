@@ -592,7 +592,7 @@ function SelectionFilteredAdjValue(props: {
               setValue(value);
             }}
             options={{
-              profExtended: group === 'Skill' || group === 'ADD-LORE',
+              profExtended: group === 'SKILL' || group === 'ADD-LORE',
             }}
           />
         )}

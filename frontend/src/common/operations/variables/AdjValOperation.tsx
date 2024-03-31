@@ -162,7 +162,7 @@ export function AdjustValueInput(props: {
               { label: 'E', value: 'E' },
               { label: 'M', value: 'M' },
               { label: 'L', value: 'L' },
-              { label: '1', value: '1' },
+              { label: '+1', value: '1' },
               { label: '-1', value: '-1' },
             ]}
           />
