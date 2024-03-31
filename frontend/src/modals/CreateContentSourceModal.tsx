@@ -174,7 +174,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
       <LoadingOverlay visible={isFetching} />
       <Group align='flex-start'>
         <form onSubmit={form.onSubmit(onSave)}>
-          <Center maw={500}>
+          <Center maw={350}>
             <Stack gap={10}>
               <Group wrap='nowrap' justify='space-between'>
                 <TextInput label='Name' required {...form.getInputProps('name')} />
@@ -262,13 +262,16 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
               <Group justify='flex-end'>
                 <Button
                   variant='default'
+                  size='compact-sm'
                   onClick={() => {
                     onReset();
                   }}
                 >
                   Cancel
                 </Button>
-                <Button type='submit'>{'Save'}</Button>
+                <Button size='compact-sm' type='submit'>
+                  Save
+                </Button>
               </Group>
             </Stack>
           </Center>
