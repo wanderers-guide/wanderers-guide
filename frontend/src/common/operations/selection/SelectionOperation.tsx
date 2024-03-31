@@ -28,6 +28,7 @@ import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
 import { AbilityBlock, AbilityBlockType, Language, Rarity, Spell } from '@typing/content';
 import {
+  Operation,
   OperationAdjValue,
   OperationGiveAbilityBlock,
   OperationGiveLanguage,
@@ -1253,7 +1254,19 @@ function SelectionPredefinedCustom(props: {
   options?: OperationSelectOptionCustom[];
   onChange: (options: OperationSelectOptionCustom[]) => void;
 }) {
-  const [options, setOptions] = useState<OperationSelectOptionCustom[]>(props.options ?? []);
+  const [options, setOptions] = useState<OperationSelectOptionCustom[]>(
+    props.options && props.options.length > 0
+      ? props.options
+      : ([
+          {
+            id: crypto.randomUUID(),
+            type: 'CUSTOM',
+            title: '',
+            description: '',
+            operations: [],
+          },
+        ] satisfies OperationSelectOptionCustom[])
+  );
 
   useDidUpdate(() => {
     props.onChange(options);
@@ -1352,20 +1365,30 @@ function SelectionPredefinedCustomOption(props: {
 }) {
   const [displayDescription, refreshDisplayDescription] = useRefresh();
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
-  const [description, setDescription] = useState<JSONContent>();
   const theme = useMantineTheme();
+
+  const [name, setName] = useState(props.option.title);
+  const [description, setDescription] = useState<JSONContent>();
+  const [descriptionText, setDescriptionText] = useState<string>(props.option.description);
+  const [operations, setOperations] = useState<Operation[]>(props.option.operations ?? []);
+
+  useDidUpdate(() => {
+    props.onChange({
+      ...props.option,
+      title: name,
+      description: descriptionText,
+      operations: operations,
+    });
+  }, [name, description, operations]);
 
   return (
     <Stack>
       <TextInput
         label='Name'
         required
-        value={props.option.title}
+        defaultValue={props.option.title}
         onChange={(event) => {
-          props.onChange({
-            ...props.option,
-            title: event.target.value,
-          });
+          setName(event.target.value);
         }}
       />
       {displayDescription && (
@@ -1375,10 +1398,7 @@ function SelectionPredefinedCustomOption(props: {
           value={description ?? toHTML(props.option.description)}
           onChange={(text, json) => {
             setDescription(json);
-            props.onChange({
-              ...props.option,
-              description: text,
-            });
+            setDescriptionText(text);
           }}
         />
       )}
@@ -1429,12 +1449,9 @@ function SelectionPredefinedCustomOption(props: {
                 </HoverCard.Dropdown>
               </HoverCard>
             }
-            value={props.option.operations}
+            value={operations}
             onChange={(operations) => {
-              props.onChange({
-                ...props.option,
-                operations: operations,
-              });
+              setOperations(operations);
             }}
           />
           <Divider />

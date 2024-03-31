@@ -360,7 +360,7 @@ export function OperationDisplay(props: {
           value={opDefineCastingSource.data.value as string}
           onSelect={(value) => {
             opDefineCastingSource.data.value = value;
-            console.log('opDefineCastingSource', opDefineCastingSource);
+
             props.onChange(_.cloneDeep(opDefineCastingSource));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
@@ -425,6 +425,7 @@ export function OperationDisplay(props: {
           data={opSelection.data}
           onChange={(data) => {
             opSelection.data = data;
+
             props.onChange(_.cloneDeep(opSelection));
           }}
           onRemove={() => props.onRemove(props.operation.id)}

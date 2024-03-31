@@ -709,6 +709,7 @@ function ContentList<
               isLoading={false}
               onClick={(item) => setOpenedId(item.id)}
               h={500}
+              includeDetails
               includeOptions
               onCopy={async (itemId) => {
                 if (props.type === 'ability-block') {

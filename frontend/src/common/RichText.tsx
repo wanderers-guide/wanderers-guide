@@ -198,7 +198,7 @@ export default function RichText(props: RichTextProps) {
         th(innerProps) {
           const { children, className } = innerProps;
           return (
-            <Table.Th ta='center' className={className}>
+            <Table.Th ta='center' p={3} className={className}>
               {children}
             </Table.Th>
           );
@@ -206,7 +206,7 @@ export default function RichText(props: RichTextProps) {
         td(innerProps) {
           const { children, className } = innerProps;
           return (
-            <Table.Td ta='center' className={className}>
+            <Table.Td ta='center' p={3} className={className}>
               {children}
             </Table.Td>
           );

@@ -802,6 +802,7 @@ function SelectionOptionsRoot(props: {
               classFeature={classFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === classFeature.id}
+              includeDetails={props.includeDetails}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
