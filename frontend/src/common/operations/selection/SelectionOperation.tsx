@@ -19,6 +19,7 @@ import {
   TagsInput,
   Text,
   TextInput,
+  Title,
   Tooltip,
   useMantineTheme,
 } from '@mantine/core';
@@ -54,6 +55,7 @@ import { OperationSection, OperationWrapper } from '../Operations';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { labelToVariable } from '@variables/variable-utils';
 import { DISCORD_URL } from '@constants/data';
+import { modals } from '@mantine/modals';
 
 export function SelectionOperation(props: {
   data: {
@@ -717,9 +719,20 @@ function SelectionPredefinedAbilityBlock(props: {
                 variant='subtle'
                 color='gray'
                 onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
+                  modals.openConfirmModal({
+                    id: 'remove-option',
+                    title: <Title order={4}>Remove Option</Title>,
+                    children: (
+                      <Text size='sm'>Are you sure you want to remove this option? This action cannot be undone.</Text>
+                    ),
+                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                    onCancel: () => {},
+                    onConfirm: () => {
+                      setOptions((prev) => {
+                        const ops = [...prev].filter((op) => op.id !== option.id);
+                        return ops;
+                      });
+                    },
                   });
                 }}
               >
@@ -943,9 +956,20 @@ function SelectionPredefinedSpell(props: {
                 variant='subtle'
                 color='gray'
                 onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
+                  modals.openConfirmModal({
+                    id: 'remove-option',
+                    title: <Title order={4}>Remove Option</Title>,
+                    children: (
+                      <Text size='sm'>Are you sure you want to remove this option? This action cannot be undone.</Text>
+                    ),
+                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                    onCancel: () => {},
+                    onConfirm: () => {
+                      setOptions((prev) => {
+                        const ops = [...prev].filter((op) => op.id !== option.id);
+                        return ops;
+                      });
+                    },
                   });
                 }}
               >
@@ -1045,9 +1069,20 @@ function SelectionPredefinedLanguage(props: {
                 variant='subtle'
                 color='gray'
                 onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
+                  modals.openConfirmModal({
+                    id: 'remove-option',
+                    title: <Title order={4}>Remove Option</Title>,
+                    children: (
+                      <Text size='sm'>Are you sure you want to remove this option? This action cannot be undone.</Text>
+                    ),
+                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                    onCancel: () => {},
+                    onConfirm: () => {
+                      setOptions((prev) => {
+                        const ops = [...prev].filter((op) => op.id !== option.id);
+                        return ops;
+                      });
+                    },
                   });
                 }}
               >
@@ -1206,9 +1241,20 @@ function SelectionPredefinedAdjValue(props: {
                 variant='subtle'
                 color='gray'
                 onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
+                  modals.openConfirmModal({
+                    id: 'remove-option',
+                    title: <Title order={4}>Remove Option</Title>,
+                    children: (
+                      <Text size='sm'>Are you sure you want to remove this option? This action cannot be undone.</Text>
+                    ),
+                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                    onCancel: () => {},
+                    onConfirm: () => {
+                      setOptions((prev) => {
+                        const ops = [...prev].filter((op) => op.id !== option.id);
+                        return ops;
+                      });
+                    },
                   });
                 }}
               >
@@ -1314,9 +1360,20 @@ function SelectionPredefinedCustom(props: {
                 variant='subtle'
                 color='gray'
                 onClick={() => {
-                  setOptions((prev) => {
-                    const ops = [...prev].filter((op) => op.id !== option.id);
-                    return ops;
+                  modals.openConfirmModal({
+                    id: 'remove-option',
+                    title: <Title order={4}>Remove Option</Title>,
+                    children: (
+                      <Text size='sm'>Are you sure you want to remove this option? This action cannot be undone.</Text>
+                    ),
+                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                    onCancel: () => {},
+                    onConfirm: () => {
+                      setOptions((prev) => {
+                        const ops = [...prev].filter((op) => op.id !== option.id);
+                        return ops;
+                      });
+                    },
                   });
                 }}
               >
