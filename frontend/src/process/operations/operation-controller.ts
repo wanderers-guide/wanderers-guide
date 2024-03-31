@@ -142,7 +142,7 @@ export async function executeCharacterOperations(
     if (class_2) {
       class2Results = await executeOperations(
         'CHARACTER',
-        'class',
+        'class-2',
         getExtendedClassOperations('CHARACTER', class_2, null),
         options,
         class_2.name

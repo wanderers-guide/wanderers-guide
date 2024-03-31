@@ -180,6 +180,12 @@ export default function CharacterInfoSection() {
                 data: { id: character?.details?.class?.id },
               });
             }}
+            onClickClass2={() => {
+              openDrawer({
+                type: 'class',
+                data: { id: character?.details?.class_2?.id },
+              });
+            }}
           />
           <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
             <Stack gap={5}>

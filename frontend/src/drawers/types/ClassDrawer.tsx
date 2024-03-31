@@ -38,6 +38,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Character, Class } from '@typing/content';
+import { OperationSelect } from '@typing/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables, getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
@@ -250,6 +251,7 @@ export function ClassInitialOverview(props: {
   class_: Class;
   mode: 'READ' | 'READ/WRITE';
   operationResults?: OperationResult[];
+  isClass2?: boolean;
 }) {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
@@ -257,7 +259,13 @@ export function ClassInitialOverview(props: {
 
   // Reading thru operations to get display UI
   const MODE = props.mode;
-  const display = convertClassOperationsIntoUI(props.class_, props.mode, props.operationResults ?? [], charState);
+  const display = convertClassOperationsIntoUI(
+    props.class_,
+    props.mode,
+    props.operationResults ?? [],
+    charState,
+    props.isClass2
+  );
 
   return (
     <>
@@ -536,7 +544,8 @@ export function convertClassOperationsIntoUI(
   class_: Class,
   mode: 'READ' | 'READ/WRITE',
   operationResults: OperationResult[],
-  charState: [Character | null, SetterOrUpdater<Character | null>]
+  charState: [Character | null, SetterOrUpdater<Character | null>],
+  isClass2?: boolean
 ) {
   const classOperations = class_.operations ?? [];
   const MODE = mode;
@@ -576,27 +585,29 @@ export function convertClassOperationsIntoUI(
     writeDetails
   );
 
-  let additionalSkillTrainings = [];
-  if (MODE === 'READ') {
-    additionalSkillTrainings = [
-      {
-        ui: (
-          <>
-            Trained in a number of additional skills equal to {class_.skill_training_base} plus your Intelligence
-            modifier
-          </>
-        ),
-        operation: null,
-      },
-    ];
-  } else if (MODE === 'READ/WRITE') {
-    const skillTrainingOps = addedClassSkillTrainings('CHARACTER', class_.skill_training_base);
-    for (const op of skillTrainingOps) {
-      const result = getDisplay('CHARACTER', { value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
-      additionalSkillTrainings.push({
-        ui: result,
-        operation: op,
-      });
+  let additionalSkillTrainings: { ui: React.ReactNode; operation: OperationSelect | null }[] = [];
+  if (!isClass2) {
+    if (MODE === 'READ') {
+      additionalSkillTrainings = [
+        {
+          ui: (
+            <>
+              Trained in a number of additional skills equal to {class_.skill_training_base} plus your Intelligence
+              modifier
+            </>
+          ),
+          operation: null,
+        },
+      ];
+    } else if (MODE === 'READ/WRITE') {
+      const skillTrainingOps = addedClassSkillTrainings('CHARACTER', class_.skill_training_base);
+      for (const op of skillTrainingOps) {
+        const result = getDisplay('CHARACTER', { value: 'T' }, op, undefined, 'READ/WRITE', writeDetails);
+        additionalSkillTrainings.push({
+          ui: result,
+          operation: op,
+        });
+      }
     }
   }
 

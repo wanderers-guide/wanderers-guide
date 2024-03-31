@@ -348,6 +348,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       if (!prev) return prev;
                       return {
                         ...prev,
+                        details: {
+                          ...prev.details,
+                          class_2: enabled ? prev.details?.class_2 : undefined,
+                        },
                         variants: {
                           ...prev.variants,
                           dual_class: enabled,

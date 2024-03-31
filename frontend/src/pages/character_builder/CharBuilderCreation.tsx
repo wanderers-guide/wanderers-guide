@@ -1552,7 +1552,8 @@ function ClassAccordionItem(props: {
         props.class_,
         'READ/WRITE',
         (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
-        [character, setCharacter]
+        [character, setCharacter],
+        props.isClass2
       )
     : null;
   if (classInitialOverviewDisplay) {
@@ -1588,7 +1589,7 @@ function ClassAccordionItem(props: {
     >
       <Accordion.Control disabled={!props.class_} icon={getIconFromContentType('class', '1rem')}>
         <Group gap={5}>
-          <Box>Class</Box>
+          <Box>Class {props.isClass2 ? '2' : ''}</Box>
           {choiceCounts.max - choiceCounts.current > 0 && (
             <Badge variant='filled'>{choiceCounts.max - choiceCounts.current}</Badge>
           )}
@@ -1604,6 +1605,7 @@ function ClassAccordionItem(props: {
                 operationResults={
                   props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults
                 }
+                isClass2={props.isClass2}
               />
             )}
           </Box>
