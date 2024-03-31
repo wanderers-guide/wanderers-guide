@@ -1,10 +1,11 @@
 import { Box, Button, Grid, Group, NumberInput, Stack, Text } from '@mantine/core';
 import { rankNumber } from '@utils/numbers';
+import _ from 'lodash-es';
 import { useState } from 'react';
 
 export function SlotSelect(props: {
-  value?: { lvl: number; rank: number; amt: number }[];
-  onChange?: (value: { lvl: number; rank: number; amt: number }[]) => void;
+  value: { lvl: number; rank: number; amt: number }[];
+  onChange: (value: { lvl: number; rank: number; amt: number }[]) => void;
 }) {
   const LEVELS = 21;
   const RANKS = 12;
@@ -39,7 +40,8 @@ export function SlotSelect(props: {
                     newSlots.push({ lvl: i, rank: w - 1, amt: amount });
                   }
                   setSlots(newSlots);
-                  props.onChange?.(newSlots);
+                  // For some reason lodash isn't working here, may be an IDE issue, try again later
+                  props.onChange(JSON.parse(JSON.stringify(newSlots)));
                 }}
                 allowDecimal={false}
                 styles={{ input: { textAlign: 'center' } }}
