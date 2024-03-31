@@ -1,7 +1,7 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect, fetchData } from "../_shared/helpers.ts";
-import type { Creature } from "../_shared/content";
+import { serve } from 'std/server';
+import { connect, fetchData } from '../_shared/helpers.ts';
+import type { Creature } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -15,7 +15,8 @@ serve(async (req: Request) => {
       { column: 'content_source_id', value: content_sources },
     ]);
 
-    const data = (id === undefined || Array.isArray(id)) ? results : results.length > 0 ? results[0] : null;
+    const data =
+      id === undefined || Array.isArray(id) ? results : results.length > 0 ? results[0] : null;
     return {
       status: 'success',
       data,

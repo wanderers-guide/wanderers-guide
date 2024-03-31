@@ -247,8 +247,6 @@ export async function insertData<T = Record<string, any>>(
   // Delete forbidden keys
   delete data.id;
 
-  console.log('Inserting data', data);
-
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
     if (error.code === '23505' && hasUUID) {
