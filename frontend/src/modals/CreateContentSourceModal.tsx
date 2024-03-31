@@ -1,6 +1,6 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { SelectionOptionsInner } from '@common/select/SelectContent';
+import { SelectionOptionsInner, selectContent } from '@common/select/SelectContent';
 import {
   deleteContentSource,
   upsertAbilityBlock,
@@ -27,18 +27,30 @@ import {
   Group,
   HoverCard,
   LoadingOverlay,
+  Menu,
   Modal,
   Stack,
   Tabs,
   Text,
   TextInput,
   Title,
+  rem,
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDebouncedState, useDisclosure } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconSearch } from '@tabler/icons-react';
+import {
+  IconArrowsLeftRight,
+  IconChevronDown,
+  IconDatabaseImport,
+  IconMessageCircle,
+  IconPhoto,
+  IconPlus,
+  IconSearch,
+  IconSettings,
+  IconTrash,
+} from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -72,7 +84,6 @@ import { CreateCreatureModal } from './CreateCreatureModal';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
-  const [loading, setLoading] = useState(false);
   const [description, setDescription] = useState<JSONContent>();
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
@@ -160,7 +171,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
       closeOnEscape={false}
       keepMounted={false}
     >
-      <LoadingOverlay visible={loading || isFetching} />
+      <LoadingOverlay visible={isFetching} />
       <Group align='flex-start'>
         <form onSubmit={form.onSubmit(onSave)}>
           <Center maw={500}>
@@ -619,6 +630,7 @@ function ContentList<
   const queryClient = useQueryClient();
   const theme = useMantineTheme();
   const [openedId, setOpenedId] = useState<number | undefined>();
+  const [loading, setLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
   const search = useRef(new JsSearch.Search('id'));
@@ -665,11 +677,91 @@ function ContentList<
       queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
 
       setSearchQuery(query);
+      setLoading(false);
     }, 500);
   };
 
+  async function copyData(itemId?: number, data?: Record<string, any>) {
+    if (props.type === 'ability-block') {
+      const item = (data ??
+        (props.content as unknown as AbilityBlock[]).find((i) => i.id === itemId)) as AbilityBlock | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertAbilityBlock(newItem);
+      }
+    } else if (props.type === 'spell') {
+      const item = (data ?? (props.content as unknown as Spell[]).find((i) => i.id === itemId)) as Spell | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertSpell(newItem);
+      }
+    } else if (props.type === 'class') {
+      const item = (data ?? (props.content as unknown as Class[]).find((i) => i.id === itemId)) as Class | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertClass(newItem);
+      }
+    } else if (props.type === 'ancestry') {
+      const item = (data ?? (props.content as unknown as Ancestry[]).find((i) => i.id === itemId)) as Ancestry | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertAncestry(newItem);
+      }
+    } else if (props.type === 'background') {
+      const item = (data ??
+        (props.content as unknown as Background[]).find((i) => i.id === itemId)) as Background | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertBackground(newItem);
+      }
+    } else if (props.type === 'item') {
+      const item = (data ?? (props.content as unknown as Item[]).find((i) => i.id === itemId)) as Item | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertItem(newItem);
+      }
+    } else if (props.type === 'trait') {
+      const item = (data ?? (props.content as unknown as Trait[]).find((i) => i.id === itemId)) as Trait | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertTrait(newItem);
+      }
+    } else if (props.type === 'creature') {
+      const item = (data ?? (props.content as unknown as Creature[]).find((i) => i.id === itemId)) as Creature | null;
+      if (item) {
+        const newItem = _.cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertCreature(newItem);
+      }
+    }
+  }
+
   return (
     <>
+      <LoadingOverlay visible={loading} />
       <Stack mx='md' gap={10}>
         <Group wrap='nowrap'>
           <TextInput
@@ -683,22 +775,61 @@ function ContentList<
               },
             }}
           />
-          <Button
-            size='compact-lg'
-            fz='xs'
-            variant='light'
-            onClick={() => {
-              setOpenedId(-1);
-            }}
-            rightSection={<IconPlus size='1.0rem' />}
-            styles={{
-              section: {
-                marginLeft: 3,
-              },
-            }}
-          >
-            Create {toLabel(props.abilityBlockType ?? props.type)}
-          </Button>
+
+          <Button.Group>
+            <Button
+              size='compact-lg'
+              fz='xs'
+              variant='light'
+              onClick={() => {
+                setOpenedId(-1);
+              }}
+              styles={{
+                section: {
+                  marginLeft: 3,
+                },
+              }}
+            >
+              Create {toLabel(props.abilityBlockType ?? props.type)}
+            </Button>
+            <Menu shadow='md'>
+              <Menu.Target>
+                <Button
+                  size='compact-lg'
+                  fz='xs'
+                  variant='light'
+                  style={{
+                    borderLeft: '1px solid',
+                  }}
+                >
+                  <IconChevronDown size='1.2rem' />
+                </Button>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconDatabaseImport style={{ width: rem(14), height: rem(14) }} />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectContent(
+                      props.type,
+                      async (option) => {
+                        setLoading(true);
+                        await copyData(undefined, option);
+                        handleReset();
+                      },
+                      {
+                        abilityBlockType: props.abilityBlockType,
+                        groupBySource: true,
+                      }
+                    );
+                  }}
+                >
+                  Import {toLabel(props.abilityBlockType ?? props.type)}
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Button.Group>
         </Group>
         <Center>
           <Stack w='100%'>
@@ -712,74 +843,12 @@ function ContentList<
               includeDetails
               includeOptions
               onCopy={async (itemId) => {
-                if (props.type === 'ability-block') {
-                  const item = (props.content as unknown as AbilityBlock[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    const result = await upsertAbilityBlock(newItem);
-                  }
-                } else if (props.type === 'spell') {
-                  const item = (props.content as unknown as Spell[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    upsertSpell(newItem);
-                  }
-                } else if (props.type === 'class') {
-                  const item = (props.content as unknown as Class[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    upsertClass(newItem);
-                  }
-                } else if (props.type === 'ancestry') {
-                  const item = (props.content as unknown as Ancestry[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    upsertAncestry(newItem);
-                  }
-                } else if (props.type === 'background') {
-                  const item = (props.content as unknown as Background[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    upsertBackground(newItem);
-                  }
-                } else if (props.type === 'item') {
-                  const item = (props.content as unknown as Item[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    upsertItem(newItem);
-                  }
-                } else if (props.type === 'trait') {
-                  const item = (props.content as unknown as Trait[]).find((i) => i.id === itemId);
-                  if (item) {
-                    const newItem = _.cloneDeep(item);
-                    newItem.id = -1;
-                    newItem.name = `(Copy) ${item.name}`;
-                    newItem.content_source_id = props.sourceId;
-                    upsertTrait(newItem);
-                  }
-                }
-
+                setLoading(true);
+                await copyData(itemId, undefined);
                 handleReset();
               }}
               onDelete={async (itemId) => {
+                setLoading(true);
                 const response = await deleteContentSource(props.type, itemId);
                 handleReset();
               }}
