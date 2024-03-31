@@ -29,6 +29,7 @@ import { OperationResult } from '@operations/operation-runner';
 import {
   IconBadgesFilled,
   IconEyeFilled,
+  IconFlare,
   IconHeartHandshake,
   IconHelpCircle,
   IconShieldCheckeredFilled,
@@ -488,6 +489,28 @@ export function ClassInitialOverview(props: {
           {display.unarmoredDefense.ui}
         </IndentedText>
       </Box>
+      {(display.spellAttack.ui || display.spellDC.ui) && (
+        <Box>
+          <Divider
+            px='xs'
+            label={
+              <Text fz='xs' c='gray.6'>
+                <Group gap={5}>
+                  <IconFlare size='0.8rem' />
+                  <Box>Spells</Box>
+                </Group>
+              </Text>
+            }
+            labelPosition='left'
+          />
+          <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+            {display.spellAttack.ui}
+          </IndentedText>
+          <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+            {display.spellDC.ui}
+          </IndentedText>
+        </Box>
+      )}
       <Box>
         <Divider
           px='xs'
@@ -593,6 +616,8 @@ export function convertClassOperationsIntoUI(
   const heavyArmor = getStatDisplay('CHARACTER', 'HEAVY_ARMOR', classOperations, MODE, writeDetails);
   const unarmoredDefense = getStatDisplay('CHARACTER', 'UNARMORED_DEFENSE', classOperations, MODE, writeDetails);
   const classDC = getStatDisplay('CHARACTER', 'CLASS_DC', classOperations, 'READ', writeDetails);
+  const spellAttack = getStatDisplay('CHARACTER', 'SPELL_ATTACK', classOperations, 'READ', writeDetails);
+  const spellDC = getStatDisplay('CHARACTER', 'SPELL_DC', classOperations, 'READ', writeDetails);
 
   return {
     keyAttribute,
@@ -610,5 +635,7 @@ export function convertClassOperationsIntoUI(
     heavyArmor,
     unarmoredDefense,
     classDC,
+    spellAttack,
+    spellDC,
   };
 }
