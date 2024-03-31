@@ -68,7 +68,7 @@ export async function executeCharacterOperations(
 
   const baseClassTrainings = Math.max(class_?.skill_training_base ?? 0, class_2?.skill_training_base ?? 0);
 
-  const classFeatures = content.abilityBlocks
+  const classFeatures_1 = content.abilityBlocks
     .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
     .sort((a, b) => {
       if (a.level !== undefined && b.level !== undefined) {
@@ -78,6 +78,24 @@ export async function executeCharacterOperations(
       }
       return a.name.localeCompare(b.name);
     });
+
+  const classFeatures_2 = content.abilityBlocks
+    .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_2?.trait_id ?? -1))
+    .sort((a, b) => {
+      if (a.level !== undefined && b.level !== undefined) {
+        if (a.level !== b.level) {
+          return a.level - b.level;
+        }
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+  // Merge both but only keep one if they both have the same name and level
+  const classFeatures = _.unionWith(
+    classFeatures_1,
+    classFeatures_2,
+    (a, b) => a.name.trim() === b.name.trim() && a.level === b.level
+  );
 
   const operationsPassthrough = async (options?: OperationOptions) => {
     let contentSourceResults: {
@@ -119,8 +137,10 @@ export async function executeCharacterOperations(
         class_.name
       );
     }
+
+    let class2Results: OperationResult[] = [];
     if (class_2) {
-      classResults = await executeOperations(
+      class2Results = await executeOperations(
         'CHARACTER',
         'class',
         getExtendedClassOperations('CHARACTER', class_2, null),
@@ -227,6 +247,7 @@ export async function executeCharacterOperations(
       contentSourceResults,
       characterResults,
       classResults,
+      class2Results,
       classFeatureResults,
       ancestryResults,
       ancestrySectionResults,
@@ -346,7 +367,7 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
 }
 
 export function getExtendedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
-  let classOperations = [...(class_.operations ?? [])];
+  let classOperations = _.cloneDeep(class_.operations ?? []);
 
   if (baseTrainings !== null) {
     classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));
@@ -384,7 +405,7 @@ export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number):
 }
 
 export function getExtendedAncestryOperations(varId: StoreID, ancestry: Ancestry) {
-  let ancestryOperations = [...(ancestry.operations ?? [])];
+  let ancestryOperations = _.cloneDeep(ancestry.operations ?? []);
 
   ancestryOperations.push(...addedAncestryLanguages(varId, ancestry));
 

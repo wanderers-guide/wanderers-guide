@@ -1193,6 +1193,7 @@ function InitialStatsLevelSection(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const class_ = props.content.classes.find((class_) => class_.id === character?.details?.class?.id);
+  const class_2 = props.content.classes.find((class_) => class_.id === character?.details?.class_2?.id);
   const ancestry = props.content.ancestries.find((ancestry) => ancestry.id === character?.details?.ancestry?.id);
   const background = props.content.backgrounds.find(
     (background) => background.id === character?.details?.background?.id
@@ -1240,6 +1241,18 @@ function InitialStatsLevelSection(props: {
           }}
           opened={subSectionValue === 'class'}
         />
+
+        {class_2 && (
+          <ClassAccordionItem
+            class_={class_2}
+            operationResults={props.operationResults}
+            onSaveChanges={(path, value) => {
+              props.onSaveChanges(path, value);
+            }}
+            opened={subSectionValue === 'class_2'}
+            isClass2
+          />
+        )}
 
         {props.operationResults.contentSourceResults.length > 0 && (
           <BooksAccordionItem
@@ -1506,6 +1519,7 @@ function ClassAccordionItem(props: {
   operationResults: OperationResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
+  isClass2?: boolean;
 }) {
   const [character, setCharacter] = useRecoilState(characterState);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -1531,12 +1545,15 @@ function ClassAccordionItem(props: {
   }, []);
 
   // Only display the operation results that aren't already displayed in the class overview
-  let classOperationResults = props.operationResults?.classResults ?? [];
+  let classOperationResults =
+    (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [];
   const classInitialOverviewDisplay = props.class_
-    ? convertClassOperationsIntoUI(props.class_, 'READ/WRITE', props.operationResults?.classResults ?? [], [
-        character,
-        setCharacter,
-      ])
+    ? convertClassOperationsIntoUI(
+        props.class_,
+        'READ/WRITE',
+        (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
+        [character, setCharacter]
+      )
     : null;
   if (classInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the class overview
@@ -1562,7 +1579,7 @@ function ClassAccordionItem(props: {
 
   return (
     <Accordion.Item
-      value='class'
+      value={props.isClass2 ? 'class_2' : 'class'}
       ref={ref}
       style={{
         backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
@@ -1584,7 +1601,9 @@ function ClassAccordionItem(props: {
               <ClassInitialOverview
                 class_={props.class_}
                 mode='READ/WRITE'
-                operationResults={props.operationResults.classResults}
+                operationResults={
+                  props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults
+                }
               />
             )}
           </Box>

@@ -16,6 +16,7 @@ export type OperationResultPackage = {
   }[];
   characterResults: OperationResult[];
   classResults: OperationResult[];
+  class2Results: OperationResult[];
   classFeatureResults: {
     baseSource: AbilityBlock;
     baseResults: OperationResult[];
