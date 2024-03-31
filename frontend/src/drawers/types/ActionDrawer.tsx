@@ -1,3 +1,4 @@
+import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
@@ -5,9 +6,11 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
+import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
+import { useRecoilState } from 'recoil';
 
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock } }) {
   const id = props.data.id;
@@ -163,7 +166,50 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
           </Text>
         )}
       </Box>
+      <DisplayOperationSelectionOptions operations={action.operations} />
       {props.data.showOperations && <ShowOperationsButton name={action.name} operations={action.operations} />}
     </Box>
+  );
+}
+
+export function DisplayOperationSelectionOptions(props: { operations?: Operation[] | undefined }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  const operations = (props.operations ?? []).filter(
+    (op) => op.type === 'select' && (op as OperationSelect).data.optionType === 'CUSTOM'
+  ) as OperationSelect[];
+  if (operations.length === 0) return null;
+
+  return (
+    <Stack gap='sm'>
+      {operations.map((op, index) => (
+        <Box key={index} pt={5}>
+          <Text fz='md' fw={600}>
+            {op.data.title ?? 'Select an Option'}:
+          </Text>
+          <List>
+            {((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]).map((option, index) => (
+              <List.Item key={index}>
+                <Anchor
+                  onClick={() => {
+                    openDrawer({
+                      type: 'generic',
+                      data: {
+                        title: option.title,
+                        description: option.description,
+                        operations: option.operations,
+                      },
+                      extra: { addToHistory: true },
+                    });
+                  }}
+                >
+                  {option.title}
+                </Anchor>
+              </List.Item>
+            ))}
+          </List>
+        </Box>
+      ))}
+    </Stack>
   );
 }

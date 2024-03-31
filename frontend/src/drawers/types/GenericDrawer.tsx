@@ -9,6 +9,7 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { Operation } from '@typing/operations';
+import { DisplayOperationSelectionOptions } from './ActionDrawer';
 
 export type GenericData = {
   title: string;
@@ -48,6 +49,7 @@ export function GenericDrawerContent(props: { data: GenericData }) {
         />
       )} */}
       <RichText ta='justify'>{props.data.description}</RichText>
+      <DisplayOperationSelectionOptions operations={props.data.operations} />
       {props.data.showOperations && <ShowOperationsButton name={props.data.title} operations={props.data.operations} />}
     </Box>
   );

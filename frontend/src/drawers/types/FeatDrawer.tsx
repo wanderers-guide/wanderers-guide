@@ -28,6 +28,7 @@ import { listToLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
+import { DisplayOperationSelectionOptions } from './ActionDrawer';
 
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock } }) {
   const id = props.data.id;
@@ -253,6 +254,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
 
         {<PrerequisiteForSection name={feat.name} />}
       </Box>
+      <DisplayOperationSelectionOptions operations={feat.operations} />
       {props.data.showOperations && <ShowOperationsButton name={feat.name} operations={feat.operations} />}
     </Box>
   );
