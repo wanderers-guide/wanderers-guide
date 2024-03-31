@@ -10,6 +10,7 @@ import {
   getVariable,
 } from '../variables/variable-manager';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
+import { getDefaultSources } from '@content/content-store';
 
 const CONDITIONS: Condition[] = [
   {
@@ -341,11 +342,35 @@ const CONDITIONS: Condition[] = [
     for_creature: true,
     for_object: false,
   },
+
+  // Starfinder Field Test Conditions
+  {
+    name: 'Glitching',
+    description: `Glitching is a condition that affects objects or creatures with the tech trait, and it always includes a value. A glitching creature or object experiences a combination of debilitating effects and moments of seizing up. If you have glitching equipment and take any action involving that equipment, you must attempt a DC 10 flat check to see what occurs. If you have the glitching condition on yourself, you must make this flat check at the beginning of every round.
+    \n\n**Critical Success** Reduce the glitching value by 1.
+    \n\n**Success** You act as normal or use your equipment as normal.
+    \n\n**Failure** You take an item penalty on all your checks and DCs equal to your glitching value or the glitching value on the item you’re attempting to use.
+    \n\n**Critical Failure** You count as stunned 1 for the round. Alternatively, the object you tried to use doesn’t function, and you lose the actions you took to attempt to use it.
+    `,
+    value: 1,
+    for_character: true,
+    for_creature: true,
+    for_object: true,
+    required_source_id: 9,
+  },
+  {
+    name: 'Suppressed',
+    description: `You have been affected by a high volume of incoming fire or a particularly dangerous attack that forces you to act less efficiently for your own safety. You take a –1 circumstance penalty on attack rolls and a –5-foot status penalty to your Speed.`,
+    for_character: true,
+    for_creature: true,
+    for_object: false,
+    required_source_id: 9,
+  },
 ];
 
 export function getConditionByName(name: string, addedSource?: string): Condition | undefined {
   const foundCondition = _.cloneDeep(
-    CONDITIONS.find((condition) => condition.name.trim().toLowerCase() === name.trim().toLowerCase())
+    getAllConditions().find((condition) => condition.name.trim().toLowerCase() === name.trim().toLowerCase())
   );
   if (foundCondition) {
     foundCondition.source = addedSource;
@@ -354,7 +379,10 @@ export function getConditionByName(name: string, addedSource?: string): Conditio
 }
 
 export function getAllConditions() {
-  return _.cloneDeep(CONDITIONS);
+  return _.cloneDeep(CONDITIONS).filter(
+    // We check the getDefaultSources as an quick easy way to get an idea if the content source is probably enabled
+    (condition) => !condition.required_source_id || getDefaultSources().includes(condition.required_source_id)
+  );
 }
 
 export function applyConditions(id: StoreID, conditions: Condition[]) {
@@ -680,6 +708,16 @@ function applyCondition(id: StoreID, condition: Condition) {
     return;
   }
   if (condition.name === 'Wounded') {
+    return;
+  }
+
+  // Starfinder Field Test Conditions
+  if (condition.name === 'Glitching') {
+    return;
+  }
+  if (condition.name === 'Suppressed') {
+    addVariableBonus(id, 'ATTACK_ROLLS_BONUS', -1, 'circumstance', '', `Suppressed`);
+    addVariableBonus(id, 'SPEED', -5, 'status', '', `Suppressed`);
     return;
   }
 }

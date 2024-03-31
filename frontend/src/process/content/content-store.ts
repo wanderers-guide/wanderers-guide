@@ -15,6 +15,7 @@ import {
 } from '@typing/content';
 import { RequestType } from '@typing/requests';
 import { hashData } from '@utils/numbers';
+import _ from 'lodash-es';
 
 ///////////////////////////////////////////////////////
 //                      Storing                      //
@@ -84,6 +85,10 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 let defaultSources: number[] | undefined = undefined; // undefined means all sources
 export function defineDefaultSources(sources?: number[]) {
   defaultSources = sources;
+}
+
+export function getDefaultSources() {
+  return _.cloneDeep(defaultSources ?? []);
 }
 
 export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {

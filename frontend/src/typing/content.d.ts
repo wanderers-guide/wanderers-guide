@@ -94,6 +94,7 @@ interface Condition {
   for_character: boolean;
   for_object: boolean;
   for_creature: boolean;
+  required_source_id?: number;
 }
 
 type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'MATERIAL';
