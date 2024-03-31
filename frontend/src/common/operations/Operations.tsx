@@ -11,6 +11,7 @@ import {
   useMantineTheme,
   Title,
   Tooltip,
+  ScrollArea,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { createDefaultOperation } from '@operations/operation-utils';
@@ -78,7 +79,8 @@ export function OperationWrapper(props: { children: React.ReactNode; title: stri
           position: 'relative',
         }}
       >
-        <Group wrap='nowrap' align='flex-start'>
+        {/* wrap='nowrap' */}
+        <Group align='flex-start'>
           <Group align='flex-start'>
             <Badge
               variant='dot'
@@ -101,7 +103,6 @@ export function OperationWrapper(props: { children: React.ReactNode; title: stri
               {props.title}
             </Badge>
           </Group>
-
           {props.children}
         </Group>
         <Box

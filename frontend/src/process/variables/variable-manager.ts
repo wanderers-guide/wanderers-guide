@@ -29,6 +29,8 @@ import {
 import * as _ from 'lodash-es';
 import { throwError } from '@utils/notifications';
 
+export const HIDDEN_VARIABLES = ['SKILL_LORE____', 'CASTING_SOURCES', 'SPELL_SLOTS', 'SPELL_DATA'];
+
 const DEFAULT_VARIABLES: Record<string, Variable> = {
   ATTRIBUTE_STR: newVariable('attr', 'ATTRIBUTE_STR'),
   ATTRIBUTE_DEX: newVariable('attr', 'ATTRIBUTE_DEX'),
@@ -117,12 +119,13 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SKILL_LORE____: newVariable('prof', 'SKILL_LORE____', {
     value: 'U',
     attribute: 'ATTRIBUTE_INT',
-  }),
+  }), // Hidden
 
   SPELL_ATTACK: newVariable('prof', 'SPELL_ATTACK'),
   SPELL_DC: newVariable('prof', 'SPELL_DC'),
-  CASTING_SOURCES: newVariable('list-str', 'CASTING_SOURCES'),
-  SPELL_SLOTS: newVariable('list-str', 'SPELL_SLOTS'),
+  CASTING_SOURCES: newVariable('list-str', 'CASTING_SOURCES'), // Hidden
+  SPELL_SLOTS: newVariable('list-str', 'SPELL_SLOTS'), // Hidden
+  SPELL_DATA: newVariable('list-str', 'SPELL_DATA'), // Hidden
 
   LIGHT_ARMOR: newVariable('prof', 'LIGHT_ARMOR'),
   MEDIUM_ARMOR: newVariable('prof', 'MEDIUM_ARMOR'),
@@ -196,8 +199,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
   EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', ['9252']), // Hardcoded Fist ID
   EXTRA_TRAIT_IDS: newVariable('list-str', 'EXTRA_TRAIT_IDS'),
-
-  SPELL_DATA: newVariable('list-str', 'SPELL_DATA'),
 
   BULK_LIMIT_BONUS: newVariable('num', 'BULK_LIMIT_BONUS'),
   INVEST_LIMIT_BONUS: newVariable('num', 'INVEST_LIMIT_BONUS'),

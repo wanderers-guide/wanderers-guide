@@ -1,6 +1,6 @@
 import { Autocomplete } from '@mantine/core';
 import { Variable, VariableType } from '@typing/variables';
-import { getVariables } from '@variables/variable-manager';
+import { HIDDEN_VARIABLES, getVariables } from '@variables/variable-manager';
 
 export default function VariableSelect(props: {
   value: string;
@@ -26,7 +26,8 @@ export default function VariableSelect(props: {
             : !variable.endsWith('____') &&
               !variable.endsWith('_IDS') &&
               !variable.endsWith('_NAMES') &&
-              !variable.endsWith('_TOTAL')
+              !variable.endsWith('_TOTAL') &&
+              !HIDDEN_VARIABLES.includes(variable)
         )
         .filter((variable) => {
           if (props.variableType) {
