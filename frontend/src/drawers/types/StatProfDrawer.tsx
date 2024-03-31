@@ -97,6 +97,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
   for (const hist of history) {
     const from = isProficiencyValue(hist.from) ? proficiencyTypeToLabel(hist.from.value) : hist.from;
     const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
+    if (from === to) continue;
     timeline.push({
       type: 'ADJUSTMENT',
       title: from ? `${from} → ${to}` : `${to}`,
