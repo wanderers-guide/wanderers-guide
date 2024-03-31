@@ -790,6 +790,7 @@ function SelectionOptionsRoot(props: {
               action={action as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === action.id}
+              includeDetails={props.includeDetails}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -928,6 +929,7 @@ function SelectionOptionsRoot(props: {
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
+            includeDetails={props.includeDetails}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}

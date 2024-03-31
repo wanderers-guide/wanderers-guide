@@ -370,7 +370,7 @@ const CONDITIONS: Condition[] = [
 
 export function getConditionByName(name: string, addedSource?: string): Condition | undefined {
   const foundCondition = _.cloneDeep(
-    getAllConditions().find((condition) => condition.name.trim().toLowerCase() === name.trim().toLowerCase())
+    CONDITIONS.find((condition) => condition.name.trim().toLowerCase() === name.trim().toLowerCase())
   );
   if (foundCondition) {
     foundCondition.source = addedSource;
