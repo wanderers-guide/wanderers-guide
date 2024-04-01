@@ -45,10 +45,13 @@ import {
   IconDots,
   IconFilter,
   IconQuestionMark,
+  IconReplace,
   IconSearch,
+  IconTransform,
   IconTrash,
   IconX,
   IconZoomCheck,
+  IconZoomScan,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/variables';
@@ -82,6 +85,7 @@ import {
 } from '../../typing/content';
 import { re } from 'mathjs';
 import { characterState } from '@atoms/characterAtoms';
+import { DrawerType } from '@typing/index';
 
 interface FilterOptions {
   options: {
@@ -109,6 +113,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     includeOptions?: boolean;
   };
 }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
 
   // Fill in selected content
@@ -139,6 +144,39 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 
   const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
 
+  const onSelect = () => {
+    selectContent<T>(
+      props.type,
+      (option) => {
+        setSelected(option);
+        props.onClick(option);
+      },
+      {
+        overrideOptions: props.options?.overrideOptions as Record<string, any>[],
+        overrideLabel: props.options?.overrideLabel,
+        abilityBlockType: props.options?.abilityBlockType,
+        groupBySource: props.options?.groupBySource,
+        skillAdjustment: props.options?.skillAdjustment,
+        // @ts-ignore
+        selectedId: selected?.id,
+        // @ts-ignore
+        filterFn: props.options?.filterFn,
+        includeDetails: props.options?.includeDetails,
+        includeOptions: props.options?.includeOptions,
+      }
+    );
+  };
+
+  const drawerType: DrawerType = props.options?.abilityBlockType ?? props.type;
+  const specialSelect = drawerType === 'ability-block';
+  const onView = () => {
+    openDrawer({
+      type: drawerType,
+      data: { id: selected?.id },
+      extra: { addToHistory: true },
+    });
+  };
+
   return (
     <Button.Group className='selection-choice-base'>
       <Button
@@ -146,43 +184,50 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         variant={selected ? 'light' : 'filled'}
         size='compact-sm'
         radius='xl'
+        w={specialSelect ? undefined : 160}
+        miw={specialSelect ? 140 : undefined}
         onClick={() => {
-          selectContent<T>(
-            props.type,
-            (option) => {
-              setSelected(option);
-              props.onClick(option);
-            },
-            {
-              overrideOptions: props.options?.overrideOptions as Record<string, any>[],
-              overrideLabel: props.options?.overrideLabel,
-              abilityBlockType: props.options?.abilityBlockType,
-              groupBySource: props.options?.groupBySource,
-              skillAdjustment: props.options?.skillAdjustment,
-              // @ts-ignore
-              selectedId: selected?.id,
-              // @ts-ignore
-              filterFn: props.options?.filterFn,
-              includeDetails: props.options?.includeDetails,
-              includeOptions: props.options?.includeOptions,
-            }
-          );
+          if (selected && !specialSelect) {
+            onView();
+          } else {
+            onSelect();
+          }
         }}
       >
         {label}
       </Button>
       {selected && (
-        <Button
-          variant='light'
-          size='compact-sm'
-          radius='xl'
-          onClick={() => {
-            setSelected(undefined);
-            props.onClear && props.onClear();
-          }}
-        >
-          <IconX size='1rem' />
-        </Button>
+        <>
+          {!specialSelect && (
+            <Button
+              variant='light'
+              size='compact-sm'
+              radius='xl'
+              onClick={() => {
+                onSelect();
+              }}
+              style={{
+                borderLeft: '1px solid',
+              }}
+            >
+              <IconTransform size='0.9rem' />
+            </Button>
+          )}
+          <Button
+            variant='light'
+            size='compact-sm'
+            radius='xl'
+            onClick={() => {
+              setSelected(undefined);
+              props.onClear && props.onClear();
+            }}
+            style={{
+              borderLeft: '1px solid',
+            }}
+          >
+            <IconX size='1rem' />
+          </Button>
+        </>
       )}
     </Button.Group>
   );
