@@ -33,10 +33,12 @@ import {
   OperationSetValue,
   OperationType,
 } from '@typing/operations';
-import { StoreID, Variable, VariableProf } from '@typing/variables';
+import { StoreID, Variable, VariableListStr, VariableProf } from '@typing/variables';
 import {
+  getAllAncestryTraitVariables,
   getAllArmorGroupVariables,
   getAllAttributeVariables,
+  getAllClassTraitVariables,
   getAllSkillVariables,
   getAllWeaponGroupVariables,
   getVariable,
@@ -219,7 +221,7 @@ export async function determineFilteredSelectionList(
   filters: OperationSelectFilters
 ): Promise<ObjectWithUUID[]> {
   if (filters.type === 'ABILITY_BLOCK') {
-    return await getAbilityBlockList(operationUUID, filters);
+    return await getAbilityBlockList(id, operationUUID, filters);
   } else if (filters.type === 'SPELL') {
     return await getSpellList(operationUUID, filters);
   } else if (filters.type === 'LANGUAGE') {
@@ -230,7 +232,7 @@ export async function determineFilteredSelectionList(
   return [];
 }
 
-async function getAbilityBlockList(operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
+async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
   if (filters.abilityBlockType !== undefined) {
@@ -243,14 +245,34 @@ async function getAbilityBlockList(operationUUID: string, filters: OperationSele
   if (filters.level.max !== undefined) {
     abilityBlocks = abilityBlocks.filter((ab) => ab.level !== undefined && ab.level <= filters.level.max!);
   }
+
+  if (filters.isFromAncestry) {
+    const traitIds = getAllAncestryTraitVariables(id).map((v) => v.value) ?? [];
+    abilityBlocks = abilityBlocks.filter((ab) => {
+      if (!ab.traits) {
+        return false;
+      }
+      return _.intersection(ab.traits, traitIds).length > 0;
+    });
+  }
+  if (filters.isFromClass) {
+    const traitIds = getAllClassTraitVariables(id).map((v) => v.value) ?? [];
+    abilityBlocks = abilityBlocks.filter((ab) => {
+      if (!ab.traits) {
+        return false;
+      }
+      return _.intersection(ab.traits, traitIds).length > 0;
+    });
+  }
+
   if (filters.traits !== undefined) {
-    const traits = await Promise.all(
-      filters.traits.map((trait) =>
+    const tDatas = await Promise.all(
+      filters.traits.map((t) =>
         // If it's a number, it's a trait id, otherwise it's a trait name
-        _.isNumber(trait) ? fetchTraitByName(undefined, undefined, trait) : fetchTraitByName(trait)
+        _.isNumber(t) ? t : fetchTraitByName(t)
       )
     );
-    const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
+    const traitIds = tDatas.map((t) => (_.isNumber(t) ? t : t?.id)).filter((t) => t) as number[];
 
     // Filter out ability blocks that don't have all the traits
     abilityBlocks = abilityBlocks.filter((ab) => {

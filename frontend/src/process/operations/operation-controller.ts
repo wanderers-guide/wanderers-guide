@@ -2,8 +2,8 @@ import { AbilityBlock, Ancestry, Character, Class, ContentPackage, ContentSource
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
-import { addVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
-import { isAttributeValue } from '@variables/variable-utils';
+import { addVariable, adjVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
+import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { hashData } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
@@ -136,6 +136,7 @@ export async function executeCharacterOperations(
         options,
         class_.name
       );
+      addVariable('CHARACTER', 'num', labelToVariable(`TRAIT_CLASS_${class_.name}_IDS`), class_.trait_id, class_.name);
     }
 
     let class2Results: OperationResult[] = [];
@@ -147,6 +148,13 @@ export async function executeCharacterOperations(
         options,
         class_2.name
       );
+      addVariable(
+        'CHARACTER',
+        'num',
+        labelToVariable(`TRAIT_CLASS_${class_2.name}_IDS`),
+        class_2.trait_id,
+        class_2.name
+      );
     }
 
     let ancestryResults: OperationResult[] = [];
@@ -156,6 +164,13 @@ export async function executeCharacterOperations(
         'ancestry',
         getExtendedAncestryOperations('CHARACTER', ancestry),
         options,
+        ancestry.name
+      );
+      addVariable(
+        'CHARACTER',
+        'num',
+        labelToVariable(`TRAIT_ANCESTRY_${ancestry.name}_IDS`),
+        ancestry.trait_id,
         ancestry.name
       );
     }
@@ -441,8 +456,6 @@ export function addedAncestryLanguages(varId: StoreID, ancestry: Ancestry): Oper
 }
 
 export function getAncestrySections(varId: StoreID, ancestry: Ancestry): AbilityBlock[] {
-  const extraTraitIds = getVariable<VariableListStr>(varId, 'EXTRA_TRAIT_IDS')?.value.map((v) => parseInt(v)) ?? [];
-
   const heritage: AbilityBlock = {
     id: hashData({ name: 'heritage' }),
     created_at: '',
@@ -459,8 +472,9 @@ export function getAncestrySections(varId: StoreID, ancestry: Ancestry): Ability
             id: 'c8dc1601-4c97-4838-9bd5-31d0e6b87286',
             type: 'ABILITY_BLOCK',
             level: {},
-            traits: [...extraTraitIds, ancestry.trait_id],
+            traits: [],
             abilityBlockType: 'heritage',
+            isFromAncestry: true,
           },
         },
       },
@@ -494,8 +508,9 @@ export function getAncestrySections(varId: StoreID, ancestry: Ancestry): Ability
               level: {
                 max: level,
               },
-              traits: [...extraTraitIds, ancestry.trait_id],
+              traits: [],
               abilityBlockType: 'feat',
+              isFromAncestry: true,
             },
           },
         },

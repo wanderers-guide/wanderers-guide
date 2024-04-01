@@ -1223,7 +1223,8 @@ export function GenericSelectionOption(props: {
         )}
         {props.option._content_type === 'language' && (
           <Button
-            size='compact-xs'
+            size='xs'
+            px={5}
             variant='subtle'
             style={{
               position: 'absolute',
@@ -1240,7 +1241,8 @@ export function GenericSelectionOption(props: {
         )}
         {props.option._custom_select && (
           <Button
-            size='compact-xs'
+            size='xs'
+            px={5}
             variant='subtle'
             style={{
               position: 'absolute',
@@ -1409,7 +1411,8 @@ export function FeatSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
+          size='xs'
+          px={5}
           variant='subtle'
           style={{
             position: 'absolute',
@@ -1527,7 +1530,8 @@ export function ActionSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
+          size='xs'
+          px={5}
           variant='subtle'
           style={{
             position: 'absolute',
@@ -1657,7 +1661,8 @@ export function ClassFeatureSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
+          size='xs'
+          px={5}
           variant='subtle'
           style={{
             position: 'absolute',
@@ -1777,7 +1782,8 @@ export function HeritageSelectionOption(props: {
       </Group>
       {props.includeDetails && (
         <Button
-          size='compact-xs'
+          size='xs'
+          px={5}
           variant='subtle'
           style={{
             position: 'absolute',
@@ -1892,7 +1898,8 @@ export function PhysicalFeatureSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -2004,7 +2011,8 @@ export function SenseSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -2185,7 +2193,8 @@ export function ClassSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -2391,7 +2400,8 @@ export function AncestrySelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -2546,7 +2556,8 @@ export function BackgroundSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -2686,7 +2697,8 @@ export function ItemSelectionOption(props: {
       )}
       {props.includeDetails && (
         <Button
-          size='compact-xs'
+          size='xs'
+          px={5}
           variant='subtle'
           style={{
             position: 'absolute',
@@ -2827,7 +2839,8 @@ export function SpellSelectionOption(props: {
       {props.includeDetails === undefined ||
         (props.includeDetails === true && (
           <Button
-            size='compact-xs'
+            size='xs'
+            px={5}
             variant='subtle'
             style={{
               position: 'absolute',
@@ -2939,7 +2952,8 @@ export function TraitSelectionOption(props: {
         </Indicator>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -3045,7 +3059,8 @@ export function LanguageSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',
@@ -3229,7 +3244,8 @@ export function CreatureSelectionOption(props: {
         <Box w={props.includeOptions ? 80 : 50}></Box>
       </Group>
       <Button
-        size='compact-xs'
+        size='xs'
+        px={5}
         variant='subtle'
         style={{
           position: 'absolute',

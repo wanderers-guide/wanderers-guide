@@ -29,6 +29,7 @@ import { useRecoilState } from 'recoil';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
 import { getCachedPublicUser } from '@auth/user-manager';
+import { getAllAncestryTraitVariables, getAllClassTraitVariables, getVariable } from '@variables/variable-manager';
 
 export function Component() {
   setPageTitle(`Builder`);

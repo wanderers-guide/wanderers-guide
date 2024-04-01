@@ -192,7 +192,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CLASS_FEATURE_NAMES: newVariable('list-str', 'CLASS_FEATURE_NAMES'),
   PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
   EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['Fist']),
-  EXTRA_TRAIT_NAMES: newVariable('list-str', 'EXTRA_TRAIT_NAMES'),
+
   //
   // List variables, storing the IDs
   SENSE_IDS: newVariable('list-str', 'SENSE_IDS'),
@@ -206,7 +206,10 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CLASS_FEATURE_IDS: newVariable('list-str', 'CLASS_FEATURE_IDS'),
   PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
   EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', ['9252']), // Hardcoded Fist ID
-  EXTRA_TRAIT_IDS: newVariable('list-str', 'EXTRA_TRAIT_IDS'),
+
+  // Used for tracking traits. We create new traits so that they're run first
+  //TRAIT_ANCESTRY_<>_IDS: newVariable('num', 'TRAIT_ANCESTRY_<>_IDS'),
+  //TRAIT_CLASS_<>_IDS: newVariable('num', 'TRAIT_CLASS_<>_IDS'),
 
   BULK_LIMIT_BONUS: newVariable('num', 'BULK_LIMIT_BONUS'),
   INVEST_LIMIT_BONUS: newVariable('num', 'INVEST_LIMIT_BONUS'),
@@ -646,6 +649,26 @@ export function getAllSpeedVariables(id: StoreID): VariableNum[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {
     if ((variable.name.startsWith('SPEED_') || variable.name === 'SPEED') && variable.type === 'num') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableNum[];
+}
+
+export function getAllAncestryTraitVariables(id: StoreID): VariableNum[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables(id))) {
+    if (variable.name.startsWith('TRAIT_ANCESTRY_') && variable.type === 'num') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableNum[];
+}
+
+export function getAllClassTraitVariables(id: StoreID): VariableNum[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables(id))) {
+    if (variable.name.startsWith('TRAIT_CLASS_') && variable.type === 'num') {
       variables.push(variable);
     }
   }

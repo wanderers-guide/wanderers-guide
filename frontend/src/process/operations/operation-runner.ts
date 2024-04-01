@@ -25,7 +25,7 @@ import * as _ from 'lodash-es';
 import { SelectionTreeNode } from './selection-tree';
 import { displayError, throwError } from '@utils/notifications';
 import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSelectionList } from './operation-utils';
-import { maxProficiencyType } from '@variables/variable-utils';
+import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
 import { ExtendedProficiencyType, ProficiencyType, StoreID, VariableNum } from '@typing/variables';
 import { fetchContentById } from '@content/content-store';
 
@@ -61,6 +61,8 @@ export async function runOperations(
     if (options?.doOnlyValueCreation) {
       if (operation.type === 'createValue') {
         return await runCreateValue(varId, operation, sourceLabel);
+      } else if (operation.type === 'giveTrait') {
+        return await runGiveTrait(varId, operation, sourceLabel);
       }
       return null;
     }
@@ -406,8 +408,17 @@ async function runGiveTrait(
     return null;
   }
 
-  adjVariable(varId, 'EXTRA_TRAIT_IDS', `${trait.id}`, sourceLabel);
-  adjVariable(varId, 'EXTRA_TRAIT_NAMES', trait.name, sourceLabel);
+  // Create variables because we run variable creation first
+  if (trait.meta_data?.class_trait) {
+    addVariable(varId, 'num', labelToVariable(`TRAIT_CLASS_${trait.name}_IDS`), trait.id, sourceLabel);
+  } else if (trait.meta_data?.ancestry_trait || trait.meta_data?.creature_trait) {
+    addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
+  } else {
+    displayError(
+      `Trait is not a class, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
+    );
+  }
+
   return null;
 }
 

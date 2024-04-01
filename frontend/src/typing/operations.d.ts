@@ -289,8 +289,10 @@ interface OperationSelectFiltersAbilityBlock extends OperationSelectFiltersBase 
     min?: number;
     max?: number;
   };
-  traits?: string[] | number[];
+  traits?: (string | number)[];
   abilityBlockType?: AbilityBlockType;
+  isFromClass?: boolean;
+  isFromAncestry?: boolean;
 }
 
 interface OperationSelectFiltersSpell extends OperationSelectFiltersBase {

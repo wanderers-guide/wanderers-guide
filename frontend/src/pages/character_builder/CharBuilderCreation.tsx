@@ -38,7 +38,12 @@ import { OperationResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
-import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import {
+  getAllAncestryTraitVariables,
+  getAllClassTraitVariables,
+  getAllSkillVariables,
+  getVariable,
+} from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
@@ -1841,36 +1846,14 @@ function DisplayOperationResult(props: {
   const selections = props.results.filter((result) => hasSelection(result));
   if (selections.length === 0) return null;
 
+  // This is the magic sauce
   return (
     <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>
       <Stack gap={10}>
         {selections.map((result, i) => (
           <Stack key={i} gap={10}>
             {result?.selection && (
-              <SelectContentButton
-                type={
-                  (result?.selection?.options ?? []).length > 0
-                    ? result?.selection?.options[0]._content_type
-                    : 'ability-block'
-                }
-                onClick={(option) => {
-                  props.onChange(result.selection?.id ?? '', option._select_uuid);
-                }}
-                onClear={() => {
-                  props.onChange(result.selection?.id ?? '', '');
-                }}
-                selectedId={result.result?.source?.id}
-                options={{
-                  overrideOptions: result?.selection?.options.map((option) => ({
-                    ...option,
-                    _source_level: props.level,
-                  })),
-                  overrideLabel: result?.selection?.title || 'Select an Option',
-                  abilityBlockType:
-                    (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
-                  skillAdjustment: result?.selection?.skillAdjustment,
-                }}
-              />
+              <OperationResultSelector result={result} level={props.level} onChange={props.onChange} />
             )}
             {result?.result?.results && result.result.results.length > 0 && (
               <DisplayOperationResult
@@ -1892,5 +1875,38 @@ function DisplayOperationResult(props: {
         ))}
       </Stack>
     </ResultWrapper>
+  );
+}
+
+function OperationResultSelector(props: {
+  result: OperationResult;
+  level?: number;
+  onChange: (path: string, value: string) => void;
+}) {
+  return (
+    <SelectContentButton
+      type={
+        (props.result?.selection?.options ?? []).length > 0
+          ? props.result?.selection?.options[0]._content_type ?? 'ability-block'
+          : 'ability-block'
+      }
+      onClick={(option) => {
+        props.onChange(props.result!.selection?.id ?? '', option._select_uuid);
+      }}
+      onClear={() => {
+        props.onChange(props.result!.selection?.id ?? '', '');
+      }}
+      selectedId={props.result!.result?.source?.id}
+      options={{
+        overrideOptions: props.result?.selection?.options.map((option) => ({
+          ...option,
+          _source_level: props.level,
+        })),
+        overrideLabel: props.result?.selection?.title || 'Select an Option',
+        abilityBlockType:
+          (props.result?.selection?.options ?? []).length > 0 ? props.result?.selection?.options[0].type : undefined,
+        skillAdjustment: props.result?.selection?.skillAdjustment,
+      }}
+    />
   );
 }

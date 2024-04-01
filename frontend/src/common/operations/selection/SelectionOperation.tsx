@@ -16,6 +16,7 @@ import {
   SegmentedControl,
   Select,
   Stack,
+  Switch,
   TagsInput,
   Text,
   TextInput,
@@ -229,6 +230,8 @@ function SelectionFilteredAbilityBlock(props: {
   const [minLevel, setMinLevel] = useState<number | undefined>(props.filters?.level.min ?? undefined);
   const [maxLevel, setMaxLevel] = useState<number | undefined>(props.filters?.level.max ?? undefined);
   const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
+  const [isFromClass, setIsFromClass] = useState<boolean | undefined>(props.filters?.isFromClass);
+  const [isFromAncestry, setIsFromAncestry] = useState<boolean | undefined>(props.filters?.isFromAncestry);
 
   useDidUpdate(() => {
     props.onChange({
@@ -240,8 +243,10 @@ function SelectionFilteredAbilityBlock(props: {
       },
       traits: traits,
       abilityBlockType: type,
+      isFromClass: isFromClass,
+      isFromAncestry: isFromAncestry,
     });
-  }, [minLevel, maxLevel, traits, type]);
+  }, [minLevel, maxLevel, traits, type, isFromClass, isFromAncestry]);
 
   return (
     <Stack gap={10}>
@@ -293,6 +298,20 @@ function SelectionFilteredAbilityBlock(props: {
         data={[]}
         value={traits}
         onChange={setTraits}
+      />
+
+      <Switch
+        size='xs'
+        checked={isFromAncestry}
+        onChange={(e) => setIsFromAncestry(e.target.checked)}
+        label='Only from your ancestry (unreliable)'
+      />
+
+      <Switch
+        size='xs'
+        checked={isFromClass}
+        onChange={(e) => setIsFromClass(e.target.checked)}
+        label='Only from your class (unreliable)'
       />
     </Stack>
   );
