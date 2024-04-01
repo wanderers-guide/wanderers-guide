@@ -22,7 +22,7 @@ import {
 } from '@typing/operations';
 import { addVariable, addVariableBonus, adjVariable, getVariable, setVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
-import { SelectionTreeNode } from './selection-tree';
+import { SelectionTrack, SelectionTreeNode } from './selection-tree';
 import { displayError, throwError } from '@utils/notifications';
 import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSelectionList } from './operation-utils';
 import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
@@ -52,7 +52,7 @@ export type OperationResult = {
 
 export async function runOperations(
   varId: StoreID,
-  selectionNode: SelectionTreeNode | undefined,
+  selectionTrack: SelectionTrack,
   operations: Operation[],
   options?: OperationOptions,
   sourceLabel?: string
@@ -64,16 +64,22 @@ export async function runOperations(
       } else if (operation.type === 'giveTrait') {
         return await runGiveTrait(varId, operation, sourceLabel);
       } else if (operation.type === 'select') {
-        const subNode = selectionNode?.children[operation.id];
+        const subNode = selectionTrack.node?.children[operation.id];
         // Run the select operation but only the parts that create variables
-        return await runSelect(varId, subNode, operation, options, sourceLabel);
+        return await runSelect(
+          varId,
+          { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+          operation,
+          options,
+          sourceLabel
+        );
       }
       return null;
     }
 
     if (options?.doOnlyConditionals) {
       if (operation.type === 'conditional') {
-        return await runConditional(varId, selectionNode, operation, options, sourceLabel);
+        return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
       }
 
       if (options.onlyConditionalsWhitelist?.includes(operation.id)) {
@@ -84,7 +90,7 @@ export async function runOperations(
     }
 
     if (options?.doConditionals && operation.type === 'conditional') {
-      return await runConditional(varId, selectionNode, operation, options, sourceLabel);
+      return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
     } else if (operation.type === 'adjValue') {
       return await runAdjValue(varId, operation, sourceLabel);
     } else if (operation.type === 'setValue') {
@@ -92,7 +98,7 @@ export async function runOperations(
     } else if (operation.type === 'addBonusToValue') {
       return await runAddBonusToValue(varId, operation, sourceLabel);
     } else if (operation.type === 'giveAbilityBlock') {
-      return await runGiveAbilityBlock(varId, selectionNode, operation, options, sourceLabel);
+      return await runGiveAbilityBlock(varId, selectionTrack, operation, options, sourceLabel);
     } else if (operation.type === 'giveLanguage') {
       return await runGiveLanguage(varId, operation, sourceLabel);
     } else if (operation.type === 'giveItem') {
@@ -112,8 +118,14 @@ export async function runOperations(
     } else if (operation.type === 'removeSpell') {
       return await runRemoveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'select') {
-      const subNode = selectionNode?.children[operation.id];
-      return await runSelect(varId, subNode, operation, options, sourceLabel);
+      const subNode = selectionTrack.node?.children[operation.id];
+      return await runSelect(
+        varId,
+        { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+        operation,
+        options,
+        sourceLabel
+      );
     }
     return null;
   };
@@ -130,7 +142,7 @@ export async function runOperations(
 
 async function runSelect(
   varId: StoreID,
-  selectionNode: SelectionTreeNode | undefined,
+  selectionTrack: SelectionTrack,
   operation: OperationSelect,
   options?: OperationOptions,
   sourceLabel?: string
@@ -150,21 +162,34 @@ async function runSelect(
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
 
-  if (selectionNode && selectionNode.value) {
-    const selectedOption = optionList.find((option) => option._select_uuid === selectionNode.value);
+  if (selectionTrack.node && selectionTrack.node.value) {
+    const selectedOption = optionList.find((option) => option._select_uuid === selectionTrack.node?.value);
     if (selectedOption) {
       updateVariables(varId, operation, selectedOption, sourceLabel, options);
     } else {
-      displayError(`Selected option "${selectionNode.value}" not found`);
+      /*
+        We don't display an error on value creation because, with trait giving, we can have values
+        that give access to other selection options. In the later passthroughs, they find the options
+        correctly but for this first value creation-only pass, it may not find the option due to not
+        having created the values to give access to those options yet.
+        * This results in a known bug where values that are created can give access to selected options
+        that might also want to create values but they won't be able to find the selected option and
+        therefore can't create that value.
+        God I hope that doesn't become too big of a problem in the future 🤞
+      */
+      if (!options?.doOnlyValueCreation) {
+        displayError(`Selected node "${selectionTrack.path}" not found`);
+      }
       return null;
     }
     selected = selectedOption;
 
     // Run the operations of the selected option
     if (selectedOption.operations) {
+      const subNode = selectionTrack.node?.children[selectedOption._select_uuid];
       results = await runOperations(
         varId,
-        selectionNode.children[selectedOption._select_uuid],
+        { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
         selectedOption.operations,
         options,
         operation.data.optionType === 'CUSTOM' ? sourceLabel : selectedOption.name ?? 'Unknown'
@@ -339,7 +364,7 @@ async function runAddBonusToValue(
 
 async function runGiveAbilityBlock(
   varId: StoreID,
-  selectionNode: SelectionTreeNode | undefined,
+  selectionTrack: SelectionTrack,
   operation: OperationGiveAbilityBlock,
   options?: OperationOptions,
   sourceLabel?: string
@@ -369,9 +394,10 @@ async function runGiveAbilityBlock(
 
   let results: OperationResult[] = [];
   if (abilityBlock.operations) {
+    const subNode = selectionTrack.node?.children[operation.id];
     results = await runOperations(
       varId,
-      selectionNode?.children[operation.id],
+      { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
       abilityBlock.operations,
       options,
       abilityBlock.type === 'feat' || abilityBlock.type === 'class-feature'
@@ -672,7 +698,7 @@ async function runRemoveSpell(
 
 async function runConditional(
   varId: StoreID,
-  selectionNode: SelectionTreeNode | undefined,
+  selectionTrack: SelectionTrack,
   operation: OperationConditional,
   options?: OperationOptions,
   sourceLabel?: string
@@ -756,7 +782,7 @@ async function runConditional(
   if (isTrue) {
     results = await runOperations(
       varId,
-      selectionNode,
+      selectionTrack,
       operation.data.trueOperations ?? [],
       {
         ...options,
@@ -768,7 +794,7 @@ async function runConditional(
   } else {
     results = await runOperations(
       varId,
-      selectionNode,
+      selectionTrack,
       operation.data.falseOperations ?? [],
       {
         ...options,
