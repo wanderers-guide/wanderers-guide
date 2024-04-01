@@ -225,7 +225,7 @@ export interface OperationSelect extends OperationBase {
   };
 }
 
-export type OperationSelectOptionType = 'CUSTOM' | 'ABILITY_BLOCK' | 'SPELL' | 'LANGUAGE' | 'ADJ_VALUE';
+export type OperationSelectOptionType = 'CUSTOM' | 'ABILITY_BLOCK' | 'SPELL' | 'LANGUAGE' | 'TRAIT' | 'ADJ_VALUE';
 
 /**
  * OperationSelectOption
@@ -276,6 +276,7 @@ export type OperationSelectFilters =
   | OperationSelectFiltersAbilityBlock
   | OperationSelectFiltersSpell
   | OperationSelectFiltersLanguage
+  | OperationSelectFiltersTrait
   | OperationSelectFiltersAdjValue;
 
 interface OperationSelectFiltersBase {
@@ -311,6 +312,13 @@ interface OperationSelectFiltersLanguage extends OperationSelectFiltersBase {
   readonly type: 'LANGUAGE';
   rarity?: Rarity;
   core?: boolean;
+}
+
+interface OperationSelectFiltersTrait extends OperationSelectFiltersBase {
+  readonly type: 'TRAIT';
+  isAncestry?: boolean;
+  isCreature?: boolean;
+  isClass?: boolean;
 }
 
 interface OperationSelectFiltersAdjValue extends OperationSelectFiltersBase {

@@ -1846,6 +1846,9 @@ function DisplayOperationResult(props: {
   const selections = props.results.filter((result) => hasSelection(result));
   if (selections.length === 0) return null;
 
+  console.log(getAllAncestryTraitVariables('CHARACTER'));
+  console.log(getAllClassTraitVariables('CHARACTER'));
+
   // This is the magic sauce
   return (
     <ResultWrapper label={`From ${props.source?.name ?? 'Unknown'}`} disabled={!props.source}>

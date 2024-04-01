@@ -1,6 +1,6 @@
 import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
-import { AbilityBlock, ContentType, Item, Language, Spell } from '@typing/content';
+import { AbilityBlock, ContentType, Item, Language, Spell, Trait } from '@typing/content';
 import {
   Operation,
   OperationAddBonusToValue,
@@ -23,6 +23,7 @@ import {
   OperationSelectFiltersAdjValue,
   OperationSelectFiltersLanguage,
   OperationSelectFiltersSpell,
+  OperationSelectFiltersTrait,
   OperationSelectOption,
   OperationSelectOptionAbilityBlock,
   OperationSelectOptionAdjValue,
@@ -226,6 +227,8 @@ export async function determineFilteredSelectionList(
     return await getSpellList(operationUUID, filters);
   } else if (filters.type === 'LANGUAGE') {
     return await getLanguageList(id, operationUUID, filters);
+  } else if (filters.type === 'TRAIT') {
+    return await getTraitList(id, operationUUID, filters);
   } else if (filters.type === 'ADJ_VALUE') {
     return await getAdjValueList(id, operationUUID, filters);
   }
@@ -363,6 +366,28 @@ async function getLanguageList(id: StoreID, operationUUID: string, filters: Oper
       ...language,
       _select_uuid: `${language.id}`,
       _content_type: 'language' as ContentType,
+    };
+  });
+}
+
+async function getTraitList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersTrait) {
+  let traits = await fetchContentAll<Trait>('trait');
+
+  if (filters.isCreature) {
+    traits = traits.filter((trait) => trait.meta_data?.creature_trait);
+  }
+  if (filters.isAncestry) {
+    traits = traits.filter((trait) => trait.meta_data?.ancestry_trait);
+  }
+  if (filters.isClass) {
+    traits = traits.filter((trait) => trait.meta_data?.class_trait);
+  }
+
+  return traits.map((trait) => {
+    return {
+      ...trait,
+      _select_uuid: `${trait.id}`,
+      _content_type: 'trait' as ContentType,
     };
   });
 }

@@ -63,6 +63,10 @@ export async function runOperations(
         return await runCreateValue(varId, operation, sourceLabel);
       } else if (operation.type === 'giveTrait') {
         return await runGiveTrait(varId, operation, sourceLabel);
+      } else if (operation.type === 'select') {
+        const subNode = selectionNode?.children[operation.id];
+        // Run the select operation but only the parts that create variables
+        return await runSelect(varId, subNode, operation, options, sourceLabel);
       }
       return null;
     }
@@ -149,7 +153,7 @@ async function runSelect(
   if (selectionNode && selectionNode.value) {
     const selectedOption = optionList.find((option) => option._select_uuid === selectionNode.value);
     if (selectedOption) {
-      updateVariables(varId, operation, selectedOption, sourceLabel);
+      updateVariables(varId, operation, selectedOption, sourceLabel, options);
     } else {
       displayError(`Selected option "${selectionNode.value}" not found`);
       return null;
@@ -202,8 +206,34 @@ async function updateVariables(
   varId: StoreID,
   operation: OperationSelect,
   selectedOption: ObjectWithUUID,
-  sourceLabel?: string
+  sourceLabel?: string,
+  options?: OperationOptions
 ) {
+  if (options?.doOnlyValueCreation) {
+    // Create variables based on the selected option
+    if (operation.data.optionType === 'TRAIT') {
+      if (selectedOption.meta_data?.class_trait) {
+        addVariable(
+          varId,
+          'num',
+          labelToVariable(`TRAIT_CLASS_${selectedOption.name}_IDS`),
+          selectedOption.id,
+          sourceLabel
+        );
+      } else if (selectedOption.meta_data?.ancestry_trait || selectedOption.meta_data?.creature_trait) {
+        addVariable(
+          varId,
+          'num',
+          labelToVariable(`TRAIT_ANCESTRY_${selectedOption.name}_IDS`),
+          selectedOption.id,
+          sourceLabel
+        );
+      }
+    }
+    return;
+  }
+
+  // Adjust variables based on the selected option
   if (operation.data.optionType === 'ABILITY_BLOCK') {
     if (selectedOption.type === 'feat') {
       adjVariable(varId, 'FEAT_IDS', `${selectedOption.id}`, sourceLabel);

@@ -40,6 +40,7 @@ import {
   OperationSelectFiltersAdjValue,
   OperationSelectFiltersLanguage,
   OperationSelectFiltersSpell,
+  OperationSelectFiltersTrait,
   OperationSelectOption,
   OperationSelectOptionAbilityBlock,
   OperationSelectOptionAdjValue,
@@ -116,6 +117,7 @@ export function SelectionOperation(props: {
               { label: 'Spell', value: 'SPELL' },
               { label: 'Adjust Value', value: 'ADJ_VALUE' },
               { label: 'Language', value: 'LANGUAGE' },
+              { label: 'Trait', value: 'TRAIT' },
               { label: 'Custom', value: 'CUSTOM' },
             ] satisfies { label: string; value: OperationSelectOptionType }[]
           }
@@ -137,7 +139,7 @@ export function SelectionOperation(props: {
             <Divider
               label={
                 <>
-                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE'].includes(optionType ?? '') && (
+                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE', 'TRAIT'].includes(optionType ?? '') && (
                     <SegmentedControl
                       size='xs'
                       value={modeType}
@@ -204,6 +206,15 @@ function SelectionFiltered(props: {
       <SelectionFilteredLanguage
         optionType={props.optionType}
         filters={props.filters as OperationSelectFiltersLanguage}
+        onChange={props.onChange}
+      />
+    );
+  }
+  if (props.optionType === 'TRAIT') {
+    return (
+      <SelectionFilteredTrait
+        optionType={props.optionType}
+        filters={props.filters as OperationSelectFiltersTrait}
         onChange={props.onChange}
       />
     );
@@ -556,6 +567,50 @@ function SelectionFilteredLanguage(props: {
             { label: 'Core Only', value: 'CORE' },
             { label: 'Non-Core Only', value: 'NON-CORE' },
           ]}
+        />
+      </Box>
+    </Stack>
+  );
+}
+
+function SelectionFilteredTrait(props: {
+  optionType: OperationSelectOptionType;
+  filters?: OperationSelectFiltersTrait;
+  onChange: (filters: OperationSelectFiltersTrait) => void;
+}) {
+  const [isCreature, setIsCreature] = useState<boolean | undefined>(props.filters?.isCreature ?? undefined);
+  const [isAncestry, setIsAncestry] = useState<boolean | undefined>(props.filters?.isAncestry ?? undefined);
+  const [isClass, setIsClass] = useState<boolean | undefined>(props.filters?.isClass ?? undefined);
+
+  useDidUpdate(() => {
+    props.onChange({
+      id: props.filters?.id ?? crypto.randomUUID(),
+      type: 'TRAIT',
+      isCreature: isCreature,
+      isAncestry: isAncestry,
+      isClass: isClass,
+    });
+  }, [isCreature, isAncestry, isClass]);
+
+  return (
+    <Stack gap={10}>
+      <Box>
+        <Switch size='xs' checked={isClass} onChange={(e) => setIsClass(e.target.checked)} label='Class Traits' />
+      </Box>
+      <Box>
+        <Switch
+          size='xs'
+          checked={isAncestry}
+          onChange={(e) => setIsAncestry(e.target.checked)}
+          label='Ancestry Traits'
+        />
+      </Box>
+      <Box>
+        <Switch
+          size='xs'
+          checked={isCreature}
+          onChange={(e) => setIsCreature(e.target.checked)}
+          label='Creature Traits'
         />
       </Box>
     </Stack>
