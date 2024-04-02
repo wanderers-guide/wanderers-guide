@@ -22,6 +22,8 @@ export type RequestType =
   | 'find-background'
   | 'create-class'
   | 'find-class'
+  | 'create-archetype'
+  | 'find-archetype'
   | 'create-item'
   | 'find-item'
   | 'create-language'

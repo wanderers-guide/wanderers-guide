@@ -13,6 +13,7 @@ import {
   upsertTrait,
   upsertLanguage,
   upsertCreature,
+  upsertArchetype,
 } from '@content/content-creation';
 import { fetchContentPackage, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
@@ -57,6 +58,7 @@ import {
   AbilityBlock,
   AbilityBlockType,
   Ancestry,
+  Archetype,
   Background,
   Class,
   ContentType,
@@ -81,6 +83,7 @@ import { CreateTraitModal } from './CreateTraitModal';
 import { CreateLanguageModal } from './CreateLanguageModal';
 import { DISCORD_URL } from '@constants/data';
 import { CreateCreatureModal } from './CreateCreatureModal';
+import { CreateArchetypeModal } from './CreateArchetypeModal';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -497,8 +500,16 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
               </Tabs.Tab>
               <Tabs.Tab
                 value='archetypes'
-                leftSection={getIconFromContentType('ability-block', '1rem')}
-                // TODO: Add archetypes
+                leftSection={getIconFromContentType('archetype', '1rem')}
+                rightSection={
+                  <>
+                    {data?.content.archetypes && data?.content.archetypes.length > 0 && (
+                      <Badge variant='light' color={theme.primaryColor} size='xs'>
+                        {data?.content.archetypes.length}
+                      </Badge>
+                    )}
+                  </>
+                }
               >
                 Archetypes
               </Tabs.Tab>
@@ -606,15 +617,13 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
               />
             </Tabs.Panel>
 
-            {/* <Tabs.Panel value='archetypes'>
-                <ContentList<AbilityBlock>
-                  type='ability-block'
-                  abilityBlockType='archetype'
-                  content={(data?.content.abilityBlocks ?? []).filter(
-                  (item) => item.type === 'archetype'
-                )}
-                />
-              </Tabs.Panel> */}
+            <Tabs.Panel value='archetypes'>
+              <ContentList<Archetype>
+                sourceId={props.sourceId}
+                type='archetype'
+                content={data?.content.archetypes ?? []}
+              />
+            </Tabs.Panel>
           </Tabs>
         </Center>
       </Group>
@@ -917,6 +926,28 @@ function ContentList<
               showNotification({
                 title: `Updated ${result.name}`,
                 message: `Successfully updated class.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'archetype' && openedId && (
+        <CreateArchetypeModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (archetype) => {
+            archetype.content_source_id = props.sourceId;
+            const result = await upsertArchetype(archetype);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated archetype.`,
                 autoClose: 3000,
               });
             }

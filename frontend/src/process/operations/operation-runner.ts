@@ -245,6 +245,14 @@ async function updateVariables(
           selectedOption.id,
           sourceLabel
         );
+      } else if (selectedOption.meta_data?.archetype_trait) {
+        addVariable(
+          varId,
+          'num',
+          labelToVariable(`TRAIT_ARCHETYPE_${selectedOption.name}_IDS`),
+          selectedOption.id,
+          sourceLabel
+        );
       } else if (selectedOption.meta_data?.ancestry_trait || selectedOption.meta_data?.creature_trait) {
         addVariable(
           varId,
@@ -467,11 +475,13 @@ async function runGiveTrait(
   // Create variables because we run variable creation first
   if (trait.meta_data?.class_trait) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_CLASS_${trait.name}_IDS`), trait.id, sourceLabel);
+  } else if (trait.meta_data?.archetype_trait) {
+    addVariable(varId, 'num', labelToVariable(`TRAIT_ARCHETYPE_${trait.name}_IDS`), trait.id, sourceLabel);
   } else if (trait.meta_data?.ancestry_trait || trait.meta_data?.creature_trait) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
   } else {
     displayError(
-      `Trait is not a class, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
+      `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
     );
   }
 

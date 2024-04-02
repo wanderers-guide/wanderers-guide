@@ -294,6 +294,7 @@ interface OperationSelectFiltersAbilityBlock extends OperationSelectFiltersBase 
   abilityBlockType?: AbilityBlockType;
   isFromClass?: boolean;
   isFromAncestry?: boolean;
+  isFromArchetype?: boolean;
 }
 
 interface OperationSelectFiltersSpell extends OperationSelectFiltersBase {

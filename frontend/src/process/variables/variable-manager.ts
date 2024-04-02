@@ -210,6 +210,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // Used for tracking traits. We create new traits so that they're run first
   //TRAIT_ANCESTRY_<>_IDS: newVariable('num', 'TRAIT_ANCESTRY_<>_IDS'),
   //TRAIT_CLASS_<>_IDS: newVariable('num', 'TRAIT_CLASS_<>_IDS'),
+  //TRAIT_ARCHETYPE_<>_IDS: newVariable('num', 'TRAIT_ARCHETYPE_<>_IDS'),
 
   BULK_LIMIT_BONUS: newVariable('num', 'BULK_LIMIT_BONUS'),
   INVEST_LIMIT_BONUS: newVariable('num', 'INVEST_LIMIT_BONUS'),
@@ -669,6 +670,16 @@ export function getAllClassTraitVariables(id: StoreID): VariableNum[] {
   const variables = [];
   for (const variable of Object.values(getVariables(id))) {
     if (variable.name.startsWith('TRAIT_CLASS_') && variable.type === 'num') {
+      variables.push(variable);
+    }
+  }
+  return variables as VariableNum[];
+}
+
+export function getAllArchetypeTraitVariables(id: StoreID): VariableNum[] {
+  const variables = [];
+  for (const variable of Object.values(getVariables(id))) {
+    if (variable.name.startsWith('TRAIT_ARCHETYPE_') && variable.type === 'num') {
       variables.push(variable);
     }
   }

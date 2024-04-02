@@ -4,6 +4,7 @@ import {
   IconCaretLeftRight,
   IconFlare,
   IconLanguage,
+  IconMilitaryRank,
   IconPaw,
   IconTag,
   IconTree,
@@ -78,5 +79,6 @@ export function getIconFromContentType(type: ContentType, size: string) {
     background: <IconWindow size={size} />,
     language: <IconLanguage size={size} />,
     'content-source': <IconBook2 size={size} />,
+    archetype: <IconMilitaryRank size={size} />,
   }[type];
 }

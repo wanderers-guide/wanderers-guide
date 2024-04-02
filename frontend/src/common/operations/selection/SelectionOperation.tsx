@@ -243,6 +243,7 @@ function SelectionFilteredAbilityBlock(props: {
   const [traits, setTraits] = useState<string[]>((props.filters?.traits as string[]) ?? []);
   const [isFromClass, setIsFromClass] = useState<boolean | undefined>(props.filters?.isFromClass);
   const [isFromAncestry, setIsFromAncestry] = useState<boolean | undefined>(props.filters?.isFromAncestry);
+  const [isFromArchetype, setIsFromArchetype] = useState<boolean | undefined>(props.filters?.isFromArchetype);
 
   useDidUpdate(() => {
     props.onChange({
@@ -256,8 +257,9 @@ function SelectionFilteredAbilityBlock(props: {
       abilityBlockType: type,
       isFromClass: isFromClass,
       isFromAncestry: isFromAncestry,
+      isFromArchetype: isFromArchetype,
     });
-  }, [minLevel, maxLevel, traits, type, isFromClass, isFromAncestry]);
+  }, [minLevel, maxLevel, traits, type, isFromClass, isFromAncestry, isFromArchetype]);
 
   return (
     <Stack gap={10}>
@@ -323,6 +325,13 @@ function SelectionFilteredAbilityBlock(props: {
         checked={isFromClass}
         onChange={(e) => setIsFromClass(e.target.checked)}
         label='Only from your class (unreliable)'
+      />
+
+      <Switch
+        size='xs'
+        checked={isFromArchetype}
+        onChange={(e) => setIsFromArchetype(e.target.checked)}
+        label='Only from your archetypes (unreliable)'
       />
     </Stack>
   );

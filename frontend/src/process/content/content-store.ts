@@ -2,6 +2,7 @@ import { makeRequest } from '@requests/request-manager';
 import {
   AbilityBlock,
   Ancestry,
+  Archetype,
   Background,
   Class,
   ContentPackage,
@@ -115,6 +116,7 @@ export async function fetchContent<T = Record<string, any>>(
     ancestry: 'find-ancestry',
     background: 'find-background',
     class: 'find-class',
+    archetype: 'find-archetype',
     'content-source': 'find-content-source',
     creature: 'find-creature',
     item: 'find-item',
@@ -185,6 +187,7 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
     fetchContentAll<Spell>('spell', sources),
     fetchContentAll<Trait>('trait', sources),
     fetchContentAll<Creature>('creature', sources),
+    fetchContentAll<Archetype>('archetype', sources),
   ]);
   const contentSources = fetchSources ? await fetchContentSources({ ids: sources }) : null;
 
@@ -198,6 +201,7 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
     spells: ((content[6] ?? []) as Spell[]).sort((a, b) => a.name.localeCompare(b.name)),
     traits: ((content[7] ?? []) as Trait[]).sort((a, b) => a.name.localeCompare(b.name)),
     creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => a.name.localeCompare(b.name)),
+    archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => a.name.localeCompare(b.name)),
     sources: contentSources ?? undefined,
   } satisfies ContentPackage;
 }

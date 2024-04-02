@@ -29,6 +29,7 @@ import { CreateTraitModal } from './CreateTraitModal';
 import { submitContentUpdate } from '@content/content-update';
 import { displayError } from '@utils/notifications';
 import { CreateCreatureModal } from './CreateCreatureModal';
+import { CreateArchetypeModal } from './CreateArchetypeModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -127,6 +128,17 @@ export default function ContentFeedbackModal(props: {
               editId={submitUpdate.id}
               onComplete={async (class_) => {
                 await handleComplete(class_.id, class_.content_source_id, class_);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
+
+          {props.type === 'archetype' && (
+            <CreateArchetypeModal
+              opened={true}
+              editId={submitUpdate.id}
+              onComplete={async (archetype) => {
+                await handleComplete(archetype.id, archetype.content_source_id, archetype);
               }}
               onCancel={() => handleReset()}
             />

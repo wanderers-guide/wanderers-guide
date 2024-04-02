@@ -22,6 +22,7 @@ import {
   Group,
   ScrollArea,
   Stack,
+  Tabs,
   Text,
   Title,
   useMantineTheme,
@@ -37,6 +38,7 @@ import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typi
 import { OperationResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
+import { hasTraitType } from '@utils/traits';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import {
   getAllAncestryTraitVariables,
@@ -1912,4 +1914,64 @@ function OperationResultSelector(props: {
       }}
     />
   );
+
+  //   const isClassfeat = checkIsClassFeat(props.result);
+  // const getDedicationButton = () => (
+  //   <SelectContentButton<AbilityBlock>
+  //     type='ability-block'
+  //     onClick={(option) => {
+  //       console.log(option);
+  //       //props.onChange(props.result!.selection?.id ?? '', option.id);
+  //     }}
+  //     onClear={() => {
+  //       props.onChange(props.result!.selection?.id ?? '', '');
+  //     }}
+  //     selectedId={props.result!.result?.source?.id}
+  //     options={{
+  //       filterFn: (option) => hasTraitType('DEDICATION', option.traits),
+  //       overrideLabel: 'Select a Dedication',
+  //       abilityBlockType: 'feat',
+  //     }}
+  //   />
+  // );
+
+  // if (isClassfeat) {
+  //   return (
+  //     <Tabs defaultValue='class-feat'>
+  //       <Tabs.List>
+  //         <Tabs.Tab value='class-feat'>Class Feat</Tabs.Tab>
+  //         <Tabs.Tab value='todo'>Archetype Feat</Tabs.Tab>
+  //         <Tabs.Tab value='add-dedication'>Add Dedication</Tabs.Tab>
+  //       </Tabs.List>
+
+  //       <Tabs.Panel value='class-feat'>
+  //         <Box pt={10}>{getSelectButton()}</Box>
+  //       </Tabs.Panel>
+
+  //       <Tabs.Panel value='todo'>Messages tab content</Tabs.Panel>
+
+  //       <Tabs.Panel value='add-dedication'>
+  //         <Box pt={10}>{getDedicationButton()}</Box>
+  //       </Tabs.Panel>
+  //     </Tabs>
+  //   );
+  // } else {
+  //   return <>{getSelectButton()}</>;
+  // }
+}
+
+function checkIsClassFeat(result: OperationResult): boolean {
+  const classTraitIds = getAllClassTraitVariables('CHARACTER').map((v) => v.value) ?? [];
+  const options = result?.selection?.options ?? [];
+  if (options.length === 0) return false;
+  if (classTraitIds.length === 0) return false;
+
+  // Check if all of the selection options contain at least one of the class traits
+  for (const option of options) {
+    if (_.intersection(classTraitIds, option.traits ?? []).length === 0) {
+      return false;
+    }
+  }
+
+  return true;
 }

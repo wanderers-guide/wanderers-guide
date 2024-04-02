@@ -37,6 +37,7 @@ import {
 import { StoreID, Variable, VariableListStr, VariableProf } from '@typing/variables';
 import {
   getAllAncestryTraitVariables,
+  getAllArchetypeTraitVariables,
   getAllArmorGroupVariables,
   getAllAttributeVariables,
   getAllClassTraitVariables,
@@ -260,6 +261,15 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
   }
   if (filters.isFromClass) {
     const traitIds = getAllClassTraitVariables(id).map((v) => v.value) ?? [];
+    abilityBlocks = abilityBlocks.filter((ab) => {
+      if (!ab.traits) {
+        return false;
+      }
+      return _.intersection(ab.traits, traitIds).length > 0;
+    });
+  }
+  if (filters.isFromArchetype) {
+    const traitIds = getAllArchetypeTraitVariables(id).map((v) => v.value) ?? [];
     abilityBlocks = abilityBlocks.filter((ab) => {
       if (!ab.traits) {
         return false;

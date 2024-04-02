@@ -17,7 +17,12 @@ export function GiveTraitOperation(props: {
         options={{
           overrideLabel: 'Select a Trait',
           filterFn: (trait: Trait) =>
-            !!(trait.meta_data?.creature_trait || trait.meta_data?.ancestry_trait || trait.meta_data?.class_trait),
+            !!(
+              trait.meta_data?.creature_trait ||
+              trait.meta_data?.ancestry_trait ||
+              trait.meta_data?.class_trait ||
+              trait.meta_data?.archetype_trait
+            ),
         }}
         selectedId={props.selectedId}
       />

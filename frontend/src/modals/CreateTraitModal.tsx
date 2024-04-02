@@ -44,8 +44,7 @@ export function CreateTraitModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
-  const editing =
-    (props.editId !== undefined && props.editId !== -1) || props.editTrait !== undefined;
+  const editing = (props.editId !== undefined && props.editId !== -1) || props.editTrait !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -57,10 +56,7 @@ export function CreateTraitModal(props: {
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId, editTrait }] = queryKey as [
-        string,
-        { editId?: number; editTrait?: Trait }
-      ];
+      const [_key, { editId, editTrait }] = queryKey as [string, { editId?: number; editTrait?: Trait }];
 
       const trait = editId ? await fetchContentById<Trait>('trait', editId) : editTrait;
       if (!trait) return null;
@@ -77,6 +73,7 @@ export function CreateTraitModal(props: {
           unselectable: trait.meta_data.unselectable ?? false,
           class_trait: trait.meta_data.class_trait ?? false,
           ancestry_trait: trait.meta_data.ancestry_trait ?? false,
+          archetype_trait: trait.meta_data.archetype_trait ?? false,
         });
       }
       refreshDisplayDescription();
@@ -94,6 +91,7 @@ export function CreateTraitModal(props: {
     unselectable: false,
     class_trait: false,
     ancestry_trait: false,
+    archetype_trait: false,
   });
 
   // Initialize form
@@ -110,6 +108,7 @@ export function CreateTraitModal(props: {
         unselectable: false,
         class_trait: false,
         ancestry_trait: false,
+        archetype_trait: false,
       },
       content_source_id: -1,
     },
@@ -133,6 +132,7 @@ export function CreateTraitModal(props: {
       unselectable: false,
       class_trait: false,
       ancestry_trait: false,
+      archetype_trait: false,
     });
     setDescription(undefined);
   };
@@ -169,11 +169,7 @@ export function CreateTraitModal(props: {
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button
-                    variant={openedAdditional ? 'light' : 'subtle'}
-                    size='compact-sm'
-                    color='gray.6'
-                  >
+                  <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Misc. Sections
                   </Button>
                 </Group>
@@ -239,6 +235,18 @@ export function CreateTraitModal(props: {
                     setMetaData({
                       ...metaData,
                       class_trait: event.currentTarget.checked,
+                    })
+                  }
+                />
+
+                <Switch
+                  label='Archetype Trait'
+                  labelPosition='left'
+                  checked={metaData.archetype_trait}
+                  onChange={(event) =>
+                    setMetaData({
+                      ...metaData,
+                      archetype_trait: event.currentTarget.checked,
                     })
                   }
                 />
