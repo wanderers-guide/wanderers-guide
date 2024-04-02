@@ -143,6 +143,10 @@ export async function executeCharacterOperations(
         class_.name
       );
       addVariable('CHARACTER', 'num', labelToVariable(`TRAIT_CLASS_${class_.name}_IDS`), class_.trait_id, class_.name);
+
+      // Add class to variables
+      adjVariable('CHARACTER', 'CLASS_IDS', `${class_.id}`, undefined);
+      adjVariable('CHARACTER', 'CLASS_NAMES', class_.name.toUpperCase(), undefined);
     }
 
     let class2Results: OperationResult[] = [];
@@ -161,6 +165,10 @@ export async function executeCharacterOperations(
         class_2.trait_id,
         class_2.name
       );
+
+      // Add class to variables
+      adjVariable('CHARACTER', 'CLASS_IDS', `${class_2.id}`, undefined);
+      adjVariable('CHARACTER', 'CLASS_NAMES', class_2.name.toUpperCase(), undefined);
     }
 
     let ancestryResults: OperationResult[] = [];
@@ -179,6 +187,10 @@ export async function executeCharacterOperations(
         ancestry.trait_id,
         ancestry.name
       );
+
+      // Add ancestry to variables
+      adjVariable('CHARACTER', 'ANCESTRY_IDS', `${ancestry.id}`, undefined);
+      adjVariable('CHARACTER', 'ANCESTRY_NAMES', ancestry.name.toUpperCase(), undefined);
     }
 
     let backgroundResults: OperationResult[] = [];
@@ -190,6 +202,10 @@ export async function executeCharacterOperations(
         options,
         background.name
       );
+
+      // Add background to variables
+      adjVariable('CHARACTER', 'BACKGROUND_IDS', `${background.id}`, undefined);
+      adjVariable('CHARACTER', 'BACKGROUND_NAMES', background.name.toUpperCase(), undefined);
     }
 
     // Ancestry heritage and feats
@@ -234,6 +250,10 @@ export async function executeCharacterOperations(
           baseSource: feature,
           baseResults: results,
         });
+
+        // Add class feature to variables
+        adjVariable('CHARACTER', 'CLASS_FEATURE_IDS', `${feature.id}`, undefined);
+        adjVariable('CHARACTER', 'CLASS_FEATURE_NAMES', feature.name.toUpperCase(), undefined);
       }
     }
 

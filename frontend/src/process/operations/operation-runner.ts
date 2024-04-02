@@ -289,28 +289,28 @@ async function updateVariables(
   if (operation.data.optionType === 'ABILITY_BLOCK') {
     if (selectedOption.type === 'feat') {
       adjVariable(varId, 'FEAT_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable(varId, 'FEAT_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'FEAT_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     } else if (selectedOption.type === 'class-feature') {
       adjVariable(varId, 'CLASS_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable(varId, 'CLASS_FEATURE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'CLASS_FEATURE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     } else if (selectedOption.type === 'sense') {
       adjVariable(varId, 'SENSE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable(varId, 'SENSE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'SENSE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     } else if (selectedOption.type === 'heritage') {
       adjVariable(varId, 'HERITAGE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable(varId, 'HERITAGE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'HERITAGE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     } else if (selectedOption.type === 'physical-feature') {
       adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
-      adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', selectedOption.name, sourceLabel);
+      adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     } else {
       throwError(`Invalid ability block type: ${selectedOption.type}`);
     }
   } else if (operation.data.optionType === 'LANGUAGE') {
     adjVariable(varId, 'LANGUAGE_IDS', `${selectedOption.id}`, sourceLabel);
-    adjVariable(varId, 'LANGUAGE_NAMES', selectedOption.name, sourceLabel);
+    adjVariable(varId, 'LANGUAGE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
   } else if (operation.data.optionType === 'SPELL') {
     adjVariable(varId, 'SPELL_IDS', `${selectedOption.id}`, sourceLabel);
-    adjVariable(varId, 'SPELL_NAMES', selectedOption.name, sourceLabel);
+    adjVariable(varId, 'SPELL_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
 
     adjVariable(
       varId,
@@ -404,19 +404,19 @@ async function runGiveAbilityBlock(
 
   if (operation.data.type === 'feat') {
     adjVariable(varId, 'FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'FEAT_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'FEAT_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
   } else if (operation.data.type === 'class-feature') {
     adjVariable(varId, 'CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
   } else if (operation.data.type === 'sense') {
     adjVariable(varId, 'SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'SENSE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'SENSE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
   } else if (operation.data.type === 'heritage') {
     adjVariable(varId, 'HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
   } else if (operation.data.type === 'physical-feature') {
     adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name, sourceLabel);
+    adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
   }
 
   let results: OperationResult[] = [];
@@ -459,7 +459,7 @@ async function runGiveLanguage(
   }
 
   adjVariable(varId, 'LANGUAGE_IDS', `${language.id}`, sourceLabel);
-  adjVariable(varId, 'LANGUAGE_NAMES', language.name, sourceLabel);
+  adjVariable(varId, 'LANGUAGE_NAMES', language.name.toUpperCase(), sourceLabel);
   return null;
 }
 
@@ -476,7 +476,7 @@ async function runGiveItem(
   }
 
   adjVariable(varId, 'EXTRA_ITEM_IDS', `${item.id}`, sourceLabel);
-  adjVariable(varId, 'EXTRA_ITEM_NAMES', item.name, sourceLabel);
+  adjVariable(varId, 'EXTRA_ITEM_NAMES', item.name.toUpperCase(), sourceLabel);
   return null;
 }
 
@@ -521,7 +521,7 @@ async function runGiveSpell(
   }
 
   adjVariable(varId, 'SPELL_IDS', `${spell.id}`, sourceLabel);
-  adjVariable(varId, 'SPELL_NAMES', spell.name, sourceLabel);
+  adjVariable(varId, 'SPELL_NAMES', spell.name.toUpperCase(), sourceLabel);
 
   adjVariable(
     varId,
@@ -607,7 +607,7 @@ async function runRemoveAbilityBlock(
     setVariable(
       varId,
       'FEAT_NAMES',
-      getVariableList(varId, 'FEAT_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'FEAT_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
       sourceLabel
     );
   } else if (operation.data.type === 'class-feature') {
@@ -620,7 +620,7 @@ async function runRemoveAbilityBlock(
     setVariable(
       varId,
       'CLASS_FEATURE_NAMES',
-      getVariableList(varId, 'CLASS_FEATURE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'CLASS_FEATURE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
       sourceLabel
     );
   } else if (operation.data.type === 'sense') {
@@ -633,7 +633,7 @@ async function runRemoveAbilityBlock(
     setVariable(
       varId,
       'SENSE_NAMES',
-      getVariableList(varId, 'SENSE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'SENSE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
       sourceLabel
     );
   } else if (operation.data.type === 'heritage') {
@@ -646,7 +646,7 @@ async function runRemoveAbilityBlock(
     setVariable(
       varId,
       'HERITAGE_NAMES',
-      getVariableList(varId, 'HERITAGE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'HERITAGE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
       sourceLabel
     );
   } else if (operation.data.type === 'physical-feature') {
@@ -659,7 +659,7 @@ async function runRemoveAbilityBlock(
     setVariable(
       varId,
       'PHYSICAL_FEATURE_NAMES',
-      getVariableList(varId, 'PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name),
+      getVariableList(varId, 'PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
       sourceLabel
     );
   }
@@ -690,7 +690,7 @@ async function runRemoveLanguage(
   setVariable(
     varId,
     'LANGUAGE_NAMES',
-    getVariableList('LANGUAGE_NAMES').filter((name) => name !== language.name),
+    getVariableList('LANGUAGE_NAMES').filter((name) => name !== language.name.toUpperCase()),
     sourceLabel
   );
   return null;
@@ -720,7 +720,7 @@ async function runRemoveSpell(
   setVariable(
     varId,
     'SPELL_NAMES',
-    getVariableList('SPELL_NAMES').filter((name) => name !== spell.name),
+    getVariableList('SPELL_NAMES').filter((name) => name !== spell.name.toUpperCase()),
     sourceLabel
   );
   return null;

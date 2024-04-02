@@ -180,7 +180,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   WEAKNESSES: newVariable('list-str', 'WEAKNESSES'),
   IMMUNITIES: newVariable('list-str', 'IMMUNITIES'),
 
-  // List variables, just storing the names
+  // List variables, just storing the names (as uppercase)
   SENSE_NAMES: newVariable('list-str', 'SENSE_NAMES'),
   CLASS_NAMES: newVariable('list-str', 'CLASS_NAMES'),
   ANCESTRY_NAMES: newVariable('list-str', 'ANCESTRY_NAMES'),
@@ -191,7 +191,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   LANGUAGE_NAMES: newVariable('list-str', 'LANGUAGE_NAMES'),
   CLASS_FEATURE_NAMES: newVariable('list-str', 'CLASS_FEATURE_NAMES'),
   PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
-  EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['Fist']),
+  EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['FIST']),
 
   //
   // List variables, storing the IDs

@@ -241,7 +241,8 @@ export function labelToProficiencyType(label: string): ProficiencyType | null {
 export function findVariable<T = Variable>(id: StoreID, type: VariableType, label: string): T | null {
   const VAR_FORMATTED = labelToVariable(label);
   const variable = Object.values(getVariables(id)).find(
-    (variable) => variable.type === type && variable.name.endsWith(`_${VAR_FORMATTED}`)
+    (variable) =>
+      variable.type === type && (variable.name === VAR_FORMATTED || variable.name.endsWith(`_${VAR_FORMATTED}`))
   );
   return (variable ?? null) as T | null;
 }
