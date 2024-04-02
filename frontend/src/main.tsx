@@ -104,6 +104,11 @@ const router = createBrowserRouter([
         },
       },
       {
+        // Legacy Character Redirect
+        path: 'profile/characters/:id',
+        lazy: () => import('@pages/LegacyRedirectPage.tsx'),
+      },
+      {
         path: 'login',
         lazy: () => import('./pages/LoginPage.tsx'),
       },
