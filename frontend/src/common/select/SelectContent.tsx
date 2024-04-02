@@ -515,12 +515,12 @@ export default function SelectContentModal({
       : 0;
 
   const { data: selectedClassFeat } = useQuery({
-    queryKey: [`select-content-selected-class-feat`, {}],
+    queryKey: [`select-content-selected-class-feat`, { selectedId: innerProps.options?.selectedId }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, {}] = queryKey;
-      return await fetchContentById<AbilityBlock>('ability-block', innerProps.options?.selectedId ?? -1);
+      const [_key, { selectedId }] = queryKey;
+      return await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
     },
     enabled: !!innerProps.options?.selectedId && isClassFeat,
   });

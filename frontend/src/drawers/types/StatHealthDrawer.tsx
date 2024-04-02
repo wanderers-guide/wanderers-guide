@@ -130,7 +130,7 @@ export function StatHealthDrawerContent(props: { data: {} }) {
                   </Text>
                 </HoverCard.Dropdown>
               </HoverCard>
-              {/* {parts.bonusHp > 0 && (
+              {parts.bonusHp > 0 && parts.breakdown.bonusValue === 0 && (
                 <>
                   {' + '}
                   <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
@@ -144,7 +144,7 @@ export function StatHealthDrawerContent(props: { data: {} }) {
                     </HoverCard.Dropdown>
                   </HoverCard>
                 </>
-              )} */}
+              )}
               {[...parts.breakdown.bonuses.entries()].map(([key, bonus], index) => (
                 <>
                   +
