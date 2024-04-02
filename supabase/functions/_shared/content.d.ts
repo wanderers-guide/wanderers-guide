@@ -86,6 +86,7 @@ interface Trait {
     unselectable?: boolean;
     class_trait?: boolean;
     ancestry_trait?: boolean;
+    archetype_trait?: boolean;
   };
   content_source_id: number;
 }
@@ -209,6 +210,19 @@ interface Class {
   artwork_url: string;
   content_source_id: number;
   version: string;
+}
+
+interface Archetype {
+  id: number;
+  created_at: string;
+  name: string;
+  rarity: Rarity;
+  description: string;
+  trait_id: number;
+  artwork_url: string;
+  content_source_id: number;
+  version: string;
+  dedication_feat_id: number;
 }
 
 interface AbilityBlock {

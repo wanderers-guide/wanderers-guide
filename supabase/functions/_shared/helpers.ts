@@ -90,6 +90,7 @@ export type TableName =
   | 'trait'
   | 'class'
   | 'background'
+  | 'archetype'
   | 'item'
   | 'spell'
   | 'creature'
