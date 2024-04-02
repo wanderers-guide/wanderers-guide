@@ -7,7 +7,7 @@ import {
   maxProficiencyType,
   variableNameToLabel,
 } from './variable-utils';
-import { getAllAttributeVariables, getVariable } from './variable-manager';
+import { getAllAttributeVariables, getAllSkillVariables, getVariable } from './variable-manager';
 import * as _ from 'lodash-es';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
@@ -90,6 +90,18 @@ function checkForProf(id: StoreID, prereq: string): PrereqMet {
   if (!profType) {
     return 'UNKNOWN';
   }
+
+  // Handle Lore separately
+  if (prof.toUpperCase() === 'LORE') {
+    const lores = getAllSkillVariables(id).filter((v) => v.name.startsWith('SKILL_LORE_'));
+    for (const lore of lores) {
+      if (maxProficiencyType(lore.value.value, profType) === lore.value.value) {
+        return 'FULLY';
+      }
+    }
+    return 'NOT';
+  }
+
   const variable = findVariable<VariableProf>(id, 'prof', prof);
 
   if (!variable) {
