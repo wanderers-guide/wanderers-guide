@@ -24,7 +24,12 @@ import { addVariable, addVariableBonus, adjVariable, getVariable, setVariable } 
 import * as _ from 'lodash-es';
 import { SelectionTrack, SelectionTreeNode } from './selection-tree';
 import { displayError, throwError } from '@utils/notifications';
-import { ObjectWithUUID, determineFilteredSelectionList, determinePredefinedSelectionList } from './operation-utils';
+import {
+  ObjectWithUUID,
+  determineFilteredSelectionList,
+  determinePredefinedSelectionList,
+  extendOperations,
+} from './operation-utils';
 import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
 import { ExtendedProficiencyType, ProficiencyType, StoreID, VariableNum } from '@typing/variables';
 import { fetchContentById } from '@content/content-store';
@@ -163,8 +168,21 @@ async function runSelect(
   let results: OperationResult[] = [];
 
   if (selectionTrack.node && selectionTrack.node.value) {
-    const selectedOption = optionList.find((option) => option._select_uuid === selectionTrack.node?.value);
+    let selectedOption = optionList.find((option) => option._select_uuid === selectionTrack.node?.value);
     if (selectedOption) {
+      updateVariables(varId, operation, selectedOption, sourceLabel, options);
+    } else if (operation.data.optionType === 'ABILITY_BLOCK') {
+      // It's probably a feat we selected from an archetype so it's not in the list, let's fetch it
+      const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', parseInt(selectionTrack.node.value));
+      if (!abilityBlock) {
+        displayError(`Selected node "${selectionTrack.path}" not found`);
+        return null;
+      }
+      selectedOption = {
+        ...abilityBlock,
+        _select_uuid: `${abilityBlock.id}`,
+        _content_type: 'ability-block',
+      } satisfies ObjectWithUUID;
       updateVariables(varId, operation, selectedOption, sourceLabel, options);
     } else {
       /*
@@ -185,12 +203,13 @@ async function runSelect(
     selected = selectedOption;
 
     // Run the operations of the selected option
-    if (selectedOption.operations) {
+    const subOperations = await extendOperations(selectedOption, selectedOption.operations);
+    if (subOperations.length > 0) {
       const subNode = selectionTrack.node?.children[selectedOption._select_uuid];
       results = await runOperations(
         varId,
         { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
-        selectedOption.operations,
+        subOperations,
         options,
         operation.data.optionType === 'CUSTOM' ? sourceLabel : selectedOption.name ?? 'Unknown'
       );
@@ -401,12 +420,13 @@ async function runGiveAbilityBlock(
   }
 
   let results: OperationResult[] = [];
-  if (abilityBlock.operations) {
+  const subOperations = await extendOperations(abilityBlock, abilityBlock.operations);
+  if (subOperations.length > 0) {
     const subNode = selectionTrack.node?.children[operation.id];
     results = await runOperations(
       varId,
       { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
-      abilityBlock.operations,
+      subOperations,
       options,
       abilityBlock.type === 'feat' || abilityBlock.type === 'class-feature'
         ? `${abilityBlock.name} (Lvl. ${abilityBlock.level})`

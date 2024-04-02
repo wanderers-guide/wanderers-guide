@@ -26,6 +26,7 @@ import {
   Popover,
   ScrollArea,
   Stack,
+  Tabs,
   Text,
   TextInput,
   ThemeIcon,
@@ -58,7 +59,12 @@ import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/
 import { pluralize, toLabel } from '@utils/strings';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
-import { getAllAttributeVariables, getVariable } from '@variables/variable-manager';
+import {
+  getAllArchetypeTraitVariables,
+  getAllAttributeVariables,
+  getAllClassTraitVariables,
+  getVariable,
+} from '@variables/variable-manager';
 import {
   isProficiencyType,
   maxProficiencyType,
@@ -68,7 +74,7 @@ import {
 } from '@variables/variable-utils';
 import * as JsSearch from 'js-search';
 import * as _ from 'lodash-es';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   AbilityBlock,
@@ -86,6 +92,8 @@ import {
 import { re } from 'mathjs';
 import { characterState } from '@atoms/characterAtoms';
 import { DrawerType } from '@typing/index';
+import { hasTraitType } from '@utils/traits';
+import { ObjectWithUUID } from '@operations/operation-utils';
 
 interface FilterOptions {
   options: {
@@ -380,8 +388,164 @@ export default function SelectContentModal({
       0
     ) ?? 0;
 
+  const getSelectionContents = (selectionOptions: React.ReactNode) => (
+    <Stack gap={10}>
+      <Group wrap='nowrap'>
+        <FocusTrap active={true}>
+          <TextInput
+            data-autofocus
+            style={{ flex: 1 }}
+            leftSection={<IconSearch size='0.9rem' />}
+            placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+              },
+            }}
+          />
+        </FocusTrap>
+        {innerProps.options?.groupBySource && (
+          <Button
+            size='compact-lg'
+            fz='xs'
+            variant='light'
+            onClick={() => setOpenedDrawer(true)}
+            rightSection={<IconChevronDown size='1.1rem' />}
+            styles={{
+              section: {
+                marginLeft: 3,
+              },
+            }}
+          >
+            {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
+          </Button>
+        )}
+
+        {innerProps.options?.filterOptions && (
+          <Popover
+            width={200}
+            position='bottom'
+            withArrow
+            shadow='md'
+            opened={openedFilters}
+            closeOnClickOutside={false}
+          >
+            <Popover.Target>
+              <Indicator
+                inline
+                label={`${Object.keys(filterSelections).length}`}
+                size={16}
+                zIndex={1000}
+                disabled={Object.keys(filterSelections).length === 0}
+              >
+                <ActionIcon
+                  size='lg'
+                  variant='light'
+                  radius='md'
+                  aria-label='Filters'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setOpenedFilters(!openedFilters);
+                  }}
+                >
+                  <IconFilter size='1rem' />
+                </ActionIcon>
+              </Indicator>
+            </Popover.Target>
+            <Popover.Dropdown>
+              <Group wrap='nowrap' justify='space-between'>
+                <Title order={5}>Filters</Title>
+                <CloseButton
+                  onClick={() => {
+                    setOpenedFilters(false);
+                  }}
+                />
+              </Group>
+              <Divider mt={5} />
+              <Stack gap={10}>
+                {innerProps.options.filterOptions.options.map((option, index) => (
+                  <Box key={index}>
+                    {option.type === 'MULTI-SELECT' && (
+                      <MultiSelect
+                        label={option.title}
+                        data={option.options ?? []}
+                        onChange={(value) => {
+                          updateFilterSelection(option.key, value);
+                        }}
+                        value={filterSelections[option.key] ?? []}
+                      />
+                    )}
+                  </Box>
+                ))}
+              </Stack>
+            </Popover.Dropdown>
+          </Popover>
+        )}
+      </Group>
+
+      {selectionOptions}
+    </Stack>
+  );
+
+  /// Handle Class Feats ///
+
+  const [classFeatTab, setClassFeatTab] = useState<string | null>('class-feat');
+  const isClassFeat = useMemo(() => {
+    if (innerProps.options?.abilityBlockType !== 'feat') return false;
+
+    const classTraitIds = getAllClassTraitVariables('CHARACTER').map((v) => v.value) ?? [];
+    const options = innerProps.options?.overrideOptions ?? [];
+    if (options.length === 0) return false;
+    if (classTraitIds.length === 0) return false;
+
+    // Check if all of the selection options contain at least one of the class traits
+    for (const option of options) {
+      if (_.intersection(classTraitIds, option.traits ?? []).length === 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }, [innerProps.options?.abilityBlockType, innerProps.options?.overrideOptions]);
+  const classFeatSourceLevel =
+    innerProps.options?.overrideOptions && innerProps.options?.overrideOptions.length > 0
+      ? innerProps.options?.overrideOptions?.[0]?._source_level
+      : 0;
+
+  const { data: selectedClassFeat } = useQuery({
+    queryKey: [`select-content-selected-class-feat`, {}],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, {}] = queryKey;
+      return await fetchContentById<AbilityBlock>('ability-block', innerProps.options?.selectedId ?? -1);
+    },
+    enabled: !!innerProps.options?.selectedId && isClassFeat,
+  });
+
+  useEffect(() => {
+    if (!selectedClassFeat) return;
+
+    if (hasTraitType('DEDICATION', selectedClassFeat.traits)) {
+      setClassFeatTab('add-dedication');
+    } else if (
+      _.intersection(
+        getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
+        selectedClassFeat.traits ?? []
+      ).length > 0
+    ) {
+      setClassFeatTab('archetype-feat');
+    } else {
+      setClassFeatTab('class-feat');
+    }
+  }, [selectedClassFeat]);
+
+  /// ------------------ ///
+
   return (
-    <Box style={{ position: 'relative', height: 455 }}>
+    <Box style={{ position: 'relative', height: isClassFeat ? 490 : 455 }}>
       <Transition mounted={openedDrawer} transition='slide-right'>
         {(styles) => (
           <Box
@@ -476,119 +640,121 @@ export default function SelectContentModal({
           }}
         />
       )}
-      <Stack gap={10}>
-        <Group wrap='nowrap'>
-          <FocusTrap active={true}>
-            <TextInput
-              data-autofocus
-              style={{ flex: 1 }}
-              leftSection={<IconSearch size='0.9rem' />}
-              placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              styles={{
-                input: {
-                  borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
-                },
+
+      {isClassFeat ? (
+        <Tabs value={classFeatTab} onChange={setClassFeatTab}>
+          <Tabs.List grow mb={10}>
+            <Tabs.Tab value='class-feat'>Class Feats</Tabs.Tab>
+            <Tabs.Tab value='archetype-feat'>Archetype Feats</Tabs.Tab>
+            <Tabs.Tab value='add-dedication'>Add Dedication</Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value='class-feat'>
+            <Box>
+              {getSelectionContents(
+                <SelectionOptions
+                  type={innerProps.type}
+                  abilityBlockType={innerProps.options?.abilityBlockType}
+                  skillAdjustment={innerProps.options?.skillAdjustment}
+                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+                  selectedId={innerProps.options?.selectedId}
+                  overrideOptions={innerProps.options?.overrideOptions}
+                  searchQuery={searchQuery}
+                  onClick={(option) => {
+                    innerProps.onClick(option);
+                    context.closeModal(id);
+                  }}
+                  filterFn={getMergedFilterFn()}
+                  includeOptions={innerProps.options?.includeOptions}
+                  includeDetails={innerProps.options?.includeDetails}
+                />
+              )}
+            </Box>
+          </Tabs.Panel>
+
+          <Tabs.Panel value='archetype-feat'>
+            <Box>
+              {getSelectionContents(
+                <SelectionOptions
+                  type='ability-block'
+                  abilityBlockType='feat'
+                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+                  selectedId={innerProps.options?.selectedId}
+                  searchQuery={searchQuery}
+                  onClick={(option) => {
+                    innerProps.onClick({
+                      ...option,
+                      // Need this for selection ops to work correctly
+                      // since we're not using the override options
+                      _select_uuid: `${option.id}`,
+                      _content_type: 'ability-block',
+                    } satisfies ObjectWithUUID);
+                    context.closeModal(id);
+                  }}
+                  filterFn={(option) =>
+                    _.intersection(
+                      getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
+                      option.traits ?? []
+                    ).length > 0 && option.level <= classFeatSourceLevel
+                  }
+                  includeOptions={innerProps.options?.includeOptions}
+                  includeDetails={innerProps.options?.includeDetails}
+                />
+              )}
+            </Box>
+          </Tabs.Panel>
+
+          <Tabs.Panel value='add-dedication'>
+            <Box>
+              {getSelectionContents(
+                <SelectionOptions
+                  type='ability-block'
+                  abilityBlockType='feat'
+                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+                  selectedId={innerProps.options?.selectedId}
+                  searchQuery={searchQuery}
+                  onClick={(option) => {
+                    innerProps.onClick({
+                      ...option,
+                      // Need this for selection ops to work correctly
+                      // since we're not using the override options
+                      _select_uuid: `${option.id}`,
+                      _content_type: 'ability-block',
+                    } satisfies ObjectWithUUID);
+                    context.closeModal(id);
+                  }}
+                  filterFn={(option) =>
+                    hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
+                  }
+                  includeOptions={innerProps.options?.includeOptions}
+                  includeDetails={innerProps.options?.includeDetails}
+                />
+              )}
+            </Box>
+          </Tabs.Panel>
+        </Tabs>
+      ) : (
+        <Box>
+          {getSelectionContents(
+            <SelectionOptions
+              type={innerProps.type}
+              abilityBlockType={innerProps.options?.abilityBlockType}
+              skillAdjustment={innerProps.options?.skillAdjustment}
+              sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+              selectedId={innerProps.options?.selectedId}
+              overrideOptions={innerProps.options?.overrideOptions}
+              searchQuery={searchQuery}
+              onClick={(option) => {
+                innerProps.onClick(option);
+                context.closeModal(id);
               }}
+              filterFn={getMergedFilterFn()}
+              includeOptions={innerProps.options?.includeOptions}
+              includeDetails={innerProps.options?.includeDetails}
             />
-          </FocusTrap>
-          {innerProps.options?.groupBySource && (
-            <Button
-              size='compact-lg'
-              fz='xs'
-              variant='light'
-              onClick={() => setOpenedDrawer(true)}
-              rightSection={<IconChevronDown size='1.1rem' />}
-              styles={{
-                section: {
-                  marginLeft: 3,
-                },
-              }}
-            >
-              {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
-            </Button>
           )}
-
-          {innerProps.options?.filterOptions && (
-            <Popover
-              width={200}
-              position='bottom'
-              withArrow
-              shadow='md'
-              opened={openedFilters}
-              closeOnClickOutside={false}
-            >
-              <Popover.Target>
-                <Indicator
-                  inline
-                  label={`${Object.keys(filterSelections).length}`}
-                  size={16}
-                  zIndex={1000}
-                  disabled={Object.keys(filterSelections).length === 0}
-                >
-                  <ActionIcon
-                    size='lg'
-                    variant='light'
-                    radius='md'
-                    aria-label='Filters'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setOpenedFilters(!openedFilters);
-                    }}
-                  >
-                    <IconFilter size='1rem' />
-                  </ActionIcon>
-                </Indicator>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <Group wrap='nowrap' justify='space-between'>
-                  <Title order={5}>Filters</Title>
-                  <CloseButton
-                    onClick={() => {
-                      setOpenedFilters(false);
-                    }}
-                  />
-                </Group>
-                <Divider mt={5} />
-                <Stack gap={10}>
-                  {innerProps.options.filterOptions.options.map((option, index) => (
-                    <Box key={index}>
-                      {option.type === 'MULTI-SELECT' && (
-                        <MultiSelect
-                          label={option.title}
-                          data={option.options ?? []}
-                          onChange={(value) => {
-                            updateFilterSelection(option.key, value);
-                          }}
-                          value={filterSelections[option.key] ?? []}
-                        />
-                      )}
-                    </Box>
-                  ))}
-                </Stack>
-              </Popover.Dropdown>
-            </Popover>
-          )}
-        </Group>
-
-        <SelectionOptions
-          type={innerProps.type}
-          abilityBlockType={innerProps.options?.abilityBlockType}
-          skillAdjustment={innerProps.options?.skillAdjustment}
-          sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-          selectedId={innerProps.options?.selectedId}
-          overrideOptions={innerProps.options?.overrideOptions}
-          searchQuery={searchQuery}
-          onClick={(option) => {
-            innerProps.onClick(option);
-            context.closeModal(id);
-          }}
-          filterFn={getMergedFilterFn()}
-          includeOptions={innerProps.options?.includeOptions}
-          includeDetails={innerProps.options?.includeDetails}
-        />
-      </Stack>
+        </Box>
+      )}
     </Box>
   );
 }

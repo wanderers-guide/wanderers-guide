@@ -206,6 +206,12 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
   } satisfies ContentPackage;
 }
 
+export async function fetchArchetypeByDedicationFeat(feat_id: number) {
+  const archetypes = await fetchContent<Archetype[]>('archetype', {
+    dedication_feat_id: feat_id,
+  });
+  return archetypes && archetypes.length > 0 ? archetypes[0] : null;
+}
 export async function fetchAllPrereqs(name: string) {
   return await fetchContent<AbilityBlock[]>('ability-block', {
     prerequisites: [name],

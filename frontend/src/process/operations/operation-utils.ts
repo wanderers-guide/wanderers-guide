@@ -1,4 +1,9 @@
-import { fetchContentAll, fetchContentById, fetchTraitByName } from '@content/content-store';
+import {
+  fetchArchetypeByDedicationFeat,
+  fetchContentAll,
+  fetchContentById,
+  fetchTraitByName,
+} from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { AbilityBlock, ContentType, Item, Language, Spell, Trait } from '@typing/content';
 import {
@@ -35,7 +40,9 @@ import {
   OperationType,
 } from '@typing/operations';
 import { StoreID, Variable, VariableListStr, VariableProf } from '@typing/variables';
+import { hasTraitType } from '@utils/traits';
 import {
+  addVariable,
   getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
   getAllArmorGroupVariables,
@@ -566,4 +573,28 @@ async function getCustomPredefinedList(options: OperationSelectOptionCustom[]) {
       operations: option.operations,
     };
   });
+}
+
+export async function extendOperations(
+  obj: AbilityBlock | ObjectWithUUID,
+  operations: Operation[] | undefined
+): Promise<Operation[]> {
+  if (!obj || !obj.traits || obj.traits.length === 0 || !hasTraitType('DEDICATION', obj.traits)) {
+    return operations ?? [];
+  }
+
+  const archetype = await fetchArchetypeByDedicationFeat(obj.id);
+  if (!archetype) {
+    return operations ?? [];
+  }
+
+  return [
+    ...(operations ?? []),
+    {
+      ...createDefaultOperation<OperationGiveTrait>('giveTrait'),
+      data: {
+        traitId: archetype.trait_id,
+      },
+    } satisfies OperationGiveTrait,
+  ];
 }

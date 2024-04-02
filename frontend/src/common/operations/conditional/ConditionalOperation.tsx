@@ -27,11 +27,7 @@ export default function ConditionalOperation(props: {
   conditions?: ConditionCheckData[];
   trueOperations?: Operation[];
   falseOperations?: Operation[];
-  onChange: (
-    conditions: ConditionCheckData[],
-    trueOperations: Operation[],
-    falseOperations: Operation[]
-  ) => void;
+  onChange: (conditions: ConditionCheckData[], trueOperations: Operation[], falseOperations: Operation[]) => void;
   onRemove: () => void;
 }) {
   const getDefaultCondition = (): ConditionCheckData => {
@@ -189,11 +185,7 @@ export function ConditionalCheck(props: {
   }, [variableName, variableData, operator, value]);
 
   let operatorOptions: { value: ConditionOperator; label: string }[] = [];
-  if (
-    variableData?.type === 'attr' ||
-    variableData?.type === 'num' ||
-    variableData?.type === 'prof'
-  ) {
+  if (variableData?.type === 'attr' || variableData?.type === 'num' || variableData?.type === 'prof') {
     operatorOptions = [
       { value: 'EQUALS', label: 'equals' },
       { value: 'LESS_THAN', label: 'less than' },
