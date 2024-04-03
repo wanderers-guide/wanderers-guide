@@ -2,9 +2,16 @@ name: npm run build
 
 on:
   push:
-    branches: ['main']
+    branches: ["main"]
+    paths:
+      - ./frontend
+      - ./supabase
   pull_request:
-    branches: ['main']
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
