@@ -103,6 +103,91 @@ export async function executeCharacterOperations(
     (a, b) => a.name.trim() === b.name.trim() && a.level === b.level
   );
 
+  // Free Archetype feat at every even level
+  if (character.variants?.free_archetype) {
+    for (const lvl of [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]) {
+      classFeatures.push({
+        id: hashData({ name: 'archetype-feat', level: lvl }),
+        created_at: '',
+        operations: [
+          {
+            id: `9594307d-b111-437f-a55a-de101e8d46b1-${lvl}`,
+            type: 'select',
+            data: {
+              title: 'Select an Option',
+              modeType: 'PREDEFINED',
+              optionType: 'CUSTOM',
+              optionsPredefined: [
+                {
+                  id: `354b57f0-ef29-4f53-819b-f1f211adfc7b-${lvl}`,
+                  type: 'CUSTOM',
+                  title: 'Add Archetype Feat',
+                  description: "Select a feat from an existing archetype you're a part of.",
+                  operations: [
+                    {
+                      id: `f8cbab2a-f19f-4209-9207-5eb30b43d4eb-${lvl}`,
+                      type: 'select',
+                      data: {
+                        title: 'Select an Archetype Feat',
+                        modeType: 'FILTERED',
+                        optionType: 'ABILITY_BLOCK',
+                        optionsPredefined: [],
+                        optionsFilters: {
+                          id: `56c57e8a-d346-409d-9f9f-e464cd2d1c0d-${lvl}`,
+                          type: 'ABILITY_BLOCK',
+                          level: {
+                            max: lvl,
+                          },
+                          traits: [],
+                          abilityBlockType: 'feat',
+                          isFromArchetype: true,
+                        },
+                      },
+                    },
+                  ],
+                },
+                {
+                  id: `a525eb70-e18f-4a95-80d9-29f6aaee0d3e-${lvl}`,
+                  type: 'CUSTOM',
+                  title: 'Add Dedication',
+                  description: 'Select a new archetype for yourself.',
+                  operations: [
+                    {
+                      id: `1c575456-4cb7-44eb-a153-9d6884b272a8-${lvl}`,
+                      type: 'select',
+                      data: {
+                        title: 'Select a Dedication',
+                        modeType: 'FILTERED',
+                        optionType: 'ABILITY_BLOCK',
+                        optionsPredefined: [],
+                        optionsFilters: {
+                          id: `fe1c27bf-ab6e-4e82-9795-8dd48a98ceae-${lvl}`,
+                          type: 'ABILITY_BLOCK',
+                          level: {
+                            max: lvl,
+                          },
+                          traits: ['Dedication'],
+                          abilityBlockType: 'feat',
+                        },
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+        name: 'Archetype Feat',
+        actions: null,
+        level: lvl,
+        rarity: 'COMMON',
+        description: `You gain a class feat that you can only use for archetypes.`,
+        type: 'class-feature',
+        content_source_id: -1,
+      } satisfies AbilityBlock);
+    }
+  }
+
   const operationsPassthrough = async (options?: OperationOptions) => {
     let contentSourceResults: {
       baseSource: ContentSource;
@@ -214,7 +299,7 @@ export async function executeCharacterOperations(
       baseResults: OperationResult[];
     }[] = [];
     if (ancestry) {
-      for (const section of getAncestrySections('CHARACTER', ancestry)) {
+      for (const section of getAncestrySections('CHARACTER', ancestry, character.variants?.ancestry_paragon ?? false)) {
         if (section.level === undefined || section.level <= character.level) {
           const results = await executeOperations(
             'CHARACTER',
@@ -481,7 +566,7 @@ export function addedAncestryLanguages(varId: StoreID, ancestry: Ancestry): Oper
   return operations;
 }
 
-export function getAncestrySections(varId: StoreID, ancestry: Ancestry): AbilityBlock[] {
+export function getAncestrySections(varId: StoreID, ancestry: Ancestry, ancestryParagon: boolean): AbilityBlock[] {
   const heritage: AbilityBlock = {
     id: hashData({ name: 'heritage' }),
     created_at: '',
@@ -552,7 +637,7 @@ export function getAncestrySections(varId: StoreID, ancestry: Ancestry): Ability
   };
 
   const sections = [heritage];
-  const featArray = [1, 5, 9, 13, 17];
+  const featArray = ancestryParagon ? [1, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19] : [1, 5, 9, 13, 17];
   for (let i = 0; i < featArray.length; i++) {
     sections.push(getAncestryFeat(i, featArray[i]));
   }

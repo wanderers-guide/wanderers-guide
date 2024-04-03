@@ -1398,6 +1398,7 @@ function SelectionPredefinedCustom(props: {
   );
 
   useDidUpdate(() => {
+    console.log(options);
     props.onChange(options);
   }, [options]);
 
