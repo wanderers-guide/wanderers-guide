@@ -11,6 +11,7 @@ import { IconQuote } from '@tabler/icons-react';
 import { getAllConditions } from '@conditions/condition-handler';
 import { compileExpressions } from '@variables/variable-utils';
 import { StoreID } from '@typing/variables';
+import _ from 'lodash-es';
 
 interface RichTextProps extends TextProps {
   children: any;
@@ -220,11 +221,16 @@ function shouldBeIndented(children: React.ReactNode) {
   const childrenArray = React.Children.toArray(children);
   const firstChild = childrenArray.length > 0 ? childrenArray[0] : null;
 
-  if (React.isValidElement(firstChild) && firstChild.type === 'strong') {
+  if (React.isValidElement(firstChild)) {
     // @ts-ignore
-    const contents = (firstChild.props?.children ?? '') as string;
-    if (['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents)) return true;
-    if (contents.length <= 20) return true;
+    const contents = _.isString(firstChild.props?.children ?? '') ? ((firstChild.props.children ?? '') as string) : '';
+    console.log(contents, firstChild.type);
+
+    if (firstChild.type === 'strong') {
+      if (['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents)) return true;
+      if (contents.length <= 45) return true;
+    }
+    if (contents.startsWith('action_symbol_')) return true;
   }
   return false;
 }
