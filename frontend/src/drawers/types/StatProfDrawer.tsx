@@ -47,6 +47,7 @@ import {
   getProficiencyTypeValue,
   isProficiencyType,
   isProficiencyValue,
+  labelToVariable,
   proficiencyTypeToLabel,
   variableNameToLabel,
   variableToLabel,
@@ -422,7 +423,7 @@ function SkillActionsSection(props: { variableName: string }) {
         if (block.type !== 'action') return false;
 
         let convertedSkills = Array.isArray(block.meta_data?.skill) ? block.meta_data?.skill : [block.meta_data?.skill];
-        convertedSkills = convertedSkills.map((skill) => `SKILL_${skill}`);
+        convertedSkills = convertedSkills.map((skill) => `SKILL_${labelToVariable(skill)}`);
 
         return (
           convertedSkills.includes(variableName) ||
@@ -450,6 +451,12 @@ function SkillActionsSection(props: { variableName: string }) {
             }}
           />
         ))}
+
+      {actions?.length === 0 && (
+        <Text fz='sm' fs='italic' pt={10}>
+          No actions found for this skill.
+        </Text>
+      )}
     </Stack>
   );
 }

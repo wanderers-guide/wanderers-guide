@@ -341,6 +341,7 @@ export async function executeCharacterOperations(
         adjVariable('CHARACTER', 'CLASS_FEATURE_NAMES', feature.name.toUpperCase(), undefined);
       }
     }
+    console.log(classFeatureResults);
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
     for (const invItem of character.inventory ? getFlatInvItems(character.inventory) : []) {
@@ -414,7 +415,7 @@ export async function executeCharacterOperations(
 function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {
   const merged = _.cloneDeep(normal);
   // Merge simple arrays
-  for (const [key, value] of Object.entries(conditional)) {
+  for (const [key, value] of Object.entries(_.cloneDeep(conditional))) {
     if (merged[key]) {
       merged[key].push(...value);
     } else {
@@ -432,8 +433,18 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
         found = true;
         const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
         if (duplicate) {
-          v.baseResults.push(...duplicate.baseResults);
+          v.baseResults = _.mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
+            // Only update "null" or "undefined" values
+            if (objValue === null || objValue === undefined) {
+              return srcValue;
+            }
+          });
+
+          /* Old way of merging, but doesn't work with nested arrays
+          console.log('Duplicate', v.baseSource?.id, duplicate.baseResults);
+          v.baseResults.unshift(...duplicate.baseResults);
           v.baseResults = _.uniq(v.baseResults);
+          */
         }
         if (!newValue.find((v2) => v2.baseSource?.id === v.baseSource?.id)) {
           newValue.push(v);

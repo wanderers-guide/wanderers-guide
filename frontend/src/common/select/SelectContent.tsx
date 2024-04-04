@@ -55,7 +55,7 @@ import {
   IconZoomScan,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { ExtendedProficiencyType, ProficiencyType, VariableProf } from '@typing/variables';
+import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@typing/variables';
 import { pluralize, toLabel } from '@utils/strings';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
@@ -838,6 +838,12 @@ function SelectionOptions(props: {
     if (props.type === 'ability-block' && (!props.overrideOptions || props.overrideOptions.length === 0)) {
       options = [];
     }
+  }
+
+  // Filter out already selected feats
+  if (props.abilityBlockType === 'feat') {
+    const featIds = getVariable<VariableListStr>('CHARACTER', 'FEAT_IDS')?.value.map((v) => parseInt(v)) ?? [];
+    options = options.filter((option) => !featIds.includes(option.id) || option.meta_data?.can_select_multiple_times);
   }
 
   // Filter options based on search query

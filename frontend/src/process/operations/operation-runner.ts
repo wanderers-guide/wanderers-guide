@@ -68,6 +68,9 @@ export async function runOperations(
         return await runCreateValue(varId, operation, sourceLabel);
       } else if (operation.type === 'giveTrait') {
         return await runGiveTrait(varId, operation, sourceLabel);
+      } else if (operation.type === 'giveAbilityBlock') {
+        // Run the ability block but only to pass the create variables
+        return await runGiveAbilityBlock(varId, selectionTrack, operation, options, sourceLabel);
       } else if (operation.type === 'select') {
         const subNode = selectionTrack.node?.children[operation.id];
         // Run the select operation but only the parts that create variables
@@ -85,6 +88,19 @@ export async function runOperations(
     if (options?.doOnlyConditionals) {
       if (operation.type === 'conditional') {
         return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
+      } else if (operation.type === 'giveAbilityBlock') {
+        // Run the ability block but only to pass the conditional check
+        return await runGiveAbilityBlock(varId, selectionTrack, operation, options, sourceLabel);
+      } else if (operation.type === 'select') {
+        const subNode = selectionTrack.node?.children[operation.id];
+        // Run the select operation but only the parts that are conditionals
+        return await runSelect(
+          varId,
+          { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+          operation,
+          options,
+          sourceLabel
+        );
       }
 
       if (options.onlyConditionalsWhitelist?.includes(operation.id)) {
@@ -253,6 +269,9 @@ async function updateVariables(
   sourceLabel?: string,
   options?: OperationOptions
 ) {
+  if (options?.doOnlyConditionals) {
+    return;
+  }
   if (options?.doOnlyValueCreation) {
     // Create variables based on the selected option
     if (operation.data.optionType === 'TRAIT') {
@@ -402,21 +421,23 @@ async function runGiveAbilityBlock(
     return null;
   }
 
-  if (operation.data.type === 'feat') {
-    adjVariable(varId, 'FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'FEAT_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-  } else if (operation.data.type === 'class-feature') {
-    adjVariable(varId, 'CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-  } else if (operation.data.type === 'sense') {
-    adjVariable(varId, 'SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'SENSE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-  } else if (operation.data.type === 'heritage') {
-    adjVariable(varId, 'HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
-  } else if (operation.data.type === 'physical-feature') {
-    adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
-    adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+  if (!options?.doOnlyValueCreation && !options?.doOnlyConditionals) {
+    if (operation.data.type === 'feat') {
+      adjVariable(varId, 'FEAT_IDS', `${abilityBlock.id}`, sourceLabel);
+      adjVariable(varId, 'FEAT_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+    } else if (operation.data.type === 'class-feature') {
+      adjVariable(varId, 'CLASS_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
+      adjVariable(varId, 'CLASS_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+    } else if (operation.data.type === 'sense') {
+      adjVariable(varId, 'SENSE_IDS', `${abilityBlock.id}`, sourceLabel);
+      adjVariable(varId, 'SENSE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+    } else if (operation.data.type === 'heritage') {
+      adjVariable(varId, 'HERITAGE_IDS', `${abilityBlock.id}`, sourceLabel);
+      adjVariable(varId, 'HERITAGE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+    } else if (operation.data.type === 'physical-feature') {
+      adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
+      adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+    }
   }
 
   let results: OperationResult[] = [];

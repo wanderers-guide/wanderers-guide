@@ -35,6 +35,7 @@ import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
+import _ from 'lodash';
 import { useState } from 'react';
 
 /**
@@ -292,18 +293,40 @@ export function CreateAbilityBlockModal(props: {
                   error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
-                <Stack py='xs'>
-                  <Switch
-                    label='Can Select Multiple Times'
-                    labelPosition='left'
-                    checked={metaData.canSelectMultipleTimes}
-                    onChange={(event) =>
+                {props.type === 'action' && (
+                  <TagsInput
+                    label='Skills'
+                    splitChars={[',', ';', '|']}
+                    value={
+                      metaData.skill
+                        ? Array.isArray(metaData.skill)
+                          ? metaData.skill.map((s) => _.startCase(s.toLowerCase()))
+                          : [_.startCase(metaData.skill.toLowerCase())]
+                        : []
+                    }
+                    onChange={(value) =>
                       setMetaData({
                         ...metaData,
-                        canSelectMultipleTimes: event.currentTarget.checked,
+                        skill: value,
                       })
                     }
                   />
+                )}
+
+                <Stack py='xs'>
+                  {props.type === 'feat' && (
+                    <Switch
+                      label='Can Select Multiple Times'
+                      labelPosition='left'
+                      checked={metaData.can_select_multiple_times}
+                      onChange={(event) =>
+                        setMetaData({
+                          ...metaData,
+                          can_select_multiple_times: event.currentTarget.checked,
+                        })
+                      }
+                    />
+                  )}
                   <Switch
                     label='Unselectable'
                     labelPosition='left'

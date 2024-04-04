@@ -316,6 +316,7 @@ interface AbilityBlock {
   type: AbilityBlockType;
   meta_data?: {
     unselectable?: boolean;
+    can_select_multiple_times?: boolean;
     skill?: string | string[];
     image_url?: string;
     // auto_adjustments?: Record<string, string>; TODO:

@@ -1,10 +1,6 @@
 import { Box, Divider, Text, useMantineTheme } from '@mantine/core';
 
-export default function ResultWrapper(props: {
-  label: string;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
+export default function ResultWrapper(props: { label: string; disabled?: boolean; children: React.ReactNode }) {
   const theme = useMantineTheme();
 
   if (props.disabled) return <>{props.children}</>;
@@ -12,9 +8,9 @@ export default function ResultWrapper(props: {
   return (
     <>
       <Box
-        px='xs'
-        pt='sm'
-        pb='xs'
+        px={10}
+        pt={15}
+        pb={10}
         style={{
           border: '1px solid ' + theme.colors.dark[3],
           borderRadius: theme.radius.md,

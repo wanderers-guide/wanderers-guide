@@ -631,10 +631,8 @@ function SelectionFilteredAdjValue(props: {
   filters?: OperationSelectFiltersAdjValue;
   onChange: (filters: OperationSelectFiltersAdjValue) => void;
 }) {
-  const [group, setGroup] = useState<string | undefined>(props.filters?.group ?? undefined);
-  const [value, setValue] = useState<VariableValue | ExtendedProficiencyValue | undefined>(
-    props.filters?.value ?? undefined
-  );
+  const [group, setGroup] = useState<string>(props.filters?.group ?? 'SKILL');
+  const [value, setValue] = useState<VariableValue | ExtendedProficiencyValue>(props.filters?.value ?? { value: 'U' });
 
   useDidUpdate(() => {
     props.onChange({
