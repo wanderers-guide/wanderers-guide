@@ -151,6 +151,7 @@ export function CreateCreatureModal(props: {
   const onSubmit = async (values: typeof form.values) => {
     props.onComplete({
       ...values,
+      name: values.name.trim(),
       traits: traits.map((trait) => trait.id),
       operations: [...(values.operations ?? []), ...totaledOperations],
     });

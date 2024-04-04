@@ -78,31 +78,48 @@ export function SelectionOperation(props: {
   }) => void;
   onRemove: () => void;
 }) {
-  const [optionType, setOptionType] = useState<OperationSelectOptionType | null>(props.data.optionType);
+  // const [optionType, setOptionType] = useState<OperationSelectOptionType | null>(props.data.optionType);
 
-  const [title, setTitle] = useState<string | undefined>(props.data.title);
-  const [modeType, setModeType] = useState(props.data.modeType);
+  // const [title, setTitle] = useState<string | undefined>(props.data.title);
+  // const [modeType, setModeType] = useState(props.data.modeType);
 
-  const [filters, setFilters] = useState<OperationSelectFilters | undefined>(props.data.optionsFilters);
-  const [options, setOptions] = useState<OperationSelectOption[] | undefined>(props.data.optionsPredefined);
+  // const [filters, setFilters] = useState<OperationSelectFilters | undefined>(props.data.optionsFilters);
+  // const [options, setOptions] = useState<OperationSelectOption[] | undefined>(props.data.optionsPredefined);
 
-  useDidUpdate(() => {
+  // useDidUpdate(() => {
+  //   props.onChange({
+  //     title: title,
+  //     modeType: modeType,
+  //     optionType: optionType ?? 'ABILITY_BLOCK',
+  //     optionsPredefined: options,
+  //     optionsFilters: filters,
+  //   });
+  // }, [title, modeType, optionType, filters, options]);
+
+  // useDidUpdate(() => {
+  //   setOptionType(props.data.optionType);
+  //   setTitle(props.data.title);
+  //   setModeType(props.data.modeType);
+  //   setFilters(props.data.optionsFilters);
+  //   setOptions(props.data.optionsPredefined);
+  // }, [props.data]);
+
+  const routeChange = (data: {
+    title?: string;
+    description?: string;
+    modeType?: 'PREDEFINED' | 'FILTERED';
+    optionType?: OperationSelectOptionType;
+    optionsPredefined?: OperationSelectOption[];
+    optionsFilters?: OperationSelectFilters;
+  }) => {
     props.onChange({
-      title: title,
-      modeType: modeType,
-      optionType: optionType ?? 'ABILITY_BLOCK',
-      optionsPredefined: options,
-      optionsFilters: filters,
+      title: data.title ?? props.data.title,
+      modeType: data.modeType ?? props.data.modeType,
+      optionType: data.optionType ?? props.data.optionType,
+      optionsPredefined: data.optionsPredefined ?? props.data.optionsPredefined,
+      optionsFilters: data.optionsFilters ?? props.data.optionsFilters,
     });
-  }, [title, modeType, optionType, filters, options]);
-
-  useDidUpdate(() => {
-    setOptionType(props.data.optionType);
-    setTitle(props.data.title);
-    setModeType(props.data.modeType);
-    setFilters(props.data.optionsFilters);
-    setOptions(props.data.optionsPredefined);
-  }, [props.data]);
+  };
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Selection'>
@@ -121,17 +138,17 @@ export function SelectionOperation(props: {
               { label: 'Custom', value: 'CUSTOM' },
             ] satisfies { label: string; value: OperationSelectOptionType }[]
           }
-          value={optionType}
-          onChange={(value) => setOptionType(value as OperationSelectOptionType | null)}
+          value={props.data.optionType}
+          onChange={(value) => routeChange({ optionType: value as OperationSelectOptionType | undefined })}
         />
         <Stack gap={10}>
           <Box>
             <TextInput
               label='Selection Title'
               placeholder='"Select an Option"'
-              value={title}
+              value={props.data.title}
               size='xs'
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => routeChange({ title: e.target.value })}
             />
           </Box>
 
@@ -139,11 +156,13 @@ export function SelectionOperation(props: {
             <Divider
               label={
                 <>
-                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE', 'TRAIT'].includes(optionType ?? '') && (
+                  {['ABILITY_BLOCK', 'SPELL', 'LANGUAGE', 'ADJ_VALUE', 'TRAIT'].includes(
+                    props.data.optionType ?? ''
+                  ) && (
                     <SegmentedControl
                       size='xs'
-                      value={modeType}
-                      onChange={(value) => setModeType(value as 'PREDEFINED' | 'FILTERED')}
+                      value={props.data.modeType}
+                      onChange={(value) => routeChange({ modeType: value as 'PREDEFINED' | 'FILTERED' })}
                       data={[
                         { label: 'Predefined', value: 'PREDEFINED' },
                         { label: 'Filtered', value: 'FILTERED' },
@@ -157,18 +176,18 @@ export function SelectionOperation(props: {
           </Box>
 
           <Box py='sm'>
-            {modeType === 'PREDEFINED' && (
+            {props.data.modeType === 'PREDEFINED' && (
               <SelectionPredefined
-                optionType={optionType}
-                options={options}
-                onChange={(options) => setOptions(options)}
+                optionType={props.data.optionType}
+                options={props.data.optionsPredefined}
+                onChange={(options) => routeChange({ optionsPredefined: options })}
               />
             )}
-            {modeType === 'FILTERED' && (
+            {props.data.modeType === 'FILTERED' && (
               <SelectionFiltered
-                optionType={optionType}
-                filters={filters}
-                onChange={(filters) => setFilters(filters)}
+                optionType={props.data.optionType}
+                filters={props.data.optionsFilters}
+                onChange={(filters) => routeChange({ optionsFilters: filters })}
               />
             )}
           </Box>
@@ -1396,7 +1415,6 @@ function SelectionPredefinedCustom(props: {
   );
 
   useDidUpdate(() => {
-    console.log(options);
     props.onChange(options);
   }, [options]);
 

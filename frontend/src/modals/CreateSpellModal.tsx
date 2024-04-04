@@ -146,6 +146,7 @@ export function CreateSpellModal(props: {
 
     props.onComplete({
       ...values,
+      name: values.name.trim(),
       rank: rank,
       traits: traits.map((trait) => trait.id),
       meta_data: metaData,

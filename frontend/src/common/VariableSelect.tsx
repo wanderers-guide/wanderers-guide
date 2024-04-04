@@ -25,7 +25,7 @@ export default function VariableSelect(props: {
             ? variable.endsWith('_TOTAL')
             : !variable.endsWith('____') &&
               !variable.endsWith('_IDS') &&
-              !variable.endsWith('_NAMES') &&
+              // !variable.endsWith('_NAMES') &&
               !variable.endsWith('_TOTAL') &&
               !HIDDEN_VARIABLES.includes(variable)
         )

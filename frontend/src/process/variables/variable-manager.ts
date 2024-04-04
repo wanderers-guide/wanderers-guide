@@ -480,7 +480,7 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
     // Some variables have a special rule where we take the higher value instead of overwriting
     // This is a hack for sure and hopefully won't be too confusing for homebrewers
     // It's to make things like HP for dual-class PCs work
-    const SPECIAL_TAKE_HIGHER_VARS = ['MAX_HEALTH_CLASS_PER_LEVEL'];
+    const SPECIAL_TAKE_HIGHER_VARS = ['MAX_HEALTH_CLASS_PER_LEVEL', getAllSpeedVariables(id).map((v) => v.name)];
     //
     if (SPECIAL_TAKE_HIGHER_VARS.includes(name)) {
       variable.value = Math.max(variable.value, parseInt(`${value}`));

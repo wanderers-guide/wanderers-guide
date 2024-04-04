@@ -151,6 +151,7 @@ export function CreateAbilityBlockModal(props: {
 
     props.onComplete({
       ...values,
+      name: values.name.trim(),
       level: level,
       traits: traits.map((trait) => trait.id),
       meta_data: {

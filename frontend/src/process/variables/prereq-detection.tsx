@@ -140,7 +140,8 @@ function checkForFeat(id: StoreID, prereq: string): PrereqMet {
 
 function checkForClassFeature(id: StoreID, prereq: string): PrereqMet {
   // Check if the way it's written is inline with how class features are written
-  if (prereq.toLowerCase() !== prereq) return null;
+  if (prereq.toLowerCase() !== prereq || prereq.split(' ').length >= 4) return null;
+  // TODO: Check if the class feature exists, if not, return null
 
   return (getVariable(id, 'CLASS_FEATURE_NAMES')!.value as string[]).includes(prereq.toUpperCase()) ? 'FULLY' : 'NOT';
 }

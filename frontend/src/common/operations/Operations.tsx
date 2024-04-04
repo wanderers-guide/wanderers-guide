@@ -425,8 +425,7 @@ export function OperationDisplay(props: {
         <SelectionOperation
           data={opSelection.data}
           onChange={(data) => {
-            opSelection.data = data;
-
+            opSelection.data = _.cloneDeep(data);
             props.onChange(_.cloneDeep(opSelection));
           }}
           onRemove={() => props.onRemove(props.operation.id)}

@@ -210,6 +210,7 @@ export function CreateItemModal(props: {
     // Combine the form values with the controlled state values
     props.onComplete({
       ...values,
+      name: values.name.trim(),
       level: values.level ? +values.level : 0,
       traits: traits.map((trait) => trait.id),
       meta_data: {
