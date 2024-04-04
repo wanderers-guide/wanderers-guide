@@ -224,6 +224,11 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // Pass WEAPON_GROUP_ in as a list
   WEAPON_CRITICAL_SPECIALIZATIONS: newVariable('list-str', 'WEAPON_CRITICAL_SPECIALIZATIONS'),
 
+  // List of weapon names, group names, or trait IDs
+  // All weapons that match are, for the purposes of proficiency, treated as simple weapons if
+  // they are martial weapons, and as martial weapons if they are advanced weapons.
+  WEAPON_FAMILIARITY: newVariable('list-str', 'WEAPON_FAMILIARITY'),
+
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
 

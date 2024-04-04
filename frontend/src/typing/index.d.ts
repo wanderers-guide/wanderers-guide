@@ -22,6 +22,7 @@ export type DrawerType =
   | 'stat-attr'
   | 'stat-hp'
   | 'stat-ac'
+  | 'stat-weapon'
   | 'stat-speed'
   | 'stat-perception'
   | 'stat-resist-weak';

@@ -1,14 +1,9 @@
-/*
-TODO: When adding dex or str to any damage or bonus, make sure you add the corresponding adjustment as well
-      (it's how the conditions can affect the damage and bonus!)
-
-*/
-
 import { Item } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { StoreID, VariableListStr } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
-import { labelToVariable } from '@variables/variable-utils';
+import { getVariable } from '@variables/variable-manager';
+import { isVariableListStr, labelToVariable } from '@variables/variable-utils';
 
 export function getWeaponStats(id: StoreID, item: Item) {
   const dice = (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0);
@@ -307,7 +302,28 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
 }
 
 function getProfTotal(id: StoreID, item: Item) {
-  const category = item.meta_data?.category ?? 'simple';
+  let category = item.meta_data?.category ?? 'simple';
+
+  // Weapon familiarity // List of weapon names, group names, or trait IDs
+  const familiarity =
+    getVariable<VariableListStr>(id, 'WEAPON_FAMILIARITY')?.value.map((f) => f.trim().toUpperCase()) ?? [];
+  const matchFamiliarity = () => {
+    for (const f of familiarity) {
+      if (item.name.trim().toUpperCase() === f) return true;
+      if (item.meta_data?.group && item.meta_data.group.trim().toUpperCase() === f) return true;
+      // Don't use labelToVariable here, as it will remove the numbers for IDs
+      if (!isNaN(parseInt(f)) && item.traits?.includes(parseInt(f))) return true;
+    }
+    return false;
+  };
+  if (matchFamiliarity()) {
+    if (category === 'martial') {
+      category = 'simple';
+    } else if (category === 'advanced') {
+      category = 'martial';
+    }
+  }
+
   let categoryProfTotal = 0;
   if (category === 'simple') {
     categoryProfTotal = parseInt(getFinalProfValue(id, `SIMPLE_WEAPONS`));

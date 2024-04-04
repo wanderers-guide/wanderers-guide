@@ -26,6 +26,7 @@ import { ConditionDrawerTitle } from './types/ConditionDrawer';
 import { ContentSourceDrawerTitle } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerTitle } from './types/ManageCoinsDrawer';
 import { CreatureDrawerTitle } from './types/CreatureDrawer';
+import { StatWeaponDrawerTitle } from './types/StatWeaponDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
@@ -52,6 +53,7 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-ac' && <StatAcDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'stat-weapon' && <StatWeaponDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-speed' && <StatSpeedDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerTitle data={_drawer.data} />}

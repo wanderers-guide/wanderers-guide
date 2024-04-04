@@ -315,6 +315,7 @@ function InvItemSections(props: {
   onItemUpdate: (invItem: InventoryItem) => void;
   openDrawer: SetterOrUpdater<any>;
 }) {
+  const [drawer, openDrawer] = useRecoilState(drawerState);
   const ac = props.invItem.item.meta_data?.ac_bonus;
   const dexCap = props.invItem.item.meta_data?.dex_cap;
   const strength = props.invItem.item.meta_data?.strength;
@@ -484,7 +485,20 @@ function InvItemSections(props: {
 
     attackAndDamageSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap' grow>
+        <Group
+          wrap='nowrap'
+          style={{
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            openDrawer({
+              type: 'stat-weapon',
+              data: { item: props.invItem.item },
+              extra: { addToHistory: true },
+            });
+          }}
+          grow
+        >
           <Group wrap='nowrap' gap={10}>
             <Text fw={600} c='gray.5' span>
               Attack

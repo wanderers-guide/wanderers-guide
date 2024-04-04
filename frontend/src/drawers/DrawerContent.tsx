@@ -25,6 +25,7 @@ import { ConditionDrawerContent } from './types/ConditionDrawer';
 import { ContentSourceDrawerContent } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerContent } from './types/ManageCoinsDrawer';
 import { CreatureDrawerContent } from './types/CreatureDrawer';
+import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
@@ -57,6 +58,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-ac' && <StatAcDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'stat-weapon' && <StatWeaponDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-speed' && <StatSpeedDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerContent data={_drawer.data} />}

@@ -83,8 +83,6 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
   // Breakdown
   const parts = getProfValueParts('CHARACTER', variable.name)!;
 
-  console.log(parts);
-
   // Timeline
   const history = getVariableHistory('CHARACTER', variable.name);
   const bonuses = getVariableBonuses('CHARACTER', variable.name);
