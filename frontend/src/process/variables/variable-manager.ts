@@ -229,6 +229,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // they are martial weapons, and as martial weapons if they are advanced weapons.
   WEAPON_FAMILIARITY: newVariable('list-str', 'WEAPON_FAMILIARITY'),
 
+  // When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus.
+  MARTIAL_EXPERIENCE: newVariable('bool', 'MARTIAL_EXPERIENCE'),
+
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
 

@@ -323,7 +323,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
   }
   if (filters.level.max !== undefined) {
-    spells = spells.filter((spell) => spell.rank >= filters.level.max!);
+    spells = spells.filter((spell) => spell.rank <= filters.level.max!);
   }
   if (filters.traits !== undefined) {
     const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
@@ -346,7 +346,10 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
   }
   if (filters.traditions !== undefined) {
     spells = spells.filter((spell) => {
-      const intersection = _.intersection(spell.traditions, filters.traditions ?? []);
+      const intersection = _.intersection(
+        spell.traditions.map((t) => t.toUpperCase()),
+        (filters.traditions ?? []).map((t) => t.toUpperCase())
+      );
       return intersection.length === filters.traditions!.length;
     });
   }

@@ -13,7 +13,17 @@ export function getFinalProfValue(
   overrideAttribute?: string
 ) {
   const parts = getProfValueParts(id, variableName, overrideAttribute);
-  if (!parts) return isDC ? '10' : '+0';
+  if (!parts) {
+    if (isDC) {
+      return '10';
+    } else {
+      if (getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value) {
+        return '-2';
+      } else {
+        return '+0';
+      }
+    }
+  }
   return isDC
     ? `${10 + parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue}`
     : sign(parts.profValue + (parts.attributeMod ?? 0) + parts.level + parts.breakdown.bonusValue);
@@ -115,6 +125,7 @@ export function getProfValueParts(id: StoreID, variableName: string, overrideAtt
   } else {
     level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
   }
+  console.log('level', level, variableName);
 
   const profValue = getProficiencyTypeValue(variable.value.value);
 

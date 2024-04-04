@@ -454,7 +454,7 @@ function SpellList(props: {
           }}
         >
           <Stack gap={0}>
-            <Divider color='dark.6' />
+            {/* <Divider color='dark.6' /> */}
             <Accordion
               px={10}
               pb={5}
@@ -567,7 +567,7 @@ function SpellList(props: {
           }}
         >
           <Stack gap={0}>
-            <Divider color='dark.6' />
+            {/* <Divider color='dark.6' /> */}
             <Accordion
               px={10}
               pb={5}
@@ -727,7 +727,7 @@ function SpellList(props: {
           }}
         >
           <Stack gap={0}>
-            <Divider color='dark.6' />
+            {/* <Divider color='dark.6' /> */}
             <Accordion
               px={10}
               pb={5}
@@ -829,7 +829,7 @@ function SpellList(props: {
           }}
         >
           <Stack gap={0}>
-            <Divider color='dark.6' />
+            {/* <Divider color='dark.6' /> */}
             <Accordion
               px={10}
               pb={5}
@@ -980,7 +980,7 @@ function SpellList(props: {
           pb={10}
         >
           <Stack gap={5}>
-            <Divider color='dark.6' />
+            {/* <Divider color='dark.6' /> */}
             {spells &&
               Object.keys(spells)
                 .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])

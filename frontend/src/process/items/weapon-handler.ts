@@ -1,5 +1,5 @@
 import { Item } from '@typing/content';
-import { StoreID, VariableListStr } from '@typing/variables';
+import { StoreID, VariableBool, VariableListStr, VariableNum } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
@@ -340,7 +340,20 @@ function getProfTotal(id: StoreID, item: Item) {
 
   const individualProfTotal = parseInt(getFinalProfValue(id, `WEAPON_${labelToVariable(item.name)}`));
 
-  return Math.max(categoryProfTotal, groupProfTotal, individualProfTotal);
+  const profTotal = Math.max(categoryProfTotal, groupProfTotal, individualProfTotal);
+
+  // "When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus."
+  const martialExperience = getVariable<VariableBool>(id, 'MARTIAL_EXPERIENCE')?.value ?? false;
+  if (martialExperience && profTotal <= 0) {
+    const profWithoutLevel = !!getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value;
+    if (profWithoutLevel) {
+      return 0;
+    } else {
+      return getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0;
+    }
+  }
+
+  return profTotal;
 }
 
 function getMAPedTotal(id: StoreID, item: Item, total: number): [number, number, number] {
