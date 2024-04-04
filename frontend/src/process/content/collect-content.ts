@@ -15,7 +15,11 @@ import { getVariable } from '@variables/variable-manager';
 import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 
-export function collectCharacterAbilityBlocks(character: Character, blocks: AbilityBlock[]) {
+export function collectCharacterAbilityBlocks(
+  character: Character,
+  blocks: AbilityBlock[],
+  options?: { filterBasicClassFeatures?: boolean }
+) {
   // Feats ///////////////////////////////
 
   const featIds = getVariable<VariableListStr>('CHARACTER', 'FEAT_IDS')?.value ?? [];
@@ -49,9 +53,20 @@ export function collectCharacterAbilityBlocks(character: Character, blocks: Abil
   // Features ////////////////////////////
 
   const classFeatureIds = getVariable<VariableListStr>('CHARACTER', 'CLASS_FEATURE_IDS')?.value ?? [];
-  const classFeatures = blocks.filter(
+  let classFeatures = blocks.filter(
     (block) => block.type === 'class-feature' && classFeatureIds.includes(`${block.id}`)
   );
+  if (options?.filterBasicClassFeatures) {
+    const BASIC_NAMES = [
+      'Attribute Boosts',
+      'Skill Feat',
+      'Skill Increase',
+      'General Feat',
+      `${character.details?.class?.name} Feat`,
+      `${character.details?.class_2?.name} Feat`,
+    ];
+    classFeatures = classFeatures.filter((feature) => !BASIC_NAMES.includes(feature.name));
+  }
 
   const physicalFeatureIds = getVariable<VariableListStr>('CHARACTER', 'PHYSICAL_FEATURE_IDS')?.value ?? [];
   const physicalFeatures = blocks.filter(
@@ -61,21 +76,13 @@ export function collectCharacterAbilityBlocks(character: Character, blocks: Abil
   const heritageIds = getVariable<VariableListStr>('CHARACTER', 'HERITAGE_IDS')?.value ?? [];
   const heritages = blocks.filter((block) => block.type === 'heritage' && heritageIds.includes(`${block.id}`));
 
-  // Base class features (default by the class)
-  const baseClassFeatures = blocks.filter(
-    (ab) =>
-      ab.type === 'class-feature' &&
-      ab.traits?.includes(character?.details?.class?.trait_id ?? -1) &&
-      (ab.level === undefined || ab.level <= character.level)
-  );
-
   return {
     generalAndSkillFeats,
     classFeats,
     ancestryFeats,
     otherFeats,
 
-    classFeatures: [...classFeatures, ...baseClassFeatures].sort((a, b) => {
+    classFeatures: classFeatures.sort((a, b) => {
       if (a.level !== undefined && b.level !== undefined) {
         if (a.level !== b.level) {
           return a.level - b.level;

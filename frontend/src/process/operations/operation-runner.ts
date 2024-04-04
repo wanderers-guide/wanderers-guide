@@ -415,6 +415,7 @@ async function runGiveAbilityBlock(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.abilityBlockId === -1) return null;
   const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
     displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
@@ -608,6 +609,7 @@ async function runRemoveAbilityBlock(
   operation: OperationRemoveAbilityBlock,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.abilityBlockId === -1) return null;
   const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
     displayError(`Ability block not found, ${operation.data.abilityBlockId}`);

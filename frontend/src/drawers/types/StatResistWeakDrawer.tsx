@@ -141,7 +141,9 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {resistVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {compileExpressions('CHARACTER', opt.replace(',', ' '), true)}
+                        {_.startCase(
+                          (compileExpressions('CHARACTER', opt.replace(',', ' '), true) ?? '').toLowerCase()
+                        )}
                       </Text>
                     </List.Item>
                   ))}
@@ -212,7 +214,9 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {weakVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {variableNameToLabel(opt)}
+                        {_.startCase(
+                          (compileExpressions('CHARACTER', opt.replace(',', ' '), true) ?? '').toLowerCase()
+                        )}
                       </Text>
                     </List.Item>
                   ))}
@@ -287,7 +291,9 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {immuneVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {variableNameToLabel(opt)}
+                        {_.startCase(
+                          (compileExpressions('CHARACTER', opt.replace(',', ' '), true) ?? '').toLowerCase()
+                        )}
                       </Text>
                     </List.Item>
                   ))}

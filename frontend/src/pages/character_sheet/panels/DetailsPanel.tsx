@@ -29,6 +29,7 @@ import {
   getAllWeaponVariables,
   getAllArmorGroupVariables,
   getAllArmorVariables,
+  getAllAncestryTraitVariables,
 } from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
 import { useRecoilState } from 'recoil';
@@ -47,6 +48,11 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
   const languages = (getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
     const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
     return lang;
+  });
+
+  const traits = getAllAncestryTraitVariables('CHARACTER').map((v) => {
+    const trait = props.content.traits.find((trait) => trait.id === v.value);
+    return trait;
   });
 
   const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
@@ -364,37 +370,71 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
         backgroundColor: 'rgba(0, 0, 0, 0.13)',
       }}
     >
-      <Stack gap={10}>
-        <Title order={4}>Languages</Title>
-        <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
-          <Box w={SECTION_WIDTH}>
-            <Pill.Group>
-              {languages.map((language, index) => (
-                <Pill
-                  key={index}
-                  size='md'
-                  styles={{
-                    label: {
-                      cursor: 'pointer',
-                    },
-                    root: {
-                      border: `1px solid ${theme.colors.dark[4]}`,
-                      backgroundColor: theme.colors.dark[6],
-                    },
-                  }}
-                  onClick={() => {
-                    openDrawer({
-                      type: 'language',
-                      data: { id: language?.id },
-                    });
-                  }}
-                >
-                  {language?.name ?? 'Unknown'}
-                </Pill>
-              ))}
-            </Pill.Group>
-          </Box>
-        </ScrollArea>
+      <Stack gap={10} h={props.panelHeight - 25}>
+        <Stack gap={10}>
+          <Title order={4}>Languages</Title>
+          <ScrollArea h={100} scrollbars='y'>
+            <Box w={SECTION_WIDTH}>
+              <Pill.Group>
+                {languages.map((language, index) => (
+                  <Pill
+                    key={index}
+                    size='md'
+                    styles={{
+                      label: {
+                        cursor: 'pointer',
+                      },
+                      root: {
+                        border: `1px solid ${theme.colors.dark[4]}`,
+                        backgroundColor: theme.colors.dark[6],
+                      },
+                    }}
+                    onClick={() => {
+                      openDrawer({
+                        type: 'language',
+                        data: { id: language?.id },
+                      });
+                    }}
+                  >
+                    {language?.name ?? 'Unknown'}
+                  </Pill>
+                ))}
+              </Pill.Group>
+            </Box>
+          </ScrollArea>
+        </Stack>
+        <Stack gap={10}>
+          <Title order={4}>Traits</Title>
+          <ScrollArea h={100} scrollbars='y'>
+            <Box w={SECTION_WIDTH}>
+              <Pill.Group>
+                {traits.map((trait, index) => (
+                  <Pill
+                    key={index}
+                    size='md'
+                    styles={{
+                      label: {
+                        cursor: 'pointer',
+                      },
+                      root: {
+                        border: `1px solid ${theme.colors.dark[4]}`,
+                        backgroundColor: theme.colors.dark[6],
+                      },
+                    }}
+                    onClick={() => {
+                      openDrawer({
+                        type: 'trait',
+                        data: { id: trait?.id },
+                      });
+                    }}
+                  >
+                    {trait?.name ?? 'Unknown'}
+                  </Pill>
+                ))}
+              </Pill.Group>
+            </Box>
+          </ScrollArea>
+        </Stack>
       </Stack>
     </Paper>
   );

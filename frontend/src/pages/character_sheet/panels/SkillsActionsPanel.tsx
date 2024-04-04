@@ -198,12 +198,26 @@ export default function SkillsActionsPanel(props: {
   }, [actions]);
 
   const explorationActions = useMemo(() => {
-    return actions.filter((a) => hasTraitType('EXPLORATION', a.traits));
-  }, [actions]);
+    let explorationFeats: AbilityBlock[] = [];
+    if (character) {
+      const results = collectCharacterAbilityBlocks(character, props.content.abilityBlocks);
+      explorationFeats = _.flattenDeep(Object.values(results)).filter((ab) => hasTraitType('EXPLORATION', ab.traits));
+    }
+    return [...actions.filter((a) => hasTraitType('EXPLORATION', a.traits)), ...explorationFeats].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [actions, props.content.abilityBlocks, character]);
 
   const downtimeActions = useMemo(() => {
-    return actions.filter((a) => hasTraitType('DOWNTIME', a.traits));
-  }, [actions]);
+    let downtimeFeats: AbilityBlock[] = [];
+    if (character) {
+      const results = collectCharacterAbilityBlocks(character, props.content.abilityBlocks);
+      downtimeFeats = _.flattenDeep(Object.values(results)).filter((ab) => hasTraitType('DOWNTIME', ab.traits));
+    }
+    return [...actions.filter((a) => hasTraitType('DOWNTIME', a.traits)), ...downtimeFeats].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [actions, props.content.abilityBlocks, character]);
 
   const itemsWithActions = useMemo(() => {
     const actionItems = props.inventory.items.filter((invItem) => {

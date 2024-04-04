@@ -40,7 +40,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
       if (!character) return null;
 
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
-      return collectCharacterAbilityBlocks(character, abilityBlocks);
+      return collectCharacterAbilityBlocks(character, abilityBlocks, {
+        filterBasicClassFeatures: true,
+      });
     },
   });
 
