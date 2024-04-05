@@ -9,11 +9,27 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  LOCAL_DB: postgresql://postgres:postgres@localhost:5432/postgres
+
 jobs:
   dump-database:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - uses: actions/checkout@v3
@@ -27,7 +43,17 @@ jobs:
         working-directory: ./data
         env:
           DB_URI: ${{ secrets.DB_URI }}
-        run: ./dump.sh $DB_URI
+        run: ./ci-dump.sh $DB_URI
+      # Creates a local copy of the data to work on
+      - name: Restore local database
+        working-directory: ./data
+        run: ./create-db.sh ${{ env.LOCAL_DB }}
+      - name: Remove user data
+        working-directory: ./data
+        run: ./clear-user-data.sh ${{ env.LOCAL_DB }}
+      - name: Dump clean data
+        working-directory: ./data
+        run: PGCLUSTER=15/main pg_dump --data-only --table="public.*" ${{ env.LOCAL_DB }} > data.sql
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
