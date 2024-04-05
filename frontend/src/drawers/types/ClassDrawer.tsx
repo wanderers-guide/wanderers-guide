@@ -11,6 +11,7 @@ import {
   Accordion,
   ActionIcon,
   Anchor,
+  Badge,
   Box,
   Divider,
   Group,
@@ -114,7 +115,18 @@ export function ClassDrawerContent(props: {
 
   const featSections = Object.keys(feats).map((level) => (
     <Accordion.Item key={level} value={level}>
-      <Accordion.Control>Level {level}</Accordion.Control>
+      <Accordion.Control>
+        <Group wrap='nowrap' justify='space-between' gap={0}>
+          <Text c='gray.5' fw={700} fz='md'>
+            Level {level}
+          </Text>
+          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+            <Text fz='sm' c='gray.5' span>
+              {feats[level].filter((feat) => feat.meta_data?.unselectable !== true).length}
+            </Text>
+          </Badge>
+        </Group>
+      </Accordion.Control>
       <Accordion.Panel
         styles={{
           content: {
@@ -125,6 +137,7 @@ export function ClassDrawerContent(props: {
         <Stack gap={0}>
           <Divider color='dark.6' />
           {feats[level]
+            .filter((feat) => feat.meta_data?.unselectable !== true)
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((feat, index) => (
               <FeatSelectionOption

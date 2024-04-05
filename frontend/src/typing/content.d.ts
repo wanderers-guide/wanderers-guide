@@ -97,7 +97,8 @@ interface Condition {
   for_character: boolean;
   for_object: boolean;
   for_creature: boolean;
-  required_source_id?: number;
+  pathfinder_only?: boolean;
+  starfinder_only?: boolean;
 }
 
 type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'MATERIAL';
@@ -161,6 +162,11 @@ interface Item {
       resilient?: number;
       potency?: number;
       property?: { name: string; id: number }[];
+    };
+    starfinder?: {
+      capacity?: string;
+      usage?: number;
+      upgrades?: number;
     };
     foundry: {
       rules?: Record<string, any>;

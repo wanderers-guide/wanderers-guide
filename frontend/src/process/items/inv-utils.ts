@@ -1,4 +1,6 @@
 import { getConditionByName } from '@conditions/condition-handler';
+import { getCachedSources } from '@content/content-store';
+import { isPlayingStarfinder } from '@content/system-handler';
 import { Character, Inventory, InventoryItem, Item } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
@@ -143,7 +145,10 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
     const extraItems: InventoryItem[] = [];
     (getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []).forEach((itemId) => {
       const item = items.find((item) => `${item.id}` === itemId);
-      if (item) {
+      const itemExists = !!(
+        character?.inventory && getFlatInvItems(character?.inventory).find((i) => `${i.item.id}` === itemId)
+      );
+      if (item && !itemExists) {
         extraItems.push({
           id: 'extra-item-' + itemId,
           item: item,
@@ -155,8 +160,7 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
       }
     });
 
-    const mergedItems = _.unionBy(character.inventory.items, extraItems, 'id');
-    if (mergedItems.length === character.inventory.items.length) return;
+    if (extraItems.length === 0) return;
 
     setCharacter((c) => {
       if (!c) return c;
@@ -164,7 +168,7 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
         ...c,
         inventory: {
           ...c.inventory!,
-          items: mergedItems,
+          items: [...(c.inventory?.items ?? []), ...extraItems],
         },
       };
     });
@@ -392,7 +396,7 @@ export function isItemWithPropertyRunes(item: Item) {
  * @returns - Whether the item is consumable
  */
 export function isItemWithQuantity(item: Item) {
-  return hasTraitType('CONSUMABLE', item.traits);
+  return hasTraitType('CONSUMABLE', item.traits) || (item.meta_data?.quantity && item.meta_data.quantity > 1);
 }
 
 /**
@@ -420,6 +424,27 @@ export function isItemArmor(item: Item) {
  */
 export function isItemShield(item: Item) {
   return item.meta_data?.ac_bonus !== undefined && !isItemArmor(item);
+}
+
+/**
+ * Utility function to determine if an item is archaic (old weapon from Pathfinder)
+ * @param item - Item
+ * @returns - Whether the item is archaic
+ */
+export function isItemArchaic(item: Item) {
+  if (hasTraitType('ARCHAIC', item.traits)) {
+    return true;
+  }
+  if (!isPlayingStarfinder()) {
+    return false;
+  }
+
+  const source = getCachedSources().find((source) => source.id === item.content_source_id);
+  if (!source) {
+    return false;
+  }
+
+  return isItemWeapon(item) && source.group.startsWith('pathfinder');
 }
 
 /**

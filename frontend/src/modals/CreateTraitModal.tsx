@@ -192,7 +192,7 @@ export function CreateTraitModal(props: {
                 />
 
                 <Switch
-                  label='Unselectable'
+                  label='Hidden'
                   labelPosition='left'
                   checked={metaData.unselectable}
                   onChange={(event) =>

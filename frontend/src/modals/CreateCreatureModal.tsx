@@ -42,6 +42,7 @@ import { useState } from 'react';
 import { json } from 'react-router-dom';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
+import { startCase } from '@utils/strings';
 
 /**
  * Modal for creating or editing a creature
@@ -197,7 +198,7 @@ export function CreateCreatureModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', _.startCase(text.toLowerCase()));
+                      form.setFieldValue('name', startCase(text));
                     }
                   }}
                 />

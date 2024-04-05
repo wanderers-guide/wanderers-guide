@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from 'react';
 import { evaluate } from 'mathjs';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
+import { isPlayingStarfinder } from '@content/system-handler';
 
 export function ManageCoinsDrawerTitle(props: {
   data: { coins?: { cp?: number; sp?: number; gp?: number; pp?: number } };
@@ -137,7 +138,8 @@ export function ManageCoinsDrawerContent(props: {
           ref={spRef}
           label={
             <Group wrap='nowrap' gap={8} style={{ textWrap: 'nowrap' }}>
-              <Avatar src={SilverCoin} alt='Silver Coin' radius='xs' size='xs' /> Silver
+              <Avatar src={SilverCoin} alt='Silver Coin' radius='xs' size='xs' />{' '}
+              {isPlayingStarfinder() ? <b>Credits</b> : 'Silver'}
             </Group>
           }
           placeholder='Coins'
@@ -207,6 +209,16 @@ export function ManageCoinsDrawerContent(props: {
           expensive items or as a way to easily transport large sums of currency. A platinum piece is worth 10 gold
           pieces, 100 silver pieces, or 1,000 copper pieces.`}
             </RichText>
+            {isPlayingStarfinder() && (
+              <>
+                <Divider my={10} />
+                <RichText ta='justify' storeID='CHARACTER' mr={10}>
+                  {`The standard currency in Starfinder is the credit, and all items in this document are priced in credits.
+                In Pathfinder Second Edition, the standard currency is typically in gold pieces (gp). The conversion
+                rate between credits and gp is that 10 credits = 1 gp.`}
+                </RichText>
+              </>
+            )}
           </Accordion.Panel>
         </Accordion.Item>
         <Accordion.Item value={'other-currency'} w='100%'>

@@ -54,6 +54,9 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
 
+  const hasTracking1 = hasTraitType('TRACKING-1', item.traits);
+  const hasTracking2 = hasTraitType('TRACKING-2', item.traits);
+
   ///
 
   const parts = new Map<string, number>();
@@ -95,6 +98,13 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
     parts.set('This is an item bonus you receive from the item itself.', extraItemBonus);
   }
 
+  if (hasTracking1) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 1);
+  }
+  if (hasTracking2) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 2);
+  }
+
   return {
     total: getMAPedTotal(
       id,
@@ -115,6 +125,9 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   const hasFinesse = hasTraitType('FINESSE', item.traits);
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
+
+  const hasTracking1 = hasTraitType('TRACKING-1', item.traits);
+  const hasTracking2 = hasTraitType('TRACKING-2', item.traits);
 
   ///
 
@@ -155,6 +168,13 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
 
   if (extraItemBonus) {
     parts.set('This is an item bonus you receive from the item itself.', extraItemBonus);
+  }
+
+  if (hasTracking1) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 1);
+  }
+  if (hasTracking2) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 2);
   }
 
   return {
@@ -293,8 +313,6 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
     parts.set('This is a bonus you receive to damage for melee attacks.', meleeAttackDamage);
   }
 
-  // TODO: Weapon Specialization
-
   return {
     total: [...parts.values()].reduce((a, b) => a + b, 0),
     parts: parts,
@@ -366,15 +384,29 @@ function getMAPedTotal(id: StoreID, item: Item, total: number): [number, number,
   return [first, second, third];
 }
 
-function convertDamageType(damageType: string) {
-  damageType = damageType.trim();
-  if (damageType.toLowerCase() === 'bludgeoning' || damageType === 'b') {
+function convertDamageType(rawDamageType: string) {
+  const damageType = rawDamageType.toLowerCase().trim();
+  if (damageType === 'bludgeoning' || damageType === 'b') {
     return 'B';
-  } else if (damageType.toLowerCase() === 'piercing' || damageType === 'p') {
+  } else if (damageType === 'piercing' || damageType === 'p') {
     return 'P';
-  } else if (damageType.toLowerCase() === 'slashing' || damageType === 's') {
+  } else if (damageType === 'slashing' || damageType === 's') {
     return 'S';
+  } else if (damageType === 'acid' || damageType === 'a') {
+    return 'acid';
+  } else if (damageType === 'cold' || damageType === 'c') {
+    return 'cold';
+  } else if (damageType === 'electricity' || damageType === 'e') {
+    return 'electricity';
+  } else if (damageType === 'fire' || damageType === 'f') {
+    return 'fire';
+  } else if (damageType === 'mental' || damageType === 'm') {
+    return 'mental';
+  } else if (damageType === 'poison' || damageType === 'po') {
+    return 'poison';
+  } else if (damageType === 'sonic' || damageType === 'So') {
+    return 'sonic';
   } else {
-    return damageType;
+    return rawDamageType;
   }
 }

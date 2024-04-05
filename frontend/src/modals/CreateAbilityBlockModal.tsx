@@ -33,7 +33,7 @@ import { JSONContent } from '@tiptap/react';
 import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
-import { toLabel } from '@utils/strings';
+import { startCase, toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash';
 import { useState } from 'react';
@@ -154,6 +154,7 @@ export function CreateAbilityBlockModal(props: {
       name: values.name.trim(),
       level: level,
       traits: traits.map((trait) => trait.id),
+      prerequisites: (values.prerequisites ?? []).map((prereq) => prereq.trim()),
       meta_data: {
         ...metaData,
         unselectable,
@@ -214,7 +215,7 @@ export function CreateAbilityBlockModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', _.startCase(text.toLowerCase()));
+                      form.setFieldValue('name', startCase(text));
                     }
                   }}
                 />
@@ -253,7 +254,9 @@ export function CreateAbilityBlockModal(props: {
               />
             </Group>
 
-            <TagsInput label='Prerequisites' splitChars={[',', ';', '|']} {...form.getInputProps('prerequisites')} />
+            {props.type === 'feat' && (
+              <TagsInput label='Prerequisites' splitChars={[',', ';', '|']} {...form.getInputProps('prerequisites')} />
+            )}
 
             <Divider
               my='xs'
@@ -340,7 +343,7 @@ export function CreateAbilityBlockModal(props: {
                     />
                   )}
                   <Switch
-                    label='Unselectable'
+                    label='Hidden'
                     labelPosition='left'
                     checked={metaData.unselectable}
                     onChange={(event) =>

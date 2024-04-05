@@ -8,6 +8,7 @@ import * as _ from 'lodash-es';
 import { hashData } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
+import { playingPathfinder, playingStarfinder } from '@content/system-handler';
 
 function defineSelectionTree(character: Character) {
   if (character.operation_data?.selections) {
@@ -64,7 +65,10 @@ export async function executeCharacterOperations(
 ): Promise<OperationResultPackage> {
   resetVariables();
   defineSelectionTree(character);
-  setVariable('CHARACTER', 'PAGE_CONTEXT', context);
+  setVariable('ALL', 'PAGE_CONTEXT', context);
+  setVariable('ALL', 'PATHFINDER', playingPathfinder(character));
+  setVariable('ALL', 'STARFINDER', playingStarfinder(character));
+
   setVariable('CHARACTER', 'LEVEL', character.level);
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
@@ -341,7 +345,6 @@ export async function executeCharacterOperations(
         adjVariable('CHARACTER', 'CLASS_FEATURE_NAMES', feature.name.toUpperCase(), undefined);
       }
     }
-    console.log(classFeatureResults);
 
     let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
     for (const invItem of character.inventory ? getFlatInvItems(character.inventory) : []) {
@@ -441,7 +444,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
           });
 
           /* Old way of merging, but doesn't work with nested arrays
-          console.log('Duplicate', v.baseSource?.id, duplicate.baseResults);
+          // 'Duplicate', v.baseSource?.id, duplicate.baseResults);
           v.baseResults.unshift(...duplicate.baseResults);
           v.baseResults = _.uniq(v.baseResults);
           */

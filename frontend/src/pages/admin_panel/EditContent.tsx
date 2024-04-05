@@ -1,9 +1,9 @@
-import BlurBox from "@common/BlurBox";
-import { fetchContentSources } from "@content/content-store";
-import { Center, Group, Select, Title } from "@mantine/core";
-import { CreateContentSourceModal } from "@modals/CreateContentSourceModal";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import BlurBox from '@common/BlurBox';
+import { defineDefaultSources, fetchContentSources } from '@content/content-store';
+import { Center, Group, Select, Title } from '@mantine/core';
+import { CreateContentSourceModal } from '@modals/CreateContentSourceModal';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 
 export default function EditContent() {
   const [sourceId, setSourceId] = useState<number | undefined>(undefined);
@@ -11,24 +11,27 @@ export default function EditContent() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      return await fetchContentSources({ homebrew: false });
+      const sources = await fetchContentSources({ homebrew: false, ids: 'all' });
+      defineDefaultSources(sources.map((source) => source.id));
+      return sources;
     },
+    refetchInterval: 1000,
   });
 
   return (
     <>
-      <BlurBox p="sm">
-        <Center p="sm">
+      <BlurBox p='sm'>
+        <Center p='sm'>
           <Group>
             <Title order={3}>Edit Content</Title>
             <Select
-              placeholder="Select content source"
+              placeholder='Select content source'
               data={(data ?? []).map((source) => ({
-                value: source.id + "",
+                value: source.id + '',
                 label: source.name,
               }))}
-              value=""
-              searchValue=""
+              value=''
+              searchValue=''
               onChange={async (value) => {
                 if (!value) return;
                 setSourceId(parseInt(value));
@@ -38,11 +41,7 @@ export default function EditContent() {
         </Center>
       </BlurBox>
       {sourceId && (
-        <CreateContentSourceModal
-          opened={true}
-          sourceId={sourceId}
-          onClose={() => setSourceId(undefined)}
-        />
+        <CreateContentSourceModal opened={true} sourceId={sourceId} onClose={() => setSourceId(undefined)} />
       )}
     </>
   );

@@ -11,6 +11,7 @@ import {
 } from '../variables/variable-manager';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { getDefaultSources } from '@content/content-store';
+import { isPlayingPathfinder, isPlayingStarfinder } from '@content/system-handler';
 
 const CONDITIONS: Condition[] = [
   {
@@ -342,8 +343,6 @@ const CONDITIONS: Condition[] = [
     for_creature: true,
     for_object: false,
   },
-
-  // Starfinder Field Test Conditions
   {
     name: 'Glitching',
     description: `Glitching is a condition that affects objects or creatures with the tech trait, and it always includes a value. A glitching creature or object experiences a combination of debilitating effects and moments of seizing up. If you have glitching equipment and take any action involving that equipment, you must attempt a DC 10 flat check to see what occurs. If you have the glitching condition on yourself, you must make this flat check at the beginning of every round.
@@ -356,7 +355,7 @@ const CONDITIONS: Condition[] = [
     for_character: true,
     for_creature: true,
     for_object: true,
-    required_source_id: 9,
+    starfinder_only: true,
   },
   {
     name: 'Suppressed',
@@ -364,7 +363,7 @@ const CONDITIONS: Condition[] = [
     for_character: true,
     for_creature: true,
     for_object: false,
-    required_source_id: 9,
+    starfinder_only: true,
   },
 ];
 
@@ -380,8 +379,10 @@ export function getConditionByName(name: string, addedSource?: string): Conditio
 
 export function getAllConditions() {
   return _.cloneDeep(CONDITIONS).filter(
-    // We check the getDefaultSources as an quick easy way to get an idea if the content source is probably enabled
-    (condition) => !condition.required_source_id || getDefaultSources().includes(condition.required_source_id)
+    (condition) =>
+      (condition.starfinder_only && isPlayingStarfinder()) ||
+      (condition.pathfinder_only && isPlayingPathfinder()) ||
+      (!condition.starfinder_only && !condition.pathfinder_only)
   );
 }
 

@@ -65,3 +65,21 @@ export function listToLabel(nodes: ReactNode[], endingWord: string): ReactNode {
     );
   }
 }
+
+export function startCase(text: string) {
+  text = text
+    .trim()
+    .toLowerCase()
+    .replace(/(^|\s|[^a-zA-Z0-9])([a-zA-Z0-9])/g, (match, prefix, letter) => {
+      return prefix + letter.toUpperCase();
+    });
+  text.replace(' And ', ' and ');
+  text.replace(' Or ', ' or ');
+  text.replace(' In ', ' in ');
+  text.replace(' Of ', ' of ');
+  text.replace(' The ', ' the ');
+  text.replace(' A ', ' a ');
+  text.replace(' An ', ' an ');
+  text.replace(' On ', ' on ');
+  return text;
+}

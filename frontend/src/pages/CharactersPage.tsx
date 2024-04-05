@@ -5,6 +5,7 @@ import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
 import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
+import { resetContentStore } from '@content/content-store';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
@@ -81,6 +82,7 @@ export function Component() {
 
   useEffect(() => {
     setCharacter(null);
+    resetContentStore();
   }, []);
 
   const handleCreateCharacter = async () => {
@@ -124,7 +126,7 @@ export function Component() {
                     handleCreateCharacter();
                   }}
                 >
-                  <IconUserPlus style={{ width: '70%', height: '70%' }} stroke={2.5} />
+                  <IconUserPlus style={{ width: '90%', height: '90%' }} stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
               <Menu shadow='md' width={220} withArrow withinPortal>
@@ -140,7 +142,7 @@ export function Component() {
                       radius='xl'
                       aria-label='Import Character'
                     >
-                      <IconUpload style={{ width: '70%', height: '70%' }} stroke={2.5} />
+                      <IconUpload style={{ width: '90%', height: '90%' }} stroke={2.5} />
                     </ActionIcon>
                   </Tooltip>
                 </Menu.Target>

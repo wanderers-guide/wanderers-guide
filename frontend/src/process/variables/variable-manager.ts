@@ -262,6 +262,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   WEAPON_GROUP_SLING: newVariable('prof', 'WEAPON_GROUP_SLING'),
   WEAPON_GROUP_SPEAR: newVariable('prof', 'WEAPON_GROUP_SPEAR'),
   WEAPON_GROUP_SWORD: newVariable('prof', 'WEAPON_GROUP_SWORD'),
+  WEAPON_GROUP_LASER: newVariable('prof', 'WEAPON_GROUP_LASER'),
+  WEAPON_GROUP_PROJECTILE: newVariable('prof', 'WEAPON_GROUP_PROJECTILE'),
   // WEAPON_GROUP____: newVariable('prof', 'WEAPON_GROUP____'),
   // WEAPON____: newVariable('prof', 'WEAPON____'),
 
@@ -273,6 +275,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // ARMOR____: newVariable('prof', 'ARMOR____'),
 
   PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
+  PATHFINDER: newVariable('bool', 'PATHFINDER', false),
+  STARFINDER: newVariable('bool', 'STARFINDER', false),
+
   PRIMARY_SHEET_TABS: newVariable('list-str', 'PRIMARY_SHEET_TABS', [
     'skills-actions',
     'inventory',

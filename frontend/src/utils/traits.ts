@@ -16,7 +16,11 @@ type TraitType =
   | 'AGILE'
   | 'FINESSE'
   | 'MULTICLASS'
-  | 'DEDICATION';
+  | 'DEDICATION'
+  | 'ARCHAIC'
+  | 'TECH'
+  | 'TRACKING-1'
+  | 'TRACKING-2';
 const traitMap: Record<number, TraitType> = {
   // Hardcoded trait ids:
   1437: 'GENERAL',
@@ -37,6 +41,10 @@ const traitMap: Record<number, TraitType> = {
   1570: 'FINESSE',
   1446: 'MULTICLASS',
   1445: 'DEDICATION',
+  2503: 'ARCHAIC',
+  2508: 'TECH',
+  2511: 'TRACKING-1',
+  2512: 'TRACKING-2',
 };
 
 export function getTraitTypeById(traitId: number): TraitType | null {

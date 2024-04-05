@@ -62,11 +62,11 @@ import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
 import useRefresh from '@utils/use-refresh';
 import * as _ from 'lodash-es';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
-import { useQuery } from '@tanstack/react-query';
-import { fetchContentSources } from '@content/content-store';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { defineDefaultSources, fetchContentSources, resetContentStore } from '@content/content-store';
 import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
@@ -81,13 +81,15 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const topGap = 30;
   const isPhone = useMediaQuery(phoneQuery());
 
+  const queryClient = useQueryClient();
+
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();
 
   const [openedOperations, setOpenedOperations] = useState(false);
 
-  const { data: fetchedBooks } = useQuery({
+  const { data: fetchedBooks, refetch } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
       return await fetchContentSources({ ids: 'all' });
@@ -142,6 +144,14 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         },
       };
     });
+    setTimeout(() => {
+      // Refresh data to repopulate with new book content
+      resetContentStore();
+      defineDefaultSources(character?.content_sources?.enabled ?? []);
+      refetch();
+      queryClient.invalidateQueries([`find-character-${character?.id}`]);
+      queryClient.invalidateQueries([`find-content-${character?.id}`]);
+    }, 500);
   };
 
   const iconStyle = { width: rem(12), height: rem(12) };

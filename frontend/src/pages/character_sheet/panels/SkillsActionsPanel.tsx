@@ -77,6 +77,7 @@ export default function SkillsActionsPanel(props: {
   const actions = useMemo(() => {
     const allActions = props.content.abilityBlocks
       .filter((ab) => ab.type === 'action')
+      .filter((ab) => ab.meta_data?.unselectable !== true)
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Filter actions

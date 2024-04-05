@@ -17,6 +17,8 @@ import { Rarity } from '@typing/content';
 import { startCase } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import RichText from './RichText';
+import { getTraitIdByType } from '@utils/traits';
+import _ from 'lodash-es';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -24,6 +26,7 @@ export default function TraitsDisplay(props: {
   size?: MantineSize;
   rarity?: Rarity;
   skill?: string | string[];
+  archaic?: boolean;
   broken?: boolean;
   shoddy?: boolean;
   justify?: 'flex-start' | 'flex-end';
@@ -32,14 +35,17 @@ export default function TraitsDisplay(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: traits } = useQuery({
-    queryKey: [`find-traits-${props.traitIds.join('_')}`, {}],
+    queryKey: [
+      `find-traits-${props.traitIds.join('_')}`,
+      { traitIds: props.archaic ? _.uniq([...props.traitIds, getTraitIdByType('ARCHAIC')]) : props.traitIds },
+    ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, {}] = queryKey;
+      const [_key, { traitIds }] = queryKey;
 
-      if (props.traitIds.length === 0) return [];
-      return (await fetchTraits(props.traitIds)).sort((a, b) => a.name.localeCompare(b.name));
+      if (traitIds.length === 0) return [];
+      return (await fetchTraits(traitIds)).sort((a, b) => a.name.localeCompare(b.name));
     },
   });
 

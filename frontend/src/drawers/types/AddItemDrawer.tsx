@@ -1,7 +1,6 @@
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import {
@@ -34,6 +33,7 @@ import { ItemSelectionOption } from '@common/select/SelectContent';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { displayComingSoon } from '@utils/notifications';
+import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 
 export function AddItemDrawerTitle(props: { data: {} }) {
   return (
@@ -52,6 +52,7 @@ export function AddItemDrawerTitle(props: { data: {} }) {
 
 export function AddItemDrawerContent(props: {
   data: { onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void };
+  onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const NUM_PER_PAGE = 20;
@@ -92,7 +93,14 @@ export function AddItemDrawerContent(props: {
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search all items`}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            defaultValue={getMetadataOpenedDict().search_query}
+            onChange={(e) => {
+              const value = e.target.value;
+              props.onMetadataChange?.({
+                search_query: value,
+              });
+              setSearchQuery(value);
+            }}
             styles={{
               input: {
                 borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
@@ -165,7 +173,11 @@ export function AddItemDrawerContent(props: {
   );
 }
 
-function ItemsList(props: { options: Item[]; onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void }) {
+function ItemsList(props: {
+  options: Item[];
+  onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
+  onMetadataChange?: () => void;
+}) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
@@ -175,6 +187,7 @@ function ItemsList(props: { options: Item[]; onClick: (item: Item, type: 'GIVE' 
           key={index}
           item={item}
           onClick={(item) => {
+            props.onMetadataChange?.();
             openDrawer({
               type: 'item',
               data: { id: item.id },

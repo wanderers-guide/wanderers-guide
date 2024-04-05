@@ -42,12 +42,20 @@ const SPECIALIZATIONS = [
     description: `The target takes 1d6 persistent bleed damage. You gain an item bonus to this bleed damage equal to the weapon’s item bonus to attack rolls.`,
   },
   {
+    name: 'Laser',
+    description: `The target must succeed at a Fortitude save against your class DC or be dazzled until the start of your next turn.`,
+  },
+  {
     name: 'Pick',
     description: `The weapon viciously pierces the target, who takes 2 additional damage per weapon damage die.`,
   },
   {
     name: 'Polearm',
     description: `The target is moved 5 feet in a direction of your choice. This is forced movement.`,
+  },
+  {
+    name: 'Projectile',
+    description: `The target must succeed at a Fortitude save against your class DC or be slowed 1 until the end of your next turn. `,
   },
   {
     name: 'Shield',

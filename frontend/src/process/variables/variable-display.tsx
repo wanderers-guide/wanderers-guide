@@ -125,7 +125,6 @@ export function getProfValueParts(id: StoreID, variableName: string, overrideAtt
   } else {
     level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
   }
-  console.log('level', level, variableName);
 
   const profValue = getProficiencyTypeValue(variable.value.value);
 

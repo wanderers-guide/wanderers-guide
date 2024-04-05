@@ -23,6 +23,7 @@ import Layout from './nav/Layout';
 import { ImageOption } from './typing';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { resetContentStore } from '@content/content-store';
 
 const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
 const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
@@ -73,6 +74,8 @@ export default function App() {
 
   const [session, setSession] = useRecoilState(sessionState);
   useEffect(() => {
+    resetContentStore();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });

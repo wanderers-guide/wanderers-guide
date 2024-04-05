@@ -21,6 +21,8 @@ export function confirmHealth(hp: string, character: Character, setCharacter: Se
 
   if (result === character.hp_current) return;
 
+  if (maxHealth === 0) return;
+
   let newConditions = _.cloneDeep(character.details?.conditions ?? []);
   // Add dying condition
   if (result === 0 && character.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {

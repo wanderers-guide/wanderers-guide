@@ -94,6 +94,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { DrawerType } from '@typing/index';
 import { hasTraitType } from '@utils/traits';
 import { ObjectWithUUID } from '@operations/operation-utils';
+import { isItemArchaic, isItemWeapon } from '@items/inv-utils';
 
 interface FilterOptions {
   options: {
@@ -2891,7 +2892,13 @@ export function ItemSelectionOption(props: {
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
         <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.item.traits ?? []} rarity={props.item.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.item.traits ?? []}
+            rarity={props.item.rarity}
+            archaic={isItemArchaic(props.item)}
+          />
         </Box>
         {(props.includeDetails || props.includeOptions || props.includeAdd) && (
           <Box w={props.includeOptions ? 80 : 55}></Box>

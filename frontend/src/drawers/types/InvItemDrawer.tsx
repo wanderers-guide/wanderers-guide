@@ -4,6 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { priceToString } from '@items/currency-handler';
 import {
+  isItemArchaic,
   isItemArmor,
   isItemBroken,
   isItemContainer,
@@ -162,6 +163,7 @@ export function InvItemDrawerContent(props: {
             rarity={invItem.item.rarity}
             broken={isItemBroken(invItem.item)}
             shoddy={invItem.item.meta_data?.is_shoddy}
+            archaic={isItemArchaic(invItem.item)}
             interactable
           />
         </Box>
@@ -621,6 +623,32 @@ function InvItemSections(props: {
     );
   }
 
+  let capacityAndUsageSection = null;
+  if (props.invItem.item.meta_data?.starfinder?.capacity || props.invItem.item.meta_data?.starfinder?.usage) {
+    capacityAndUsageSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap' grow>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Capacity
+            </Text>
+            <Text c='gray.5' span>
+              {props.invItem.item.meta_data?.starfinder?.capacity ?? '—'}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Ammo Usage
+            </Text>
+            <Text c='gray.5' span>
+              {props.invItem.item.meta_data?.starfinder?.usage ?? '—'}
+            </Text>
+          </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
   let categoryAndGroupSection = null;
   if (props.invItem.item.meta_data?.category || props.invItem.item.meta_data?.group) {
     let groupDesc =
@@ -831,6 +859,7 @@ function InvItemSections(props: {
         <>{attackAndDamageSection}</>
         <>{rangeAndReloadSection}</>
         <>{armorSection}</>
+        <>{capacityAndUsageSection}</>
         <>{categoryAndGroupSection}</>
         <>{quantitySection}</>
         <>{healthSection}</>

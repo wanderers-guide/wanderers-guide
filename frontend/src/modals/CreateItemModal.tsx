@@ -34,6 +34,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Item, ItemGroup, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
+import { startCase } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
@@ -193,6 +194,11 @@ export function CreateItemModal(props: {
           potency: undefined,
           property: [],
         },
+        starfinder: {
+          capacity: undefined,
+          usage: undefined,
+          upgrades: undefined,
+        },
         foundry: {},
       },
       operations: [],
@@ -252,6 +258,11 @@ export function CreateItemModal(props: {
     ((weaponGroup || armorGroup) && (weaponGroup.length > 0 || armorGroup.length > 0) ? 1 : 0) +
     (form.values.meta_data?.range && form.values.meta_data.range > 0 ? 1 : 0) +
     (form.values.meta_data?.reload && form.values.meta_data.reload.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.starfinder?.capacity && form.values.meta_data.starfinder.capacity.length > 0 ? 1 : 0) +
+    (form.values.meta_data?.starfinder?.usage && form.values.meta_data.starfinder.usage > 0 ? 1 : 0) +
+    (form.values.meta_data?.damage?.dice && form.values.meta_data.damage?.dice > 0 ? 1 : 0) +
+    (form.values.meta_data?.starfinder?.upgrades && form.values.meta_data.starfinder.upgrades > 0 ? 1 : 0) +
+    (form.values.meta_data?.attack_bonus && form.values.meta_data.attack_bonus !== 0 ? 1 : 0) +
     (form.values.meta_data?.ac_bonus && form.values.meta_data.ac_bonus > 0 ? 1 : 0) +
     (form.values.meta_data?.check_penalty && form.values.meta_data.check_penalty < 0 ? 1 : 0) +
     (form.values.meta_data?.speed_penalty && form.values.meta_data.speed_penalty < 0 ? 1 : 0) +
@@ -312,7 +323,7 @@ export function CreateItemModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', _.startCase(text.toLowerCase()));
+                      form.setFieldValue('name', startCase(text));
                     }
                   }}
                 />
@@ -348,7 +359,7 @@ export function CreateItemModal(props: {
             <Group wrap='nowrap'>
               <NumberInput label='PP' placeholder='Price' min={0} {...form.getInputProps('price.pp')} />
               <NumberInput label='GP' placeholder='Price' min={0} {...form.getInputProps('price.gp')} />
-              <NumberInput label='SP' placeholder='Price' min={0} {...form.getInputProps('price.sp')} />
+              <NumberInput label='SP/Credits' placeholder='Price' min={0} {...form.getInputProps('price.sp')} />
               <NumberInput label='CP' placeholder='Price' min={0} {...form.getInputProps('price.cp')} />
             </Group>
             <Group wrap='nowrap'>
@@ -494,8 +505,10 @@ export function CreateItemModal(props: {
                                 { value: 'flail', label: 'Flail' },
                                 { value: 'hammer', label: 'Hammer' },
                                 { value: 'knife', label: 'Knife' },
+                                { value: 'laser', label: 'Laser' },
                                 { value: 'pick', label: 'Pick' },
                                 { value: 'polearm', label: 'Polearm' },
+                                { value: 'projectile', label: 'Projectile' },
                                 { value: 'shield', label: 'Shield' },
                                 { value: 'sling', label: 'Sling' },
                                 { value: 'spear', label: 'Spear' },
@@ -521,6 +534,36 @@ export function CreateItemModal(props: {
                               label='Reload'
                               placeholder='Reload'
                               {...form.getInputProps('meta_data.reload')}
+                            />
+                          </Group>
+
+                          <Divider mt={10} />
+
+                          <Group wrap='nowrap'>
+                            <TextInput
+                              label='Capacity'
+                              placeholder='Capacity'
+                              {...form.getInputProps('meta_data.starfinder.capacity')}
+                            />
+
+                            <NumberInput
+                              label='Amm. Usage'
+                              placeholder='Amm. Usage'
+                              min={0}
+                              {...form.getInputProps('meta_data.starfinder.usage')}
+                            />
+                          </Group>
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Number of Dice'
+                              placeholder='(added to Striking)'
+                              {...form.getInputProps('meta_data.damage.dice')}
+                            />
+
+                            <NumberInput
+                              label='Max Upgrades'
+                              placeholder='Max Upgrades'
+                              {...form.getInputProps('meta_data.starfinder.upgrades')}
                             />
                           </Group>
 
@@ -794,7 +837,7 @@ export function CreateItemModal(props: {
                           />
 
                           <Switch
-                            label='Unselectable'
+                            label='Hidden'
                             labelPosition='left'
                             {...form.getInputProps('meta_data.unselectable', {
                               type: 'checkbox',

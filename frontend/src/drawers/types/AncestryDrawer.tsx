@@ -12,6 +12,7 @@ import {
   Accordion,
   ActionIcon,
   Anchor,
+  Badge,
   Box,
   Divider,
   Group,
@@ -107,7 +108,18 @@ export function AncestryDrawerContent(props: {
 
   const featSections = Object.keys(feats).map((level) => (
     <Accordion.Item key={level} value={level}>
-      <Accordion.Control>Level {level}</Accordion.Control>
+      <Accordion.Control>
+        <Group wrap='nowrap' justify='space-between' gap={0}>
+          <Text c='gray.5' fw={700} fz='md'>
+            Level {level}
+          </Text>
+          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+            <Text fz='sm' c='gray.5' span>
+              {feats[level].filter((feat) => feat.meta_data?.unselectable !== true).length}
+            </Text>
+          </Badge>
+        </Group>
+      </Accordion.Control>
       <Accordion.Panel
         styles={{
           content: {
@@ -117,20 +129,23 @@ export function AncestryDrawerContent(props: {
       >
         <Stack gap={0}>
           <Divider color='dark.6' />
-          {feats[level].map((feat, index) => (
-            <FeatSelectionOption
-              key={index}
-              feat={feat}
-              onClick={() => {
-                props.onMetadataChange?.();
-                openDrawer({
-                  type: 'feat',
-                  data: { id: feat.id },
-                  extra: { addToHistory: true },
-                });
-              }}
-            />
-          ))}
+          {feats[level]
+            .filter((feat) => feat.meta_data?.unselectable !== true)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((feat, index) => (
+              <FeatSelectionOption
+                key={index}
+                feat={feat}
+                onClick={() => {
+                  props.onMetadataChange?.();
+                  openDrawer({
+                    type: 'feat',
+                    data: { id: feat.id },
+                    extra: { addToHistory: true },
+                  });
+                }}
+              />
+            ))}
         </Stack>
       </Accordion.Panel>
     </Accordion.Item>
@@ -173,7 +188,18 @@ export function AncestryDrawerContent(props: {
           }}
         >
           <Accordion.Item value={'heritages'}>
-            <Accordion.Control>View Options</Accordion.Control>
+            <Accordion.Control>
+              <Group wrap='nowrap' justify='space-between' gap={0}>
+                <Text c='gray.5' fw={700} fz='md'>
+                  View Options
+                </Text>
+                <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                  <Text fz='sm' c='gray.5' span>
+                    {heritages.length}
+                  </Text>
+                </Badge>
+              </Group>
+            </Accordion.Control>
             <Accordion.Panel
               styles={{
                 content: {

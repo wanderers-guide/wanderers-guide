@@ -8,6 +8,7 @@ import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
 import {
+  isItemArchaic,
   isItemArmor,
   isItemShield,
   isItemWeapon,
@@ -68,7 +69,10 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{item.name}</Title>
+              <Title order={3}>
+                {item.name}{' '}
+                {item.meta_data?.quantity && item.meta_data.quantity > 1 ? `(${item.meta_data.quantity})` : ''}
+              </Title>
             </Box>
           </Group>
           <Text style={{ textWrap: 'nowrap' }}>Item {item.level}</Text>
@@ -185,7 +189,7 @@ export function ItemDrawerContent(props: {
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={item.traits ?? []} rarity={item.rarity} interactable />
+          <TraitsDisplay traitIds={item.traits ?? []} rarity={item.rarity} archaic={isItemArchaic(item)} interactable />
         </Box>
 
         <MiscItemSections item={item} storeID={storeID} openDrawer={openDrawer} />
@@ -441,6 +445,32 @@ function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: Set
     );
   }
 
+  let capacityAndUsageSection = null;
+  if (props.item.meta_data?.starfinder?.capacity || props.item.meta_data?.starfinder?.usage) {
+    capacityAndUsageSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group wrap='nowrap' grow>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Capacity
+            </Text>
+            <Text c='gray.5' span>
+              {props.item.meta_data?.starfinder?.capacity ?? '—'}
+            </Text>
+          </Group>
+          <Group wrap='nowrap' gap={10}>
+            <Text fw={600} c='gray.5' span>
+              Ammo Usage
+            </Text>
+            <Text c='gray.5' span>
+              {props.item.meta_data?.starfinder?.usage ?? '—'}
+            </Text>
+          </Group>
+        </Group>
+      </Paper>
+    );
+  }
+
   let categoryAndGroupSection = null;
   if (props.item.meta_data?.category || props.item.meta_data?.group) {
     let groupDesc =
@@ -651,6 +681,7 @@ function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: Set
         <>{armorSection}</>
         <>{runesSection}</>
         <>{rangeAndReloadSection}</>
+        <>{capacityAndUsageSection}</>
         <>{categoryAndGroupSection}</>
         <>{quantitySection}</>
         <>{healthSection}</>

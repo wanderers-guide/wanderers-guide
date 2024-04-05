@@ -92,6 +92,10 @@ export function getDefaultSources() {
   return _.cloneDeep(defaultSources ?? []);
 }
 
+export function getCachedSources(): ContentSource[] {
+  return [...(idStore.get('content-source')?.values() ?? [])].filter((source) => source) as ContentSource[];
+}
+
 export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {
   if (!id) return null;
   return await fetchContent<T>(type, { id, content_sources: sources });
@@ -149,7 +153,11 @@ export async function fetchContent<T = Record<string, any>>(
   }
 }
 
-export function resetContentStore() {
+export function resetContentStore(resetSources = true) {
+  console.warn('⚠️ Resetting Content Store ⚠️');
+  if (resetSources) {
+    defineDefaultSources([]);
+  }
   contentStore.clear();
   idStore = emptyIdStore();
 }

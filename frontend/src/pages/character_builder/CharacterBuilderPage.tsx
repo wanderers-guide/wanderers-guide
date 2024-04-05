@@ -1,6 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import BlurBox from '@common/BlurBox';
-import { defineDefaultSources } from '@content/content-store';
+import { defineDefaultSources, resetContentStore } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import {
   ActionIcon,
@@ -199,7 +199,7 @@ export function Component() {
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
                 <ScrollArea h={pageHeight} scrollbars='y'>
-                  {character && !isLoading ? (
+                  {active === 0 && character && !isLoading ? (
                     <CharBuilderHome pageHeight={pageHeight} />
                   ) : (
                     <LoadingOverlay
@@ -218,7 +218,7 @@ export function Component() {
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
                 <ScrollArea h={pageHeight} scrollbars='y'>
-                  {character && !isLoading ? (
+                  {active === 1 && character && !isLoading ? (
                     <CharBuilderCreation pageHeight={pageHeight} />
                   ) : (
                     <LoadingOverlay

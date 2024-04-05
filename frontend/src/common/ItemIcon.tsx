@@ -1,6 +1,8 @@
+import { isItemWeapon } from '@items/inv-utils';
 import { Item, ItemGroup } from '@typing/content';
 import { hasTraitType } from '@utils/traits';
 import {
+  GiBolterGun,
   GiBroadsword,
   GiChestArmor,
   GiCloak,
@@ -15,7 +17,17 @@ import {
   GiSwapBag,
 } from 'react-icons/gi';
 
-type ItemIconType = 'GENERAL' | 'ARMOR' | 'WEAPON' | 'SHIELD' | 'RUNE' | 'MATERIAL' | 'UNARMED' | 'BOMB' | 'CONTAINER';
+type ItemIconType =
+  | 'GENERAL'
+  | 'ARMOR'
+  | 'WEAPON'
+  | 'SHIELD'
+  | 'RUNE'
+  | 'MATERIAL'
+  | 'UNARMED'
+  | 'BOMB'
+  | 'CONTAINER'
+  | 'HIGH_TECH_GUN';
 
 const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
   GENERAL: <GiSwapBag color={color} size={size} />,
@@ -27,6 +39,7 @@ const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Eleme
   UNARMED: <GiFist color={color} size={size} />,
   BOMB: <GiRollingBomb color={color} size={size} />,
   CONTAINER: <GiLightBackpack color={color} size={size} />,
+  HIGH_TECH_GUN: <GiBolterGun color={color} size={size} />,
 });
 
 export function ItemIcon(props: { item: Item; size: string; color: string }) {
@@ -41,6 +54,15 @@ export function ItemIcon(props: { item: Item; size: string; color: string }) {
 
   if (type === 'GENERAL' && props.item.meta_data?.bulk.capacity) {
     type = 'CONTAINER';
+  }
+
+  if (
+    isItemWeapon(props.item) &&
+    hasTraitType('TECH', props.item.traits) &&
+    props.item.meta_data?.range &&
+    props.item.meta_data.range > 0
+  ) {
+    type = 'HIGH_TECH_GUN';
   }
 
   return <>{getIconMap(props.size, props.color)[type]}</>;

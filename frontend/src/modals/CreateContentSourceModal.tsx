@@ -15,7 +15,7 @@ import {
   upsertCreature,
   upsertArchetype,
 } from '@content/content-creation';
-import { fetchContentPackage, resetContentStore } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
 import {
   Anchor,
@@ -685,7 +685,7 @@ function ContentList<
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();
-      resetContentStore();
+      resetContentStore(false);
       queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
 
       setSearchQuery(query);
