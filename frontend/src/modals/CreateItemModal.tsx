@@ -304,7 +304,18 @@ export function CreateItemModal(props: {
           <Stack gap={10}>
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
-                <TextInput label='Name' required {...form.getInputProps('name')} />
+                <TextInput
+                  label='Name'
+                  required
+                  {...form.getInputProps('name')}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData('text/plain');
+                    if (text.toUpperCase() === text) {
+                      e.preventDefault();
+                      form.setFieldValue('name', _.startCase(text.toLowerCase()));
+                    }
+                  }}
+                />
                 <Select
                   label='Level'
                   required
