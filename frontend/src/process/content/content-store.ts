@@ -66,6 +66,16 @@ function getStoredIds(type: ContentType, data: Record<string, any>) {
 }
 
 function setStoredIds(type: ContentType, data: Record<string, any>, value: any) {
+  // Handle content source dumps
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      if (!v.id) return 'Value is not an array of objects with ids';
+      idStore.get(type)?.set(v.id, v);
+    }
+    return true;
+  }
+
+  // Handle individual ids
   if (!data.id) return true;
   if (Array.isArray(data.id)) {
     if (!Array.isArray(value)) return 'Value is not an array';
@@ -141,6 +151,7 @@ export async function fetchContent<T = Record<string, any>>(
     // Make sure we're always filtering by content source
     const newData = { ...data };
     if (type !== 'content-source' && !newData.content_sources) {
+      // This will fetch the default content sources...
       const sources = await fetchContentSources(); // TODO: Add homebrew
       newData.content_sources = sources.map((source) => source.id);
     }

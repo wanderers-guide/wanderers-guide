@@ -45,6 +45,15 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
   });
   const feat = props.data.feat ?? _feat;
 
+  let type = `Feat ${feat?.level}`;
+  if (feat?.meta_data?.unselectable) {
+    if (feat?.actions === null) {
+      type = '';
+    } else {
+      type = 'Action';
+    }
+  }
+
   return (
     <>
       {feat && (
@@ -57,7 +66,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
               <ActionSymbol cost={feat.actions} size={'2.1rem'} />
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>{feat.meta_data?.unselectable ? 'Action' : `Feat ${feat.level}`}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
         </Group>
       )}
     </>

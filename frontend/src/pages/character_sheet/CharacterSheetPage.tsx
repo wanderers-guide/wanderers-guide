@@ -3,7 +3,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import { applyConditions } from '@conditions/condition-handler';
-import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 
 import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
@@ -90,6 +90,9 @@ export function Component(props: {}) {
         id: characterId,
       });
       defineDefaultSources(character?.content_sources?.enabled);
+
+      // Prefetch content sources (to avoid multiple requests)
+      await fetchContentSources();
 
       // Fetch content
       const content = await fetchContentPackage(undefined, true);

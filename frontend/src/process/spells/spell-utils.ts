@@ -7,7 +7,7 @@ import { hasTraitType } from '@utils/traits';
  * @returns - Whether the spell is a focus spell
  */
 export function isFocusSpell(spell: Spell) {
-  return hasTraitType('FOCUS', spell.traits);
+  return hasTraitType('FOCUS', spell.traits) || spell.meta_data.focus;
 }
 
 /**

@@ -569,10 +569,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       >
                         <Box>
                           <Text c='gray.0' fz='sm'>
-                            {variableToLabel(skill)}
+                            {_.truncate(variableToLabel(skill), { length: 17 })}
                           </Text>
                         </Box>
-                        <Group>
+                        <Group wrap='nowrap'>
                           <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
                           <Badge variant='default'>{skill?.value.value}</Badge>
                         </Group>

@@ -246,6 +246,8 @@ export async function determineFilteredSelectionList(
 async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
+  abilityBlocks = abilityBlocks.filter((ab) => ab.meta_data?.unselectable !== true);
+
   if (filters.abilityBlockType !== undefined) {
     abilityBlocks = abilityBlocks.filter((ab) => ab.type === filters.abilityBlockType);
   }
@@ -318,6 +320,8 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
 
 async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
   let spells = await fetchContentAll<Spell>('spell');
+
+  spells = spells.filter((spell) => spell.meta_data?.unselectable !== true);
 
   if (filters.level.min !== undefined) {
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
@@ -392,6 +396,8 @@ async function getLanguageList(id: StoreID, operationUUID: string, filters: Oper
 
 async function getTraitList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersTrait) {
   let traits = await fetchContentAll<Trait>('trait');
+
+  traits = traits.filter((traits) => traits.meta_data?.unselectable !== true);
 
   if (filters.isCreature) {
     traits = traits.filter((trait) => trait.meta_data?.creature_trait);

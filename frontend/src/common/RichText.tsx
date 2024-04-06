@@ -45,10 +45,15 @@ export default function RichText(props: RichTextProps) {
   // Auto-detect conditions and convert to content links
   const conditions = getAllConditions()
     .map((c) => c.name.toLowerCase())
-    .filter((c) => !props.conditionBlacklist?.includes(c));
-  const conditionRegex = new RegExp(`\\b(${conditions.join('|')})\\b`, 'g');
+    .filter((c) => !props.conditionBlacklist?.includes(c) && c !== 'persistent damage');
+  const conditionRegex = new RegExp(`\\b(${conditions.join('|')})\\b`, 'gi');
   convertedChildren = convertedChildren?.replace(conditionRegex, (match) => {
-    return `[${match}](link_condition_${match})`;
+    return `[${match}](link_condition_${match.replace(' ', '~')})`;
+  });
+
+  // Auto-detect persistent damage separately
+  convertedChildren = convertedChildren?.replace(/persistent (\w*?\s|)damage/gi, (match) => {
+    return `[${match}](link_condition_persistent~damage)`;
   });
 
   return (

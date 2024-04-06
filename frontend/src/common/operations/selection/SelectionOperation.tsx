@@ -123,24 +123,24 @@ export function SelectionOperation(props: {
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Selection'>
+      <Select
+        placeholder='Type'
+        size='xs'
+        w={130}
+        data={
+          [
+            { label: 'Ability Block', value: 'ABILITY_BLOCK' },
+            { label: 'Spell', value: 'SPELL' },
+            { label: 'Adjust Value', value: 'ADJ_VALUE' },
+            { label: 'Language', value: 'LANGUAGE' },
+            { label: 'Trait', value: 'TRAIT' },
+            { label: 'Custom', value: 'CUSTOM' },
+          ] satisfies { label: string; value: OperationSelectOptionType }[]
+        }
+        value={props.data.optionType}
+        onChange={(value) => routeChange({ optionType: value as OperationSelectOptionType | undefined })}
+      />
       <Stack w='100%'>
-        <Select
-          placeholder='Type'
-          size='xs'
-          w={130}
-          data={
-            [
-              { label: 'Ability Block', value: 'ABILITY_BLOCK' },
-              { label: 'Spell', value: 'SPELL' },
-              { label: 'Adjust Value', value: 'ADJ_VALUE' },
-              { label: 'Language', value: 'LANGUAGE' },
-              { label: 'Trait', value: 'TRAIT' },
-              { label: 'Custom', value: 'CUSTOM' },
-            ] satisfies { label: string; value: OperationSelectOptionType }[]
-          }
-          value={props.data.optionType}
-          onChange={(value) => routeChange({ optionType: value as OperationSelectOptionType | undefined })}
-        />
         <Stack gap={10}>
           <Box>
             <TextInput
@@ -513,25 +513,27 @@ function SelectionFilteredSpell(props: {
         </Group>
       </Box>
 
-      <TagsInput
-        label='Has Traits'
-        placeholder='Enter trait'
-        size='xs'
-        splitChars={[',', ';', '|']}
-        data={[]}
-        value={traits}
-        onChange={setTraits}
-      />
+      <Group>
+        <TagsInput
+          label='Has Traits'
+          placeholder='Enter trait'
+          size='xs'
+          splitChars={[',', ';', '|']}
+          data={[]}
+          value={traits}
+          onChange={setTraits}
+        />
 
-      <TagsInput
-        label='Has Traditions'
-        placeholder='Enter tradition'
-        size='xs'
-        splitChars={[',', ';', '|']}
-        data={['Arcane', 'Divine', 'Occult', 'Primal']}
-        value={traditions}
-        onChange={setTraditions}
-      />
+        <TagsInput
+          label='Has Traditions'
+          placeholder='Enter tradition'
+          size='xs'
+          splitChars={[',', ';', '|']}
+          data={['Arcane', 'Divine', 'Occult', 'Primal']}
+          value={traditions}
+          onChange={setTraditions}
+        />
+      </Group>
     </Stack>
   );
 }

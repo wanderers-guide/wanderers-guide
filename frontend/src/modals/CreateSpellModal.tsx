@@ -338,7 +338,7 @@ export function CreateSpellModal(props: {
                   <Switch
                     label='Focus Spell'
                     labelPosition='left'
-                    checked={metaData.unselectable}
+                    checked={metaData.focus}
                     onChange={(event) =>
                       setMetaData({
                         ...metaData,

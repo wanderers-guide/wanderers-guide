@@ -234,6 +234,7 @@ interface Spell {
     data: Record<string, any>; // TODO
   };
   meta_data: {
+    focus?: boolean;
     damage?: Record<string, any>;
     type?: string;
     ritual?: Record<string, any>;
