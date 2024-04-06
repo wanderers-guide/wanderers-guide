@@ -3,11 +3,13 @@ import { drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
+import { fetchContentSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
 import { makeRequest } from '@requests/request-manager';
+import { Session } from '@supabase/supabase-js';
 import {
   IconAdjustments,
   IconArchive,
@@ -30,16 +32,20 @@ import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
 import { displayComingSoon } from '@utils/notifications';
 import { pluralize, toLabel } from '@utils/strings';
+import { labelToVariable } from '@variables/variable-utils';
 import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
 import { useEffect, useRef, useState } from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
+import stripMd from 'remove-markdown';
 
 const MAX_QUERY_LENGTH = 100;
 
 export default function SearchSpotlight() {
   const theme = useMantineTheme();
+  const session = useRecoilValue(sessionState);
+
   const navigate = useNavigate();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -50,7 +56,7 @@ export default function SearchSpotlight() {
 
   useEffect(() => {
     if (query) {
-      activateQueryPipeline(defaultActions, query, navigate, openDrawer, theme).then((result) => {
+      activateQueryPipeline(defaultActions, query, navigate, openDrawer, theme, session).then((result) => {
         if (query === currentQuery.current) {
           setQueryResult(result);
         } else {
@@ -60,7 +66,6 @@ export default function SearchSpotlight() {
     }
   }, [query]);
 
-  const session = useRecoilValue(sessionState);
   const LOGGED_IN_ACTIONS = session
     ? [
         {
@@ -254,14 +259,30 @@ async function activateQueryPipeline(
   rawQuery: string,
   navigate: NavigateFunction,
   openDrawer: DrawerStateSet,
-  theme: MantineTheme
+  theme: MantineTheme,
+  session: Session | null
 ): Promise<SpotlightActionGroupData[] | null | false> {
   const query = (rawQuery.length > MAX_QUERY_LENGTH ? rawQuery.slice(0, MAX_QUERY_LENGTH) : rawQuery).trim();
   let actions: SpotlightActionData[] = [];
   if (query && query.length >= 3) {
-    actions = [...(await queryResults(query, openDrawer, theme)), ...actions];
-    actions = [...(await fetchCharacters(query, navigate, theme)), ...actions];
+    actions = [...actions, ...(await queryResults(query, openDrawer, theme))];
+    actions = [...actions, ...(await fetchBooks(query, openDrawer, theme))];
+    actions = [...actions, ...(await fetchCharacters(query, navigate, theme, session))];
     // Add more here.
+
+    // Put exact matches first and preserve order of other results.
+    actions = ((arr: SpotlightActionData[], match: string) => {
+      const matchedItems: SpotlightActionData[] = [];
+      const otherItems: SpotlightActionData[] = [];
+      for (const item of arr) {
+        if (labelToVariable(`${item.label}`) === labelToVariable(match)) {
+          matchedItems.push(item);
+        } else {
+          otherItems.push(item);
+        }
+      }
+      return matchedItems.concat(otherItems);
+    })(actions, query);
   }
 
   const groupedActions = groupBy(actions, '_type');
@@ -287,7 +308,7 @@ async function queryResults(
   });
 
   return result.map((data) => {
-    let description = `${data.description}`.split('.')[0] + '.';
+    let description = `${stripMd(`${data.description}`)}`.split('.')[0] + '.';
 
     const abilityBlockType = data._type === 'ability-block' ? (data.type as AbilityBlockType) : null;
 
@@ -316,12 +337,43 @@ async function queryResults(
   });
 }
 
+async function fetchBooks(
+  query: string,
+  openDrawer: DrawerStateSet,
+  theme: MantineTheme
+): Promise<SpotlightActionData[]> {
+  const sources = await fetchContentSources({
+    published: true,
+    ids: 'all',
+  });
+  return sources.map((source) => {
+    return {
+      id: `content-source-${source.id}`,
+      label: source.name,
+      description: truncate(source.description, { length: 80 }),
+      onClick: () => {
+        openDrawer({
+          type: 'content-source',
+          data: { id: source.id },
+        });
+      },
+      leftSection: getIconFromContentType('content-source', '1.5rem'),
+      highlightColor: theme.colors[theme.primaryColor][2],
+      keywords: [`content source`],
+      _type: 'content-source',
+    };
+  });
+}
+
 async function fetchCharacters(
   query: string,
   navigate: NavigateFunction,
-  theme: MantineTheme
+  theme: MantineTheme,
+  session: Session | null
 ): Promise<SpotlightActionData[]> {
-  const characters = await makeRequest<Character[]>('find-character', {});
+  const characters = await makeRequest<Character[]>('find-character', {
+    user_id: session?.user.id,
+  });
   return (characters ?? []).map((character) => {
     const level = character.level;
     const heritage = ''; //character.details?.heritage?.name ?? '';
