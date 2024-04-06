@@ -210,7 +210,7 @@ export function CreateBackgroundModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  value={form.values.operations}
+                  operations={form.values.operations}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

@@ -80,5 +80,6 @@ export function getIconFromContentType(type: ContentType, size: string) {
     language: <IconLanguage size={size} />,
     'content-source': <IconBook2 size={size} />,
     archetype: <IconMilitaryRank size={size} />,
+    'versatile-heritage': <IconCaretLeftRight size={size} />,
   }[type];
 }

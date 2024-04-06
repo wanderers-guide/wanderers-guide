@@ -567,7 +567,7 @@ export function convertClassOperationsIntoUI(
       ? {
           operationResults: operationResults,
           characterState: charState,
-          primarySource: 'class',
+          primarySource: isClass2 ? 'class-2' : 'class',
         }
       : undefined;
 

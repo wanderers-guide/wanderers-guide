@@ -223,7 +223,7 @@ export function convertBackgroundOperationsIntoUI(
     writeDetails
   );
 
-  console.log(attributes);
+  //console.log(attributes);
 
   return {
     attributes,

@@ -938,7 +938,7 @@ export function CreateItemModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  value={form.values.operations}
+                  operations={form.values.operations}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

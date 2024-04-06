@@ -66,7 +66,7 @@ export default function CustomOperationsModal(props: {
               </HoverCard.Dropdown>
             </HoverCard>
           }
-          value={props.operations}
+          operations={props.operations}
           onChange={(operations) => props.onChange(_.cloneDeep(operations))}
         />
       </Box>

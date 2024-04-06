@@ -44,6 +44,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { VariableBool, VariableListStr, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
+import { displaySense } from '@utils/senses';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
@@ -204,15 +205,20 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                                   });
                                 }}
                               >
-                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                                {displaySense(sense)}
                               </Anchor>
                             ) : (
                               <Text c='gray.5' size='md' span>
-                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                                {displaySense(sense)}
                               </Text>
                             )}
                           </List.Item>
                         ))}
+                        {senses.precise.length === 0 && (
+                          <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                            No precise senses found.
+                          </Text>
+                        )}
                       </List>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -287,15 +293,20 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                                   });
                                 }}
                               >
-                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                                {displaySense(sense)}
                               </Anchor>
                             ) : (
                               <Text c='gray.5' size='md' span>
-                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                                {displaySense(sense)}
                               </Text>
                             )}
                           </List.Item>
                         ))}
+                        {senses.imprecise.length === 0 && (
+                          <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                            No imprecise senses found.
+                          </Text>
+                        )}
                       </List>
                     </Accordion.Panel>
                   </Accordion.Item>
@@ -367,15 +378,20 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                                   });
                                 }}
                               >
-                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                                {displaySense(sense)}
                               </Anchor>
                             ) : (
                               <Text c='gray.5' size='md' span>
-                                {sense.senseName} {sense.range ? `(${sense.range} ft.)` : ''}
+                                {displaySense(sense)}
                               </Text>
                             )}
                           </List.Item>
                         ))}
+                        {senses.vague.length === 0 && (
+                          <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                            No vague senses found.
+                          </Text>
+                        )}
                       </List>
                     </Accordion.Panel>
                   </Accordion.Item>

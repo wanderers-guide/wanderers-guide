@@ -74,6 +74,7 @@ export function CreateTraitModal(props: {
           class_trait: trait.meta_data.class_trait ?? false,
           ancestry_trait: trait.meta_data.ancestry_trait ?? false,
           archetype_trait: trait.meta_data.archetype_trait ?? false,
+          versatile_heritage_trait: trait.meta_data.versatile_heritage_trait ?? false,
         });
       }
       refreshDisplayDescription();
@@ -92,6 +93,7 @@ export function CreateTraitModal(props: {
     class_trait: false,
     ancestry_trait: false,
     archetype_trait: false,
+    versatile_heritage_trait: false,
   });
 
   // Initialize form
@@ -109,6 +111,7 @@ export function CreateTraitModal(props: {
         class_trait: false,
         ancestry_trait: false,
         archetype_trait: false,
+        versatile_heritage_trait: false,
       },
       content_source_id: -1,
     },
@@ -133,6 +136,7 @@ export function CreateTraitModal(props: {
       class_trait: false,
       ancestry_trait: false,
       archetype_trait: false,
+      versatile_heritage_trait: false,
     });
     setDescription(undefined);
   };
@@ -247,6 +251,18 @@ export function CreateTraitModal(props: {
                     setMetaData({
                       ...metaData,
                       archetype_trait: event.currentTarget.checked,
+                    })
+                  }
+                />
+
+                <Switch
+                  label='Versatile Heritage Trait'
+                  labelPosition='left'
+                  checked={metaData.versatile_heritage_trait}
+                  onChange={(event) =>
+                    setMetaData({
+                      ...metaData,
+                      versatile_heritage_trait: event.currentTarget.checked,
                     })
                   }
                 />

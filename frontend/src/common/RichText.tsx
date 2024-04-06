@@ -22,6 +22,10 @@ interface RichTextProps extends TextProps {
 export default function RichText(props: RichTextProps) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   let convertedChildren = props.children as string | undefined | null;
+
+  if (Array.isArray(convertedChildren)) {
+    convertedChildren = convertedChildren.join('');
+  }
   if (typeof convertedChildren !== 'string') {
     return null;
   }
@@ -224,7 +228,7 @@ function shouldBeIndented(children: React.ReactNode) {
   if (React.isValidElement(firstChild)) {
     // @ts-ignore
     const contents = _.isString(firstChild.props?.children ?? '') ? ((firstChild.props.children ?? '') as string) : '';
-    console.log(contents, firstChild.type);
+    //console.log(contents, firstChild.type);
 
     if (firstChild.type === 'strong') {
       if (['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents)) return true;

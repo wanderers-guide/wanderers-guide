@@ -50,7 +50,7 @@ export default function ViewOperationsModal(props: {
               Read-Only View
             </Text>
           }
-          value={props.operations}
+          operations={props.operations}
           onChange={() => {}}
         />
       </Box>

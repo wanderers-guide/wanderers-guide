@@ -424,7 +424,10 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
     } else {
       merged[key] = value;
     }
-    merged[key] = merged[key].filter((v: any) => v);
+    merged[key] = _.uniqWith(
+      merged[key].filter((v: any) => v),
+      _.isEqual
+    );
   }
 
   // Merge arrays of results (like class features)
@@ -455,7 +458,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
       }
     }
     if (found) {
-      merged[key] = newValue;
+      merged[key] = _.uniqWith(newValue, _.isEqual);
     }
   }
 

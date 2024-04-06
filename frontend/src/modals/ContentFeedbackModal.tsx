@@ -30,6 +30,7 @@ import { submitContentUpdate } from '@content/content-update';
 import { displayError } from '@utils/notifications';
 import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
+import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -139,6 +140,17 @@ export default function ContentFeedbackModal(props: {
               editId={submitUpdate.id}
               onComplete={async (archetype) => {
                 await handleComplete(archetype.id, archetype.content_source_id, archetype);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
+
+          {props.type === 'versatile-heritage' && (
+            <CreateVersatileHeritageModal
+              opened={true}
+              editId={submitUpdate.id}
+              onComplete={async (versHeritage) => {
+                await handleComplete(versHeritage.id, versHeritage.content_source_id, versHeritage);
               }}
               onCancel={() => handleReset()}
             />

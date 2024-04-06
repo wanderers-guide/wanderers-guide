@@ -6,9 +6,11 @@ import {
   SpellListEntry,
   SpellInnateEntry,
   CastingSource,
+  SenseWithRange,
 } from '@typing/content';
 import { GiveSpellData, SpellMetadata } from '@typing/operations';
 import { StoreID, VariableListStr } from '@typing/variables';
+import { attemptToFindSense, compactSensesWithRange } from '@utils/senses';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getVariable } from '@variables/variable-manager';
@@ -110,23 +112,30 @@ export function collectCharacterSenses(id: StoreID, blocks: AbilityBlock[]) {
       range = parts[parts.length - 1];
     }
 
-    return {
-      sense: allSenses.find((sense) => labelToVariable(sense.name) === labelToVariable(varTitle)),
-      senseName: toLabel(varTitle),
-      range: compileExpressions(id, range?.trim() ?? '', true),
-    };
+    const finalRange = compileExpressions(id, range?.trim() ?? '', true) ?? '';
+    const finalSenseName = toLabel(varTitle);
+    return attemptToFindSense(finalSenseName, finalRange, allSenses);
   };
 
-  type SenseWithRange = {
-    sense?: AbilityBlock;
-    senseName: string;
-    range: string;
-  };
+  const compactSenses = compactSensesWithRange([
+    ...precise
+      .map(findSense)
+      .filter((s) => s !== null)
+      .map((s) => ({ ...s, type: 'precise' })),
+    ...imprecise
+      .map(findSense)
+      .filter((s) => s !== null)
+      .map((s) => ({ ...s, type: 'imprecise' })),
+    ...vague
+      .map(findSense)
+      .filter((s) => s !== null)
+      .map((s) => ({ ...s, type: 'vague' })),
+  ] as SenseWithRange[]);
 
   return {
-    precise: precise.map(findSense).filter((s) => s !== null) as SenseWithRange[],
-    imprecise: imprecise.map(findSense).filter((s) => s !== null) as SenseWithRange[],
-    vague: vague.map(findSense).filter((s) => s !== null) as SenseWithRange[],
+    precise: compactSenses.filter((s) => s.type === 'precise'),
+    imprecise: compactSenses.filter((s) => s.type === 'imprecise'),
+    vague: compactSenses.filter((s) => s.type === 'vague'),
   };
 }
 

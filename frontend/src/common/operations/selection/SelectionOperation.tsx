@@ -813,7 +813,7 @@ function SelectionPredefinedAbilityBlock(props: {
                 style={{
                   position: 'absolute',
                   top: -5,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -846,7 +846,7 @@ function SelectionPredefinedAbilityBlock(props: {
                 style={{
                   position: 'absolute',
                   top: 18,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1050,7 +1050,7 @@ function SelectionPredefinedSpell(props: {
                 style={{
                   position: 'absolute',
                   top: -5,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1083,7 +1083,7 @@ function SelectionPredefinedSpell(props: {
                 style={{
                   position: 'absolute',
                   top: 18,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1163,7 +1163,7 @@ function SelectionPredefinedLanguage(props: {
                 style={{
                   position: 'absolute',
                   top: -5,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1196,7 +1196,7 @@ function SelectionPredefinedLanguage(props: {
                 style={{
                   position: 'absolute',
                   top: 18,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1335,7 +1335,7 @@ function SelectionPredefinedAdjValue(props: {
                 style={{
                   position: 'absolute',
                   top: -5,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1368,7 +1368,7 @@ function SelectionPredefinedAdjValue(props: {
                 style={{
                   position: 'absolute',
                   top: 18,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1454,7 +1454,7 @@ function SelectionPredefinedCustom(props: {
                 style={{
                   position: 'absolute',
                   top: -5,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1487,7 +1487,7 @@ function SelectionPredefinedCustom(props: {
                 style={{
                   position: 'absolute',
                   top: 18,
-                  left: -40,
+                  left: -30,
                 }}
                 size='sm'
                 variant='subtle'
@@ -1606,7 +1606,7 @@ function SelectionPredefinedCustomOption(props: {
                 </HoverCard.Dropdown>
               </HoverCard>
             }
-            value={operations}
+            operations={operations}
             onChange={(operations) => {
               setOperations(operations);
             }}

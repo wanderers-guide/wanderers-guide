@@ -149,7 +149,10 @@ export function labelToVariable(label: string, trim = true) {
   if (trim) {
     label = label.trim();
   }
-  let cleanedString = label.toUpperCase().replace(/[^a-zA-Z_\s]/g, '');
+  let cleanedString = label
+    .toUpperCase()
+    .replace('-', '_')
+    .replace(/[^a-zA-Z_\s]/g, '');
   cleanedString = cleanedString.replace(/\s+/g, '_');
   return cleanedString;
 }

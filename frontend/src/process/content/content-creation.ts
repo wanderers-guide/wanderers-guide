@@ -11,6 +11,7 @@ import {
   Trait,
   Language,
   Archetype,
+  VersatileHeritage,
 } from '@typing/content';
 import * as _ from 'lodash-es';
 import { makeRequest } from '@requests/request-manager';
@@ -77,6 +78,13 @@ export async function upsertArchetype(archetype: Archetype) {
     ...archetype,
   });
   return result ? (result === true ? archetype : result) : null;
+}
+
+export async function upsertVersatileHeritage(versHeritage: VersatileHeritage) {
+  const result = await makeRequest<VersatileHeritage | true>('create-versatile-heritage', {
+    ...versHeritage,
+  });
+  return result ? (result === true ? versHeritage : result) : null;
 }
 
 export async function upsertAncestry(ancestry: Ancestry) {

@@ -397,7 +397,7 @@ async function getTraitList(id: StoreID, operationUUID: string, filters: Operati
     traits = traits.filter((trait) => trait.meta_data?.creature_trait);
   }
   if (filters.isAncestry) {
-    traits = traits.filter((trait) => trait.meta_data?.ancestry_trait);
+    traits = traits.filter((trait) => trait.meta_data?.ancestry_trait || trait.meta_data?.versatile_heritage_trait);
   }
   if (filters.isClass) {
     traits = traits.filter((trait) => trait.meta_data?.class_trait);

@@ -32,6 +32,7 @@ import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import { ObjectWithUUID } from '@operations/operation-utils';
+import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
@@ -128,7 +129,7 @@ export function CharBuilderCreationInner(props: {
       setOperationResults(results);
       executingOperations.current = false;
     });
-  }, [character]);
+  }, [character, props.content]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -177,6 +178,8 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Ancestry>(
                     'ancestry',
                     (option) => {
+                      // Wipe old data
+                      const selections = removeParentSelections('ancestry', character?.operation_data?.selections);
                       setCharacter((prev) => {
                         if (!prev) return prev;
                         return {
@@ -184,6 +187,10 @@ export function CharBuilderCreationInner(props: {
                           details: {
                             ...prev.details,
                             ancestry: option,
+                          },
+                          operation_data: {
+                            ...prev.operation_data,
+                            selections,
                           },
                         };
                       });
@@ -198,6 +205,8 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Background>(
                     'background',
                     (option) => {
+                      // Wipe old data
+                      const selections = removeParentSelections('background', character?.operation_data?.selections);
                       setCharacter((prev) => {
                         if (!prev) return prev;
                         return {
@@ -205,6 +214,10 @@ export function CharBuilderCreationInner(props: {
                           details: {
                             ...prev.details,
                             background: option,
+                          },
+                          operation_data: {
+                            ...prev.operation_data,
+                            selections,
                           },
                         };
                       });
@@ -219,6 +232,11 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Class>(
                     'class',
                     (option) => {
+                      // Wipe old data
+                      let selections = removeParentSelections('class_', character?.operation_data?.selections);
+                      if (!character?.variants?.dual_class) {
+                        selections = removeParentSelections('class-feature', selections);
+                      }
                       setCharacter((prev) => {
                         if (!prev) return prev;
                         return {
@@ -227,16 +245,48 @@ export function CharBuilderCreationInner(props: {
                             ...prev.details,
                             class: option,
                           },
+                          operation_data: {
+                            ...prev.operation_data,
+                            selections,
+                          },
                         };
                       });
                     },
                     {
                       groupBySource: true,
                       selectedId: character?.details?.class?.id,
+                      filterFn: (option) => option.id !== character?.details?.class_2?.id,
                     }
                   );
                 }}
-                onClickClass2={() => {}}
+                onClickClass2={() => {
+                  selectContent<Class>(
+                    'class',
+                    (option) => {
+                      // Wipe old data
+                      const selections = removeParentSelections('class-2_', character?.operation_data?.selections);
+                      setCharacter((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          details: {
+                            ...prev.details,
+                            class_2: option,
+                          },
+                          operation_data: {
+                            ...prev.operation_data,
+                            selections,
+                          },
+                        };
+                      });
+                    },
+                    {
+                      groupBySource: true,
+                      selectedId: character?.details?.class_2?.id,
+                      filterFn: (option) => option.id !== character?.details?.class?.id,
+                    }
+                  );
+                }}
               />
               <Button
                 leftSection={<IconId size={14} />}
@@ -297,6 +347,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Ancestry>(
               'ancestry',
               (option) => {
+                // Wipe old data
+                const selections = removeParentSelections('ancestry', character?.operation_data?.selections);
                 setCharacter((prev) => {
                   if (!prev) return prev;
                   return {
@@ -304,6 +356,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       ancestry: option,
+                    },
+                    operation_data: {
+                      ...prev.operation_data,
+                      selections,
                     },
                   };
                 });
@@ -318,6 +374,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Background>(
               'background',
               (option) => {
+                // Wipe old data
+                const selections = removeParentSelections('background', character?.operation_data?.selections);
                 setCharacter((prev) => {
                   if (!prev) return prev;
                   return {
@@ -325,6 +383,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       background: option,
+                    },
+                    operation_data: {
+                      ...prev.operation_data,
+                      selections,
                     },
                   };
                 });
@@ -339,6 +401,11 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Class>(
               'class',
               (option) => {
+                // Wipe old data
+                let selections = removeParentSelections('class_', character?.operation_data?.selections);
+                if (!character?.variants?.dual_class) {
+                  selections = removeParentSelections('class-feature', selections);
+                }
                 setCharacter((prev) => {
                   if (!prev) return prev;
                   return {
@@ -346,6 +413,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       class: option,
+                    },
+                    operation_data: {
+                      ...prev.operation_data,
+                      selections,
                     },
                   };
                 });
@@ -361,6 +432,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Class>(
               'class',
               (option) => {
+                // Wipe old data
+                const selections = removeParentSelections('class-2_', character?.operation_data?.selections);
                 setCharacter((prev) => {
                   if (!prev) return prev;
                   return {
@@ -368,6 +441,10 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       class_2: option,
+                    },
+                    operation_data: {
+                      ...prev.operation_data,
+                      selections,
                     },
                   };
                 });
@@ -1206,6 +1283,21 @@ function InitialStatsLevelSection(props: {
 
   if (!props.operationResults) return null;
 
+  const hasOperationResults = (
+    data: {
+      baseSource: any;
+      baseResults: OperationResult[];
+    }[]
+  ) => {
+    if (data.length === 0) return false;
+    for (const r of data) {
+      for (const result of r.baseResults) {
+        if (result) return true;
+      }
+    }
+    return false;
+  };
+
   return (
     <>
       <Accordion
@@ -1256,7 +1348,7 @@ function InitialStatsLevelSection(props: {
           />
         )}
 
-        {props.operationResults.contentSourceResults.length > 0 && (
+        {hasOperationResults(props.operationResults.contentSourceResults) && (
           <BooksAccordionItem
             operationResults={props.operationResults}
             onSaveChanges={(path, value) => {
@@ -1265,7 +1357,7 @@ function InitialStatsLevelSection(props: {
             opened={subSectionValue === 'books'}
           />
         )}
-        {props.operationResults.itemResults.length > 0 && (
+        {hasOperationResults(props.operationResults.itemResults) && (
           <ItemsAccordionItem
             operationResults={props.operationResults}
             onSaveChanges={(path, value) => {
@@ -1618,7 +1710,7 @@ function ClassAccordionItem(props: {
               level={1}
               results={classOperationResults}
               onChange={(path, value) => {
-                props.onSaveChanges(`class_${path}`, value);
+                props.onSaveChanges(`${props.isClass2 ? 'class-2' : 'class'}_${path}`, value);
               }}
             />
           </Box>

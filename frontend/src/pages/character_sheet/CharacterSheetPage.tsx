@@ -86,10 +86,10 @@ export function Component(props: {}) {
     queryKey: [`find-content-${characterId}`],
     queryFn: async () => {
       // Set default sources
-      // const character = await makeRequest<Character>('find-character', {
-      //   id: characterId,
-      // });
-      // defineDefaultSources(character?.content_sources?.enabled);
+      const character = await makeRequest<Character>('find-character', {
+        id: characterId,
+      });
+      defineDefaultSources(character?.content_sources?.enabled);
 
       // Fetch content
       const content = await fetchContentPackage(undefined, true);

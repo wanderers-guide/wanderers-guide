@@ -131,26 +131,19 @@ export function OperationWrapper(props: { children: React.ReactNode; title: stri
 export function OperationSection(props: {
   title: ReactNode;
   blacklist?: string[];
-  value?: Operation[];
+  operations?: Operation[];
   onChange: (operations: Operation[]) => void;
 }) {
-  const [operations, setOperations] = useState<Operation[]>(props.value ?? []);
   const selectRef = useRef<HTMLInputElement>(null);
 
   useDidUpdate(() => {
-    setOperations(props.value ?? []);
-
     // Make sure all the variables are created
-    for (let op of props.value ?? []) {
+    for (let op of props.operations ?? []) {
       if (op.type === 'createValue') {
         addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value);
       }
     }
-  }, [props.value]);
-
-  useDidUpdate(() => {
-    props.onChange(operations);
-  }, [operations]);
+  }, [props.operations]);
 
   return (
     <Stack gap={10}>
@@ -205,42 +198,38 @@ export function OperationSection(props: {
                   (newOp as OperationGiveAbilityBlock).data.type = abilBlockType as AbilityBlockType;
                 }
 
-                setOperations((prev) => {
-                  return [...prev, newOp];
-                });
+                props.onChange([...(props.operations ?? []), newOp]);
                 selectRef.current?.blur();
               }
             }
           }}
         />
       </Group>
-
       <Stack gap={10}>
-        {operations.map((op, index) => (
+        {(props.operations ?? []).map((op, index) => (
           <OperationDisplay
             key={index}
             operation={op}
             onChange={(option) => {
               const newOp = _.cloneDeep(op);
               newOp.data = option.data;
-              setOperations((prev) => {
-                return prev.map((p_op) => {
+
+              props.onChange(
+                (props.operations ?? []).map((p_op) => {
                   if (p_op.id === op.id) {
                     return newOp;
                   } else {
                     return p_op;
                   }
-                });
-              });
+                })
+              );
             }}
             onRemove={(id) => {
-              setOperations((prev) => {
-                return prev.filter((p_op) => p_op.id !== id);
-              });
+              props.onChange((props.operations ?? []).filter((p_op) => p_op.id !== id));
             }}
           />
         ))}
-        {operations.length === 0 && (
+        {(props.operations ?? []).length === 0 && (
           <Text size='sm' c='gray.7' ta='center' fs='italic'>
             No operations
           </Text>

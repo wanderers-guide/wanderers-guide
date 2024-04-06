@@ -47,4 +47,12 @@ export function resetSelections() {
   selectionTree = { value: null, children: {} };
 }
 
-//export function removeSelection(path: string, selections: Record<string, string>) {}
+export function removeParentSelections(prefix: string, selections?: Record<string, string> | undefined) {
+  const newSelections = _.cloneDeep(selections);
+  for (const key in newSelections) {
+    if (key.startsWith(prefix)) {
+      delete newSelections[key];
+    }
+  }
+  return newSelections;
+}

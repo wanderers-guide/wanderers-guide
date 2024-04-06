@@ -60,6 +60,7 @@ import { pluralize, toLabel } from '@utils/strings';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import {
+  getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
   getAllAttributeVariables,
   getAllClassTraitVariables,
@@ -88,8 +89,8 @@ import {
   Language,
   Spell,
   Trait,
+  VersatileHeritage,
 } from '../../typing/content';
-import { re } from 'mathjs';
 import { characterState } from '@atoms/characterAtoms';
 import { DrawerType } from '@typing/index';
 import { hasTraitType } from '@utils/traits';
@@ -128,7 +129,10 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
   // Fill in selected content
   useEffect(() => {
     (async () => {
-      if (!props.selectedId) return;
+      if (!props.selectedId) {
+        setSelected(undefined);
+        return;
+      }
       if (_.isNumber(props.selectedId)) {
         const content = await fetchContentById<T>(props.type, props.selectedId);
         if (content) {
@@ -147,7 +151,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         }
       }
     })();
-  }, [props.selectedId, props.type]);
+  }, [props.selectedId, props.type, props.options?.overrideOptions]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
@@ -545,8 +549,56 @@ export default function SelectContentModal({
 
   /// ------------------ ///
 
+  /// Handle Versatile Heritages ///
+
+  const [versHeritageTab, setVersHeritageTab] = useState<string | null>('ancestry-heritage');
+  const isHeritage = useMemo(() => {
+    // Do all this because sometimes we can have a heritage select that isn't abilityBlockType === 'heritage'
+    if (innerProps.options?.abilityBlockType === 'feat') return false;
+
+    const ancestryTraitIds = getAllAncestryTraitVariables('CHARACTER').map((v) => v.value) ?? [];
+    const options = innerProps.options?.overrideOptions ?? [];
+    if (options.length === 0) return false;
+    if (ancestryTraitIds.length === 0) return false;
+
+    // Check if all of the selection options contain at least one of the ancestry traits
+    for (const option of options) {
+      if (_.intersection(ancestryTraitIds, option.traits ?? []).length === 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }, [innerProps.options?.overrideOptions, innerProps.options?.abilityBlockType]);
+
+  const { data: versHeritageData } = useQuery({
+    queryKey: [`select-content-vers-heritage-data`, { selectedId: innerProps.options?.selectedId }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { selectedId }] = queryKey;
+      const heritage = await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
+      const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage');
+      return {
+        heritage,
+        versHeritages,
+      };
+    },
+    enabled: isHeritage,
+  });
+
+  useEffect(() => {
+    if (!versHeritageData) return;
+    const verHeritage = versHeritageData.versHeritages.find((v) => v.heritage_id === versHeritageData.heritage?.id);
+    if (verHeritage) {
+      setVersHeritageTab('versatile-heritage');
+    } else {
+      setVersHeritageTab('ancestry-heritage');
+    }
+  }, [versHeritageData]);
+
   return (
-    <Box style={{ position: 'relative', height: isClassFeat ? 490 : 455 }}>
+    <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 490 : 455 }}>
       <Transition mounted={openedDrawer} transition='slide-right'>
         {(styles) => (
           <Box
@@ -642,7 +694,7 @@ export default function SelectContentModal({
         />
       )}
 
-      {isClassFeat ? (
+      {isClassFeat && (
         <Tabs value={classFeatTab} onChange={setClassFeatTab}>
           <Tabs.List grow mb={10}>
             <Tabs.Tab value='class-feat'>Class Feats</Tabs.Tab>
@@ -734,7 +786,70 @@ export default function SelectContentModal({
             </Box>
           </Tabs.Panel>
         </Tabs>
-      ) : (
+      )}
+
+      {isHeritage && (
+        <Tabs value={versHeritageTab} onChange={setVersHeritageTab}>
+          <Tabs.List grow mb={10}>
+            <Tabs.Tab value='ancestry-heritage'>Ancestry Heritages</Tabs.Tab>
+            <Tabs.Tab value='versatile-heritage'>Versatile Heritages</Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value='ancestry-heritage'>
+            <Box>
+              {getSelectionContents(
+                <SelectionOptions
+                  type={innerProps.type}
+                  abilityBlockType={innerProps.options?.abilityBlockType}
+                  skillAdjustment={innerProps.options?.skillAdjustment}
+                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+                  selectedId={innerProps.options?.selectedId}
+                  overrideOptions={innerProps.options?.overrideOptions}
+                  searchQuery={searchQuery}
+                  onClick={(option) => {
+                    innerProps.onClick(option);
+                    context.closeModal(id);
+                  }}
+                  filterFn={(option) =>
+                    getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
+                  }
+                  includeOptions={innerProps.options?.includeOptions}
+                  includeDetails={innerProps.options?.includeDetails}
+                />
+              )}
+            </Box>
+          </Tabs.Panel>
+
+          <Tabs.Panel value='versatile-heritage'>
+            <Box>
+              {getSelectionContents(
+                <SelectionOptions
+                  type='ability-block'
+                  abilityBlockType='heritage'
+                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
+                  selectedId={innerProps.options?.selectedId}
+                  searchQuery={searchQuery}
+                  onClick={(option) => {
+                    innerProps.onClick({
+                      ...option,
+                      // Need this for selection ops to work correctly
+                      // since we're not using the override options
+                      _select_uuid: `${option.id}`,
+                      _content_type: 'ability-block',
+                    } satisfies ObjectWithUUID);
+                    context.closeModal(id);
+                  }}
+                  filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
+                  includeOptions={innerProps.options?.includeOptions}
+                  includeDetails={innerProps.options?.includeDetails}
+                />
+              )}
+            </Box>
+          </Tabs.Panel>
+        </Tabs>
+      )}
+
+      {!(isClassFeat || isHeritage) && (
         <Box>
           {getSelectionContents(
             <SelectionOptions
@@ -2127,7 +2242,7 @@ export function PhysicalFeatureSelectionOption(props: {
         onClick={(e) => {
           e.stopPropagation();
           openDrawer({
-            type: 'class-feature',
+            type: 'physical-feature',
             data: { id: props.physicalFeature.id },
           });
         }}
@@ -2239,7 +2354,7 @@ export function SenseSelectionOption(props: {
         }}
         onClick={(e) => {
           e.stopPropagation();
-          openDrawer({ type: 'class-feature', data: { id: props.sense.id } });
+          openDrawer({ type: 'sense', data: { id: props.sense.id } });
         }}
       >
         Details

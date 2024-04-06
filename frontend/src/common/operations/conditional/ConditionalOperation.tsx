@@ -40,16 +40,15 @@ export default function ConditionalOperation(props: {
     } satisfies ConditionCheckData;
   };
 
-  const [checks, setChecks] = useState<ConditionCheckData[]>(
-    props.conditions && props.conditions.length > 0 ? props.conditions : [getDefaultCondition()]
-  );
+  const checks = props.conditions && props.conditions.length > 0 ? props.conditions : [getDefaultCondition()];
 
-  const [trueOperations, setTrueOperations] = useState<Operation[]>(props.trueOperations ?? []);
-  const [falseOperations, setFalseOperations] = useState<Operation[]>(props.falseOperations ?? []);
-
-  useDidUpdate(() => {
-    props.onChange(checks, trueOperations, falseOperations);
-  }, [checks, trueOperations, falseOperations]);
+  const routeChange = (data: {
+    checks?: ConditionCheckData[];
+    trueOperations?: Operation[];
+    falseOperations?: Operation[];
+  }) => {
+    props.onChange(data.checks ?? [], data.trueOperations ?? [], data.falseOperations ?? []);
+  };
 
   return (
     <OperationWrapper onRemove={props.onRemove} title='Conditional'>
@@ -64,21 +63,28 @@ export default function ConditionalOperation(props: {
               defaultOperator={check.operator}
               defaultValue={check.value}
               onChange={(data) => {
-                setChecks((prev) => {
-                  prev[index] = data;
-                  return _.cloneDeep(prev);
+                let newChecks = _.cloneDeep(checks);
+                newChecks[index] = data;
+                routeChange({
+                  checks: newChecks,
+                  trueOperations: props.trueOperations,
+                  falseOperations: props.falseOperations,
                 });
               }}
               includeAnd={index !== 0}
               includeAdd={index === checks.length - 1}
               onAdd={() => {
-                setChecks((prev) => {
-                  return [...prev, getDefaultCondition()];
+                routeChange({
+                  checks: [...checks, getDefaultCondition()],
+                  trueOperations: props.trueOperations,
+                  falseOperations: props.falseOperations,
                 });
               }}
               onRemove={(id) => {
-                setChecks((prev) => {
-                  return prev.filter((p_op) => p_op.id !== id);
+                routeChange({
+                  checks: checks.filter((p_op) => p_op.id !== id),
+                  trueOperations: props.trueOperations,
+                  falseOperations: props.falseOperations,
                 });
               }}
             />
@@ -86,8 +92,8 @@ export default function ConditionalOperation(props: {
         </>
         <Divider />
         <>
-          {true && (
-            <ScrollArea mah={400} scrollbars='y'>
+          {
+            <ScrollArea scrollbars='y'>
               <Stack>
                 <OperationSection
                   title={
@@ -111,8 +117,14 @@ export default function ConditionalOperation(props: {
                       </Badge>
                     </Group>
                   }
-                  value={trueOperations}
-                  onChange={(operations) => setTrueOperations(operations)}
+                  operations={props.trueOperations ?? []}
+                  onChange={(operations) => {
+                    routeChange({
+                      checks: props.conditions,
+                      trueOperations: operations,
+                      falseOperations: props.falseOperations,
+                    });
+                  }}
                   /* Don't allow nested conditionals and allowing creating new variables 
                       under a condition would be a mess to support 
                   */
@@ -140,8 +152,14 @@ export default function ConditionalOperation(props: {
                       </Badge>
                     </Group>
                   }
-                  value={falseOperations}
-                  onChange={(operations) => setFalseOperations(operations)}
+                  operations={props.falseOperations ?? []}
+                  onChange={(operations) => {
+                    routeChange({
+                      checks: props.conditions,
+                      trueOperations: props.trueOperations,
+                      falseOperations: operations,
+                    });
+                  }}
                   /* Don't allow nested conditionals and allowing creating new variables 
                       under a condition would be a mess to support 
                   */
@@ -149,7 +167,7 @@ export default function ConditionalOperation(props: {
                 />
               </Stack>
             </ScrollArea>
-          )}
+          }
         </>
       </Stack>
     </OperationWrapper>

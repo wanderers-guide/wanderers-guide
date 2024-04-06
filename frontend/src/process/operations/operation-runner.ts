@@ -291,7 +291,11 @@ async function updateVariables(
           selectedOption.id,
           sourceLabel
         );
-      } else if (selectedOption.meta_data?.ancestry_trait || selectedOption.meta_data?.creature_trait) {
+      } else if (
+        selectedOption.meta_data?.ancestry_trait ||
+        selectedOption.meta_data?.creature_trait ||
+        selectedOption.meta_data?.versatile_heritage_trait
+      ) {
         addVariable(
           varId,
           'num',
@@ -519,7 +523,11 @@ async function runGiveTrait(
     addVariable(varId, 'num', labelToVariable(`TRAIT_CLASS_${trait.name}_IDS`), trait.id, sourceLabel);
   } else if (trait.meta_data?.archetype_trait) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ARCHETYPE_${trait.name}_IDS`), trait.id, sourceLabel);
-  } else if (trait.meta_data?.ancestry_trait || trait.meta_data?.creature_trait) {
+  } else if (
+    trait.meta_data?.ancestry_trait ||
+    trait.meta_data?.creature_trait ||
+    trait.meta_data?.versatile_heritage_trait
+  ) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
   } else {
     displayError(

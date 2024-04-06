@@ -14,6 +14,7 @@ import {
   upsertLanguage,
   upsertCreature,
   upsertArchetype,
+  upsertVersatileHeritage,
 } from '@content/content-creation';
 import { defineDefaultSources, fetchContentPackage, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
@@ -67,6 +68,7 @@ import {
   Language,
   Spell,
   Trait,
+  VersatileHeritage,
 } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { pluralize, toLabel } from '@utils/strings';
@@ -84,6 +86,7 @@ import { CreateLanguageModal } from './CreateLanguageModal';
 import { DISCORD_URL } from '@constants/data';
 import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
+import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -255,7 +258,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                         </HoverCard.Dropdown>
                       </HoverCard>
                     }
-                    value={form.values.operations}
+                    operations={form.values.operations}
                     onChange={(operations) => form.setValues({ ...form.values, operations })}
                   />
                   <Divider />
@@ -513,6 +516,21 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
               >
                 Archetypes
               </Tabs.Tab>
+              <Tabs.Tab
+                value='versatile-heritages'
+                leftSection={getIconFromContentType('versatile-heritage', '1rem')}
+                rightSection={
+                  <>
+                    {data?.content.versatileHeritages && data?.content.versatileHeritages.length > 0 && (
+                      <Badge variant='light' color={theme.primaryColor} size='xs'>
+                        {data?.content.versatileHeritages.length}
+                      </Badge>
+                    )}
+                  </>
+                }
+              >
+                Versatile Heritages
+              </Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value='actions'>
@@ -622,6 +640,14 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='archetype'
                 content={data?.content.archetypes ?? []}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value='versatile-heritages'>
+              <ContentList<VersatileHeritage>
+                sourceId={props.sourceId}
+                type='versatile-heritage'
+                content={data?.content.versatileHeritages ?? []}
               />
             </Tabs.Panel>
           </Tabs>
@@ -948,6 +974,28 @@ function ContentList<
               showNotification({
                 title: `Updated ${result.name}`,
                 message: `Successfully updated archetype.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
+      {props.type === 'versatile-heritage' && openedId && (
+        <CreateVersatileHeritageModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (versHeritage) => {
+            versHeritage.content_source_id = props.sourceId;
+            const result = await upsertVersatileHeritage(versHeritage);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated versatile heritage.`,
                 autoClose: 3000,
               });
             }

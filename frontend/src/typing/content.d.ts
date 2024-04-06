@@ -11,6 +11,7 @@ type ContentPackage = {
   traits: Trait[];
   creatures: Creature[];
   archetypes: Archetype[];
+  versatileHeritages: VersatileHeritage[];
   sources?: ContentSource[];
 };
 
@@ -37,6 +38,7 @@ type ContentType =
   | 'spell'
   | 'class'
   | 'archetype'
+  | 'versatile-heritage'
   | 'ability-block'
   | 'creature'
   | 'ancestry'
@@ -85,6 +87,7 @@ interface Trait {
     class_trait?: boolean;
     ancestry_trait?: boolean;
     archetype_trait?: boolean;
+    versatile_heritage_trait?: boolean;
   };
   content_source_id: number;
 }
@@ -301,6 +304,19 @@ interface Archetype {
   content_source_id: number;
   version: string;
   dedication_feat_id: number;
+}
+
+interface VersatileHeritage {
+  id: number;
+  created_at: string;
+  name: string;
+  rarity: Rarity;
+  description: string;
+  trait_id: number;
+  artwork_url: string;
+  content_source_id: number;
+  version: string;
+  heritage_id: number;
 }
 
 interface AbilityBlock {
@@ -573,4 +589,11 @@ type Language = {
   description: string;
   content_source_id: number;
   rarity: Rarity;
+};
+
+type SenseWithRange = {
+  sense?: AbilityBlock;
+  senseName: string;
+  range: string;
+  type?: 'precise' | 'imprecise' | 'vague';
 };

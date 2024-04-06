@@ -5,9 +5,13 @@ import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
+import { collectCharacterSenses } from '@content/collect-content';
 import { useMantineTheme, Group, Stack, Box, Text } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
+import { VariableListStr } from '@typing/variables';
+import { compactSenses, displayPrimaryVisionSense } from '@utils/senses';
 import { displayFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
+import { getVariable } from '@variables/variable-manager';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
@@ -63,8 +67,8 @@ export default function SpeedSection() {
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
                 {displayFinalProfValue('CHARACTER', 'PERCEPTION')}
               </Text>
-              <Text fz='xs' c='gray.5' ta='center'>
-                Normal Vision
+              <Text fz={10} c='gray.5' ta='center' truncate>
+                {displayPrimaryVisionSense('CHARACTER')}
               </Text>
             </Stack>
           </Box>
@@ -99,7 +103,7 @@ export default function SpeedSection() {
                   ft.
                 </Text>
               </Text>
-              <Text fz='xs' c='gray.5' ta='center'>
+              <Text fz={10} c='gray.5' ta='center'>
                 And Others
               </Text>
             </Stack>

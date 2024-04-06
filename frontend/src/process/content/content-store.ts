@@ -13,6 +13,7 @@ import {
   Language,
   Spell,
   Trait,
+  VersatileHeritage,
 } from '@typing/content';
 import { RequestType } from '@typing/requests';
 import { hashData } from '@utils/numbers';
@@ -121,6 +122,7 @@ export async function fetchContent<T = Record<string, any>>(
     background: 'find-background',
     class: 'find-class',
     archetype: 'find-archetype',
+    'versatile-heritage': 'find-versatile-heritage',
     'content-source': 'find-content-source',
     creature: 'find-creature',
     item: 'find-item',
@@ -196,6 +198,7 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
     fetchContentAll<Trait>('trait', sources),
     fetchContentAll<Creature>('creature', sources),
     fetchContentAll<Archetype>('archetype', sources),
+    fetchContentAll<VersatileHeritage>('versatile-heritage', sources),
   ]);
   const contentSources = fetchSources ? await fetchContentSources({ ids: sources }) : null;
 
@@ -210,6 +213,7 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
     traits: ((content[7] ?? []) as Trait[]).sort((a, b) => a.name.localeCompare(b.name)),
     creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => a.name.localeCompare(b.name)),
     archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => a.name.localeCompare(b.name)),
+    versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => a.name.localeCompare(b.name)),
     sources: contentSources ?? undefined,
   } satisfies ContentPackage;
 }
@@ -219,6 +223,12 @@ export async function fetchArchetypeByDedicationFeat(feat_id: number) {
     dedication_feat_id: feat_id,
   });
   return archetypes && archetypes.length > 0 ? archetypes[0] : null;
+}
+export async function fetchVersHeritageByHeritage(heritage_id: number) {
+  const versatileHeritages = await fetchContent<VersatileHeritage[]>('versatile-heritage', {
+    heritage_id: heritage_id,
+  });
+  return versatileHeritages && versatileHeritages.length > 0 ? versatileHeritages[0] : null;
 }
 export async function fetchAllPrereqs(name: string) {
   return await fetchContent<AbilityBlock[]>('ability-block', {

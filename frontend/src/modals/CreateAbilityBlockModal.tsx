@@ -219,7 +219,9 @@ export function CreateAbilityBlockModal(props: {
                     }
                   }}
                 />
-                <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
+                {(props.type === 'action' || props.type === 'feat' || props.type === 'physical-feature') && (
+                  <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />
+                )}
               </Group>
 
               {(props.type === 'feat' || props.type === 'class-feature') && !metaData?.unselectable && (
@@ -419,7 +421,7 @@ export function CreateAbilityBlockModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  value={form.values.operations}
+                  operations={form.values.operations}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />
