@@ -570,7 +570,7 @@ CREATE TABLE public.spell (
     targets character varying,
     duration character varying,
     description text,
-    meta_data json,
+    meta_data jsonb,
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
