@@ -48,6 +48,9 @@ serve(async (req: Request) => {
         name: name,
         description: `This indicates content from the ${name.toLowerCase()} ancestry.`,
         content_source_id,
+        meta_data: {
+          ancestry_trait: true,
+        },
       });
     }
 

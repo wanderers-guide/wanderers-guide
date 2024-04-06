@@ -1,33 +1,25 @@
 // @ts-ignore
 import { serve } from 'std/server';
 import { connect, fetchData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
-import type { Archetype, Trait } from '../_shared/content';
+import type { Trait, VersatileHeritage } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let {
-      id,
-      name,
-      rarity,
-      description,
-      artwork_url,
-      content_source_id,
-      version,
-      dedication_feat_id,
-    } = body as Archetype;
+    let { id, name, rarity, description, artwork_url, content_source_id, version, heritage_id } =
+      body as VersatileHeritage;
 
     let trait_id: number | undefined = undefined;
     if (!id || id === -1) {
-      // Is a new archetype, so we need to create a new trait
+      // Is a new versatile heritage, so we need to create a new trait
       const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
         client,
         'trait',
         {
-          name: `${name} Archetype`,
-          description: `This indicates content from the ${name.toLowerCase()} archetype.`,
+          name: `${name}`,
+          description: `This indicates content from the ${name.toLowerCase()} versatile heritage.`,
           content_source_id,
           meta_data: {
-            archetype_trait: true,
+            versatile_heritage_trait: true,
           },
         }
       );
@@ -44,27 +36,27 @@ serve(async (req: Request) => {
     }
 
     if (name && trait_id === undefined && id && id !== -1) {
-      const archetypes = await fetchData<Archetype>(client, 'archetype', [
+      const versHeritages = await fetchData<VersatileHeritage>(client, 'versatile_heritage', [
         { column: 'id', value: id },
       ]);
-      const archetype = archetypes[0];
+      const versHeritage = versHeritages[0];
 
       name = name.trim();
       // Update the trait name & description
       await upsertData<Trait>(client, 'trait', {
-        id: archetype.trait_id,
-        name: `${name} Archetype`,
-        description: `This indicates content from the ${name.toLowerCase()} archetype.`,
+        id: versHeritage.trait_id,
+        name: `${name}`,
+        description: `This indicates content from the ${name.toLowerCase()} versatile heritage.`,
         content_source_id,
         meta_data: {
-          archetype_trait: true,
+          versatile_heritage_trait: true,
         },
       });
     }
 
-    const { procedure, result } = await upsertData<Archetype>(
+    const { procedure, result } = await upsertData<VersatileHeritage>(
       client,
-      'archetype',
+      'versatile_heritage',
       {
         id,
         name,
@@ -74,7 +66,7 @@ serve(async (req: Request) => {
         artwork_url,
         content_source_id,
         version,
-        dedication_feat_id,
+        heritage_id,
       },
       undefined,
       false

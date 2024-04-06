@@ -55,6 +55,9 @@ serve(async (req: Request) => {
         name: name,
         description: `This indicates content from the ${name.toLowerCase()} class.`,
         content_source_id,
+        meta_data: {
+          class_trait: true,
+        },
       });
     }
 

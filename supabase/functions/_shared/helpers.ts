@@ -85,6 +85,7 @@ export type TableName =
   | 'ability_block'
   | 'content_source'
   | 'content_update'
+  | 'versatile_heritage'
   | 'character'
   | 'ancestry'
   | 'trait'
@@ -127,6 +128,10 @@ export function convertContentTypeToTableName(type: ContentType): TableName | nu
       return 'language';
     case 'content-source':
       return 'content_source';
+    case 'archetype':
+      return 'archetype';
+    case 'versatile-heritage':
+      return 'versatile_heritage';
     default:
       return null;
   }

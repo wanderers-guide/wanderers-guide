@@ -3,7 +3,7 @@ import { serve } from 'std/server';
 import { connect } from '../_shared/helpers.ts';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (_client, body) => {
     let {
       collection: collectionName,
       nResults,
@@ -13,7 +13,7 @@ serve(async (req: Request) => {
     } = body as {
       collection: string;
       nResults?: number;
-      maxDistance?: number; // from 0.0 - 1.0, 1.0 being the furthest
+      maxDistance?: number; // from 0.0 - ∞, 0.0 being identical
       query?: string;
       where?: Record<string, string | number | boolean>;
     };

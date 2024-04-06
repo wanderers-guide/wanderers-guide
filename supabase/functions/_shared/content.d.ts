@@ -18,9 +18,11 @@ type ContentType =
   | 'item'
   | 'spell'
   | 'class'
+  | 'archetype'
+  | 'versatile-heritage'
   | 'ability-block'
-  | 'ancestry'
   | 'creature'
+  | 'ancestry'
   | 'background'
   | 'language'
   | 'content-source';
@@ -87,6 +89,7 @@ interface Trait {
     class_trait?: boolean;
     ancestry_trait?: boolean;
     archetype_trait?: boolean;
+    versatile_heritage_trait?: boolean;
   };
   content_source_id: number;
 }
@@ -223,6 +226,19 @@ interface Archetype {
   content_source_id: number;
   version: string;
   dedication_feat_id: number;
+}
+
+interface VersatileHeritage {
+  id: number;
+  created_at: string;
+  name: string;
+  rarity: Rarity;
+  description: string;
+  trait_id: number;
+  artwork_url: string;
+  content_source_id: number;
+  version: string;
+  heritage_id: number;
 }
 
 interface AbilityBlock {
