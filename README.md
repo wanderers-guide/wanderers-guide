@@ -2,7 +2,7 @@
 
 ## Quick links
 
-- [Legacy App Repo](https://github.com/wanderers-guide/wanderers-guide)
+- [Legacy App Repo](https://github.com/wanderers-guide/wanderers-guide-legacy)
 - [Web App](./frontend)
 - [Serverless API](./supabase)
 
