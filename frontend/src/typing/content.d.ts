@@ -412,6 +412,8 @@ interface Character {
     custom_operations?: boolean;
     dice_roller?: boolean;
     ignore_bulk_limit?: boolean;
+    alternate_ancestry_boosts?: boolean;
+    voluntary_flaws?: boolean;
   };
   variants?: {
     ancestry_paragon?: boolean;

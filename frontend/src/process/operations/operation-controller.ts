@@ -2,7 +2,14 @@ import { AbilityBlock, Ancestry, Character, Class, ContentPackage, ContentSource
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
-import { addVariable, adjVariable, getVariable, resetVariables, setVariable } from '@variables/variable-manager';
+import {
+  addVariable,
+  adjVariable,
+  getAllAttributeVariables,
+  getVariable,
+  resetVariables,
+  setVariable,
+} from '@variables/variable-manager';
 import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { hashData } from '@utils/numbers';
@@ -265,7 +272,7 @@ export async function executeCharacterOperations(
       ancestryResults = await executeOperations(
         'CHARACTER',
         'ancestry',
-        getExtendedAncestryOperations('CHARACTER', ancestry),
+        getAdjustedAncestryOperations('CHARACTER', character, getExtendedAncestryOperations('CHARACTER', ancestry)),
         options,
         ancestry.name
       );
@@ -544,6 +551,82 @@ export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number):
     });
   }
 
+  return operations;
+}
+
+export function getAdjustedAncestryOperations(varId: StoreID, character: Character, operations: Operation[]) {
+  if (character.options?.alternate_ancestry_boosts) {
+    // Remove all ancestry boost/flaws operations
+    const newOps = operations.filter(
+      (op) =>
+        !(
+          op.type === 'adjValue' &&
+          getAllAttributeVariables(varId)
+            .map((v) => v.name)
+            .includes(op.data.variable)
+        ) && !(op.type === 'select' && op.data.title === 'Select an Attribute')
+    );
+
+    newOps.push({
+      id: 'eadjpcd7-5jad-4f7c-a712-95d5e272bcf3-1',
+      type: 'select',
+      data: {
+        title: 'Select an Attribute',
+        modeType: 'FILTERED',
+        optionType: 'ADJ_VALUE',
+        optionsPredefined: [],
+        optionsFilters: {
+          id: '0c1e5659-5023-4d00-8d55-f10f50b4688d-1',
+          type: 'ADJ_VALUE',
+          group: 'ATTRIBUTE',
+          value: {
+            value: 1,
+          },
+        },
+      },
+    } satisfies OperationSelect);
+    newOps.push({
+      id: 'eadjpcd7-5jad-4f7c-a712-95d5e272bcf3-2',
+      type: 'select',
+      data: {
+        title: 'Select an Attribute',
+        modeType: 'FILTERED',
+        optionType: 'ADJ_VALUE',
+        optionsPredefined: [],
+        optionsFilters: {
+          id: '0c1e5659-5023-4d00-8d55-f10f50b4688d-2',
+          type: 'ADJ_VALUE',
+          group: 'ATTRIBUTE',
+          value: {
+            value: 1,
+          },
+        },
+      },
+    } satisfies OperationSelect);
+
+    operations = newOps;
+  }
+  if (character.options?.voluntary_flaws) {
+    // Add a flaw operation
+    operations.push({
+      id: 'tadjpcd7-5jp4-4f7c-a712-95d5e272bcg0',
+      type: 'select',
+      data: {
+        title: 'Select a Voluntary Flaw',
+        modeType: 'FILTERED',
+        optionType: 'ADJ_VALUE',
+        optionsPredefined: [],
+        optionsFilters: {
+          id: 'nc1e5659-5kk3-4d00-8d55-f10f50b4689d',
+          type: 'ADJ_VALUE',
+          group: 'ATTRIBUTE',
+          value: {
+            value: -1,
+          },
+        },
+      },
+    } satisfies OperationSelect);
+  }
   return operations;
 }
 

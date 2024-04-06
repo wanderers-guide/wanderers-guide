@@ -25,12 +25,13 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { addedAncestryLanguages } from '@operations/operation-controller';
+import { addedAncestryLanguages, getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import { IconChevronsDown, IconChevronsUp, IconHelpCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Character, Language } from '@typing/content';
 import { DrawerType } from '@typing/index';
+import { OperationSelect } from '@typing/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
@@ -547,7 +548,9 @@ export function convertAncestryOperationsIntoUI(
     extra?: any;
   } | null>
 ) {
-  const ancestryOperations = ancestry.operations ?? [];
+  const ancestryOperations = charState[0]
+    ? getAdjustedAncestryOperations('CHARACTER', charState[0], ancestry.operations ?? [])
+    : ancestry.operations ?? [];
   const MODE = mode;
   const writeDetails =
     MODE === 'READ/WRITE'

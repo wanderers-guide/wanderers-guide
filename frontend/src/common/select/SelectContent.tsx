@@ -96,6 +96,7 @@ import { DrawerType } from '@typing/index';
 import { hasTraitType } from '@utils/traits';
 import { ObjectWithUUID } from '@operations/operation-utils';
 import { isItemArchaic, isItemWeapon } from '@items/inv-utils';
+import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 
 interface FilterOptions {
   options: {
@@ -2608,19 +2609,24 @@ export function AncestrySelectionOption(props: {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
 
-  const ancestryHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_ANCESTRY', props.ancestry.operations ?? [], 'READ');
+  const operations = character
+    ? getAdjustedAncestryOperations('CHARACTER', character, props.ancestry.operations ?? [])
+    : props.ancestry.operations ?? [];
+
+  const ancestryHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_ANCESTRY', operations, 'READ');
   const attributes = getStatBlockDisplay(
     'CHARACTER',
     getAllAttributeVariables('CHARACTER').map((v) => v.name),
-    props.ancestry.operations ?? [],
+    operations,
     'READ'
   );
 
   const flawAttributes = getStatBlockDisplay(
     'CHARACTER',
     getAllAttributeVariables('CHARACTER').map((v) => v.name),
-    props.ancestry.operations ?? [],
+    operations,
     'READ',
     undefined,
     { onlyNegatives: true }

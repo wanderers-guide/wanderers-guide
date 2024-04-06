@@ -430,6 +430,23 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
             <Tabs.Panel value='options'>
               <Stack gap={0} pt='sm'>
                 <LinkSwitch
+                  label='Alternate Ancestry Boosts'
+                  info={`The attribute boosts and flaws listed in each ancestry represent general trends or help guide players to create the kinds of characters from that ancestry most likely to pursue the life of an adventurer. However, ancestries aren’t a monolith. You always have the option to replace your ancestry’s listed attribute boosts and attribute flaws entirely and instead select two free attribute boosts when creating your character.`}
+                  enabled={character?.options?.alternate_ancestry_boosts}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          alternate_ancestry_boosts: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
                   label='Auto Detect Prerequisites'
                   info={`**[Beta]** Automatically determine if a feat or feature has its prerequisites met in order to be taken. This is a beta feature and may not always work correctly.`}
                   enabled={character?.options?.auto_detect_prerequisites}
@@ -526,6 +543,23 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                         options: {
                           ...prev.options,
                           is_public: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Voluntary Flaw'
+                  info={`Sometimes, it’s fun to play a character with a major flaw regardless of your ancestry. You can elect to take an additional attribute flaw when applying the attribute boosts and attribute flaws from your ancestry.`}
+                  enabled={character?.options?.voluntary_flaws}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          voluntary_flaws: enabled,
                         },
                       };
                     });

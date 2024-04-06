@@ -39,7 +39,7 @@ import {
   OperationSetValue,
   OperationType,
 } from '@typing/operations';
-import { StoreID, Variable, VariableListStr, VariableProf } from '@typing/variables';
+import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import {
   addVariable,
@@ -52,7 +52,7 @@ import {
   getAllWeaponGroupVariables,
   getVariable,
 } from '@variables/variable-manager';
-import { labelToVariable, variableToLabel } from '@variables/variable-utils';
+import { isProficiencyTypeGreaterOrEqual, labelToVariable, variableToLabel } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
@@ -600,4 +600,14 @@ export async function extendOperations(
       },
     } satisfies OperationGiveTrait,
   ];
+}
+
+export function isSkillAlreadyTrained(varId: StoreID, variableName: string, value: VariableValue): boolean {
+  const variable = getAllSkillVariables(varId).find((v) => v.name === variableName);
+  if (!variable) {
+    return false;
+  }
+  const profType = (value as ProficiencyValue).value;
+  if (profType !== 'T') return false;
+  return isProficiencyTypeGreaterOrEqual(variable.value.value, profType);
 }
