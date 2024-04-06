@@ -38,6 +38,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
 import { OperationResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
+import { displayResistWeak } from '@utils/resist-weaks';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 import { hasTraitType } from '@utils/traits';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
@@ -910,7 +911,86 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 </Text>
               </Accordion.Control>
               <Accordion.Panel>
-                <Stack gap={5}></Stack>
+                <Stack gap={5}>
+                  {(getVariable<VariableListStr>('CHARACTER', 'RESISTANCES')?.value ?? []).map((opt, index) => (
+                    <StatButton
+                      key={index}
+                      onClick={() => {
+                        openDrawer({ type: 'stat-resist-weak', data: {} });
+                      }}
+                    >
+                      <Box>
+                        <Text c='gray.0' fz='sm'>
+                          {displayResistWeak('CHARACTER', opt)}
+                        </Text>
+                      </Box>
+                      <Group>
+                        <Badge
+                          variant='default'
+                          styles={{
+                            root: {
+                              textTransform: 'initial',
+                            },
+                          }}
+                        >
+                          Resist.
+                        </Badge>
+                      </Group>
+                    </StatButton>
+                  ))}
+                  {(getVariable<VariableListStr>('CHARACTER', 'WEAKNESSES')?.value ?? []).map((opt, index) => (
+                    <StatButton
+                      key={index}
+                      onClick={() => {
+                        openDrawer({ type: 'stat-resist-weak', data: {} });
+                      }}
+                    >
+                      <Box>
+                        <Text c='gray.0' fz='sm'>
+                          {displayResistWeak('CHARACTER', opt)}
+                        </Text>
+                      </Box>
+                      <Group>
+                        <Badge
+                          variant='default'
+                          styles={{
+                            root: {
+                              textTransform: 'initial',
+                            },
+                          }}
+                        >
+                          Weak.
+                        </Badge>
+                      </Group>
+                    </StatButton>
+                  ))}
+                  {(getVariable<VariableListStr>('CHARACTER', 'IMMUNITIES')?.value ?? []).map((opt, index) => (
+                    <StatButton
+                      key={index}
+                      onClick={() => {
+                        openDrawer({ type: 'stat-resist-weak', data: {} });
+                      }}
+                    >
+                      <Box>
+                        <Text c='gray.0' fz='sm'>
+                          {displayResistWeak('CHARACTER', opt)}
+                        </Text>
+                      </Box>
+                      <Group>
+                        <Badge
+                          variant='default'
+                          styles={{
+                            root: {
+                              textTransform: 'initial',
+                            },
+                          }}
+                        >
+                          Immun.
+                        </Badge>
+                      </Group>
+                    </StatButton>
+                  ))}
+                </Stack>
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>

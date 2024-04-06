@@ -41,6 +41,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
+import { displayResistWeak } from '@utils/resist-weaks';
 import {
   displayFinalProfValue,
   getBonusText,
@@ -141,9 +142,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {resistVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {_.startCase(
-                          (compileExpressions('CHARACTER', opt.replace(',', ' '), true) ?? '').toLowerCase()
-                        )}
+                        {displayResistWeak('CHARACTER', opt)}
                       </Text>
                     </List.Item>
                   ))}
@@ -214,9 +213,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {weakVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {_.startCase(
-                          (compileExpressions('CHARACTER', opt.replace(',', ' '), true) ?? '').toLowerCase()
-                        )}
+                        {displayResistWeak('CHARACTER', opt)}
                       </Text>
                     </List.Item>
                   ))}
@@ -291,9 +288,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {immuneVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {_.startCase(
-                          (compileExpressions('CHARACTER', opt.replace(',', ' '), true) ?? '').toLowerCase()
-                        )}
+                        {displayResistWeak('CHARACTER', opt)}
                       </Text>
                     </List.Item>
                   ))}
