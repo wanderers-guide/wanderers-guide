@@ -15,8 +15,11 @@ To help contribute, currently go to the [Legacy App](https://github.com/wanderer
 ## Setup
 
 1. Install node.js using the instructions here: <https://nodejs.org/en/download>
-2. Go into the `/frontend` directory
-3. Run `npm install`
-4. While npm installs, copy `.env.local.template` to `.env.local`
-5. Paste the supabase url and key into `.env.local` (get these values from the project settings page)
-6. Run `npm run dev`
+2. Install the supabase CLI for your OS following the instructions: <https://supabase.com/docs/guides/cli/getting-started>
+3. Run `supabase start` to initialize supabase locally
+4. Go into the `/data` folder and run `./create-db.sh postgresql://postgres:postgres@127.0.0.1:54322/postgres`. This will create all the tables needed
+5. Go into the `/frontend` directory
+6. Copy `.env.local.template` to `.env.local` and paste the supabase url and anon key into `.env.local`. The default url to the supabase panel is <http://127.0.0.1:54323/>
+7. Run `npm install`
+8. Run `npm run dev`
+9. In another terminal window run at the project root level `supabase functions serve` to initialize the backend
