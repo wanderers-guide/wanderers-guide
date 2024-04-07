@@ -778,6 +778,10 @@ async function runConditional(
         return variable.value.value < value;
       } else if (check.operator === 'NOT_EQUALS') {
         return variable.value.value !== value;
+      } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
+        return variable.value.value >= value;
+      } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
+        return variable.value.value <= value;
       }
     } else if (variable.type === 'num') {
       const value = parseInt(check.value);
@@ -789,6 +793,10 @@ async function runConditional(
         return variable.value < value;
       } else if (check.operator === 'NOT_EQUALS') {
         return variable.value !== value;
+      } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
+        return variable.value >= value;
+      } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
+        return variable.value <= value;
       }
     } else if (variable.type === 'str') {
       if (check.operator === 'EQUALS') {
@@ -827,6 +835,12 @@ async function runConditional(
         return bestProf === check.value;
       } else if (check.operator === 'NOT_EQUALS') {
         return variable.value.value !== check.value;
+      } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
+        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
+        return bestProf === variable.value.value || variable.value.value === check.value;
+      } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
+        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
+        return bestProf === check.value || variable.value.value === check.value;
       }
     }
     return false;

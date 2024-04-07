@@ -143,7 +143,15 @@ export type ConditionCheckData = {
   value: string;
 };
 
-export type ConditionOperator = '' | 'INCLUDES' | 'EQUALS' | 'NOT_EQUALS' | 'LESS_THAN' | 'GREATER_THAN';
+export type ConditionOperator =
+  | ''
+  | 'INCLUDES'
+  | 'EQUALS'
+  | 'NOT_EQUALS'
+  | 'LESS_THAN'
+  | 'GREATER_THAN'
+  | 'GREATER_THAN_OR_EQUALS'
+  | 'LESS_THAN_OR_EQUALS';
 
 export interface GiveSpellData extends SpellMetadata {
   spellId: number;

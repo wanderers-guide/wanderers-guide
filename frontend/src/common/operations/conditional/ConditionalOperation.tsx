@@ -205,32 +205,36 @@ export function ConditionalCheck(props: {
   let operatorOptions: { value: ConditionOperator; label: string }[] = [];
   if (variableData?.type === 'attr' || variableData?.type === 'num' || variableData?.type === 'prof') {
     operatorOptions = [
-      { value: 'EQUALS', label: 'equals' },
-      { value: 'LESS_THAN', label: 'less than' },
-      { value: 'GREATER_THAN', label: 'greater than' },
-      { value: 'NOT_EQUALS', label: 'not equals' },
+      { value: 'LESS_THAN', label: '<' },
+      { value: 'LESS_THAN_OR_EQUALS', label: '≤' },
+      { value: 'GREATER_THAN', label: '>' },
+      { value: 'GREATER_THAN_OR_EQUALS', label: '≥' },
+      { value: 'EQUALS', label: '=' },
+      { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
   if (variableData?.type === 'bool') {
     operatorOptions = [
-      { value: 'EQUALS', label: 'equals' },
-      { value: 'NOT_EQUALS', label: 'not equals' },
+      { value: 'EQUALS', label: '=' },
+      { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
   if (variableData?.type === 'str' || variableData?.type === 'list-str') {
     operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
-      { value: 'EQUALS', label: 'equals' },
-      { value: 'NOT_EQUALS', label: 'not equals' },
+      { value: 'EQUALS', label: '=' },
+      { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
   if (!variableData) {
     operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
-      { value: 'EQUALS', label: 'equals' },
-      { value: 'NOT_EQUALS', label: 'not equals' },
-      { value: 'LESS_THAN', label: 'less than' },
-      { value: 'GREATER_THAN', label: 'greater than' },
+      { value: 'LESS_THAN', label: '<' },
+      { value: 'LESS_THAN_OR_EQUALS', label: '≤' },
+      { value: 'GREATER_THAN', label: '>' },
+      { value: 'GREATER_THAN_OR_EQUALS', label: '≥' },
+      { value: 'EQUALS', label: '=' },
+      { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
 
