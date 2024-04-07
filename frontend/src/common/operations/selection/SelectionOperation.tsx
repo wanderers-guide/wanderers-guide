@@ -52,7 +52,7 @@ import {
 import { ExtendedProficiencyValue, VariableType, VariableValue } from '@typing/variables';
 import useRefresh from '@utils/use-refresh';
 import { getVariable } from '@variables/variable-manager';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { labelToVariable } from '@variables/variable-utils';
@@ -546,7 +546,7 @@ function SelectionFilteredLanguage(props: {
   const [rarity, setRarity] = useState<Rarity | undefined>(props.filters?.rarity ?? undefined);
   const [core, setCore] = useState<boolean | undefined>(props.filters?.core ?? undefined);
 
-  useDidUpdate(() => {
+  useEffect(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
       type: 'LANGUAGE',

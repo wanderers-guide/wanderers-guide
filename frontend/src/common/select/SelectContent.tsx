@@ -938,7 +938,7 @@ function SelectionOptions(props: {
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
   });
-  let options = data ? [...data.values()] : [];
+  let options = useMemo(() => (data ? [...data.values()] : []), [data]);
   if (props.overrideOptions) options = props.overrideOptions;
   options = options.filter((d) => d).filter(props.filterFn ? props.filterFn : () => true);
 
@@ -1346,7 +1346,6 @@ function SelectionOptionsRoot(props: {
   const isSkillIncreaseWithLore = props.skillAdjustment && props.options.find((o) => o.variable === 'SKILL_LORE____');
   if (isSkillIncreaseWithLore) {
     const addNewLore = (option: AbilityBlock) => {
-      console.log('Adding new lore', option);
       openContextModal({
         modal: 'addNewLore',
         title: <Title order={3}>Add New Lore</Title>,

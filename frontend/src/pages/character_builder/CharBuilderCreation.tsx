@@ -569,7 +569,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       >
                         <Box>
                           <Text c='gray.0' fz='sm'>
-                            {_.truncate(variableToLabel(skill), { length: 17 })}
+                            {_.truncate(variableToLabel(skill), { length: 15 })}
                           </Text>
                         </Box>
                         <Group wrap='nowrap'>
