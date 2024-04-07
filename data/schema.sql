@@ -603,7 +603,7 @@ CREATE TABLE public.trait (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     name character varying DEFAULT ''::character varying NOT NULL,
     description text DEFAULT ''::text NOT NULL,
-    meta_data json,
+    meta_data jsonb,
     content_source_id bigint NOT NULL,
     uuid bigint NOT NULL
 );
