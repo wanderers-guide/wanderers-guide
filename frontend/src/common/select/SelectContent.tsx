@@ -1174,6 +1174,7 @@ function SelectionOptionsRoot(props: {
               physicalFeature={physicalFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === physicalFeature.id}
+              includeDetails={props.includeDetails}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -2190,6 +2191,7 @@ export function PhysicalFeatureSelectionOption(props: {
   physicalFeature: AbilityBlock;
   onClick: (physicalFeature: AbilityBlock) => void;
   selected?: boolean;
+  includeDetails?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2228,27 +2230,29 @@ export function PhysicalFeatureSelectionOption(props: {
             rarity={props.physicalFeature.rarity}
           />
         </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
+        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
       </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({
-            type: 'physical-feature',
-            data: { id: props.physicalFeature.id },
-          });
-        }}
-      >
-        Details
-      </Button>
+      {props.includeDetails && (
+        <Button
+          size='xs'
+          px={5}
+          variant='subtle'
+          style={{
+            position: 'absolute',
+            top: 12,
+            right: props.includeOptions ? 40 : 10,
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openDrawer({
+              type: 'physical-feature',
+              data: { id: props.physicalFeature.id },
+            });
+          }}
+        >
+          Details
+        </Button>
+      )}
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>

@@ -160,7 +160,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             >
               {data.classFeats.length > 0 && (
                 <Accordion.Item value='class-feats'>
-                  <Accordion.Control>Class Feats</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>Class Feats</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -190,7 +192,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
               {data.ancestryFeats.length > 0 && (
                 <Accordion.Item value='ancestry-feats'>
-                  <Accordion.Control>Ancestry Feats</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>Ancestry Feats</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -220,7 +224,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
               {data.generalAndSkillFeats.length > 0 && (
                 <Accordion.Item value='general-skill-feats'>
-                  <Accordion.Control>General & Skill Feats</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>General & Skill Feats</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -250,7 +256,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
               {data.otherFeats.length > 0 && (
                 <Accordion.Item value='other-feats'>
-                  <Accordion.Control>Other Feats</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>Other Feats</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -303,7 +311,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             >
               {data.classFeatures.length > 0 && (
                 <Accordion.Item value='class-features'>
-                  <Accordion.Control>Class Features</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>Class Features</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -332,7 +342,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
               {data.heritages.length > 0 && (
                 <Accordion.Item value='heritages'>
-                  <Accordion.Control>Heritage</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>Heritage</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {
@@ -361,7 +373,9 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
               {data.physicalFeatures.length > 0 && (
                 <Accordion.Item value='ancestry-features'>
-                  <Accordion.Control>Ancestry Features</Accordion.Control>
+                  <Accordion.Control>
+                    <Text fw={600}>Ancestry Features</Text>
+                  </Accordion.Control>
                   <Accordion.Panel
                     styles={{
                       content: {

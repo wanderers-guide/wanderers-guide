@@ -990,6 +990,14 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Group>
                     </StatButton>
                   ))}
+
+                  {(getVariable<VariableListStr>('CHARACTER', 'RESISTANCES')?.value ?? []).length === 0 &&
+                    (getVariable<VariableListStr>('CHARACTER', 'WEAKNESSES')?.value ?? []).length === 0 &&
+                    (getVariable<VariableListStr>('CHARACTER', 'IMMUNITIES')?.value ?? []).length === 0 && (
+                      <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                        No records found.
+                      </Text>
+                    )}
                 </Stack>
               </Accordion.Panel>
             </Accordion.Item>
