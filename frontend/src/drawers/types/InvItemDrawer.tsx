@@ -51,6 +51,11 @@ import { getWeaponSpecialization } from '@specializations/weapon-specializations
 import { drawerState } from '@atoms/navAtoms';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
+  let type = `Item ${props.data.invItem.item.level}`;
+  if (props.data.invItem.item?.meta_data?.unselectable && props.data.invItem.item.level === 0) {
+    type = '';
+  }
+
   return (
     <>
       <Group justify='space-between' wrap='nowrap'>
@@ -59,7 +64,7 @@ export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) 
             <Title order={3}>{props.data.invItem.item.name}</Title>
           </Box>
         </Group>
-        <Text style={{ textWrap: 'nowrap' }}>Item {props.data.invItem.item.level}</Text>
+        <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
       </Group>
     </>
   );

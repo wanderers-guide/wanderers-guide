@@ -157,26 +157,26 @@ export function OperationSection(props: {
           data={[
             { value: 'select', label: 'Selection' },
             { value: 'conditional', label: 'Conditional' },
+            { value: 'adjValue', label: 'Adjust Value' },
+            { value: 'addBonusToValue', label: 'Add Bonus to Value' },
             { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
-            {
-              value: 'giveAbilityBlock:::class-feature',
-              label: 'Give Class Feature',
-            },
+            { value: 'giveLanguage', label: 'Give Language' },
+            { value: 'giveSpell', label: 'Give Spell' },
+            { value: 'giveSpellSlot', label: 'Give Spell Slots' },
+            { value: 'defineCastingSource', label: 'Define Casting Source' },
             { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
             {
               value: 'giveAbilityBlock:::physical-feature',
               label: 'Give Physical Feature',
             },
-            { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
-            { value: 'giveSpell', label: 'Give Spell' },
-            { value: 'giveSpellSlot', label: 'Give Spell Slots' },
-            { value: 'defineCastingSource', label: 'Define Casting Source' },
-            { value: 'giveLanguage', label: 'Give Language' },
-            { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'giveItem', label: 'Give Item' },
             { value: 'giveTrait', label: 'Give Trait' },
-            { value: 'adjValue', label: 'Adjust Value' },
-            { value: 'addBonusToValue', label: 'Add Bonus to Value' },
+            { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
+            {
+              value: 'giveAbilityBlock:::class-feature',
+              label: 'Give Class Feature',
+            },
+            { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'createValue', label: 'Create Value' },
             { value: 'setValue', label: 'Override Value' },
             { value: 'RESO', label: 'RESO' }, // TODO

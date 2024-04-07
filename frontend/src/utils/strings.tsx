@@ -73,13 +73,14 @@ export function startCase(text: string) {
     .replace(/(^|\s|[^a-zA-Z0-9])([a-zA-Z0-9])/g, (match, prefix, letter) => {
       return prefix + letter.toUpperCase();
     });
-  text.replace(' And ', ' and ');
-  text.replace(' Or ', ' or ');
-  text.replace(' In ', ' in ');
-  text.replace(' Of ', ' of ');
-  text.replace(' The ', ' the ');
-  text.replace(' A ', ' a ');
-  text.replace(' An ', ' an ');
-  text.replace(' On ', ' on ');
+  text = text.replace(' And ', ' and ');
+  text = text.replace(' Or ', ' or ');
+  text = text.replace(' In ', ' in ');
+  text = text.replace(' By ', ' by ');
+  text = text.replace(' Of ', ' of ');
+  text = text.replace(' The ', ' the ');
+  text = text.replace(' A ', ' a ');
+  text = text.replace(' An ', ' an ');
+  text = text.replace(' On ', ' on ');
   return text;
 }

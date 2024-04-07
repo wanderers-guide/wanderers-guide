@@ -63,6 +63,11 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   });
   const item = props.data.item ?? _item;
 
+  let type = `Item ${item?.level}`;
+  if (item?.meta_data?.unselectable && item.level === 0) {
+    type = '';
+  }
+
   return (
     <>
       {item && (
@@ -75,7 +80,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
               </Title>
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>Item {item.level}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
         </Group>
       )}
     </>
