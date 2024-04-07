@@ -207,27 +207,28 @@ export function OperationSection(props: {
       </Group>
       <Stack gap={10}>
         {(props.operations ?? []).map((op, index) => (
-          <OperationDisplay
-            key={index}
-            operation={op}
-            onChange={(option) => {
-              const newOp = _.cloneDeep(op);
-              newOp.data = option.data;
+          <Paper withBorder key={index}>
+            <OperationDisplay
+              operation={op}
+              onChange={(option) => {
+                const newOp = _.cloneDeep(op);
+                newOp.data = option.data;
 
-              props.onChange(
-                (props.operations ?? []).map((p_op) => {
-                  if (p_op.id === op.id) {
-                    return newOp;
-                  } else {
-                    return p_op;
-                  }
-                })
-              );
-            }}
-            onRemove={(id) => {
-              props.onChange((props.operations ?? []).filter((p_op) => p_op.id !== id));
-            }}
-          />
+                props.onChange(
+                  (props.operations ?? []).map((p_op) => {
+                    if (p_op.id === op.id) {
+                      return newOp;
+                    } else {
+                      return p_op;
+                    }
+                  })
+                );
+              }}
+              onRemove={(id) => {
+                props.onChange((props.operations ?? []).filter((p_op) => p_op.id !== id));
+              }}
+            />
+          </Paper>
         ))}
         {(props.operations ?? []).length === 0 && (
           <Text size='sm' c='gray.7' ta='center' fs='italic'>

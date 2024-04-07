@@ -111,6 +111,12 @@ const imageStore: Record<string, ImageOption[]> = {
       source_url: 'https://www.artstation.com/andreasrocha',
     },
     {
+      name: 'Deep in the Forest',
+      url: 'https://cdnb.artstation.com/p/assets/images/images/000/310/933/large/andreas-rocha-deepintheforest08.jpg',
+      source: 'Andreas Rocha',
+      source_url: 'https://www.artstation.com/andreasrocha',
+    },
+    {
       name: 'Towering Shadows',
       url: 'https://cdnb.artstation.com/p/assets/images/images/016/145/351/large/andreas-rocha-toweringshadows01.jpg',
       source: 'Andreas Rocha',

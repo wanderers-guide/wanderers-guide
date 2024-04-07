@@ -146,7 +146,9 @@ export function CreateAbilityBlockModal(props: {
       level = +values.level;
     } else {
       level = 1;
-      unselectable = true;
+      if (values.type === 'feat') {
+        unselectable = true;
+      }
     }
 
     props.onComplete({

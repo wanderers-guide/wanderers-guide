@@ -366,6 +366,16 @@ const CONDITIONS: Condition[] = [
     for_object: false,
     starfinder_only: true,
   },
+
+  // TODO, Temp solution to include auto-detected rules here.
+  // Set everything false so they don't show up in modal
+  {
+    name: 'Fast Healing',
+    description: `You regain the given number of Hit Points each round at the beginning of your turn.`,
+    for_character: false,
+    for_creature: false,
+    for_object: false,
+  },
 ];
 
 export function getConditionByName(name: string, addedSource?: string): Condition | undefined {
@@ -712,8 +722,6 @@ function applyCondition(id: StoreID, condition: Condition) {
   if (condition.name === 'Wounded') {
     return;
   }
-
-  // Starfinder Field Test Conditions
   if (condition.name === 'Glitching') {
     return;
   }

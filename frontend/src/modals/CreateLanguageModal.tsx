@@ -30,8 +30,7 @@ export function CreateLanguageModal(props: {
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
-  const editing =
-    (props.editId !== undefined && props.editId !== -1) || props.editLanguage !== undefined;
+  const editing = (props.editId !== undefined && props.editId !== -1) || props.editLanguage !== undefined;
 
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
@@ -40,10 +39,7 @@ export function CreateLanguageModal(props: {
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { editId, editLanguage }] = queryKey as [
-        string,
-        { editId?: number; editLanguage?: Language }
-      ];
+      const [_key, { editId, editLanguage }] = queryKey as [string, { editId?: number; editLanguage?: Language }];
 
       const language = editId ? await fetchContentById<Language>('language', editId) : editLanguage;
       if (!language) return null;
@@ -61,14 +57,14 @@ export function CreateLanguageModal(props: {
   });
 
   const [description, setDescription] = useState<JSONContent>();
- 
+
   const form = useForm<Language>({
     initialValues: {
       id: -1,
       created_at: '',
       name: '',
-      speakers: '', 
-      script: '', 
+      speakers: '',
+      script: '',
       description: '',
       rarity: 'COMMON' as Rarity,
       content_source_id: -1,
@@ -114,8 +110,8 @@ export function CreateLanguageModal(props: {
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
                 <TextInput label='Name' required {...form.getInputProps('name')} />
-                <TextInput label='Speakers' required {...form.getInputProps('speakers')} />
-                <TextInput label='Script' required {...form.getInputProps('script')} />
+                <TextInput label='Speakers' {...form.getInputProps('speakers')} />
+                <TextInput label='Script' {...form.getInputProps('script')} />
               </Group>
               <Select
                 label='Rarity'
@@ -161,4 +157,3 @@ export function CreateLanguageModal(props: {
     </Modal>
   );
 }
- 

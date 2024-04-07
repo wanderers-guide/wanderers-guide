@@ -970,7 +970,7 @@ function SelectionOptions(props: {
     search.current.addIndex('name');
     //search.current.addIndex('description');
     search.current.addDocuments(options);
-  }, [data]);
+  }, [options]);
   let filteredOptions = props.searchQuery
     ? (search.current.search(props.searchQuery) as Record<string, any>[])
     : options;

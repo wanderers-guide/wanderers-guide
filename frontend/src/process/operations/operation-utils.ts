@@ -246,7 +246,7 @@ export async function determineFilteredSelectionList(
 async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
-  abilityBlocks = abilityBlocks.filter((ab) => ab.meta_data?.unselectable !== true);
+  abilityBlocks = abilityBlocks.filter((ab) => ab.type !== 'feat' || ab.meta_data?.unselectable !== true);
 
   if (filters.abilityBlockType !== undefined) {
     abilityBlocks = abilityBlocks.filter((ab) => ab.type === filters.abilityBlockType);

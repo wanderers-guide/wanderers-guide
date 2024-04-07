@@ -89,7 +89,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
           </IndentedText>
         )}
         {(language.speakers || language.script) && <Divider />}
-        <RichText ta='justify'>{language.description}</RichText>
+        <RichText ta='justify'>{language.description || 'No description given.'}</RichText>
       </Box>
     </Box>
   );

@@ -232,6 +232,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus.
   MARTIAL_EXPERIENCE: newVariable('bool', 'MARTIAL_EXPERIENCE'),
 
+  // When you take Multilingual, you gain 3 languages instead of 2.
+  IMPROVED_MULTILINGUAL: newVariable('bool', 'IMPROVED_MULTILINGUAL'),
+
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
 
