@@ -351,7 +351,7 @@ export function CreateSpellModal(props: {
                 <TextInput
                   defaultValue={metaData.image_url ?? ''}
                   label='Image URL'
-                  onChange={async (e) => {
+                  onBlur={async (e) => {
                     setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
                     setMetaData({
                       ...metaData,

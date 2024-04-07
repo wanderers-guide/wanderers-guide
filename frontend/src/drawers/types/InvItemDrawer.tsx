@@ -37,7 +37,14 @@ import {
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { CreateItemModal } from '@modals/CreateItemModal';
-import { IconChevronDown, IconEdit, IconHelpCircle, IconTrashXFilled } from '@tabler/icons-react';
+import {
+  IconChevronDown,
+  IconEdit,
+  IconHelpCircle,
+  IconSquareRounded,
+  IconSquareRoundedFilled,
+  IconTrashXFilled,
+} from '@tabler/icons-react';
 import { InventoryItem } from '@typing/content';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -49,6 +56,7 @@ import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
 import { drawerState } from '@atoms/navAtoms';
+import TokenSelect from '@common/TokenSelect';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -210,87 +218,137 @@ export function InvItemDrawerContent(props: {
           width: '100%',
         }}
       >
-        <Group justify='flex-end' wrap='nowrap' mr={15} gap={15}>
-          {!invItem.item.meta_data?.unselectable && containerItems.length > 0 && (
-            <Menu
-              transitionProps={{ transition: 'pop-top-right' }}
-              position='top-end'
-              // width={140}
-              withinPortal
-              zIndex={10000}
-            >
-              <Menu.Target>
-                <Button
-                  variant='light'
-                  color='teal'
-                  size='compact-sm'
-                  radius='xl'
-                  rightSection={<IconChevronDown style={{ width: rem(18), height: rem(18) }} stroke={1.5} />}
-                  styles={{
-                    section: {
-                      marginLeft: 5,
-                    },
-                  }}
-                  style={{
-                    backdropFilter: 'blur(8px)',
-                  }}
-                  pr={5}
-                >
-                  Move Item
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Item
-                  onClick={() => {
-                    props.data.onItemMove(invItem, null);
-                  }}
-                >
-                  Unstored
-                </Menu.Item>
-                <Menu.Divider />
-                {containerItems.map((containerItem, index) => (
+        <Group justify='space-between' wrap='nowrap'>
+          <Group wrap='nowrap' gap={15} ml={0}>
+            {invItem.item.meta_data?.charges?.max && (
+              <Box mb={-10}>
+                <TokenSelect
+                  count={invItem.item.meta_data.charges.max}
+                  value={invItem.item.meta_data.charges.current ?? 0}
+                  onChange={(val) =>
+                    props.data.onItemUpdate({
+                      ...invItem,
+                      item: {
+                        ...invItem.item,
+                        meta_data: {
+                          ...invItem.item.meta_data!,
+                          charges: {
+                            ...invItem.item.meta_data?.charges,
+                            current: val,
+                          },
+                        },
+                      },
+                    })
+                  }
+                  size='xs'
+                  emptySymbol={
+                    <ActionIcon
+                      variant='transparent'
+                      color='gray.1'
+                      aria-label='Item Charge, Unused'
+                      size='xs'
+                      style={{ opacity: 0.7 }}
+                    >
+                      <IconSquareRounded size='1rem' />
+                    </ActionIcon>
+                  }
+                  fullSymbol={
+                    <ActionIcon
+                      variant='transparent'
+                      color='gray.1'
+                      aria-label='Item Charge, Exhuasted'
+                      size='xs'
+                      style={{ opacity: 0.7 }}
+                    >
+                      <IconSquareRoundedFilled size='1rem' />
+                    </ActionIcon>
+                  }
+                />
+              </Box>
+            )}
+          </Group>
+          <Group wrap='nowrap' gap={15} mr={15}>
+            {!invItem.item.meta_data?.unselectable && containerItems.length > 0 && (
+              <Menu
+                transitionProps={{ transition: 'pop-top-right' }}
+                position='top-end'
+                // width={140}
+                withinPortal
+                zIndex={10000}
+              >
+                <Menu.Target>
+                  <Button
+                    variant='light'
+                    color='teal'
+                    size='compact-sm'
+                    radius='xl'
+                    rightSection={<IconChevronDown style={{ width: rem(18), height: rem(18) }} stroke={1.5} />}
+                    styles={{
+                      section: {
+                        marginLeft: 5,
+                      },
+                    }}
+                    style={{
+                      backdropFilter: 'blur(8px)',
+                    }}
+                    pr={5}
+                  >
+                    Move Item
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
                   <Menu.Item
-                    key={index}
                     onClick={() => {
-                      props.data.onItemMove(invItem, containerItem);
+                      props.data.onItemMove(invItem, null);
                     }}
                   >
-                    {containerItem.item.name}
+                    Unstored
                   </Menu.Item>
-                ))}
-              </Menu.Dropdown>
-            </Menu>
-          )}
-          <ActionIcon
-            variant='light'
-            color='cyan'
-            radius='xl'
-            aria-label='Edit Item'
-            style={{
-              backdropFilter: 'blur(8px)',
-            }}
-            onClick={() => {
-              setEditingItem(true);
-            }}
-          >
-            <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
-          </ActionIcon>
-          {!invItem.item.meta_data?.unselectable && (
+                  <Menu.Divider />
+                  {containerItems.map((containerItem, index) => (
+                    <Menu.Item
+                      key={index}
+                      onClick={() => {
+                        props.data.onItemMove(invItem, containerItem);
+                      }}
+                    >
+                      {containerItem.item.name}
+                    </Menu.Item>
+                  ))}
+                </Menu.Dropdown>
+              </Menu>
+            )}
             <ActionIcon
               variant='light'
-              color='red'
+              color='cyan'
               radius='xl'
-              aria-label='Remove Item'
+              aria-label='Edit Item'
               style={{
                 backdropFilter: 'blur(8px)',
               }}
               onClick={() => {
-                props.data.onItemDelete(invItem);
+                setEditingItem(true);
               }}
             >
-              <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
             </ActionIcon>
-          )}
+            {!invItem.item.meta_data?.unselectable && (
+              <ActionIcon
+                variant='light'
+                color='red'
+                radius='xl'
+                aria-label='Remove Item'
+                style={{
+                  backdropFilter: 'blur(8px)',
+                }}
+                onClick={() => {
+                  props.data.onItemDelete(invItem);
+                }}
+              >
+                <IconTrashXFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon>
+            )}
+          </Group>
         </Group>
         {editingItem && (
           <CreateItemModal
@@ -409,32 +467,34 @@ function InvItemSections(props: {
 
     healthSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
-        <Group wrap='nowrap'>
-          <Text fw={600} c='gray.5' span>
-            Hit Points
-          </Text>{' '}
-          <TextInput
-            ref={healthRef}
-            w={120}
-            placeholder='HP'
-            value={health}
-            onChange={(e) => {
-              setHealth(e.target.value);
-            }}
-            onBlur={handleHealthSubmit}
-            onKeyDown={getHotkeyHandler([
-              ['mod+Enter', handleHealthSubmit],
-              ['Enter', handleHealthSubmit],
-            ])}
-            rightSection={
-              <Group>
-                <Text>/</Text>
-                <Text>{maxHp}</Text>
-              </Group>
-            }
-            rightSectionWidth={60}
-          />
-          <Group gap={5}>
+        <Group gap={5}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+            <Text fw={600} c='gray.5' span>
+              Hit Points
+            </Text>{' '}
+            <TextInput
+              ref={healthRef}
+              w={120}
+              placeholder='HP'
+              value={health}
+              onChange={(e) => {
+                setHealth(e.target.value);
+              }}
+              onBlur={handleHealthSubmit}
+              onKeyDown={getHotkeyHandler([
+                ['mod+Enter', handleHealthSubmit],
+                ['Enter', handleHealthSubmit],
+              ])}
+              rightSection={
+                <Group>
+                  <Text>/</Text>
+                  <Text>{maxHp}</Text>
+                </Group>
+              }
+              rightSectionWidth={60}
+            />
+          </Group>
+          <Group gap={5} style={{ flexGrow: 1 }}>
             <Stack gap={0}>
               <Text ta='right' fz={10}>
                 Hardness
@@ -493,7 +553,7 @@ function InvItemSections(props: {
     attackAndDamageSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group
-          wrap='nowrap'
+          gap={0}
           style={{
             cursor: 'pointer',
           }}
@@ -504,9 +564,8 @@ function InvItemSections(props: {
               extra: { addToHistory: true },
             });
           }}
-          grow
         >
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Attack
             </Text>
@@ -515,7 +574,7 @@ function InvItemSections(props: {
               {sign(weaponStats.attack_bonus.total[2])}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Damage
             </Text>
@@ -606,8 +665,8 @@ function InvItemSections(props: {
   if (props.invItem.item.meta_data?.range || props.invItem.item.meta_data?.reload) {
     rangeAndReloadSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap' grow>
-          <Group wrap='nowrap' gap={10}>
+        <Group gap={0}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Range
             </Text>
@@ -615,7 +674,7 @@ function InvItemSections(props: {
               {props.invItem.item.meta_data?.range} ft.
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Reload
             </Text>
@@ -632,8 +691,8 @@ function InvItemSections(props: {
   if (props.invItem.item.meta_data?.starfinder?.capacity || props.invItem.item.meta_data?.starfinder?.usage) {
     capacityAndUsageSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap' grow>
-          <Group wrap='nowrap' gap={10}>
+        <Group gap={0}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Capacity
             </Text>
@@ -641,7 +700,7 @@ function InvItemSections(props: {
               {props.invItem.item.meta_data?.starfinder?.capacity ?? '—'}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Ammo Usage
             </Text>
@@ -675,8 +734,8 @@ function InvItemSections(props: {
 
     categoryAndGroupSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap' grow>
-          <Group wrap='nowrap' gap={10}>
+        <Group gap={0}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Category
             </Text>
@@ -684,7 +743,7 @@ function InvItemSections(props: {
               {toLabel(props.invItem.item.meta_data?.category)}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               Group
             </Text>
@@ -718,8 +777,8 @@ function InvItemSections(props: {
   if (hasArmor) {
     armorSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md' style={{ position: 'relative' }}>
-        <Group wrap='nowrap'>
-          <Group wrap='nowrap' mr={20}>
+        <Group gap={0}>
+          <Group wrap='nowrap' mr={20} style={{ flexGrow: 1 }}>
             <Text fw={600} c='gray.5' span>
               AC Bonus
             </Text>{' '}
@@ -727,7 +786,7 @@ function InvItemSections(props: {
               {sign(ac ?? 0)}
             </Text>
           </Group>
-          <Group wrap='nowrap' align='flex-start'>
+          <Group wrap='nowrap' align='flex-start' style={{ flexGrow: 1 }}>
             {(dexCap !== undefined || strength !== undefined) && (
               <Group gap={5}>
                 <Stack gap={0}>
@@ -778,7 +837,7 @@ function InvItemSections(props: {
                   )}
                   {!!speedPenalty && (
                     <Text ta='left' fw={500} c='gray.4' fz={10}>
-                      {sign(speedPenalty)}
+                      {sign(speedPenalty)} ft.
                     </Text>
                   )}
                 </Stack>

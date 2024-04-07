@@ -475,7 +475,7 @@ export function CreateCreatureModal(props: {
                 <TextInput
                   defaultValue={form.values.details.image_url ?? ''}
                   label='Image URL'
-                  onChange={async (e) => {
+                  onBlur={async (e) => {
                     setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
                     form.setFieldValue('details.image_url', e.target?.value);
                   }}

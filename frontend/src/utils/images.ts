@@ -6,7 +6,7 @@ export async function getIcon(content: string) {
 export async function isValidImage(url?: string): Promise<boolean> {
   if (!url) return false;
   const urlPattern = /^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}(\S*)$/;
-  if (url.match(urlPattern)) {
+  if (url.trim().match(urlPattern)) {
     return new Promise((resolve, reject) => {
       let img = new Image();
       img.onload = function () {

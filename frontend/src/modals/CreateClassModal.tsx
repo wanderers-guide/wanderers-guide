@@ -158,7 +158,7 @@ export function CreateClassModal(props: {
             <TextInput
               defaultValue={form.values.artwork_url ?? ''}
               label='Image URL'
-              onChange={async (e) => {
+              onBlur={async (e) => {
                 setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
                 form.setFieldValue('artwork_url', e.target?.value);
               }}

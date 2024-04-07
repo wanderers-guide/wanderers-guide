@@ -158,6 +158,7 @@ export function SkillDisplay(props: { skill: string | string[]; interactable?: b
 
 export function BrokenDisplay(props: { interactable?: boolean; size?: MantineSize }) {
   const theme = useMantineTheme();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const broken = getConditionByName('Broken')!;
 
@@ -181,6 +182,15 @@ export function BrokenDisplay(props: { interactable?: boolean; size?: MantineSiz
                 textTransform: 'initial',
                 cursor: props.interactable ? 'pointer' : undefined,
               },
+            }}
+            onClick={() => {
+              if (props.interactable) {
+                openDrawer({
+                  type: 'condition',
+                  data: { id: broken.name },
+                  extra: { addToHistory: true },
+                });
+              }
             }}
           >
             {broken.name}

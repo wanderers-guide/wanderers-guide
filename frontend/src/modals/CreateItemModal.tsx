@@ -117,7 +117,6 @@ export function CreateItemModal(props: {
   const [traits, setTraits] = useState<Trait[]>([]);
 
   const [isValidImageURL, setIsValidImageURL] = useState(true);
-  const [imageURL, setImageURL] = useState<string>('');
 
   const [armorCategory, setArmorCategory] = useState('');
   const [armorGroup, setArmorGroup] = useState('');
@@ -199,6 +198,10 @@ export function CreateItemModal(props: {
           usage: undefined,
           upgrades: undefined,
         },
+        charges: {
+          current: undefined,
+          max: undefined,
+        },
         foundry: {},
       },
       operations: [],
@@ -214,6 +217,7 @@ export function CreateItemModal(props: {
 
   const onSubmit = async (values: typeof form.values) => {
     // Combine the form values with the controlled state values
+
     props.onComplete({
       ...values,
       name: values.name.trim(),
@@ -234,7 +238,6 @@ export function CreateItemModal(props: {
         },
         category: weaponCategory ? weaponCategory : armorCategory,
         group: weaponGroup ? weaponGroup : armorGroup,
-        image_url: isValidImageURL ? imageURL : '',
       },
     });
     setTimeout(() => {
@@ -452,6 +455,11 @@ export function CreateItemModal(props: {
                       <Accordion.Panel>
                         <Stack gap={10}>
                           <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Num. of Dice'
+                              placeholder='(+ Striking)'
+                              {...form.getInputProps('meta_data.damage.dice')}
+                            />
                             <Select
                               label='Damage Die'
                               clearable
@@ -466,7 +474,6 @@ export function CreateItemModal(props: {
                               ]}
                               {...form.getInputProps('meta_data.damage.die')}
                             />
-
                             <TextInput
                               label='Damage Type'
                               placeholder='ex. slashing'
@@ -554,12 +561,6 @@ export function CreateItemModal(props: {
                             />
                           </Group>
                           <Group wrap='nowrap'>
-                            <NumberInput
-                              label='Number of Dice'
-                              placeholder='(added to Striking)'
-                              {...form.getInputProps('meta_data.damage.dice')}
-                            />
-
                             <NumberInput
                               label='Max Upgrades'
                               placeholder='Max Upgrades'
@@ -766,26 +767,28 @@ export function CreateItemModal(props: {
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap={10}>
-                          <NumberInput
-                            label='Hardness'
-                            placeholder='Hardness'
-                            min={0}
-                            {...form.getInputProps('meta_data.hardness')}
-                          />
+                          <Group>
+                            <NumberInput
+                              label='Hardness'
+                              placeholder='Hardness'
+                              min={0}
+                              {...form.getInputProps('meta_data.hardness')}
+                            />
 
-                          <NumberInput
-                            label='Max HP'
-                            placeholder='Max HP'
-                            min={0}
-                            {...form.getInputProps('meta_data.hp_max')}
-                          />
+                            <NumberInput
+                              label='Max HP'
+                              placeholder='Max HP'
+                              min={0}
+                              {...form.getInputProps('meta_data.hp_max')}
+                            />
 
-                          <NumberInput
-                            label='Broken Threshold'
-                            placeholder='(typically 1/2 max HP)'
-                            min={0}
-                            {...form.getInputProps('meta_data.broken_threshold')}
-                          />
+                            <NumberInput
+                              label='Broken Threshold'
+                              placeholder='(typically 1/2 max HP)'
+                              min={0}
+                              {...form.getInputProps('meta_data.broken_threshold')}
+                            />
+                          </Group>
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>
@@ -829,27 +832,35 @@ export function CreateItemModal(props: {
                       <Accordion.Panel>
                         <Stack gap={10}>
                           <Switch
-                            label='Is Shoddy'
-                            labelPosition='left'
-                            {...form.getInputProps('meta_data.is_shoddy', {
-                              type: 'checkbox',
-                            })}
-                          />
-
-                          <Switch
                             label='Hidden'
                             labelPosition='left'
                             {...form.getInputProps('meta_data.unselectable', {
                               type: 'checkbox',
                             })}
                           />
-
-                          <NumberInput
-                            label='Quantity'
-                            placeholder='Quantity'
-                            min={0}
-                            {...form.getInputProps('meta_data.quantity')}
+                          <Switch
+                            label='Shoddy Item'
+                            labelPosition='left'
+                            {...form.getInputProps('meta_data.is_shoddy', {
+                              type: 'checkbox',
+                            })}
                           />
+
+                          <Group wrap='nowrap'>
+                            <NumberInput
+                              label='Quantity'
+                              placeholder='Quantity'
+                              min={0}
+                              {...form.getInputProps('meta_data.quantity')}
+                            />
+
+                            <NumberInput
+                              label='Max Charges'
+                              placeholder='Max Charges'
+                              min={0}
+                              {...form.getInputProps('meta_data.charges.max')}
+                            />
+                          </Group>
 
                           <NumberInput
                             label='Bulk (when held or stowed)'
@@ -861,9 +872,9 @@ export function CreateItemModal(props: {
                           <TextInput
                             defaultValue={form.values.meta_data?.image_url ?? ''}
                             label='Image URL'
-                            onChange={async (e) => {
+                            onBlur={async (e) => {
                               setIsValidImageURL(e.target.value.trim() ? await isValidImage(e.target.value) : true);
-                              setImageURL(e.target.value ?? '');
+                              form.setFieldValue('meta_data.image_url', e.target.value);
                             }}
                             error={isValidImageURL ? false : 'Invalid URL'}
                           />

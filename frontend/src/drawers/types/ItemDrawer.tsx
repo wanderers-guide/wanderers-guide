@@ -600,7 +600,7 @@ function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: Set
                   )}
                   {!!speedPenalty && (
                     <Text ta='left' fw={500} c='gray.4' fz={10}>
-                      {sign(speedPenalty)}
+                      {sign(speedPenalty)} ft.
                     </Text>
                   )}
                 </Stack>

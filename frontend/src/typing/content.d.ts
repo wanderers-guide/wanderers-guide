@@ -146,6 +146,10 @@ interface Item {
       held_or_stowed?: number;
       ignored?: number;
     };
+    charges?: {
+      current?: number;
+      max?: number;
+    };
     group?: string;
     hardness?: number;
     hp?: number;
