@@ -86,11 +86,14 @@ export function InvItemDrawerContent(props: {
     onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
   };
 }) {
+  const onItemUpdate = (invItem: InventoryItem) => {
+    props.data.onItemUpdate(invItem);
+    setInvItem(invItem);
+  };
+
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [invItem, setInvItem] = useState(props.data.invItem);
   const [editingItem, setEditingItem] = useState(false);
-
-  const [displaySections, refreshSections] = useRefresh();
 
   const character = useRecoilValue(characterState);
   const containerItems = (character?.inventory?.items.filter((item) => isItemContainer(item.item)) ?? []).filter(
@@ -120,7 +123,7 @@ export function InvItemDrawerContent(props: {
       </>
     );
   }
-  if (invItem.item.bulk !== undefined && invItem.item.bulk !== null && invItem.item.bulk?.trim() !== '') {
+  if (invItem.item.bulk !== undefined && invItem.item.bulk !== null && `${invItem.item.bulk}`.trim() !== '') {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>
@@ -181,16 +184,7 @@ export function InvItemDrawerContent(props: {
           />
         </Box>
 
-        {displaySections && (
-          <InvItemSections
-            invItem={invItem}
-            onItemUpdate={(invItem) => {
-              setInvItem(invItem);
-              props.data.onItemUpdate(invItem);
-            }}
-            openDrawer={openDrawer}
-          />
-        )}
+        <InvItemSections invItem={invItem} onItemUpdate={(invItem) => onItemUpdate(invItem)} openDrawer={openDrawer} />
 
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
@@ -226,7 +220,7 @@ export function InvItemDrawerContent(props: {
                   count={invItem.item.meta_data.charges.max}
                   value={invItem.item.meta_data.charges.current ?? 0}
                   onChange={(val) =>
-                    props.data.onItemUpdate({
+                    onItemUpdate({
                       ...invItem,
                       item: {
                         ...invItem.item,
@@ -247,7 +241,10 @@ export function InvItemDrawerContent(props: {
                       color='gray.1'
                       aria-label='Item Charge, Unused'
                       size='xs'
-                      style={{ opacity: 0.7 }}
+                      style={{
+                        opacity: 0.7,
+                        backdropFilter: 'blur(12px)',
+                      }}
                     >
                       <IconSquareRounded size='1rem' />
                     </ActionIcon>
@@ -258,7 +255,10 @@ export function InvItemDrawerContent(props: {
                       color='gray.1'
                       aria-label='Item Charge, Exhuasted'
                       size='xs'
-                      style={{ opacity: 0.7 }}
+                      style={{
+                        opacity: 0.7,
+                        backdropFilter: 'blur(12px)',
+                      }}
                     >
                       <IconSquareRoundedFilled size='1rem' />
                     </ActionIcon>
@@ -359,11 +359,17 @@ export function InvItemDrawerContent(props: {
                 ..._.cloneDeep(invItem),
                 item,
               };
-              console.log(newInvItem);
-              setInvItem(newInvItem);
-              props.data.onItemUpdate(newInvItem);
-              refreshSections();
-              setEditingItem(false);
+              onItemUpdate(newInvItem);
+              openDrawer(null);
+              setTimeout(() => {
+                openDrawer({
+                  type: 'inv-item',
+                  data: {
+                    ...props.data,
+                    invItem: newInvItem,
+                  },
+                });
+              }, 1);
             }}
             onCancel={() => {
               setEditingItem(false);

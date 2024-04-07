@@ -4,7 +4,7 @@ import { makeRequest } from '@requests/request-manager';
 import { AbilityBlockType, ContentType, Trait } from '@typing/content';
 
 //
-const ENABLED = true;
+const ENABLED = false;
 
 // LEAKED: This key is gonna be leaked, but it's not a big deal.
 // It's read-only and is used to access the free legacy API.

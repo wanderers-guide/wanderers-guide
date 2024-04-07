@@ -65,7 +65,7 @@ export default function TraitsDisplay(props: {
           width={265}
           shadow='md'
           zIndex={2000}
-          openDelay={250}
+          openDelay={500}
           withinPortal
           withArrow
         >
@@ -169,7 +169,7 @@ export function BrokenDisplay(props: { interactable?: boolean; size?: MantineSiz
         width={265}
         shadow='md'
         zIndex={2000}
-        openDelay={250}
+        openDelay={500}
         withinPortal
         withArrow
       >
@@ -216,7 +216,7 @@ export function ShoddyDisplay(props: { interactable?: boolean; size?: MantineSiz
         width={265}
         shadow='md'
         zIndex={2000}
-        openDelay={250}
+        openDelay={500}
         withinPortal
         withArrow
       >

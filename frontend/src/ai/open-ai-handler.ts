@@ -36,7 +36,7 @@ export async function classifySkillForAction(description: string) {
     SURVIVAL
     THIEVERY
     LORE
-  `;
+  `.trim();
   return await generateCompletion(prompt);
 }
 
@@ -70,6 +70,123 @@ export async function detectPotentialContentLinks(description: string) {
   Now it's your turn.
   ### Input:
   ${description}
-  `;
+  `.trim();
   return await generateCompletion(prompt);
+}
+
+export async function fixBackgroundContent(description: string) {
+  const prompt = `
+  Your job is to fix backgrounds. I'm going to give you 3 examples and then it'll be your turn to do the same thing.
+
+# Example 1
+———————————
+
+## Input
+> _You spent your early days in a religious monastery or cloister. You may have traveled out into the world to spread the message of your religion or because you cast away the teachings of your faith, but deep down, you'll always carry within you the lessons you learned._
+
+Choose two attribute boosts. One must be to [Intelligence](link_trait_1613) or Wisdom, and one is a free attribute boost.
+
+You're trained in the Religion skill and the Scribing Lore skill. You gain the [Student of the Canon](link_feat_20599) skill feat.
+
+## Output
+### Description:
+> _You spent your early days in a religious monastery or cloister. You may have traveled out into the world to spread the message of your religion or because you cast away the teachings of your faith, but deep down, you'll always carry within you the lessons you learned._
+
+Choose two attribute boosts. One must be to Intelligence or Wisdom, and one is a free attribute boost.
+
+You're trained in the Religion skill and the Scribing Lore skill. You gain the Student of the Canon skill feat.
+### Attribute Choice: [INT, WIS]
+### Skills: [RELIGION, LORE_SCRIBING]
+### Feat: [Student of the Canon]
+
+———————————
+# Example 2
+———————————
+
+## Input
+> _To the common folk, the life of a noble seems one of idyllic luxury, but growing up as a noble or member of the aspiring gentry, you know the reality: a noble's lot is obligation and intrigue. Whether you seek to escape your duties by adventuring or to better your station, you have traded silks and pageantry for an adventurer's life._
+
+Choose two attribute boosts. One must be to [Intelligence](link_trait_1613) or Charisma, and one is a free attribute boost.
+
+You're trained in the Society skill and the Genealogy Lore or Heraldry Lore skill. You gain the [Courtly Graces](link_feat_20024) skill feat.
+
+## Output
+### Description:
+> _To the common folk, the life of a noble seems one of idyllic luxury, but growing up as a noble or member of the aspiring gentry, you know the reality: a noble's lot is obligation and intrigue. Whether you seek to escape your duties by adventuring or to better your station, you have traded silks and pageantry for an adventurer's life._
+
+Choose two attribute boosts. One must be to Intelligence or Charisma, and one is a free attribute boost.
+
+You're trained in the Society skill and the Genealogy Lore or Heraldry Lore skill. You gain the Courtly Graces skill feat.
+### Attribute Choice: [INT, CHA]
+### Skills: [SOCIETY, NOT_SURE]
+### Feat: [Courtly Graces]
+
+———————————
+# Example 3
+———————————
+
+## Input
+> _You have been imprisoned or punished for crimes (whether you were guilty or not). Now that your sentence has ended or you've escaped, you take full advantage of the newfound freedom of your adventuring life._
+
+Choose two attribute boosts. One must be to Strength or Constitution, and one is a free attribute boost.
+
+You're trained in the [Stealth](link_feat_20586) skill and the Underworld Lore skill. You gain the [Experienced Smuggler](link_feat_20127) skill feat.
+
+## Output
+### Description:
+> _You have been imprisoned or punished for crimes (whether you were guilty or not). Now that your sentence has ended or you've escaped, you take full advantage of the newfound freedom of your adventuring life._
+
+Choose two attribute boosts. One must be to Strength or Constitution, and one is a free attribute boost.
+
+You're trained in the Stealth skill and the Underworld Lore skill. You gain the Experienced Smuggler skill feat.
+### Attribute Choice: [STR, CON]
+### Skills: [STEALTH, LORE_UNDERWORLD]
+### Feat: [Experienced Smuggler]
+
+———————————
+
+If you come across any lore where it’s more complicated than just “you’re trained in <blank> Lore”, just say NOT_SURE.
+
+
+Okay, now it’s your turn:
+
+## Input
+${description}
+
+## Output`.trim();
+
+  const result = (await generateCompletion(prompt)) ?? '';
+
+  const obj = {
+    description: '',
+    attributeChoice: [] as string[],
+    skills: [] as string[],
+    feat: '',
+  };
+
+  // Extract Description
+  const descriptionMatch = result.match(/Description:\s*(>\s*.*?)\s*###\s*/s);
+  if (descriptionMatch) {
+    obj.description = descriptionMatch[1].trim();
+  }
+
+  // Extract Attribute Choice
+  const attributeChoiceMatch = result.match(/Attribute Choice: \[(.+?)\]/);
+  if (attributeChoiceMatch) {
+    obj.attributeChoice = attributeChoiceMatch[1].split(',').map((x) => x.trim());
+  }
+
+  // Extract Skills
+  const skillsMatch = result.match(/Skills: \[(.+?)\]/);
+  if (skillsMatch) {
+    obj.skills = skillsMatch[1].split(',').map((x) => x.trim());
+  }
+
+  // Extract Feat
+  const featMatch = result.match(/Feat: \[(.+?)\]/);
+  if (featMatch) {
+    obj.feat = featMatch[1].trim();
+  }
+
+  return obj;
 }

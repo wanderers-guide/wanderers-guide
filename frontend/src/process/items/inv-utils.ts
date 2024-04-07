@@ -444,7 +444,7 @@ export function isItemArchaic(item: Item) {
     return false;
   }
 
-  return isItemWeapon(item) && source.group.startsWith('pathfinder');
+  return (isItemWeapon(item) || isItemArmor(item)) && source.group.startsWith('pathfinder');
 }
 
 /**

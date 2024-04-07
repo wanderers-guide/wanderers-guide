@@ -143,7 +143,7 @@ export function ItemDrawerContent(props: {
       </>
     );
   }
-  if (item.bulk !== undefined && item.bulk !== null && item.bulk?.trim() !== '') {
+  if (item.bulk !== undefined && item.bulk !== null && `${item.bulk}`.trim() !== '') {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>

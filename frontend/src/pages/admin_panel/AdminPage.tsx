@@ -1,9 +1,10 @@
-import { Stack } from "@mantine/core";
-import { setPageTitle } from "@utils/document-change";
-import EditContent from "./EditContent";
-import GenerateEmbeddings from "./GenerateEmbeddings";
-import ImportLegacyContent from "./ImportLegacyContent";
-import UploadContent from "./UploadContent";
+import { Stack } from '@mantine/core';
+import { setPageTitle } from '@utils/document-change';
+import EditContent from './EditContent';
+import GenerateEmbeddings from './GenerateEmbeddings';
+import ImportLegacyContent from './ImportLegacyContent';
+import UploadContent from './UploadContent';
+import BackgroundFixer from './BackgroundFixer';
 
 export function Component() {
   setPageTitle(`Admin Panel`);
@@ -14,6 +15,7 @@ export function Component() {
       <UploadContent />
       <EditContent />
       <ImportLegacyContent />
+      <BackgroundFixer />
     </Stack>
   );
 }
