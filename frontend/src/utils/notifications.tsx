@@ -87,7 +87,7 @@ export function displayComingSoon() {
   });
 }
 
-export function displayPatronOnly() {
+export function displayPatronOnly(message = 'This feature is only available to patrons!') {
   const id = 'patron-only';
   hideNotification(id);
   showNotification({
@@ -95,7 +95,7 @@ export function displayPatronOnly() {
     title: <Title order={5}>Patron Only</Title>,
     message: (
       <>
-        This feature is only available to patrons! Consider supporting me on{' '}
+        {message} Consider supporting me on{' '}
         <Anchor href={PATREON_URL} target='_blank'>
           Patreon
         </Anchor>{' '}

@@ -36,20 +36,3 @@ export async function deleteDiceRoom(AUTH_KEY: string, roomId: string) {
   });
   return res.ok;
 }
-
-type DiceUserSettings = {
-  audio: boolean;
-  diceTray: string[];
-};
-
-export function getDiceUserSettings(): DiceUserSettings {
-  try {
-    return JSON.parse(localStorage.getItem('dice-settings') ?? 'none') as DiceUserSettings;
-  } catch (e) {
-    return { audio: true, diceTray: [] };
-  }
-}
-
-export function setDiceUserSettings(settings: DiceUserSettings) {
-  localStorage.setItem('dice-settings', JSON.stringify(settings));
-}

@@ -9,7 +9,6 @@ import {
   Title,
   Stack,
   TextInput,
-  Popover,
   Menu,
   Badge,
   Avatar,
@@ -19,19 +18,23 @@ import {
   Divider,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDidUpdate, useMediaQuery } from '@mantine/hooks';
 import { tabletQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { deleteDiceRoom, getDiceUserSettings, setDiceUserSettings } from './dice-utils';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { deleteDiceRoom } from './dice-utils';
 import { GiRollingDiceCup } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
-import { set } from 'colorjs.io/fn';
-import { IconPlus, IconTrack, IconTrash, IconVolume, IconVolumeOff, IconX } from '@tabler/icons-react';
+import { IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
 import _ from 'lodash';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import { characterState } from '@atoms/characterAtoms';
+import { hasPatreonAccess } from '@utils/patreon';
+import { getCachedPublicUser } from '@auth/user-manager';
+import { displayPatronOnly } from '@utils/notifications';
 
 const AUTH_KEY = (import.meta.env.VITE_DDDICE_AUTH_KEY ?? '') as string;
 const OVERLAY_INDEX = 99999;
@@ -47,6 +50,7 @@ type Dice = {
 export default function DiceRoller(props: { opened: boolean; onClose: () => void }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
+  const [character, setCharacter] = useRecoilState(characterState);
 
   const [diceOverlay, setDiceOverlay] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -65,11 +69,21 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
   const [currentDiceBonus, setCurrentDiceBonus] = useState(0);
   const [currentDiceLabel, setCurrentDiceLabel] = useState('');
 
-  // Dice Settings
-  const [diceSettings, setDiceSettings] = useState(getDiceUserSettings());
-  useEffect(() => {
-    setDiceUserSettings(diceSettings);
-  }, [diceSettings]);
+  const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 2000);
+  useDidUpdate(() => {
+    // Saving theme
+    if (!character || !debouncedTheme) return;
+    setCharacter({
+      ...character,
+      details: {
+        ...character.details,
+        dice: {
+          ...character.details?.dice,
+          default_theme: debouncedTheme,
+        },
+      },
+    });
+  }, [debouncedTheme]);
 
   // Setup & Cleanup DDDice
   useEffect(() => {
@@ -84,6 +98,9 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
         // Initialize dddice
         dddice.current = new ThreeDDice(canvasRef.current, AUTH_KEY, {
           autoClear: null,
+          dice: {
+            drawOutlines: false,
+          },
         });
         dddice.current.controlsEnabled = false;
         dddice.current.start();
@@ -131,14 +148,26 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
     openDiceTray();
 
     const result = await dddice.current.roll(
-      dice.map((die) => ({
-        type: die.type,
-        theme: die.theme,
-        label: die.label.trim() || undefined,
-        meta: {
-          bonus: die.bonus,
-        },
-      })),
+      dice
+        .map((die) => ({
+          type: die.type,
+          theme: die.theme,
+          label: die.label.trim() || undefined,
+          meta: {
+            bonus: die.bonus,
+          },
+        }))
+        .map((die) => {
+          if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 2)) {
+            displayPatronOnly('Special dice themes are only available to patrons!');
+            return {
+              ...die,
+              theme: DICE_THEMES[0].theme,
+            };
+          } else {
+            return die;
+          }
+        }),
       {}
     );
     console.log(result);
@@ -251,14 +280,14 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
                           newDice.push({
                             id: crypto.randomUUID(),
                             type: currentDiceType,
-                            theme: diceSettings.diceTray.length > 0 ? diceSettings.diceTray[0] : DICE_THEMES[0].theme,
+                            theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                             bonus: currentDiceBonus,
                             label: currentDiceLabel,
                           });
                         }
                         setDice([...dice, ...newDice]);
                         setCurrentDiceNum(1);
-                        setCurrentDiceType('d20');
+                        //setCurrentDiceType('d20');
                         setCurrentDiceBonus(0);
                         setCurrentDiceLabel('');
                       }}
@@ -365,8 +394,10 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
 
                   {
                     <Carousel
-                      withIndicators
-                      height={100}
+                      slideSize='70%'
+                      slideGap='md'
+                      loop
+                      height={80}
                       initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
                       onSlideChange={(index) => {
                         setTimeout(() => {
@@ -382,6 +413,7 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
                               return die;
                             });
                           });
+                          setDebouncedTheme(theme.theme);
                         }, 500);
                       }}
                     >
