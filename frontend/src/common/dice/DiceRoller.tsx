@@ -51,6 +51,7 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
   const [character, setCharacter] = useRecoilState(characterState);
+  const [useFallback, setUseFallback] = useState(false);
 
   const [diceOverlay, setDiceOverlay] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -95,22 +96,28 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
           props.onClose();
           return;
         }
-        // Initialize dddice
-        dddice.current = new ThreeDDice(canvasRef.current, AUTH_KEY, {
-          autoClear: null,
-          dice: {
-            drawOutlines: false,
-          },
-        });
-        dddice.current.controlsEnabled = false;
-        dddice.current.start();
-        if (!roomId.current) {
-          const room = await dddice.current.api?.room.create();
-          roomId.current = room?.data.slug ?? '';
+        try {
+          // Initialize dddice
+          dddice.current = new ThreeDDice(canvasRef.current, AUTH_KEY, {
+            autoClear: null,
+            dice: {
+              drawOutlines: false,
+            },
+          });
+          dddice.current.controlsEnabled = false;
+          dddice.current.start();
+          if (!roomId.current) {
+            const room = await dddice.current.api?.room.create();
+            roomId.current = room?.data.slug ?? '';
+          }
+          console.log('Dice Roller 🎲 Connecting to room: ', roomId.current);
+          await dddice.current.connect(roomId.current);
+          setLoaded(true);
+        } catch (e) {
+          alert('Error ' + e);
+          setUseFallback(true);
+          setLoaded(true);
         }
-        console.log('Dice Roller 🎲 Connecting to room: ', roomId.current);
-        await dddice.current.connect(roomId.current);
-        setLoaded(true);
       }, 200);
     } else {
       // Cleanup
@@ -137,40 +144,44 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
 
   // Roll Dice
   const onRollDice = async () => {
-    if (!dddice.current || !roomId.current) {
-      console.warn('dddice is not initialized');
-      return;
-    }
-    dddice.current.resetCamera();
+    dddice.current?.resetCamera();
 
     setActiveDie(null);
     setLoadingRoll(true);
     openDiceTray();
 
-    const result = await dddice.current.roll(
-      dice
-        .map((die) => ({
-          type: die.type,
-          theme: die.theme,
-          label: die.label.trim() || undefined,
-          meta: {
-            bonus: die.bonus,
-          },
-        }))
-        .map((die) => {
-          if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 2)) {
-            displayPatronOnly('Special dice themes are only available to patrons!');
-            return {
-              ...die,
-              theme: DICE_THEMES[0].theme,
-            };
-          } else {
-            return die;
-          }
-        }),
-      {}
-    );
-    console.log(result);
+    const results: { type: string; label: string; result: number; bonus: number }[] = [];
+    if (useFallback) {
+      // TODO: Roll dice using traditional method
+    } else {
+      const vResult = await dddice.current?.roll(
+        dice
+          .map((die) => ({
+            type: die.type,
+            theme: die.theme,
+            label: die.label.trim() || undefined,
+            meta: {
+              bonus: die.bonus,
+            },
+          }))
+          .map((die) => {
+            if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 2)) {
+              displayPatronOnly('Special dice themes are only available to patrons!');
+              return {
+                ...die,
+                theme: DICE_THEMES[0].theme,
+              };
+            } else {
+              return die;
+            }
+          }),
+        {}
+      );
+      // TODO: convert vResult to results
+      //vResult?.dat;
+    }
+
+    console.log(results);
     setDice([]);
     setLoadingRoll(false);
   };

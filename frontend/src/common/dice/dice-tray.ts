@@ -24,7 +24,7 @@ export const DICE_THEMES: DiceTheme[] = [
       imageURL: 'https://i.imgur.com/O0i6MuX.png',
     },
     {
-      name: 'Armellian Classic Dice',
+      name: 'Armellian Classic',
       theme: 'armellian-classic-dice-lrz1nwhc',
       imageURL: 'https://i.imgur.com/Ilg2I7H.png',
     },
