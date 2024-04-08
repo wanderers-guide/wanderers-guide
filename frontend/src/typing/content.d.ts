@@ -378,6 +378,9 @@ interface Character {
   details?: {
     image_url?: string;
     background_image_url?: string;
+    dice?: {
+      default_theme?: string;
+    };
     sheet_theme?: {
       color: string;
     };
