@@ -51,7 +51,7 @@ import { toLabel } from '@utils/strings';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable, setVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import { confirmHealth } from './character-utils';
@@ -69,8 +69,11 @@ import CharacterInfoSection from './sections/CharacterInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
-import { GiDiceTwentyFacesTwenty, GiRollingDiceCup, GiRollingDices } from 'react-icons/gi';
+import { GiRollingDices } from 'react-icons/gi';
 import { displayComingSoon } from '@utils/notifications';
+import DiceRoller from '@common/dice/DiceRoller';
+
+//const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
 
 export function Component(props: {}) {
   setPageTitle(`Sheet`);
@@ -310,6 +313,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     });
   }, [debouncedInventory]);
 
+  const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
+
   return (
     <Center>
       <Box maw={1000} w='100%'>
@@ -340,44 +345,49 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           </Stack>
         </Box>
       </Box>
-      {true && (
-        <Box
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            left: 20,
-          }}
-        >
-          <Stack>
-            {character?.campaign_id && (
-              <ActionIcon
-                size={40}
-                variant='filled'
-                radius={100}
-                aria-label='Campaigns View'
-                onClick={() => {
-                  displayComingSoon();
-                }}
-              >
-                <IconFlag size='1.7rem' stroke={1.5} />
-              </ActionIcon>
-            )}
-            {character?.options?.dice_roller && (
-              <ActionIcon
-                size={40}
-                variant='filled'
-                radius={100}
-                aria-label='Dice Roller'
-                onClick={() => {
-                  displayComingSoon();
-                }}
-              >
-                <GiRollingDices size='1.8rem' stroke={1.5} />
-              </ActionIcon>
-            )}
-          </Stack>
-        </Box>
-      )}
+      <Box
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          left: 20,
+        }}
+      >
+        <Stack>
+          {character?.campaign_id && (
+            <ActionIcon
+              size={40}
+              variant='filled'
+              radius={100}
+              aria-label='Campaigns View'
+              onClick={() => {
+                displayComingSoon();
+              }}
+            >
+              <IconFlag size='1.7rem' stroke={1.5} />
+            </ActionIcon>
+          )}
+          {character?.options?.dice_roller && (
+            <ActionIcon
+              size={40}
+              variant='filled'
+              radius={100}
+              aria-label='Dice Roller'
+              onClick={() => {
+                //displayComingSoon();
+                setOpenedDiceRoller(true);
+              }}
+            >
+              <GiRollingDices size='1.8rem' stroke={1.5} />
+            </ActionIcon>
+          )}
+        </Stack>
+      </Box>
+      <DiceRoller
+        opened={openedDiceRoller}
+        onClose={() => {
+          setOpenedDiceRoller(false);
+        }}
+      />
     </Center>
   );
 }
