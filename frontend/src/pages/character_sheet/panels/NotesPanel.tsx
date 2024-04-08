@@ -3,7 +3,7 @@ import { Icon } from '@common/Icon';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { GUIDE_BLUE } from '@constants/data';
 import { Tabs, ActionIcon, ScrollArea, Title, Box, Menu, Button } from '@mantine/core';
-import { useElementSize, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDidUpdate, useElementSize, useMediaQuery } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
@@ -18,6 +18,25 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
   const [character, setCharacter] = useRecoilState(characterState);
   const isPhone = isPhoneSized(props.panelWidth);
   const [displayNotes, refreshNotes] = useRefresh();
+
+  const [debouncedJson, setDebouncedJson] = useDebouncedState<{
+    index: number;
+    json: JSONContent;
+  } | null>(null, 500);
+
+  useDidUpdate(() => {
+    // Saving notes
+    if (!character || !debouncedJson) return;
+    const newPages = _.cloneDeep(pages);
+    newPages[debouncedJson.index].contents = debouncedJson.json;
+    setCharacter({
+      ...character,
+      notes: {
+        ...character.notes,
+        pages: newPages,
+      },
+    });
+  }, [debouncedJson]);
 
   useEffect(() => {
     refreshNotes();
@@ -53,16 +72,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
           placeholder='Your notes...'
           value={page.contents}
           onChange={(text, json) => {
-            if (!character) return;
-            const newPages = _.cloneDeep(pages);
-            newPages[index].contents = json;
-            setCharacter({
-              ...character,
-              notes: {
-                ...character.notes,
-                pages: newPages,
-              },
-            });
+            setDebouncedJson({ index: index, json: json });
           }}
           minHeight={props.panelHeight}
         />

@@ -157,6 +157,7 @@ export function Component() {
                     Import from JSON
                   </Menu.Item>
                   <Menu.Item
+                    disabled
                     leftSection={<IconArchive style={{ width: rem(14), height: rem(14) }} />}
                     onClick={() => {
                       guidecharImportRef.current?.click();

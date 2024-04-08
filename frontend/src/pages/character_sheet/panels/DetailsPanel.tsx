@@ -35,6 +35,7 @@ import { variableToLabel } from '@variables/variable-utils';
 import { useRecoilState } from 'recoil';
 import classes from '@css/FaqSimple.module.css';
 import { isPhoneSized } from '@utils/mobile-responsive';
+import { useDebouncedState, useDidUpdate } from '@mantine/hooks';
 
 const SECTION_WIDTH = 280;
 
@@ -60,6 +61,20 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
 
   const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
   const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
+
+  const characterInfo = character?.details?.info;
+  const [debouncedInfo, setDebouncedInfo] = useDebouncedState<typeof characterInfo | null>(null, 200);
+  useDidUpdate(() => {
+    // Saving details
+    if (!character || !debouncedInfo) return;
+    setCharacter({
+      ...character,
+      details: {
+        ...character.details,
+        info: debouncedInfo,
+      },
+    });
+  }, [debouncedInfo]);
 
   const getInfoSection = () => (
     <Paper
@@ -87,15 +102,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.organized_play_id}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          organized_play_id: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      organized_play_id: e.target.value,
                     });
                   }}
                   rightSection={
@@ -120,15 +129,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.appearance}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          appearance: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      appearance: e.target.value,
                     });
                   }}
                 />
@@ -139,15 +142,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.personality}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          personality: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      personality: e.target.value,
                     });
                   }}
                 />
@@ -158,15 +155,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.alignment}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          alignment: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      alignment: e.target.value,
                     });
                   }}
                 />
@@ -177,15 +168,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.beliefs}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          beliefs: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      beliefs: e.target.value,
                     });
                   }}
                 />
@@ -196,15 +181,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.age}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          age: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      age: e.target.value,
                     });
                   }}
                 />
@@ -214,15 +193,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.height}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          height: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      height: e.target.value,
                     });
                   }}
                 />
@@ -232,15 +205,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.weight}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          weight: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      weight: e.target.value,
                     });
                   }}
                 />
@@ -250,15 +217,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.gender}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          gender: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      gender: e.target.value,
                     });
                   }}
                 />
@@ -268,15 +229,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.pronouns}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          pronouns: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      pronouns: e.target.value,
                     });
                   }}
                 />
@@ -287,15 +242,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.faction}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          faction: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      faction: e.target.value,
                     });
                   }}
                 />
@@ -305,15 +254,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.ethnicity}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          ethnicity: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      ethnicity: e.target.value,
                     });
                   }}
                 />
@@ -323,15 +266,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.nationality}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          nationality: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      nationality: e.target.value,
                     });
                   }}
                 />
@@ -341,15 +278,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   defaultValue={character?.details?.info?.birthplace}
                   onChange={(e) => {
                     if (!character) return;
-                    setCharacter({
-                      ...character,
-                      details: {
-                        ...character.details,
-                        info: {
-                          ...character.details?.info,
-                          birthplace: e.target.value,
-                        },
-                      },
+                    setDebouncedInfo({
+                      ...character.details?.info,
+                      birthplace: e.target.value,
                     });
                   }}
                 />
