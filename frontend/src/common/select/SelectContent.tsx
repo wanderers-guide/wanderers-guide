@@ -35,7 +35,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useHover } from '@mantine/hooks';
+import { useDebouncedState, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import {
   IconArrowNarrowRight,
@@ -97,6 +97,7 @@ import { hasTraitType } from '@utils/traits';
 import { ObjectWithUUID } from '@operations/operation-utils';
 import { isItemArchaic, isItemWeapon } from '@items/inv-utils';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 interface FilterOptions {
   options: {
@@ -979,11 +980,21 @@ function SelectionOptions(props: {
   filteredOptions = filteredOptions.sort((a, b) => {
     if (a.level !== undefined && b.level !== undefined) {
       if (a.level !== b.level) {
-        return b.level - a.level;
+        // Sort greatest first if it's overrideOptions
+        if (props.overrideOptions) {
+          return b.level - a.level;
+        } else {
+          return a.level - b.level;
+        }
       }
     } else if (a.rank !== undefined && b.rank !== undefined) {
       if (a.rank !== b.rank) {
-        return b.rank - a.rank;
+        // Sort greatest first if it's overrideOptions
+        if (props.overrideOptions) {
+          return b.rank - a.rank;
+        } else {
+          return a.rank - b.rank;
+        }
       }
     }
     return a.name.localeCompare(b.name);
@@ -1454,6 +1465,9 @@ export function GenericSelectionOption(props: {
         ? prevProficiencyType(currentProf ?? 'U')
         : props.skillAdjustment;
 
+  console.log(currentProf);
+  console.log(nextProf);
+
   // If selected already, show the previous data to reflect the change
   if (props.selected && currentProf) {
     nextProf = currentProf;
@@ -1474,12 +1488,16 @@ export function GenericSelectionOption(props: {
     }
   }
 
-  const alreadyProficient =
+  let alreadyProficient =
     !props.selected &&
     currentProf &&
     (currentProf === props.skillAdjustment ||
       (isProficiencyType(props.skillAdjustment) &&
         maxProficiencyType(currentProf ?? 'U', props.skillAdjustment) === currentProf));
+
+  if (nextProf === null) {
+    alreadyProficient = true;
+  }
 
   const disabled = alreadyProficient || limitedByLevel;
 
@@ -1710,7 +1728,7 @@ export function FeatSelectionOption(props: {
           <Text fz='sm'>{props.feat.name}</Text>
         </Box>
         <Box>
-          <ActionSymbol cost={props.feat.actions} />
+          <ActionSymbol cost={props.feat.actions} gap={5} />
         </Box>
         {prereqMet && prereqMet.result && (
           <>
@@ -1847,7 +1865,7 @@ export function ActionSelectionOption(props: {
           <Text fz='sm'>{props.action.name}</Text>
         </Box>
         <Box>
-          <ActionSymbol cost={props.action.actions} />
+          <ActionSymbol cost={props.action.actions} gap={5} />
         </Box>
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
@@ -1979,7 +1997,7 @@ export function ClassFeatureSelectionOption(props: {
           <Text fz='sm'>{props.classFeature.name}</Text>
         </Box>
         <Box>
-          <ActionSymbol cost={props.classFeature.actions} />
+          <ActionSymbol cost={props.classFeature.actions} gap={5} />
         </Box>
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
@@ -2100,7 +2118,7 @@ export function HeritageSelectionOption(props: {
           <Text fz='sm'>{props.heritage.name}</Text>
         </Box>
         <Box>
-          <ActionSymbol cost={props.heritage.actions} />
+          <ActionSymbol cost={props.heritage.actions} gap={5} />
         </Box>
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
@@ -2218,7 +2236,7 @@ export function PhysicalFeatureSelectionOption(props: {
           <Text fz='sm'>{props.physicalFeature.name}</Text>
         </Box>
         <Box>
-          <ActionSymbol cost={props.physicalFeature.actions} />
+          <ActionSymbol cost={props.physicalFeature.actions} gap={5} />
         </Box>
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
@@ -2338,7 +2356,7 @@ export function SenseSelectionOption(props: {
           <Text fz='sm'>{props.sense.name}</Text>
         </Box>
         <Box>
-          <ActionSymbol cost={props.sense.actions} />
+          <ActionSymbol cost={props.sense.actions} gap={5} />
         </Box>
       </Group>
       <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
@@ -3133,6 +3151,7 @@ export function SpellSelectionOption(props: {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const isPhone = useMediaQuery(phoneQuery());
 
   return (
     <Group
@@ -3150,7 +3169,7 @@ export function SpellSelectionOption(props: {
       onClick={() => props.onClick(props.spell)}
       justify='space-between'
     >
-      {!props.hideRank && (
+      {!props.hideRank && props.spell.rank !== 0 && (
         <Text
           fz={10}
           c='dimmed'
@@ -3173,17 +3192,24 @@ export function SpellSelectionOption(props: {
         </Box>
         {isActionCost(props.spell.cast) && (
           <Box>
-            <ActionSymbol cost={props.spell.cast} />
+            <ActionSymbol cost={props.spell.cast} gap={5} />
           </Box>
         )}
         {props.leftSection && <Box>{props.leftSection}</Box>}
       </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
+      {!isPhone && (
+        <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+          <Box>
+            <TraitsDisplay
+              justify='flex-end'
+              size='xs'
+              traitIds={props.spell.traits ?? []}
+              rarity={props.spell.rarity}
+            />
+          </Box>
+          <Box w={props.includeOptions ? 80 : 50}></Box>
+        </Group>
+      )}
       {props.includeDetails === undefined ||
         (props.includeDetails === true && (
           <Button

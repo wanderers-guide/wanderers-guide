@@ -13,8 +13,6 @@ export default function AddNewLoreModal({
 }>) {
   const [loreName, setLoreName] = useState('');
 
-  console.log('got here');
-
   const handleSubmit = () => {
     innerProps.onConfirm(labelToVariable(loreName));
     context.closeModal(id);
@@ -22,7 +20,7 @@ export default function AddNewLoreModal({
 
   return (
     <Stack style={{ position: 'relative' }}>
-      <Text fz='sm'>You become trained in the following lore of your choice.</Text>
+      <Text fz='sm'>You gain the following lore of your choice.</Text>
       <TextInput
         placeholder='Name of Lore'
         onChange={async (e) => {
@@ -41,7 +39,7 @@ export default function AddNewLoreModal({
           Cancel
         </Button>
         <Button disabled={!loreName} onClick={handleSubmit}>
-          Train in Lore
+          Add Lore
         </Button>
       </Group>
     </Stack>

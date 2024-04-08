@@ -153,7 +153,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const { ref, width, height } = useElementSize();
 
   const panelWidth = width ? width - 60 : 2000;
-  const panelHeight = height > 1000 ? 550 : 500;
+  const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
   const [character, setCharacter] = useRecoilState(characterState);

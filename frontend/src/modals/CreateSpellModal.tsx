@@ -29,6 +29,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Spell, Trait } from '@typing/content';
+import { actionCostToLabel } from '@utils/actions';
 import { isValidImage } from '@utils/images';
 import { startCase } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
@@ -221,18 +222,18 @@ export function CreateSpellModal(props: {
                   clearable
                   w={100}
                   data={[
-                    { value: 'ONE-ACTION', label: '◆' },
-                    { value: 'TWO-ACTIONS', label: '◆◆' },
-                    { value: 'THREE-ACTIONS', label: '◆◆◆' },
-                    { value: 'FREE-ACTION', label: '◇' },
-                    { value: 'REACTION', label: '⤾' },
-                    { value: 'ONE-TO-TWO-ACTIONS', label: '◆ - ◆◆' },
-                    { value: 'ONE-TO-THREE-ACTIONS', label: '◆ - ◆◆◆' },
-                    { value: 'TWO-TO-THREE-ACTIONS', label: '◆◆ - ◆◆◆' },
-                    { value: 'TWO-TO-TWO-ROUNDS', label: '◆◆ - 2 rounds' },
-                    { value: 'TWO-TO-THREE-ROUNDS', label: '◆◆ - 3 rounds' },
-                    { value: 'THREE-TO-TWO-ROUNDS', label: '◆◆◆ - 2 rounds' },
-                    { value: 'THREE-TO-THREE-ROUNDS', label: '◆◆◆ - 3 rounds' },
+                    { value: 'ONE-ACTION', label: actionCostToLabel('ONE-ACTION') },
+                    { value: 'TWO-ACTIONS', label: actionCostToLabel('TWO-ACTIONS') },
+                    { value: 'THREE-ACTIONS', label: actionCostToLabel('THREE-ACTIONS') },
+                    { value: 'FREE-ACTION', label: actionCostToLabel('FREE-ACTION') },
+                    { value: 'REACTION', label: actionCostToLabel('REACTION') },
+                    { value: 'ONE-TO-TWO-ACTIONS', label: actionCostToLabel('ONE-TO-TWO-ACTIONS') },
+                    { value: 'ONE-TO-THREE-ACTIONS', label: actionCostToLabel('ONE-TO-THREE-ACTIONS') },
+                    { value: 'TWO-TO-THREE-ACTIONS', label: actionCostToLabel('TWO-TO-THREE-ACTIONS') },
+                    { value: 'TWO-TO-TWO-ROUNDS', label: actionCostToLabel('TWO-TO-TWO-ROUNDS') },
+                    { value: 'TWO-TO-THREE-ROUNDS', label: actionCostToLabel('TWO-TO-THREE-ROUNDS') },
+                    { value: 'THREE-TO-TWO-ROUNDS', label: actionCostToLabel('THREE-TO-TWO-ROUNDS') },
+                    { value: 'THREE-TO-THREE-ROUNDS', label: actionCostToLabel('THREE-TO-THREE-ROUNDS') },
                     { value: '2 rounds', label: '2 rounds' },
                     { value: '3 rounds', label: '3 rounds' },
                     { value: '1 minute', label: '1 minute' },

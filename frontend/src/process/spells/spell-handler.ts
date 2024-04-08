@@ -3,21 +3,21 @@ import { StoreID } from '@typing/variables';
 import { getFinalProfValue, getFinalVariableValue, getProfValueParts } from '@variables/variable-display';
 import { variableNameToLabel } from '@variables/variable-utils';
 
-export function getSpellStats(id: StoreID, spell: Spell, tradition: string, attribute: string) {
+export function getSpellStats(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   return {
     spell_attack: getSpellAttack(id, spell, tradition, attribute),
     spell_dc: getSpellDC(id, spell, tradition, attribute),
   };
 }
 
-function getSpellAttack(id: StoreID, spell: Spell, tradition: string, attribute: string) {
+function getSpellAttack(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   const attackBonus = getFinalVariableValue(id, 'ATTACK_ROLLS_BONUS').total;
   const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
   const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
   const meleeAttackBonus =
-    spell.range?.toLowerCase() === 'touch' ? getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total : 0;
+    spell?.range?.toLowerCase() === 'touch' ? getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total : 0;
   const rangedAttackBonus =
-    spell.range?.toLowerCase() !== 'touch' ? getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total : 0;
+    spell?.range?.toLowerCase() !== 'touch' ? getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total : 0;
 
   const profParts = getProfValueParts(id, `SPELL_ATTACK`, attribute)!;
 
@@ -64,7 +64,7 @@ function getSpellAttack(id: StoreID, spell: Spell, tradition: string, attribute:
   };
 }
 
-function getSpellDC(id: StoreID, spell: Spell, tradition: string, attribute: string) {
+function getSpellDC(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   const profParts = getProfValueParts(id, `SPELL_DC`, attribute)!;
 
   ///

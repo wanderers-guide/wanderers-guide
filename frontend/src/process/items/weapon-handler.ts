@@ -4,6 +4,7 @@ import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { isVariableListStr, labelToVariable } from '@variables/variable-utils';
+import { isItemRangedWeapon } from './inv-utils';
 
 export function getWeaponStats(id: StoreID, item: Item) {
   const dice = (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0);
@@ -31,12 +32,8 @@ export function getWeaponStats(id: StoreID, item: Item) {
   };
 }
 
-function isRangedWeapon(item: Item) {
-  return !!item.meta_data?.range;
-}
-
 function getAttackBonus(id: StoreID, item: Item) {
-  if (isRangedWeapon(item)) {
+  if (isItemRangedWeapon(item)) {
     return getRangedAttackBonus(id, item);
   } else {
     return getMeleeAttackBonus(id, item);
@@ -188,7 +185,7 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
 }
 
 function getAttackDamage(id: StoreID, item: Item) {
-  if (isRangedWeapon(item)) {
+  if (isItemRangedWeapon(item)) {
     return getRangedAttackDamage(id, item);
   } else {
     return getMeleeAttackDamage(id, item);

@@ -409,6 +409,15 @@ export function isItemWeapon(item: Item) {
 }
 
 /**
+ * Utility function to determine if an item is a ranged weapon
+ * @param item - Item
+ * @returns - Whether the item is a ranged weapon
+ */
+export function isItemRangedWeapon(item: Item) {
+  return !!item.meta_data?.range;
+}
+
+/**
  * Utility function to determine if an item is armor
  * @param item - Item
  * @returns - Whether the item is armor

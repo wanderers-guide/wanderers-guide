@@ -79,7 +79,8 @@ export function variableToLabel(variable: Variable) {
   return variableNameToLabel(variable.name);
 }
 
-export function variableNameToLabel(variableName: string) {
+export function variableNameToLabel(variableName?: string | null) {
+  if (!variableName) return '';
   const OVERRIDE_CHANGES = {
     'fort ': 'Fortitude ',
     'str ': 'Strength ',

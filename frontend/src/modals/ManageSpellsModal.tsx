@@ -270,6 +270,17 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                         filterOptions: {
                           options: [
                             {
+                              title: 'Tradition',
+                              type: 'MULTI-SELECT',
+                              options: [
+                                { label: 'Arcane', value: 'arcane' },
+                                { label: 'Divine', value: 'divine' },
+                                { label: 'Occult', value: 'occult' },
+                                { label: 'Primal', value: 'primal' },
+                              ],
+                              key: 'tradition',
+                            },
+                            {
                               title: 'Rank',
                               type: 'MULTI-SELECT',
                               options: [
@@ -346,7 +357,7 @@ const ListSection = (props: {
   };
 
   return (
-    <ScrollArea pr={14} h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} scrollbars='y'>
+    <Box>
       <SelectSpellRankModal
         spell={rankSelectSpell}
         onConfirm={(spell, rank) => {
@@ -396,15 +407,27 @@ const ListSection = (props: {
                 overrideLabel: `Add ${isRituals ? 'Ritual' : 'Spell'}`,
 
                 filterFn: (spellRec: Record<string, any>) => {
+                  const s = spellRec as Spell;
                   if (isRituals) {
-                    return isRitual(spellRec as Spell);
+                    return isRitual(s);
                   } else {
-                    return isNormalSpell(spellRec as Spell);
+                    return isNormalSpell(s);
                   }
                 },
 
                 filterOptions: {
                   options: [
+                    {
+                      title: 'Tradition',
+                      type: 'MULTI-SELECT',
+                      options: [
+                        { label: 'Arcane', value: 'arcane' },
+                        { label: 'Divine', value: 'divine' },
+                        { label: 'Occult', value: 'occult' },
+                        { label: 'Primal', value: 'primal' },
+                      ],
+                      key: 'traditions',
+                    },
                     {
                       title: 'Rank',
                       type: 'MULTI-SELECT',
@@ -432,46 +455,48 @@ const ListSection = (props: {
           Add {isRituals ? 'Ritual' : 'Spell'}
         </Button>
       </Group>
-      <Stack>
-        {props.spells.map((spell) => (
-          <SpellSelectionOption
-            spell={spell}
-            onClick={(spell) => {
-              openDrawer({ type: 'spell', data: { id: spell.id } });
-            }}
-            onDelete={(spellId) => {
-              setCharacter((c) => {
-                if (!c) return c;
+      <ScrollArea pr={14} h={`min(70vh, ${EDIT_MODAL_HEIGHT - 100}px)`} scrollbars='y'>
+        <Stack gap={0}>
+          {props.spells.map((spell) => (
+            <SpellSelectionOption
+              spell={spell}
+              onClick={(spell) => {
+                openDrawer({ type: 'spell', data: { id: spell.id } });
+              }}
+              onDelete={(spellId) => {
+                setCharacter((c) => {
+                  if (!c) return c;
 
-                const list = (c.spells?.list ?? []).filter((entry) => {
-                  return !(entry.spell_id === spellId && entry.source === props.source);
+                  const list = (c.spells?.list ?? []).filter((entry) => {
+                    return !(entry.spell_id === spellId && entry.source === props.source);
+                  });
+
+                  return {
+                    ...c,
+                    spells: {
+                      ...(c.spells ?? {
+                        slots: [],
+                        list: [],
+                        focus_point_current: 0,
+                        innate_casts: [],
+                      }),
+                      list: list,
+                    },
+                  };
                 });
-
-                return {
-                  ...c,
-                  spells: {
-                    ...(c.spells ?? {
-                      slots: [],
-                      list: [],
-                      focus_point_current: 0,
-                      innate_casts: [],
-                    }),
-                    list: list,
-                  },
-                };
-              });
-            }}
-            includeDetails={false}
-            includeOptions={true}
-          />
-        ))}
-        {props.spells.length === 0 && (
-          <Text c='gray.6' fz='sm' fs='italic' ta='center' pt={20}>
-            No {isRituals ? 'rituals' : 'spells'} found
-          </Text>
-        )}
-      </Stack>
-    </ScrollArea>
+              }}
+              includeDetails={false}
+              includeOptions={true}
+            />
+          ))}
+          {props.spells.length === 0 && (
+            <Text c='gray.6' fz='sm' fs='italic' ta='center' pt={20}>
+              No {isRituals ? 'rituals' : 'spells'} found
+            </Text>
+          )}
+        </Stack>
+      </ScrollArea>
+    </Box>
   );
 };
 

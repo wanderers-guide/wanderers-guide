@@ -71,8 +71,6 @@ export function compactSensesWithRange(senses: SenseWithRange[]): SenseWithRange
 }
 
 export function attemptToFindSense(name: string, range: string, allSenses: AbilityBlock[]): SenseWithRange {
-  console.log(labelToVariable('LOW-LIGHT VISION'), labelToVariable(name));
-
   let foundSense = allSenses.find((sense) => labelToVariable(sense.name) === labelToVariable(name));
   if (!foundSense) {
     for (const sense of allSenses) {
