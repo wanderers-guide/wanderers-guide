@@ -226,7 +226,7 @@ CREATE TABLE public."character" (
     roll_history json,
     custom_operations json[],
     meta_data json,
-    options jsonb DEFAULT '{"auto_detect_prerequisites": true}'::jsonb,
+    options jsonb DEFAULT '{"dice_roller": true, "auto_detect_prerequisites": true}'::jsonb,
     variants json,
     content_sources json DEFAULT '{"enabled":[1,8,7]}'::json,
     operation_data json,
