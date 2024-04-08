@@ -344,7 +344,7 @@ const variableMap = new Map<string, VariableStore>();
 // +2 status bonus
 // Map<string, { value?: number, type: string, text: string }[]>
 
-function getVariableStore(id: StoreID) {
+export function getVariableStore(id: StoreID) {
   if (!variableMap.has(id)) {
     variableMap.set(id, {
       variables: _.cloneDeep(DEFAULT_VARIABLES),
@@ -421,7 +421,7 @@ export function getVariableHistory(id: StoreID, name: string) {
 }
 
 function addVariableHistory(id: StoreID, name: string, to: VariableValue, from: VariableValue, source: string) {
-  if (from === to) return;
+  if (_.isEqual(from, to)) return;
   if (!getVariableStore(id).history[name]) {
     getVariableStore(id).history[name] = [];
   }

@@ -1,22 +1,18 @@
 import { Character } from '@typing/content';
+import _ from 'lodash';
+import jsonV4 from './json/json-v4';
 
 // Legacy WG .guidechar exports are version 3
-const VERSION = 4;
+export const EXPORT_JSON_VERSION = 4;
 
 export default async function exportToJSON(character: Character) {
-  const exportObject = {
-    version: VERSION,
-    character,
-  };
-
-  const fileName = character.name
-    .trim()
-    .toLowerCase()
-    .replace(/([^a-z0-9]+)/gi, '-');
-  downloadObjectAsJson(exportObject, fileName);
+  if (EXPORT_JSON_VERSION === 4) {
+    return await jsonV4(character);
+  }
 }
 
-function downloadObjectAsJson(object: Record<string, any>, fileName: string) {
+// Utils
+export function downloadObjectAsJson(object: Record<string, any>, fileName: string) {
   const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(object));
   const downloadAnchorNode = document.createElement('a');
   downloadAnchorNode.setAttribute('href', dataStr);
