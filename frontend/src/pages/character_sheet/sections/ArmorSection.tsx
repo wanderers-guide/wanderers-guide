@@ -14,7 +14,7 @@ import { sign } from '@utils/numbers';
 import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSaveVariables } from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 

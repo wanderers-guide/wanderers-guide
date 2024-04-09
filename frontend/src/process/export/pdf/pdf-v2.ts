@@ -3,7 +3,7 @@ import {
   collectCharacterSenses,
   collectCharacterSpellcasting,
 } from '@content/collect-content';
-import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 import {
   isItemWeapon,
   getFlatInvItems,
@@ -45,7 +45,7 @@ import { isCantrip, isRitual } from '@spells/spell-utils';
 
 export async function pdfV2(character: Character) {
   // Load your PDF
-  const url = '/src/assets/files/character-sheet-v2.pdf';
+  const url = '/files/character-sheet-v2.pdf';
   const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
 
   // Load a PDFDocument from the existing PDF bytes
@@ -90,6 +90,11 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   // Get all content that the character uses
   defineDefaultSources(character.content_sources?.enabled ?? []);
+
+  // Prefetch content sources
+  await fetchContentSources();
+
+  // Fetch the content package
   const content = await fetchContentPackage(undefined, true);
   const STORE_ID = 'CHARACTER';
 
@@ -144,7 +149,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form
     .getTextField('Heritage and Traits')
     .setText(`${featData.heritages.map((h) => h.name).join(', ')} | ${traits.map((t) => t?.name).join(', ')}`);
-  form.getTextField('Size').setText(variableNameToLabel(getVariable<VariableStr>(STORE_ID, 'Size')?.value));
+  form.getTextField('Size').setText(variableNameToLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value));
   form.getTextField('Background Notes').setText('');
   form.getTextField('Class Notes').setText('');
 
@@ -358,16 +363,16 @@ async function fillPDF(form: PDFForm, character: Character) {
   if (dying) {
     const dyingValue = dying.value ?? 0;
     if (dyingValue >= 1) {
-      form.getRadioGroup('DYING 1').select(form.getRadioGroup('DYING 1').getOptions()[0]);
+      form.getCheckBox('DYING1').check();
     }
     if (dyingValue >= 2) {
-      form.getRadioGroup('DYING 2').select(form.getRadioGroup('DYING 2').getOptions()[0]);
+      form.getCheckBox('DYING2').check();
     }
     if (dyingValue >= 3) {
-      form.getRadioGroup('DYING 3').select(form.getRadioGroup('DYING 3').getOptions()[0]);
+      form.getCheckBox('DYING3').check();
     }
     if (dyingValue >= 4) {
-      form.getRadioGroup('DYING 4').select(form.getRadioGroup('DYING 4').getOptions()[0]);
+      form.getCheckBox('DYING4').check();
     }
   }
   const wounded = conditions.find((c) => c.name === 'Wounded');
@@ -376,8 +381,16 @@ async function fillPDF(form: PDFForm, character: Character) {
   }
 
   //
-  const resistWeakImmune =
-    `Resist: ${resistVar?.value.map((v) => displayResistWeak(STORE_ID, v)).join(', ') ?? ''} | Weak: ${weakVar?.value.map((v) => displayResistWeak(STORE_ID, v)).join(', ') ?? ''} | Immune: ${immuneVar?.value.map((v) => displayResistWeak(STORE_ID, v)).join(', ') ?? ''}`.trim();
+  let resistWeakImmune = '';
+  if (resistVar && resistVar.value.length > 0) {
+    resistWeakImmune += `Resist: ${resistVar?.value.map((v) => displayResistWeak(STORE_ID, v)).join(', ') ?? ''}`;
+  }
+  if (weakVar && weakVar.value.length > 0) {
+    resistWeakImmune += ` | Weak: ${weakVar?.value.map((v) => displayResistWeak(STORE_ID, v)).join(', ') ?? ''}`;
+  }
+  if (immuneVar && immuneVar.value.length > 0) {
+    resistWeakImmune += ` | Immune: ${immuneVar?.value.map((v) => displayResistWeak(STORE_ID, v)).join(', ') ?? ''}`;
+  }
 
   form.getTextField('RESISTANCE AND IMMUNITIES').setText(resistWeakImmune);
   form.getTextField('CONDITIONS').setText(conditions.map((c) => c.name).join(', '));
@@ -391,7 +404,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('SPEED').setText(getVariable<VariableNum>(STORE_ID, 'SPEED')?.value + 'ft');
   form.getTextField('SPECIAL MOVEMENT').setText(
     getAllSpeedVariables(STORE_ID)
-      .filter((v) => v.value > 0)
+      .filter((v) => v.value > 0 && v.name !== 'SPEED')
       .map((v) => `${variableNameToLabel(v.name)} ${v.value}ft`)
       .join('\n')
   );
@@ -549,7 +562,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('Organizations').setText(character.details?.info?.organized_play_id);
 
   const actionFillIn = (action: AbilityBlock, index: number) => {
-    const CHUNK_SIZE = 15;
+    const CHUNK_SIZE = 10;
     function chunkString(str: string, chunkSize: number) {
       const wordArray = _.split(str, /\s+/);
       const chunks = _.chunk(wordArray, chunkSize);
@@ -592,14 +605,7 @@ async function fillPDF(form: PDFForm, character: Character) {
           }
         }
 
-        const chunks = chunkString(stripMd(action.description), CHUNK_SIZE);
-        for (let i = 0; i < chunks.length; i++) {
-          try {
-            form.getTextField(`REACTIONS EFFECTS ${index}-${i + 1}`).setText(chunks[i]);
-          } catch (e) {
-            console.warn(e);
-          }
-        }
+        form.getTextField(`REACTIONS EFFECTS ${index}-1`).setText(stripMd(action.description));
       } catch (e) {
         console.warn(e);
       }
@@ -612,14 +618,7 @@ async function fillPDF(form: PDFForm, character: Character) {
         });
         form.getTextField(`TRAIT(S)${index}`).setText(actionTraits.map((a) => a?.name ?? '').join(', '));
 
-        const chunks = chunkString(stripMd(action.description), CHUNK_SIZE);
-        for (let i = 0; i < chunks.length; i++) {
-          try {
-            form.getTextField(`EFFECTS ${index}-${i + 1}`).setText(chunks[i]);
-          } catch (e) {
-            console.warn(e);
-          }
-        }
+        form.getTextField(`EFFECTS ${index}-1`).setText(stripMd(action.description));
       } catch (e) {
         console.warn(e);
       }
@@ -653,6 +652,12 @@ async function fillPDF(form: PDFForm, character: Character) {
     profFillIn('SPELL_DC', 'SPELL SAVE DC');
     form.getTextField(`SPELL ATTACK`).setText(sign(spellStats.spell_attack.total[0]));
     form.getTextField(`SPELL SAVE DC`).setText(`${spellStats.spell_dc.total}`);
+
+    try {
+      form.getCheckBox(firstSource.tradition).check();
+    } catch (e) {
+      console.warn(e);
+    }
   }
 
   const spells = (

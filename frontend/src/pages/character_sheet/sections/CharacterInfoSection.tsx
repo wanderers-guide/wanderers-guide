@@ -9,7 +9,7 @@ import { getHotkeyHandler } from '@mantine/hooks';
 import { VariableAttr, VariableNum, VariableProf } from '@typing/variables';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';

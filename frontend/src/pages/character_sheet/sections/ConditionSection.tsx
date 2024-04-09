@@ -13,7 +13,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import { openContextModal, modals } from '@mantine/modals';
 import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-react';
 import { phoneQuery } from '@utils/mobile-responsive';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 

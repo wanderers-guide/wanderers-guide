@@ -29,7 +29,7 @@ import { rankNumber } from '@utils/numbers';
 import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
 import { variableNameToLabel } from '@variables/variable-utils';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';

@@ -9,7 +9,7 @@ import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
 import { isPhoneSized, phoneQuery, usePhoneSized } from '@utils/mobile-responsive';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 

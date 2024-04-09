@@ -1,5 +1,5 @@
 import { Character } from '@typing/content';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import jsonV4 from './json/json-v4';
 
 // Legacy WG .guidechar exports are version 3

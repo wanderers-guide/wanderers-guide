@@ -45,7 +45,7 @@ import { isCantrip, isRitual } from '@spells/spell-utils';
 
 export async function pdfV1(character: Character) {
   // Load your PDF
-  const url = '/src/assets/files/character-sheet-v1.pdf';
+  const url = '/files/character-sheet-v1.pdf';
   const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
 
   // Load a PDFDocument from the existing PDF bytes

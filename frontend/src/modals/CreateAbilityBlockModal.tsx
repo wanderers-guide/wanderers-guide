@@ -35,7 +35,7 @@ import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import { startCase, toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useState } from 'react';
 
 /**

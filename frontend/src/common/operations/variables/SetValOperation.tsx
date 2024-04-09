@@ -12,7 +12,7 @@ import {
 import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';
-import _ from 'lodash';
+import _ from 'lodash-es';
 
 export function SetValOperation(props: {
   variable: string;

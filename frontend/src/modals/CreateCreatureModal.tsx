@@ -37,7 +37,7 @@ import { AbilityBlock, Creature, Trait } from '@typing/content';
 import { Operation, OperationAddBonusToValue, OperationSetValue } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useState } from 'react';
 import { json } from 'react-router-dom';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';

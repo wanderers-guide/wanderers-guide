@@ -51,7 +51,7 @@ import {
   IconCoins,
 } from '@tabler/icons-react';
 import { ContentPackage, Inventory, Item, InventoryItem, Character } from '@typing/content';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import classes from '@css/FaqSimple.module.css';

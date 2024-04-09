@@ -29,7 +29,7 @@ import { IconArrowBigRightFilled, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { hasPatreonAccess } from '@utils/patreon';

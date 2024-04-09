@@ -31,7 +31,7 @@ import { hasTraitType } from '@utils/traits';
 import { displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { variableToLabel, variableNameToLabel } from '@variables/variable-utils';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { useState, useMemo } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 

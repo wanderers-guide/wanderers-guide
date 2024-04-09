@@ -1,7 +1,7 @@
 import { getConditionByName } from '@conditions/condition-handler';
 import { Character } from '@typing/content';
 import { getFinalHealthValue } from '@variables/variable-display';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { SetterOrUpdater } from 'recoil';
 
