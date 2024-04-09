@@ -45,6 +45,9 @@ import { isCantrip, isRitual } from '@spells/spell-utils';
 
 export async function pdfV1(character: Character) {
   // Load your PDF
+
+  // For old character-sheet-v1.pdf file, see:
+  // https://github.com/wanderers-guide/wanderers-guide/blob/f5f022c083b5d6e6af3a7300157d81e7faf588d4/frontend/public/files/character-sheet-v1.pdf
   const url = '/files/character-sheet-v1.pdf';
   const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
 
