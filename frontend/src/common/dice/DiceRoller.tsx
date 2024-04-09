@@ -17,29 +17,20 @@ import {
   Center,
   Divider,
   useMantineTheme,
-  FocusTrap,
 } from '@mantine/core';
-import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDebouncedValue, useDidUpdate, useMediaQuery } from '@mantine/hooks';
 import { tabletQuery } from '@utils/mobile-responsive';
-import { DiceEvent, ThreeDDice } from 'dddice-js';
+import { ThreeDDice } from 'dddice-js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom } from './dice-utils';
 import { GiRollingDiceCup } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
-import {
-  IconArrowBigRightFilled,
-  IconArrowBigRightLine,
-  IconArrowBigRightLines,
-  IconEraser,
-  IconTrash,
-  IconTrashXFilled,
-  IconX,
-} from '@tabler/icons-react';
+import { IconArrowBigRightFilled, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
 import _ from 'lodash';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { hasPatreonAccess } from '@utils/patreon';
 import { getCachedPublicUser } from '@auth/user-manager';
