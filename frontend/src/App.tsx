@@ -32,6 +32,7 @@ const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterP
 //const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
 const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
 const ConditionModal = lazy(() => import('@modals/ConditionModal'));
+const CreateDicePresetModal = lazy(() => import('@modals/CreateDicePresetModal'));
 
 const modals = {
   selectContent: SelectContentModal,
@@ -41,6 +42,7 @@ const modals = {
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
+  createDicePreset: CreateDicePresetModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {

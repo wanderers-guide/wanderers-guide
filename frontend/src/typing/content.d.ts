@@ -380,6 +380,11 @@ interface Character {
     background_image_url?: string;
     dice?: {
       default_theme?: string;
+      presets?: {
+        id: string;
+        name: string;
+        dice: Dice[];
+      }[];
     };
     sheet_theme?: {
       color: string;
@@ -614,4 +619,12 @@ type SenseWithRange = {
   senseName: string;
   range: string;
   type?: 'precise' | 'imprecise' | 'vague';
+};
+
+type Dice = {
+  id: string;
+  type: string;
+  theme: string;
+  bonus: number;
+  label: string;
 };

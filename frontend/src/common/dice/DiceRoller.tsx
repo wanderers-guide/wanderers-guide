@@ -25,7 +25,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom } from './dice-utils';
 import { GiRollingDiceCup } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
-import { IconArrowBigRightFilled, IconTrash, IconX } from '@tabler/icons-react';
+import { IconArrowBigRightFilled, IconSquareRoundedArrowDown, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
@@ -36,17 +36,11 @@ import { hasPatreonAccess } from '@utils/patreon';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { displayPatronOnly } from '@utils/notifications';
 import { rollDie } from '@utils/random';
+import { Dice } from '@typing/content';
+import { openContextModal } from '@mantine/modals';
 
 const AUTH_KEY = (import.meta.env.VITE_DDDICE_AUTH_KEY ?? '') as string;
 const OVERLAY_INDEX = 99999;
-
-type Dice = {
-  id: string;
-  type: string;
-  theme: string;
-  bonus: number;
-  label: string;
-};
 
 export default function DiceRoller(props: {
   opened: boolean;
@@ -73,10 +67,14 @@ export default function DiceRoller(props: {
   const [activeDie, setActiveDie] = useState<string | null>(null);
   const [displayCarousel, refreshCarousel] = useRefresh();
 
+  const [openedPresets, setOpenedPresets] = useState(false);
+
   const [currentDiceNum, setCurrentDiceNum] = useState(props.diceNum ?? 1);
   const [currentDiceType, setCurrentDiceType] = useState(props.diceType ?? 'd20');
   const [currentDiceBonus, setCurrentDiceBonus] = useState(props.diceBonus ?? 0);
   const [currentDiceLabel, setCurrentDiceLabel] = useState(props.diceLabel ?? '');
+
+  // Theme //
 
   const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 2000);
   useDidUpdate(() => {
@@ -94,7 +92,9 @@ export default function DiceRoller(props: {
     });
   }, [debouncedTheme]);
 
-  const [rollHistory, setRollHistory] = useState(character?.roll_history?.rolls ?? []);
+  // Roll History //
+
+  const [rollHistory, setRollHistory] = useState(_.cloneDeep(character?.roll_history?.rolls ?? []));
   const groupedRolls = _.groupBy(
     rollHistory.map((r) => ({ ...r, group: `${r.label}~${r.timestamp}~${r.type}` })),
     (r) => r.group
@@ -192,8 +192,8 @@ export default function DiceRoller(props: {
             .filter((group) => groupedRolls[group].length > 0)
             .sort((a, b) => groupedRolls[b][0].timestamp - groupedRolls[a][0].timestamp)
             .map((group, i) => (
-              <Paper withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
-                <Group key={i} justify='space-between' align='start' wrap='nowrap' px={5}>
+              <Paper key={i} withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
+                <Group justify='space-between' align='start' wrap='nowrap' px={5}>
                   <Box>{getRollEntry(groupedRolls[group])}</Box>
                   <Box>
                     <Stack gap={0} justify='space-between' align='end'>
@@ -208,6 +208,86 @@ export default function DiceRoller(props: {
                 </Group>
               </Paper>
             ))}
+        </Stack>
+      </>
+    );
+  };
+
+  // Presets //
+
+  const [presets, setPresets] = useState(_.cloneDeep(character?.details?.dice?.presets ?? []));
+  const [debouncedPresets] = useDebouncedValue(presets, 1000);
+  useDidUpdate(() => {
+    // Saving presets
+    if (!character || !debouncedPresets) return;
+    console.log('Dice Roller 🎲 Saving presets,', debouncedPresets.length);
+    setCharacter({
+      ...character,
+      details: {
+        ...character.details,
+        dice: {
+          ...character.details?.dice,
+          presets: debouncedPresets,
+        },
+      },
+    });
+  }, [debouncedPresets]);
+
+  const getPresetList = () => {
+    return (
+      <>
+        <Stack gap={5}>
+          {_.cloneDeep(presets)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((preset, i) => (
+              <Paper key={i} withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
+                <Group justify='space-between' align='center' wrap='nowrap' px={5}>
+                  <Group wrap='nowrap' gap={10}>
+                    <Text fz='sm'>{preset.name}</Text>
+                    <Badge variant='outline' size='xs' circle>
+                      {preset.dice.length}
+                    </Badge>
+                  </Group>
+
+                  <Group gap={8} justify='space-between' align='end' wrap='nowrap'>
+                    <Button
+                      size='compact-xs'
+                      onClick={() => {
+                        setDice((prev) => [
+                          ...prev,
+                          ...preset.dice.map((die) => ({
+                            ...die,
+                            id: crypto.randomUUID(),
+                          })),
+                        ]);
+                      }}
+                    >
+                      Add to tray
+                    </Button>
+                    <ActionIcon
+                      variant='subtle'
+                      aria-label='Delete Preset'
+                      size='sm'
+                      radius={'xl'}
+                      color='gray.6'
+                      onClick={() => {
+                        setPresets((prev) => prev.filter((p) => p.id !== preset.id));
+                      }}
+                    >
+                      <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
+                    </ActionIcon>
+                  </Group>
+                </Group>
+              </Paper>
+            ))}
+          {presets.length === 0 && (
+            <>
+              <Divider />
+              <Text w='100%' py='xs' fz='xs' c='gray.7' ta='center' fs='italic'>
+                No presets found.
+              </Text>
+            </>
+          )}
         </Stack>
       </>
     );
@@ -263,6 +343,7 @@ export default function DiceRoller(props: {
       setLoaded(false);
       setDice([]);
       setActiveDie(null);
+      setOpenedPresets(false);
       if (dddice.current) {
         dddice.current.clear();
         dddice.current = undefined;
@@ -285,6 +366,7 @@ export default function DiceRoller(props: {
     dddice.current?.resetCamera();
 
     setActiveDie(null);
+    setOpenedPresets(false);
     setLoadingRoll(true);
     openDiceTray();
 
@@ -338,7 +420,8 @@ export default function DiceRoller(props: {
     setTimeout(() => {
       setLoadingRoll(false);
       // Add to history
-      setRollHistory((prev) => [...prev, ...results.map((result) => ({ ...result, timestamp: Date.now() }))]);
+      const timestamp = Date.now();
+      setRollHistory((prev) => [...prev, ...results.map((result) => ({ ...result, timestamp: timestamp }))]);
     }, 1000);
     setDice([]);
   };
@@ -370,13 +453,28 @@ export default function DiceRoller(props: {
         opened={props.opened}
         onClose={props.onClose}
         title={
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} justify='space-between'>
             <Title order={3}>Dice Roller</Title>
+            <Button
+              size='xs'
+              color='gray.6'
+              variant={openedPresets ? 'light' : 'subtle'}
+              mr={5}
+              onClick={() => {
+                setOpenedPresets(!openedPresets);
+                setActiveDie(null);
+              }}
+            >
+              Open Presets
+            </Button>
           </Group>
         }
         size={'min(100vw, 400px)'}
         overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}
         styles={{
+          title: {
+            width: '100%',
+          },
           body: {
             height: 'calc(100% - 64px)',
           },
@@ -438,9 +536,10 @@ export default function DiceRoller(props: {
                     value={currentDiceBonus || ''}
                     onChange={(value) => setCurrentDiceBonus(parseInt(`${value}`))}
                   />
-                  <Box pl={10}>
+                  <Box pl={5}>
                     <Button
-                      size='compact-sm'
+                      size='xs'
+                      variant='filled'
                       radius={'xl'}
                       onClick={() => {
                         const newDice: Dice[] = [];
@@ -449,7 +548,7 @@ export default function DiceRoller(props: {
                             id: crypto.randomUUID(),
                             type: currentDiceType,
                             theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
-                            bonus: currentDiceBonus,
+                            bonus: i === currentDiceNum - 1 ? currentDiceBonus : 0,
                             label: currentDiceLabel,
                           });
                         }
@@ -501,6 +600,7 @@ export default function DiceRoller(props: {
                         } else {
                           refreshCarousel();
                           setActiveDie(die.id);
+                          setOpenedPresets(false);
                         }
                       }}
                       leftSection={<Avatar size={18} src={findDiceTheme(die.theme).imageURL} alt='Dice Icon' />}
@@ -525,7 +625,9 @@ export default function DiceRoller(props: {
                     </Badge>
                   ))}
                   {dice.length === 0 && (
-                    <Text w='100%' py='xs' fz='sm' c='gray.7' ta='center' fs='italic'>
+                    <Text w='100%' py='xs' fz='xs' c='gray.7' ta='center' fs='italic'>
+                      Dice tray
+                      <br />
                       Add some dice to roll
                     </Text>
                   )}
@@ -546,87 +648,141 @@ export default function DiceRoller(props: {
             </Button>
           </Stack>
           <Box>
-            {activeDie && displayCarousel ? (
-              <Paper withBorder p={5}>
-                <Stack>
-                  <Group align='start'>
-                    <Avatar size={40} src={activeDieData.theme.imageURL} alt='Dice Icon' />
-                    <Stack gap={0} h={40}>
-                      <Title order={4}>{activeDieData.theme.name}</Title>
-                      <Text fz='xs' fs='italic'>
-                        {activeDieData.die?.label
-                          ? `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}, ${activeDieData.die?.label}`
-                          : `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}`}
-                      </Text>
-                    </Stack>
-                  </Group>
-                  <Divider />
-
-                  {
-                    <Carousel
-                      slideSize='70%'
-                      slideGap='md'
-                      loop
-                      height={80}
-                      initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
-                      onSlideChange={(index) => {
-                        setTimeout(() => {
-                          const theme = DICE_THEMES[index];
-                          setDice((prev) => {
-                            return prev.map((die) => {
-                              if (die.id === activeDie) {
-                                return {
-                                  ...die,
-                                  theme: theme.theme,
-                                };
-                              }
-                              return die;
-                            });
-                          });
-                          setDebouncedTheme(theme.theme);
-                        }, 500);
-                      }}
-                    >
-                      {DICE_THEMES.map((theme, index) => (
-                        <Carousel.Slide key={index}>
-                          <Center>
-                            <Avatar size={70} src={theme.imageURL} alt='Dice Icon' />
-                          </Center>
-                        </Carousel.Slide>
-                      ))}
-                    </Carousel>
-                  }
-                </Stack>
-              </Paper>
-            ) : (
+            {activeDie ? (
               <>
-                {rollHistory.length !== 0 && (
+                {displayCarousel && (
                   <Paper withBorder p={5}>
-                    <Stack gap={5}>
-                      <Box>
-                        <Group wrap='nowrap' justify='space-between' mx={5}>
-                          <Title order={4}>History</Title>
-                          <ActionIcon
-                            variant='subtle'
-                            aria-label='Clear History'
-                            size='sm'
-                            radius={'xl'}
-                            color='gray.9'
-                            onClick={() => {
-                              setRollHistory([]);
-                            }}
-                          >
-                            <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
-                          </ActionIcon>
-                        </Group>
-                      </Box>
-                      <Box>
-                        <ScrollArea h={`min(40vh, 350px)`} scrollbars='y'>
-                          {getRollHistory()}
-                        </ScrollArea>
-                      </Box>
+                    <Stack>
+                      <Group align='start'>
+                        <Avatar size={40} src={activeDieData.theme.imageURL} alt='Dice Icon' />
+                        <Stack gap={0} h={40}>
+                          <Title order={4}>{activeDieData.theme.name}</Title>
+                          <Text fz='xs' fs='italic'>
+                            {activeDieData.die?.label
+                              ? `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}, ${activeDieData.die?.label}`
+                              : `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}`}
+                          </Text>
+                        </Stack>
+                      </Group>
+                      <Divider />
+
+                      {
+                        <Carousel
+                          slideSize='70%'
+                          slideGap='md'
+                          loop
+                          height={80}
+                          initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
+                          onSlideChange={(index) => {
+                            setTimeout(() => {
+                              const theme = DICE_THEMES[index];
+                              setDice((prev) => {
+                                return prev.map((die) => {
+                                  if (die.id === activeDie) {
+                                    return {
+                                      ...die,
+                                      theme: theme.theme,
+                                    };
+                                  }
+                                  return die;
+                                });
+                              });
+                              setDebouncedTheme(theme.theme);
+                            }, 500);
+                          }}
+                        >
+                          {DICE_THEMES.map((theme, index) => (
+                            <Carousel.Slide key={index}>
+                              <Center>
+                                <Avatar size={70} src={theme.imageURL} alt='Dice Icon' />
+                              </Center>
+                            </Carousel.Slide>
+                          ))}
+                        </Carousel>
+                      }
                     </Stack>
                   </Paper>
+                )}
+              </>
+            ) : (
+              <>
+                {openedPresets ? (
+                  <>
+                    <Paper withBorder p={5}>
+                      <Stack gap={5}>
+                        <Box>
+                          <Group wrap='nowrap' justify='space-between' ml={5}>
+                            <Title order={4}>Presets</Title>
+
+                            <Group wrap='nowrap'>
+                              <Button
+                                size='compact-xs'
+                                variant='light'
+                                disabled={dice.length === 0}
+                                onClick={() => {
+                                  closeDiceTray();
+                                  openContextModal({
+                                    modal: 'createDicePreset',
+                                    title: <Title order={3}>Create Preset</Title>,
+                                    innerProps: {
+                                      onConfirm: (name) => {
+                                        setPresets((prev) => [
+                                          ...prev,
+                                          {
+                                            id: crypto.randomUUID(),
+                                            name: name,
+                                            dice: dice,
+                                          },
+                                        ]);
+                                      },
+                                    },
+                                  });
+                                }}
+                              >
+                                Save tray to preset
+                              </Button>
+                            </Group>
+                          </Group>
+                        </Box>
+                        <Box>
+                          <ScrollArea h={`min(40vh, 350px)`} scrollbars='y'>
+                            {getPresetList()}
+                          </ScrollArea>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  </>
+                ) : (
+                  <>
+                    {rollHistory.length !== 0 && (
+                      <Paper withBorder p={5}>
+                        <Stack gap={5}>
+                          <Box>
+                            <Group wrap='nowrap' justify='space-between' mx={5}>
+                              <Title order={4}>History</Title>
+                              <ActionIcon
+                                variant='subtle'
+                                aria-label='Clear History'
+                                size='sm'
+                                radius={'xl'}
+                                color='gray.9'
+                                onClick={() => {
+                                  setRollHistory([]);
+                                }}
+                              >
+                                <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
+                              </ActionIcon>
+                            </Group>
+                          </Box>
+                          <Box>
+                            <ScrollArea h={`min(40vh, 350px)`} scrollbars='y'>
+                              {getRollHistory()}
+                            </ScrollArea>
+                          </Box>
+                        </Stack>
+                      </Paper>
+                    )}
+                  </>
                 )}
               </>
             )}
