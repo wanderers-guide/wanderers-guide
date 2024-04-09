@@ -191,7 +191,7 @@ async function runSelect(
       // It's probably a feat we selected from an archetype so it's not in the list, let's fetch it
       const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', parseInt(selectionTrack.node.value));
       if (!abilityBlock) {
-        displayError(`Selected node "${selectionTrack.path}" not found`);
+        displayError(`Selected node "${selectionTrack.path}" not found`, true);
         return null;
       }
       selectedOption = {
@@ -212,7 +212,7 @@ async function runSelect(
         God I hope that doesn't become too big of a problem in the future 🤞
       */
       if (!options?.doOnlyValueCreation) {
-        displayError(`Selected node "${selectionTrack.path}" not found`);
+        displayError(`Selected node "${selectionTrack.path}" not found`, true);
       }
       return null;
     }
@@ -422,7 +422,7 @@ async function runGiveAbilityBlock(
   if (operation.data.abilityBlockId === -1) return null;
   const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
-    displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    displayError(`Ability block not found, ${operation.data.abilityBlockId}`, true);
     return null;
   }
 
@@ -480,7 +480,7 @@ async function runGiveLanguage(
   if (operation.data.languageId === -1) return null;
   const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
-    displayError(`Language not found: ${operation.data.languageId}`);
+    displayError(`Language not found: ${operation.data.languageId}`, true);
     return null;
   }
 
@@ -497,7 +497,7 @@ async function runGiveItem(
   if (operation.data.itemId === -1) return null;
   const item = await fetchContentById<Item>('item', operation.data.itemId);
   if (!item) {
-    displayError(`Item not found: ${operation.data.itemId}`);
+    displayError(`Item not found: ${operation.data.itemId}`, true);
     return null;
   }
 
@@ -514,7 +514,7 @@ async function runGiveTrait(
   if (operation.data.traitId === -1) return null;
   const trait = await fetchContentById<Trait>('trait', operation.data.traitId);
   if (!trait) {
-    displayError(`Trait not found: ${operation.data.traitId}`);
+    displayError(`Trait not found: ${operation.data.traitId}`, true);
     return null;
   }
 
@@ -546,7 +546,7 @@ async function runGiveSpell(
   if (operation.data.spellId === -1) return null;
   const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
-    displayError(`Spell not found: ${operation.data.spellId}`);
+    displayError(`Spell not found: ${operation.data.spellId}`, true);
     return null;
   }
 
@@ -620,7 +620,7 @@ async function runRemoveAbilityBlock(
   if (operation.data.abilityBlockId === -1) return null;
   const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', operation.data.abilityBlockId);
   if (!abilityBlock) {
-    displayError(`Ability block not found, ${operation.data.abilityBlockId}`);
+    displayError(`Ability block not found, ${operation.data.abilityBlockId}`, true);
     return null;
   }
 
@@ -704,7 +704,7 @@ async function runRemoveLanguage(
 ): Promise<OperationResult> {
   const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
-    displayError('Language not found');
+    displayError('Language not found', true);
     return null;
   }
 
@@ -734,7 +734,7 @@ async function runRemoveSpell(
 ): Promise<OperationResult> {
   const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
-    displayError('Spell not found');
+    displayError('Spell not found', true);
     return null;
   }
 

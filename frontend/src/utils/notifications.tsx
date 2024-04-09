@@ -1,4 +1,4 @@
-import { PATREON_URL } from '@constants/data';
+import { DEBUG_MODE, PATREON_URL } from '@constants/data';
 import { Anchor, Title } from '@mantine/core';
 import { hideNotification, showNotification, updateNotification } from '@mantine/notifications';
 import { IconBrandPatreon, IconBrandPatreonFilled, IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
@@ -57,12 +57,16 @@ export default async function displayNotification(
   }
 }
 
-export function throwError(message: string) {
+export function throwError(message: string, debugOnly?: boolean) {
+  if (debugOnly && !DEBUG_MODE) return;
+
   displayError(message);
   throw new Error(message);
 }
 
-export function displayError(message: string) {
+export function displayError(message: string, debugOnly?: boolean) {
+  if (debugOnly && !DEBUG_MODE) return;
+
   const id = message;
   hideNotification(id);
   showNotification({

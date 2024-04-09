@@ -1,3 +1,5 @@
+export const DEBUG_MODE = import.meta.env.VITE_ENV === 'development'; // || true;
+
 export const DEBOUNCE_DELAY = 200; // ms
 
 export const TEXT_INDENT_AMOUNT = 20; // px
