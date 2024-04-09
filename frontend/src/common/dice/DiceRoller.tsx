@@ -117,7 +117,7 @@ export default function DiceRoller(props: {
   }, [debouncedRollHistory]);
 
   useEffect(() => {
-    rollHistoryViewport.current?.scrollTo({ top: 0, behavior: 'instant' });
+    rollHistoryViewport.current?.scrollTo({ top: 0 });
   }, [rollHistory]);
 
   const getRollHistory = () => {
