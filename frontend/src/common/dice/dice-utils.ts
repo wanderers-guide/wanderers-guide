@@ -20,6 +20,16 @@
 //   return await res.json();
 // }
 
+import { Character, Dice } from '@typing/content';
+import { StoreID, VariableProf } from '@typing/variables';
+import { getAllSaveVariables, getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import { DICE_THEMES } from './dice-tray';
+import { getFinalProfValue } from '@variables/variable-display';
+import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
+import { isItemWeapon } from '@items/inv-utils';
+import { getWeaponStats } from '@items/weapon-handler';
+import { getSpellStats } from '@spells/spell-handler';
+
 /**
  * Deletes a room on the DDDice server.
  * @param AUTH_KEY
@@ -35,4 +45,126 @@ export async function deleteDiceRoom(AUTH_KEY: string, roomId: string) {
     },
   });
   return res.ok;
+}
+
+export function findDefaultPresets(id: StoreID, character: Character | null) {
+  console.log('Loading default presets...');
+
+  const theme = character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme;
+  const presets: {
+    id: string;
+    name: string;
+    dice: Dice[];
+  }[] = [];
+
+  // Spells
+  // if (
+  //   getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value !== undefined &&
+  //   getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value !== 'U'
+  // ) {
+  //   presets.push({
+  //     id: crypto.randomUUID(),
+  //     name: 'Spell attack',
+  //     dice: [
+  //       {
+  //         id: crypto.randomUUID(),
+  //         type: 'd20',
+  //         theme: theme,
+  //         bonus: //getSpellStats(id, null, 'TODO', 'TODO').spell_attack.total[0],
+  //         label: 'Spell attack',
+  //       },
+  //     ],
+  //   });
+  // }
+
+  // Weapons
+  const weapons = character?.inventory?.items
+    .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
+    .sort((a, b) => a.item.name.localeCompare(b.item.name));
+  for (const weapon of weapons ?? []) {
+    const weaponStats = getWeaponStats(id, weapon.item);
+    presets.push({
+      id: crypto.randomUUID(),
+      name: `${weapon.item.name} (1st attack)`,
+      dice: [
+        {
+          id: crypto.randomUUID(),
+          type: 'd20',
+          theme: theme,
+          bonus: weaponStats.attack_bonus.total[0],
+          label: `${weapon.item.name} (1st attack)`,
+        },
+      ],
+    });
+    if (!weaponStats.damage.die || weaponStats.damage.die === '1') continue;
+
+    const weapDice: Dice[] = [];
+    for (let i = 0; i < weaponStats.damage.dice; i++) {
+      weapDice.push({
+        id: crypto.randomUUID(),
+        type: weaponStats.damage.die,
+        theme: theme,
+        bonus: i === weaponStats.damage.dice - 1 ? weaponStats.damage.bonus.total : 0,
+        label: `${weaponStats.damage.damageType} dmg (${weapon.item.name})`,
+      });
+    }
+    presets.push({
+      id: crypto.randomUUID(),
+      name: `${weapon.item.name} (damage)`,
+      dice: weapDice,
+    });
+  }
+
+  // Saves
+  presets.push(
+    ...getAllSaveVariables(id).map((save) => ({
+      id: crypto.randomUUID(),
+      name: `${variableNameToLabel(save.name)} save`,
+      dice: [
+        {
+          id: crypto.randomUUID(),
+          type: 'd20',
+          theme: theme,
+          bonus: parseInt(getFinalProfValue(id, save.name)),
+          label: `${variableNameToLabel(save.name)} save`,
+        },
+      ],
+    }))
+  );
+
+  // Perception
+  presets.push({
+    id: crypto.randomUUID(),
+    name: 'Perception check',
+    dice: [
+      {
+        id: crypto.randomUUID(),
+        type: 'd20',
+        theme: theme,
+        bonus: parseInt(getFinalProfValue(id, 'PERCEPTION')),
+        label: 'Perception check',
+      },
+    ],
+  });
+
+  // Skills
+  presets.push(
+    ...getAllSkillVariables(id)
+      .filter((skill) => skill.name !== 'SKILL_LORE____')
+      .map((skill) => ({
+        id: crypto.randomUUID(),
+        name: `${variableNameToLabel(skill.name)} check`,
+        dice: [
+          {
+            id: crypto.randomUUID(),
+            type: 'd20',
+            theme: theme,
+            bonus: parseInt(getFinalProfValue(id, skill.name)),
+            label: `${variableNameToLabel(skill.name)} check`,
+          },
+        ],
+      }))
+  );
+
+  return presets;
 }

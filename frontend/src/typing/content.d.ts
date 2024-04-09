@@ -380,6 +380,7 @@ interface Character {
     background_image_url?: string;
     dice?: {
       default_theme?: string;
+      opened_default_presets?: boolean;
       presets?: {
         id: string;
         name: string;
