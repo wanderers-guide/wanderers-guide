@@ -18,14 +18,22 @@ import {
   Divider,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useDidUpdate, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDebouncedValue, useDidUpdate, useMediaQuery } from '@mantine/hooks';
 import { tabletQuery } from '@utils/mobile-responsive';
-import { ThreeDDice } from 'dddice-js';
+import { DiceEvent, ThreeDDice } from 'dddice-js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom } from './dice-utils';
 import { GiRollingDiceCup } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
-import { IconTrash, IconX } from '@tabler/icons-react';
+import {
+  IconArrowBigRightFilled,
+  IconArrowBigRightLine,
+  IconArrowBigRightLines,
+  IconEraser,
+  IconTrash,
+  IconTrashXFilled,
+  IconX,
+} from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
@@ -35,6 +43,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { hasPatreonAccess } from '@utils/patreon';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { displayPatronOnly } from '@utils/notifications';
+import { rollDie } from '@utils/random';
 
 const AUTH_KEY = (import.meta.env.VITE_DDDICE_AUTH_KEY ?? '') as string;
 const OVERLAY_INDEX = 99999;
@@ -56,6 +65,7 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
   const [diceOverlay, setDiceOverlay] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [loadingRoll, setLoadingRoll] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [loaded, setLoaded] = useState(false);
   const roomId = useRef<string | null>(null);
@@ -86,6 +96,127 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
     });
   }, [debouncedTheme]);
 
+  const [rollHistory, setRollHistory] = useState(character?.roll_history?.rolls ?? []);
+  const groupedRolls = _.groupBy(
+    rollHistory.map((r) => ({ ...r, group: `${r.label}~${r.timestamp}~${r.type}` })),
+    (r) => r.group
+  );
+  const [debouncedRollHistory] = useDebouncedValue(rollHistory, 2000);
+  useDidUpdate(() => {
+    // Saving roll history
+    if (!character || !debouncedRollHistory) return;
+    setCharacter({
+      ...character,
+      roll_history: {
+        ...character.roll_history,
+        rolls: debouncedRollHistory,
+      },
+    });
+  }, [debouncedRollHistory]);
+
+  const getRollHistory = () => {
+    const getRollEntry = (
+      dice: {
+        group: string;
+        type: string;
+        label: string;
+        result: number;
+        bonus: number;
+        timestamp: number;
+      }[]
+    ) => {
+      const numColor = 'gray.6';
+      const mathColor = 'gray.7';
+      const maxColor = 'green.5';
+      const minColor = 'red.5';
+      const resultColor = 'blue.5';
+
+      const dieType = parseInt(dice[0].type.slice(1));
+      const bonus = dice.reduce((a, b) => a + b.bonus, 0);
+      const result = dice.reduce((a, b) => a + b.result, 0) + bonus;
+
+      console.log(dice[0].type);
+
+      return (
+        <Group gap={5} wrap='nowrap' align='start'>
+          <Text span>
+            <Text c={numColor} span>
+              {dice.length}
+            </Text>
+            <Text c={mathColor} span>
+              d
+            </Text>
+            <Text c={numColor} span>
+              {dieType}
+            </Text>
+            <Text c={mathColor} span>
+              {bonus !== 0 && (bonus > 0 ? '+' : '-')}
+            </Text>
+            <Text c={numColor} span>
+              {bonus !== 0 && bonus}
+            </Text>
+          </Text>
+          <Text c={mathColor} span>
+            <IconArrowBigRightFilled size='0.7rem' />
+          </Text>
+          <Text span>
+            {dice.map((die, i) => (
+              <Text key={i} span>
+                <Text c={mathColor} span>
+                  {`(`}
+                </Text>
+                <Text c={die.result === dieType ? maxColor : die.result === 1 ? minColor : numColor} span>
+                  {die.result}
+                </Text>
+                <Text c={mathColor} span>
+                  {`)`}
+                </Text>
+                <Text c={mathColor} span>
+                  {dice.length - 1 !== i && '+'}
+                </Text>
+              </Text>
+            ))}
+          </Text>
+          <Text c={mathColor} span>
+            <IconArrowBigRightFilled size='0.7rem' />
+          </Text>
+          <Text span>
+            <Text c={resultColor} fw={600} span>
+              {result}
+            </Text>
+          </Text>
+        </Group>
+      );
+    };
+
+    return (
+      <>
+        <Stack gap={5}>
+          {Object.keys(groupedRolls)
+            .filter((group) => groupedRolls[group].length > 0)
+            .sort((a, b) => groupedRolls[b][0].timestamp - groupedRolls[a][0].timestamp)
+            .map((group, i) => (
+              <Paper withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
+                <Group key={i} justify='space-between' align='start' wrap='nowrap'>
+                  <Box px={5}>{getRollEntry(groupedRolls[group])}</Box>
+                  <Box>
+                    <Stack gap={0} justify='space-between' align='end'>
+                      <Text fz={8} c='gray.7' fs='italic'>
+                        {new Date(groupedRolls[group][0].timestamp).toLocaleTimeString()}
+                      </Text>
+                      <Text fz={10} c='gray.6'>
+                        {groupedRolls[group][0].label}
+                      </Text>
+                    </Stack>
+                  </Box>
+                </Group>
+              </Paper>
+            ))}
+        </Stack>
+      </>
+    );
+  };
+
   // Setup & Cleanup DDDice
   useEffect(() => {
     if (props.opened) {
@@ -111,8 +242,11 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
             roomId.current = room?.data.slug ?? '';
           }
           console.log('Dice Roller 🎲 Connecting to room: ', roomId.current);
-          await dddice.current.connect(roomId.current);
-          setLoaded(true);
+          dddice.current.connect(roomId.current);
+          // Takes a little time to join room and we can't await it,
+          setTimeout(() => {
+            setLoaded(true);
+          }, 500);
         } catch (e) {
           alert('Error ' + e);
           setUseFallback(true);
@@ -150,10 +284,18 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
     setLoadingRoll(true);
     openDiceTray();
 
-    const results: { type: string; label: string; result: number; bonus: number }[] = [];
+    let results: { type: string; label: string; result: number; bonus: number }[] = [];
     if (useFallback) {
-      // TODO: Roll dice using traditional method
+      // RNG Dice Roll
+      results =
+        dice.map((value) => ({
+          type: value.type,
+          label: value.label ?? '',
+          result: rollDie(value.type),
+          bonus: value.bonus,
+        })) ?? [];
     } else {
+      // 3D Dice Roll
       const vResult = await dddice.current?.roll(
         dice
           .map((die) => ({
@@ -177,13 +319,23 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
           }),
         {}
       );
-      // TODO: convert vResult to results
-      //vResult?.dat;
+
+      results =
+        vResult?.data.values.map((value) => ({
+          type: value.type,
+          label: value.label ?? '',
+          result: value.value,
+          bonus: value.meta?.bonus,
+        })) ?? [];
     }
 
-    console.log(results);
+    // Takes a little time to finish rolling
+    setTimeout(() => {
+      setLoadingRoll(false);
+      // Add to history
+      setRollHistory((prev) => [...prev, ...results.map((result) => ({ ...result, timestamp: Date.now() }))]);
+    }, 1000);
     setDice([]);
-    setLoadingRoll(false);
   };
 
   // Open & Close Dice Tray
@@ -318,9 +470,6 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
                   />
                 </i>
               </Stack>
-              <ActionIcon variant='subtle' aria-label='Clear History' size='sm' radius={'xl'} color='gray.9'>
-                <IconTrash style={{ width: '70%', height: '70%' }} stroke={1.5} />
-              </ActionIcon>
             </Group>
 
             <Paper withBorder p={5} mb={5}>
@@ -387,8 +536,8 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
             </Button>
           </Stack>
           <Box>
-            <Paper withBorder p={5}>
-              {activeDie && displayCarousel ? (
+            {activeDie && displayCarousel ? (
+              <Paper withBorder p={5}>
                 <Stack>
                   <Group align='start'>
                     <Avatar size={40} src={activeDieData.theme.imageURL} alt='Dice Icon' />
@@ -438,10 +587,39 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
                     </Carousel>
                   }
                 </Stack>
-              ) : (
-                <>History</>
-              )}
-            </Paper>
+              </Paper>
+            ) : (
+              <>
+                {rollHistory.length !== 0 && (
+                  <Paper withBorder p={5}>
+                    <Stack gap={5}>
+                      <Box>
+                        <Group wrap='nowrap' justify='space-between' mx={5}>
+                          <Title order={4}>History</Title>
+                          <ActionIcon
+                            variant='subtle'
+                            aria-label='Clear History'
+                            size='sm'
+                            radius={'xl'}
+                            color='gray.9'
+                            onClick={() => {
+                              setRollHistory([]);
+                            }}
+                          >
+                            <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
+                          </ActionIcon>
+                        </Group>
+                      </Box>
+                      <Box>
+                        <ScrollArea h={`min(40vh, 350px)`} type='always' scrollbars='y'>
+                          {getRollHistory()}
+                        </ScrollArea>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                )}
+              </>
+            )}
           </Box>
         </Stack>
       </Drawer>

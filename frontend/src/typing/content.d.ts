@@ -407,7 +407,15 @@ interface Character {
     conditions?: Condition[];
   };
   campaign_id?: number;
-  roll_history?: Record<string, any>; // TODO
+  roll_history?: {
+    rolls: {
+      type: string;
+      label: string;
+      result: number;
+      bonus: number;
+      timestamp: number;
+    }[];
+  };
   custom_operations?: Operation[];
   meta_data?: {
     reset_hp?: boolean;
