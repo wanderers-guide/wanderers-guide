@@ -43,9 +43,9 @@ import { PDFDocument, PDFForm } from 'pdf-lib';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 
-export async function pdfV1(character: Character) {
+export async function pdfV2(character: Character) {
   // Load your PDF
-  const url = '/src/assets/files/character-sheet-v1.pdf';
+  const url = '/src/assets/files/character-sheet-v2.pdf';
   const existingPdfBytes = await fetch(url).then((res) => res.arrayBuffer());
 
   // Load a PDFDocument from the existing PDF bytes
@@ -144,7 +144,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form
     .getTextField('Heritage and Traits')
     .setText(`${featData.heritages.map((h) => h.name).join(', ')} | ${traits.map((t) => t?.name).join(', ')}`);
-  form.getTextField('Size').setText(variableNameToLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value));
+  form.getTextField('Size').setText(variableNameToLabel(getVariable<VariableStr>(STORE_ID, 'Size')?.value));
   form.getTextField('Background Notes').setText('');
   form.getTextField('Class Notes').setText('');
 
@@ -155,6 +155,16 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('LEVEL').setText(getVariable<VariableNum>(STORE_ID, 'LEVEL')?.value + '');
   form.getTextField('XP').setText(character.experience + '');
 
+  if (character.hero_points > 0) {
+    form.getCheckBox('HERO POINT 1').check();
+  }
+  if (character.hero_points > 1) {
+    form.getCheckBox('HERO POINT 2').check();
+  }
+  if (character.hero_points > 2) {
+    form.getCheckBox('HERO POINT 3').check();
+  }
+
   form.getTextField('STRENGTH STAT').setText(sign(strValue.value));
   form.getTextField('DEXTERITY STAT').setText(sign(dexValue.value));
   form.getTextField('CONSTITUTION STAT').setText(sign(conValue.value));
@@ -162,17 +172,24 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('WISDOM STAT').setText(sign(wisValue.value));
   form.getTextField('CHARISMA STAT').setText(sign(chaValue.value));
 
-  // Set partial (since it's a radio group, only one can be selected)
-  let firstPartialIndex = -1;
-  for (let i = 0; i < getAllAttributeVariables(STORE_ID).length; i++) {
-    const attr = getAllAttributeVariables(STORE_ID)[i];
-    if (attr.value.partial) {
-      firstPartialIndex = i;
-      break;
-    }
+  // Set partials
+  if (strValue.partial) {
+    form.getCheckBox('STRENGTH PARTIAL BOOST').check();
   }
-  if (firstPartialIndex > -1) {
-    form.getRadioGroup('Strength').select(form.getRadioGroup('Strength').getOptions()[firstPartialIndex]);
+  if (dexValue.partial) {
+    form.getCheckBox('DEXTERITY PARTIAL BOOST').check();
+  }
+  if (conValue.partial) {
+    form.getCheckBox('CONSTITUTION PARTIAL BOOST').check();
+  }
+  if (intValue.partial) {
+    form.getCheckBox('INTELLIGENCE PARTIAL BOOST').check();
+  }
+  if (wisValue.partial) {
+    form.getCheckBox('WISDOM PARTIAL BOOST').check();
+  }
+  if (chaValue.partial) {
+    form.getCheckBox('CHARISMA PARTIAL BOOST').check();
   }
 
   // Other times attributes are used
@@ -196,7 +213,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     form.getTextField('HP').setText(`${getBestShield(STORE_ID, character.inventory)?.item.meta_data?.hp ?? 0}`);
   }
 
-  const profFillIn = (variableName: string, sheetId: string, profSheetId?: string) => {
+  const profFillIn = (variableName: string, sheetId: string) => {
     const variable = getVariable<VariableProf>(STORE_ID, variableName);
     if (variable?.value.attribute) {
       try {
@@ -233,16 +250,16 @@ async function fillPDF(form: PDFForm, character: Character) {
     }
     try {
       if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'T')) {
-        form.getCheckBox((profSheetId ?? sheetId) + ' TRAINED').check();
+        form.getCheckBox(sheetId + ' TRAINED').check();
       }
       if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'E')) {
-        form.getCheckBox((profSheetId ?? sheetId) + ' EXPERT').check();
+        form.getCheckBox(sheetId + ' EXPERT').check();
       }
       if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'M')) {
-        form.getCheckBox((profSheetId ?? sheetId) + ' MASTER').check();
+        form.getCheckBox(sheetId + ' MASTER').check();
       }
       if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'L')) {
-        form.getCheckBox((profSheetId ?? sheetId) + ' LEGENDARY').check();
+        form.getCheckBox(sheetId + ' LEGENDARY').check();
       }
     } catch (e) {
       console.warn(e);
@@ -265,12 +282,12 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   profFillIn('SKILL_ACROBATICS', 'ACROBATICS');
   profFillIn('SKILL_ARCANA', 'ARCANA');
-  profFillIn('SKILL_ATHLETICS', 'ATHLETICS', 'ATHELETICS'); // field misspelled
+  profFillIn('SKILL_ATHLETICS', 'ATHLETICS');
   profFillIn('SKILL_CRAFTING', 'CRAFTING');
   profFillIn('SKILL_DECEPTION', 'DECEPTION');
   profFillIn('SKILL_DIPLOMACY', 'DIPLOMACY');
   profFillIn('SKILL_INTIMIDATION', 'INTIMIDATION');
-  profFillIn('SKILL_MEDICINE', 'MEDICINE', 'MEDECINE'); // field misspelled
+  profFillIn('SKILL_MEDICINE', 'MEDICINE');
   profFillIn('SKILL_NATURE', 'NATURE');
   profFillIn('SKILL_OCCULTISM', 'OCCULTISM');
   profFillIn('SKILL_PERFORMANCE', 'PERFORMANCE');
@@ -368,7 +385,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('LANGUAGES').setText(languages.map((l) => variableNameToLabel(l)).join('\n'));
 
   const preciseVague =
-    `Precise: ${senseData.precise.map((v) => displaySense(v)).join(', ') ?? ''} | Imprecise: ${senseData.imprecise.map((v) => displaySense(v)).join(', ') ?? ''} | Vague: ${senseData.vague.map((v) => displaySense(v)).join(', ') ?? ''}`.trim();
+    `Precise: ${senseData.precise.map((v) => displaySense(v)).join(', ') ?? ''}\nImprecise: ${senseData.imprecise.map((v) => displaySense(v)).join(', ') ?? ''}\nVague: ${senseData.vague.map((v) => displaySense(v)).join(', ') ?? ''}`.trim();
   form.getTextField('SENSES AND NOTES').setText(preciseVague);
 
   form.getTextField('SPEED').setText(getVariable<VariableNum>(STORE_ID, 'SPEED')?.value + 'ft');
@@ -376,7 +393,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     getAllSpeedVariables(STORE_ID)
       .filter((v) => v.value > 0)
       .map((v) => `${variableNameToLabel(v.name)} ${v.value}ft`)
-      .join(', ')
+      .join('\n')
   );
 
   // Weapons attacks
@@ -439,7 +456,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     featData.classFeatures
       .filter((f) => f.level === 1)
       .map((f) => f.name)
-      .join(', ')
+      .join('\n')
   );
 
   const featFillIn = (options: AbilityBlock[], prefixId: string) => {

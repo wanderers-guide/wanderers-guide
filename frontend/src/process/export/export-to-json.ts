@@ -3,7 +3,7 @@ import _ from 'lodash';
 import jsonV4 from './json/json-v4';
 
 // Legacy WG .guidechar exports are version 3
-export const EXPORT_JSON_VERSION = 4;
+export const EXPORT_JSON_VERSION: number = 4;
 
 export default async function exportToJSON(character: Character) {
   if (EXPORT_JSON_VERSION === 4) {
