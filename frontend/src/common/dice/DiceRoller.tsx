@@ -17,8 +17,9 @@ import {
   Center,
   Divider,
   useMantineTheme,
+  FocusTrap,
 } from '@mantine/core';
-import { useDebouncedState, useDebouncedValue, useDidUpdate, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { tabletQuery } from '@utils/mobile-responsive';
 import { DiceEvent, ThreeDDice } from 'dddice-js';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -56,7 +57,14 @@ type Dice = {
   label: string;
 };
 
-export default function DiceRoller(props: { opened: boolean; onClose: () => void }) {
+export default function DiceRoller(props: {
+  opened: boolean;
+  onClose: () => void;
+  diceNum?: number;
+  diceType?: string;
+  diceBonus?: number;
+  diceLabel?: string;
+}) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
   const [character, setCharacter] = useRecoilState(characterState);
@@ -65,7 +73,6 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
   const [diceOverlay, setDiceOverlay] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [loadingRoll, setLoadingRoll] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const [loaded, setLoaded] = useState(false);
   const roomId = useRef<string | null>(null);
@@ -75,10 +82,10 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
   const [activeDie, setActiveDie] = useState<string | null>(null);
   const [displayCarousel, refreshCarousel] = useRefresh();
 
-  const [currentDiceNum, setCurrentDiceNum] = useState(1);
-  const [currentDiceType, setCurrentDiceType] = useState('d20');
-  const [currentDiceBonus, setCurrentDiceBonus] = useState(0);
-  const [currentDiceLabel, setCurrentDiceLabel] = useState('');
+  const [currentDiceNum, setCurrentDiceNum] = useState(props.diceNum ?? 1);
+  const [currentDiceType, setCurrentDiceType] = useState(props.diceType ?? 'd20');
+  const [currentDiceBonus, setCurrentDiceBonus] = useState(props.diceBonus ?? 0);
+  const [currentDiceLabel, setCurrentDiceLabel] = useState(props.diceLabel ?? '');
 
   const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 2000);
   useDidUpdate(() => {
@@ -101,10 +108,11 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
     rollHistory.map((r) => ({ ...r, group: `${r.label}~${r.timestamp}~${r.type}` })),
     (r) => r.group
   );
-  const [debouncedRollHistory] = useDebouncedValue(rollHistory, 2000);
+  const [debouncedRollHistory] = useDebouncedValue(rollHistory, 5000);
   useDidUpdate(() => {
     // Saving roll history
     if (!character || !debouncedRollHistory) return;
+    console.log('Dice Roller 🎲 Saving roll history,', debouncedRollHistory.length);
     setCharacter({
       ...character,
       roll_history: {
@@ -134,9 +142,6 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
       const dieType = parseInt(dice[0].type.slice(1));
       const bonus = dice.reduce((a, b) => a + b.bonus, 0);
       const result = dice.reduce((a, b) => a + b.result, 0) + bonus;
-
-      console.log(dice[0].type);
-
       return (
         <Group gap={5} wrap='nowrap' align='start'>
           <Text span>
@@ -197,11 +202,11 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
             .sort((a, b) => groupedRolls[b][0].timestamp - groupedRolls[a][0].timestamp)
             .map((group, i) => (
               <Paper withBorder p={3} style={{ backgroundColor: theme.colors.dark[6] + '77' }}>
-                <Group key={i} justify='space-between' align='start' wrap='nowrap'>
-                  <Box px={5}>{getRollEntry(groupedRolls[group])}</Box>
+                <Group key={i} justify='space-between' align='start' wrap='nowrap' px={5}>
+                  <Box>{getRollEntry(groupedRolls[group])}</Box>
                   <Box>
                     <Stack gap={0} justify='space-between' align='end'>
-                      <Text fz={8} c='gray.7' fs='italic'>
+                      <Text fz={8} c='gray.7' fs='italic' style={{ whiteSpace: 'nowrap' }}>
                         {new Date(groupedRolls[group][0].timestamp).toLocaleTimeString()}
                       </Text>
                       <Text fz={10} c='gray.6'>
@@ -219,7 +224,15 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
 
   // Setup & Cleanup DDDice
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDiceTray();
+        props.onClose();
+      }
+    };
+
     if (props.opened) {
+      document.addEventListener('keydown', handleKeyDown);
       setTimeout(async () => {
         if (dddice.current && roomId.current) return;
         if (!canvasRef.current) {
@@ -248,13 +261,13 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
             setLoaded(true);
           }, 500);
         } catch (e) {
-          alert('Error ' + e);
           setUseFallback(true);
           setLoaded(true);
         }
       }, 200);
     } else {
       // Cleanup
+      document.removeEventListener('keydown', handleKeyDown);
       closeDiceTray();
       setLoaded(false);
       setDice([]);
@@ -304,6 +317,7 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
             label: die.label.trim() || undefined,
             meta: {
               bonus: die.bonus,
+              type: die.type,
             },
           }))
           .map((die) => {
@@ -322,7 +336,7 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
 
       results =
         vResult?.data.values.map((value) => ({
-          type: value.type,
+          type: value.meta?.type,
           label: value.label ?? '',
           result: value.value,
           bonus: value.meta?.bonus,
@@ -519,6 +533,11 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
                       {die.bonus ? `${sign(die.bonus)}` : ''}
                     </Badge>
                   ))}
+                  {dice.length === 0 && (
+                    <Text w='100%' py='xs' fz='sm' c='gray.7' ta='center' fs='italic'>
+                      Add some dice to roll
+                    </Text>
+                  )}
                 </Group>
               </ScrollArea>
             </Paper>
@@ -611,7 +630,7 @@ export default function DiceRoller(props: { opened: boolean; onClose: () => void
                         </Group>
                       </Box>
                       <Box>
-                        <ScrollArea h={`min(40vh, 350px)`} type='always' scrollbars='y'>
+                        <ScrollArea h={`min(40vh, 350px)`} scrollbars='y'>
                           {getRollHistory()}
                         </ScrollArea>
                       </Box>
