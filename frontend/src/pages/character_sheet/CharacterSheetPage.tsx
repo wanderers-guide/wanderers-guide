@@ -51,7 +51,7 @@ import { toLabel } from '@utils/strings';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable, setVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
-import { lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import { confirmHealth } from './character-utils';
@@ -71,9 +71,7 @@ import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
 import { GiRollingDices } from 'react-icons/gi';
 import { displayComingSoon } from '@utils/notifications';
-import DiceRoller from '@common/dice/DiceRoller';
-
-//const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
+const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
 
 export function Component(props: {}) {
   setPageTitle(`Sheet`);
@@ -314,6 +312,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   }, [debouncedInventory]);
 
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
+  const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
 
   return (
     <Center>
@@ -373,7 +372,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               radius={100}
               aria-label='Dice Roller'
               onClick={() => {
-                //displayComingSoon();
+                if (!loadedDiceRoller) {
+                  setLoadedDiceRoller(true);
+                }
                 setOpenedDiceRoller(true);
               }}
             >
@@ -382,12 +383,16 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           )}
         </Stack>
       </Box>
-      <DiceRoller
-        opened={openedDiceRoller}
-        onClose={() => {
-          setOpenedDiceRoller(false);
-        }}
-      />
+      {loadedDiceRoller && (
+        <Suspense fallback={<></>}>
+          <DiceRoller
+            opened={openedDiceRoller}
+            onClose={() => {
+              setOpenedDiceRoller(false);
+            }}
+          />
+        </Suspense>
+      )}
     </Center>
   );
 }
