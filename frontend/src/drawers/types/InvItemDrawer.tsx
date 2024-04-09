@@ -244,6 +244,7 @@ export function InvItemDrawerContent(props: {
                       style={{
                         opacity: 0.7,
                         backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                       }}
                     >
                       <IconSquareRounded size='1rem' />
@@ -258,6 +259,7 @@ export function InvItemDrawerContent(props: {
                       style={{
                         opacity: 0.7,
                         backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                       }}
                     >
                       <IconSquareRoundedFilled size='1rem' />
@@ -290,6 +292,7 @@ export function InvItemDrawerContent(props: {
                     }}
                     style={{
                       backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
                     }}
                     pr={5}
                   >
@@ -325,6 +328,7 @@ export function InvItemDrawerContent(props: {
               aria-label='Edit Item'
               style={{
                 backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
               }}
               onClick={() => {
                 setEditingItem(true);
@@ -340,6 +344,7 @@ export function InvItemDrawerContent(props: {
                 aria-label='Remove Item'
                 style={{
                   backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
                 }}
                 onClick={() => {
                   props.data.onItemDelete(invItem);

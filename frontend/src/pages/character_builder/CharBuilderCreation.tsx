@@ -515,8 +515,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           <StatButton
             onClick={() => {
               openDrawer({
-                type: 'stat-prof',
-                data: { variableName: 'PERCEPTION' },
+                type: 'stat-perception',
+                data: {},
               });
             }}
           >

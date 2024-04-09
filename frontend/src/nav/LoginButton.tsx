@@ -20,6 +20,7 @@ export function LoginButton(props: { onClick: () => void }) {
         color: theme.colors.gray[4],
         fontWeight: 500,
         backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         backgroundColor: hovered ? theme.colors.dark[8] + '20' : theme.colors.dark[8] + '00',
       }}
     >

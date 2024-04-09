@@ -88,6 +88,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           border: `0px solid`,
           borderRadius: 0,
           backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
           backgroundColor: theme.colors.dark[8] + 'CC',
         }}
@@ -324,6 +325,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           border: `0px solid`,
           borderRadius: 0,
           backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
           backgroundColor: theme.colors.dark[8] + 'CC',
         }}

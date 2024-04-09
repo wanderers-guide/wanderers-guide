@@ -355,7 +355,11 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           {character?.campaign_id && (
             <ActionIcon
               size={40}
-              variant='filled'
+              variant='light'
+              style={{
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
               radius={100}
               aria-label='Campaigns View'
               onClick={() => {
@@ -368,7 +372,11 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           {character?.options?.dice_roller && (
             <ActionIcon
               size={40}
-              variant='filled'
+              variant='light'
+              style={{
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+              }}
               radius={100}
               aria-label='Dice Roller'
               onClick={() => {

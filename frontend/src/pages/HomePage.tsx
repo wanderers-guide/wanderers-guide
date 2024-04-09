@@ -48,6 +48,7 @@ export function Component() {
               style={{
                 backgroundColor: theme.colors.dark[7] + 'D3',
                 backdropFilter: `blur(8px)`,
+                WebkitBackdropFilter: 'blur(8px)',
               }}
             >
               Start your Adventure

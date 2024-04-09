@@ -110,26 +110,22 @@ export function StatAttrDrawerContent(props: { data: { attributeName?: string } 
     }
   }
 
-  const rows = Object.keys(sourceRecords)
-    .sort()
-    .map((source, index) => (
-      <Table.Tr key={index} ta='center'>
-        {sourceRecords[source].map((record, i) => (
-          <HoverCard shadow='md' openDelay={250} position='bottom' zIndex={10000}>
-            <HoverCard.Target>
-              <Table.Td key={i}>
-                {record !== null ? record === undefined ? <>—</> : <>{sign(record)}</> : <></>}
-              </Table.Td>
-            </HoverCard.Target>
-            <HoverCard.Dropdown py={5} px={10}>
-              <Text c='gray.0' size='xs'>
-                From {source}
-              </Text>
-            </HoverCard.Dropdown>
-          </HoverCard>
-        ))}
-      </Table.Tr>
-    ));
+  const rows = sortAttributes(Object.keys(sourceRecords)).map((source, index) => (
+    <Table.Tr key={index} ta='center'>
+      {sourceRecords[source].map((record, i) => (
+        <HoverCard shadow='md' openDelay={250} position='bottom' zIndex={10000}>
+          <HoverCard.Target>
+            <Table.Td key={i}>{record !== null ? record === undefined ? <>–</> : <>{sign(record)}</> : <></>}</Table.Td>
+          </HoverCard.Target>
+          <HoverCard.Dropdown py={5} px={10}>
+            <Text c='gray.0' size='xs'>
+              From {source}
+            </Text>
+          </HoverCard.Dropdown>
+        </HoverCard>
+      ))}
+    </Table.Tr>
+  ));
 
   const ths = (
     <Table.Tr>
@@ -207,4 +203,12 @@ function getAttributeDescription(attributeName: string) {
     return `Charisma measures your character’s personal magnetism and strength of personality. A high Charisma modifier helps you build relationships and influence the thoughts and moods of others with social skills.`;
   }
   return 'No description available for this attribute.';
+}
+
+function sortAttributes(sources: string[]) {
+  sources = sources.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  return [
+    ...sources.filter((str) => !str.toLowerCase().trim().startsWith('attribute')),
+    ...sources.filter((str) => str.toLowerCase().trim().startsWith('attribute')),
+  ];
 }
