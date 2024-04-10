@@ -177,7 +177,7 @@ CREATE TABLE public.campaign (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     user_id uuid NOT NULL,
     name character varying DEFAULT '''New Campaign'''::character varying NOT NULL,
-    description character varying,
+    description json,
     notes json,
     recommended_options json,
     recommended_variants json,
