@@ -452,27 +452,27 @@ const imageStore: Record<string, ImageOption[]> = {
   animated_svgs: [
     {
       name: 'Twilight',
-      url: '/src/assets/images/backgrounds/svgs/twilight.svg',
+      url: '/backgrounds/svgs/twilight.svg',
     },
     {
       name: 'Clouds',
-      url: '/src/assets/images/backgrounds/svgs/clouds.svg',
+      url: '/backgrounds/svgs/clouds.svg',
     },
     {
       name: 'Tide',
-      url: '/src/assets/images/backgrounds/svgs/tide.svg',
+      url: '/backgrounds/svgs/tide.svg',
     },
     {
       name: 'Ocean',
-      url: '/src/assets/images/backgrounds/svgs/ocean.svg',
+      url: '/backgrounds/svgs/ocean.svg',
     },
     {
       name: 'Wave',
-      url: '/src/assets/images/backgrounds/svgs/wave.svg',
+      url: '/backgrounds/svgs/wave.svg',
     },
     {
       name: 'Ripple',
-      url: '/src/assets/images/backgrounds/svgs/ripple.svg',
+      url: '/backgrounds/svgs/ripple.svg',
     },
   ],
   patterns: [

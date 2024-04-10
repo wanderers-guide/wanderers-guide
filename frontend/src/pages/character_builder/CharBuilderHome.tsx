@@ -737,7 +737,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 h='auto'
                 fit='contain'
                 src={character?.details?.background_image_url}
-                fallbackSrc='/src/assets/images/backgrounds/placeholder.jpeg'
+                fallbackSrc='/backgrounds/placeholder.jpeg'
               />
             </UnstyledButton>
           </Box>

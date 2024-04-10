@@ -296,12 +296,19 @@ interface Campaign {
   created_at: string;
   user_id: string;
   name: string;
-  description: string;
+  description: {
+    contents: JSONContent;
+  };
   notes?: {
     pages: {
       name: string;
       icon: string;
       color: string;
+      contents: JSONContent;
+    }[];
+    sessions: {
+      id: string;
+      name: string;
       contents: JSONContent;
     }[];
   };
@@ -312,7 +319,29 @@ interface Campaign {
   };
   custom_operations?: Operation[];
   meta_data?: {
+    settings?: {
+      show_party_member_status?: boolean;
+    };
+    join_key?: string;
     image_url?: string;
+    dice?: {
+      default_theme?: string;
+      opened_default_presets?: boolean;
+      presets?: {
+        id: string;
+        name: string;
+        dice: Dice[];
+      }[];
+    };
+    roll_history?: {
+      rolls: {
+        type: string;
+        label: string;
+        result: number;
+        bonus: number;
+        timestamp: number;
+      }[];
+    };
   };
 }
 
