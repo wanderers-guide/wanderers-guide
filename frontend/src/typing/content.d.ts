@@ -492,8 +492,25 @@ interface Campaign {
       contents: JSONContent;
     }[];
   };
-  recommended_options?: Record<string, any>; // TODO
-  recommended_variants?: Record<string, any>; // TODO
+  recommended_options?: {
+    is_public?: boolean;
+    auto_detect_prerequisites?: boolean;
+    auto_heighten_spells?: boolean;
+    class_archetypes?: boolean;
+    custom_operations?: boolean;
+    dice_roller?: boolean;
+    ignore_bulk_limit?: boolean;
+    alternate_ancestry_boosts?: boolean;
+    voluntary_flaws?: boolean;
+  };
+  recommended_variants?: {
+    ancestry_paragon?: boolean;
+    proficiency_without_level?: boolean;
+    proficiency_half_level?: boolean;
+    stamina?: boolean;
+    free_archetype?: boolean;
+    dual_class?: boolean;
+  };
   recommended_content_sources?: {
     enabled?: number[];
   };

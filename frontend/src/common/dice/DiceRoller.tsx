@@ -28,7 +28,7 @@ import { GiRollingDiceCup } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
 import { IconArrowBigRightFilled, IconSquareRoundedArrowDown, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
-import { DICE_THEMES, findDiceTheme } from './dice-tray';
+import { DICE_THEMES, fetchDiceThemes, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
 import _ from 'lodash-es';
 import { useRecoilState } from 'recoil';
@@ -380,6 +380,13 @@ export default function DiceRoller(props: {
           dddice.current.connect(roomId.current);
           // Takes a little time to join room and we can't await it,
           setTimeout(() => {
+            // Get theme objs for DICE_THEMES
+            // if (dddice.current) {
+            //   fetchDiceThemes(dddice.current).then((themes) => {
+            //     console.log(themes);
+            //   });
+            // }
+
             setLoaded(true);
           }, 500);
         } catch (e) {
@@ -662,7 +669,9 @@ export default function DiceRoller(props: {
                           setOpenedPresets(false);
                         }
                       }}
-                      leftSection={<Avatar size={18} src={findDiceTheme(die.theme).imageURL} alt='Dice Icon' />}
+                      leftSection={
+                        <Avatar size={18} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
+                      }
                       rightSection={
                         <ActionIcon
                           variant='subtle'
@@ -713,7 +722,11 @@ export default function DiceRoller(props: {
                   <Paper withBorder p={5}>
                     <Stack>
                       <Group align='start'>
-                        <Avatar size={40} src={activeDieData.theme.imageURL} alt='Dice Icon' />
+                        <Avatar
+                          size={40}
+                          src={activeDieData.theme.preview[activeDieData.die?.type ?? '']}
+                          alt='Dice Icon'
+                        />
                         <Stack gap={0} h={40}>
                           <Title order={4}>{activeDieData.theme.name}</Title>
                           <Text fz='xs' fs='italic'>
@@ -730,7 +743,7 @@ export default function DiceRoller(props: {
                           slideSize='70%'
                           slideGap='md'
                           loop
-                          height={80}
+                          height={100}
                           initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
                           onSlideChange={(index) => {
                             setTimeout(() => {
@@ -753,7 +766,7 @@ export default function DiceRoller(props: {
                           {DICE_THEMES.map((theme, index) => (
                             <Carousel.Slide key={index}>
                               <Center>
-                                <Avatar size={70} src={theme.imageURL} alt='Dice Icon' />
+                                <Avatar size={90} src={theme.preview[activeDieData.die?.type ?? '']} alt='Dice Icon' />
                               </Center>
                             </Carousel.Slide>
                           ))}
