@@ -4,9 +4,11 @@
     "base64-arraybuffer": "^1.0.2",
     "lodash": "^4.17.21",
     "patreon": "^0.4.1",
-    "sharp": "^0.32.6"
+    "sharp": "^0.32.6",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.199"
+    "@types/lodash": "^4.14.199",
+    "@types/uuid": "^9.0.8"
   }
 }
