@@ -16,16 +16,12 @@ serve(async (req: Request) => {
     const results = await fetchData<Campaign>(client, 'campaign', [
       { column: 'id', value: id },
       { column: 'user_id', value: user_id },
-      { column: 'join_key', value: join_key }
+      { column: 'join_key', value: join_key },
     ]);
-
-    const data = results.length == 1
-      ? results[0]
-      : results.sort((a, b) => a.id - b.id);
 
     return {
       status: 'success',
-      data,
+      data: results.sort((a, b) => a.id - b.id),
     };
   });
 });

@@ -19,12 +19,16 @@ serve(async (req: Request) => {
       { column: 'campaign_id', value: campaign_id },
     ]);
 
-    const data = results.length == 1
-      ? results[0]
-      : results.sort((a, b) => a.id - b.id);
+    if (id && !Array.isArray(id)) {
+      return {
+        status: 'success',
+        data: results[0],
+      };
+    }
+
     return {
       status: 'success',
-      data,
+      data: results.sort((a, b) => a.id - b.id),
     };
   });
 });
