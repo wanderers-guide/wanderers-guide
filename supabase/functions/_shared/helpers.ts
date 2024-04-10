@@ -86,6 +86,7 @@ export type TableName =
   | 'content_source'
   | 'content_update'
   | 'versatile_heritage'
+  | 'campaign'
   | 'character'
   | 'ancestry'
   | 'trait'
