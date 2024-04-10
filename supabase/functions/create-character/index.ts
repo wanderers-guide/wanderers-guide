@@ -36,6 +36,7 @@ serve(async (req: Request) => {
       operation_data,
       spells,
       companions,
+      campaign_id,
     } = body as Character;
 
     const user = await getPublicUser(client);
@@ -88,6 +89,7 @@ serve(async (req: Request) => {
         operation_data,
         spells,
         companions,
+        campaign_id,
       },
       undefined,
       false
