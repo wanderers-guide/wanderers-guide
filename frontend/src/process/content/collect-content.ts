@@ -200,14 +200,16 @@ export function collectCharacterSpellcasting(character: Character) {
   // Fill current casts from saved character data
   innate = mergeInnateSpells(innate, character.spells?.innate_casts ?? []);
 
+  const maxFocusPoints = Math.min(focus.filter((f) => f.rank !== 0).length ?? 0, 3);
+
   return {
     slots,
     list,
     focus,
     innate,
     focus_points: {
-      current: character.spells?.focus_point_current ?? 0,
-      max: Math.min(focus.filter((f) => f.rank !== 0).length ?? 0, 3),
+      current: character.spells?.focus_point_current ?? maxFocusPoints,
+      max: maxFocusPoints,
     },
     sources: castingSources
       .map((source) => {

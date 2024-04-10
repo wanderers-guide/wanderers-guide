@@ -24,7 +24,7 @@ import { tabletQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom, findDefaultPresets } from './dice-utils';
-import { GiRollingDiceCup } from 'react-icons/gi';
+import { GiRollingDiceCup, GiRollingDices } from 'react-icons/gi';
 import useRefresh from '@utils/use-refresh';
 import { IconArrowBigRightFilled, IconSquareRoundedArrowDown, IconTrash, IconX } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
@@ -156,7 +156,7 @@ export default function DiceRoller(props: {
               {bonus !== 0 && (bonus > 0 ? '+' : '-')}
             </Text>
             <Text c={numColor} span>
-              {bonus !== 0 && bonus}
+              {bonus !== 0 && Math.abs(bonus)}
             </Text>
           </Text>
           <Text c={mathColor} span>
@@ -179,6 +179,12 @@ export default function DiceRoller(props: {
                 </Text>
               </Text>
             ))}
+            <Text c={mathColor} span>
+              {bonus !== 0 && (bonus > 0 ? '+' : '-')}
+            </Text>
+            <Text c={numColor} span>
+              {bonus !== 0 && Math.abs(bonus)}
+            </Text>
           </Text>
           <Text c={mathColor} span>
             <IconArrowBigRightFilled size='0.7rem' />
@@ -334,9 +340,17 @@ export default function DiceRoller(props: {
         <Collapse in={openedDefaultPresets}>
           {openedDefaultPresets && (
             <Stack gap={5}>
-              {defaultPresets.map((preset, i) => (
-                <Box key={i}>{getPresetEntry(preset, false)}</Box>
-              ))}
+              {defaultPresets
+                .map((preset) => ({
+                  ...preset,
+                  dice: preset.dice.map((die) => ({
+                    ...die,
+                    theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                  })),
+                }))
+                .map((preset, i) => (
+                  <Box key={i}>{getPresetEntry(preset, false)}</Box>
+                ))}
             </Stack>
           )}
         </Collapse>
@@ -512,7 +526,10 @@ export default function DiceRoller(props: {
         onClose={props.onClose}
         title={
           <Group wrap='nowrap' gap={10} justify='space-between'>
-            <Title order={3}>Dice Roller</Title>
+            <Group wrap='nowrap' gap={10}>
+              <GiRollingDices size='1.6rem' stroke={1.5} />
+              <Title order={3}>Dice Roller</Title>
+            </Group>
             <Button
               size='xs'
               color='gray.6'

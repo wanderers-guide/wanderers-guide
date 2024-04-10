@@ -964,6 +964,16 @@ function SelectionOptions(props: {
     options = options.filter((option) => !featIds.includes(option.id) || option.meta_data?.can_select_multiple_times);
   }
 
+  // Filter out already selected languages
+  if (
+    props.overrideOptions &&
+    props.overrideOptions.length > 0 &&
+    props.overrideOptions[0]._content_type === 'language'
+  ) {
+    const languageIds = getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value.map((v) => parseInt(v)) ?? [];
+    options = options.filter((option) => !languageIds.includes(option.id));
+  }
+
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
   useEffect(() => {
@@ -1464,9 +1474,6 @@ export function GenericSelectionOption(props: {
       : props.skillAdjustment === '-1'
         ? prevProficiencyType(currentProf ?? 'U')
         : props.skillAdjustment;
-
-  console.log(currentProf);
-  console.log(nextProf);
 
   // If selected already, show the previous data to reflect the change
   if (props.selected && currentProf) {

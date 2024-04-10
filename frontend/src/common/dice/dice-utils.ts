@@ -50,7 +50,7 @@ export async function deleteDiceRoom(AUTH_KEY: string, roomId: string) {
 export function findDefaultPresets(id: StoreID, character: Character | null) {
   console.log('Loading default presets...');
 
-  const theme = character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme;
+  const theme = DICE_THEMES[0].theme;
   const presets: {
     id: string;
     name: string;
