@@ -724,6 +724,14 @@ ALTER TABLE ONLY public.background
 
 
 --
+-- Name: campaign campaign_join_key_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.campaign
+    ADD CONSTRAINT campaign_join_key_key UNIQUE (join_key);
+
+
+--
 -- Name: campaign campaign_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -897,6 +905,20 @@ ALTER TABLE ONLY public.versatile_heritage
 
 ALTER TABLE ONLY public.versatile_heritage
     ADD CONSTRAINT versatile_heritage_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: campaign_join_key_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX campaign_join_key_idx ON public.campaign USING btree (join_key);
+
+
+--
+-- Name: character_campaign_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX character_campaign_id_idx ON public."character" USING btree (campaign_id);
 
 
 --
