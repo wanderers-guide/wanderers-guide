@@ -528,7 +528,8 @@ CREATE TABLE public.public_user (
     deactivated boolean DEFAULT false NOT NULL,
     summary text,
     subscribed_content_sources json,
-    patreon jsonb
+    patreon jsonb,
+    organized_play_id character varying
 );
 
 
