@@ -157,6 +157,7 @@ export function Component() {
                 radius='xl'
                 size='xl'
                 style={{
+                  border: '1px solid ' + theme.colors['dark'][6],
                   position: 'absolute',
                   top: '45%',
                   right: -70,
@@ -174,6 +175,7 @@ export function Component() {
                 radius='xl'
                 size='xl'
                 style={{
+                  border: '1px solid ' + theme.colors['dark'][6],
                   position: 'absolute',
                   top: '45%',
                   left: -70,

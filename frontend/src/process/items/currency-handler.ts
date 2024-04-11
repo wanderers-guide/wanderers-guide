@@ -60,5 +60,9 @@ export function convertToCp(price?: { cp?: number; sp?: number; gp?: number; pp?
     return 0;
   }
 
-  return (price.cp ?? 0) + (price.sp ?? 0) * 10 + (price.gp ?? 0) * 100 + (price.pp ?? 0) * 1000;
+  return (price.cp || 0) + (price.sp || 0) * 10 + (price.gp || 0) * 100 + (price.pp || 0) * 1000;
+}
+
+export function convertToGp(price?: { cp?: number; sp?: number; gp?: number; pp?: number }) {
+  return Math.round((convertToCp(price) / 100) * 100) / 100;
 }

@@ -802,7 +802,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       };
                     });
                   }}
-                  w={220}
+                  w={isPhone ? undefined : 220}
                   rightSection={
                     <HoverCard width={280} shadow='md' openDelay={750}>
                       <HoverCard.Target>

@@ -8,6 +8,7 @@ import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
 import { resetContentStore } from '@content/content-store';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
+import { importFromGeneric } from '@import/generic/import-from-generic';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import importFromJSON from '@import/json/import-from-json';
 import {
@@ -155,6 +156,23 @@ export function Component() {
                     }}
                   >
                     Import from JSON
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
+                    onClick={() => {
+                      if (session) {
+                        importFromGeneric(session, {
+                          className: 'fighter',
+                          backgroundName: 'acolyte',
+                          ancestryName: 'human',
+                          level: 10,
+                          contentSources: 'all',
+                          selections: [],
+                        });
+                      }
+                    }}
+                  >
+                    Import from Generic
                   </Menu.Item>
                   <Menu.Item
                     disabled

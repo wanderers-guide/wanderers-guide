@@ -394,7 +394,12 @@ export function AncestryInitialOverview(props: {
           <Text c='gray.5' ta='center'>
             Size
           </Text>
-          <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
+          <Text
+            c='gray.4'
+            fw={700}
+            ta='center'
+            style={{ display: 'flex', justifyContent: 'center', textWrap: 'nowrap' }}
+          >
             {display.size.ui ?? 'Varies'}
           </Text>
         </Paper>

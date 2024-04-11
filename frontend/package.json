@@ -20,6 +20,7 @@
   "dependencies": {
     "@mantine/carousel": "^7.5.1",
     "@mantine/core": "^7.5.1",
+    "@mantine/dates": "^7.5.1",
     "@mantine/dropzone": "^7.5.1",
     "@mantine/form": "^7.5.1",
     "@mantine/hooks": "^7.5.1",
@@ -45,6 +46,7 @@
     "@tiptap/starter-kit": "^2.1.12",
     "@widgetbot/react-embed": "^1.9.0",
     "colorjs.io": "^0.4.5",
+    "dayjs": "^1.11.10",
     "dddice-js": "^0.18.5",
     "framer-motion": "^10.16.5",
     "js-search": "^2.0.1",

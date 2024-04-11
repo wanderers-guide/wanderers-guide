@@ -74,6 +74,7 @@ interface PublicUser {
   };
   deactivated: boolean;
   summary?: string;
+  organized_play_id?: string;
   subscribed_content_sources?: { source_id: number; source_name: string; added_at: string }[];
 }
 

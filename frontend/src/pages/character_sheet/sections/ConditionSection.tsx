@@ -12,10 +12,38 @@ import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Tex
 import { useMediaQuery } from '@mantine/hooks';
 import { openContextModal, modals } from '@mantine/modals';
 import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-react';
+import { Character, Condition } from '@typing/content';
 import { phoneQuery } from '@utils/mobile-responsive';
 import _ from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+
+export function selectCondition(currentConditions: Condition[], addCondition: (condition: Condition) => void) {
+  selectContent(
+    'ability-block',
+    (option) => {
+      const condition = getConditionByName(option.name);
+      if (!condition) return;
+      const hasCondition = currentConditions?.find((c) => c.name === condition.name);
+      if (hasCondition) return;
+      addCondition(condition);
+    },
+    {
+      overrideOptions: getAllConditions()
+        .filter((condition) => condition.for_character)
+        .map((condition, index) => ({
+          id: index,
+          name: condition.name,
+          _custom_select: {
+            title: condition.name,
+            description: condition.description,
+          },
+        })),
+      overrideLabel: 'Select a Condition',
+      selectedId: -1,
+    }
+  );
+}
 
 export default function ConditionSection() {
   const navigate = useNavigate();
@@ -50,37 +78,16 @@ export default function ConditionSection() {
                 radius='xl'
                 color='gray'
                 onClick={() => {
-                  selectContent(
-                    'ability-block',
-                    (option) => {
-                      if (!character) return;
-                      const condition = getConditionByName(option.name);
-                      if (!condition) return;
-                      const hasCondition = character.details?.conditions?.find((c) => c.name === condition.name);
-                      if (hasCondition) return;
-                      setCharacter({
-                        ...character,
-                        details: {
-                          ...character.details,
-                          conditions: [...(character.details?.conditions ?? []), condition],
-                        },
-                      });
-                    },
-                    {
-                      overrideOptions: getAllConditions()
-                        .filter((condition) => condition.for_character)
-                        .map((condition, index) => ({
-                          id: index,
-                          name: condition.name,
-                          _custom_select: {
-                            title: condition.name,
-                            description: condition.description,
-                          },
-                        })),
-                      overrideLabel: 'Select a Condition',
-                      selectedId: -1,
-                    }
-                  );
+                  selectCondition(character?.details?.conditions ?? [], (condition) => {
+                    if (!character) return;
+                    setCharacter({
+                      ...character,
+                      details: {
+                        ...character.details,
+                        conditions: [...(character.details?.conditions ?? []), condition],
+                      },
+                    });
+                  });
                 }}
               >
                 <IconPlus size='1rem' stroke={1.5} />

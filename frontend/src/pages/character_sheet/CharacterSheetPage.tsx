@@ -198,36 +198,38 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   useEffect(() => {
     if (!character || executingOperations.current) return;
     executingOperations.current = true;
-    executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
-      if (character.variants?.proficiency_without_level) {
-        setVariable('ALL', 'PROF_WITHOUT_LEVEL', true);
-      }
+    setTimeout(() => {
+      executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
+        if (character.variants?.proficiency_without_level) {
+          setVariable('ALL', 'PROF_WITHOUT_LEVEL', true);
+        }
 
-      // Add the extra items to the inventory from variables
-      addExtraItems(props.content.items, character, setCharacter);
+        // Add the extra items to the inventory from variables
+        addExtraItems(props.content.items, character, setCharacter);
 
-      // Check bulk limits
-      if (character.options?.ignore_bulk_limit !== true) {
-        checkBulkLimit(character, setCharacter);
-      }
+        // Check bulk limits
+        if (character.options?.ignore_bulk_limit !== true) {
+          checkBulkLimit(character, setCharacter);
+        }
 
-      // Apply conditions after everything else
-      applyConditions('CHARACTER', character.details?.conditions ?? []);
-      if (character.meta_data?.reset_hp !== false) {
-        // To reset hp, we need to confirm health
-        confirmHealth(`${getFinalHealthValue('CHARACTER')}`, character, setCharacter);
-      } else {
-        // Because of the drained condition, let's confirm health
-        confirmHealth(`${character.hp_current}`, character, setCharacter);
-      }
+        // Apply conditions after everything else
+        applyConditions('CHARACTER', character.details?.conditions ?? []);
+        if (character.meta_data?.reset_hp !== false) {
+          // To reset hp, we need to confirm health
+          confirmHealth(`${getFinalHealthValue('CHARACTER')}`, character, setCharacter);
+        } else {
+          // Because of the drained condition, let's confirm health
+          confirmHealth(`${character.hp_current}`, character, setCharacter);
+        }
 
-      setOperationResults(results);
-      executingOperations.current = false;
+        setOperationResults(results);
+        executingOperations.current = false;
 
-      setTimeout(() => {
-        props.onFinishLoading?.();
-      }, 100);
-    });
+        setTimeout(() => {
+          props.onFinishLoading?.();
+        }, 100);
+      });
+    }, 1);
   }, [character]);
 
   //

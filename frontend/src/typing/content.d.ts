@@ -413,10 +413,12 @@ interface Character {
       gender?: string;
       pronouns?: string;
       faction?: string;
+      reputation?: number;
       ethnicity?: string;
       nationality?: string;
       birthplace?: string;
       organized_play_id?: string;
+      organized_play_adventures?: SocietyAdventureEntry[];
     };
     conditions?: Condition[];
   };
@@ -590,6 +592,7 @@ interface PublicUser {
   };
   deactivated: boolean;
   summary?: string;
+  organized_play_id?: string;
   subscribed_content_sources?: { source_id: number; source_name: string; added_at: string }[];
 }
 
@@ -685,3 +688,28 @@ type Dice = {
   bonus: number;
   label: string;
 };
+
+interface SocietyAdventureEntry {
+  id?: string;
+  name?: string;
+  event?: string;
+  event_code?: string;
+  date?: number;
+  character_level?: number;
+  gm_organized_play_id?: string;
+  chronicle_code?: string;
+  boons?: string;
+  xp_gained?: number;
+  rep_gained?: number;
+  items_snapshot: Item[];
+  conditions_snapshot: Condition[];
+  items_sold: Item[];
+  items_bought: Item[];
+  items_total_buy?: number;
+  items_total_sell?: number;
+  items_total_extra?: number;
+  conditions_gained: Condition[];
+  conditions_cleared: Condition[];
+  notes?: string;
+  downtime?: string;
+}
