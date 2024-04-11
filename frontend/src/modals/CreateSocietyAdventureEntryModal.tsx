@@ -593,29 +593,34 @@ export function CreateSocietyAdventureEntryModal(props: {
             />
 
             <Group justify='space-between' align='end'>
-              <Button
-                variant='light'
-                color='red'
-                size='compact-sm'
-                onClick={() => {
-                  modals.openConfirmModal({
-                    title: <Title order={3}>Are you sure you want to delete this record?</Title>,
-                    children: (
-                      <Text size='sm'>
-                        This action cannot be undone. All data associated with this record will be permanently deleted.
-                      </Text>
-                    ),
-                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
-                    onCancel: () => {},
-                    onConfirm: () => {
-                      props.onDelete();
-                      onReset();
-                    },
-                  });
-                }}
-              >
-                Delete Record
-              </Button>
+              {editing ? (
+                <Button
+                  variant='light'
+                  color='red'
+                  size='compact-sm'
+                  onClick={() => {
+                    modals.openConfirmModal({
+                      title: <Title order={3}>Are you sure you want to delete this record?</Title>,
+                      children: (
+                        <Text size='sm'>
+                          This action cannot be undone. All data associated with this record will be permanently
+                          deleted.
+                        </Text>
+                      ),
+                      labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                      onCancel: () => {},
+                      onConfirm: () => {
+                        props.onDelete();
+                        onReset();
+                      },
+                    });
+                  }}
+                >
+                  Delete Record
+                </Button>
+              ) : (
+                <Box></Box>
+              )}
               <Group justify='flex-end'>
                 <Button
                   variant='default'
