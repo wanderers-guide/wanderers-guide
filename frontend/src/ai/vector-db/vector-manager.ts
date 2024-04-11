@@ -100,6 +100,7 @@ export async function queryByContent(
 const TYPE_WEIGHTS: Record<string, number> = {
   trait: -0.2,
   action: -0.2,
+  'class-feature': -0.2,
 };
 function getTypeWeight(data: Record<string, string | number | boolean>) {
   return -1 * (TYPE_WEIGHTS[`${data.type || data._type}`] ?? 0);
