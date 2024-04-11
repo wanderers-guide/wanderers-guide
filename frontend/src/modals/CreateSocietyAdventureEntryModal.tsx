@@ -35,12 +35,18 @@ import { IconAdjustments, IconCirclePlus, IconPlus, IconX } from '@tabler/icons-
 import { selectContent } from '@common/select/SelectContent';
 import { convertToGp } from '@items/currency-handler';
 import { selectCondition } from '@pages/character_sheet/sections/ConditionSection';
+import { modals } from '@mantine/modals';
+
+export function getGpGained(entry: SocietyAdventureEntry) {
+  return (entry.items_total_sell ?? 0) / 2 - (entry.items_total_buy ?? 0) + (entry.items_total_extra ?? 0);
+}
 
 export function CreateSocietyAdventureEntryModal(props: {
   opened: boolean;
   editEntry?: SocietyAdventureEntry;
   onComplete: (entry: SocietyAdventureEntry) => void;
   onCancel: () => void;
+  onDelete: () => void;
 }) {
   const theme = useMantineTheme();
   const editing = props.editEntry !== undefined;
@@ -99,9 +105,6 @@ export function CreateSocietyAdventureEntryModal(props: {
     setNotes(undefined);
     setDowntime(undefined);
   };
-
-  const gp_gained =
-    (form.values.items_total_sell ?? 0) / 2 - (form.values.items_total_buy ?? 0) + (form.values.items_total_extra ?? 0);
 
   return (
     <Modal
@@ -371,7 +374,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                 label='GP Gained'
                 placeholder='Result'
                 readOnly
-                value={gp_gained}
+                value={getGpGained(form.values)}
                 style={{
                   whiteSpace: 'nowrap',
                 }}
@@ -589,17 +592,42 @@ export function CreateSocietyAdventureEntryModal(props: {
               }}
             />
 
-            <Group justify='flex-end'>
+            <Group justify='space-between' align='end'>
               <Button
-                variant='default'
+                variant='light'
+                color='red'
+                size='compact-sm'
                 onClick={() => {
-                  props.onCancel();
-                  onReset();
+                  modals.openConfirmModal({
+                    title: <Title order={3}>Are you sure you want to delete this record?</Title>,
+                    children: (
+                      <Text size='sm'>
+                        This action cannot be undone. All data associated with this record will be permanently deleted.
+                      </Text>
+                    ),
+                    labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                    onCancel: () => {},
+                    onConfirm: () => {
+                      props.onDelete();
+                      onReset();
+                    },
+                  });
                 }}
               >
-                Cancel
+                Delete Record
               </Button>
-              <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
+              <Group justify='flex-end'>
+                <Button
+                  variant='default'
+                  onClick={() => {
+                    props.onCancel();
+                    onReset();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type='submit'>{editing ? 'Update' : 'Create'}</Button>
+              </Group>
             </Group>
           </Stack>
         </form>

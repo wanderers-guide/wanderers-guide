@@ -46,8 +46,8 @@ import { useMutation } from '@tanstack/react-query';
 import { JSendResponse } from '@typing/requests';
 import { useState } from 'react';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
-import { parse } from 'mathjs';
-import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
+import { CreateSocietyAdventureEntryModal, getGpGained } from '@modals/CreateSocietyAdventureEntryModal';
+import _ from 'lodash-es';
 
 const SECTION_WIDTH = 280;
 
@@ -927,9 +927,14 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
         }}
       >
         <Group wrap='nowrap' justify='space-between'>
-          <Text px={5} fz='lg'>
-            Adventures
-          </Text>
+          <Group wrap='nowrap' gap={5}>
+            <Text px={5} fz='lg'>
+              Adventures
+            </Text>
+            <Badge variant='outline' size='sm' color='gray.5' circle>
+              {(character?.details?.info?.organized_play_adventures ?? []).length}
+            </Badge>
+          </Group>
           <Button
             size='compact-sm'
             variant='filled'
@@ -945,19 +950,44 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
         <SimpleGrid cols={4}>
           <Stack gap={0}>
             <Text ta='center'>Lvl</Text>
-            <Text ta='center'>15</Text>
+            <Text ta='center' fw={600}>
+              {1 +
+                Math.floor(
+                  (character?.details?.info?.organized_play_adventures ?? []).reduce(
+                    (acc, a) => acc + (a.xp_gained ?? 0),
+                    0
+                  ) / 12
+                )}
+            </Text>
           </Stack>
           <Stack gap={0}>
             <Text ta='center'>XP</Text>
-            <Text ta='center'>15</Text>
+            <Text ta='center' fw={600}>
+              {(character?.details?.info?.organized_play_adventures ?? []).reduce(
+                (acc, a) => acc + (a.xp_gained ?? 0),
+                0
+              ) % 12}
+            </Text>
           </Stack>
           <Stack gap={0}>
             <Text ta='center'>GP</Text>
-            <Text ta='center'>15</Text>
+            <Text ta='center' fw={600}>
+              {Math.round(
+                (character?.details?.info?.organized_play_adventures ?? []).reduce(
+                  (acc, a) => acc + getGpGained(a),
+                  0
+                ) * 100
+              ) / 100}
+            </Text>
           </Stack>
           <Stack gap={0}>
             <Text ta='center'>Rep</Text>
-            <Text ta='center'>15</Text>
+            <Text ta='center' fw={600}>
+              {(character?.details?.info?.organized_play_adventures ?? []).reduce(
+                (acc, a) => acc + (a.rep_gained ?? 0),
+                0
+              )}
+            </Text>
           </Stack>
         </SimpleGrid>
       </Paper>
@@ -1003,19 +1033,27 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
                 <SimpleGrid cols={4}>
                   <Stack gap={0}>
                     <Text ta='center'>Lvl</Text>
-                    <Text ta='center'>15</Text>
+                    <Text ta='center' fw={600}>
+                      {adventure.character_level}
+                    </Text>
                   </Stack>
                   <Stack gap={0}>
                     <Text ta='center'>+XP</Text>
-                    <Text ta='center'>15</Text>
+                    <Text ta='center' fw={600}>
+                      {adventure.xp_gained}
+                    </Text>
                   </Stack>
                   <Stack gap={0}>
                     <Text ta='center'>+GP</Text>
-                    <Text ta='center'>15</Text>
+                    <Text ta='center' fw={600}>
+                      {getGpGained(adventure)}
+                    </Text>
                   </Stack>
                   <Stack gap={0}>
                     <Text ta='center'>+Rep</Text>
-                    <Text ta='center'>15</Text>
+                    <Text ta='center' fw={600}>
+                      {adventure.rep_gained}
+                    </Text>
                   </Stack>
                 </SimpleGrid>
                 <Divider my={8} />
@@ -1033,14 +1071,29 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
           opened={true}
           editEntry={character?.details?.info?.organized_play_adventures?.find((a) => `${a.id}` === openedAdventureId)}
           onComplete={async (entry) => {
-            const adventures = character?.details?.info?.organized_play_adventures ?? [];
-            adventures.push({
-              ...entry,
-              character_level: entry.character_level ?? character?.level,
-            });
+            const adventures = _.cloneDeep(character?.details?.info?.organized_play_adventures ?? []);
+
+            const existing = adventures.find((a) => a.id === entry.id);
+            if (existing) {
+              Object.assign(existing, entry);
+            } else {
+              adventures.push({
+                ...entry,
+                character_level: entry.character_level ?? character?.level,
+              });
+            }
             props.setDebouncedInfo({
               ...character?.details?.info,
               organized_play_adventures: adventures,
+            });
+            setOpenedAdventureId(null);
+          }}
+          onDelete={() => {
+            props.setDebouncedInfo({
+              ...character?.details?.info,
+              organized_play_adventures: (character?.details?.info?.organized_play_adventures ?? []).filter(
+                (a) => `${a.id}` !== openedAdventureId
+              ),
             });
             setOpenedAdventureId(null);
           }}
