@@ -31,7 +31,7 @@ import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/ho
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
-import { ObjectWithUUID } from '@operations/operation-utils';
+import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -1277,7 +1277,7 @@ function ClassFeatureAccordionItem(props: {
             level={props.feature.level}
             results={props.results}
             onChange={(path, value) => {
-              props.onSaveChanges(`class-feature-${props.feature.id}_${path}`, value);
+              props.onSaveChanges(`${convertKeyToBasePrefix('classFeatureResults', props.feature.id)}_${path}`, value);
             }}
           />
         </Stack>
@@ -1341,7 +1341,10 @@ function AncestrySectionAccordionItem(props: {
             level={props.section.level}
             results={props.results}
             onChange={(path, value) => {
-              props.onSaveChanges(`ancestry-section-${props.section.id}_${path}`, value);
+              props.onSaveChanges(
+                `${convertKeyToBasePrefix('ancestrySectionResults', props.section.id)}_${path}`,
+                value
+              );
             }}
           />
         </Stack>
@@ -1579,7 +1582,7 @@ function AncestryAccordionItem(props: {
               level={1}
               results={ancestryOperationResults}
               onChange={(path, value) => {
-                props.onSaveChanges(`ancestry_${path}`, value);
+                props.onSaveChanges(`${convertKeyToBasePrefix('ancestryResults')}_${path}`, value);
               }}
             />
           </Box>
@@ -1686,7 +1689,7 @@ function BackgroundAccordionItem(props: {
               level={1}
               results={backgroundOperationResults}
               onChange={(path, value) => {
-                props.onSaveChanges(`background_${path}`, value);
+                props.onSaveChanges(`${convertKeyToBasePrefix('backgroundResults')}_${path}`, value);
               }}
             />
           </Box>
@@ -1798,7 +1801,10 @@ function ClassAccordionItem(props: {
               level={1}
               results={classOperationResults}
               onChange={(path, value) => {
-                props.onSaveChanges(`${props.isClass2 ? 'class-2' : 'class'}_${path}`, value);
+                props.onSaveChanges(
+                  `${props.isClass2 ? convertKeyToBasePrefix('class2Results') : convertKeyToBasePrefix('classResults')}_${path}`,
+                  value
+                );
               }}
             />
           </Box>
@@ -1865,7 +1871,7 @@ function BooksAccordionItem(props: {
             level={character?.level ?? 1}
             results={s.baseResults}
             onChange={(path, value) => {
-              props.onSaveChanges(`content-source-${s.baseSource.id}_${path}`, value);
+              props.onSaveChanges(`${convertKeyToBasePrefix('contentSourceResults', s.baseSource.id)}_${path}`, value);
             }}
           />
         ))}
@@ -1929,7 +1935,7 @@ function ItemsAccordionItem(props: {
             level={s.baseSource.level}
             results={s.baseResults}
             onChange={(path, value) => {
-              props.onSaveChanges(`item-${s.baseSource.id}_${path}`, value);
+              props.onSaveChanges(`${convertKeyToBasePrefix('itemResults', s.baseSource.id)}_${path}`, value);
             }}
           />
         ))}
@@ -1966,7 +1972,7 @@ function CustomAccordionItem(props: {
     return () => clearInterval(intervalId);
   }, []);
 
-  const selections = props.operationResults.characterResults.filter((result) => hasSelection(result));
+  const selections = props.operationResults.characterResults.filter((result) => hasOperationSelection(result));
 
   return (
     <Accordion.Item
@@ -1991,7 +1997,7 @@ function CustomAccordionItem(props: {
           level={character?.level ?? 1}
           results={props.operationResults.characterResults}
           onChange={(path, value) => {
-            props.onSaveChanges(`character_${path}`, value);
+            props.onSaveChanges(`${convertKeyToBasePrefix('characterResults')}_${path}`, value);
           }}
         />
         {selections.length === 0 && (
@@ -2006,21 +2012,13 @@ function CustomAccordionItem(props: {
 
 //////////////////////////////////////////
 
-const hasSelection = (result: OperationResult) => {
-  if (result?.selection) return true;
-  for (const subResult of result?.result?.results ?? []) {
-    if (hasSelection(subResult)) return true;
-  }
-  return false;
-};
-
 function DisplayOperationResult(props: {
   source?: ObjectWithUUID;
   level?: number;
   results: OperationResult[];
   onChange: (path: string, value: string) => void;
 }) {
-  const selections = props.results.filter((result) => hasSelection(result));
+  const selections = props.results.filter((result) => hasOperationSelection(result));
   if (selections.length === 0) return null;
 
   // This is the magic sauce

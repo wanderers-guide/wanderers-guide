@@ -54,6 +54,8 @@ import {
 } from '@variables/variable-manager';
 import { isProficiencyTypeGreaterOrEqual, labelToVariable, variableToLabel } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
+import { OperationResult } from './operation-runner';
+import { throwError } from '@utils/notifications';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -214,6 +216,34 @@ export function createDefaultOperation<T = Operation>(type: OperationType): T {
     } satisfies OperationGiveTrait as T;
   } else {
     throw new Error(`Unknown operation type: ${type}`);
+  }
+}
+
+export const hasOperationSelection = (result: OperationResult) => {
+  if (result?.selection) return true;
+  for (const subResult of result?.result?.results ?? []) {
+    if (hasOperationSelection(subResult)) return true;
+  }
+  return false;
+};
+
+export function convertKeyToBasePrefix(key: string, id?: number): string {
+  const mapping: { [key: string]: string } = {
+    ancestryResults: `ancestry`,
+    ancestrySectionResults: `ancestry-section-${id}`,
+    backgroundResults: `background`,
+    characterResults: `character`,
+    class2Results: `class-2`,
+    classResults: `class`,
+    classFeatureResults: `class-feature-${id}`,
+    contentSourceResults: `content-source-${id}`,
+    itemResults: `item-${id}`,
+  };
+  if (mapping[key]) {
+    return mapping[key];
+  } else {
+    throwError(`Unknown key: ${key}`);
+    return '';
   }
 }
 

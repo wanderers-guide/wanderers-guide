@@ -852,8 +852,6 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
     });
   }, [debouncedUser]);
 
-  console.log(character?.details?.info?.organized_play_adventures?.find((a) => `${a.id}` === openedAdventureId));
-
   return (
     <Stack gap={5}>
       <TextInput

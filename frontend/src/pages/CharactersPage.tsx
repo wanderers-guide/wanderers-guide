@@ -8,7 +8,7 @@ import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
 import { resetContentStore } from '@content/content-store';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
-import { importFromGeneric } from '@import/generic/import-from-generic';
+import { importFromFTC } from '@import/ftc/import-from-ftc';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import importFromJSON from '@import/json/import-from-json';
 import {
@@ -161,13 +161,20 @@ export function Component() {
                     leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
                     onClick={() => {
                       if (session) {
-                        importFromGeneric(session, {
-                          className: 'fighter',
-                          backgroundName: 'acolyte',
-                          ancestryName: 'human',
-                          level: 10,
-                          contentSources: 'all',
-                          selections: [],
+                        importFromFTC(session, {
+                          version: '1.0',
+                          data: {
+                            name: 'RANDOM',
+                            class: 'fighter',
+                            background: 'RANDOM',
+                            ancestry: 'RANDOM',
+                            level: 20,
+                            content_sources: 'ALL',
+                            selections: 'RANDOM',
+                            items: [],
+                            spells: [],
+                            conditions: [],
+                          },
                         });
                       }
                     }}
