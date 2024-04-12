@@ -41,16 +41,6 @@ export default async function importFromJSON(file: File) {
   return character;
 }
 
-async function getFileContents(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = function fileReadCompleted() {
-      resolve(reader.result as string);
-    };
-    reader.readAsText(file);
-  });
-}
-
 async function importObject(obj: Record<string, any>): Promise<Character | null> {
   const version = obj.version;
   if (version === 4) {
@@ -61,13 +51,23 @@ async function importObject(obj: Record<string, any>): Promise<Character | null>
 }
 
 async function importV4(obj: Record<string, any>): Promise<Character | null> {
-
   const fileCharacter: Character = obj.character;
 
   const character = {
     ...fileCharacter,
-    id: undefined,// remove ID so it creates a new character
+    id: undefined, // remove ID so it creates a new character
   };
 
   return await makeRequest<Character>('create-character', character);
+}
+
+// Utils
+export async function getFileContents(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function fileReadCompleted() {
+      resolve(reader.result as string);
+    };
+    reader.readAsText(file);
+  });
 }

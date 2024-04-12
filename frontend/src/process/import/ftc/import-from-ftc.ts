@@ -41,7 +41,7 @@ export interface FTC {
       pp?: number;
     };
     spells: { source: string; name: string; rank: number }[]; // TODO
-    conditions: { name: string; value: string }[]; // TODO
+    conditions: { name: string; value?: string }[]; // TODO
     hp?: number;
     temp_hp?: number;
     hero_points?: number;
@@ -87,12 +87,12 @@ export interface FTC {
   };
 }
 
-export async function importFromFTC(session: Session, d: FTC) {
+export async function importFromFTC(d: FTC) {
   const data = d.data;
   const character = {
     id: -1,
     created_at: '',
-    user_id: session.user.id,
+    user_id: '',
     name: data.name ?? 'Unknown Wanderer',
     level: data.level,
     experience: data.experience ?? 0,
@@ -324,7 +324,7 @@ export async function importFromFTC(session: Session, d: FTC) {
       if (found) {
         character.details!.conditions.push({
           ...found,
-          value: parseInt(condition.value),
+          value: condition.value ? parseInt(condition.value) : undefined,
         });
       }
     }
@@ -340,7 +340,7 @@ export async function importFromFTC(session: Session, d: FTC) {
       character.name = name;
     }
 
-    // Give we have a random name and no info, let's also get some random info
+    // If we have a random name and no info, let's also get some random info
     if (!data.info) {
       const charWithInfo = await randomCharacterInfo(character);
       character.details = charWithInfo.details;

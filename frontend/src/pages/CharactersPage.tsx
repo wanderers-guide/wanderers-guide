@@ -180,7 +180,6 @@ export function Component() {
                     Import from Pathbuilder
                   </Menu.Item>
                   <Menu.Item
-                    disabled
                     leftSection={<IconArchive style={{ width: rem(14), height: rem(14) }} />}
                     onClick={() => {
                       guidecharImportRef.current?.click();
@@ -201,9 +200,16 @@ export function Component() {
                   radius='xl'
                   aria-label='Create Character'
                   onClick={async () => {
-                    if (!session) return;
                     setLoadingCreateRandomCharacter(true);
-                    const character = await importFromFTC(session, {
+                    showNotification({
+                      id: `create-random-character`,
+                      title: `Creating random character`,
+                      message: `They're level 20, this may take a minute...`,
+                      autoClose: false,
+                      withCloseButton: false,
+                      loading: true,
+                    });
+                    const character = await importFromFTC({
                       version: '1.0',
                       data: {
                         name: 'RANDOM',
@@ -218,6 +224,7 @@ export function Component() {
                         conditions: [],
                       },
                     });
+                    hideNotification(`create-random-character`);
                     if (character) {
                       navigate(`/sheet/${character.id}`);
                     }
@@ -267,10 +274,9 @@ export function Component() {
             <PathbuilderInputModal
               open={openedPathbuilderModal}
               onConfirm={async (pathbuilderId) => {
-                if (!session) return;
                 setOpenedPathbuilderModal(false);
                 setLoadingImportCharacter(true);
-                const character = await importFromPathbuilder(session, pathbuilderId);
+                const character = await importFromPathbuilder(pathbuilderId);
                 refetch();
                 setLoadingImportCharacter(false);
               }}

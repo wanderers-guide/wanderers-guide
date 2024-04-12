@@ -1,17 +1,56 @@
 import { FTC, importFromFTC } from '@import/ftc/import-from-ftc';
+import { hideNotification, showNotification } from '@mantine/notifications';
 import { Session } from '@supabase/supabase-js';
 import { lengthenLabels } from '@variables/variable-utils';
 
-export async function importFromPathbuilder(session: Session, pathbuilderJsonId: number) {
+export async function importFromPathbuilder(pathbuilderJsonId: number) {
+  showNotification({
+    id: `importing-${pathbuilderJsonId}`,
+    title: `Importing character`,
+    message: 'This may take a minute...',
+    autoClose: false,
+    withCloseButton: false,
+    loading: true,
+  });
+
   const res = await fetch(`https://pathbuilder2e.com/json.php?id=${pathbuilderJsonId}`);
   const json = await res.json();
 
   if (json?.success) {
     const ftc = convertPathbuilderToFTC(json.build);
     console.log('Converted FTC:', ftc);
-    return await importFromFTC(session, ftc);
+    const character = await importFromFTC(ftc);
+
+    if (character) {
+      hideNotification(`importing-${pathbuilderJsonId}`);
+      showNotification({
+        title: 'Success',
+        message: `Imported "${character.name}"`,
+        icon: null,
+        autoClose: 3000,
+      });
+    } else {
+      hideNotification(`importing-${pathbuilderJsonId}`);
+      showNotification({
+        title: 'Import failed',
+        message: 'Error importing from Pathbuilder',
+        color: 'red',
+        icon: null,
+        autoClose: false,
+      });
+    }
+    return character;
+  } else {
+    hideNotification(`importing-${pathbuilderJsonId}`);
+    showNotification({
+      title: 'Import failed',
+      message: 'Error from Pathbuilder',
+      color: 'red',
+      icon: null,
+      autoClose: false,
+    });
+    return null;
   }
-  return null;
 }
 
 function convertPathbuilderToFTC(build: Record<string, any>): FTC {

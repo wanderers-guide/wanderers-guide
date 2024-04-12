@@ -178,12 +178,20 @@ export function compactLabels(text: string) {
 export function lengthenLabels(text: string) {
   const OVERRIDE_CHANGES = {
     Fort: 'Fortitude',
+
     Str: 'Strength',
     Dex: 'Dexterity',
     Con: 'Constitution',
     Int: 'Intelligence',
     Wis: 'Wisdom',
     Cha: 'Charisma',
+
+    STR: 'Strength',
+    DEX: 'Dexterity',
+    CON: 'Constitution',
+    INT: 'Intelligence',
+    WIS: 'Wisdom',
+    CHA: 'Charisma',
   };
   let label = text.trim();
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {

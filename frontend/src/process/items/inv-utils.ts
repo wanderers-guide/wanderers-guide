@@ -38,10 +38,9 @@ export function getFlatInvItems(inv: Inventory) {
 export function getInvBulk(inv: Inventory) {
   let totalBulk = 0;
   for (const invItem of inv.items) {
-    const bulk =
-      (invItem.is_equipped
-        ? invItem.item.meta_data?.bulk?.held_or_stowed ?? parseFloat(invItem.item.bulk ?? '0')
-        : parseFloat(invItem.item.bulk ?? '0')) ?? 0;
+    const bulk = invItem.is_equipped
+      ? invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0)
+      : parseFloat(invItem.item.bulk ?? '0') || 0;
     totalBulk += bulk * getItemQuantity(invItem.item);
 
     if (isItemContainer(invItem.item)) {
@@ -49,7 +48,7 @@ export function getInvBulk(inv: Inventory) {
       let containerTotalBulk = 0;
       for (const containerItem of invItem.container_contents) {
         const innerBulk =
-          containerItem.item.meta_data?.bulk?.held_or_stowed ?? parseFloat(containerItem.item.bulk ?? '0') ?? 0;
+          containerItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(containerItem.item.bulk ?? '0') || 0);
         containerTotalBulk += innerBulk * getItemQuantity(containerItem.item);
       }
       containerTotalBulk -= ignoredBulk;
