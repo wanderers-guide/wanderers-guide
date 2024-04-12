@@ -33,7 +33,7 @@ export function ManageCoinsDrawerTitle(props: {
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>Manage Coins</Title>
+              <Title order={3}>Manage Currency</Title>
             </Box>
             <Box></Box>
           </Group>

@@ -61,6 +61,7 @@ import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
 import { sign } from '@utils/numbers';
 import { isPhoneSized } from '@utils/mobile-responsive';
+import { isPlayingStarfinder } from '@content/system-handler';
 
 export default function InventoryPanel(props: {
   content: ContentPackage;
@@ -146,7 +147,7 @@ export default function InventoryPanel(props: {
             }}
           />
           {isPhone ? (
-            <Menu shadow='md' width={160}>
+            <Menu shadow='md' width={140}>
               <Menu.Target>
                 <ActionIcon variant='light' color='gray' size='lg' aria-label='Inventory Options'>
                   <IconMenu2 style={{ width: '70%', height: '70%' }} stroke={1.5} />
@@ -161,7 +162,7 @@ export default function InventoryPanel(props: {
                   leftSection={<IconCoins style={{ width: rem(14), height: rem(14) }} />}
                   onClick={() => openManageCoinsDrawer()}
                 >
-                  Manage Coins
+                  Manage Currency
                 </Menu.Item>
                 <Menu.Item
                   leftSection={<IconPlus style={{ width: rem(14), height: rem(14) }} />}
@@ -430,14 +431,14 @@ function CurrencySection(props: { character: Character | null; onClick?: () => v
   const sp = props.character?.inventory?.coins.sp ?? 0;
   const cp = props.character?.inventory?.coins.cp ?? 0;
 
-  const displayAll = true; //!pp && !gp && !sp && !cp;
+  const displayAll = isPlayingStarfinder() ? false : true;
 
   return (
     <Group
       gap={15}
       wrap='nowrap'
       justify='center'
-      miw={200}
+      miw={100}
       style={{
         cursor: 'pointer',
       }}

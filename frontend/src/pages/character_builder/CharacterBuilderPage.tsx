@@ -166,7 +166,7 @@ export function Component() {
                 onClick={() => handleStepChange(active + 1)}
                 disabled={active === 1 && !isPlayable(character)}
               >
-                <IconArrowRight style={{ width: '70%', height: '70%' }} stroke={2} />
+                <IconArrowRight style={{ width: '100%', height: '100%' }} stroke={2} />
               </ActionIcon>
               <ActionIcon
                 variant='filled'
@@ -183,7 +183,7 @@ export function Component() {
                 }}
                 onClick={() => handleStepChange(active - 1)}
               >
-                <IconArrowLeft style={{ width: '70%', height: '70%' }} stroke={2} />
+                <IconArrowLeft style={{ width: '100%', height: '100%' }} stroke={2} />
               </ActionIcon>
             </>
           )}

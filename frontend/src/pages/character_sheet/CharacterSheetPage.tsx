@@ -296,7 +296,6 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           gp: 0,
           pp: 0,
         },
-        unarmed_attacks: [],
         items: [],
       }
     );
