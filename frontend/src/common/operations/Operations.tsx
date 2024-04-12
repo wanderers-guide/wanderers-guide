@@ -179,6 +179,8 @@ export function OperationSection(props: {
             { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
             { value: 'createValue', label: 'Create Value' },
             { value: 'setValue', label: 'Override Value' },
+            { value: 'injectSelectOption', label: 'Inject Select Option' }, // TODO, run at create create variable time.
+            // - Store in a variable with stringified JSON of the selection option. Inject it at execution time.
             { value: 'RESO', label: 'RESO' }, // TODO
           ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
           searchValue={''}

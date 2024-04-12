@@ -1,6 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { getCachedPublicUser } from '@auth/user-manager';
+import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
@@ -11,6 +11,8 @@ import exportToPDF from '@export/export-to-pdf';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import importFromJSON from '@import/json/import-from-json';
+import PathbuilderInputModal from '@import/pathbuilder/PathbuilderInputModal';
+import { importFromPathbuilder } from '@import/pathbuilder/import-from-pathbuilder';
 import {
   ActionIcon,
   Box,
@@ -30,12 +32,14 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useHover, useMediaQuery } from '@mantine/hooks';
+import { useForceUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconArchive,
+  IconArrowsShuffle,
+  IconBrandTidal,
   IconCodeDots,
   IconCopy,
   IconDots,
@@ -51,6 +55,7 @@ import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useEffect, useRef, useState } from 'react';
+import { GiRollingDiceCup } from 'react-icons/gi';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
@@ -77,13 +82,22 @@ export function Component() {
   const [loadingCreateCharacter, setLoadingCreateCharacter] = useState(false);
   const [loadingImportCharacter, setLoadingImportCharacter] = useState(false);
   const [loadingCreateZeroCharacter, setLoadingCreateZeroCharacter] = useState(false);
+  const [loadingCreateRandomCharacter, setLoadingCreateRandomCharacter] = useState(false);
 
   const jsonImportRef = useRef<HTMLButtonElement>(null);
   const guidecharImportRef = useRef<HTMLButtonElement>(null);
+  const [openedPathbuilderModal, setOpenedPathbuilderModal] = useState(false);
 
+  const forceUpdate = useForceUpdate();
   useEffect(() => {
     setCharacter(null);
     resetContentStore();
+    getPublicUser().then((user) => {
+      if (user) {
+        // Update the user cache
+        forceUpdate();
+      }
+    });
   }, []);
 
   const handleCreateCharacter = async () => {
@@ -130,7 +144,7 @@ export function Component() {
                   <IconUserPlus style={{ width: '90%', height: '90%' }} stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
-              <Menu shadow='md' width={220} withArrow withinPortal>
+              <Menu shadow='md' width={240} withArrow withinPortal>
                 <Menu.Target>
                   <Tooltip label='Import Character' openDelay={750}>
                     <ActionIcon
@@ -158,28 +172,12 @@ export function Component() {
                     Import from JSON
                   </Menu.Item>
                   <Menu.Item
-                    leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
+                    leftSection={<IconBrandTidal style={{ width: rem(14), height: rem(14) }} />}
                     onClick={() => {
-                      if (session) {
-                        importFromFTC(session, {
-                          version: '1.0',
-                          data: {
-                            name: 'RANDOM',
-                            class: 'fighter',
-                            background: 'RANDOM',
-                            ancestry: 'RANDOM',
-                            level: 20,
-                            content_sources: 'ALL',
-                            selections: 'RANDOM',
-                            items: [],
-                            spells: [],
-                            conditions: [],
-                          },
-                        });
-                      }
+                      setOpenedPathbuilderModal(true);
                     }}
                   >
-                    Import from Generic
+                    Import from Pathbuilder
                   </Menu.Item>
                   <Menu.Item
                     disabled
@@ -192,6 +190,43 @@ export function Component() {
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+              <Tooltip label='Random Character' openDelay={750}>
+                <ActionIcon
+                  disabled={reachedCharacterLimit}
+                  style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  loading={loadingCreateRandomCharacter}
+                  variant='subtle'
+                  color='gray.0'
+                  size='xl'
+                  radius='xl'
+                  aria-label='Create Character'
+                  onClick={async () => {
+                    if (!session) return;
+                    setLoadingCreateRandomCharacter(true);
+                    const character = await importFromFTC(session, {
+                      version: '1.0',
+                      data: {
+                        name: 'RANDOM',
+                        class: 'RANDOM',
+                        background: 'RANDOM',
+                        ancestry: 'RANDOM',
+                        level: 20,
+                        content_sources: 'ALL',
+                        selections: 'RANDOM',
+                        items: [],
+                        spells: [],
+                        conditions: [],
+                      },
+                    });
+                    if (character) {
+                      navigate(`/sheet/${character.id}`);
+                    }
+                    setLoadingCreateRandomCharacter(false);
+                  }}
+                >
+                  <IconArrowsShuffle style={{ width: '90%', height: '90%' }} stroke={2.5} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
 
             <VisuallyHidden>
@@ -229,6 +264,18 @@ export function Component() {
                 )}
               </FileButton>
             </VisuallyHidden>
+            <PathbuilderInputModal
+              open={openedPathbuilderModal}
+              onConfirm={async (pathbuilderId) => {
+                if (!session) return;
+                setOpenedPathbuilderModal(false);
+                setLoadingImportCharacter(true);
+                const character = await importFromPathbuilder(session, pathbuilderId);
+                refetch();
+                setLoadingImportCharacter(false);
+              }}
+              onClose={() => setOpenedPathbuilderModal(false)}
+            />
           </Group>
           <Divider color='gray.2' />
         </Box>

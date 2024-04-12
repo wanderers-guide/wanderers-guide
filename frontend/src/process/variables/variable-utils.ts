@@ -175,6 +175,23 @@ export function compactLabels(text: string) {
   return label;
 }
 
+export function lengthenLabels(text: string) {
+  const OVERRIDE_CHANGES = {
+    Fort: 'Fortitude',
+    Str: 'Strength',
+    Dex: 'Dexterity',
+    Con: 'Constitution',
+    Int: 'Intelligence',
+    Wis: 'Wisdom',
+    Cha: 'Charisma',
+  };
+  let label = text.trim();
+  for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
+    label = label.replace(key, value);
+  }
+  return label;
+}
+
 export function maxProficiencyType(profType1: ProficiencyType, profType2: ProficiencyType): ProficiencyType {
   const convertToNum = (profType: ProficiencyType) => {
     if (profType === 'U') return 0;

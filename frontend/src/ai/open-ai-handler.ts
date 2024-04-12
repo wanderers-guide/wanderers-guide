@@ -1,12 +1,84 @@
 import { makeRequest } from '@requests/request-manager';
+import { Character } from '@typing/content';
+import yaml from 'js-yaml';
 
-export async function generateCompletion(prompt?: string) {
+export async function generateCompletion(prompt?: string, model = 'gpt-4-turbo') {
   if (!prompt) return null;
   const result = await makeRequest<string>('open-ai-request', {
     content: prompt.trim(),
-    model: 'gpt-4',
+    model: model,
   });
   return result;
+}
+
+export async function randomCharacterInfo(character: Character) {
+  const prompt = `
+  From the following information about a TTRPG character, generate the following information: about them.
+
+  ## Name:
+  ${character.name}
+  ## Level:
+  ${character.level}
+
+  ## Class:
+  ${character.details?.class?.name}
+
+  ## Background:
+  ${character.details?.background?.name}
+
+  ## Ancestry:
+  ${character.details?.ancestry?.name}
+
+
+  Here's the information I need, please fill in this JSON object with basic information.
+  Be creative but keep each field to one sentence max. Do more with less.
+  {
+    appearance: string;
+    personality: string;
+    alignment: string;
+    beliefs: string;
+    age: string;
+    height: string;
+    weight: string;
+    gender: string;
+    pronouns: string;
+    faction: string;
+    ethnicity: string;
+    nationality: string;
+    birthplace: string;
+  }
+
+
+  Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  The resulting object:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-3.5-turbo');
+  try {
+    const data = yaml.load(result ?? '') as any;
+    character.details = {
+      ...character.details,
+      info: {
+        ...character.details?.info,
+        appearance: `${data?.appearance}`,
+        personality: `${data?.personality}`,
+        alignment: `${data?.alignment}`,
+        beliefs: `${data?.beliefs}`,
+        age: `${data?.age}`,
+        height: `${data?.height}`,
+        weight: `${data?.weight}`,
+        gender: `${data?.gender}`,
+        pronouns: `${data?.pronouns}`,
+        faction: `${data?.faction}`,
+        ethnicity: `${data?.ethnicity}`,
+        nationality: `${data?.nationality}`,
+        birthplace: `${data?.birthplace}`,
+      },
+    };
+    return character;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return character;
+  }
 }
 
 export async function classifySkillForAction(description: string) {

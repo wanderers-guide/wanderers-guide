@@ -1,5 +1,9 @@
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
+import { randomCharacterInfo } from '@ai/open-ai-handler';
+import { getConditionByName } from '@conditions/condition-handler';
+import { collectCharacterSpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
+import { isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
@@ -18,7 +22,7 @@ import _ from 'lodash';
  * how to import a character from it.
  */
 
-interface FTC {
+export interface FTC {
   version: '1.0';
   data: {
     class: string | 'RANDOM';
@@ -29,8 +33,14 @@ interface FTC {
     experience?: number;
     content_sources: string[] | 'ALL';
     selections: { name: string | 'RANDOM'; level: number }[] | 'RANDOM';
-    items: { name: string; level: number }[]; // TODO
-    spells: { name: string; level: number }[]; // TODO
+    items: { name: string; level?: number }[]; // TODO
+    coins?: {
+      cp?: number;
+      sp?: number;
+      gp?: number;
+      pp?: number;
+    };
+    spells: { source: string; name: string; rank: number }[]; // TODO
     conditions: { name: string; value: string }[]; // TODO
     hp?: number;
     temp_hp?: number;
@@ -56,7 +66,22 @@ interface FTC {
     };
     info?: {
       notes?: string;
-    }; // TODO, general character info
+      appearance?: string;
+      personality?: string;
+      alignment?: string;
+      beliefs?: string;
+      age?: string;
+      height?: string;
+      weight?: string;
+      gender?: string;
+      pronouns?: string;
+      faction?: string;
+      reputation?: number;
+      ethnicity?: string;
+      nationality?: string;
+      birthplace?: string;
+      organized_play_id?: string;
+    };
     compiled_stats?: {};
     // TODO, Add support for pre-compiled character data for less robust sheets so they can use this.
   };
@@ -80,7 +105,52 @@ export async function importFromFTC(session: Session, d: FTC) {
       class: undefined,
       background: undefined,
       ancestry: undefined,
+      info: {
+        appearance: data.info?.appearance ?? '',
+        personality: data.info?.personality ?? '',
+        alignment: data.info?.alignment ?? '',
+        beliefs: data.info?.beliefs ?? '',
+        age: data.info?.age ?? '',
+        height: data.info?.height ?? '',
+        weight: data.info?.weight ?? '',
+        gender: data.info?.gender ?? '',
+        pronouns: data.info?.pronouns ?? '',
+        faction: data.info?.faction ?? '',
+        reputation: data.info?.reputation ?? 0,
+        ethnicity: data.info?.ethnicity ?? '',
+        nationality: data.info?.nationality ?? '',
+        birthplace: data.info?.birthplace ?? '',
+        organized_play_id: data.info?.organized_play_id ?? '',
+      },
     },
+    notes: data.info?.notes
+      ? {
+          pages: [
+            {
+              name: 'Imported Notes',
+              icon: 'notes',
+              color: '#ffffff',
+              contents: {
+                type: 'doc',
+                content: [
+                  {
+                    type: 'paragraph',
+                    attrs: {
+                      textAlign: 'left',
+                    },
+                    content: [
+                      {
+                        type: 'text',
+                        text: data.info.notes,
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        }
+      : undefined,
     options: {
       is_public: data.options?.public ?? false,
       auto_detect_prerequisites: data.options?.auto_detect_prerequisites ?? false,
@@ -166,14 +236,12 @@ export async function importFromFTC(session: Session, d: FTC) {
     const results = await executeCharacterOperations(_.cloneDeep(character), content, 'CHARACTER-BUILDER');
     const found = findFirstSelection(results, checked);
 
-    console.log('Found:', found, results);
-
-    if (found.selection) {
+    if (found) {
       let result: ObjectWithUUID | null = null;
       if (data.selections === 'RANDOM') {
-        result = selectRandom(found.selection.selection?.options ?? []);
+        result = selectRandom(found.selection?.selection?.options ?? []);
       } else {
-        result = findMatchingOption(data.selections, found.selection.selection?.options ?? [], found.level);
+        result = findMatchingOption(data.selections, found.selection?.selection?.options ?? [], found.level);
       }
       if (result) {
         selections[found.path] = result._select_uuid;
@@ -181,17 +249,87 @@ export async function importFromFTC(session: Session, d: FTC) {
         // Update the resulting selections
         character.operation_data!.selections = _.cloneDeep(selections);
       }
-      if (found.selection.selection) {
-        checked.add(found.selection.selection.id);
-      }
+      checked.add(found.path);
     } else {
       hasSelections = false;
     }
     iteration++;
-    if (iteration > 9999) {
+    if (iteration > 999) {
       console.warn('Infinite loop detected in FTC import.');
       break;
     }
+  }
+
+  // Add items
+  character.inventory = {
+    items: [],
+    coins: {
+      cp: data.coins?.cp ?? 0,
+      sp: data.coins?.sp ?? 0,
+      gp: data.coins?.gp ?? 0,
+      pp: data.coins?.pp ?? 0,
+    },
+  };
+  try {
+    for (const item of data.items) {
+      const found = content.items.find((i) => {
+        if (item.level !== undefined) {
+          return labelToVariable(i.name) === labelToVariable(item.name) && i.level === item.level;
+        } else {
+          return labelToVariable(i.name) === labelToVariable(item.name);
+        }
+      });
+      if (found) {
+        character.inventory.items.push({
+          id: crypto.randomUUID(),
+          item: found,
+          is_formula: false,
+          is_equipped: isItemEquippable(found) ? true : false,
+          is_invested: isItemInvestable(found) ? true : false,
+          container_contents: [],
+        });
+      }
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+
+  // Add spells, all of these are used for tracking meta data. Only `list` is super useful to import.
+  character.spells = {
+    slots: [],
+    list: [],
+    focus_point_current: 0,
+    innate_casts: [],
+  };
+  try {
+    for (const spell of data.spells) {
+      const found = content.spells.find((s) => labelToVariable(s.name) === labelToVariable(spell.name));
+      if (found) {
+        character.spells.list.push({
+          spell_id: found.id,
+          rank: spell.rank,
+          source: labelToVariable(spell.source),
+        });
+      }
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+
+  // Add conditions
+  character.details!.conditions = [];
+  try {
+    for (const condition of data.conditions) {
+      const found = getConditionByName(condition.name);
+      if (found) {
+        character.details!.conditions.push({
+          ...found,
+          value: parseInt(condition.value),
+        });
+      }
+    }
+  } catch (e) {
+    console.warn(e);
   }
 
   // Random name
@@ -200,6 +338,12 @@ export async function importFromFTC(session: Session, d: FTC) {
     if (names.length > 0) {
       const name = names[0].replace(/\*/g, '');
       character.name = name;
+    }
+
+    // Give we have a random name and no info, let's also get some random info
+    if (!data.info) {
+      const charWithInfo = await randomCharacterInfo(character);
+      character.details = charWithInfo.details;
     }
   }
 
@@ -233,47 +377,50 @@ function findFirstSelection(
   selection: OperationResult;
   path: string;
   level: number;
-} {
+} | null {
   // Check each category of results in the package
   for (const [key, category] of Object.entries(resultPackage)) {
+    if (category.length === 0) continue;
+
     // Assuming all result arrays are directly within the package or nested in an object with a baseResults array
-    if (Array.isArray(category)) {
+    if (category[0]?.hasOwnProperty('baseResults')) {
+      for (const subsource of category as { baseSource: ObjectWithUUID; baseResults: OperationResult[] }[]) {
+        if (!subsource) continue;
+        // Subsourced array of OperationResults
+        const prefix = convertKeyToBasePrefix(key, subsource.baseSource.id);
+        const result = innerFindFirstSelection(subsource.baseResults, checked, prefix);
+        if (result && result.selection) {
+          return {
+            selection: result.selection,
+            path: prefix + '_' + result.path,
+            level: subsource.baseSource.level,
+          };
+        }
+      }
+    } else {
       // Direct array of OperationResults
-      const result = innerFindFirstSelection(category as OperationResult[], checked);
-      if (result.selection)
+      const prefix = convertKeyToBasePrefix(key);
+      const result = innerFindFirstSelection(category as OperationResult[], checked, prefix);
+      if (result && result.selection) {
         return {
           selection: result.selection,
-          path: convertKeyToBasePrefix(key) + '_' + result.path,
+          path: prefix + '_' + result.path,
           level: 1,
         };
-    } else if (category && typeof category === 'object') {
-      // Objects containing baseResults
-      const baseResultsCategory = category as {
-        baseSource: ObjectWithUUID;
-        baseResults: OperationResult[];
-      };
-
-      console.log('Checking base:', baseResultsCategory.baseSource.name, baseResultsCategory.baseResults.length);
-
-      const result = innerFindFirstSelection(baseResultsCategory.baseResults, checked);
-      if (result.selection)
-        return {
-          selection: result.selection,
-          path: convertKeyToBasePrefix(key, baseResultsCategory.baseSource.id) + '_' + result.path,
-          level: baseResultsCategory.baseSource.level,
-        };
+      }
     }
   }
-  return { selection: null, path: '', level: -1 };
+  return null;
 }
 
 function innerFindFirstSelection(
   results: OperationResult[],
   checked: Set<string>,
+  prefix: string,
   basePath: string = ''
-): { selection: OperationResult; path: string } {
+): { selection: OperationResult; path: string } | null {
   for (const result of results) {
-    if (!checked.has(result?.selection?.id ?? '') && hasOperationSelection(result)) {
+    if (hasOperationSelection(result)) {
       // Base case: if the current result has a selection, return it and the constructed path
       let path = basePath;
       const selectionUUID = result?.selection?.id ?? '';
@@ -281,6 +428,8 @@ function innerFindFirstSelection(
 
       if (selectionUUID) path += (path ? '_' : '') + selectionUUID;
       if (resultUUID) path += (path ? '_' : '') + resultUUID;
+
+      if (checked.has(prefix + '_' + path)) continue; // Skip if this path has already been checked
 
       return { selection: result, path };
     } else if (result?.result?.results && result.result.results.length > 0) {
@@ -290,10 +439,10 @@ function innerFindFirstSelection(
       if (resultUUID) newPath += (newPath ? '_' : '') + resultUUID;
 
       const deepSearch = innerFindFirstSelection(result.result.results, checked, newPath);
-      if (deepSearch.selection) return deepSearch; // If a selection is found in deeper levels, return it
+      if (deepSearch && deepSearch.selection) return deepSearch; // If a selection is found in deeper levels, return it
     }
   }
 
   // If no selection is found in the current branch
-  return { selection: null, path: '' };
+  return null;
 }
