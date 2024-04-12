@@ -5,6 +5,7 @@ import GenerateEmbeddings from './GenerateEmbeddings';
 import ImportLegacyContent from './ImportLegacyContent';
 import UploadContent from './UploadContent';
 import BackgroundFixer from './BackgroundFixer';
+import ImportPathbuilderContent from './ImportPathbuilderContent';
 
 export function Component() {
   setPageTitle(`Admin Panel`);
@@ -15,6 +16,7 @@ export function Component() {
       <UploadContent />
       <EditContent />
       <ImportLegacyContent />
+      <ImportPathbuilderContent />
       <BackgroundFixer />
     </Stack>
   );

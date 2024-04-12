@@ -66,6 +66,7 @@ export default defineConfig({
       '@specializations': path.resolve(__dirname, './src/process/specializations'),
       '@import': path.resolve(__dirname, './src/process/import'),
       '@export': path.resolve(__dirname, './src/process/export'),
+      '@homebrew': path.resolve(__dirname, './src/process/homebrew'),
       '@conditions': path.resolve(__dirname, './src/process/conditions'),
       '@spells': path.resolve(__dirname, './src/process/spells'),
       '@css': path.resolve(__dirname, './src/css'),

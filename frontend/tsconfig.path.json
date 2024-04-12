@@ -23,6 +23,7 @@
       "@specializations/*": ["src/process/specializations/*"],
       "@import/*": ["src/process/import/*"],
       "@export/*": ["src/process/export/*"],
+      "@homebrew/*": ["src/process/homebrew/*"],
       "@conditions/*": ["src/process/conditions/*"],
       "@spells/*": ["src/process/spells/*"],
       "@css/*": ["src/css/*"],
