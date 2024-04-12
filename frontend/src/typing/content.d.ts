@@ -365,6 +365,7 @@ interface AbilityBlock {
 interface Character {
   id: number;
   created_at: string;
+  campaign_id?: number;
   user_id: string;
   name: string;
   level: number;

@@ -27,6 +27,7 @@ serve(async (req: Request) => {
       hp_temp,
       hero_points,
       stamina_current,
+      campaign_id,
     } = body as Character;
 
     const status = await updateData(client, 'character', id, {
@@ -50,6 +51,7 @@ serve(async (req: Request) => {
       hp_temp,
       hero_points,
       stamina_current,
+      campaign_id,
     });
 
     if (status === 'SUCCESS') {
