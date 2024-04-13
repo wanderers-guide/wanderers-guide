@@ -932,8 +932,8 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
             <Text px={5} fz='lg'>
               Adventures
             </Text>
-            <Badge variant='outline' size='sm' color='gray.5' circle>
-              {(character?.details?.info?.organized_play_adventures ?? []).length}
+            <Badge size='sm' variant='light' circle>
+              <Text fz='xs'>{(character?.details?.info?.organized_play_adventures ?? []).length}</Text>
             </Badge>
           </Group>
           <Button
