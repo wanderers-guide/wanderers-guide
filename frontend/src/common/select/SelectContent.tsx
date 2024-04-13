@@ -12,6 +12,7 @@ import {
   Badge,
   Box,
   Button,
+  ButtonProps,
   Center,
   CloseButton,
   Divider,
@@ -71,7 +72,6 @@ import {
   maxProficiencyType,
   nextProficiencyType,
   prevProficiencyType,
-  proficiencyTypeToLabel,
 } from '@variables/variable-utils';
 import * as JsSearch from 'js-search';
 import * as _ from 'lodash-es';
@@ -95,9 +95,10 @@ import { characterState } from '@atoms/characterAtoms';
 import { DrawerType } from '@typing/index';
 import { hasTraitType } from '@utils/traits';
 import { ObjectWithUUID } from '@operations/operation-utils';
-import { isItemArchaic, isItemWeapon } from '@items/inv-utils';
+import { isItemArchaic } from '@items/inv-utils';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { getFinalProfValue } from '@variables/variable-display';
 
 interface FilterOptions {
   options: {
@@ -183,13 +184,27 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
   };
 
   const drawerType: DrawerType = props.options?.abilityBlockType ?? props.type;
-  const specialSelect = drawerType === 'ability-block';
+  const customSelect =
+    props.options?.overrideOptions &&
+    props.options.overrideOptions.length > 0 &&
+    props.options.overrideOptions[0]._custom_select;
+  const hideSwitch = drawerType === 'ability-block' && !customSelect;
+  const showLongName = drawerType === 'ability-block';
+
   const onView = () => {
-    openDrawer({
-      type: drawerType,
-      data: { id: selected?.id },
-      extra: { addToHistory: true },
-    });
+    if (customSelect) {
+      openDrawer({
+        type: 'generic',
+        data: selected,
+        extra: { addToHistory: true },
+      });
+    } else {
+      openDrawer({
+        type: drawerType,
+        data: { id: selected?.id },
+        extra: { addToHistory: true },
+      });
+    }
   };
 
   return (
@@ -199,10 +214,10 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         variant={selected ? 'light' : 'filled'}
         size='compact-sm'
         radius='xl'
-        w={specialSelect ? undefined : 160}
-        miw={specialSelect ? 140 : undefined}
+        w={showLongName ? undefined : 160}
+        miw={showLongName ? 140 : undefined}
         onClick={() => {
-          if (selected && !specialSelect) {
+          if (selected && !hideSwitch) {
             onView();
           } else {
             onSelect();
@@ -213,7 +228,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
       </Button>
       {selected && (
         <>
-          {!specialSelect && (
+          {!hideSwitch && (
             <Button
               variant='light'
               size='compact-sm'
@@ -1460,12 +1475,86 @@ export function GenericSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
+  const [hovered, setHovered] = useState(false);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  if (props.option._content_type === 'language') {
+    // Route to language option
+    return (
+      <LanguageSelectionOption
+        language={props.option as unknown as Language}
+        onClick={() => props.onClick(props.option)}
+        selected={props.selected}
+        includeOptions={props.includeOptions}
+        onDelete={props.onDelete}
+        onCopy={props.onCopy}
+      />
+    );
+  }
+
+  // It's a custom selection option
+  if (props.option._custom_select) {
+    return (
+      <BaseSelectionOption
+        leftSection={
+          <Group wrap='nowrap' gap={5}>
+            <Box pl={8}>
+              <Text fz='sm'>{props.option._custom_select.title}</Text>
+            </Box>
+          </Group>
+        }
+        selected={props.selected}
+        onClick={() => {
+          props.onClick(props.option);
+        }}
+        buttonTitle='Details'
+        buttonProps={{
+          variant: 'subtle',
+        }}
+        onButtonClick={() => {
+          openDrawer({
+            type: 'generic',
+            data: {
+              ...props.option._custom_select,
+              onSelect: () => props.onClick(props.option),
+            },
+            extra: { addToHistory: true },
+          });
+        }}
+        includeOptions={props.includeOptions}
+        onOptionsDelete={() => props.onDelete?.(props.option.id)}
+        onOptionsCopy={() => props.onCopy?.(props.option.id)}
+      />
+    );
+  }
 
   // @ts-ignore
   const variable = getVariable('CHARACTER', props.option.variable);
+
+  // It's some kind of variable selection option that's not a proficiency
+  if (variable?.type !== 'prof') {
+    return (
+      <BaseSelectionOption
+        leftSection={
+          <Group wrap='nowrap' gap={8} pl={8}>
+            <Text fz='sm'>{props.option.name}</Text>
+          </Group>
+        }
+        selected={props.selected}
+        onClick={() => {
+          props.onClick(props.option);
+        }}
+        onHover={setHovered}
+        includeOptions={props.includeOptions}
+        onOptionsDelete={() => props.onDelete?.(props.option.id)}
+        onOptionsCopy={() => props.onCopy?.(props.option.id)}
+      />
+    );
+  }
+
+  ////////////////////////////
+  // It's a prof selection: //
+  ////////////////////////////
 
   let currentProf: ProficiencyType | undefined | null = (variable as VariableProf)?.value.value;
   let nextProf =
@@ -1508,196 +1597,66 @@ export function GenericSelectionOption(props: {
 
   const disabled = alreadyProficient || limitedByLevel;
 
-  if (props.option._content_type === 'language') {
-    // Route to language option
-    return (
-      <LanguageSelectionOption
-        language={props.option as unknown as Language}
-        onClick={() => props.onClick(props.option)}
-        selected={props.selected}
-        includeOptions={props.includeOptions}
-        onDelete={props.onDelete}
-        onCopy={props.onCopy}
-      />
-    );
-  }
-
-  if (props.option._custom_select) {
-    return (
-      <BaseSelectionOption
-        leftSection={
-          <Group wrap='nowrap' gap={5}>
-            <Box pl={8}>
-              <Text fz='sm'>{props.option._custom_select.title}</Text>
-            </Box>
-          </Group>
-        }
-        selected={props.selected}
-        disabled={disabled}
-        onClick={() => {
-          openDrawer({
-            type: 'generic',
-            data: {
-              ...props.option._custom_select,
-              onSelect: () => props.onClick(props.option),
-            },
-            extra: { addToHistory: true },
-          });
-        }}
-        buttonTitle='Select'
-        disableButton={props.selected}
-        onButtonClick={() => props.onClick(props.option)}
-        includeOptions={props.includeOptions}
-        onOptionsDelete={() => props.onDelete?.(props.option.id)}
-        onOptionsCopy={() => props.onCopy?.(props.option.id)}
-      />
-    );
-  }
+  // Get bonus totals
+  // @ts-ignore
+  const currentTotal = getFinalProfValue('CHARACTER', props.option.variable, undefined, undefined, currentProf);
+  // @ts-ignore
+  const nextTotal = getFinalProfValue('CHARACTER', props.option.variable, undefined, undefined, nextProf);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: disabled
-          ? theme.colors.dark[8]
-          : hovered || props.selected
-            ? theme.colors.dark[6]
-            : 'transparent',
-        position: 'relative',
-      }}
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={8} pl={8}>
+          {alreadyProficient ? (
+            <Badge size='sm' variant='light' color='gray' circle>
+              {currentProf ?? 'U'}
+            </Badge>
+          ) : (
+            <>
+              {hovered && !disabled ? (
+                <Badge size='sm' circle>
+                  {nextProf ?? 'U'}
+                </Badge>
+              ) : (
+                <Badge size='sm' variant='light' circle>
+                  {currentProf ?? 'U'}
+                </Badge>
+              )}
+            </>
+          )}
+          <Text fz='sm'>{props.option.name}</Text>
+          {hovered && !disabled ? (
+            <Text c='gray.5' fw={600} fz='sm'>
+              {nextTotal}
+            </Text>
+          ) : (
+            <Text c='gray.6' fz='sm'>
+              {currentTotal}
+            </Text>
+          )}
+        </Group>
+      }
+      selected={props.selected}
+      disabled={disabled}
       onClick={() => {
-        if (disabled) return;
         props.onClick(props.option);
       }}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Group pl={8} wrap='nowrap' gap={5}>
-          <Text fz='sm'>{props.option.name}</Text>{' '}
-          {/* {props.skillAdjustment && variable && (variable as VariableProf).attribute && (
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              {compactLabels(variableNameToLabel((variable as VariableProf).attribute!))}
-            </Badge>
-          )} */}
-        </Group>
-        {props.option._is_core && (
-          <ThemeIcon variant='light' size='xs' radius='xl'>
-            <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />
-          </ThemeIcon>
-        )}
-      </Group>
-      <Group wrap='nowrap' gap={5}>
-        {props.skillAdjustment && variable && (
-          <Badge
-            variant='dot'
-            size='xs'
-            styles={{
-              root: {
-                // @ts-ignore
-                '--badge-dot-size': 0,
-                textTransform: 'initial',
-              },
-            }}
-            c='gray.6'
-          >
-            <Group gap={2} wrap='nowrap'>
-              {alreadyProficient ? (
-                <>{proficiencyTypeToLabel(currentProf ?? 'U')}</>
-              ) : (
-                <>
-                  {proficiencyTypeToLabel(currentProf ?? 'U')}
-                  <IconArrowNarrowRight size='0.8rem' />
-                  {proficiencyTypeToLabel(nextProf ?? 'U')}
-                </>
-              )}
-            </Group>
-          </Badge>
-        )}
-
-        {props.includeOptions && (
-          <Menu shadow='md' width={200}>
-            <Menu.Target>
-              <ActionIcon
-                size='sm'
-                variant='subtle'
-                color='gray.5'
-                radius='xl'
-                style={{
-                  position: 'absolute',
-                  top: 13,
-                  right: 15,
-                }}
-                aria-label='Options'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                <IconDots size='1rem' />
-              </ActionIcon>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Label>Options</Menu.Label>
-              <Menu.Item
-                leftSection={
-                  <IconCopy
-                    style={{ width: rem(14), height: rem(14) }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      props.onCopy?.(props.option.id);
-                    }}
-                  />
-                }
-              >
-                Duplicate
-              </Menu.Item>
-
-              <Menu.Divider />
-
-              <Menu.Label>Danger zone</Menu.Label>
-              <Menu.Item
-                color='red'
-                leftSection={
-                  <IconTrash
-                    style={{ width: rem(14), height: rem(14) }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      props.onDelete?.(props.option.id);
-                    }}
-                  />
-                }
-              >
-                Delete
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        )}
-      </Group>
-    </Group>
+      onHover={setHovered}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.option.id)}
+      onOptionsCopy={() => props.onCopy?.(props.option.id)}
+    />
   );
 }
 
 export function BaseSelectionOption(props: {
   selected?: boolean;
   buttonTitle?: string;
+  buttonProps?: ButtonProps;
   includeOptions?: boolean;
   buttonOverride?: React.ReactNode;
   onClick: () => void;
-  onHover?: () => void;
+  onHover?: (active: boolean) => void;
   onButtonClick?: () => void;
   onOptionsDelete?: () => void;
   onOptionsCopy?: () => void;
@@ -1714,9 +1673,7 @@ export function BaseSelectionOption(props: {
   const isPhone = useMediaQuery(phoneQuery());
 
   useDidUpdate(() => {
-    if (hovered && props.onHover) {
-      props.onHover();
-    }
+    props.onHover?.(hovered);
   }, [hovered]);
 
   return (
@@ -1729,8 +1686,9 @@ export function BaseSelectionOption(props: {
         borderBottom: '1px solid ' + theme.colors.dark[6],
         backgroundColor: (hovered || props.selected) && !props.noBackground ? theme.colors.dark[6] : 'transparent',
         position: 'relative',
-        opacity: props.disabled ? 0.5 : 1,
+        opacity: props.disabled ? 0.4 : 1,
         width: '100%',
+        pointerEvents: props.disabled ? 'none' : undefined,
       }}
       onClick={props.onClick}
       justify='space-between'
@@ -1754,7 +1712,7 @@ export function BaseSelectionOption(props: {
       {!isPhone && props.rightSection && (
         <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
           <Box>{props.rightSection}</Box>
-          <Box w={props.includeOptions ? 85 : 55}></Box>
+          {props.buttonOverride || props.buttonTitle ? <Box w={props.includeOptions ? 85 : 55}></Box> : null}
         </Group>
       )}
 
@@ -1773,11 +1731,12 @@ export function BaseSelectionOption(props: {
               <Button
                 disabled={props.disableButton}
                 size='compact-sm'
-                variant='filled'
+                variant='light'
                 onClick={(e) => {
                   e.stopPropagation();
                   props.onButtonClick?.();
                 }}
+                {...props.buttonProps}
               >
                 {props.buttonTitle}
               </Button>
@@ -2690,6 +2649,12 @@ export function LanguageSelectionOption(props: {
           <Box pl={8}>
             <Text fz='sm'>{props.language.name}</Text>
           </Box>
+          {/* @ts-ignore */}
+          {props.language._is_core && (
+            <ThemeIcon variant='light' size='xs' radius='xl'>
+              <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />
+            </ThemeIcon>
+          )}
         </Group>
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />}

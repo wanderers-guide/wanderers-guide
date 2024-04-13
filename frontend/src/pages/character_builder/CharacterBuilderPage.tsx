@@ -157,7 +157,10 @@ export function Component() {
                 radius={60}
                 size={60}
                 style={{
-                  border: '1px solid ' + theme.colors['dark'][6],
+                  backdropFilter: `blur(8px)`,
+                  WebkitBackdropFilter: `blur(8px)`,
+                  // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
+                  backgroundColor: theme.colors.dark[8] + 'D3',
                   position: 'absolute',
                   top: '45%',
                   right: -100,
@@ -175,7 +178,10 @@ export function Component() {
                 radius={60}
                 size={60}
                 style={{
-                  border: '1px solid ' + theme.colors['dark'][6],
+                  backdropFilter: `blur(8px)`,
+                  WebkitBackdropFilter: `blur(8px)`,
+                  // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
+                  backgroundColor: theme.colors.dark[8] + 'D3',
                   position: 'absolute',
                   top: '45%',
                   left: -100,

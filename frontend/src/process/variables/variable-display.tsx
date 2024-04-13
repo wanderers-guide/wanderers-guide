@@ -1,4 +1,12 @@
-import { VariableAttr, StoreID, VariableNum, VariableProf, VariableListStr, VariableBool } from '@typing/variables';
+import {
+  VariableAttr,
+  StoreID,
+  VariableNum,
+  VariableProf,
+  VariableListStr,
+  VariableBool,
+  ProficiencyType,
+} from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
@@ -10,9 +18,10 @@ export function getFinalProfValue(
   id: StoreID,
   variableName: string,
   isDC: boolean = false,
-  overrideAttribute?: string
+  overrideAttribute?: string,
+  overrideProfType?: ProficiencyType
 ) {
-  const parts = getProfValueParts(id, variableName, overrideAttribute);
+  const parts = getProfValueParts(id, variableName, overrideAttribute, overrideProfType);
   if (!parts) {
     if (isDC) {
       return '10';
@@ -113,20 +122,26 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
   };
 }
 
-export function getProfValueParts(id: StoreID, variableName: string, overrideAttribute?: string) {
+export function getProfValueParts(
+  id: StoreID,
+  variableName: string,
+  overrideAttribute?: string,
+  overrideProfType?: ProficiencyType
+) {
   const variable = getVariable<VariableProf>(id, variableName);
   if (!variable) return null;
   const breakdown = getVariableBreakdown(id, variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
+  const profType = overrideProfType ?? variable.value.value;
 
   let level = 0;
   if (getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value) {
-    level = variable.value.value !== 'U' ? 0 : -2;
+    level = profType !== 'U' ? 0 : -2;
   } else {
-    level = variable.value.value !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
+    level = profType !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
   }
 
-  const profValue = getProficiencyTypeValue(variable.value.value);
+  const profValue = getProficiencyTypeValue(profType);
 
   let attribute = overrideAttribute ? overrideAttribute : variable.value.attribute;
   if (!attribute && (variableName === 'SPELL_ATTACK' || variableName === 'SPELL_DC')) {
