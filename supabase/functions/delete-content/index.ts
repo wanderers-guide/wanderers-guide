@@ -10,9 +10,14 @@ import {
 } from '../_shared/helpers.ts';
 import type { ContentType } from '../_shared/content';
 
+interface DeleteContentBody {
+  id: number;
+  type: TableName | ContentType;
+}
+
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id, type } = body as { id: number; type: TableName | ContentType };
+    let { id, type } = body as DeleteContentBody;
 
     const convertedType = convertContentTypeToTableName(type as ContentType);
     const tableName = convertedType ? convertedType : type;
@@ -22,6 +27,7 @@ serve(async (req: Request) => {
         'ability_block',
         'content_source',
         'character',
+        'campaign',
         'ancestry',
         'trait',
         'class',
