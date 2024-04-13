@@ -220,7 +220,7 @@ CREATE TABLE public."character" (
     hero_points integer DEFAULT 1 NOT NULL,
     stamina_current integer DEFAULT 0 NOT NULL,
     resolve_current integer DEFAULT 0 NOT NULL,
-    inventory json,
+    inventory json DEFAULT '{ "coins": {"cp": 0, "sp": 150, "gp": 0, "pp": 0 }, "items": [] }'::json,
     notes json,
     details json,
     roll_history json,
