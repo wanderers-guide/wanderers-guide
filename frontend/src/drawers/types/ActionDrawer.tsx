@@ -6,14 +6,16 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor } from '@mantine/core';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor, Button } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
 import { useRecoilState } from 'recoil';
 
-export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock } }) {
+export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _action } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
@@ -39,6 +41,20 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
               <ActionSymbol cost={action.actions} size={'2.1rem'} />
             </Box>
           </Group>
+          {props.data.onSelect && (
+            <Button
+              variant='filled'
+              radius='xl'
+              mb={5}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onSelect?.();
+                openDrawer(null);
+              }}
+            >
+              Select
+            </Button>
+          )}
         </Group>
       )}
     </>

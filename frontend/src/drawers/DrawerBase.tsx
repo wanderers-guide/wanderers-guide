@@ -146,6 +146,7 @@ export default function DrawerBase() {
             paddingRight: 2,
           },
         }}
+        transitionProps={{ duration: 150 }}
       >
         {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
         {/* This "fix" will still have the bug on titles that are multiline */}

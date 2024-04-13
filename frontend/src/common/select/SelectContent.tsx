@@ -1508,6 +1508,52 @@ export function GenericSelectionOption(props: {
 
   const disabled = alreadyProficient || limitedByLevel;
 
+  if (props.option._content_type === 'language') {
+    // Route to language option
+    return (
+      <LanguageSelectionOption
+        language={props.option as unknown as Language}
+        onClick={() => props.onClick(props.option)}
+        selected={props.selected}
+        includeOptions={props.includeOptions}
+        onDelete={props.onDelete}
+        onCopy={props.onCopy}
+      />
+    );
+  }
+
+  if (props.option._custom_select) {
+    return (
+      <BaseSelectionOption
+        leftSection={
+          <Group wrap='nowrap' gap={5}>
+            <Box pl={8}>
+              <Text fz='sm'>{props.option._custom_select.title}</Text>
+            </Box>
+          </Group>
+        }
+        selected={props.selected}
+        disabled={disabled}
+        onClick={() => {
+          openDrawer({
+            type: 'generic',
+            data: {
+              ...props.option._custom_select,
+              onSelect: () => props.onClick(props.option),
+            },
+            extra: { addToHistory: true },
+          });
+        }}
+        buttonTitle='Select'
+        disableButton={props.selected}
+        onButtonClick={() => props.onClick(props.option)}
+        includeOptions={props.includeOptions}
+        onOptionsDelete={() => props.onDelete?.(props.option.id)}
+        onOptionsCopy={() => props.onCopy?.(props.option.id)}
+      />
+    );
+  }
+
   return (
     <Group
       ref={ref}
@@ -1579,45 +1625,6 @@ export function GenericSelectionOption(props: {
               )}
             </Group>
           </Badge>
-        )}
-        {props.option._content_type === 'language' && (
-          <Button
-            size='xs'
-            px={5}
-            variant='subtle'
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: props.includeOptions ? 40 : 10,
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              openDrawer({ type: 'language', data: { id: props.option.id } });
-            }}
-          >
-            Details
-          </Button>
-        )}
-        {props.option._custom_select && (
-          <Button
-            size='xs'
-            px={5}
-            variant='subtle'
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: props.includeOptions ? 40 : 10,
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              openDrawer({
-                type: 'generic',
-                data: props.option._custom_select,
-              });
-            }}
-          >
-            Details
-          </Button>
         )}
 
         {props.includeOptions && (
@@ -1747,7 +1754,7 @@ export function BaseSelectionOption(props: {
       {!isPhone && props.rightSection && (
         <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
           <Box>{props.rightSection}</Box>
-          <Box w={props.includeOptions ? 80 : 50}></Box>
+          <Box w={props.includeOptions ? 85 : 55}></Box>
         </Group>
       )}
 
@@ -1756,16 +1763,17 @@ export function BaseSelectionOption(props: {
       ) : (
         <>
           {props.buttonTitle && (
-            <Box pl={0}>
+            <Box
+              style={{
+                position: 'absolute',
+                top: 7,
+                right: props.includeOptions ? 45 : 15,
+              }}
+            >
               <Button
                 disabled={props.disableButton}
                 size='compact-sm'
                 variant='filled'
-                style={{
-                  position: 'absolute',
-                  top: 7,
-                  right: props.includeOptions ? 40 : 10,
-                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   props.onButtonClick?.();
@@ -1892,7 +1900,11 @@ export function FeatSelectionOption(props: {
       level={props.displayLevel && !props.feat.meta_data?.unselectable ? props.feat.level : undefined}
       selected={props.selected}
       onClick={() =>
-        openDrawer({ type: 'feat', data: { id: props.feat.id, onSelect: () => props.onClick(props.feat) } })
+        openDrawer({
+          type: 'feat',
+          data: { id: props.feat.id, onSelect: () => props.onClick(props.feat) },
+          extra: { addToHistory: true },
+        })
       }
       buttonTitle='Select'
       disableButton={props.selected}
@@ -1938,7 +1950,11 @@ export function ActionSelectionOption(props: {
       }
       selected={props.selected}
       onClick={() =>
-        openDrawer({ type: 'action', data: { id: props.action.id, onSelect: () => props.onClick(props.action) } })
+        openDrawer({
+          type: 'action',
+          data: { id: props.action.id, onSelect: () => props.onClick(props.action) },
+          extra: { addToHistory: true },
+        })
       }
       buttonTitle='Select'
       disableButton={props.selected}
@@ -1987,6 +2003,7 @@ export function ClassFeatureSelectionOption(props: {
         openDrawer({
           type: 'class-feature',
           data: { id: props.classFeature.id, onSelect: () => props.onClick(props.classFeature) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2036,6 +2053,7 @@ export function HeritageSelectionOption(props: {
         openDrawer({
           type: 'heritage',
           data: { id: props.heritage.id, onSelect: () => props.onClick(props.heritage) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2085,6 +2103,7 @@ export function PhysicalFeatureSelectionOption(props: {
         openDrawer({
           type: 'physical-feature',
           data: { id: props.physicalFeature.id, onSelect: () => props.onClick(props.physicalFeature) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2133,6 +2152,7 @@ export function SenseSelectionOption(props: {
         openDrawer({
           type: 'sense',
           data: { id: props.sense.id, onSelect: () => props.onClick(props.sense) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2243,7 +2263,13 @@ export function ClassSelectionOption(props: {
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />}
       selected={props.selected}
-      onClick={() => openDrawer({ type: 'class', data: { id: props.class_.id, onSelect: () => onSelect() } })}
+      onClick={() =>
+        openDrawer({
+          type: 'class',
+          data: { id: props.class_.id, onSelect: () => onSelect() },
+          extra: { addToHistory: true },
+        })
+      }
       buttonTitle='Select'
       disableButton={props.selected}
       onButtonClick={() => onSelect()}
@@ -2382,7 +2408,13 @@ export function AncestrySelectionOption(props: {
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.ancestry.rarity} />}
       selected={props.selected}
-      onClick={() => openDrawer({ type: 'ancestry', data: { id: props.ancestry.id, onSelect: () => onSelect() } })}
+      onClick={() =>
+        openDrawer({
+          type: 'ancestry',
+          data: { id: props.ancestry.id, onSelect: () => onSelect() },
+          extra: { addToHistory: true },
+        })
+      }
       buttonTitle='Select'
       disableButton={props.selected}
       onButtonClick={() => onSelect()}
@@ -2465,7 +2497,13 @@ export function BackgroundSelectionOption(props: {
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.background.rarity} />}
       selected={props.selected}
-      onClick={() => openDrawer({ type: 'background', data: { id: props.background.id, onSelect: () => onSelect() } })}
+      onClick={() =>
+        openDrawer({
+          type: 'background',
+          data: { id: props.background.id, onSelect: () => onSelect() },
+          extra: { addToHistory: true },
+        })
+      }
       buttonTitle='Select'
       disableButton={props.selected}
       onButtonClick={() => onSelect()}
@@ -2512,6 +2550,7 @@ export function ItemSelectionOption(props: {
         openDrawer({
           type: 'item',
           data: { id: props.item.id, onSelect: () => props.onClick(props.item) },
+          extra: { addToHistory: true },
         })
       }
       level={props.item.level}
@@ -2573,6 +2612,7 @@ export function SpellSelectionOption(props: {
         openDrawer({
           type: 'spell',
           data: { id: props.spell.id, onSelect: () => props.onClick(props.spell) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2620,6 +2660,7 @@ export function TraitSelectionOption(props: {
         openDrawer({
           type: 'trait',
           data: { id: props.trait.id, onSelect: () => props.onClick(props.trait) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2657,6 +2698,7 @@ export function LanguageSelectionOption(props: {
         openDrawer({
           type: 'language',
           data: { id: props.language.id, onSelect: () => props.onClick(props.language) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'
@@ -2759,6 +2801,7 @@ export function CreatureSelectionOption(props: {
         openDrawer({
           type: 'creature',
           data: { id: props.creature.id, onSelect: () => props.onClick(props.creature) },
+          extra: { addToHistory: true },
         })
       }
       buttonTitle='Select'

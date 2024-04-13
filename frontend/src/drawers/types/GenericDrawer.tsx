@@ -5,19 +5,24 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
+import { drawerState } from '@atoms/navAtoms';
+import { useRecoilState } from 'recoil';
 
 export type GenericData = {
   title: string;
   description: string;
   operations?: Operation[];
   showOperations?: boolean;
+  onSelect?: () => void;
 };
 export function GenericDrawerTitle(props: { data: GenericData }) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
   return (
     <>
       <Group justify='space-between' wrap='nowrap'>
@@ -27,6 +32,20 @@ export function GenericDrawerTitle(props: { data: GenericData }) {
           </Box>
           <Box></Box>
         </Group>
+        {props.data.onSelect && (
+          <Button
+            variant='filled'
+            radius='xl'
+            mb={5}
+            size='compact-sm'
+            onClick={() => {
+              props.data.onSelect?.();
+              openDrawer(null);
+            }}
+          >
+            Select
+          </Button>
+        )}
       </Group>
     </>
   );

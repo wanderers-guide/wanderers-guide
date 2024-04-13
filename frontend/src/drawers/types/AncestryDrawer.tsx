@@ -32,7 +32,6 @@ import { IconChevronsDown, IconChevronsUp, IconHelpCircle } from '@tabler/icons-
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Character, Language } from '@typing/content';
 import { DrawerType } from '@typing/index';
-import { OperationSelect } from '@typing/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables } from '@variables/variable-manager';
 import * as _ from 'lodash-es';

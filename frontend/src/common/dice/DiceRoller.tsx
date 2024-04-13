@@ -561,6 +561,7 @@ export default function DiceRoller(props: {
             height: 'calc(100% - 64px)',
           },
         }}
+        transitionProps={{ duration: 150 }}
       >
         <Stack justify='space-between' h='100%'>
           <Stack gap={10}>

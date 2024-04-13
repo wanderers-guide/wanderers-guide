@@ -160,6 +160,7 @@ export function CharBuilderCreationInner(props: {
           }}
           title={<Title order={3}>Character Stats</Title>}
           size='xs'
+          transitionProps={{ duration: 150 }}
         >
           <CharacterStatSidebar content={props.content} pageHeight={window.innerHeight - 80} />
         </Drawer>
