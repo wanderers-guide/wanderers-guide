@@ -141,7 +141,7 @@ export function Component() {
                     handleCreateCharacter();
                   }}
                 >
-                  <IconUserPlus style={{ width: '90%', height: '90%' }} stroke={2.5} />
+                  <IconUserPlus size='1.3rem' stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
               <Menu shadow='md' width={240} withArrow withinPortal>
@@ -157,7 +157,7 @@ export function Component() {
                       radius='xl'
                       aria-label='Import Character'
                     >
-                      <IconUpload style={{ width: '90%', height: '90%' }} stroke={2.5} />
+                      <IconUpload size='1.3rem' stroke={2.5} />
                     </ActionIcon>
                   </Tooltip>
                 </Menu.Target>
@@ -231,7 +231,7 @@ export function Component() {
                     setLoadingCreateRandomCharacter(false);
                   }}
                 >
-                  <IconArrowsShuffle style={{ width: '90%', height: '90%' }} stroke={2.5} />
+                  <IconArrowsShuffle size='1.3rem' stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
             </Group>

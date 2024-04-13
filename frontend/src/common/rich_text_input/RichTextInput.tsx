@@ -50,6 +50,10 @@ export default function RichTextInput(props: RichTextInputProps) {
     },
   });
 
+  const { ref, width, height } = useElementSize();
+  const isSmall = width < 500;
+  const isVerySmall = width < 375;
+
   return (
     <Box>
       {props.label && (
@@ -63,6 +67,7 @@ export default function RichTextInput(props: RichTextInputProps) {
         </Text>
       )}
       <RichTextEditor
+        ref={ref}
         editor={editor}
         fz='sm'
         styles={{
@@ -77,7 +82,9 @@ export default function RichTextInput(props: RichTextInputProps) {
           },
         }}
       >
-        <RichTextEditor.Toolbar style={{ gap: 5 }}>
+        <RichTextEditor.Toolbar
+          style={isSmall ? { gap: 0, justifyContent: 'space-between' } : { gap: 5, flexWrap: 'nowrap' }}
+        >
           <RichTextEditor.ControlsGroup>
             <ActionSymbolControl />
           </RichTextEditor.ControlsGroup>
@@ -100,12 +107,14 @@ export default function RichTextInput(props: RichTextInputProps) {
             <RichTextEditor.OrderedList />
           </RichTextEditor.ControlsGroup>
 
-          <RichTextEditor.ControlsGroup>
-            {/* <RichTextEditor.H1 /> */}
-            <RichTextEditor.H2 />
-            <RichTextEditor.H3 />
-            <RichTextEditor.H4 />
-          </RichTextEditor.ControlsGroup>
+          {!isVerySmall && (
+            <RichTextEditor.ControlsGroup>
+              {/* <RichTextEditor.H1 /> */}
+              <RichTextEditor.H2 />
+              <RichTextEditor.H3 />
+              <RichTextEditor.H4 />
+            </RichTextEditor.ControlsGroup>
+          )}
         </RichTextEditor.Toolbar>
 
         <RichTextEditor.Content />

@@ -56,7 +56,6 @@ export function CreateSocietyAdventureEntryModal(props: {
 
   const [boons, setBoons] = useState<JSONContent>();
   const [notes, setNotes] = useState<JSONContent>();
-  const [downtime, setDowntime] = useState<JSONContent>();
   const character = useRecoilValue(characterState);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -86,7 +85,6 @@ export function CreateSocietyAdventureEntryModal(props: {
       conditions_gained: props.editEntry?.conditions_gained ?? [],
       conditions_cleared: props.editEntry?.conditions_cleared ?? [],
       notes: props.editEntry?.notes ?? '',
-      downtime: props.editEntry?.downtime ?? undefined,
     },
   });
 
@@ -103,7 +101,6 @@ export function CreateSocietyAdventureEntryModal(props: {
     form.reset();
     setBoons(undefined);
     setNotes(undefined);
-    setDowntime(undefined);
   };
 
   return (
@@ -394,7 +391,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                 <NumberInput hideControls placeholder='Buy' {...form.getInputProps('items_total_buy')} />
               )}
               <Text pb={5}>+</Text>
-              <NumberInput hideControls placeholder='Extra' {...form.getInputProps('items_total_extra')} />
+              <NumberInput hideControls placeholder='Treasure' {...form.getInputProps('items_total_extra')} />
             </Group>
 
             <Divider my='md' />
@@ -572,7 +569,7 @@ export function CreateSocietyAdventureEntryModal(props: {
               </Box>
             </Group>
 
-            <Divider my='md' />
+            <Divider mt='md' />
 
             <RichTextInput
               label='Notes'
@@ -580,15 +577,6 @@ export function CreateSocietyAdventureEntryModal(props: {
               onChange={(text, json) => {
                 setNotes(json);
                 form.setFieldValue('notes', text);
-              }}
-            />
-
-            <RichTextInput
-              label='Downtime'
-              value={downtime ?? toHTML(form.values.downtime)}
-              onChange={(text, json) => {
-                setDowntime(json);
-                form.setFieldValue('downtime', text);
               }}
             />
 

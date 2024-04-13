@@ -22,6 +22,7 @@ import {
   Select,
   SimpleGrid,
   Button,
+  Center,
 } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
@@ -857,7 +858,9 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
       <TextInput
         label='Organized Play ID'
         placeholder='12345678-2000'
-        defaultValue={character?.details?.info?.organized_play_id || (user?.organized_play_id ?? '') + '-2'}
+        defaultValue={
+          character?.details?.info?.organized_play_id || (user?.organized_play_id ? user?.organized_play_id + '-2' : '')
+        }
         onChange={(e) => {
           if (!character || !user) return;
           props.setDebouncedInfo({
@@ -945,47 +948,63 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
           </Button>
         </Group>
         <Divider my={8} />
-        <SimpleGrid cols={4}>
+        <SimpleGrid cols={4} spacing={0}>
           <Stack gap={0}>
             <Text ta='center'>Lvl</Text>
-            <Text ta='center' fw={600}>
-              {1 +
-                Math.floor(
-                  (character?.details?.info?.organized_play_adventures ?? []).reduce(
-                    (acc, a) => acc + (a.xp_gained ?? 0),
-                    0
-                  ) / 12
-                )}
-            </Text>
+            <Center>
+              <Badge size='lg' variant='light'>
+                <Text fz='sm'>
+                  {1 +
+                    Math.floor(
+                      (character?.details?.info?.organized_play_adventures ?? []).reduce(
+                        (acc, a) => acc + (a.xp_gained ?? 0),
+                        0
+                      ) / 12
+                    )}
+                </Text>
+              </Badge>
+            </Center>
           </Stack>
           <Stack gap={0}>
             <Text ta='center'>XP</Text>
-            <Text ta='center' fw={600}>
-              {(character?.details?.info?.organized_play_adventures ?? []).reduce(
-                (acc, a) => acc + (a.xp_gained ?? 0),
-                0
-              ) % 12}
-            </Text>
+            <Center>
+              <Badge size='lg' variant='light'>
+                <Text fz='sm'>
+                  {(character?.details?.info?.organized_play_adventures ?? []).reduce(
+                    (acc, a) => acc + (a.xp_gained ?? 0),
+                    0
+                  ) % 12}
+                </Text>
+              </Badge>
+            </Center>
           </Stack>
           <Stack gap={0}>
             <Text ta='center'>GP</Text>
-            <Text ta='center' fw={600}>
-              {Math.round(
-                (character?.details?.info?.organized_play_adventures ?? []).reduce(
-                  (acc, a) => acc + getGpGained(a),
-                  0
-                ) * 100
-              ) / 100}
-            </Text>
+            <Center>
+              <Badge size='lg' variant='light'>
+                <Text fz='sm'>
+                  {Math.round(
+                    (character?.details?.info?.organized_play_adventures ?? []).reduce(
+                      (acc, a) => acc + getGpGained(a),
+                      0
+                    ) * 100
+                  ) / 100}
+                </Text>
+              </Badge>
+            </Center>
           </Stack>
           <Stack gap={0}>
             <Text ta='center'>Rep</Text>
-            <Text ta='center' fw={600}>
-              {(character?.details?.info?.organized_play_adventures ?? []).reduce(
-                (acc, a) => acc + (a.rep_gained ?? 0),
-                0
-              )}
-            </Text>
+            <Center>
+              <Badge size='lg' variant='light'>
+                <Text fz='sm'>
+                  {(character?.details?.info?.organized_play_adventures ?? []).reduce(
+                    (acc, a) => acc + (a.rep_gained ?? 0),
+                    0
+                  )}
+                </Text>
+              </Badge>
+            </Center>
           </Stack>
         </SimpleGrid>
       </Paper>

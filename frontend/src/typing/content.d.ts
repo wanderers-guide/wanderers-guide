@@ -709,5 +709,4 @@ interface SocietyAdventureEntry {
   conditions_gained: Condition[];
   conditions_cleared: Condition[];
   notes?: string;
-  downtime?: string;
 }
