@@ -14,6 +14,7 @@ import {
   Anchor,
   Badge,
   Box,
+  Button,
   Divider,
   Group,
   HoverCard,
@@ -38,8 +39,10 @@ import * as _ from 'lodash-es';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Ancestry } }) {
+export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Ancestry; onSelect?: () => void } }) {
   const id = props.data.id;
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _ancestry } = useQuery({
     queryKey: [`find-ancestry-${id}`, { id }],
@@ -63,6 +66,20 @@ export function AncestryDrawerTitle(props: { data: { id?: number; ancestry?: Anc
             </Box>
           </Group>
           <TraitsDisplay traitIds={[]} rarity={ancestry.rarity} />
+          {props.data.onSelect && (
+            <Button
+              variant='filled'
+              radius='xl'
+              mb={5}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onSelect?.();
+                openDrawer(null);
+              }}
+            >
+              Select Ancestry
+            </Button>
+          )}
         </Group>
       )}
     </>

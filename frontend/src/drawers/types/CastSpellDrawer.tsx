@@ -80,7 +80,7 @@ export function CastSpellDrawerTitle(props: {
             <Button
               variant='outline'
               radius='xl'
-              mb={3}
+              mb={5}
               size='compact-sm'
               onClick={() => {
                 props.data.onCastSpell(false);
@@ -94,7 +94,7 @@ export function CastSpellDrawerTitle(props: {
               disabled={disableCasting}
               variant='filled'
               radius='xl'
-              mb={3}
+              mb={5}
               size='compact-sm'
               onClick={() => {
                 props.data.onCastSpell(true);

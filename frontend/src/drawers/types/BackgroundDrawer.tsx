@@ -4,7 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Anchor, Box, Group, Image, Loader, Paper, Stack, Text, Title, useMantineTheme } from '@mantine/core';
+import { Anchor, Box, Button, Group, Image, Loader, Paper, Stack, Text, Title, useMantineTheme } from '@mantine/core';
 import { OperationResult } from '@operations/operation-runner';
 import { useQuery } from '@tanstack/react-query';
 import { Background, Character } from '@typing/content';
@@ -14,8 +14,12 @@ import { getAllAttributeVariables } from '@variables/variable-manager';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export function BackgroundDrawerTitle(props: { data: { id?: number; background?: Background } }) {
+export function BackgroundDrawerTitle(props: {
+  data: { id?: number; background?: Background; onSelect?: () => void };
+}) {
   const id = props.data.id;
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _background } = useQuery({
     queryKey: [`find-background-${id}`, { id }],
@@ -39,6 +43,20 @@ export function BackgroundDrawerTitle(props: { data: { id?: number; background?:
             </Box>
           </Group>
           <TraitsDisplay traitIds={[]} rarity={background.rarity} />
+          {props.data.onSelect && (
+            <Button
+              variant='filled'
+              radius='xl'
+              mb={5}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onSelect?.();
+                openDrawer(null);
+              }}
+            >
+              Select Background
+            </Button>
+          )}
         </Group>
       )}
     </>

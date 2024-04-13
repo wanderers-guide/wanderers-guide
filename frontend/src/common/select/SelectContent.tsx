@@ -35,7 +35,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useHover, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import {
   IconArrowNarrowRight,
@@ -1684,108 +1684,100 @@ export function GenericSelectionOption(props: {
   );
 }
 
-export function FeatSelectionOption(props: {
-  feat: AbilityBlock;
-  onClick: (feat: AbilityBlock) => void;
+export function BaseSelectionOption(props: {
   selected?: boolean;
-  displayLevel?: boolean;
-  includeDetails?: boolean;
+  buttonTitle?: string;
   includeOptions?: boolean;
-  onDelete?: (id: number) => void;
-  onCopy?: (id: number) => void;
+  buttonOverride?: React.ReactNode;
+  onClick: () => void;
+  onHover?: () => void;
+  onButtonClick?: () => void;
+  onOptionsDelete?: () => void;
+  onOptionsCopy?: () => void;
+  leftSection?: React.ReactNode;
+  rightSection?: React.ReactNode;
+  level?: string | number;
+  noBackground?: boolean;
+  disabled?: boolean;
+  disableButton?: boolean;
+  px?: number;
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilValue(characterState);
-  const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
+  const isPhone = useMediaQuery(phoneQuery());
 
-  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', props.feat.prerequisites);
+  useDidUpdate(() => {
+    if (hovered && props.onHover) {
+      props.onHover();
+    }
+  }, [hovered]);
 
   return (
     <Group
       ref={ref}
-      p='sm'
+      py='sm'
+      px={props.px ?? 'sm'}
       style={{
         cursor: 'pointer',
         borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
+        backgroundColor: (hovered || props.selected) && !props.noBackground ? theme.colors.dark[6] : 'transparent',
         position: 'relative',
+        opacity: props.disabled ? 0.5 : 1,
+        width: '100%',
       }}
-      onClick={() => props.onClick(props.feat)}
+      onClick={props.onClick}
       justify='space-between'
     >
-      {props.displayLevel && !props.feat.meta_data?.unselectable && (
+      {props.level && parseInt(`${props.level}`) !== 0 && !isNaN(parseInt(`${props.level}`)) && (
         <Text
-          fz={9}
+          fz={10}
           c='dimmed'
           ta='right'
           w={14}
           style={{
             position: 'absolute',
-            top: 18,
-            left: 2,
+            top: 15,
+            left: 1,
           }}
         >
-          {props.feat.level}.
+          {props.level}.
         </Text>
       )}
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.feat.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.feat.actions} gap={5} />
-        </Box>
-        {prereqMet && prereqMet.result && (
-          <>
-            {prereqMet.result === 'FULLY' && (
-              <ThemeIcon variant='light' size='xs' radius='xl'>
-                <IconCheck style={{ width: '70%', height: '70%' }} />
-              </ThemeIcon>
-            )}
-            {prereqMet.result === 'PARTIALLY' && (
-              <ThemeIcon variant='light' size='xs' radius='xl'>
-                <IconZoomCheck style={{ width: '70%', height: '70%' }} />
-              </ThemeIcon>
-            )}
-            {prereqMet.result === 'UNKNOWN' && (
-              <ThemeIcon variant='light' size='xs' radius='xl' color='yellow'>
-                <IconQuestionMark style={{ width: '70%', height: '70%' }} />
-              </ThemeIcon>
-            )}
-            {prereqMet.result === 'NOT' && (
-              <ThemeIcon variant='light' size='xs' radius='xl' color='red'>
-                <IconX style={{ width: '70%', height: '70%' }} />
-              </ThemeIcon>
-            )}
-          </>
-        )}
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
-        </Box>
-        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
-      </Group>
-      {props.includeDetails && (
-        <Button
-          size='xs'
-          px={5}
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: props.includeOptions ? 40 : 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({ type: 'feat', data: { id: props.feat.id } });
-          }}
-        >
-          Details
-        </Button>
+      {props.leftSection && <Box>{props.leftSection}</Box>}
+      {!isPhone && props.rightSection && (
+        <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
+          <Box>{props.rightSection}</Box>
+          <Box w={props.includeOptions ? 80 : 50}></Box>
+        </Group>
       )}
+
+      {props.buttonOverride ? (
+        props.buttonOverride
+      ) : (
+        <>
+          {props.buttonTitle && (
+            <Box pl={0}>
+              <Button
+                disabled={props.disableButton}
+                size='compact-sm'
+                variant='filled'
+                style={{
+                  position: 'absolute',
+                  top: 7,
+                  right: props.includeOptions ? 40 : 10,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onButtonClick?.();
+                }}
+              >
+                {props.buttonTitle}
+              </Button>
+            </Box>
+          )}
+        </>
+      )}
+
       {props.includeOptions && (
         <Menu shadow='md' width={200}>
           <Menu.Target>
@@ -1811,33 +1803,104 @@ export function FeatSelectionOption(props: {
 
           <Menu.Dropdown>
             <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.feat.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
+            {props.onOptionsCopy && (
+              <Menu.Item
+                leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onOptionsCopy?.();
+                }}
+              >
+                Duplicate
+              </Menu.Item>
+            )}
 
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.feat.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
+            {props.onOptionsDelete && (
+              <Menu.Item
+                color='red'
+                leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onOptionsDelete?.();
+                }}
+              >
+                Delete
+              </Menu.Item>
+            )}
           </Menu.Dropdown>
         </Menu>
       )}
     </Group>
+  );
+}
+
+export function FeatSelectionOption(props: {
+  feat: AbilityBlock;
+  onClick: (feat: AbilityBlock) => void;
+  selected?: boolean;
+  displayLevel?: boolean;
+  includeDetails?: boolean;
+  includeOptions?: boolean;
+  onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
+  const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
+
+  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', props.feat.prerequisites);
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5} pl={8}>
+          <Box>
+            <Text fz='sm'>{props.feat.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.feat.actions} gap={5} />
+          </Box>
+          {prereqMet && prereqMet.result && (
+            <>
+              {prereqMet.result === 'FULLY' && (
+                <ThemeIcon variant='light' size='xs' radius='xl'>
+                  <IconCheck style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+              )}
+              {prereqMet.result === 'PARTIALLY' && (
+                <ThemeIcon variant='light' size='xs' radius='xl'>
+                  <IconZoomCheck style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+              )}
+              {prereqMet.result === 'UNKNOWN' && (
+                <ThemeIcon variant='light' size='xs' radius='xl' color='yellow'>
+                  <IconQuestionMark style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+              )}
+              {prereqMet.result === 'NOT' && (
+                <ThemeIcon variant='light' size='xs' radius='xl' color='red'>
+                  <IconX style={{ width: '70%', height: '70%' }} />
+                </ThemeIcon>
+              )}
+            </>
+          )}
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
+      }
+      level={props.displayLevel && !props.feat.meta_data?.unselectable ? props.feat.level : undefined}
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({ type: 'feat', data: { id: props.feat.id, onSelect: () => props.onClick(props.feat) } })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.feat)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.feat.id)}
+      onOptionsCopy={() => props.onCopy?.(props.feat.id)}
+    />
   );
 }
 
@@ -1850,113 +1913,40 @@ export function ActionSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.action)}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.action.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.action.actions} gap={5} />
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.action.traits ?? []}
-            rarity={props.action.rarity}
-            skill={props.action.meta_data?.skill}
-          />
-        </Box>
-        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
-      </Group>
-      {props.includeDetails && (
-        <Button
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.action.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.action.actions} gap={5} />
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
           size='xs'
-          px={5}
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: props.includeOptions ? 40 : 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({ type: 'action', data: { id: props.action.id } });
-          }}
-        >
-          Details
-        </Button>
-      )}
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.action.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.action.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+          traitIds={props.action.traits ?? []}
+          rarity={props.action.rarity}
+          skill={props.action.meta_data?.skill}
+        />
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({ type: 'action', data: { id: props.action.id, onSelect: () => props.onClick(props.action) } })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.action)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.action.id)}
+      onOptionsCopy={() => props.onCopy?.(props.action.id)}
+    />
   );
 }
 
@@ -1969,128 +1959,43 @@ export function ClassFeatureSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.classFeature)}
-      justify='space-between'
-    >
-      <Text
-        fz={10}
-        c='dimmed'
-        ta='right'
-        w={14}
-        style={{
-          position: 'absolute',
-          top: 15,
-          left: 1,
-        }}
-      >
-        {props.classFeature.level}.
-      </Text>
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.classFeature.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.classFeature.actions} gap={5} />
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.classFeature.traits ?? []}
-            rarity={props.classFeature.rarity}
-          />
-        </Box>
-        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
-      </Group>
-      {props.includeDetails && (
-        <Button
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.classFeature.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.classFeature.actions} gap={5} />
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
           size='xs'
-          px={5}
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: props.includeOptions ? 40 : 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({
-              type: 'class-feature',
-              data: { id: props.classFeature.id },
-            });
-          }}
-        >
-          Details
-        </Button>
-      )}
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.classFeature.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.classFeature.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+          traitIds={props.classFeature.traits ?? []}
+          rarity={props.classFeature.rarity}
+          skill={props.classFeature.meta_data?.skill}
+        />
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'class-feature',
+          data: { id: props.classFeature.id, onSelect: () => props.onClick(props.classFeature) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.classFeature)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.classFeature.id)}
+      onOptionsCopy={() => props.onCopy?.(props.classFeature.id)}
+    />
   );
 }
 
@@ -2103,112 +2008,43 @@ export function HeritageSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.heritage)}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.heritage.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.heritage.actions} gap={5} />
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.heritage.traits ?? []}
-            rarity={props.heritage.rarity}
-          />
-        </Box>
-        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
-      </Group>
-      {props.includeDetails && (
-        <Button
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.heritage.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.heritage.actions} gap={5} />
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
           size='xs'
-          px={5}
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: props.includeOptions ? 40 : 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({ type: 'heritage', data: { id: props.heritage.id } });
-          }}
-        >
-          Details
-        </Button>
-      )}
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.heritage.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.heritage.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+          traitIds={props.heritage.traits ?? []}
+          rarity={props.heritage.rarity}
+          skill={props.heritage.meta_data?.skill}
+        />
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'heritage',
+          data: { id: props.heritage.id, onSelect: () => props.onClick(props.heritage) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.heritage)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.heritage.id)}
+      onOptionsCopy={() => props.onCopy?.(props.heritage.id)}
+    />
   );
 }
 
@@ -2221,115 +2057,43 @@ export function PhysicalFeatureSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.physicalFeature)}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.physicalFeature.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.physicalFeature.actions} gap={5} />
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.physicalFeature.traits ?? []}
-            rarity={props.physicalFeature.rarity}
-          />
-        </Box>
-        {(props.includeDetails || props.includeOptions) && <Box w={props.includeOptions ? 80 : 50}></Box>}
-      </Group>
-      {props.includeDetails && (
-        <Button
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.physicalFeature.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.physicalFeature.actions} gap={5} />
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
           size='xs'
-          px={5}
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: props.includeOptions ? 40 : 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({
-              type: 'physical-feature',
-              data: { id: props.physicalFeature.id },
-            });
-          }}
-        >
-          Details
-        </Button>
-      )}
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.physicalFeature.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.physicalFeature.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+          traitIds={props.physicalFeature.traits ?? []}
+          rarity={props.physicalFeature.rarity}
+          skill={props.physicalFeature.meta_data?.skill}
+        />
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'physical-feature',
+          data: { id: props.physicalFeature.id, onSelect: () => props.onClick(props.physicalFeature) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.physicalFeature)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.physicalFeature.id)}
+      onOptionsCopy={() => props.onCopy?.(props.physicalFeature.id)}
+    />
   );
 }
 
@@ -2341,105 +2105,43 @@ export function SenseSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.sense)}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.sense.name}</Text>
-        </Box>
-        <Box>
-          <ActionSymbol cost={props.sense.actions} gap={5} />
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.sense.traits ?? []} rarity={props.sense.rarity} />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'sense', data: { id: props.sense.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.sense.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.sense.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.sense.name}</Text>
+          </Box>
+          <Box>
+            <ActionSymbol cost={props.sense.actions} gap={5} />
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={props.sense.traits ?? []}
+          rarity={props.sense.rarity}
+          skill={props.sense.meta_data?.skill}
+        />
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'sense',
+          data: { id: props.sense.id, onSelect: () => props.onClick(props.sense) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.sense)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.sense.id)}
+      onOptionsCopy={() => props.onCopy?.(props.sense.id)}
+    />
   );
 }
 
@@ -2452,8 +2154,6 @@ export function ClassSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const classHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_CLASS_PER_LEVEL', props.class_.operations ?? [], 'READ');
@@ -2483,145 +2183,74 @@ export function ClassSelectionOption(props: {
       onConfirm: () => props.onClick(props.class_),
     });
 
+  const onSelect = () => {
+    if (props.hasSelected && !props.selected) {
+      openConfirmModal();
+    } else {
+      props.onClick(props.class_);
+    }
+  };
+
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => {
-        if (props.hasSelected && !props.selected) {
-          openConfirmModal();
-        } else {
-          props.onClick(props.class_);
-        }
-      }}
-      justify='space-between'
-    >
-      <Group wrap='nowrap'>
-        <Avatar
-          src={props.class_.artwork_url}
-          radius='sm'
-          styles={{
-            image: {
-              objectFit: 'contain',
-            },
-          }}
-        />
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap'>
+          <Avatar
+            src={props.class_.artwork_url}
+            radius='sm'
+            styles={{
+              image: {
+                objectFit: 'contain',
+              },
+            }}
+          />
 
-        <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
-            {props.class_.name}
-          </Text>
+          <div style={{ flex: 1 }}>
+            <Text size='sm' fw={500}>
+              {props.class_.name}
+            </Text>
 
-          <Group gap={5}>
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              {classHp.ui ?? '-'} HP
-            </Badge>
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              {keyAttribute.ui ?? 'Varies'}
-            </Badge>
-          </Group>
-        </div>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'class', data: { id: props.class_.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.class_.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.class_.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+            <Group gap={5}>
+              <Badge
+                variant='dot'
+                size='xs'
+                styles={{
+                  root: {
+                    // @ts-ignore
+                    '--badge-dot-size': 0,
+                  },
+                }}
+                c='gray.6'
+              >
+                {classHp.ui ?? '-'} HP
+              </Badge>
+              <Badge
+                variant='dot'
+                size='xs'
+                styles={{
+                  root: {
+                    // @ts-ignore
+                    '--badge-dot-size': 0,
+                  },
+                }}
+                c='gray.6'
+              >
+                {keyAttribute.ui ?? 'Varies'}
+              </Badge>
+            </Group>
+          </div>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />}
+      selected={props.selected}
+      onClick={() => openDrawer({ type: 'class', data: { id: props.class_.id, onSelect: () => onSelect() } })}
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => onSelect()}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.class_.id)}
+      onOptionsCopy={() => props.onCopy?.(props.class_.id)}
+    />
   );
 }
 
@@ -2634,8 +2263,6 @@ export function AncestrySelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const character = useRecoilValue(characterState);
 
@@ -2674,72 +2301,34 @@ export function AncestrySelectionOption(props: {
       onConfirm: () => props.onClick(props.ancestry),
     });
 
+  const onSelect = () => {
+    if (props.hasSelected && !props.selected) {
+      openConfirmModal();
+    } else {
+      props.onClick(props.ancestry);
+    }
+  };
+
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => {
-        if (props.hasSelected && !props.selected) {
-          openConfirmModal();
-        } else {
-          props.onClick(props.ancestry);
-        }
-      }}
-      justify='space-between'
-    >
-      <Group wrap='nowrap'>
-        <Avatar
-          src={props.ancestry.artwork_url}
-          radius='sm'
-          styles={{
-            image: {
-              objectFit: 'contain',
-            },
-          }}
-        />
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap'>
+          <Avatar
+            src={props.ancestry.artwork_url}
+            radius='sm'
+            styles={{
+              image: {
+                objectFit: 'contain',
+              },
+            }}
+          />
 
-        <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
-            {props.ancestry.name}
-          </Text>
+          <div style={{ flex: 1 }}>
+            <Text size='sm' fw={500}>
+              {props.ancestry.name}
+            </Text>
 
-          <Group gap={5}>
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              {ancestryHp.ui} HP
-            </Badge>
-            <Badge
-              variant='dot'
-              size='xs'
-              styles={{
-                root: {
-                  // @ts-ignore
-                  '--badge-dot-size': 0,
-                },
-              }}
-              c='gray.6'
-            >
-              +
-              {attributes.flatMap((attribute, index) =>
-                index < attributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
-              )}
-            </Badge>
-            {flawAttributes.length > 0 && (
+            <Group gap={5}>
               <Badge
                 variant='dot'
                 size='xs'
@@ -2751,89 +2340,56 @@ export function AncestrySelectionOption(props: {
                 }}
                 c='gray.6'
               >
-                -
-                {flawAttributes.flatMap((attribute, index) =>
-                  index < flawAttributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
+                {ancestryHp.ui} HP
+              </Badge>
+              <Badge
+                variant='dot'
+                size='xs'
+                styles={{
+                  root: {
+                    // @ts-ignore
+                    '--badge-dot-size': 0,
+                  },
+                }}
+                c='gray.6'
+              >
+                +
+                {attributes.flatMap((attribute, index) =>
+                  index < attributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
                 )}
               </Badge>
-            )}
-          </Group>
-        </div>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.ancestry.rarity} />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'ancestry', data: { id: props.ancestry.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.ancestry.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.ancestry.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+              {flawAttributes.length > 0 && (
+                <Badge
+                  variant='dot'
+                  size='xs'
+                  styles={{
+                    root: {
+                      // @ts-ignore
+                      '--badge-dot-size': 0,
+                    },
+                  }}
+                  c='gray.6'
+                >
+                  -
+                  {flawAttributes.flatMap((attribute, index) =>
+                    index < flawAttributes.length - 1 ? [attribute.ui, ', '] : [attribute.ui]
+                  )}
+                </Badge>
+              )}
+            </Group>
+          </div>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.ancestry.rarity} />}
+      selected={props.selected}
+      onClick={() => openDrawer({ type: 'ancestry', data: { id: props.ancestry.id, onSelect: () => onSelect() } })}
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => onSelect()}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.ancestry.id)}
+      onOptionsCopy={() => props.onCopy?.(props.ancestry.id)}
+    />
   );
 }
 
@@ -2846,8 +2402,6 @@ export function BackgroundSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const openConfirmModal = () =>
@@ -2871,125 +2425,54 @@ export function BackgroundSelectionOption(props: {
     'READ'
   );
 
+  const onSelect = () => {
+    if (props.hasSelected && !props.selected) {
+      openConfirmModal();
+    } else {
+      props.onClick(props.background);
+    }
+  };
+
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => {
-        if (props.hasSelected && !props.selected) {
-          openConfirmModal();
-        } else {
-          props.onClick(props.background);
-        }
-      }}
-      justify='space-between'
-    >
-      <Group wrap='nowrap'>
-        <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
-            {props.background.name}
-          </Text>
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap'>
+          <div style={{ flex: 1 }}>
+            <Text size='sm' fw={500}>
+              {props.background.name}
+            </Text>
 
-          <Group gap={5}>
-            {attributes.map((attribute, index) => (
-              <Badge
-                key={index}
-                variant='dot'
-                size='xs'
-                styles={{
-                  root: {
-                    // @ts-ignore
-                    '--badge-dot-size': 0,
-                  },
-                }}
-                c='gray.6'
-              >
-                {attribute.ui}
-              </Badge>
-            ))}
-          </Group>
-        </div>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.background.rarity} />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'background', data: { id: props.background.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.background.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.background.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+            <Group gap={5}>
+              {attributes.map((attribute, index) => (
+                <Badge
+                  key={index}
+                  variant='dot'
+                  size='xs'
+                  styles={{
+                    root: {
+                      // @ts-ignore
+                      '--badge-dot-size': 0,
+                    },
+                  }}
+                  c='gray.6'
+                >
+                  {attribute.ui}
+                </Badge>
+              ))}
+            </Group>
+          </div>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.background.rarity} />}
+      selected={props.selected}
+      onClick={() => openDrawer({ type: 'background', data: { id: props.background.id, onSelect: () => onSelect() } })}
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => onSelect()}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.background.id)}
+      onOptionsCopy={() => props.onCopy?.(props.background.id)}
+    />
   );
 }
 
@@ -3004,140 +2487,45 @@ export function ItemSelectionOption(props: {
   includeAdd?: boolean;
   onAdd?: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => hovered && props.onClick(props.item)}
-      justify='space-between'
-    >
-      <Text
-        fz={10}
-        c='dimmed'
-        ta='right'
-        w={14}
-        style={{
-          position: 'absolute',
-          top: 15,
-          left: 1,
-        }}
-      >
-        {props.item.level}.
-      </Text>
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.item.name}</Text>
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.item.traits ?? []}
-            rarity={props.item.rarity}
-            archaic={isItemArchaic(props.item)}
-          />
-        </Box>
-        {(props.includeDetails || props.includeOptions || props.includeAdd) && (
-          <Box w={props.includeOptions ? 80 : 55}></Box>
-        )}
-      </Group>
-      {props.includeAdd && (
-        <Box
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 10,
-          }}
-        >
-          <BuyItemButton
-            onBuy={() => props.onAdd?.(props.item, 'BUY')}
-            onGive={() => props.onAdd?.(props.item, 'GIVE')}
-            onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
-          />
-        </Box>
-      )}
-      {props.includeDetails && (
-        <Button
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' pl={8}>
+          <Box>
+            <Text fz='sm'>{props.item.name}</Text>
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
           size='xs'
-          px={5}
-          variant='subtle'
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: props.includeOptions ? 40 : 10,
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            openDrawer({ type: 'item', data: { id: props.item.id } });
-          }}
-        >
-          Details
-        </Button>
-      )}
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.item.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.item.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+          traitIds={props.item.traits ?? []}
+          rarity={props.item.rarity}
+          archaic={isItemArchaic(props.item)}
+        />
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'item',
+          data: { id: props.item.id, onSelect: () => props.onClick(props.item) },
+        })
+      }
+      level={props.item.level}
+      buttonOverride={
+        <BuyItemButton
+          onBuy={() => props.onAdd?.(props.item, 'BUY')}
+          onGive={() => props.onAdd?.(props.item, 'GIVE')}
+          onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
+        />
+      }
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.item.id)}
+      onOptionsCopy={() => props.onCopy?.(props.item.id)}
+    />
   );
 }
 
@@ -3155,140 +2543,45 @@ export function SpellSelectionOption(props: {
   exhausted?: boolean;
   px?: number;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const isPhone = useMediaQuery(phoneQuery());
 
   return (
-    <Group
-      ref={ref}
-      py='sm'
-      px={props.px ?? 'sm'}
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: (hovered || props.selected) && !props.noBackground ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-        opacity: props.exhausted ? 0.5 : 1,
-        width: '100%',
-      }}
-      onClick={() => props.onClick(props.spell)}
-      justify='space-between'
-    >
-      {!props.hideRank && props.spell.rank !== 0 && (
-        <Text
-          fz={10}
-          c='dimmed'
-          ta='right'
-          w={14}
-          style={{
-            position: 'absolute',
-            top: 15,
-            left: 1,
-          }}
-        >
-          {props.spell.rank}.
-        </Text>
-      )}
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm' td={props.exhausted ? 'line-through' : undefined}>
-            {props.spell.name}
-          </Text>
-        </Box>
-        {isActionCost(props.spell.cast) && (
-          <Box>
-            <ActionSymbol cost={props.spell.cast} gap={5} />
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm' td={props.exhausted ? 'line-through' : undefined}>
+              {props.spell.name}
+            </Text>
           </Box>
-        )}
-        {props.leftSection && <Box>{props.leftSection}</Box>}
-      </Group>
-      {!isPhone && (
-        <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-          <Box>
-            <TraitsDisplay
-              justify='flex-end'
-              size='xs'
-              traitIds={props.spell.traits ?? []}
-              rarity={props.spell.rarity}
-            />
-          </Box>
-          <Box w={props.includeOptions ? 80 : 50}></Box>
+          {isActionCost(props.spell.cast) && (
+            <Box>
+              <ActionSymbol cost={props.spell.cast} gap={5} />
+            </Box>
+          )}
+          {props.leftSection && <Box>{props.leftSection}</Box>}
         </Group>
-      )}
-      {props.includeDetails === undefined ||
-        (props.includeDetails === true && (
-          <Button
-            size='xs'
-            px={5}
-            variant='subtle'
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: props.includeOptions ? 40 : 10,
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              openDrawer({ type: 'spell', data: { id: props.spell.id } });
-            }}
-          >
-            Details
-          </Button>
-        ))}
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            {props.onCopy && (
-              <Menu.Item
-                leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  props.onCopy?.(props.spell.id);
-                }}
-              >
-                Duplicate
-              </Menu.Item>
-            )}
-
-            {props.onDelete && (
-              <Menu.Item
-                color='red'
-                leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  props.onDelete?.(props.spell.id);
-                }}
-              >
-                Delete
-              </Menu.Item>
-            )}
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+      }
+      rightSection={
+        <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
+      }
+      selected={props.selected}
+      level={!props.hideRank && props.spell.rank !== 0 ? props.spell.rank : undefined}
+      disabled={props.exhausted}
+      onClick={() =>
+        openDrawer({
+          type: 'spell',
+          data: { id: props.spell.id, onSelect: () => props.onClick(props.spell) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.spell)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.spell.id)}
+      onOptionsCopy={() => props.onCopy?.(props.spell.id)}
+    />
   );
 }
 
@@ -3301,105 +2594,41 @@ export function TraitSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.trait)}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Indicator
-          disabled={!props.trait.meta_data?.important}
-          inline
-          size={12}
-          offset={-10}
-          position='middle-end'
-          color={theme.colors.gray[5]}
-          withBorder
-        >
-          <Box pl={8}>
-            <Text fz='sm'>{props.trait.name}</Text>
-          </Box>
-        </Indicator>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'trait', data: { id: props.trait.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.trait.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.trait.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Indicator
+            disabled={!props.trait.meta_data?.important}
+            inline
+            size={12}
+            offset={-10}
+            position='middle-end'
+            color={theme.colors.gray[5]}
+            withBorder
+          >
+            <Box pl={8}>
+              <Text fz='sm'>{props.trait.name}</Text>
+            </Box>
+          </Indicator>
+        </Group>
+      }
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'trait',
+          data: { id: props.trait.id, onSelect: () => props.onClick(props.trait) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.trait)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.trait.id)}
+      onOptionsCopy={() => props.onCopy?.(props.trait.id)}
+    />
   );
 }
 
@@ -3411,102 +2640,32 @@ export function LanguageSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => props.onClick(props.language)}
-      justify='space-between'
-    >
-      <Group wrap='nowrap' gap={5}>
-        <Box pl={8}>
-          <Text fz='sm'>{props.language.name}</Text>
-        </Box>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 12,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'language', data: { id: props.language.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.language.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.language.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.language.name}</Text>
+          </Box>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />}
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'language',
+          data: { id: props.language.id, onSelect: () => props.onClick(props.language) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.language)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.language.id)}
+      onOptionsCopy={() => props.onCopy?.(props.language.id)}
+    />
   );
 }
 
@@ -3519,56 +2678,28 @@ export function CreatureSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group
-      ref={ref}
-      p='sm'
-      style={{
-        cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: hovered || props.selected ? theme.colors.dark[6] : 'transparent',
-        position: 'relative',
-      }}
-      onClick={() => {
-        props.onClick(props.creature);
-      }}
-      justify='space-between'
-    >
-      <Text
-        fz={10}
-        c='dimmed'
-        ta='right'
-        w={14}
-        style={{
-          position: 'absolute',
-          top: 15,
-          left: 1,
-        }}
-      >
-        {props.creature.level}.
-      </Text>
-      <Group ml={8} wrap='nowrap'>
-        <Avatar
-          src={props.creature.details.image_url}
-          radius='sm'
-          styles={{
-            image: {
-              objectFit: 'contain',
-            },
-          }}
-        />
+    <BaseSelectionOption
+      leftSection={
+        <Group ml={8} wrap='nowrap'>
+          <Avatar
+            src={props.creature.details.image_url}
+            radius='sm'
+            styles={{
+              image: {
+                objectFit: 'contain',
+              },
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <Text size='sm' fw={500}>
+              {props.creature.name}
+            </Text>
 
-        <div style={{ flex: 1 }}>
-          <Text size='sm' fw={500}>
-            {props.creature.name}
-          </Text>
-
-          <Group gap={5}>
-            {/* {props.creature.family_type && (
+            <Group gap={5}>
+              {/* {props.creature.family_type && (
               <Badge
                 variant='dot'
                 size='xs'
@@ -3584,7 +2715,7 @@ export function CreatureSelectionOption(props: {
                 {props.creature.family_type}
               </Badge>
             )} */}
-            {/* <Badge
+              {/* <Badge
               variant='dot'
               size='xs'
               styles={{
@@ -3597,7 +2728,7 @@ export function CreatureSelectionOption(props: {
             >
               AC {props.creature.stats?.ac}
             </Badge> */}
-            {/* <Badge
+              {/* <Badge
               variant='dot'
               size='xs'
               styles={{
@@ -3610,87 +2741,32 @@ export function CreatureSelectionOption(props: {
             >
               {props.creature.stats?.hp.max} HP
             </Badge> */}
-          </Group>
-        </div>
-      </Group>
-      <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
-        <Box>
-          <TraitsDisplay
-            justify='flex-end'
-            size='xs'
-            traitIds={props.creature.traits ?? []}
-            rarity={props.creature.rarity}
-          />
-        </Box>
-        <Box w={props.includeOptions ? 80 : 50}></Box>
-      </Group>
-      <Button
-        size='xs'
-        px={5}
-        variant='subtle'
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: props.includeOptions ? 40 : 10,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          openDrawer({ type: 'creature', data: { id: props.creature.id } });
-        }}
-      >
-        Details
-      </Button>
-      {props.includeOptions && (
-        <Menu shadow='md' width={200}>
-          <Menu.Target>
-            <ActionIcon
-              size='sm'
-              variant='subtle'
-              color='gray.5'
-              radius='xl'
-              style={{
-                position: 'absolute',
-                top: 13,
-                right: 15,
-              }}
-              aria-label='Options'
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              <IconDots size='1rem' />
-            </ActionIcon>
-          </Menu.Target>
-
-          <Menu.Dropdown>
-            <Menu.Label>Options</Menu.Label>
-            <Menu.Item
-              leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onCopy?.(props.creature.id);
-              }}
-            >
-              Duplicate
-            </Menu.Item>
-
-            <Menu.Divider />
-
-            <Menu.Label>Danger zone</Menu.Label>
-            <Menu.Item
-              color='red'
-              leftSection={<IconTrash style={{ width: rem(14), height: rem(14) }} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                props.onDelete?.(props.creature.id);
-              }}
-            >
-              Delete
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      )}
-    </Group>
+            </Group>
+          </div>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={props.creature.traits ?? []}
+          rarity={props.creature.rarity}
+        />
+      }
+      selected={props.selected}
+      level={props.creature.level}
+      onClick={() =>
+        openDrawer({
+          type: 'creature',
+          data: { id: props.creature.id, onSelect: () => props.onClick(props.creature) },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.creature)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.creature.id)}
+      onOptionsCopy={() => props.onCopy?.(props.creature.id)}
+    />
   );
 }

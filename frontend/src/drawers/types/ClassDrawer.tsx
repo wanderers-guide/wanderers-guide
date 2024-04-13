@@ -13,6 +13,7 @@ import {
   Anchor,
   Badge,
   Box,
+  Button,
   Divider,
   Group,
   HoverCard,
@@ -46,8 +47,10 @@ import * as _ from 'lodash-es';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class } }) {
+export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class; onSelect?: () => void } }) {
   const id = props.data.id;
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _class_ } = useQuery({
     queryKey: [`find-class-${id}`, { id }],
@@ -71,6 +74,20 @@ export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class } 
             </Box>
           </Group>
           <TraitsDisplay traitIds={[]} rarity={class_.rarity} />
+          {props.data.onSelect && (
+            <Button
+              variant='filled'
+              radius='xl'
+              mb={5}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onSelect?.();
+                openDrawer(null);
+              }}
+            >
+              Select Class
+            </Button>
+          )}
         </Group>
       )}
     </>

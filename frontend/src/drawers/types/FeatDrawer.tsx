@@ -20,6 +20,7 @@ import {
   Anchor,
   useMantineTheme,
   ThemeIcon,
+  Button,
 } from '@mantine/core';
 import { IconCheck, IconZoomCheck, IconX, IconQuestionMark } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -30,8 +31,10 @@ import { ReactNode } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 
-export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock } }) {
+export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _feat } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
@@ -66,7 +69,22 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
               <ActionSymbol cost={feat.actions} size={'2.1rem'} />
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
+          {props.data.onSelect ? (
+            <Button
+              variant='filled'
+              radius='xl'
+              mb={5}
+              size='compact-sm'
+              onClick={() => {
+                props.data.onSelect?.();
+                openDrawer(null);
+              }}
+            >
+              Select {type}
+            </Button>
+          ) : (
+            <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
+          )}
         </Group>
       )}
     </>
