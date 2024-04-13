@@ -116,7 +116,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <RichText ta='justify' storeID='CHARACTER'>
+                <RichText ta='justify' store='CHARACTER'>
                   {`If you have resistance to a type of damage, each time you take that type of damage, reduce the amount
                   of damage you take by the listed number (to a minimum of 0 damage). \n\n If you have more than one type of
                   resistance that would apply to the same instance of damage, use only the highest applicable resistance
@@ -185,7 +185,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <RichText ta='justify' storeID='CHARACTER'>
+                <RichText ta='justify' store='CHARACTER'>
                   {`If you have a weakness to a certain type of damage or damage from a certain source, that type of
                   damage is extra effective against you. Whenever you would take that type of damage, increase the
                   damage you take by the value of the weakness. For instance, if you are dealt 2d6 fire damage and have
@@ -256,7 +256,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <RichText ta='justify' storeID='CHARACTER'>
+                <RichText ta='justify' store='CHARACTER'>
                   {`When you have immunity to a specific type of damage, you ignore all damage of that type. If you have
                   immunity to a specific condition or type of effect, you can't be affected by that condition or any
                   effect of that type. You can still be targeted by an ability that includes an effect or condition you

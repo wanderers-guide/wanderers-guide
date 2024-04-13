@@ -122,7 +122,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' storeID='CHARACTER'>
+            <RichText ta='justify' store='CHARACTER'>
               {getProfDescription(props.data.variableName)}
             </RichText>
           </Accordion.Panel>

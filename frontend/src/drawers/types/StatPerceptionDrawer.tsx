@@ -167,7 +167,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <RichText ta='justify' storeID='CHARACTER'>
+                      <RichText ta='justify' store='CHARACTER'>
                         A precise sense is one that can be used to perceive the world in nuanced detail. The only way to
                         target a creature without having drawbacks is to use a precise sense. You can usually detect a
                         creature automatically with a precise sense unless that creature is hiding or obscured by the
@@ -253,7 +253,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <RichText ta='justify' storeID='CHARACTER'>
+                      <RichText ta='justify' store='CHARACTER'>
                         An imprecise sense can't detect the full range of detail that a precise sense can. You can
                         usually sense a creature automatically with an imprecise sense, but it has the hidden condition
                         instead of the observed condition. It might be undetected by you if it's using Stealth or is in
@@ -341,7 +341,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <RichText ta='justify' storeID='CHARACTER'>
+                      <RichText ta='justify' store='CHARACTER'>
                         A vague sense is one that can alert you that something is there but isn't useful for zeroing in
                         on it to determine exactly what it is. At best, a vague sense can be used to detect the presence
                         of an unnoticed creature, making it undetected. Even then, the vague sense isn't sufficient to
@@ -404,7 +404,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' storeID='CHARACTER'>
+            <RichText ta='justify' store='CHARACTER'>
               An individual's Perception measures their ability to notice things, search for what's hidden, and tell
               whether something about a situation is suspicious.
             </RichText>

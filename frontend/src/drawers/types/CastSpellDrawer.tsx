@@ -307,7 +307,7 @@ export function CastSpellDrawerContent(props: {
           </IndentedText>
         )}
         {true && <Divider />}
-        <RichText ta='justify' storeID='CHARACTER' py={5}>
+        <RichText ta='justify' store='CHARACTER' py={5}>
           {spell.description}
         </RichText>
 

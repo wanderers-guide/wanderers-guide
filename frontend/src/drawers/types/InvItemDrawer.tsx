@@ -194,7 +194,7 @@ export function InvItemDrawerContent(props: {
         )}
 
         <Divider />
-        <RichText ta='justify' storeID='CHARACTER' py={5}>
+        <RichText ta='justify' store='CHARACTER' py={5}>
           {invItem.item.description}
         </RichText>
 
@@ -773,7 +773,7 @@ function InvItemSections(props: {
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' storeID='CHARACTER'>
+                <RichText ta='justify' fz='xs' store='CHARACTER'>
                   {groupDesc?.description}
                 </RichText>
               </HoverCard.Dropdown>

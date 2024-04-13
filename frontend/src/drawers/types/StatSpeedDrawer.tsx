@@ -87,7 +87,7 @@ export function StatSpeedDrawerContent(props: { data: {} }) {
 
   return (
     <>
-      <RichText ta='justify' storeID='CHARACTER' pb={10}>
+      <RichText ta='justify' store='CHARACTER' pb={10}>
         Speed is the distance an individual can move using a single action, measured in feet. There are various kinds of
         speeds, allowing one to easily fly, swim, or dig, but the most common speed is for walking normally. Penalties
         to a speed can decrease it to a minimum of 5 feet.

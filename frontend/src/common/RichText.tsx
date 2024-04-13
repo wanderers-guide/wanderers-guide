@@ -16,7 +16,7 @@ import _ from 'lodash-es';
 interface RichTextProps extends TextProps {
   children: any;
   conditionBlacklist?: string[];
-  storeID?: StoreID;
+  store?: StoreID;
 }
 
 export default function RichText(props: RichTextProps) {
@@ -30,8 +30,8 @@ export default function RichText(props: RichTextProps) {
     return null;
   }
 
-  if (convertedChildren && props.storeID) {
-    convertedChildren = compileExpressions(props.storeID, convertedChildren, true);
+  if (convertedChildren && props.store) {
+    convertedChildren = compileExpressions(props.store, convertedChildren, true);
   }
 
   // Convert action symbol text of abbr to code markdown (then convert it back)

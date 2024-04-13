@@ -113,7 +113,7 @@ export function StatAcDrawerContent(props: { data: {} }) {
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' storeID='CHARACTER'>
+            <RichText ta='justify' store='CHARACTER'>
               Armor Class represents how difficult this individual is to hit and damage in combat. This metric is the
               combination of their ability to dodge, their natural toughness, and the protection provided by their
               armor.

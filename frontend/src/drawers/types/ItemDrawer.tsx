@@ -197,7 +197,7 @@ export function ItemDrawerContent(props: {
           <TraitsDisplay traitIds={item.traits ?? []} rarity={item.rarity} archaic={isItemArchaic(item)} interactable />
         </Box>
 
-        <MiscItemSections item={item} storeID={storeID} openDrawer={openDrawer} />
+        <MiscItemSections item={item} store={storeID} openDrawer={openDrawer} />
 
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
@@ -525,7 +525,7 @@ function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: Set
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' storeID={props.storeID}>
+                <RichText ta='justify' fz='xs' store={props.storeID}>
                   {groupDesc?.description}
                 </RichText>
               </HoverCard.Dropdown>

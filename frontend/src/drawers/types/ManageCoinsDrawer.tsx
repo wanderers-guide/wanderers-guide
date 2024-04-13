@@ -200,7 +200,7 @@ export function ManageCoinsDrawerContent(props: {
             </Group>
           </Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' storeID='CHARACTER' mr={10}>
+            <RichText ta='justify' store='CHARACTER' mr={10}>
               {`There are four common types of coins, each standardized in weight and value.\n- The copper piece (cp) is worth
           one-tenth of a silver piece.\n- The silver piece (sp) is the standard unit of currency. Each silver piece is a
           standard weight of silver and is typically accepted by any merchant or kingdom no matter where it was minted.
@@ -212,7 +212,7 @@ export function ManageCoinsDrawerContent(props: {
             {isPlayingStarfinder() && (
               <>
                 <Divider my={10} />
-                <RichText ta='justify' storeID='CHARACTER' mr={10}>
+                <RichText ta='justify' store='CHARACTER' mr={10}>
                   {`The standard currency in Starfinder is the credit, and all items in this document are priced in credits.
                 In Pathfinder Second Edition, the standard currency is typically in gold pieces (gp). The conversion
                 rate between credits and gp is that 10 credits = 1 gp.`}
@@ -230,7 +230,7 @@ export function ManageCoinsDrawerContent(props: {
             </Group>
           </Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' storeID='CHARACTER'>
+            <RichText ta='justify' store='CHARACTER'>
               {`Art objects, gems, and raw materials (such
           as those used for the ${convertToHardcodedLink('action', 'Craft')} activity) can be used much like currency: you can sell them for the same Price you
           can buy them.`}

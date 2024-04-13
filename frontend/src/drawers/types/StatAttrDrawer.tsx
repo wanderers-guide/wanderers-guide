@@ -175,7 +175,7 @@ export function StatAttrDrawerContent(props: { data: { attributeName?: string } 
       </Table>
 
       {props.data.attributeName && (
-        <RichText ta='justify' storeID='CHARACTER' pt={10}>
+        <RichText ta='justify' store='CHARACTER' pt={10}>
           {getAttributeDescription(props.data.attributeName)}
         </RichText>
       )}
