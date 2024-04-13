@@ -474,7 +474,8 @@ function SelectionFilteredSpell(props: {
             />
             <NumberInput
               size='xs'
-              placeholder='Casts/day'
+              placeholder='Casts'
+              rightSection={<Text fz='xs'>/day</Text>}
               min={0}
               max={10}
               w={90}
@@ -1009,7 +1010,8 @@ function SelectionPredefinedSpell(props: {
             />
             <NumberInput
               size='xs'
-              placeholder='Casts/day'
+              placeholder='Casts'
+              rightSection={<Text fz='xs'>/day</Text>}
               min={0}
               max={10}
               w={90}

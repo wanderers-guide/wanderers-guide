@@ -100,7 +100,7 @@ export default function Layout(props: { children: React.ReactNode }) {
             <Group gap={0} style={{ flex: 1 }} visibleFrom='md' justify='space-between' wrap='nowrap'>
               {width >= 1050 ? (
                 <Group gap={0}>
-                  <UnstyledButton
+                  {/* <UnstyledButton
                     component='a'
                     href={`/`}
                     className={classes.control}
@@ -109,7 +109,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                     }}
                   >
                     About
-                  </UnstyledButton>
+                  </UnstyledButton> */}
                   <UnstyledButton
                     component='a'
                     href={DISCORD_URL}

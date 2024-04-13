@@ -41,23 +41,10 @@ import {
   IconMap,
   IconBrandSafari,
   IconDots,
-  IconArrowRight,
-  IconUsers,
-  IconLogin2,
-  IconUserPlus,
-  IconUsersPlus,
-  IconPhoto,
-  IconArchive,
-  IconNorthStar,
-  IconMoonStars,
-  IconRocket,
-  IconSword,
   IconServer,
   IconFlagPlus,
   IconKey,
 } from '@tabler/icons-react';
-import { Character, ContentSource } from '@typing/content';
-import { uploadImage } from '@upload/image-upload';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
 import useRefresh from '@utils/use-refresh';
@@ -224,7 +211,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       });
                   }}
                 />
-                <Box py={8}></Box>
+                <Box py={8}>
+                  <Divider w={220} ml={15} />
+                </Box>
                 <LinksGroup
                   icon={IconMap}
                   label={'Adventure Paths'}
@@ -783,6 +772,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   radius='xl'
                   variant='transparent'
                   color='dark.3'
+                  style={{
+                    border: `1px solid ${theme.colors.dark[4]}`,
+                  }}
                   bg={theme.colors.dark[6]}
                 >
                   <IconUserCircle size='1.5rem' stroke={1.5} />

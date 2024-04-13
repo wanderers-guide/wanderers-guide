@@ -1,7 +1,7 @@
 import { SelectContentButton } from '@common/select/SelectContent';
 import { Spell } from '@typing/content';
 import { OperationWrapper } from '../Operations';
-import { Group, NumberInput, SegmentedControl, Stack, TextInput } from '@mantine/core';
+import { Group, NumberInput, SegmentedControl, Stack, TextInput, Text } from '@mantine/core';
 import { useState } from 'react';
 import { useDidUpdate } from '@mantine/hooks';
 import { GiveSpellData } from '@typing/operations';
@@ -117,7 +117,8 @@ export function GiveSpellOperation(props: {
             />
             <NumberInput
               size='xs'
-              placeholder='Casts/day'
+              placeholder='Casts'
+              rightSection={<Text fz='xs'>/day</Text>}
               min={0}
               max={10}
               w={90}

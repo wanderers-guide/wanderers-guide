@@ -10,6 +10,7 @@ import {
   ScrollArea,
   Stack,
   Stepper,
+  StepperProps,
   Text,
   rem,
   useMantineTheme,
@@ -29,7 +30,6 @@ import { useRecoilState } from 'recoil';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
 import { getCachedPublicUser } from '@auth/user-manager';
-import { getAllAncestryTraitVariables, getAllClassTraitVariables, getVariable } from '@variables/variable-manager';
 
 export function Component() {
   setPageTitle(`Builder`);
@@ -154,36 +154,36 @@ export function Component() {
                 variant='filled'
                 color='gray'
                 aria-label='Next Page'
-                radius='xl'
-                size='xl'
+                radius={60}
+                size={60}
                 style={{
                   border: '1px solid ' + theme.colors['dark'][6],
                   position: 'absolute',
                   top: '45%',
-                  right: -70,
+                  right: -100,
                   visibility: active === 2 ? 'hidden' : 'visible',
                 }}
                 onClick={() => handleStepChange(active + 1)}
                 disabled={active === 1 && !isPlayable(character)}
               >
-                <IconArrowRight style={{ width: '100%', height: '100%' }} stroke={2} />
+                <IconArrowRight size='1.7rem' stroke={2} />
               </ActionIcon>
               <ActionIcon
                 variant='filled'
                 color='gray'
                 aria-label='Previous Page'
-                radius='xl'
-                size='xl'
+                radius={60}
+                size={60}
                 style={{
                   border: '1px solid ' + theme.colors['dark'][6],
                   position: 'absolute',
                   top: '45%',
-                  left: -70,
+                  left: -100,
                   visibility: active === 0 ? 'hidden' : 'visible',
                 }}
                 onClick={() => handleStepChange(active - 1)}
               >
-                <IconArrowLeft style={{ width: '100%', height: '100%' }} stroke={2} />
+                <IconArrowLeft size='1.7rem' stroke={2} />
               </ActionIcon>
             </>
           )}
@@ -191,8 +191,9 @@ export function Component() {
             <Stepper
               active={active}
               onStepClick={setActive}
-              iconSize={32}
-              size={isCharacterBuilderMobile() ? 'xs' : undefined}
+              iconSize={isCharacterBuilderMobile() ? undefined : 40}
+              size={isCharacterBuilderMobile() ? 'xs' : 'lg'}
+              wrap={false}
             >
               <Stepper.Step
                 label='Home'

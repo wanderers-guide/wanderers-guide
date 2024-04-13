@@ -12,6 +12,7 @@ import {
   Title,
   Tooltip,
   ScrollArea,
+  Autocomplete,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { createDefaultOperation } from '@operations/operation-utils';
@@ -55,6 +56,7 @@ import { GiveSpellSlotOperation } from './spell/GiveSpellSlotOperation';
 import { DefineCastingSourceOperation } from './spell/DefineCastingSourceOperation';
 import { GiveItemOperation } from './item/GiveItemOperation';
 import { GiveTraitOperation } from './trait/GiveTraitOperation';
+import useRefresh from '@utils/use-refresh';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -134,7 +136,8 @@ export function OperationSection(props: {
   operations?: Operation[];
   onChange: (operations: Operation[]) => void;
 }) {
-  const selectRef = useRef<HTMLInputElement>(null);
+  const [searchValue, setSearchValue] = useState('');
+  const [displaySelect, refreshSelect] = useRefresh();
 
   useDidUpdate(() => {
     // Make sure all the variables are created
@@ -149,63 +152,67 @@ export function OperationSection(props: {
     <Stack gap={10}>
       <Group justify='space-between'>
         <Box>{props.title}</Box>
-        <Select
-          ref={selectRef}
-          variant='filled'
-          size='xs'
-          placeholder='Add Operation'
-          data={[
-            { value: 'select', label: 'Selection' },
-            { value: 'conditional', label: 'Conditional' },
-            { value: 'adjValue', label: 'Adjust Value' },
-            { value: 'addBonusToValue', label: 'Add Bonus to Value' },
-            { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
-            { value: 'giveLanguage', label: 'Give Language' },
-            { value: 'giveSpell', label: 'Give Spell' },
-            { value: 'giveSpellSlot', label: 'Give Spell Slots' },
-            { value: 'defineCastingSource', label: 'Define Casting Source' },
-            { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
-            {
-              value: 'giveAbilityBlock:::physical-feature',
-              label: 'Give Physical Feature',
-            },
-            { value: 'giveItem', label: 'Give Item' },
-            { value: 'giveTrait', label: 'Give Trait' },
-            { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
-            {
-              value: 'giveAbilityBlock:::class-feature',
-              label: 'Give Class Feature',
-            },
-            { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
-            { value: 'createValue', label: 'Create Value' },
-            { value: 'setValue', label: 'Override Value' },
-            { value: 'injectSelectOption', label: 'Inject Select Option' }, // TODO, run at create create variable time.
-            // - Store in a variable with stringified JSON of the selection option. Inject it at execution time.
-            { value: 'RESO', label: 'RESO' }, // TODO
-          ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
-          searchValue={''}
-          value={null}
-          onChange={(value) => {
-            if (value) {
-              let abilBlockType = null;
-              if (value.includes('giveAbilityBlock:::')) {
-                abilBlockType = value.split(':::')[1];
-                value = 'giveAbilityBlock';
-              }
-
-              const newOp = createDefaultOperation(value as OperationType);
-
-              if (newOp) {
-                if (abilBlockType) {
-                  (newOp as OperationGiveAbilityBlock).data.type = abilBlockType as AbilityBlockType;
+        {displaySelect && (
+          <Select
+            variant='filled'
+            size='xs'
+            placeholder='Add Operation'
+            data={[
+              { value: 'select', label: 'Selection' },
+              { value: 'conditional', label: 'Conditional' },
+              { value: 'adjValue', label: 'Adjust Value' },
+              { value: 'addBonusToValue', label: 'Add Bonus to Value' },
+              { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
+              { value: 'giveLanguage', label: 'Give Language' },
+              { value: 'giveSpell', label: 'Give Spell' },
+              { value: 'giveSpellSlot', label: 'Give Spell Slots' },
+              { value: 'defineCastingSource', label: 'Define Casting Source' },
+              { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
+              {
+                value: 'giveAbilityBlock:::physical-feature',
+                label: 'Give Physical Feature',
+              },
+              { value: 'giveItem', label: 'Give Item' },
+              { value: 'giveTrait', label: 'Give Trait' },
+              { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
+              {
+                value: 'giveAbilityBlock:::class-feature',
+                label: 'Give Class Feature',
+              },
+              { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
+              { value: 'createValue', label: 'Create Value' },
+              { value: 'setValue', label: 'Override Value' },
+              { value: 'injectSelectOption', label: 'Inject Select Option' }, // TODO, run at create create variable time.
+              // - Store in a variable with stringified JSON of the selection option. Inject it at execution time.
+              { value: 'RESO', label: 'RESO' }, // TODO
+            ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
+            searchable
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+            value={null}
+            onChange={(value) => {
+              if (value) {
+                let abilBlockType = null;
+                if (value.includes('giveAbilityBlock:::')) {
+                  abilBlockType = value.split(':::')[1];
+                  value = 'giveAbilityBlock';
                 }
 
-                props.onChange([...(props.operations ?? []), newOp]);
-                selectRef.current?.blur();
+                const newOp = createDefaultOperation(value as OperationType);
+
+                if (newOp) {
+                  if (abilBlockType) {
+                    (newOp as OperationGiveAbilityBlock).data.type = abilBlockType as AbilityBlockType;
+                  }
+
+                  props.onChange([...(props.operations ?? []), newOp]);
+                  setSearchValue('');
+                  refreshSelect();
+                }
               }
-            }
-          }}
-        />
+            }}
+          />
+        )}
       </Group>
       <Stack gap={10}>
         {(props.operations ?? []).map((op, index) => (

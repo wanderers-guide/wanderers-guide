@@ -122,6 +122,15 @@ const router = createBrowserRouter([
   },
 ]);
 
+// Remove dumb warning (errors) caused by Mantine in dev
+const consoleError = console.error;
+console.error = function (message, ...args) {
+  if (/validateDOMNesting|changing an uncontrolled input/.test(message)) {
+    return;
+  }
+  consoleError(message, ...args);
+};
+
 const root = createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <StrictMode>
