@@ -19,6 +19,7 @@ import {
   SimpleGrid,
   Stack,
   Tabs,
+  Title,
   rem,
   useMantineTheme,
 } from '@mantine/core';
@@ -71,6 +72,8 @@ import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
 import { GiRollingDices } from 'react-icons/gi';
 import { displayComingSoon } from '@utils/notifications';
+
+// Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
 
 export function Component(props: {}) {

@@ -16,6 +16,7 @@ import { RecoilRoot } from 'recoil';
 import App from './App.tsx';
 import './index.css';
 import { ErrorPage } from './pages/ErrorPage.tsx';
+import { MantineProvider } from '@mantine/core';
 
 const queryClient = new QueryClient();
 
@@ -134,10 +135,12 @@ console.error = function (message, ...args) {
 const root = createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RecoilRoot>
-        <RouterProvider router={router} />
-      </RecoilRoot>
-    </QueryClientProvider>
+    <MantineProvider defaultColorScheme='dark'>
+      <QueryClientProvider client={queryClient}>
+        <RecoilRoot>
+          <RouterProvider router={router} />
+        </RecoilRoot>
+      </QueryClientProvider>
+    </MantineProvider>
   </StrictMode>
 );

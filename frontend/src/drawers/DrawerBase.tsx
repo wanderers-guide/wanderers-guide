@@ -1,11 +1,10 @@
 import { drawerState } from '@atoms/navAtoms';
 import { convertToContentType } from '@content/content-utils';
-import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, ScrollArea, Text, Title } from '@mantine/core';
+import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useElementSize, useLocalStorage } from '@mantine/hooks';
-import { openContextModal } from '@mantine/modals';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { lazy, useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
@@ -84,16 +83,27 @@ export default function DrawerBase() {
     }, 1);
   };
 
+  const opened = !!_drawer;
   return (
     <>
       <Drawer
-        opened={!!_drawer}
+        opened={opened}
         onClose={handleDrawerClose}
         title={
           <Box ref={ref}>
             <Group gap={12} justify='space-between'>
               <Box style={{ flex: 1 }}>
-                <DrawerTitle />
+                {opened && (
+                  <Suspense
+                    fallback={
+                      <Group wrap='nowrap' gap={10}>
+                        <Loader size='sm' />
+                      </Group>
+                    }
+                  >
+                    <DrawerTitle />
+                  </Suspense>
+                )}
                 <Divider />
               </Box>
               {!!_drawer?.extra?.history?.length ? (
@@ -146,11 +156,15 @@ export default function DrawerBase() {
               overflowX: 'hidden',
             }}
           >
-            <DrawerContent
-              onMetadataChange={(openedDict) => {
-                saveMetadata(openedDict);
-              }}
-            />
+            {opened && (
+              <Suspense fallback={<div></div>}>
+                <DrawerContent
+                  onMetadataChange={(openedDict) => {
+                    saveMetadata(openedDict);
+                  }}
+                />
+              </Suspense>
+            )}
           </Box>
         </ScrollArea>
 

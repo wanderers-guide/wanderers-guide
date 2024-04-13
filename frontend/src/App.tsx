@@ -24,15 +24,23 @@ import { ImageOption } from './typing';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { resetContentStore } from '@content/content-store';
+import SelectContentModal from '@common/select/SelectContent';
+import ConditionModal from '@modals/ConditionModal';
+import CreateDicePresetModal from '@modals/CreateDicePresetModal';
+import SelectIconModal from '@modals/SelectIconModal';
+import SelectImageModal from '@modals/SelectImageModal';
+import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
+import UpdateNotePageModal from '@modals/UpdateNotePageModal';
 
-const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
-const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
-const SelectIconModal = lazy(() => import('@modals/SelectIconModal'));
-const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterPortraitModal'));
-//const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
-const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
-const ConditionModal = lazy(() => import('@modals/ConditionModal'));
-const CreateDicePresetModal = lazy(() => import('@modals/CreateDicePresetModal'));
+// TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
+// const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
+// const SelectImageModal = lazy(() => import('@modals/SelectImageModal'));
+// const SelectIconModal = lazy(() => import('@modals/SelectIconModal'));
+// const UpdateCharacterPortraitModal = lazy(() => import('@modals/UpdateCharacterPortraitModal'));
+// const AddNewLoreModal = lazy(() => import('@modals/AddNewLoreModal'));
+// const UpdateNotePageModal = lazy(() => import('@modals/UpdateNotePageModal'));
+// const ConditionModal = lazy(() => import('@modals/ConditionModal'));
+// const CreateDicePresetModal = lazy(() => import('@modals/CreateDicePresetModal'));
 
 const modals = {
   selectContent: SelectContentModal,
