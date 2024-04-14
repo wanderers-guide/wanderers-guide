@@ -1,13 +1,14 @@
 import { drawerState } from '@atoms/navAtoms';
 import { convertToContentType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
-import { useElementSize, useLocalStorage } from '@mantine/hooks';
+import { useDidUpdate, useElementSize, useLocalStorage } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import { Suspense, lazy, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
+import useRefresh from '@utils/use-refresh';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -42,6 +43,7 @@ export default function DrawerBase() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { ref, height: titleHeight } = useElementSize();
+  const [displayTitle, refreshTitle] = useRefresh();
   const [feedbackData, setFeedbackData] = useState<{ type: ContentType; data: { id?: number } } | null>(null);
 
   const viewport = useRef<HTMLDivElement>(null);
@@ -83,6 +85,10 @@ export default function DrawerBase() {
     }, 1);
   };
 
+  useDidUpdate(() => {
+    refreshTitle();
+  }, [_drawer]);
+
   const opened = !!_drawer;
   return (
     <>
@@ -90,47 +96,51 @@ export default function DrawerBase() {
         opened={opened}
         onClose={handleDrawerClose}
         title={
-          <Box ref={ref}>
-            <Group gap={12} justify='space-between'>
-              <Box style={{ flex: 1 }}>
-                {opened && (
-                  <Suspense
-                    fallback={
-                      <Group wrap='nowrap' gap={10}>
-                        <Loader size='sm' />
-                      </Group>
-                    }
-                  >
-                    <DrawerTitle />
-                  </Suspense>
-                )}
-                <Divider />
+          <>
+            {displayTitle && (
+              <Box ref={ref}>
+                <Group gap={12} justify='space-between'>
+                  <Box style={{ flex: 1 }}>
+                    {opened && (
+                      <Suspense
+                        fallback={
+                          <Group wrap='nowrap' gap={10}>
+                            <Loader size='sm' />
+                          </Group>
+                        }
+                      >
+                        <DrawerTitle />
+                      </Suspense>
+                    )}
+                    <Divider />
+                  </Box>
+                  {!!_drawer?.extra?.history?.length ? (
+                    <ActionIcon
+                      variant='light'
+                      color='gray.4'
+                      radius='xl'
+                      size='md'
+                      onClick={handleDrawerGoBack}
+                      aria-label='Go back to previous drawer'
+                    >
+                      <IconArrowLeft size='1.2rem' stroke={1.5} />
+                    </ActionIcon>
+                  ) : (
+                    <ActionIcon
+                      variant='light'
+                      color='gray.4'
+                      radius='xl'
+                      size='md'
+                      onClick={handleDrawerClose}
+                      aria-label='Close drawer'
+                    >
+                      <IconX size='1.2rem' stroke={1.5} />
+                    </ActionIcon>
+                  )}
+                </Group>
               </Box>
-              {!!_drawer?.extra?.history?.length ? (
-                <ActionIcon
-                  variant='light'
-                  color='gray.4'
-                  radius='xl'
-                  size='md'
-                  onClick={handleDrawerGoBack}
-                  aria-label='Go back to previous drawer'
-                >
-                  <IconArrowLeft size='1.2rem' stroke={1.5} />
-                </ActionIcon>
-              ) : (
-                <ActionIcon
-                  variant='light'
-                  color='gray.4'
-                  radius='xl'
-                  size='md'
-                  onClick={handleDrawerClose}
-                  aria-label='Close drawer'
-                >
-                  <IconX size='1.2rem' stroke={1.5} />
-                </ActionIcon>
-              )}
-            </Group>
-          </Box>
+            )}
+          </>
         }
         withCloseButton={false}
         position='right'

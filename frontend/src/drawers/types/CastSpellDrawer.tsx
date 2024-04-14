@@ -311,7 +311,7 @@ export function CastSpellDrawerContent(props: {
           {spell.description}
         </RichText>
 
-        {spell.heightened && spell.heightened.text && (
+        {spell.heightened && spell.heightened.text && spell.heightened.text.length > 0 && (
           <Box>
             <Divider />
             {spell.heightened.text.map((text, index) => (
