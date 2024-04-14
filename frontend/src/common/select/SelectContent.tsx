@@ -1985,6 +1985,7 @@ export function ClassFeatureSelectionOption(props: {
           skill={props.classFeature.meta_data?.skill}
         />
       }
+      level={props.classFeature.level}
       showButton={props.showButton}
       selected={props.selected}
       onClick={() =>

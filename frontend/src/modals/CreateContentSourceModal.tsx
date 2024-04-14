@@ -91,6 +91,7 @@ import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import Paginator from '@common/Paginator';
+import TraitsDisplay from '@common/TraitsDisplay';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -888,6 +889,15 @@ function ContentList<
                       </Box>
                     </Group>
                   }
+                  rightSection={
+                    <TraitsDisplay
+                      justify='flex-end'
+                      size='xs'
+                      traitIds={record.traits ?? []}
+                      rarity={record.rarity}
+                      skill={record.meta_data?.skill}
+                    />
+                  }
                   onClick={() => {
                     setOpenedId(record.id);
                   }}
@@ -902,6 +912,7 @@ function ContentList<
                       extra: { addToHistory: true },
                     });
                   }}
+                  level={record.level ?? record.rank}
                   includeOptions
                   onOptionsCopy={async () => {
                     setLoading(true);
