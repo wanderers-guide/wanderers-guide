@@ -135,6 +135,9 @@ export function SetValueInput(props: {
     );
   } else if (props.variableType === 'prof') {
     const value = props.value as ProficiencyValue;
+    if (!value.value) {
+      value.value = 'U';
+    }
 
     return (
       <>

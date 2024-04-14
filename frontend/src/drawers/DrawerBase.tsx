@@ -146,11 +146,12 @@ export default function DrawerBase() {
             paddingRight: 2,
           },
         }}
-        transitionProps={{ duration: 150 }}
+        transitionProps={{ duration: 200 }}
       >
         {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
         {/* This "fix" will still have the bug on titles that are multiline */}
-        <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={14} scrollbars='y'>
+
+        <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={16} scrollbars='y'>
           <Box
             pt={2}
             style={{

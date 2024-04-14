@@ -1522,6 +1522,7 @@ export function GenericSelectionOption(props: {
         buttonTitle='Details'
         buttonProps={{
           variant: 'subtle',
+          size: 'compact-xs',
         }}
         onButtonClick={() => {
           openDrawer({
@@ -1543,8 +1544,11 @@ export function GenericSelectionOption(props: {
   // @ts-ignore
   const variable = getVariable('CHARACTER', props.option.variable);
 
-  // It's some kind of variable selection option that's not a proficiency
-  if (variable?.type !== 'prof') {
+  // @ts-ignore
+  console.log('variable', variable, '', props.option.variable);
+
+  // It's some kind of variable selection option that's not a prof or a prof but without an attribute
+  if (variable?.type !== 'prof' || !variable.value.attribute) {
     return (
       <BaseSelectionOption
         leftSection={
@@ -1750,8 +1754,8 @@ export function BaseSelectionOption(props: {
                 >
                   <Button
                     disabled={props.disableButton}
-                    size='compact-sm'
-                    variant='light'
+                    size='compact-xs'
+                    variant='filled'
                     onClick={(e) => {
                       e.stopPropagation();
                       props.onButtonClick?.();

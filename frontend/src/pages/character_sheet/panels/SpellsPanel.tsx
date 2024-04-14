@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurButton from '@common/BlurButton';
 import TokenSelect from '@common/TokenSelect';
 import { SpellSelectionOption } from '@common/select/SelectContent';
-import { collectCharacterSpellcasting } from '@content/collect-content';
+import { collectCharacterSpellcasting, getFocusPoints } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   useMantineTheme,
@@ -187,7 +187,6 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                       spellIds={charData.focus.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                       allSpells={allSpells}
                       type='FOCUS'
-                      extra={{ focusPoints: charData.focus_points }}
                       hasFilters={!!searchQuery.trim()}
                     />
                   )}
@@ -240,10 +239,6 @@ function SpellList(props: {
   extra?: {
     slots?: SpellSlot[];
     innates?: SpellInnateEntry[];
-    focusPoints?: {
-      current: number;
-      max: number;
-    };
   };
   hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
@@ -680,11 +675,13 @@ function SpellList(props: {
     );
   }
 
-  if (props.type === 'FOCUS' && props.source && props.extra?.focusPoints) {
+  if (props.type === 'FOCUS' && props.source && character) {
     // If there are no spells to display, and there are filters, return null
     if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
       return null;
     }
+
+    const focusPoints = getFocusPoints(character, _.flatMap(spells));
 
     return (
       <Accordion.Item value={props.index}>
@@ -696,8 +693,8 @@ function SpellList(props: {
             <Box mr={10}>
               <SpellSlotSelect
                 text='Focus Points'
-                current={props.extra.focusPoints.max - props.extra.focusPoints.current}
-                max={props.extra.focusPoints.max}
+                current={focusPoints.max - focusPoints.current}
+                max={focusPoints.max}
                 onChange={(v) => {
                   setCharacter((c) => {
                     if (!c) return c;
@@ -710,7 +707,7 @@ function SpellList(props: {
                           focus_point_current: 0,
                           innate_casts: [],
                         }),
-                        focus_point_current: Math.max(props.extra!.focusPoints!.max - v, 0),
+                        focus_point_current: Math.max(focusPoints.max - v, 0),
                       },
                     };
                   });
@@ -776,7 +773,11 @@ function SpellList(props: {
                                 // Add focus trait in case it doesn't have it
                                 traits: _.uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
                               }}
-                              exhausted={!character?.spells?.focus_point_current}
+                              exhausted={
+                                character?.spells?.focus_point_current === undefined
+                                  ? false
+                                  : character.spells.focus_point_current <= 0
+                              }
                               tradition={props.source!.tradition}
                               attribute={props.source!.attribute}
                               onCastSpell={(cast: boolean) => {
@@ -1103,8 +1104,10 @@ function SpellSlotSelect(props: { current: number; max: number; onChange: (v: nu
     refreshDisplaySlots();
   }, [props.current, props.max]);
 
+  console.log('SpellSlotSelect', props.current, props.max, displaySlots);
+
   return (
-    <Box pt={3}>
+    <Box pt={3} style={{ zIndex: 100 }}>
       {displaySlots && (
         <HoverCard width={280} shadow='md'>
           <HoverCard.Target>

@@ -239,6 +239,7 @@ export function convertBackgroundOperationsIntoUI(
     backgroundOperations,
     MODE,
     writeDetails
+    //{ fullNames: true }
   );
 
   //console.log(attributes);

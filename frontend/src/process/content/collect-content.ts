@@ -16,6 +16,7 @@ import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getVariable } from '@variables/variable-manager';
 import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
+import { fetchContent, fetchContentById } from './content-store';
 
 export function collectCharacterAbilityBlocks(
   character: Character,
@@ -165,7 +166,7 @@ export function collectCharacterSpellcasting(character: Character) {
 
   // List of character's spells
   let list = _.cloneDeep(character.spells?.list ?? []);
-  let focus: { spell_id: number; source: string; rank: number }[] = [];
+  let focus: { spell_id: number; source: string; rank: number | undefined }[] = [];
   let innate: SpellInnateEntry[] = [];
   for (const strD of spellDatas) {
     const spellData = JSON.parse(strD) as GiveSpellData;
@@ -180,7 +181,7 @@ export function collectCharacterSpellcasting(character: Character) {
       focus.push({
         spell_id: spellData.spellId,
         source: spellData.castingSource ?? '',
-        rank: spellData.rank ?? 0,
+        rank: spellData.rank,
       });
     } else if (spellData.type === 'INNATE') {
       innate.push({
@@ -200,17 +201,11 @@ export function collectCharacterSpellcasting(character: Character) {
   // Fill current casts from saved character data
   innate = mergeInnateSpells(innate, character.spells?.innate_casts ?? []);
 
-  const maxFocusPoints = Math.min(focus.filter((f) => f.rank !== 0).length ?? 0, 3);
-
   return {
     slots,
     list,
     focus,
     innate,
-    focus_points: {
-      current: character.spells?.focus_point_current ?? maxFocusPoints,
-      max: maxFocusPoints,
-    },
     sources: castingSources
       .map((source) => {
         const parts = source.split(':::') || ['', '', '', ''];
@@ -227,6 +222,14 @@ export function collectCharacterSpellcasting(character: Character) {
         }
         return a.name.localeCompare(b.name);
       }),
+  };
+}
+
+export function getFocusPoints(character: Character, focusSpells: Record<string, any>[]) {
+  const maxFocusPoints = Math.min(focusSpells.filter((f) => f?.rank !== 0).length ?? 0, 3);
+  return {
+    current: character.spells?.focus_point_current ?? maxFocusPoints,
+    max: maxFocusPoints,
   };
 }
 

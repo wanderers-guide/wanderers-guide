@@ -599,7 +599,7 @@ export function getAllSkillVariables(id: StoreID): VariableProf[] {
       variables.push(variable);
     }
   }
-  return variables as VariableProf[];
+  return (variables as VariableProf[]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function getAllSaveVariables(id: StoreID): VariableProf[] {

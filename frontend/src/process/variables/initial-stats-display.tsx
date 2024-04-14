@@ -291,7 +291,7 @@ export function getDisplay(
         return (
           <>
             {listToLabel(
-              attrs.map((a) => (options?.fullNames ? a : compactLabels(a))),
+              attrs.map((a) => (options?.fullNames ? a : `${compactLabels(a)}`)),
               'or'
             )}
           </>
@@ -299,7 +299,7 @@ export function getDisplay(
       }
     } else {
       const name = variableNameToLabel(variable?.name ?? '');
-      return <>{options?.fullNames ? name : compactLabels(name)}</>;
+      return <>{options?.fullNames ? name : `${compactLabels(name)}`}</>;
     }
   }
 
