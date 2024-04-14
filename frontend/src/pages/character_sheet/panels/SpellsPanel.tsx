@@ -1073,7 +1073,6 @@ function SpellListEntry(props: {
           showButton={false}
           spell={props.spell}
           leftSection={props.leftSection}
-          onClick={() => {}}
           px={0}
         />
       </StatButton>

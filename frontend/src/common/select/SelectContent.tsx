@@ -2575,7 +2575,7 @@ export function ItemSelectionOption(props: {
 
 export function SpellSelectionOption(props: {
   spell: Spell;
-  onClick: (spell: Spell) => void;
+  onClick?: (spell: Spell) => void;
   selected?: boolean;
   includeOptions?: boolean;
   showButton?: boolean;
@@ -2618,16 +2618,22 @@ export function SpellSelectionOption(props: {
       level={!props.hideRank && props.spell.rank !== 0 ? props.spell.rank : undefined}
       disabled={props.exhausted}
       noBackground={props.noBackground}
-      onClick={() =>
-        openDrawer({
-          type: 'spell',
-          data: { id: props.spell.id, onSelect: props.showButton ? () => props.onClick(props.spell) : undefined },
-          extra: { addToHistory: true },
-        })
+      onClick={
+        props.onClick
+          ? () =>
+              openDrawer({
+                type: 'spell',
+                data: {
+                  id: props.spell.id,
+                  onSelect: props.showButton ? () => props.onClick?.(props.spell) : undefined,
+                },
+                extra: { addToHistory: true },
+              })
+          : () => {}
       }
       buttonTitle='Select'
       disableButton={props.selected}
-      onButtonClick={() => props.onClick(props.spell)}
+      onButtonClick={props.onClick ? () => props.onClick?.(props.spell) : undefined}
       includeOptions={props.includeOptions}
       onOptionsDelete={props.onDelete ? () => props.onDelete?.(props.spell.id) : undefined}
       onOptionsCopy={props.onCopy ? () => props.onCopy?.(props.spell.id) : undefined}
