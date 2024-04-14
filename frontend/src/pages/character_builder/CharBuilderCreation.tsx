@@ -27,7 +27,7 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { useDebouncedValue, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
@@ -120,17 +120,20 @@ export function CharBuilderCreationInner(props: {
   const [character, setCharacter] = useRecoilState(characterState);
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
+  // Execute operations
   const [operationResults, setOperationResults] = useState<OperationResultPackage>();
-
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!character || executingOperations.current) return;
-    executingOperations.current = true;
-    executeCharacterOperations(character, props.content, 'CHARACTER-BUILDER').then((results) => {
-      setOperationResults(results);
-      executingOperations.current = false;
-    });
-  }, [character, props.content]);
+    setTimeout(() => {
+      if (!character || executingOperations.current) return;
+      executingOperations.current = true;
+      executeCharacterOperations(character, props.content, 'CHARACTER-BUILDER').then((results) => {
+        setOperationResults(results);
+        executingOperations.current = false;
+      });
+    }, 1);
+  }, [character]);
 
   useEffect(() => {
     setTimeout(() => {

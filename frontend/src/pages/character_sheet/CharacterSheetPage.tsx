@@ -200,8 +200,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!character || executingOperations.current) return;
-    executingOperations.current = true;
     setTimeout(() => {
+      if (!character || executingOperations.current) return;
+      executingOperations.current = true;
       executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
         if (character.variants?.proficiency_without_level) {
           setVariable('ALL', 'PROF_WITHOUT_LEVEL', true);
