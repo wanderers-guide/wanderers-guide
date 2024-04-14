@@ -1,37 +1,47 @@
 export function purchase(
   price: { cp?: number; sp?: number; gp?: number; pp?: number },
   coins: { cp: number; sp: number; gp: number; pp: number }
-) {
-  // Subtract the costs
-  let resultCp = coins.cp - (price.cp ?? 0);
-  let resultSp = coins.sp - (price.sp ?? 0);
-  let resultGp = coins.gp - (price.gp ?? 0);
-  let resultPp = coins.pp - (price.pp ?? 0);
+): { cp: number; sp: number; gp: number; pp: number } | null {
+  const { cp: priceCp = 0, sp: priceSp = 0, gp: priceGp = 0, pp: pricePp = 0 } = price;
 
-  // Fix negative values by converting from higher denominations
-  if (resultCp < 0) {
-    let neededSp = Math.ceil(Math.abs(resultCp) / 10);
-    resultSp -= neededSp;
-    resultCp += neededSp * 10;
-  }
-  if (resultSp < 0) {
-    let neededGp = Math.ceil(Math.abs(resultSp) / 10);
-    resultGp -= neededGp;
-    resultSp += neededGp * 10;
-  }
-  if (resultGp < 0) {
-    let neededPp = Math.ceil(Math.abs(resultGp) / 10);
-    resultPp -= neededPp;
-    resultGp += neededPp * 10;
+  const totalPriceInCp = priceCp + priceSp * 10 + priceGp * 100 + pricePp * 1000;
+
+  const updatedCoins = { ...coins };
+
+  let totalCoinsInCp = updatedCoins.cp + updatedCoins.sp * 10 + updatedCoins.gp * 100 + updatedCoins.pp * 1000;
+
+  if (totalCoinsInCp < totalPriceInCp) {
+    return null; // Not enough coins to make the purchase
   }
 
-  // Check for insufficient funds
-  if (resultCp < 0 || resultSp < 0 || resultGp < 0 || resultPp < 0) {
-    return null;
-  }
+  // Deduct the price from the total coins
+  totalCoinsInCp -= totalPriceInCp;
 
-  // Return the new coin amounts after purchase
-  return { cp: resultCp, sp: resultSp, gp: resultGp, pp: resultPp };
+  // Reconstruct the coin amounts to try and match the original amounts
+  const remainingPp = Math.min(coins.pp, Math.floor(totalCoinsInCp / 1000));
+  totalCoinsInCp -= remainingPp * 1000;
+
+  const remainingGp = Math.min(coins.gp, Math.floor(totalCoinsInCp / 100));
+  totalCoinsInCp -= remainingGp * 100;
+
+  const remainingSp = Math.min(coins.sp, Math.floor(totalCoinsInCp / 10));
+  totalCoinsInCp -= remainingSp * 10;
+
+  const remainingCp = totalCoinsInCp;
+
+  updatedCoins.pp = remainingPp;
+  updatedCoins.gp = remainingGp;
+  updatedCoins.sp = remainingSp;
+
+  // In the case of not finding a good match, it results in a big copper dump.
+  // Let's try to distribute the remaining copper to the other coins
+  const distribution = convertCpToCoins(remainingCp);
+  updatedCoins.pp += distribution.pp;
+  updatedCoins.gp += distribution.gp;
+  updatedCoins.sp += distribution.sp;
+  updatedCoins.cp = distribution.cp;
+
+  return updatedCoins;
 }
 
 export function priceToString(price?: { cp?: number; sp?: number; gp?: number; pp?: number }) {
@@ -65,4 +75,21 @@ export function convertToCp(price?: { cp?: number; sp?: number; gp?: number; pp?
 
 export function convertToGp(price?: { cp?: number; sp?: number; gp?: number; pp?: number }) {
   return Math.round((convertToCp(price) / 100) * 100) / 100;
+}
+
+export function convertCpToCoins(totalCp: number): { cp: number; sp: number; gp: number; pp: number } {
+  const coins = { cp: 0, sp: 0, gp: 0, pp: 0 };
+
+  coins.pp = Math.floor(totalCp / 1000);
+  totalCp %= 1000;
+
+  coins.gp = Math.floor(totalCp / 100);
+  totalCp %= 100;
+
+  coins.sp = Math.floor(totalCp / 10);
+  totalCp %= 10;
+
+  coins.cp = totalCp;
+
+  return coins;
 }

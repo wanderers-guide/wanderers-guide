@@ -1,4 +1,4 @@
-import { Text, TextInput, Stack, Button, Group, Modal, Title } from '@mantine/core';
+import { Text, TextInput, Stack, Button, Group, Modal, Title, Box } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
 import { Character, Inventory, Item } from '@typing/content';
 import * as _ from 'lodash-es';
@@ -29,7 +29,7 @@ export function BuyItemModal(props: {
         <Stack gap={0}>
           {convertToCp(props.item.price) > 0 && (
             <Group wrap='nowrap' gap={10}>
-              <Text>This item costs</Text>
+              <Text>This item costs: </Text>
               <CoinSection
                 cp={props.item.price?.cp}
                 sp={props.item.price?.sp}
@@ -42,18 +42,20 @@ export function BuyItemModal(props: {
           {resultingCoins ? (
             <>
               {convertToCp(props.item.price) > 0 && (
-                <Group gap={5}>
-                  <Text>Your resulting balance would be: </Text>
-                  <CoinSection
-                    cp={resultingCoins?.cp}
-                    sp={resultingCoins?.sp}
-                    gp={resultingCoins?.gp}
-                    pp={resultingCoins?.pp}
-                    justify='center'
-                  />
+                <Group gap={10}>
+                  <Text>Your balance will be: </Text>
+                  <Box>
+                    <CoinSection
+                      cp={resultingCoins?.cp}
+                      sp={resultingCoins?.sp}
+                      gp={resultingCoins?.gp}
+                      pp={resultingCoins?.pp}
+                      justify='center'
+                    />
+                  </Box>
                 </Group>
               )}
-              <Text>Are you sure you want to purchase this item?</Text>
+              <Text pt={10}>Are you sure you want to purchase this item?</Text>
             </>
           ) : (
             <Text>You do not have the funds to purchase this item.</Text>

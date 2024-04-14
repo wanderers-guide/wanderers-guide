@@ -126,7 +126,7 @@ export default function ManageSpellsModal(props: {
       size={props.type === 'SLOTS-AND-LIST' ? 'xl' : 'md'}
       keepMounted={false}
     >
-      <Stack style={{ position: 'relative' }} mx={10}>
+      <Stack style={{ position: 'relative' }} mx={10} h={500}>
         {props.type === 'LIST-ONLY' ? (
           <ListSection
             selectRank
@@ -486,6 +486,7 @@ const ListSection = (props: {
                 });
               }}
               showButton={false}
+              hideTraits={true}
               includeOptions={true}
             />
           ))}

@@ -341,7 +341,7 @@ export default function SelectContentModal({
         const filterValue = filterSelections[key];
         if (Array.isArray(value)) {
           if (Array.isArray(filterValue)) {
-            if (!value.every((val) => filterValue.includes(val))) {
+            if (!value.some((val) => filterValue.includes(val))) {
               return false;
             }
           } else {
@@ -1529,7 +1529,7 @@ export function GenericSelectionOption(props: {
             type: 'generic',
             data: {
               ...props.option._custom_select,
-              onSelect: () => props.onClick(props.option),
+              onSelect: props.showButton ? () => props.onClick(props.option) : undefined,
             },
             extra: { addToHistory: true },
           });
@@ -1888,7 +1888,7 @@ export function FeatSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'feat',
-          data: { id: props.feat.id, onSelect: () => props.onClick(props.feat) },
+          data: { id: props.feat.id, onSelect: props.showButton ? () => props.onClick(props.feat) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -1939,7 +1939,7 @@ export function ActionSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'action',
-          data: { id: props.action.id, onSelect: () => props.onClick(props.action) },
+          data: { id: props.action.id, onSelect: props.showButton ? () => props.onClick(props.action) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -1990,7 +1990,10 @@ export function ClassFeatureSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'class-feature',
-          data: { id: props.classFeature.id, onSelect: () => props.onClick(props.classFeature) },
+          data: {
+            id: props.classFeature.id,
+            onSelect: props.showButton ? () => props.onClick(props.classFeature) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2041,7 +2044,7 @@ export function HeritageSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'heritage',
-          data: { id: props.heritage.id, onSelect: () => props.onClick(props.heritage) },
+          data: { id: props.heritage.id, onSelect: props.showButton ? () => props.onClick(props.heritage) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2092,7 +2095,10 @@ export function PhysicalFeatureSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'physical-feature',
-          data: { id: props.physicalFeature.id, onSelect: () => props.onClick(props.physicalFeature) },
+          data: {
+            id: props.physicalFeature.id,
+            onSelect: props.showButton ? () => props.onClick(props.physicalFeature) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2143,7 +2149,7 @@ export function SenseSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'sense',
-          data: { id: props.sense.id, onSelect: () => props.onClick(props.sense) },
+          data: { id: props.sense.id, onSelect: props.showButton ? () => props.onClick(props.sense) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2260,7 +2266,7 @@ export function ClassSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'class',
-          data: { id: props.class_.id, onSelect: () => onSelect() },
+          data: { id: props.class_.id, onSelect: props.showButton ? () => onSelect() : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2407,7 +2413,7 @@ export function AncestrySelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'ancestry',
-          data: { id: props.ancestry.id, onSelect: () => onSelect() },
+          data: { id: props.ancestry.id, onSelect: props.showButton ? () => onSelect() : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2498,7 +2504,7 @@ export function BackgroundSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'background',
-          data: { id: props.background.id, onSelect: () => onSelect() },
+          data: { id: props.background.id, onSelect: props.showButton ? () => onSelect() : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2548,7 +2554,7 @@ export function ItemSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'item',
-          data: { id: props.item.id, onSelect: () => props.onClick(props.item) },
+          data: { id: props.item.id, onSelect: props.showButton ? () => props.onClick(props.item) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2573,6 +2579,7 @@ export function SpellSelectionOption(props: {
   selected?: boolean;
   includeOptions?: boolean;
   showButton?: boolean;
+  hideTraits?: boolean;
   leftSection?: React.ReactNode;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2602,7 +2609,9 @@ export function SpellSelectionOption(props: {
         </Group>
       }
       rightSection={
-        <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
+        props.hideTraits ? null : (
+          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
+        )
       }
       showButton={props.showButton}
       selected={props.selected}
@@ -2612,7 +2621,7 @@ export function SpellSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'spell',
-          data: { id: props.spell.id, onSelect: () => props.onClick(props.spell) },
+          data: { id: props.spell.id, onSelect: props.showButton ? () => props.onClick(props.spell) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2620,8 +2629,8 @@ export function SpellSelectionOption(props: {
       disableButton={props.selected}
       onButtonClick={() => props.onClick(props.spell)}
       includeOptions={props.includeOptions}
-      onOptionsDelete={() => props.onDelete?.(props.spell.id)}
-      onOptionsCopy={() => props.onCopy?.(props.spell.id)}
+      onOptionsDelete={props.onDelete ? () => props.onDelete?.(props.spell.id) : undefined}
+      onOptionsCopy={props.onCopy ? () => props.onCopy?.(props.spell.id) : undefined}
     />
   );
 }
@@ -2662,7 +2671,7 @@ export function TraitSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'trait',
-          data: { id: props.trait.id, onSelect: () => props.onClick(props.trait) },
+          data: { id: props.trait.id, onSelect: props.showButton ? () => props.onClick(props.trait) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2708,7 +2717,7 @@ export function LanguageSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'language',
-          data: { id: props.language.id, onSelect: () => props.onClick(props.language) },
+          data: { id: props.language.id, onSelect: props.showButton ? () => props.onClick(props.language) : undefined },
           extra: { addToHistory: true },
         })
       }
@@ -2813,7 +2822,7 @@ export function CreatureSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'creature',
-          data: { id: props.creature.id, onSelect: () => props.onClick(props.creature) },
+          data: { id: props.creature.id, onSelect: props.showButton ? () => props.onClick(props.creature) : undefined },
           extra: { addToHistory: true },
         })
       }
