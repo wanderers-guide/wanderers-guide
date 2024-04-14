@@ -225,7 +225,7 @@ export function Component(props: {}) {
                 </Group>
 
                 <Container pt={15}>
-                  <Paper w={`min(450px, 50vw)`} withBorder>
+                  <Paper w={`calc(min(450px, 50vw))`} withBorder>
                     <Text ta='center'>Detected Field Changes</Text>
 
                     <Stack gap={8} pb={8}>

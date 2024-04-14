@@ -835,7 +835,7 @@ export default function DiceRoller(props: {
                           </Group>
                         </Box>
                         <Box>
-                          <ScrollArea h={`min(40vh, 350px)`} scrollbars='y'>
+                          <ScrollArea h={`calc(min(40vh, 350px))`} scrollbars='y'>
                             {getPresetList()}
                           </ScrollArea>
                         </Box>
@@ -865,7 +865,7 @@ export default function DiceRoller(props: {
                             </Group>
                           </Box>
                           <Box>
-                            <ScrollArea h={`min(40vh, 350px)`} scrollbars='y' viewportRef={rollHistoryViewport}>
+                            <ScrollArea h={`calc(min(40vh, 350px))`} scrollbars='y' viewportRef={rollHistoryViewport}>
                               {getRollHistory()}
                             </ScrollArea>
                           </Box>
@@ -909,6 +909,7 @@ export default function DiceRoller(props: {
             marginTop: 15,
             width: '95%',
             height: '95%',
+            zIndex: OVERLAY_INDEX + 1,
           }}
         />
       </Box>

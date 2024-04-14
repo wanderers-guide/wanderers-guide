@@ -71,7 +71,7 @@ export function OperationWrapper(props: { children: React.ReactNode; title: stri
     });
 
   return (
-    <Container w={'min(700px, 100%)'}>
+    <Container w={'calc(min(700px, 100%))'}>
       <Paper
         py='xs'
         pl='xs'

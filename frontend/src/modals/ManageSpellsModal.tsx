@@ -126,7 +126,7 @@ export default function ManageSpellsModal(props: {
       size={props.type === 'SLOTS-AND-LIST' ? 'xl' : 'md'}
       keepMounted={false}
     >
-      <Stack style={{ position: 'relative' }} mx={10} h={500}>
+      <Stack style={{ position: 'relative' }} mx={10}>
         {props.type === 'LIST-ONLY' ? (
           <ListSection
             selectRank
@@ -172,7 +172,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
   const [displaySlots, refreshSlots] = useRefresh();
 
   return (
-    <ScrollArea pr={14} h={`min(80vh, ${EDIT_MODAL_HEIGHT}px)`} scrollbars='y'>
+    <ScrollArea pr={14} h={`calc(min(80vh, ${EDIT_MODAL_HEIGHT}px))`} scrollbars='y'>
       <Stack gap={10}>
         {Object.keys(props.slots).map((rank, index) => (
           <Box key={index}>
@@ -455,7 +455,7 @@ const ListSection = (props: {
           Add {isRituals ? 'Ritual' : 'Spell'}
         </Button>
       </Group>
-      <ScrollArea pr={14} h={`min(70vh, ${EDIT_MODAL_HEIGHT - 100}px)`} scrollbars='y'>
+      <ScrollArea h={`calc(min(70vh, ${EDIT_MODAL_HEIGHT - 100}px))`} scrollbars='y'>
         <Stack gap={0}>
           {props.spells.map((spell) => (
             <SpellSelectionOption

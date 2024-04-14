@@ -625,7 +625,7 @@ export default function SelectContentModal({
               top: 0,
               left: 0,
               backgroundColor: theme.colors.dark[7],
-              width: 'max(50%, 275px)',
+              width: 'calc(max(50%, 275px))',
               height: '100%',
               zIndex: 100,
 
