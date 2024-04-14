@@ -545,14 +545,14 @@ function SelectionFilteredLanguage(props: {
   onChange: (filters: OperationSelectFiltersLanguage) => void;
 }) {
   const [rarity, setRarity] = useState<Rarity | undefined>(props.filters?.rarity ?? undefined);
-  const [core, setCore] = useState<boolean | undefined>(props.filters?.core ?? undefined);
+  const [core, setCore] = useState<boolean | 'ANY'>(props.filters?.core ?? 'ANY');
 
   useEffect(() => {
     props.onChange({
       id: props.filters?.id ?? crypto.randomUUID(),
       type: 'LANGUAGE',
       rarity: rarity,
-      core: core,
+      core: core === 'ANY' ? undefined : core,
     });
   }, [rarity, core]);
 
@@ -585,10 +585,10 @@ function SelectionFilteredLanguage(props: {
       <Box>
         <SegmentedControl
           size='xs'
-          value={core === undefined ? 'ANY' : core ? 'CORE' : 'NON-CORE'}
+          value={core === 'ANY' ? 'ANY' : core ? 'CORE' : 'NON-CORE'}
           onChange={(value) => {
             if (value === 'ANY') {
-              setCore(undefined);
+              setCore('ANY');
             } else {
               setCore(value === 'CORE');
             }

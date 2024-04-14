@@ -25,6 +25,8 @@ import {
   ScrollArea,
   ColorInput,
   HoverCard,
+  List,
+  Anchor,
 } from '@mantine/core';
 import { useElementSize, useMediaQuery } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
@@ -53,13 +55,20 @@ import { useEffect, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { defineDefaultSources, fetchContentSources, resetContentStore } from '@content/content-store';
+import {
+  defineDefaultSources,
+  fetchContentSources,
+  findRequiredContentSources,
+  resetContentStore,
+} from '@content/content-store';
 import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
 import CustomOperationsModal from '@modals/CustomOperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
+import RichText from '@common/RichText';
+import { drawerState } from '@atoms/navAtoms';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -69,6 +78,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const isPhone = useMediaQuery(phoneQuery());
 
   const queryClient = useQueryClient();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
@@ -118,27 +128,70 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
     return character?.content_sources?.enabled?.includes(bookId);
   };
 
-  const setBookEnabled = (bookId: number, enabled: boolean) => {
-    setCharacter((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        content_sources: {
-          ...prev.content_sources,
-          enabled: enabled
-            ? _.uniq([...(prev.content_sources?.enabled ?? []), bookId])
-            : prev.content_sources?.enabled?.filter((id: number) => id !== bookId),
-        },
-      };
-    });
-    setTimeout(() => {
-      // Refresh data to repopulate with new book content
-      resetContentStore();
-      defineDefaultSources(character?.content_sources?.enabled ?? []);
-      refetch();
-      queryClient.invalidateQueries([`find-character-${character?.id}`]);
-      queryClient.invalidateQueries([`find-content-${character?.id}`]);
-    }, 500);
+  const setBooksEnabled = async (inputIds: number[], enabled: boolean) => {
+    const changeBooks = (bookIds: number[]) => {
+      // Update character content sources
+      setCharacter((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          content_sources: {
+            ...prev.content_sources,
+            enabled: enabled
+              ? _.uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
+              : prev.content_sources?.enabled?.filter((id: number) => !bookIds.includes(id)),
+          },
+        };
+      });
+      setTimeout(() => {
+        // Refresh data to repopulate with new book content
+        resetContentStore();
+        defineDefaultSources(character?.content_sources?.enabled ?? []);
+        refetch();
+        queryClient.invalidateQueries([`find-character-${character?.id}`]);
+        queryClient.invalidateQueries([`find-content-${character?.id}`]);
+      }, 500);
+    };
+
+    if (enabled) {
+      // Handle dependency logic
+      const requiredBooks = await findRequiredContentSources(
+        _.uniq([...(character?.content_sources?.enabled ?? []), ...inputIds])
+      );
+      if (requiredBooks.newSources.length > 0) {
+        modals.openConfirmModal({
+          title: <Title order={3}>Enable Dependencies</Title>,
+          children: (
+            <Stack gap='xs'>
+              <Text fz='sm'>
+                It's recommended to enable the following as well. Certain features may not work as intended without
+                them.
+              </Text>
+              <List>
+                {requiredBooks.newSources.map((source, index) => (
+                  <List.Item key={index}>
+                    <Anchor
+                      onClick={() => {
+                        openDrawer({ type: 'content-source', data: { id: source.id } });
+                      }}
+                    >
+                      {source.name}
+                    </Anchor>
+                  </List.Item>
+                ))}
+              </List>
+            </Stack>
+          ),
+          labels: { confirm: 'Enable', cancel: 'Continue without' },
+          onCancel: () => changeBooks(inputIds),
+          onConfirm: () => changeBooks([...inputIds, ...requiredBooks.sourceIds]),
+        });
+      } else {
+        changeBooks(inputIds);
+      }
+    } else {
+      changeBooks(inputIds);
+    }
   };
 
   const iconStyle = { width: rem(12), height: rem(12) };
@@ -182,13 +235,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       url: book.url,
                       enabled: hasBookEnabled(book.id),
                     }))}
-                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
                   onEnableAll={() => {
-                    books
-                      .filter((book) => book.group === 'pathfinder-core')
-                      .forEach((book) => {
-                        setBookEnabled(book.id, true);
-                      });
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'pathfinder-core').map((book) => book.id),
+                      true
+                    );
                   }}
                 />
                 <LinksGroup
@@ -202,13 +254,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       url: book.url,
                       enabled: hasBookEnabled(book.id),
                     }))}
-                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
                   onEnableAll={() => {
-                    books
-                      .filter((book) => book.group === 'starfinder-core')
-                      .forEach((book) => {
-                        setBookEnabled(book.id, true);
-                      });
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'starfinder-core').map((book) => book.id),
+                      true
+                    );
                   }}
                 />
                 <Box py={8}>
@@ -225,13 +276,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       url: book.url,
                       enabled: hasBookEnabled(book.id),
                     }))}
-                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
                   onEnableAll={() => {
-                    books
-                      .filter((book) => book.group === 'adventure-path')
-                      .forEach((book) => {
-                        setBookEnabled(book.id, true);
-                      });
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'adventure-path').map((book) => book.id),
+                      true
+                    );
                   }}
                 />
                 <LinksGroup
@@ -245,13 +295,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       url: book.url,
                       enabled: hasBookEnabled(book.id),
                     }))}
-                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
                   onEnableAll={() => {
-                    books
-                      .filter((book) => book.group === 'standalone-adventure')
-                      .forEach((book) => {
-                        setBookEnabled(book.id, true);
-                      });
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'standalone-adventure').map((book) => book.id),
+                      true
+                    );
                   }}
                 />
                 <LinksGroup
@@ -265,13 +314,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       url: book.url,
                       enabled: hasBookEnabled(book.id),
                     }))}
-                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
                   onEnableAll={() => {
-                    books
-                      .filter((book) => book.group === 'lost-omens')
-                      .forEach((book) => {
-                        setBookEnabled(book.id, true);
-                      });
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'lost-omens').map((book) => book.id),
+                      true
+                    );
                   }}
                 />
                 <LinksGroup
@@ -285,13 +333,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       url: book.url,
                       enabled: hasBookEnabled(book.id),
                     }))}
-                  onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
                   onEnableAll={() => {
-                    books
-                      .filter((book) => book.group === 'misc')
-                      .forEach((book) => {
-                        setBookEnabled(book.id, true);
-                      });
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'misc').map((book) => book.id),
+                      true
+                    );
                   }}
                 />
                 {/* <LinksGroup

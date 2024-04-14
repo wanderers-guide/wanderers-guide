@@ -229,6 +229,43 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
   } satisfies ContentPackage;
 }
 
+export async function findRequiredContentSources(sourceIds?: number[]) {
+  if (!sourceIds || sourceIds.length === 0) {
+    return { sourceIds: [], sources: [], newSourceIds: [], newSources: [] };
+  }
+
+  // Prefetch published content sources (homebrew still needs to be fetched individually)
+  await fetchContentSources({ ids: 'all' });
+
+  const required = new Map<number, ContentSource>();
+  const findRequired = async (sourceId: number) => {
+    const contentSource = await fetchContentById<ContentSource>('content-source', sourceId);
+    if (contentSource) {
+      required.set(sourceId, contentSource);
+
+      // Add required sources
+      if (contentSource.required_content_sources) {
+        for (const requiredSourceId of contentSource.required_content_sources) {
+          if (!required.has(requiredSourceId)) {
+            await findRequired(requiredSourceId);
+          }
+        }
+      }
+    }
+  };
+
+  for (const sourceId of sourceIds) {
+    await findRequired(sourceId);
+  }
+
+  return {
+    sourceIds: [...required.keys()],
+    sources: [...required.values()],
+    newSourceIds: [...required.keys()].filter((sourceId) => !sourceIds.includes(sourceId)),
+    newSources: [...required.values()].filter((source) => !sourceIds.includes(source.id)),
+  };
+}
+
 export async function fetchArchetypeByDedicationFeat(feat_id: number) {
   const archetypes = await fetchContent<Archetype[]>('archetype', {
     dedication_feat_id: feat_id,
