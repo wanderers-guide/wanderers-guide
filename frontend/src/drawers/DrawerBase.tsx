@@ -106,6 +106,7 @@ export default function DrawerBase() {
                         fallback={
                           <Group wrap='nowrap' gap={10}>
                             <Loader size='sm' />
+                            <Title order={3}>Loading...</Title>
                           </Group>
                         }
                       >
@@ -158,9 +159,6 @@ export default function DrawerBase() {
         }}
         transitionProps={{ duration: 200 }}
       >
-        {/* TODO: There's a weird bug here where the titleHeight=0 on the first open of this drawer */}
-        {/* This "fix" will still have the bug on titles that are multiline */}
-
         <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={16} scrollbars='y'>
           <Box
             pt={2}
