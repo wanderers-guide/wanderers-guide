@@ -551,7 +551,7 @@ export default function DiceRoller(props: {
             </Button>
           </Group>
         }
-        size={'min(100vw, 400px)'}
+        size={'calc(min(100vw, 400px))'}
         overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}
         styles={{
           title: {
