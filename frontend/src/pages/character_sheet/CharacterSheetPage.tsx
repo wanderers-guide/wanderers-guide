@@ -72,6 +72,7 @@ import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
 import { GiRollingDices } from 'react-icons/gi';
 import { displayComingSoon } from '@utils/notifications';
+import { saveCalculatedStats } from '@variables/calculated-stats';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -225,6 +226,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           // Because of the drained condition, let's confirm health
           confirmHealth(`${character.hp_current}`, character, setCharacter);
         }
+
+        // Save calculated stats
+        saveCalculatedStats(character, setCharacter);
 
         setOperationResults(results);
         executingOperations.current = false;

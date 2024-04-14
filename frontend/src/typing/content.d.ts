@@ -1,4 +1,5 @@
 import { Operation } from './operations';
+import { ProficiencyType } from './variables';
 
 type ContentPackage = {
   ancestries: Ancestry[];
@@ -433,6 +434,12 @@ interface Character {
   custom_operations?: Operation[];
   meta_data?: {
     reset_hp?: boolean;
+    calculated_stats?: {
+      hp_max: number;
+      stamina_max: number;
+      resolve_max: number;
+      profs: Record<string, { total: number; type: ProficiencyType }>;
+    };
   };
   options?: {
     is_public?: boolean;

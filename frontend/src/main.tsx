@@ -76,6 +76,13 @@ const router = createBrowserRouter([
             },
           },
           {
+            path: 'campaign/:campaignId',
+            lazy: () => import('@pages/campaign/CampaignOverviewPage.tsx'),
+            loader: async ({ params }: { params: any }) => {
+              return { campaignId: params.campaignId };
+            },
+          },
+          {
             path: 'builder/:characterId',
             lazy: () => import('@pages/character_builder/CharacterBuilderPage.tsx'),
             loader: async ({ params }: { params: any }) => {
