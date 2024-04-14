@@ -122,7 +122,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     groupBySource?: boolean;
     filterOptions?: FilterOptions;
     filterFn?: (option: T) => boolean;
-    includeDetails?: boolean;
+    showButton?: boolean;
     includeOptions?: boolean;
   };
 }) {
@@ -177,7 +177,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         selectedId: selected?.id,
         // @ts-ignore
         filterFn: props.options?.filterFn,
-        includeDetails: props.options?.includeDetails,
+        showButton: props.options?.showButton,
         includeOptions: props.options?.includeOptions,
       }
     );
@@ -275,7 +275,7 @@ export function selectContent<T = Record<string, any>>(
     filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
-    includeDetails?: boolean;
+    showButton?: boolean;
     includeOptions?: boolean;
   }
 ) {
@@ -308,7 +308,7 @@ export default function SelectContentModal({
     filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
-    includeDetails?: boolean;
+    showButton?: boolean;
     includeOptions?: boolean;
   };
 }>) {
@@ -736,7 +736,7 @@ export default function SelectContentModal({
                   }}
                   filterFn={getMergedFilterFn()}
                   includeOptions={innerProps.options?.includeOptions}
-                  includeDetails={innerProps.options?.includeDetails}
+                  showButton={innerProps.options?.showButton}
                 />
               )}
             </Box>
@@ -768,7 +768,7 @@ export default function SelectContentModal({
                     ).length > 0 && option.level <= classFeatSourceLevel
                   }
                   includeOptions={innerProps.options?.includeOptions}
-                  includeDetails={innerProps.options?.includeDetails}
+                  showButton={innerProps.options?.showButton}
                 />
               )}
             </Box>
@@ -797,7 +797,7 @@ export default function SelectContentModal({
                     hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
                   }
                   includeOptions={innerProps.options?.includeOptions}
-                  includeDetails={innerProps.options?.includeDetails}
+                  showButton={innerProps.options?.showButton}
                 />
               )}
             </Box>
@@ -831,7 +831,7 @@ export default function SelectContentModal({
                     getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
                   }
                   includeOptions={innerProps.options?.includeOptions}
-                  includeDetails={innerProps.options?.includeDetails}
+                  showButton={innerProps.options?.showButton}
                 />
               )}
             </Box>
@@ -858,7 +858,7 @@ export default function SelectContentModal({
                   }}
                   filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
                   includeOptions={innerProps.options?.includeOptions}
-                  includeDetails={innerProps.options?.includeDetails}
+                  showButton={innerProps.options?.showButton}
                 />
               )}
             </Box>
@@ -883,7 +883,7 @@ export default function SelectContentModal({
               }}
               filterFn={getMergedFilterFn()}
               includeOptions={innerProps.options?.includeOptions}
-              includeDetails={innerProps.options?.includeDetails}
+              showButton={innerProps.options?.showButton}
             />
           )}
         </Box>
@@ -941,7 +941,7 @@ function SelectionOptions(props: {
   overrideOptions?: Record<string, any>[];
   filterFn?: (option: Record<string, any>) => boolean;
   includeOptions?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
 }) {
   const { data, isFetching } = useQuery({
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
@@ -1034,7 +1034,7 @@ function SelectionOptions(props: {
       isLoading={isFetching || !options}
       onClick={props.onClick}
       selectedId={props.selectedId}
-      includeDetails={props.includeDetails}
+      showButton={props.showButton}
       includeOptions={props.includeOptions}
     />
   );
@@ -1049,7 +1049,7 @@ export function SelectionOptionsInner(props: {
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   includeOptions?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
   h?: number;
@@ -1097,7 +1097,7 @@ export function SelectionOptionsInner(props: {
             abilityBlockType={props.abilityBlockType}
             onClick={props.onClick}
             selectedId={props.selectedId}
-            includeDetails={props.includeDetails}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1127,7 +1127,7 @@ function SelectionOptionsRoot(props: {
   onClick: (option: Record<string, any>) => void;
   selectedId?: number;
   includeOptions?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -1143,7 +1143,7 @@ function SelectionOptionsRoot(props: {
               onClick={props.onClick}
               selected={props.selectedId === feat.id}
               displayLevel={true}
-              includeDetails={true}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1160,7 +1160,7 @@ function SelectionOptionsRoot(props: {
               action={action as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === action.id}
-              includeDetails={props.includeDetails}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1177,7 +1177,7 @@ function SelectionOptionsRoot(props: {
               classFeature={classFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === classFeature.id}
-              includeDetails={props.includeDetails}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1194,6 +1194,7 @@ function SelectionOptionsRoot(props: {
               sense={sense as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === sense.id}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1210,7 +1211,7 @@ function SelectionOptionsRoot(props: {
               physicalFeature={physicalFeature as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === physicalFeature.id}
-              includeDetails={props.includeDetails}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1227,7 +1228,7 @@ function SelectionOptionsRoot(props: {
               heritage={heritage as AbilityBlock}
               onClick={props.onClick}
               selected={props.selectedId === heritage.id}
-              includeDetails={true}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1247,6 +1248,7 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === class_.id}
             hasSelected={props.selectedId !== undefined}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1265,6 +1267,7 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === background.id}
             hasSelected={props.selectedId !== undefined}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1283,6 +1286,7 @@ function SelectionOptionsRoot(props: {
             onClick={props.onClick}
             selected={props.selectedId === ancestry.id}
             hasSelected={props.selectedId !== undefined}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1300,7 +1304,7 @@ function SelectionOptionsRoot(props: {
             item={item as Item}
             onClick={props.onClick}
             selected={props.selectedId === item.id}
-            includeDetails={props.includeDetails}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1318,7 +1322,7 @@ function SelectionOptionsRoot(props: {
             spell={spell as Spell}
             onClick={props.onClick}
             selected={props.selectedId === spell.id}
-            includeDetails={props.includeDetails}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1336,6 +1340,7 @@ function SelectionOptionsRoot(props: {
             trait={trait as Trait}
             onClick={props.onClick}
             selected={props.selectedId === trait.id}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1353,6 +1358,7 @@ function SelectionOptionsRoot(props: {
             language={language as Language}
             onClick={props.onClick}
             selected={props.selectedId === language.id}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1370,6 +1376,7 @@ function SelectionOptionsRoot(props: {
             creature={creature as Creature}
             onClick={props.onClick}
             selected={props.selectedId === creature.id}
+            showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
             onCopy={props.onCopy}
@@ -1415,6 +1422,7 @@ function SelectionOptionsRoot(props: {
               onClick={props.onClick}
               selected={props.selectedId === option.id}
               skillAdjustment={props.skillAdjustment}
+              showButton={props.showButton}
               includeOptions={props.includeOptions}
               onDelete={props.onDelete}
               onCopy={props.onCopy}
@@ -1432,6 +1440,7 @@ function SelectionOptionsRoot(props: {
           }}
           selected={false}
           skillAdjustment={props.skillAdjustment}
+          showButton={props.showButton}
           includeOptions={props.includeOptions}
           onDelete={props.onDelete}
           onCopy={props.onCopy}
@@ -1450,6 +1459,7 @@ function SelectionOptionsRoot(props: {
           onClick={props.onClick}
           selected={props.selectedId === option.id}
           skillAdjustment={props.skillAdjustment}
+          showButton={props.showButton}
           includeOptions={props.includeOptions}
           onDelete={props.onDelete}
           onCopy={props.onCopy}
@@ -1471,6 +1481,7 @@ export function GenericSelectionOption(props: {
   onClick: (option: GenericAbilityBlock) => void;
   selected?: boolean;
   skillAdjustment?: ExtendedProficiencyType;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -1503,6 +1514,7 @@ export function GenericSelectionOption(props: {
             </Box>
           </Group>
         }
+        showButton={props.showButton}
         selected={props.selected}
         onClick={() => {
           props.onClick(props.option);
@@ -1540,6 +1552,7 @@ export function GenericSelectionOption(props: {
             <Text fz='sm'>{props.option.name}</Text>
           </Group>
         }
+        showButton={props.showButton}
         selected={props.selected}
         onClick={() => {
           props.onClick(props.option);
@@ -1636,6 +1649,7 @@ export function GenericSelectionOption(props: {
           )}
         </Group>
       }
+      showButton={props.showButton}
       selected={props.selected}
       disabled={disabled}
       onClick={() => {
@@ -1655,6 +1669,7 @@ export function BaseSelectionOption(props: {
   buttonProps?: ButtonProps;
   includeOptions?: boolean;
   buttonOverride?: React.ReactNode;
+  showButton?: boolean;
   onClick: () => void;
   onHover?: (active: boolean) => void;
   onButtonClick?: () => void;
@@ -1675,6 +1690,9 @@ export function BaseSelectionOption(props: {
   useDidUpdate(() => {
     props.onHover?.(hovered);
   }, [hovered]);
+
+  const displayButton =
+    (props.showButton || props.showButton === undefined) && (props.buttonTitle || props.buttonOverride);
 
   return (
     <Group
@@ -1712,35 +1730,39 @@ export function BaseSelectionOption(props: {
       {!isPhone && props.rightSection && (
         <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
           <Box>{props.rightSection}</Box>
-          {props.buttonOverride || props.buttonTitle ? <Box w={props.includeOptions ? 85 : 55}></Box> : null}
+          {displayButton ? <Box w={props.includeOptions ? 85 : 55}></Box> : null}
         </Group>
       )}
 
-      {props.buttonOverride ? (
-        props.buttonOverride
-      ) : (
+      {displayButton && (
         <>
-          {props.buttonTitle && (
-            <Box
-              style={{
-                position: 'absolute',
-                top: 7,
-                right: props.includeOptions ? 45 : 15,
-              }}
-            >
-              <Button
-                disabled={props.disableButton}
-                size='compact-sm'
-                variant='light'
-                onClick={(e) => {
-                  e.stopPropagation();
-                  props.onButtonClick?.();
-                }}
-                {...props.buttonProps}
-              >
-                {props.buttonTitle}
-              </Button>
-            </Box>
+          {props.buttonOverride ? (
+            props.buttonOverride
+          ) : (
+            <>
+              {props.buttonTitle && (
+                <Box
+                  style={{
+                    position: 'absolute',
+                    top: 7,
+                    right: props.includeOptions ? 45 : 15,
+                  }}
+                >
+                  <Button
+                    disabled={props.disableButton}
+                    size='compact-sm'
+                    variant='light'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.onButtonClick?.();
+                    }}
+                    {...props.buttonProps}
+                  >
+                    {props.buttonTitle}
+                  </Button>
+                </Box>
+              )}
+            </>
           )}
         </>
       )}
@@ -1806,7 +1828,7 @@ export function FeatSelectionOption(props: {
   onClick: (feat: AbilityBlock) => void;
   selected?: boolean;
   displayLevel?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -1856,6 +1878,7 @@ export function FeatSelectionOption(props: {
       rightSection={
         <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
       }
+      showButton={props.showButton}
       level={props.displayLevel && !props.feat.meta_data?.unselectable ? props.feat.level : undefined}
       selected={props.selected}
       onClick={() =>
@@ -1880,7 +1903,7 @@ export function ActionSelectionOption(props: {
   onClick: (action: AbilityBlock) => void;
   selected?: boolean;
   includeOptions?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -1907,6 +1930,7 @@ export function ActionSelectionOption(props: {
           skill={props.action.meta_data?.skill}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -1930,7 +1954,7 @@ export function ClassFeatureSelectionOption(props: {
   onClick: (classFeature: AbilityBlock) => void;
   selected?: boolean;
   includeOptions?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
@@ -1957,6 +1981,7 @@ export function ClassFeatureSelectionOption(props: {
           skill={props.classFeature.meta_data?.skill}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -1979,7 +2004,7 @@ export function HeritageSelectionOption(props: {
   heritage: AbilityBlock;
   onClick: (heritage: AbilityBlock) => void;
   selected?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2007,6 +2032,7 @@ export function HeritageSelectionOption(props: {
           skill={props.heritage.meta_data?.skill}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2029,7 +2055,7 @@ export function PhysicalFeatureSelectionOption(props: {
   physicalFeature: AbilityBlock;
   onClick: (physicalFeature: AbilityBlock) => void;
   selected?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2057,6 +2083,7 @@ export function PhysicalFeatureSelectionOption(props: {
           skill={props.physicalFeature.meta_data?.skill}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2079,6 +2106,7 @@ export function SenseSelectionOption(props: {
   sense: AbilityBlock;
   onClick: (sense: AbilityBlock) => void;
   selected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2106,6 +2134,7 @@ export function SenseSelectionOption(props: {
           skill={props.sense.meta_data?.skill}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2129,6 +2158,7 @@ export function ClassSelectionOption(props: {
   onClick: (class_: Class) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2221,6 +2251,7 @@ export function ClassSelectionOption(props: {
         </Group>
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.class_.rarity} />}
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2244,6 +2275,7 @@ export function AncestrySelectionOption(props: {
   onClick: (ancestry: Ancestry) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2366,6 +2398,7 @@ export function AncestrySelectionOption(props: {
         </Group>
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.ancestry.rarity} />}
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2389,6 +2422,7 @@ export function BackgroundSelectionOption(props: {
   onClick: (background: Background) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2455,6 +2489,7 @@ export function BackgroundSelectionOption(props: {
         </Group>
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.background.rarity} />}
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2477,7 +2512,7 @@ export function ItemSelectionOption(props: {
   item: Item;
   onClick: (item: Item) => void;
   selected?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2504,6 +2539,7 @@ export function ItemSelectionOption(props: {
           archaic={isItemArchaic(props.item)}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2532,7 +2568,7 @@ export function SpellSelectionOption(props: {
   onClick: (spell: Spell) => void;
   selected?: boolean;
   includeOptions?: boolean;
-  includeDetails?: boolean;
+  showButton?: boolean;
   leftSection?: React.ReactNode;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2564,9 +2600,11 @@ export function SpellSelectionOption(props: {
       rightSection={
         <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
       }
+      showButton={props.showButton}
       selected={props.selected}
       level={!props.hideRank && props.spell.rank !== 0 ? props.spell.rank : undefined}
       disabled={props.exhausted}
+      noBackground={props.noBackground}
       onClick={() =>
         openDrawer({
           type: 'spell',
@@ -2588,6 +2626,7 @@ export function TraitSelectionOption(props: {
   trait: Trait;
   onClick: (trait: Trait) => void;
   selected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2614,6 +2653,7 @@ export function TraitSelectionOption(props: {
           </Indicator>
         </Group>
       }
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2636,6 +2676,7 @@ export function LanguageSelectionOption(props: {
   language: Language;
   onClick: (language: Language) => void;
   selected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2658,6 +2699,7 @@ export function LanguageSelectionOption(props: {
         </Group>
       }
       rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />}
+      showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2681,6 +2723,7 @@ export function CreatureSelectionOption(props: {
   onClick: (creature: Creature) => void;
   selected?: boolean;
   hasSelected?: boolean;
+  showButton?: boolean;
   includeOptions?: boolean;
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
@@ -2760,6 +2803,7 @@ export function CreatureSelectionOption(props: {
           rarity={props.creature.rarity}
         />
       }
+      showButton={props.showButton}
       selected={props.selected}
       level={props.creature.level}
       onClick={() =>

@@ -252,7 +252,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                       }}
                       selectedId={slot.spell_id === -1 ? undefined : slot.spell_id}
                       options={{
-                        includeDetails: true,
+                        showButton: true,
                         overrideOptions: props.spells,
                         filterFn: (spell: Spell) => {
                           // const foundSpell =
@@ -402,7 +402,7 @@ const ListSection = (props: {
                 }
               },
               {
-                includeDetails: true,
+                showButton: true,
                 groupBySource: true,
                 overrideLabel: `Add ${isRituals ? 'Ritual' : 'Spell'}`,
 
@@ -485,7 +485,7 @@ const ListSection = (props: {
                   };
                 });
               }}
-              includeDetails={false}
+              showButton={false}
               includeOptions={true}
             />
           ))}

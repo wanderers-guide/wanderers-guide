@@ -168,6 +168,7 @@ export function ContentSourceDrawerContent(props: {
                   <ActionSelectionOption
                     key={index}
                     action={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'action',
@@ -200,6 +201,7 @@ export function ContentSourceDrawerContent(props: {
                   <AncestrySelectionOption
                     key={index}
                     ancestry={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'ancestry',
@@ -232,6 +234,7 @@ export function ContentSourceDrawerContent(props: {
                   <BackgroundSelectionOption
                     key={index}
                     background={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'background',
@@ -264,6 +267,7 @@ export function ContentSourceDrawerContent(props: {
                   <ClassSelectionOption
                     key={index}
                     class_={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'class',
@@ -296,6 +300,7 @@ export function ContentSourceDrawerContent(props: {
                   <CreatureSelectionOption
                     key={index}
                     creature={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'creature',
@@ -328,6 +333,7 @@ export function ContentSourceDrawerContent(props: {
                   <FeatSelectionOption
                     key={index}
                     feat={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'feat',
@@ -360,6 +366,7 @@ export function ContentSourceDrawerContent(props: {
                   <ItemSelectionOption
                     key={index}
                     item={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'item',
@@ -392,6 +399,7 @@ export function ContentSourceDrawerContent(props: {
                   <LanguageSelectionOption
                     key={index}
                     language={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'language',
@@ -424,6 +432,7 @@ export function ContentSourceDrawerContent(props: {
                   <SpellSelectionOption
                     key={index}
                     spell={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'spell',
@@ -456,6 +465,7 @@ export function ContentSourceDrawerContent(props: {
                   <TraitSelectionOption
                     key={index}
                     trait={record}
+                    showButton={false}
                     onClick={(a) => {
                       openDrawer({
                         type: 'trait',

@@ -177,6 +177,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                           key={index}
                           feat={feat}
                           displayLevel
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'feat',
@@ -209,6 +210,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                           key={index}
                           feat={feat}
                           displayLevel
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'feat',
@@ -241,6 +243,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                           key={index}
                           feat={feat}
                           displayLevel
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'feat',
@@ -273,6 +276,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                           key={index}
                           feat={feat}
                           displayLevel
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'feat',
@@ -327,6 +331,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                         <ClassFeatureSelectionOption
                           key={index}
                           classFeature={feature}
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'class-feature',
@@ -358,6 +363,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                         <HeritageSelectionOption
                           key={index}
                           heritage={heritage}
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'heritage',
@@ -389,6 +395,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                         <PhysicalFeatureSelectionOption
                           key={index}
                           physicalFeature={feature}
+                          showButton={false}
                           onClick={() => {
                             openDrawer({
                               type: 'physical-feature',

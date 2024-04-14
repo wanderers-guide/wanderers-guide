@@ -153,6 +153,7 @@ export function AncestryDrawerContent(props: {
               <FeatSelectionOption
                 key={index}
                 feat={feat}
+                showButton={false}
                 onClick={() => {
                   props.onMetadataChange?.();
                   openDrawer({
@@ -230,6 +231,7 @@ export function AncestryDrawerContent(props: {
                   <HeritageSelectionOption
                     key={index}
                     heritage={heritage}
+                    showButton={false}
                     onClick={() => {
                       props.onMetadataChange?.();
                       openDrawer({

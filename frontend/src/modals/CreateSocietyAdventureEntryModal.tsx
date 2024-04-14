@@ -217,7 +217,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                           refreshSellTotal();
                         },
                         {
-                          includeDetails: true,
+                          showButton: true,
                           groupBySource: true,
                         }
                       );
@@ -301,7 +301,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                           refreshBuyTotal();
                         },
                         {
-                          includeDetails: true,
+                          showButton: true,
                           groupBySource: true,
                         }
                       );

@@ -1,6 +1,6 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { SelectionOptionsInner, selectContent } from '@common/select/SelectContent';
+import { BaseSelectionOption, SelectionOptionsInner, selectContent } from '@common/select/SelectContent';
 import {
   deleteContentSource,
   upsertAbilityBlock,
@@ -22,6 +22,7 @@ import {
   Anchor,
   Autocomplete,
   Badge,
+  Box,
   Button,
   Center,
   Collapse,
@@ -87,6 +88,9 @@ import { DISCORD_URL } from '@constants/data';
 import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
+import { drawerState } from '@atoms/navAtoms';
+import { useRecoilState } from 'recoil';
+import Paginator from '@common/Paginator';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -669,6 +673,7 @@ function ContentList<
   const theme = useMantineTheme();
   const [openedId, setOpenedId] = useState<number | undefined>();
   const [loading, setLoading] = useState(false);
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
   const search = useRef(new JsSearch.Search('id'));
@@ -871,25 +876,45 @@ function ContentList<
         </Group>
         <Center>
           <Stack w='100%'>
-            <SelectionOptionsInner
-              options={getContent()}
-              type={props.type}
-              abilityBlockType={props.abilityBlockType}
-              isLoading={false}
-              onClick={(item) => setOpenedId(item.id)}
+            <Paginator
               h={500}
-              includeDetails
-              includeOptions
-              onCopy={async (itemId) => {
-                setLoading(true);
-                await copyData(itemId, undefined);
-                handleReset();
-              }}
-              onDelete={async (itemId) => {
-                setLoading(true);
-                const response = await deleteContentSource(props.type, itemId);
-                handleReset();
-              }}
+              records={getContent().map((record: Record<string, any>, index) => (
+                <BaseSelectionOption
+                  key={index}
+                  leftSection={
+                    <Group wrap='nowrap' gap={5}>
+                      <Box pl={8}>
+                        <Text fz='sm'>{record.name}</Text>
+                      </Box>
+                    </Group>
+                  }
+                  onClick={() => {
+                    setOpenedId(record.id);
+                  }}
+                  buttonTitle='Details'
+                  buttonProps={{
+                    variant: 'subtle',
+                  }}
+                  onButtonClick={() => {
+                    openDrawer({
+                      type: props.abilityBlockType ?? props.type,
+                      data: { id: record.id },
+                      extra: { addToHistory: true },
+                    });
+                  }}
+                  includeOptions
+                  onOptionsCopy={async () => {
+                    setLoading(true);
+                    await copyData(record.id, undefined);
+                    handleReset();
+                  }}
+                  onOptionsDelete={async () => {
+                    setLoading(true);
+                    const response = await deleteContentSource(props.type, record.id);
+                    handleReset();
+                  }}
+                />
+              ))}
             />
           </Stack>
         </Center>

@@ -1069,6 +1069,7 @@ function SpellListEntry(props: {
           noBackground
           hideRank
           exhausted={exhausted}
+          showButton={false}
           spell={props.spell}
           leftSection={props.leftSection}
           onClick={() => {}}

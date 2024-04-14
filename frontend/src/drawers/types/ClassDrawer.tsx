@@ -160,6 +160,7 @@ export function ClassDrawerContent(props: {
               <FeatSelectionOption
                 key={index}
                 feat={feat}
+                showButton={false}
                 onClick={() => {
                   props.onMetadataChange?.();
                   openDrawer({

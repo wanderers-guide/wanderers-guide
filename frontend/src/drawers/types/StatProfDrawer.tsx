@@ -440,6 +440,7 @@ function SkillActionsSection(props: { variableName: string }) {
           <ActionSelectionOption
             key={index}
             action={action}
+            showButton={false}
             onClick={() => {
               openDrawer({
                 type: 'action',
