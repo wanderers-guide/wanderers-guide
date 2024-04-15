@@ -808,6 +808,7 @@ function SelectionPredefinedAbilityBlock(props: {
             selectedId={option.operation.data.abilityBlockId}
             options={{
               abilityBlockType: props.type,
+              showButton: false,
             }}
           />
           {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
@@ -1047,6 +1048,9 @@ function SelectionPredefinedSpell(props: {
               });
             }}
             selectedId={option.operation.data.spellId}
+            options={{
+              showButton: false,
+            }}
           />
           {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
             <Tooltip label='Remove Option' position='right' withArrow withinPortal>
@@ -1160,6 +1164,9 @@ function SelectionPredefinedLanguage(props: {
               });
             }}
             selectedId={option.operation.data.languageId}
+            options={{
+              showButton: false,
+            }}
           />
           {optionsForUI[optionsForUI.length - 1].id === option.id && index !== 0 && (
             <Tooltip label='Remove Option' position='right' withArrow withinPortal>

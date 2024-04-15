@@ -176,6 +176,7 @@ export function CreateArchetypeModal(props: {
                 form.setFieldValue('dedication_feat_id', feat.id);
               }}
               options={{
+                showButton: false,
                 overrideLabel: 'Select a Dedication',
                 abilityBlockType: 'feat',
                 filterFn: (feat) => hasTraitType('DEDICATION', feat.traits),

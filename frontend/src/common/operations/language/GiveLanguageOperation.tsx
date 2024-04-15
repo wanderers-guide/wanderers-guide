@@ -1,7 +1,6 @@
-import { SelectContentButton } from "@common/select/SelectContent";
-import { AbilityBlock, Language } from "@typing/content";
-import { OperationWrapper } from "../Operations";
-
+import { SelectContentButton } from '@common/select/SelectContent';
+import { AbilityBlock, Language } from '@typing/content';
+import { OperationWrapper } from '../Operations';
 
 export function GiveLanguageOperation(props: {
   selectedId: number;
@@ -16,6 +15,9 @@ export function GiveLanguageOperation(props: {
           props.onSelect(option);
         }}
         selectedId={props.selectedId}
+        options={{
+          showButton: false,
+        }}
       />
     </OperationWrapper>
   );

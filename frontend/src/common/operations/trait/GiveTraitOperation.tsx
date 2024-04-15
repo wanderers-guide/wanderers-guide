@@ -15,6 +15,7 @@ export function GiveTraitOperation(props: {
           props.onSelect(option);
         }}
         options={{
+          showButton: false,
           overrideLabel: 'Select a Trait',
           filterFn: (trait: Trait) =>
             !!(

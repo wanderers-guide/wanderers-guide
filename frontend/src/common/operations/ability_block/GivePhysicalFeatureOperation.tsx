@@ -1,7 +1,6 @@
-import { SelectContentButton } from "@common/select/SelectContent";
-import { AbilityBlock } from "@typing/content";
-import { OperationWrapper } from "../Operations";
-
+import { SelectContentButton } from '@common/select/SelectContent';
+import { AbilityBlock } from '@typing/content';
+import { OperationWrapper } from '../Operations';
 
 export function GivePhysicalFeatureOperation(props: {
   selectedId: number;
@@ -18,6 +17,7 @@ export function GivePhysicalFeatureOperation(props: {
         selectedId={props.selectedId}
         options={{
           abilityBlockType: 'physical-feature',
+          showButton: false,
         }}
       />
     </OperationWrapper>

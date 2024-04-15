@@ -176,6 +176,7 @@ export function CreateVersatileHeritageModal(props: {
                 form.setFieldValue('heritage_id', feat.id);
               }}
               options={{
+                showButton: false,
                 overrideLabel: 'Select a Heritage',
                 abilityBlockType: 'heritage',
               }}

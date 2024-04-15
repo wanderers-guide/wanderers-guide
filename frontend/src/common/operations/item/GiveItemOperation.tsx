@@ -15,6 +15,9 @@ export function GiveItemOperation(props: {
           props.onSelect(option);
         }}
         selectedId={props.selectedId}
+        options={{
+          showButton: false,
+        }}
       />
     </OperationWrapper>
   );

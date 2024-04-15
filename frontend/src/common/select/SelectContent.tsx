@@ -265,7 +265,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 
 export function selectContent<T = Record<string, any>>(
   type: ContentType,
-  onClick: (option: T) => void,
+  onClick?: (option: T) => void,
   options?: {
     overrideOptions?: Record<string, any>[];
     overrideLabel?: string;
@@ -287,7 +287,7 @@ export function selectContent<T = Record<string, any>>(
     title: <Title order={3}>{label}</Title>,
     innerProps: {
       type,
-      onClick: (option) => onClick(option as T),
+      onClick: onClick ? (option) => onClick(option as T) : undefined,
       options,
     },
   });
@@ -299,7 +299,7 @@ export default function SelectContentModal({
   innerProps,
 }: ContextModalProps<{
   type: ContentType;
-  onClick: (option: Record<string, any>) => void;
+  onClick?: (option: Record<string, any>) => void;
   options?: {
     overrideOptions?: Record<string, any>[];
     abilityBlockType?: AbilityBlockType;
@@ -730,10 +730,14 @@ export default function SelectContentModal({
                   selectedId={innerProps.options?.selectedId}
                   overrideOptions={innerProps.options?.overrideOptions}
                   searchQuery={searchQuery}
-                  onClick={(option) => {
-                    innerProps.onClick(option);
-                    context.closeModal(id);
-                  }}
+                  onClick={
+                    innerProps.onClick
+                      ? (option) => {
+                          innerProps.onClick!(option);
+                          context.closeModal(id);
+                        }
+                      : undefined
+                  }
                   filterFn={getMergedFilterFn()}
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
@@ -751,16 +755,20 @@ export default function SelectContentModal({
                   sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   searchQuery={searchQuery}
-                  onClick={(option) => {
-                    innerProps.onClick({
-                      ...option,
-                      // Need this for selection ops to work correctly
-                      // since we're not using the override options
-                      _select_uuid: `${option.id}`,
-                      _content_type: 'ability-block',
-                    } satisfies ObjectWithUUID);
-                    context.closeModal(id);
-                  }}
+                  onClick={
+                    innerProps.onClick
+                      ? (option) => {
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
+                      : undefined
+                  }
                   filterFn={(option) =>
                     _.intersection(
                       getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
@@ -783,16 +791,20 @@ export default function SelectContentModal({
                   sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   searchQuery={searchQuery}
-                  onClick={(option) => {
-                    innerProps.onClick({
-                      ...option,
-                      // Need this for selection ops to work correctly
-                      // since we're not using the override options
-                      _select_uuid: `${option.id}`,
-                      _content_type: 'ability-block',
-                    } satisfies ObjectWithUUID);
-                    context.closeModal(id);
-                  }}
+                  onClick={
+                    innerProps.onClick
+                      ? (option) => {
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
+                      : undefined
+                  }
                   filterFn={(option) =>
                     hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
                   }
@@ -823,10 +835,14 @@ export default function SelectContentModal({
                   selectedId={innerProps.options?.selectedId}
                   overrideOptions={innerProps.options?.overrideOptions}
                   searchQuery={searchQuery}
-                  onClick={(option) => {
-                    innerProps.onClick(option);
-                    context.closeModal(id);
-                  }}
+                  onClick={
+                    innerProps.onClick
+                      ? (option) => {
+                          innerProps.onClick!(option);
+                          context.closeModal(id);
+                        }
+                      : undefined
+                  }
                   filterFn={(option) =>
                     getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
                   }
@@ -846,16 +862,20 @@ export default function SelectContentModal({
                   sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   searchQuery={searchQuery}
-                  onClick={(option) => {
-                    innerProps.onClick({
-                      ...option,
-                      // Need this for selection ops to work correctly
-                      // since we're not using the override options
-                      _select_uuid: `${option.id}`,
-                      _content_type: 'ability-block',
-                    } satisfies ObjectWithUUID);
-                    context.closeModal(id);
-                  }}
+                  onClick={
+                    innerProps.onClick
+                      ? (option) => {
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
+                      : undefined
+                  }
                   filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
@@ -877,10 +897,14 @@ export default function SelectContentModal({
               selectedId={innerProps.options?.selectedId}
               overrideOptions={innerProps.options?.overrideOptions}
               searchQuery={searchQuery}
-              onClick={(option) => {
-                innerProps.onClick(option);
-                context.closeModal(id);
-              }}
+              onClick={
+                innerProps.onClick
+                  ? (option) => {
+                      innerProps.onClick!(option);
+                      context.closeModal(id);
+                    }
+                  : undefined
+              }
               filterFn={getMergedFilterFn()}
               includeOptions={innerProps.options?.includeOptions}
               showButton={innerProps.options?.showButton}
@@ -936,7 +960,7 @@ function SelectionOptions(props: {
   skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   sourceId?: number | 'all';
-  onClick: (option: Record<string, any>) => void;
+  onClick?: (option: Record<string, any>) => void;
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
   filterFn?: (option: Record<string, any>) => boolean;
@@ -1046,7 +1070,7 @@ export function SelectionOptionsInner(props: {
   skillAdjustment?: ExtendedProficiencyType;
   abilityBlockType?: AbilityBlockType;
   isLoading: boolean;
-  onClick: (option: Record<string, any>) => void;
+  onClick?: (option: Record<string, any>) => void;
   selectedId?: number;
   includeOptions?: boolean;
   showButton?: boolean;
@@ -1095,7 +1119,7 @@ export function SelectionOptionsInner(props: {
             type={props.type}
             skillAdjustment={props.skillAdjustment}
             abilityBlockType={props.abilityBlockType}
-            onClick={props.onClick}
+            onClick={props.onClick ? props.onClick : () => {}}
             selectedId={props.selectedId}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
@@ -1712,7 +1736,7 @@ export function BaseSelectionOption(props: {
         width: '100%',
         pointerEvents: props.disabled ? 'none' : undefined,
       }}
-      onClick={props.onClick}
+      onClick={displayButton ? props.onClick : props.onButtonClick ?? props.onClick}
       justify='space-between'
     >
       {props.level && parseInt(`${props.level}`) !== 0 && !isNaN(parseInt(`${props.level}`)) && (

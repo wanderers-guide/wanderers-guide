@@ -92,6 +92,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import Paginator from '@common/Paginator';
 import TraitsDisplay from '@common/TraitsDisplay';
+import { ActionSymbol } from '@common/Actions';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -886,6 +887,9 @@ function ContentList<
                     <Group wrap='nowrap' gap={5}>
                       <Box pl={8}>
                         <Text fz='sm'>{record.name}</Text>
+                      </Box>
+                      <Box>
+                        <ActionSymbol cost={record.actions ?? null} gap={5} />
                       </Box>
                     </Group>
                   }

@@ -42,6 +42,9 @@ export function GiveSpellOperation(props: {
               setDefaultRank(option.rank);
             }}
             selectedId={props.data.spellId}
+            options={{
+              showButton: false,
+            }}
           />
           <SegmentedControl
             value={type}

@@ -17,6 +17,7 @@ export function GiveHeritageOperation(props: {
         selectedId={props.selectedId}
         options={{
           abilityBlockType: 'heritage',
+          showButton: false,
         }}
       />
     </OperationWrapper>
