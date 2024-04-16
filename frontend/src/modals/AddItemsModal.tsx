@@ -8,6 +8,7 @@ import {
   Center,
   CloseButton,
   Divider,
+  FocusTrap,
   Group,
   HoverCard,
   Indicator,
@@ -161,20 +162,23 @@ export default function AddItemsModal({
     <Stack gap={5} justify='space-between' style={{ overflow: 'hidden' }}>
       <Stack gap={5}>
         <Group gap={10}>
-          <TextInput
-            style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search all items`}
-            onChange={(e) => {
-              const value = e.target.value;
-              setSearchQuery(value);
-            }}
-            styles={{
-              input: {
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
-              },
-            }}
-          />
+          <FocusTrap active={true}>
+            <TextInput
+              data-autofocus
+              style={{ flex: 1 }}
+              leftSection={<IconSearch size='0.9rem' />}
+              placeholder={`Search all items`}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+              }}
+              styles={{
+                input: {
+                  borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+                },
+              }}
+            />
+          </FocusTrap>
           <Popover
             width={200}
             position='bottom'

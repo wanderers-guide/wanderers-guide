@@ -91,7 +91,7 @@ export const handleAddItem = (
     };
   });
   showNotification({
-    title: 'Item Added to Inventory',
+    title: 'Added to Inventory',
     message: `Added ${item.name}.`,
     icon: <ItemIcon item={item} size='1.0rem' color='#f8f9fa' useDefaultIcon />,
     autoClose: 1000,
