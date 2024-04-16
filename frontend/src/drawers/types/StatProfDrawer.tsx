@@ -355,7 +355,7 @@ function getProfDescription(variableName: string) {
     return `Arcana measures how much you know about arcane magic and creatures. Even if you’re untrained, you can ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
   }
   if (variableName === 'SKILL_ATHLETICS') {
-    return `Athletics allows you to perform deeds of physical prowess. Most Athletics actions let you move about the environment or control your opponent’s movement in combat. When you use the Escape basic action (page 416), you can use your Athletics modifier instead of your unarmed attack modifier.`;
+    return `Athletics allows you to perform deeds of physical prowess. Most Athletics actions let you move about the environment or control your opponent’s movement in combat. When you use the ${convertToHardcodedLink('action', 'Escape')} basic action, you can use your Athletics modifier instead of your unarmed attack modifier.`;
   }
   if (variableName === 'SKILL_CRAFTING') {
     return `You can use this skill to create and repair items. Even if you’re untrained, you can ${convertToHardcodedLink('action', 'Recall Knowledge')}.`;
