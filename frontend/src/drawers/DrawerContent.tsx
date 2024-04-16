@@ -1,7 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilValue } from 'recoil';
 import { ActionDrawerContent } from './types/ActionDrawer';
-import { AddItemDrawerContent } from './types/AddItemDrawer';
 import { AncestryDrawerContent } from './types/AncestryDrawer';
 import { BackgroundDrawerContent } from './types/BackgroundDrawer';
 import { ClassDrawerContent } from './types/ClassDrawer';
@@ -63,7 +62,6 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'add-item' && <AddItemDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'inv-item' && <InvItemDrawerContent data={_drawer.data} />}
       {_drawer?.type === 'cast-spell' && <CastSpellDrawerContent data={_drawer.data} />}
     </>

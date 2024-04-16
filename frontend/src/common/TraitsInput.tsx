@@ -6,6 +6,7 @@ import * as _ from 'lodash-es';
 
 interface TraitsInputProps extends TagsInputProps {
   defaultTraits?: number[];
+  traits?: number[];
   onTraitChange?: (traits: Trait[]) => void;
   includeCreatureTraits?: boolean;
 }
@@ -32,6 +33,7 @@ export default function TraitsInput(props: TraitsInputProps) {
   // Remove the added props so they don't get passed to TagsInput
   const passedProps = { ...props };
   delete passedProps.defaultTraits;
+  delete passedProps.traits;
   delete passedProps.onTraitChange;
   delete passedProps.includeCreatureTraits;
 
@@ -43,6 +45,7 @@ export default function TraitsInput(props: TraitsInputProps) {
         <TagsInput
           {...passedProps}
           defaultValue={traits.filter((trait) => props.defaultTraits?.includes(trait.id)).map((trait) => trait.name)}
+          value={traits.filter((trait) => props.traits?.includes(trait.id)).map((trait) => trait.name)}
           data={_.uniq(traits.map((trait) => trait.name))}
           limit={1000}
           onChange={(value) => {

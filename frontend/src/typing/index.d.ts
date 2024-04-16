@@ -16,7 +16,6 @@ export type DrawerType =
   | 'manage-coins'
   | 'inv-item'
   | 'cast-spell'
-  | 'add-item'
   | 'add-spell'
   | 'stat-prof'
   | 'stat-attr'

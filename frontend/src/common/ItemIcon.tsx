@@ -42,7 +42,7 @@ const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Eleme
   HIGH_TECH_GUN: <GiBolterGun color={color} size={size} />,
 });
 
-export function ItemIcon(props: { item: Item; size: string; color: string }) {
+export function ItemIcon(props: { item: Item; size: string; color: string; useDefaultIcon?: boolean }) {
   let type: ItemIconType = props.item.group;
   if (props.item.meta_data?.category === 'unarmed_attack') {
     type = 'UNARMED';
@@ -65,5 +65,10 @@ export function ItemIcon(props: { item: Item; size: string; color: string }) {
     type = 'HIGH_TECH_GUN';
   }
 
-  return <>{getIconMap(props.size, props.color)[type]}</>;
+  let icon = getIconMap(props.size, props.color)[type];
+  if (!icon && props.useDefaultIcon) {
+    return <>{getIconMap(props.size, props.color)['GENERAL']}</>;
+  } else {
+    return <>{icon}</>;
+  }
 }

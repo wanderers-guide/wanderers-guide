@@ -2,13 +2,11 @@ export function purchase(
   price: { cp?: number; sp?: number; gp?: number; pp?: number },
   coins: { cp: number; sp: number; gp: number; pp: number }
 ): { cp: number; sp: number; gp: number; pp: number } | null {
-  const { cp: priceCp = 0, sp: priceSp = 0, gp: priceGp = 0, pp: pricePp = 0 } = price;
-
-  const totalPriceInCp = priceCp + priceSp * 10 + priceGp * 100 + pricePp * 1000;
+  const totalPriceInCp = convertToCp(price);
 
   const updatedCoins = { ...coins };
 
-  let totalCoinsInCp = updatedCoins.cp + updatedCoins.sp * 10 + updatedCoins.gp * 100 + updatedCoins.pp * 1000;
+  let totalCoinsInCp = convertToCp(coins);
 
   if (totalCoinsInCp < totalPriceInCp) {
     return null; // Not enough coins to make the purchase

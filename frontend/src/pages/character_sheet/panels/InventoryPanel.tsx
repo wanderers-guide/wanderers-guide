@@ -36,6 +36,7 @@ import {
   Menu,
   ActionIcon,
   rem,
+  Title,
 } from '@mantine/core';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
@@ -62,6 +63,8 @@ import SilverCoin from '@assets/images/currency/silver.png';
 import { sign } from '@utils/numbers';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { isPlayingStarfinder } from '@content/system-handler';
+import { openContextModal } from '@mantine/modals';
+import { showNotification } from '@mantine/notifications';
 
 export default function InventoryPanel(props: {
   content: ContentPackage;
@@ -100,10 +103,16 @@ export default function InventoryPanel(props: {
     : visibleInvItems;
 
   const openAddItemDrawer = () => {
-    openDrawer({
-      type: 'add-item',
-      data: {
-        onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
+    openContextModal({
+      modal: 'addItems',
+      title: (
+        <Group wrap='nowrap' gap={20}>
+          <Title order={3}>Add Items</Title>
+          {/* (<CurrencySection character={character} />) */}
+        </Group>
+      ),
+      innerProps: {
+        onAddItem: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
           if (!character) return;
           if (type === 'BUY') {
             setConfirmBuyItem({ item });
@@ -479,7 +488,7 @@ export function CoinSection(props: {
           <Avatar src={GoldCoin} alt='Gold Coins' radius='xs' size='xs' />
         </Group>
       )}
-      {(sp || props.displayAll) && (
+      {true && ( // Always show silver coins, even if 0
         <Group wrap='nowrap' gap={5}>
           <Text c='gray.4' fz='md' fw={600}>
             {sp.toLocaleString()}

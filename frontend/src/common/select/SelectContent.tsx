@@ -2588,12 +2588,24 @@ export function ItemSelectionOption(props: {
       }
       level={props.item.level}
       buttonOverride={
-        <BuyItemButton
-          onBuy={() => props.onAdd?.(props.item, 'BUY')}
-          onGive={() => props.onAdd?.(props.item, 'GIVE')}
-          onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
-        />
+        props.includeAdd ? (
+          <Box
+            style={{
+              position: 'absolute',
+              top: 13,
+              right: 15,
+            }}
+          >
+            <BuyItemButton
+              onBuy={() => props.onAdd?.(props.item, 'BUY')}
+              onGive={() => props.onAdd?.(props.item, 'GIVE')}
+              onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
+            />
+          </Box>
+        ) : undefined
       }
+      buttonTitle='Select'
+      disableButton={props.selected}
       onButtonClick={props.onClick ? () => props.onClick?.(props.item) : undefined}
       includeOptions={props.includeOptions}
       onOptionsDelete={() => props.onDelete?.(props.item.id)}

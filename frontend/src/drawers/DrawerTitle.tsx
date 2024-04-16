@@ -2,7 +2,6 @@ import { drawerState } from '@atoms/navAtoms';
 import { forwardRef, LegacyRef } from 'react';
 import { useRecoilValue } from 'recoil';
 import { ActionDrawerTitle } from './types/ActionDrawer';
-import { AddItemDrawerTitle } from './types/AddItemDrawer';
 import { AncestryDrawerTitle } from './types/AncestryDrawer';
 import { BackgroundDrawerTitle } from './types/BackgroundDrawer';
 import { ClassDrawerTitle } from './types/ClassDrawer';
@@ -58,7 +57,6 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'trait' && <TraitDrawerTitle data={_drawer.data} />}
-      {_drawer?.type === 'add-item' && <AddItemDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'inv-item' && <InvItemDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'cast-spell' && <CastSpellDrawerTitle data={_drawer.data} />}
     </div>

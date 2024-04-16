@@ -1,12 +1,15 @@
+import { ItemIcon } from '@common/ItemIcon';
 import { getConditionByName } from '@conditions/condition-handler';
 import { getCachedSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
+import { showNotification } from '@mantine/notifications';
 import { Character, Inventory, InventoryItem, Item } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
+import { color } from 'framer-motion';
 import * as _ from 'lodash-es';
 import { SetterOrUpdater } from 'recoil';
 
@@ -86,6 +89,12 @@ export const handleAddItem = (
       ...prev,
       items: newItems,
     };
+  });
+  showNotification({
+    title: 'Item Added to Inventory',
+    message: `Added ${item.name}.`,
+    icon: <ItemIcon item={item} size='1.0rem' color='#f8f9fa' useDefaultIcon />,
+    autoClose: 1000,
   });
 };
 

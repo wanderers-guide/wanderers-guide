@@ -31,6 +31,7 @@ import SelectIconModal from '@modals/SelectIconModal';
 import SelectImageModal from '@modals/SelectImageModal';
 import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
 import UpdateNotePageModal from '@modals/UpdateNotePageModal';
+import AddItemsModal from '@modals/AddItemsModal';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -51,6 +52,7 @@ const modals = {
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
   createDicePreset: CreateDicePresetModal,
+  addItems: AddItemsModal,
 };
 declare module '@mantine/modals' {
   export interface MantineModalsOverride {
@@ -230,7 +232,7 @@ export default function App() {
           </Anchor>
         )}
         <SearchSpotlight />
-        <Notifications position='top-right' zIndex={9400} />
+        <Notifications position='top-right' zIndex={9400} containerWidth={300} />
         <DrawerBase />
         <Layout>
           {/* Outlet is where react-router will render child routes */}

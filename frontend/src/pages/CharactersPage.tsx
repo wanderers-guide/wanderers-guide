@@ -204,7 +204,7 @@ export function Component() {
                     showNotification({
                       id: `create-random-character`,
                       title: `Creating random character`,
-                      message: `They're level 20, this may take a minute...`,
+                      message: `This may take a minute...`,
                       autoClose: false,
                       withCloseButton: false,
                       loading: true,
@@ -216,7 +216,7 @@ export function Component() {
                         class: 'RANDOM',
                         background: 'RANDOM',
                         ancestry: 'RANDOM',
-                        level: 20,
+                        level: Math.floor(Math.random() * 20) + 1,
                         content_sources: 'ALL',
                         selections: 'RANDOM',
                         items: [],
