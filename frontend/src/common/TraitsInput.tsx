@@ -45,7 +45,11 @@ export default function TraitsInput(props: TraitsInputProps) {
         <TagsInput
           {...passedProps}
           defaultValue={traits.filter((trait) => props.defaultTraits?.includes(trait.id)).map((trait) => trait.name)}
-          value={traits.filter((trait) => props.traits?.includes(trait.id)).map((trait) => trait.name)}
+          value={
+            props.traits
+              ? traits.filter((trait) => props.traits?.includes(trait.id)).map((trait) => trait.name)
+              : props.value
+          }
           data={_.uniq(traits.map((trait) => trait.name))}
           limit={1000}
           onChange={(value) => {

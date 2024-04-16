@@ -9,6 +9,7 @@ import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
+import { modals } from '@mantine/modals';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -215,6 +216,7 @@ export default function DrawerBase() {
             setFeedbackData(null);
           }}
           onStartFeedback={() => {
+            modals.closeAll();
             openDrawer(null);
           }}
           onCompleteFeedback={() => {
