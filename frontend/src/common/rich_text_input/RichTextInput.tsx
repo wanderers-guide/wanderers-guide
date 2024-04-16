@@ -16,6 +16,7 @@ import { ActionSymbol } from './ActionSymbolExtension';
 import ActionSymbolControl from './ActionSymbolControl';
 import Placeholder from '@tiptap/extension-placeholder';
 import { useElementSize } from '@mantine/hooks';
+import AutoContentLinkControl from './AutoContentLinkControl';
 
 interface RichTextInputProps {
   label?: string;
@@ -51,8 +52,8 @@ export default function RichTextInput(props: RichTextInputProps) {
   });
 
   const { ref, width, height } = useElementSize();
-  const isSmall = width < 500;
-  const isVerySmall = width < 375;
+  const isSmall = width < 510;
+  const isVerySmall = width < 395;
 
   return (
     <Box>
@@ -113,6 +114,11 @@ export default function RichTextInput(props: RichTextInputProps) {
               <RichTextEditor.H2 />
               <RichTextEditor.H3 />
               <RichTextEditor.H4 />
+            </RichTextEditor.ControlsGroup>
+          )}
+          {!isVerySmall && (
+            <RichTextEditor.ControlsGroup>
+              <AutoContentLinkControl />
             </RichTextEditor.ControlsGroup>
           )}
         </RichTextEditor.Toolbar>
