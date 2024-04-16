@@ -34,6 +34,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { displayComingSoon } from '@utils/notifications';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
+import { labelToVariable } from '@variables/variable-utils';
 
 export function AddItemDrawerTitle(props: { data: {} }) {
   return (
@@ -155,7 +156,23 @@ export function AddItemDrawerContent(props: {
         ) : (
           <ItemsList
             options={items.slice((activePage - 1) * NUM_PER_PAGE, activePage * NUM_PER_PAGE)}
-            onClick={props.data.onClick}
+            onClick={(item, type) => {
+              const baseItem = item.meta_data?.base_item
+                ? rawItems?.find((i) => labelToVariable(i.name) === labelToVariable(item.meta_data!.base_item!))
+                : undefined;
+
+              const injectedItem = {
+                ...item,
+                meta_data: item.meta_data
+                  ? {
+                      ...item.meta_data,
+                      base_item_content: baseItem,
+                    }
+                  : undefined,
+              };
+
+              props.data.onClick(injectedItem, type);
+            }}
           />
         )}
       </ScrollArea>

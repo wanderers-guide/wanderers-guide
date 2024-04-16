@@ -104,6 +104,7 @@ export function CreateItemModal(props: {
       setPotencyRune(item.meta_data?.runes?.potency);
       setPropertyRunes(item.meta_data?.runes?.property);
       setBaseItem(item.meta_data?.base_item);
+      setBaseItemContent(item.meta_data?.base_item_content);
       setMaterialType(item.meta_data?.material?.type);
       refreshDisplayDescription();
 
@@ -130,6 +131,7 @@ export function CreateItemModal(props: {
   const [propertyRunes, setPropertyRunes] = useState<{ name: string; id: number }[] | undefined>([]);
 
   const [baseItem, setBaseItem] = useState<string | undefined>();
+  const [baseItemContent, setBaseItemContent] = useState<Item | undefined>();
 
   const [materialType, setMaterialType] = useState<string | undefined>();
 
@@ -226,6 +228,7 @@ export function CreateItemModal(props: {
       meta_data: {
         ...values.meta_data!,
         base_item: baseItem,
+        base_item_content: baseItemContent,
         material: {
           ...values.meta_data?.material,
           type: materialType,
@@ -443,6 +446,7 @@ export function CreateItemModal(props: {
                       }}
                       onChange={(item, name) => {
                         setBaseItem(name);
+                        setBaseItemContent(item);
                       }}
                     />
                   </Box>

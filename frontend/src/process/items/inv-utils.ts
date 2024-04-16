@@ -3,9 +3,10 @@ import { getCachedSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { Character, Inventory, InventoryItem, Item } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
-import { hasTraitType } from '@utils/traits';
+import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
+import { labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { SetterOrUpdater } from 'recoil';
 
@@ -148,9 +149,21 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
         character?.inventory && getFlatInvItems(character?.inventory).find((i) => `${i.item.id}` === itemId)
       );
       if (item && !itemExists) {
+        const baseItem = item.meta_data?.base_item
+          ? items.find((i) => labelToVariable(i.name) === labelToVariable(item.meta_data!.base_item!))
+          : undefined;
+
         extraItems.push({
           id: 'extra-item-' + itemId,
-          item: item,
+          item: {
+            ...item,
+            meta_data: item.meta_data
+              ? {
+                  ...item.meta_data,
+                  base_item_content: baseItem,
+                }
+              : undefined,
+          },
           is_formula: false,
           is_equipped: isItemEquippable(item),
           is_invested: isItemInvestable(item),
@@ -453,6 +466,23 @@ export function isItemArchaic(item: Item) {
   }
 
   return (isItemWeapon(item) || isItemArmor(item)) && source.group.startsWith('pathfinder');
+}
+
+/**
+ * Gets all traits that the item should have from its base item, main traits, runes, etc
+ * @param item
+ */
+export function compileTraits(item: Item) {
+  const traits = item.traits ?? [];
+  if (item.meta_data?.base_item_content) {
+    traits.push(...(item.meta_data.base_item_content.traits ?? []));
+  }
+
+  if (isItemWithRunes(item)) {
+    traits.push(getTraitIdByType('MAGICAL'));
+  }
+
+  return _.uniq(traits);
 }
 
 /**

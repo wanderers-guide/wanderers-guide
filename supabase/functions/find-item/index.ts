@@ -1,17 +1,19 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect, fetchData } from "../_shared/helpers.ts";
-import type { Item } from "../_shared/content";
+import { serve } from 'std/server';
+import { connect, fetchData } from '../_shared/helpers.ts';
+import type { Item } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id, content_sources } = body as {
+    let { id, name, content_sources } = body as {
       id?: number | number[];
+      name?: string;
       content_sources?: number[];
     };
 
     const results = await fetchData<Item>(client, 'item', [
       { column: 'id', value: id },
+      { column: 'name', value: name, options: { ignoreCase: true } },
       { column: 'content_source_id', value: content_sources },
     ]);
 

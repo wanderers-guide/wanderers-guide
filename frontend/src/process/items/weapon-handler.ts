@@ -3,8 +3,8 @@ import { StoreID, VariableBool, VariableListStr, VariableNum } from '@typing/var
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
-import { isVariableListStr, labelToVariable } from '@variables/variable-utils';
-import { isItemRangedWeapon } from './inv-utils';
+import { labelToVariable } from '@variables/variable-utils';
+import { compileTraits, isItemRangedWeapon } from './inv-utils';
 
 export function getWeaponStats(id: StoreID, item: Item) {
   const dice = (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0);
@@ -41,18 +41,19 @@ function getAttackBonus(id: StoreID, item: Item) {
 }
 
 function getRangedAttackBonus(id: StoreID, item: Item) {
+  const itemTraits = compileTraits(item);
   const attackBonus = getFinalVariableValue(id, 'ATTACK_ROLLS_BONUS').total;
   const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
   const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
   const rangedAttackBonus = getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total;
   const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
 
-  const hasBrutal = false; //TODO: hasTraitType('BRUTAL', item.traits);
+  const hasBrutal = false; //TODO: hasTraitType('BRUTAL', itemTraits);
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
 
-  const hasTracking1 = hasTraitType('TRACKING-1', item.traits);
-  const hasTracking2 = hasTraitType('TRACKING-2', item.traits);
+  const hasTracking1 = hasTraitType('TRACKING-1', itemTraits);
+  const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
 
   ///
 
@@ -113,18 +114,19 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
 }
 
 function getMeleeAttackBonus(id: StoreID, item: Item) {
+  const itemTraits = compileTraits(item);
   const attackBonus = getFinalVariableValue(id, 'ATTACK_ROLLS_BONUS').total;
   const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
   const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
   const meleeAttackBonus = getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total;
   const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
 
-  const hasFinesse = hasTraitType('FINESSE', item.traits);
+  const hasFinesse = hasTraitType('FINESSE', itemTraits);
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
 
-  const hasTracking1 = hasTraitType('TRACKING-1', item.traits);
-  const hasTracking2 = hasTraitType('TRACKING-2', item.traits);
+  const hasTracking1 = hasTraitType('TRACKING-1', itemTraits);
+  const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
 
   ///
 
@@ -193,17 +195,18 @@ function getAttackDamage(id: StoreID, item: Item) {
 }
 
 function getRangedAttackDamage(id: StoreID, item: Item) {
+  const itemTraits = compileTraits(item);
   const attackDamage = getFinalVariableValue(id, 'ATTACK_DAMAGE_BONUS').total;
   const dexAttackDamage = getFinalVariableValue(id, 'DEX_ATTACK_DAMAGE_BONUS').total;
   const strAttackDamage = getFinalVariableValue(id, 'STR_ATTACK_DAMAGE_BONUS').total;
   const rangedAttackDamage = getFinalVariableValue(id, 'RANGED_ATTACK_DAMAGE_BONUS').total;
 
   const hasThrown =
-    hasTraitType('THROWN', item.traits) ||
-    hasTraitType('THROWN-10', item.traits) ||
-    hasTraitType('THROWN-20', item.traits);
-  const hasSplash = hasTraitType('SPLASH', item.traits);
-  const hasPropulsive = hasTraitType('PROPULSIVE', item.traits);
+    hasTraitType('THROWN', itemTraits) ||
+    hasTraitType('THROWN-10', itemTraits) ||
+    hasTraitType('THROWN-20', itemTraits);
+  const hasSplash = hasTraitType('SPLASH', itemTraits);
+  const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
 
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
@@ -259,13 +262,14 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
 }
 
 function getMeleeAttackDamage(id: StoreID, item: Item) {
+  const itemTraits = compileTraits(item);
   const attackDamage = getFinalVariableValue(id, 'ATTACK_DAMAGE_BONUS').total;
   const dexAttackDamage = getFinalVariableValue(id, 'DEX_ATTACK_DAMAGE_BONUS').total;
   const strAttackDamage = getFinalVariableValue(id, 'STR_ATTACK_DAMAGE_BONUS').total;
   const meleeAttackDamage = getFinalVariableValue(id, 'MELEE_ATTACK_DAMAGE_BONUS').total;
 
-  const hasSplash = hasTraitType('SPLASH', item.traits);
-  const hasFinesse = hasTraitType('FINESSE', item.traits);
+  const hasSplash = hasTraitType('SPLASH', itemTraits);
+  const hasFinesse = hasTraitType('FINESSE', itemTraits);
 
   const hasFinesseUseDexDamage = getVariable<VariableBool>(id, 'USE_DEX_FOR_MELEE_FINESSE')?.value ?? false;
 
@@ -334,7 +338,7 @@ function getProfTotal(id: StoreID, item: Item) {
       if (item.name.trim().toUpperCase() === f) return true;
       if (item.meta_data?.group && item.meta_data.group.trim().toUpperCase() === f) return true;
       // Don't use labelToVariable here, as it will remove the numbers for IDs
-      if (!isNaN(parseInt(f)) && item.traits?.includes(parseInt(f))) return true;
+      if (!isNaN(parseInt(f)) && compileTraits(item).includes(parseInt(f))) return true;
     }
     return false;
   };
@@ -379,7 +383,7 @@ function getProfTotal(id: StoreID, item: Item) {
 }
 
 function getMAPedTotal(id: StoreID, item: Item, total: number): [number, number, number] {
-  const hasAgile = hasTraitType('AGILE', item.traits);
+  const hasAgile = hasTraitType('AGILE', compileTraits(item));
 
   const first = total;
   const second = hasAgile ? total - 4 : total - 5;

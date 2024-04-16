@@ -18,6 +18,7 @@ type TraitType =
   | 'MULTICLASS'
   | 'DEDICATION'
   | 'ARCHAIC'
+  | 'MAGICAL'
   | 'TECH'
   | 'TRACKING-1'
   | 'TRACKING-2';
@@ -41,6 +42,7 @@ const traitMap: Record<number, TraitType> = {
   1570: 'FINESSE',
   1446: 'MULTICLASS',
   1445: 'DEDICATION',
+  1504: 'MAGICAL',
   2503: 'ARCHAIC',
   2508: 'TECH',
   2511: 'TRACKING-1',

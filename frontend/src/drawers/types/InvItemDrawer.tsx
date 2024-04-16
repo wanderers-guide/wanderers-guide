@@ -4,6 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { priceToString } from '@items/currency-handler';
 import {
+  compileTraits,
   isItemArchaic,
   isItemArmor,
   isItemBroken,
@@ -175,7 +176,7 @@ export function InvItemDrawerContent(props: {
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
           <TraitsDisplay
-            traitIds={invItem.item.traits ?? []}
+            traitIds={compileTraits(invItem.item)}
             rarity={invItem.item.rarity}
             broken={isItemBroken(invItem.item)}
             shoddy={invItem.item.meta_data?.is_shoddy}

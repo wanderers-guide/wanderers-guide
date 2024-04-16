@@ -87,19 +87,19 @@ export async function getLanguageIds(languageNames: string[], source: ContentSou
 
   const languageIds: number[] = [];
   for (const languageName of languageNames) {
-    let language = await fetchLanguageByName(
+    let languages = await fetchLanguageByName(
       languageName,
       sources.map((s) => s.id)
     );
-    if (!language) {
+    if (!languages || languages.length === 0) {
       await createLanguage(_.startCase(languageName), '', 'COMMON', source.id);
-      language = await fetchLanguageByName(
+      languages = await fetchLanguageByName(
         languageName,
         sources.map((s) => s.id)
       );
     }
-    if (language) {
-      languageIds.push(language.id);
+    if (languages && languages.length > 0) {
+      languageIds.push(languages[0].id);
     }
   }
   return languageIds;
@@ -110,12 +110,12 @@ export async function getSpellIds(spellNames: string[]) {
 
   const spellIds: number[] = [];
   for (const spellName of spellNames) {
-    let spell = await fetchSpellByName(
+    const spells = await fetchSpellByName(
       spellName,
       sources.map((s) => s.id)
     );
-    if (spell) {
-      spellIds.push(spell.id);
+    if (spells && spells.length > 0) {
+      spellIds.push(spells[0].id);
     } else {
       console.warn(`Spell not found: ${spellName}`);
     }
@@ -128,12 +128,12 @@ export async function getItemIds(itemNames: string[]) {
 
   const itemIds: number[] = [];
   for (const itemName of itemNames) {
-    let item = await fetchItemByName(
+    const items = await fetchItemByName(
       itemName,
       sources.map((s) => s.id)
     );
-    if (item) {
-      itemIds.push(item.id);
+    if (items && items.length > 0) {
+      itemIds.push(items[0].id);
     } else {
       console.warn(`Item not found: ${itemName}`);
     }

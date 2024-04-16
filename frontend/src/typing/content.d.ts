@@ -129,6 +129,7 @@ interface Item {
   meta_data?: {
     image_url?: string;
     base_item?: string;
+    base_item_content?: Item;
     category?: string;
     damage?: {
       damageType: string;

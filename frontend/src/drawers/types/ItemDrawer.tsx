@@ -3,11 +3,12 @@ import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentById } from '@content/content-store';
+import { fetchContentById, fetchItemByName } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
 import {
+  compileTraits,
   isItemArchaic,
   isItemArmor,
   isItemShield,
@@ -95,15 +96,23 @@ export function ItemDrawerContent(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: _item } = useQuery({
-    queryKey: [`find-item-${id}`, { id }],
+    queryKey: [`find-item-with-base-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await fetchContentById<Item>('item', id);
+      const item = await fetchContentById<Item>('item', id);
+
+      // Inject base item content
+      if (item?.meta_data?.base_item) {
+        const baseItem = await fetchItemByName(item.meta_data.base_item);
+        item.meta_data.base_item_content = baseItem && baseItem.length > 0 ? baseItem[0] : undefined;
+      }
+      return item;
     },
     enabled: !!id,
   });
+
   const item = props.data.item ?? _item;
 
   if (!item) {
@@ -194,7 +203,12 @@ export function ItemDrawerContent(props: {
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={item.traits ?? []} rarity={item.rarity} archaic={isItemArchaic(item)} interactable />
+          <TraitsDisplay
+            traitIds={compileTraits(item)}
+            rarity={item.rarity}
+            archaic={isItemArchaic(item)}
+            interactable
+          />
         </Box>
 
         <MiscItemSections item={item} store={storeID} openDrawer={openDrawer} />
