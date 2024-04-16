@@ -146,7 +146,7 @@ export function Component() {
 
   return (
     <Center>
-      <Box maw={800} w='100%'>
+      <Box maw={800} w='100%' pb='sm'>
         <Stack style={{ position: 'relative' }}>
           {!isCharacterBuilderMobile() && (
             <>
