@@ -235,6 +235,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // When you take Multilingual, you gain 3 languages instead of 2.
   IMPROVED_MULTILINGUAL: newVariable('bool', 'IMPROVED_MULTILINGUAL'),
 
+  // When you attack with a finesse melee weapon, you can use Dex mod for damage instead of Str mod.
+  USE_DEX_FOR_MELEE_FINESSE: newVariable('bool', 'USE_DEX_FOR_MELEE_FINESSE'),
+
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
 

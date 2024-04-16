@@ -2,6 +2,7 @@ import {
   collectCharacterAbilityBlocks,
   collectCharacterSenses,
   collectCharacterSpellcasting,
+  getFocusPoints,
 } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import {
@@ -728,13 +729,14 @@ async function fillPDF(form: PDFForm, character: Character) {
     }
   }
 
-  if (spellData.focus_points.current > 0) {
+  const focusPoints = getFocusPoints(character, spellData.focus);
+  if (focusPoints.current > 0) {
     form.getCheckBox('FP1').check();
   }
-  if (spellData.focus_points.current > 1) {
+  if (focusPoints.current > 1) {
     form.getCheckBox('FP2').check();
   }
-  if (spellData.focus_points.current > 2) {
+  if (focusPoints.current > 2) {
     form.getCheckBox('FP3').check();
   }
 

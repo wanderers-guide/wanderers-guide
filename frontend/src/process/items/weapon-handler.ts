@@ -265,6 +265,9 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
   const meleeAttackDamage = getFinalVariableValue(id, 'MELEE_ATTACK_DAMAGE_BONUS').total;
 
   const hasSplash = hasTraitType('SPLASH', item.traits);
+  const hasFinesse = hasTraitType('FINESSE', item.traits);
+
+  const hasFinesseUseDexDamage = getVariable<VariableBool>(id, 'USE_DEX_FOR_MELEE_FINESSE')?.value ?? false;
 
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
@@ -273,25 +276,29 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
 
   const parts = new Map<string, number>();
 
-  // TODO:
-  // if(gState_hasFinesseMeleeUseDexDamage && finesseTag != null){
-  //   if(dexModDamage > strModDamage) {
-  //     if(dexModDamage != 0){
-  //       dmgStrBonus = dexModDamage;
-  //       weapStruct.damage.parts.set('This is your Dexterity modifier. You\'re adding Dexterity instead of Strength to your weapon\'s damage, because this weapon has the finesse trait and you have an ability that allows you to use your Dexterity modifier instead of Strength for damage with finesse weapons.', dmgStrBonus);
-  //     }
-  //   } else {
-  //     if(strModDamage != 0){
-  //       dmgStrBonus = strModDamage;
-  //       weapStruct.damage.parts.set('This is your Strength modifier. You have an ability that allows you to use your Dexterity modifier instead of Strength for damage with finesse weapons. However, your Strength modifier is greater than your Dexterity so it is being used instead.', dmgStrBonus);
-  //     }
-  //   }
-
-  if (!hasSplash && strMod) {
-    parts.set(
-      'This is your Strength modifier. You generally add your Strength modifier to damage with melee weapons.',
-      strMod
-    );
+  if (hasFinesseUseDexDamage && hasFinesse) {
+    if (dexMod >= strMod) {
+      if (dexMod) {
+        parts.set(
+          `This is your Dexterity modifier. You're adding Dexterity instead of Strength to your weapon's damage because this weapon has the finesse trait and you have an ability that allows you to use your Dexterity modifier instead of Strength for damage with finesse weapons.`,
+          dexMod
+        );
+      }
+    } else {
+      if (strMod) {
+        parts.set(
+          'This is your Strength modifier. You have an ability that allows you to use your Dexterity modifier instead of Strength for damage with finesse weapons. However, your Strength modifier is greater than your Dexterity so it is being used instead.',
+          strMod
+        );
+      }
+    }
+  } else {
+    if (!hasSplash && strMod) {
+      parts.set(
+        'This is your Strength modifier. You generally add your Strength modifier to damage with melee weapons.',
+        strMod
+      );
+    }
   }
 
   if (attackDamage) {

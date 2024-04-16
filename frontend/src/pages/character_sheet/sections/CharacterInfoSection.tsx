@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
-import { collectCharacterSpellcasting } from '@content/collect-content';
+import { collectCharacterSpellcasting, getFocusPoints } from '@content/collect-content';
 import { useMantineTheme, Group, Stack, TextInput, Box, Text } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { VariableAttr, VariableNum, VariableProf } from '@typing/variables';
@@ -93,9 +93,10 @@ export default function CharacterInfoSection() {
     };
 
     // Reset Focus Points
+    const focusPoints = getFocusPoints(newCharacter, spellData.focus);
     newCharacter.spells = {
       ...newCharacter.spells,
-      focus_point_current: spellData.focus_points.max,
+      focus_point_current: focusPoints.max,
     };
 
     // Reset Spell Slots

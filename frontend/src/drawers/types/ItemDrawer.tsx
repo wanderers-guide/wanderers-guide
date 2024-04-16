@@ -222,7 +222,7 @@ export function ItemDrawerContent(props: {
   );
 }
 
-function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: SetterOrUpdater<any> }) {
+function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: SetterOrUpdater<any> }) {
   const ac = props.item.meta_data?.ac_bonus;
   const dexCap = props.item.meta_data?.dex_cap;
   const strength = props.item.meta_data?.strength;
@@ -321,7 +321,7 @@ function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: Set
 
   let attackAndDamageSection = null;
   if (hasAttackAndDamage) {
-    const weaponStats = getWeaponStats(props.storeID, props.item);
+    const weaponStats = getWeaponStats(props.store, props.item);
 
     const damageBonus = weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
 
@@ -525,7 +525,7 @@ function MiscItemSections(props: { item: Item; storeID: StoreID; openDrawer: Set
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' store={props.storeID}>
+                <RichText ta='justify' fz='xs' store={props.store}>
                   {groupDesc?.description}
                 </RichText>
               </HoverCard.Dropdown>
