@@ -325,7 +325,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   return (
     <Center>
-      <Box maw={1000} w='100%'>
+      <Box maw={1000} w='100%' pb='sm'>
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
             <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>

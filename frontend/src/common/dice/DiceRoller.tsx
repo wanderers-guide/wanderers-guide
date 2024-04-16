@@ -906,7 +906,7 @@ export default function DiceRoller(props: {
           ref={canvasRef}
           style={{
             position: 'absolute',
-            border: 'solid',
+            //border: 'solid',
             marginTop: 15,
             width: '95%',
             height: '95%',
