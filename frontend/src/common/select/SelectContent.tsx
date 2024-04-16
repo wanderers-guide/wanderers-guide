@@ -2545,7 +2545,7 @@ export function BackgroundSelectionOption(props: {
 
 export function ItemSelectionOption(props: {
   item: Item;
-  onClick: (item: Item) => void;
+  onClick?: (item: Item) => void;
   selected?: boolean;
   showButton?: boolean;
   includeOptions?: boolean;
@@ -2576,12 +2576,15 @@ export function ItemSelectionOption(props: {
       }
       showButton={props.showButton}
       selected={props.selected}
-      onClick={() =>
-        openDrawer({
-          type: 'item',
-          data: { id: props.item.id, onSelect: props.showButton ? () => props.onClick(props.item) : undefined },
-          extra: { addToHistory: true },
-        })
+      onClick={
+        props.onClick
+          ? () =>
+              openDrawer({
+                type: 'item',
+                data: { id: props.item.id, onSelect: props.showButton ? () => props.onClick?.(props.item) : undefined },
+                extra: { addToHistory: true },
+              })
+          : () => {}
       }
       level={props.item.level}
       buttonOverride={
@@ -2591,6 +2594,7 @@ export function ItemSelectionOption(props: {
           onFormula={() => props.onAdd?.(props.item, 'FORMULA')}
         />
       }
+      onButtonClick={props.onClick ? () => props.onClick?.(props.item) : undefined}
       includeOptions={props.includeOptions}
       onOptionsDelete={() => props.onDelete?.(props.item.id)}
       onOptionsCopy={() => props.onCopy?.(props.item.id)}
