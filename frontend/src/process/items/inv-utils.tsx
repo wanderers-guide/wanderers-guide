@@ -482,7 +482,7 @@ export function isItemArchaic(item: Item) {
  * @param item
  */
 export function compileTraits(item: Item) {
-  const traits = item.traits ?? [];
+  const traits = _.cloneDeep(item.traits ?? []);
   if (item.meta_data?.base_item_content) {
     traits.push(...(item.meta_data.base_item_content.traits ?? []));
   }
