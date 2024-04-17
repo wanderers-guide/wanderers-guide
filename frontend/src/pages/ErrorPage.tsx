@@ -1,4 +1,4 @@
-import { Title, Text, Button, Container, Group } from '@mantine/core';
+import { Title, Text, Button, Container, Group, Box } from '@mantine/core';
 import classes from '@css/ErrorPage.module.css';
 import { setPageTitle } from '@utils/document-change';
 import { IconBrandGithub } from '@tabler/icons-react';
@@ -7,7 +7,7 @@ export function ErrorPage() {
   setPageTitle(`Error 500`);
 
   return (
-    <div className={classes.root}>
+    <Box className={classes.root} h={'100vh'}>
       <Container>
         <div className={classes.label}>500</div>
         <Title className={classes.title}>We just rolled a Nat 1...</Title>
@@ -28,6 +28,6 @@ export function ErrorPage() {
           </Button>
         </Group>
       </Container>
-    </div>
+    </Box>
   );
 }
