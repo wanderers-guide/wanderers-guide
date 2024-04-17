@@ -259,7 +259,12 @@ export function CreateAbilityBlockModal(props: {
             </Group>
 
             {props.type === 'feat' && (
-              <TagsInput label='Prerequisites' splitChars={[',', ';', '|']} {...form.getInputProps('prerequisites')} />
+              <TagsInput
+                maw='410'
+                label='Prerequisites'
+                splitChars={[',', ';', '|']}
+                {...form.getInputProps('prerequisites')}
+              />
             )}
 
             <Divider

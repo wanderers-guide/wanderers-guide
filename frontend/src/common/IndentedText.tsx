@@ -14,6 +14,7 @@ export default function IndentedText(props: IndentedTextProps) {
         props.disabled
           ? {}
           : {
+              marginTop: 5,
               marginLeft: TEXT_INDENT_AMOUNT,
               textIndent: -1 * TEXT_INDENT_AMOUNT,
             }

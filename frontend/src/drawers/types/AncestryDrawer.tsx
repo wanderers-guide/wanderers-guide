@@ -527,7 +527,7 @@ export function AncestryInitialOverview(props: {
           </IndentedText>
         ))}
       </Box>
-      {(display.senses.length > 0 || display.physicalFeatures.length) && (
+      {(display.senses.length > 0 || display.physicalFeatures.length > 0) && (
         <Box>
           <Divider
             px='xs'
