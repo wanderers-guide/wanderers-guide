@@ -23,3 +23,18 @@ To help contribute, currently go to the [Legacy App](https://github.com/wanderer
 7. Run `npm install`
 8. Run `npm run dev`
 9. In another terminal window run at the project root level `supabase functions serve` to initialize the backend
+
+### Creating a user
+
+To properly access the website you need to register a user.
+
+1. First go to the local supabase studio page at <http://127.0.0.1:54323>
+2. In the authentication page, create a new user with email and password. Copy the User UUID generated
+3. Create a file named `user.csv` in your computer with the following content. Remember to substitute the "UUID HERE" string for the User UUID generate in step 2:
+
+```csv
+id,created_at,user_id,display_name,image_url,background_image_url,site_theme,is_admin,is_mod,deactivated,summary,subscribed_content_sources,patreon,organized_play_id
+1,2024-04-03 21:30:01.720023+00,UUID HERE,User name,,,,false,false,false,,,,
+```
+4. Go to the Table Editor page and select the `public_user` table. Insert the CSV in the table
+5. Login with the email and password
