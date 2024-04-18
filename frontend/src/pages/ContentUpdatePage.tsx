@@ -6,44 +6,25 @@ import { DISCORD_URL } from '@constants/data';
 import { fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
 import { mapToDrawerData } from '@drawers/drawer-utils';
-import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
-import importFromJSON from '@import/json/import-from-json';
 import {
   Center,
   Group,
   Title,
-  Tooltip,
   ActionIcon,
-  Menu,
-  rem,
-  VisuallyHidden,
-  FileButton,
-  Button,
   Text,
   Divider,
   Loader,
   Box,
-  Code,
   Stack,
   Container,
-  List,
   Anchor,
   Paper,
   Badge,
 } from '@mantine/core';
-import { openContextModal } from '@mantine/modals';
-import {
-  IconUserPlus,
-  IconUpload,
-  IconCodeDots,
-  IconArchive,
-  IconArrowBigRightLine,
-  IconThumbUp,
-  IconThumbDown,
-} from '@tabler/icons-react';
+import { IconArrowBigRightLine, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { setPageTitle } from '@utils/document-change';
-import { hashData, sign } from '@utils/numbers';
+import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import _ from 'lodash-es';
 import { useMemo } from 'react';
