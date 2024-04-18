@@ -33,6 +33,7 @@ export default async function importFromGUIDECHAR(file: File) {
       throw new Error();
     }
   } catch (e) {
+    console.log(e);
     hideNotification(`importing-${file.name}`);
     showNotification({
       title: 'Import failed',
@@ -82,7 +83,7 @@ function convertGUIDECHARToFTC(data: Record<string, any>): FTC {
     });
   };
 
-  let info: Record<string, string> = {};
+  let info: Record<string, string> | null = {};
   try {
     info = JSON.parse(data.character.infoJSON);
   } catch (e) {}
@@ -163,19 +164,19 @@ function convertGUIDECHARToFTC(data: Record<string, any>): FTC {
       resolve: data.character?.currentResolve,
       info: {
         notes: 'Please copy and paste your notes manually, thanks!',
-        appearance: info.appearance,
-        personality: info.personality,
-        alignment: info.alignment,
-        beliefs: info.beliefs,
-        age: info.age,
+        appearance: info?.appearance,
+        personality: info?.personality,
+        alignment: info?.alignment,
+        beliefs: info?.beliefs,
+        age: info?.age,
         height: undefined,
         weight: undefined,
-        gender: info.gender,
-        pronouns: info.pronouns,
-        faction: info.faction,
+        gender: info?.gender,
+        pronouns: info?.pronouns,
+        faction: info?.faction,
         reputation: undefined,
-        ethnicity: info.ethnicity,
-        nationality: info.nationality,
+        ethnicity: info?.ethnicity,
+        nationality: info?.nationality,
         birthplace: undefined,
         organized_play_id: undefined,
       },
