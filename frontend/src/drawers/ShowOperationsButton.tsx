@@ -1,5 +1,5 @@
 import BlurButton from '@common/BlurButton';
-import { Badge, Button, Text } from '@mantine/core';
+import { Badge, Box, Button, Text } from '@mantine/core';
 import ViewOperationsModal from '@modals/ViewOperationsModal';
 import { Operation } from '@typing/operations';
 import { useState } from 'react';
@@ -33,6 +33,8 @@ export default function ShowOperationsButton(props: { name: string; operations?:
         operations={props.operations}
         title={`Operations - ${props.name}`}
       />
+      {/* Included to fix bug vvv */}
+      <Box mb={5}></Box>
     </>
   );
 }
