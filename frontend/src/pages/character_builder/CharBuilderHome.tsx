@@ -46,6 +46,7 @@ import {
   IconServer,
   IconFlagPlus,
   IconKey,
+  IconArchive,
 } from '@tabler/icons-react';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
@@ -352,6 +353,28 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                 />
                 <LinksGroup
+                  icon={IconArchive}
+                  label={'Legacy Backports'}
+                  links={books
+                    .filter((book) => book.group === 'legacy')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
+                  onEnableAll={() => {
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'legacy').map((book) => book.id),
+                      true
+                    );
+                  }}
+                  onFeedback={(type, id, contentSourceId) => {
+                    setFeedbackData({ type, data: { id, contentSourceId } });
+                  }}
+                />
+                <LinksGroup
                   icon={IconDots}
                   label={'Miscellaneous'}
                   links={books
@@ -373,29 +396,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
-                {/* <LinksGroup
-                      icon={IconArchive}
-                      label={'Legacy Backports'}
-                      links={books
-                        .filter((book) => book.group === 'legacy')
-                        .map((book) => ({
-                          label: book.name,
-                          id: book.id,
-                          url: book.url,
-                          enabled: hasBookEnabled(book.id),
-                        }))}
-                      onLinkChange={(bookId, enabled) => setBookEnabled(bookId, enabled)}
-                      onEnableAll={() => {
-                        books
-                          .filter((book) => book.group === 'legacy')
-                          .forEach((book) => {
-                            setBookEnabled(book.id, true);
-                          });
-                      }}
-                      onFeedback={(type, id, contentSourceId) => {
-                        setFeedbackData({ type, data: { id, contentSourceId } });
-                      }}
-                    /> */}
               </Stack>
             </Tabs.Panel>
 
