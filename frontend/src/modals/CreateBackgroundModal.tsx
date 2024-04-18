@@ -28,6 +28,7 @@ import { JSONContent } from '@tiptap/react';
 import { Background, Rarity } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
+import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
 
 export function CreateBackgroundModal(props: {
@@ -55,6 +56,7 @@ export function CreateBackgroundModal(props: {
         ...background,
       });
       form.reset();
+      refreshDisplayDescription();
 
       return background;
     },
@@ -64,6 +66,7 @@ export function CreateBackgroundModal(props: {
 
   const [description, setDescription] = useState<JSONContent>();
   const [isValidImageURL, setIsValidImageURL] = useState(true);
+  const [displayDescription, refreshDisplayDescription] = useRefresh();
 
   const form = useForm<Background>({
     initialValues: {
@@ -152,7 +155,7 @@ export function CreateBackgroundModal(props: {
               error={isValidImageURL ? false : 'Invalid URL'}
             />
 
-            {(description || form.values.description) && (
+            {displayDescription && (
               <RichTextInput
                 label='Description'
                 required

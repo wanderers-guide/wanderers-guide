@@ -61,7 +61,15 @@ serve(async (req: Request) => {
       if (update.action === 'UPDATE' && update.ref_id) {
         result = await updateData(client, tableName, update.ref_id, update.data);
       } else if (update.action === 'CREATE') {
-        const newData = await insertData(client, tableName, update.data, update.data?.type);
+        const newData = await insertData(
+          client,
+          tableName,
+          {
+            ...update.data,
+            content_source_id: update.content_source_id,
+          },
+          update.data?.type
+        );
         result = newData ? 'SUCCESS' : 'ERROR_UNKNOWN';
       } else if (update.action === 'DELETE' && update.ref_id) {
         result = await deleteData(client, tableName, update.ref_id);

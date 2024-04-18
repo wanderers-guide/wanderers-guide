@@ -107,12 +107,12 @@ export function CreateLanguageModal(props: {
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
-            <Group wrap='nowrap' justify='space-between'>
-              <Group wrap='nowrap'>
-                <TextInput label='Name' required {...form.getInputProps('name')} />
-                <TextInput label='Speakers' {...form.getInputProps('speakers')} />
-                <TextInput label='Script' {...form.getInputProps('script')} />
-              </Group>
+            <Group wrap='nowrap'>
+              <TextInput label='Name' required {...form.getInputProps('name')} />
+              <TextInput label='Speakers' {...form.getInputProps('speakers')} />
+            </Group>
+            <Group>
+              <TextInput label='Script' {...form.getInputProps('script')} />
               <Select
                 label='Rarity'
                 required

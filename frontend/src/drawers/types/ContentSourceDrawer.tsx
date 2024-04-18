@@ -15,8 +15,8 @@ import {
   SpellSelectionOption,
   TraitSelectionOption,
 } from '@common/select/SelectContent';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById, fetchContentPackage, fetchContentSources } from '@content/content-store';
+import { convertToContentType } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import {
   Title,
@@ -33,11 +33,14 @@ import {
   Badge,
   Select,
 } from '@mantine/core';
+import { modals } from '@mantine/modals';
+import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, ContentSource } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { displayComingSoon } from '@utils/notifications';
+import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
@@ -86,7 +89,12 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
 }
 
 export function ContentSourceDrawerContent(props: {
-  data: { id?: number; source?: ContentSource; showOperations?: boolean };
+  data: {
+    id?: number;
+    source?: ContentSource;
+    showOperations?: boolean;
+    onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
+  };
 }) {
   const id = props.data.id;
 
@@ -487,26 +495,34 @@ export function ContentSourceDrawerContent(props: {
         <Divider my='sm' />
         <Select
           placeholder='Missing something?'
-          data={[
-            { label: 'Action', value: 'action' },
-            { label: 'Ancestry', value: 'ancestry' },
-            { label: 'Background', value: 'background' },
-            { label: 'Class', value: 'class' },
-            { label: 'Creature', value: 'creature' },
-            { label: 'Feat', value: 'feat' },
-            { label: 'Item', value: 'item' },
-            { label: 'Language', value: 'language' },
-            { label: 'Spell', value: 'spell' },
-            { label: 'Trait', value: 'trait' },
-          ]}
+          data={
+            [
+              { label: 'Action', value: 'action' },
+              { label: 'Ancestry', value: 'ancestry' },
+              { label: 'Archetype', value: 'archetype' },
+              { label: 'Background', value: 'background' },
+              { label: 'Class', value: 'class' },
+              { label: 'Class Feature', value: 'class-feature' },
+              { label: 'Creature', value: 'creature' },
+              { label: 'Feat', value: 'feat' },
+              { label: 'Heritage', value: 'heritage' },
+              { label: 'Item', value: 'item' },
+              { label: 'Language', value: 'language' },
+              { label: 'Physical Feature', value: 'physical-feature' },
+              { label: 'Sense', value: 'sense' },
+              { label: 'Spell', value: 'spell' },
+              { label: 'Trait', value: 'trait' },
+              { label: 'Versatile Heritage', value: 'versatile-heritage' },
+            ] satisfies { label: string; value: ContentType | AbilityBlockType }[]
+          }
           styles={{
             dropdown: {
               zIndex: 10000,
             },
           }}
           onChange={(value) => {
-            // TODO: Open drawer to create that type of content to submit a content update
-            displayComingSoon();
+            if (!value) return;
+            props.data.onFeedback?.(value as ContentType | AbilityBlockType, -1, source.id);
           }}
         />
       </Box>

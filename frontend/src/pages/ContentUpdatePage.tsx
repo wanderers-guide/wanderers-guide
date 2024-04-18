@@ -156,103 +156,133 @@ export function Component(props: {}) {
           ) : (
             <BlurBox w={'100%'} p='md'>
               <Stack gap={10}>
-                <Text fz='lg' ta='center'>
-                  {_.startCase(data.contentUpdate.action.toLowerCase())} <b>{data.originalContent?.name}</b> from the{' '}
-                  <b>{data.source.name}</b>.
-                </Text>
-                <Group wrap='nowrap' align='center' justify='center'>
-                  <Box>
-                    <BlurButton
-                      size='compact-md'
-                      fw={500}
-                      onClick={() => {
-                        if (!data.contentUpdate.ref_id) return;
-                        openDrawer(
-                          mapToDrawerData(
-                            data.contentUpdate.data?.type ?? data.contentUpdate.type,
-                            data.contentUpdate.ref_id,
-                            { noFeedback: true, showOperations: true }
-                          )
-                        );
-                      }}
-                    >
-                      View Original
-                    </BlurButton>
-                  </Box>
-                  <Box style={{ position: 'relative' }}>
-                    <ActionIcon
-                      variant='transparent'
-                      color='gray.5'
-                      style={{ cursor: 'default' }}
-                      aria-label='Arrow Right'
-                      aria-readonly
-                      size='lg'
-                    >
-                      <IconArrowBigRightLine size='1.5rem' stroke={1.5} />
-                    </ActionIcon>
-                    <Text
-                      fz={10}
-                      ta='center'
-                      fs='italic'
-                      style={{
-                        position: 'absolute',
-                        bottom: -20,
-                        whiteSpace: 'nowrap',
-
-                        left: '40%',
-                        transform: 'translate(-50%, -50%)',
-                      }}
-                    >
-                      {sizeDiff}
+                {data.contentUpdate.action === 'UPDATE' && (
+                  <Stack gap={10}>
+                    <Text fz='lg' ta='center'>
+                      {_.startCase(data.contentUpdate.action.toLowerCase())} <b>{data.originalContent?.name}</b> from
+                      the <b>{data.source.name}</b>.
                     </Text>
-                  </Box>
-                  <Box>
-                    <BlurButton
-                      size='compact-md'
-                      fw={500}
-                      onClick={() => {
-                        openDrawer(
-                          mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
-                            noFeedback: true,
-                            showOperations: true,
-                          })
-                        );
-                      }}
-                    >
-                      View Updated
-                    </BlurButton>
-                  </Box>
-                </Group>
+                    <Group wrap='nowrap' align='center' justify='center'>
+                      <Box>
+                        <BlurButton
+                          size='compact-md'
+                          fw={500}
+                          onClick={() => {
+                            if (!data.contentUpdate.ref_id) return;
+                            openDrawer(
+                              mapToDrawerData(
+                                data.contentUpdate.data?.type ?? data.contentUpdate.type,
+                                data.contentUpdate.ref_id,
+                                { noFeedback: true, showOperations: true }
+                              )
+                            );
+                          }}
+                        >
+                          View Original
+                        </BlurButton>
+                      </Box>
+                      <Box style={{ position: 'relative' }}>
+                        <ActionIcon
+                          variant='transparent'
+                          color='gray.5'
+                          style={{ cursor: 'default' }}
+                          aria-label='Arrow Right'
+                          aria-readonly
+                          size='lg'
+                        >
+                          <IconArrowBigRightLine size='1.5rem' stroke={1.5} />
+                        </ActionIcon>
+                        <Text
+                          fz={10}
+                          ta='center'
+                          fs='italic'
+                          style={{
+                            position: 'absolute',
+                            bottom: -20,
+                            whiteSpace: 'nowrap',
 
-                <Container pt={15}>
-                  <Paper w={`calc(min(450px, 50vw))`} withBorder>
-                    <Text ta='center'>Detected Field Changes</Text>
+                            left: '40%',
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          {sizeDiff}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <BlurButton
+                          size='compact-md'
+                          fw={500}
+                          onClick={() => {
+                            openDrawer(
+                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                                noFeedback: true,
+                                showOperations: true,
+                              })
+                            );
+                          }}
+                        >
+                          View Updated
+                        </BlurButton>
+                      </Box>
+                    </Group>
 
-                    <Stack gap={8} pb={8}>
-                      {changedFields.map((field, index) => (
-                        <Box key={index} mx={8}>
-                          <Badge
-                            variant='light'
-                            color='gray'
-                            fullWidth
-                            styles={{
-                              root: {
-                                textTransform: 'initial',
-                              },
-                            }}
-                          >
-                            {toLabel(field)}
-                          </Badge>
-                        </Box>
-                      ))}
-                    </Stack>
-                    {changedFields.length === 0 && (
-                      <Text fz='xs' fs='italic' c='dimmed' ta='center'>
-                        No changes detected?
-                      </Text>
-                    )}
-                  </Paper>
-                </Container>
+                    <Container pt={15}>
+                      <Paper w={`calc(min(450px, 50vw))`} withBorder>
+                        <Text ta='center'>Detected Field Changes</Text>
+
+                        <Stack gap={8} pb={8}>
+                          {changedFields.map((field, index) => (
+                            <Box key={index} mx={8}>
+                              <Badge
+                                variant='light'
+                                color='gray'
+                                fullWidth
+                                styles={{
+                                  root: {
+                                    textTransform: 'initial',
+                                  },
+                                }}
+                              >
+                                {toLabel(field)}
+                              </Badge>
+                            </Box>
+                          ))}
+                        </Stack>
+                        {changedFields.length === 0 && (
+                          <Text fz='xs' fs='italic' c='dimmed' ta='center'>
+                            No changes detected?
+                          </Text>
+                        )}
+                      </Paper>
+                    </Container>
+                  </Stack>
+                )}
+
+                {data.contentUpdate.action === 'CREATE' && (
+                  <Stack gap={10}>
+                    <Text fz='lg' ta='center'>
+                      Add <b>{data.contentUpdate.data.name}</b> to the <b>{data.source.name}</b>.
+                    </Text>
+                    <Group wrap='nowrap' align='center' justify='center'>
+                      <Box>
+                        <BlurButton
+                          size='compact-md'
+                          fw={500}
+                          onClick={() => {
+                            openDrawer(
+                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                                noFeedback: true,
+                                showOperations: true,
+                              })
+                            );
+                          }}
+                        >
+                          View New Content
+                        </BlurButton>
+                      </Box>
+                    </Group>
+                  </Stack>
+                )}
 
                 <Stack pt={10} gap={0}>
                   <Group wrap='nowrap' justify='center' align='center' gap={10}>

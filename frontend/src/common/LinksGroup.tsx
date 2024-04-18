@@ -28,6 +28,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { ContentType, AbilityBlockType } from '@typing/content';
 
 interface LinksGroupProps {
   icon: React.FC<any>;
@@ -36,9 +37,18 @@ interface LinksGroupProps {
   links?: { label: string; id: number; url: string; enabled?: boolean }[];
   onLinkChange?: (id: number, enabled: boolean) => void;
   onEnableAll?: () => void;
+  onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
 }
 
-export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkChange, onEnableAll }: LinksGroupProps) {
+export function LinksGroup({
+  icon: Icon,
+  label,
+  initiallyOpened,
+  links,
+  onLinkChange,
+  onEnableAll,
+  onFeedback,
+}: LinksGroupProps) {
   const theme = useMantineTheme();
   const isPhone = useMediaQuery(phoneQuery());
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -67,7 +77,14 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
               radius='xl'
               aria-label='Source Info'
               onClick={() => {
-                openDrawer({ type: 'content-source', data: { id: link.id, showOperations: true } });
+                openDrawer({
+                  type: 'content-source',
+                  data: {
+                    id: link.id,
+                    showOperations: true,
+                    onFeedback: onFeedback,
+                  },
+                });
               }}
             >
               <IconExternalLink size='0.6rem' stroke={1.5} />

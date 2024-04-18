@@ -44,7 +44,10 @@ export default function DrawerBase() {
 
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
-  const [feedbackData, setFeedbackData] = useState<{ type: ContentType; data: { id?: number } } | null>(null);
+  const [feedbackData, setFeedbackData] = useState<{
+    type: ContentType | AbilityBlockType;
+    data: { id?: number };
+  } | null>(null);
 
   const viewport = useRef<HTMLDivElement>(null);
   const [value, setValue] = useLocalStorage<PrevMetadata>({
@@ -194,7 +197,7 @@ export default function DrawerBase() {
                   }}
                   onClick={() => {
                     setFeedbackData({
-                      type: convertToContentType(_drawer.type as ContentType | AbilityBlockType),
+                      type: _drawer.type as ContentType | AbilityBlockType,
                       data: _drawer.data,
                     });
                   }}

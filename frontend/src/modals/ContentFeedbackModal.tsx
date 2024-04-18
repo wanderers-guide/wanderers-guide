@@ -1,13 +1,13 @@
 import { Text, TextInput, Stack, Button, Group, Loader, Avatar, Modal, Title, Box } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
-import { Character, ContentSource, ContentType } from '@typing/content';
+import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
 import * as _ from 'lodash-es';
 import { isValidImage } from '@utils/images';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DrawerType } from '@typing/index';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconHash, IconStar, IconX } from '@tabler/icons-react';
-import { getIconFromContentType } from '@content/content-utils';
+import { convertToContentType, getIconFromContentType } from '@content/content-utils';
 import { fetchContentById } from '@content/content-store';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import {
@@ -37,10 +37,17 @@ export default function ContentFeedbackModal(props: {
   onCancel: () => void;
   onStartFeedback: () => void;
   onCompleteFeedback: () => void;
-  type: ContentType;
-  data: { id?: number };
+  type: ContentType | AbilityBlockType;
+  data: { id?: number; contentSourceId?: number };
 }) {
-  const [submitUpdate, setSubmitUpdate] = useState<{ id: number; content: any } | null>(null);
+  const [submitUpdate, setSubmitUpdate] = useState<{ id: number | undefined; content: any } | null>(null);
+
+  useEffect(() => {
+    if (props.data.id === -1 && submitUpdate === null) {
+      props.onStartFeedback();
+      setSubmitUpdate({ id: undefined, content: props.type });
+    }
+  }, []);
 
   const handleReset = () => {
     setSubmitUpdate(null);
@@ -59,7 +66,15 @@ export default function ContentFeedbackModal(props: {
       loading: true,
     });
 
-    const result = await submitContentUpdate(props.type, 'UPDATE', data, contentSourceId, refId);
+    console.log(refId, props.data);
+
+    const result = await submitContentUpdate(
+      convertToContentType(props.type),
+      props.data.id === -1 ? 'CREATE' : 'UPDATE',
+      data,
+      contentSourceId === -1 ? props.data.contentSourceId ?? -1 : contentSourceId,
+      refId === -1 ? undefined : refId
+    );
 
     hideNotification('submit-content-update');
     if (!result) {
@@ -79,7 +94,7 @@ export default function ContentFeedbackModal(props: {
   return (
     <>
       <Modal
-        opened={props.opened && !submitUpdate}
+        opened={props.opened && !submitUpdate && !!props.data.id && props.data.id !== -1}
         onClose={() => {
           props.onCancel();
         }}
@@ -89,7 +104,7 @@ export default function ContentFeedbackModal(props: {
       >
         <Box style={{ position: 'relative', minHeight: 150 }}>
           <ContentFeedbackSection
-            type={props.type}
+            type={convertToContentType(props.type)}
             data={props.data}
             onSubmitUpdate={(id, content) => {
               props.onStartFeedback();
@@ -100,10 +115,10 @@ export default function ContentFeedbackModal(props: {
       </Modal>
       {submitUpdate && (
         <Box>
-          {props.type === 'ability-block' && (
+          {convertToContentType(props.type) === 'ability-block' && (
             <CreateAbilityBlockModal
               opened={true}
-              type={submitUpdate.content.type}
+              type={props.type as AbilityBlockType}
               editId={submitUpdate.id}
               onComplete={async (abilityBlock) => {
                 await handleComplete(abilityBlock.id, abilityBlock.content_source_id, abilityBlock);

@@ -273,6 +273,8 @@ export async function insertData<T = Record<string, any>>(
 
   // Delete forbidden keys
   delete data.id;
+  delete data.created_at;
+  delete data.version;
 
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
