@@ -1569,9 +1569,6 @@ export function GenericSelectionOption(props: {
   // @ts-ignore
   const variable = getVariable('CHARACTER', props.option.variable);
 
-  // @ts-ignore
-  console.log('variable', variable, '', props.option.variable);
-
   // It's some kind of variable selection option that's not a prof or a prof but without an attribute
   if (variable?.type !== 'prof' || !variable.value.attribute) {
     return (

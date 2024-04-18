@@ -269,10 +269,14 @@ async function updateVariables(
   sourceLabel?: string,
   options?: OperationOptions
 ) {
-  if (options?.doOnlyConditionals) {
-    return;
+  if (options && options.doOnlyConditionals) {
+    if (options.onlyConditionalsWhitelist?.includes(operation.id)) {
+      // Continue to update the variables
+    } else {
+      return;
+    }
   }
-  if (options?.doOnlyValueCreation) {
+  if (options && options.doOnlyValueCreation) {
     // Create variables based on the selected option
     if (operation.data.optionType === 'TRAIT') {
       if (selectedOption.meta_data?.class_trait) {
