@@ -576,7 +576,10 @@ interface PublicUser {
   image_url?: string;
   background_image_url?: string;
   site_theme?: {
-    color: string;
+    color?: string;
+    dyslexia_font?: boolean;
+    view_operations?: boolean;
+    zoom?: number;
   };
   is_admin: boolean;
   is_mod: boolean;

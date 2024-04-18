@@ -25,45 +25,54 @@ import { ContentSourceDrawerContent } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerContent } from './types/ManageCoinsDrawer';
 import { CreatureDrawerContent } from './types/CreatureDrawer';
 import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
+import { getCachedCustomization } from '@content/customization-cache';
+import _ from 'lodash-es';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
+
+  let drawerData = _.cloneDeep(_drawer?.data ?? {});
+  if (_drawer && getCachedCustomization()?.sheet_theme?.view_operations) {
+    drawerData = {
+      ...drawerData,
+      showOperations: true,
+    };
+  }
+
   return (
     <>
-      {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'generic' && <GenericDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'condition' && <ConditionDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'creature' && <CreatureDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'feat' && <FeatDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'action' && <ActionDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'spell' && <SpellDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'item' && <ItemDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'class' && (
-        <ClassDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
-      )}
-      {_drawer?.type === 'class-feature' && <ClassFeatureDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
+      {_drawer?.type === 'generic' && <GenericDrawerContent data={drawerData} />}
+      {_drawer?.type === 'condition' && <ConditionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'creature' && <CreatureDrawerContent data={drawerData} />}
+      {_drawer?.type === 'feat' && <FeatDrawerContent data={drawerData} />}
+      {_drawer?.type === 'action' && <ActionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'spell' && <SpellDrawerContent data={drawerData} />}
+      {_drawer?.type === 'item' && <ItemDrawerContent data={drawerData} />}
+      {_drawer?.type === 'class' && <ClassDrawerContent data={drawerData} onMetadataChange={props.onMetadataChange} />}
+      {_drawer?.type === 'class-feature' && <ClassFeatureDrawerContent data={drawerData} />}
       {_drawer?.type === 'ancestry' && (
-        <AncestryDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
+        <AncestryDrawerContent data={drawerData} onMetadataChange={props.onMetadataChange} />
       )}
       {_drawer?.type === 'background' && (
-        <BackgroundDrawerContent data={_drawer.data} onMetadataChange={props.onMetadataChange} />
+        <BackgroundDrawerContent data={drawerData} onMetadataChange={props.onMetadataChange} />
       )}
-      {_drawer?.type === 'language' && <LanguageDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'heritage' && <ActionDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'sense' && <ActionDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-attr' && <StatAttrDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-ac' && <StatAcDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-weapon' && <StatWeaponDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-speed' && <StatSpeedDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'trait' && <TraitDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'inv-item' && <InvItemDrawerContent data={_drawer.data} />}
-      {_drawer?.type === 'cast-spell' && <CastSpellDrawerContent data={_drawer.data} />}
+      {_drawer?.type === 'language' && <LanguageDrawerContent data={drawerData} />}
+      {_drawer?.type === 'heritage' && <ActionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'sense' && <ActionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-attr' && <StatAttrDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-hp' && <StatHealthDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-ac' && <StatAcDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-weapon' && <StatWeaponDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-speed' && <StatSpeedDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-perception' && <StatPerceptionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'stat-resist-weak' && <StatResistWeakDrawerContent data={drawerData} />}
+      {_drawer?.type === 'trait' && <TraitDrawerContent data={drawerData} />}
+      {_drawer?.type === 'inv-item' && <InvItemDrawerContent data={drawerData} />}
+      {_drawer?.type === 'cast-spell' && <CastSpellDrawerContent data={drawerData} />}
     </>
   );
 }

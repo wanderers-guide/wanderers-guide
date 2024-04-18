@@ -12,6 +12,7 @@ export default function ShowOperationsButton(props: { name: string; operations?:
   return (
     <>
       <Button
+        mt={10}
         variant='light'
         size='compact-sm'
         fullWidth

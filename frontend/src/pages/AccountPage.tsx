@@ -29,6 +29,9 @@ import {
   Anchor,
   CopyButton,
   ScrollArea,
+  Stack,
+  Switch,
+  Slider,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
 import { useNavigate } from 'react-router-dom';
@@ -46,18 +49,22 @@ import { makeRequest } from '@requests/request-manager';
 import { JSendResponse } from '@typing/requests';
 import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
-import { useRecoilValue } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { modals } from '@mantine/modals';
 import { hasPatreonAccess } from '@utils/patreon';
+import { userState } from '@atoms/userAtoms';
 
 export function Component() {
   setPageTitle(`Account`);
+
+  const [user, setUser] = useRecoilState(userState);
 
   const { data } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
       const user = await getPublicUser();
+      setUser(user);
       return user;
     },
   });
@@ -76,14 +83,19 @@ export function Component() {
       />
     );
 
-  return <ProfileSection user={data} />;
+  return <ProfileSection />;
 }
 
-function ProfileSection(props: { user: PublicUser }) {
+function ProfileSection() {
   const theme = useMantineTheme();
-  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<PublicUser>(props.user);
+  const [_user, setUser] = useRecoilState(userState);
+
+  // User should always be defined here
+  const user = _user!;
+  if (!user) {
+    throw new Error('User is not defined');
+  }
 
   const { hovered: hoveredPfp, ref: refPfp } = useHover();
   const { hovered: hoveredBck, ref: refBck } = useHover();
@@ -253,49 +265,120 @@ function ProfileSection(props: { user: PublicUser }) {
             <Box
               style={{
                 position: 'absolute',
-                top: 145,
+                top: 135,
                 right: 5,
               }}
             >
-              <Popover position='bottom' withArrow shadow='md'>
-                <Popover.Target>
-                  <ColorSwatch style={{ cursor: 'pointer' }} color={user.site_theme?.color || GUIDE_BLUE} size={15} />
-                </Popover.Target>
-                <Popover.Dropdown p={5}>
-                  <ColorPicker
-                    format='hex'
-                    value={user.site_theme?.color || GUIDE_BLUE}
-                    onChange={(value) => {
-                      if (!hasPatreonAccess(user, 2)) {
-                        displayPatronOnly();
-                        return;
-                      }
+              <Stack gap={3}>
+                <Center>
+                  <Popover position='bottom' withArrow shadow='md'>
+                    <Popover.Target>
+                      <ColorSwatch
+                        style={{ cursor: 'pointer' }}
+                        color={user.site_theme?.color || GUIDE_BLUE}
+                        size={15}
+                      />
+                    </Popover.Target>
+                    <Popover.Dropdown p={5}>
+                      <ColorPicker
+                        format='hex'
+                        value={user.site_theme?.color || GUIDE_BLUE}
+                        onChange={(value) => {
+                          if (!hasPatreonAccess(user, 2)) {
+                            displayPatronOnly();
+                            return;
+                          }
 
-                      setUser((prev) => {
-                        if (!prev) return prev;
-                        return { ...prev, site_theme: { ...prev.site_theme, color: value } };
-                      });
-                    }}
-                    swatches={[
-                      '#25262b',
-                      '#868e96',
-                      '#fa5252',
-                      '#e64980',
-                      '#be4bdb',
-                      '#8d69f5',
-                      '#577deb',
-                      GUIDE_BLUE,
-                      '#15aabf',
-                      '#12b886',
-                      '#40c057',
-                      '#82c91e',
-                      '#fab005',
-                      '#fd7e14',
-                    ]}
-                    swatchesPerRow={7}
-                  />
-                </Popover.Dropdown>
-              </Popover>
+                          setUser((prev) => {
+                            if (!prev) return prev;
+                            return { ...prev, site_theme: { ...prev.site_theme, color: value } };
+                          });
+                        }}
+                        swatches={[
+                          '#25262b',
+                          '#868e96',
+                          '#fa5252',
+                          '#e64980',
+                          '#be4bdb',
+                          '#8d69f5',
+                          '#577deb',
+                          GUIDE_BLUE,
+                          '#15aabf',
+                          '#12b886',
+                          '#40c057',
+                          '#82c91e',
+                          '#fab005',
+                          '#fd7e14',
+                        ]}
+                        swatchesPerRow={7}
+                      />
+                    </Popover.Dropdown>
+                  </Popover>
+                </Center>
+
+                <Center>
+                  <Popover position='bottom' withArrow shadow='md'>
+                    <Popover.Target>
+                      <ActionIcon variant='subtle' radius='xl' aria-label='Settings' color='default'>
+                        <IconAdjustments style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                      </ActionIcon>
+                    </Popover.Target>
+
+                    <Popover.Dropdown>
+                      <Stack>
+                        <Switch
+                          size='sm'
+                          onLabel='On'
+                          offLabel='Off'
+                          label='See Operations'
+                          checked={user.site_theme?.view_operations ?? false}
+                          onChange={(e) => {
+                            setUser((prev) => {
+                              if (!prev) return prev;
+                              return {
+                                ...prev,
+                                site_theme: { ...prev.site_theme, view_operations: e.currentTarget.checked },
+                              };
+                            });
+                          }}
+                        />
+                        <Switch
+                          size='sm'
+                          onLabel='On'
+                          offLabel='Off'
+                          label='Dyslexia Font'
+                          checked={user.site_theme?.dyslexia_font ?? false}
+                          onChange={(e) => {
+                            setUser((prev) => {
+                              if (!prev) return prev;
+                              return {
+                                ...prev,
+                                site_theme: { ...prev.site_theme, dyslexia_font: e.currentTarget.checked },
+                              };
+                            });
+                          }}
+                        />
+
+                        <Stack gap={5}>
+                          <Text fz='sm'>UI Size</Text>
+                          <Slider
+                            min={0.75}
+                            max={1.5}
+                            step={0.01}
+                            value={user.site_theme?.zoom ?? 1}
+                            onChange={(value) => {
+                              setUser((prev) => {
+                                if (!prev) return prev;
+                                return { ...prev, site_theme: { ...prev.site_theme, zoom: value } };
+                              });
+                            }}
+                          />
+                        </Stack>
+                      </Stack>
+                    </Popover.Dropdown>
+                  </Popover>
+                </Center>
+              </Stack>
             </Box>
 
             <Center>

@@ -6,7 +6,7 @@ import { GUIDE_BLUE } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
-import { Anchor, BackgroundImage, Button, MantineProvider, Text, createTheme } from '@mantine/core';
+import { Anchor, BackgroundImage, Box, Button, MantineProvider, Text, createTheme } from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
@@ -32,6 +32,7 @@ import SelectImageModal from '@modals/SelectImageModal';
 import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
 import UpdateNotePageModal from '@modals/UpdateNotePageModal';
 import AddItemsModal from '@modals/AddItemsModal';
+import _ from 'lodash-es';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -122,9 +123,8 @@ export default function App() {
     })();
   }, [activeCharacer]);
 
-  // Update primary color when sheet_theme changes
-  const [theme, setTheme] = useState<any>(
-    createTheme({
+  const generateTheme = () => {
+    return createTheme({
       colors: {
         // @ts-ignore
         guide: getShadesFromColor(getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
@@ -141,48 +141,21 @@ export default function App() {
           '#101113',
         ],
       },
-      // components: {
-      //   Button: Button.extend({
-      //     defaultProps: {
-      //       style: {
-      //       },
-      //     },
-      //   }),
-      // },
       cursorType: 'pointer',
       primaryColor: 'guide',
       defaultRadius: 'md',
-      fontFamily: 'Montserrat, sans-serif',
+      fontFamily: getCachedCustomization()?.sheet_theme?.dyslexia_font
+        ? 'OpenDyslexicRegular'
+        : 'Montserrat, sans-serif',
       fontFamilyMonospace: 'Ubuntu Mono, monospace',
-    })
-  );
+    });
+  };
+
+  const [theme, setTheme] = useState<any>(generateTheme());
   useEffect(() => {
-    if (prevCharacer?.details?.sheet_theme === activeCharacer?.details?.sheet_theme) return;
-    console.log('Updating color theme...');
-    setTheme(
-      createTheme({
-        colors: {
-          // @ts-ignore
-          guide: getShadesFromColor(activeCharacer?.details?.sheet_theme?.color || GUIDE_BLUE),
-          dark: [
-            '#C1C2C5',
-            '#A6A7AB',
-            '#909296',
-            '#5c5f66',
-            '#373A40',
-            '#2C2E33',
-            '#25262b',
-            '#1A1B1E',
-            '#141517',
-            '#101113',
-          ],
-        },
-        primaryColor: 'guide',
-        defaultRadius: 'md',
-        fontFamily: 'Montserrat, sans-serif',
-        fontFamilyMonospace: 'Ubuntu Mono, monospace',
-      })
-    );
+    if (_.isEqual(prevCharacer?.details?.sheet_theme, activeCharacer?.details?.sheet_theme)) return;
+    console.log('Updating site theme...');
+    setTheme(generateTheme());
   }, [activeCharacer]);
 
   // Handle query params
@@ -234,10 +207,12 @@ export default function App() {
         <SearchSpotlight />
         <Notifications position='top-right' zIndex={9400} containerWidth={350} />
         <DrawerBase />
-        <Layout>
-          {/* Outlet is where react-router will render child routes */}
-          <Outlet />
-        </Layout>
+        <Box style={{ zoom: getCachedCustomization()?.sheet_theme?.zoom ?? 1 }}>
+          <Layout>
+            {/* Outlet is where react-router will render child routes */}
+            <Outlet />
+          </Layout>
+        </Box>
       </ModalsProvider>
     </MantineProvider>
   );
