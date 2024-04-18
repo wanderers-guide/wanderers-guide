@@ -1,7 +1,7 @@
 type CustomizationCache = {
   background_image_url?: string;
   sheet_theme?: {
-    color: string;
+    color?: string;
     dyslexia_font?: boolean;
     view_operations?: boolean;
     zoom?: number;
