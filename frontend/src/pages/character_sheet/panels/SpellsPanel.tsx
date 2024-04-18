@@ -81,6 +81,8 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
 
   const allSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
 
+  console.log(charData);
+
   return (
     <Box h='100%'>
       <Stack gap={10}>
@@ -1102,8 +1104,6 @@ function SpellSlotSelect(props: { current: number; max: number; onChange: (v: nu
   useEffect(() => {
     refreshDisplaySlots();
   }, [props.current, props.max]);
-
-  console.log('SpellSlotSelect', props.current, props.max, displaySlots);
 
   return (
     <Box pt={3} style={{ zIndex: 100 }}>

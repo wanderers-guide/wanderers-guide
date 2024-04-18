@@ -1553,7 +1553,8 @@ export function GenericSelectionOption(props: {
             type: 'generic',
             data: {
               ...props.option._custom_select,
-              onSelect: props.showButton ? () => props.onClick(props.option) : undefined,
+              onSelect:
+                props.showButton || props.showButton === undefined ? () => props.onClick(props.option) : undefined,
             },
             extra: { addToHistory: true },
           });
@@ -1654,7 +1655,7 @@ export function GenericSelectionOption(props: {
             </Badge>
           ) : (
             <>
-              {hovered && !disabled ? (
+              {props.selected || (hovered && !disabled) ? (
                 <Badge size='sm' circle>
                   {nextProf ?? 'U'}
                 </Badge>
@@ -1666,7 +1667,7 @@ export function GenericSelectionOption(props: {
             </>
           )}
           <Text fz='sm'>{props.option.name}</Text>
-          {hovered && !disabled ? (
+          {props.selected || (hovered && !disabled) ? (
             <Text c='gray.5' fw={600} fz='sm'>
               {nextTotal}
             </Text>
@@ -1912,7 +1913,10 @@ export function FeatSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'feat',
-          data: { id: props.feat.id, onSelect: props.showButton ? () => props.onClick(props.feat) : undefined },
+          data: {
+            id: props.feat.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => props.onClick(props.feat) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -1963,7 +1967,11 @@ export function ActionSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'action',
-          data: { id: props.action.id, onSelect: props.showButton ? () => props.onClick(props.action) : undefined },
+          data: {
+            id: props.action.id,
+            onSelect:
+              props.showButton || props.showButton === undefined ? () => props.onClick(props.action) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2017,7 +2025,8 @@ export function ClassFeatureSelectionOption(props: {
           type: 'class-feature',
           data: {
             id: props.classFeature.id,
-            onSelect: props.showButton ? () => props.onClick(props.classFeature) : undefined,
+            onSelect:
+              props.showButton || props.showButton === undefined ? () => props.onClick(props.classFeature) : undefined,
           },
           extra: { addToHistory: true },
         })
@@ -2069,7 +2078,11 @@ export function HeritageSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'heritage',
-          data: { id: props.heritage.id, onSelect: props.showButton ? () => props.onClick(props.heritage) : undefined },
+          data: {
+            id: props.heritage.id,
+            onSelect:
+              props.showButton || props.showButton === undefined ? () => props.onClick(props.heritage) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2122,7 +2135,10 @@ export function PhysicalFeatureSelectionOption(props: {
           type: 'physical-feature',
           data: {
             id: props.physicalFeature.id,
-            onSelect: props.showButton ? () => props.onClick(props.physicalFeature) : undefined,
+            onSelect:
+              props.showButton || props.showButton === undefined
+                ? () => props.onClick(props.physicalFeature)
+                : undefined,
           },
           extra: { addToHistory: true },
         })
@@ -2174,7 +2190,10 @@ export function SenseSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'sense',
-          data: { id: props.sense.id, onSelect: props.showButton ? () => props.onClick(props.sense) : undefined },
+          data: {
+            id: props.sense.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => props.onClick(props.sense) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2291,7 +2310,10 @@ export function ClassSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'class',
-          data: { id: props.class_.id, onSelect: props.showButton ? () => onSelect() : undefined },
+          data: {
+            id: props.class_.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => onSelect() : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2438,7 +2460,10 @@ export function AncestrySelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'ancestry',
-          data: { id: props.ancestry.id, onSelect: props.showButton ? () => onSelect() : undefined },
+          data: {
+            id: props.ancestry.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => onSelect() : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2529,7 +2554,10 @@ export function BackgroundSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'background',
-          data: { id: props.background.id, onSelect: props.showButton ? () => onSelect() : undefined },
+          data: {
+            id: props.background.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => onSelect() : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2581,7 +2609,11 @@ export function ItemSelectionOption(props: {
           ? () =>
               openDrawer({
                 type: 'item',
-                data: { id: props.item.id, onSelect: props.showButton ? () => props.onClick?.(props.item) : undefined },
+                data: {
+                  id: props.item.id,
+                  onSelect:
+                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
+                },
                 extra: { addToHistory: true },
               })
           : () => {}
@@ -2666,7 +2698,8 @@ export function SpellSelectionOption(props: {
                 type: 'spell',
                 data: {
                   id: props.spell.id,
-                  onSelect: props.showButton ? () => props.onClick?.(props.spell) : undefined,
+                  onSelect:
+                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
                 },
                 extra: { addToHistory: true },
               })
@@ -2718,7 +2751,10 @@ export function TraitSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'trait',
-          data: { id: props.trait.id, onSelect: props.showButton ? () => props.onClick(props.trait) : undefined },
+          data: {
+            id: props.trait.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => props.onClick(props.trait) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2764,7 +2800,11 @@ export function LanguageSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'language',
-          data: { id: props.language.id, onSelect: props.showButton ? () => props.onClick(props.language) : undefined },
+          data: {
+            id: props.language.id,
+            onSelect:
+              props.showButton || props.showButton === undefined ? () => props.onClick(props.language) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }
@@ -2869,7 +2909,11 @@ export function CreatureSelectionOption(props: {
       onClick={() =>
         openDrawer({
           type: 'creature',
-          data: { id: props.creature.id, onSelect: props.showButton ? () => props.onClick(props.creature) : undefined },
+          data: {
+            id: props.creature.id,
+            onSelect:
+              props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,
+          },
           extra: { addToHistory: true },
         })
       }

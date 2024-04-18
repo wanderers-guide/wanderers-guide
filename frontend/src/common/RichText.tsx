@@ -1,6 +1,6 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps, Title } from '@mantine/core';
+import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps, Title, useMantineTheme } from '@mantine/core';
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
@@ -20,6 +20,7 @@ interface RichTextProps extends TextProps {
 }
 
 export default function RichText(props: RichTextProps) {
+  const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   let convertedChildren = props.children as string | undefined | null;
 
@@ -149,29 +150,58 @@ export default function RichText(props: RichTextProps) {
           const contentData = getContentDataFromHref(href ?? '');
           const drawerData = contentData ? convertContentLink(contentData) : null;
 
-          return (
-            <Anchor
-              onClick={(e) => {
-                if (drawerData) {
-                  openDrawer({
-                    type: drawerData.type,
-                    data: drawerData.data,
-                    extra: { addToHistory: true },
-                  });
-                  e.preventDefault();
-                }
-              }}
-              // Italicize spell links as done in the books
-              fs={contentData?.type === 'spell' ? 'italic' : undefined}
-              href={drawerData ? undefined : href}
-              target='_blank'
-              underline='hover'
-              className={className}
-              {...props}
-            >
-              {children}
-            </Anchor>
-          );
+          if (contentData?.type === 'trait') {
+            return (
+              <Anchor
+                onClick={(e) => {
+                  if (drawerData) {
+                    openDrawer({
+                      type: drawerData.type,
+                      data: drawerData.data,
+                      extra: { addToHistory: true },
+                    });
+                    e.preventDefault();
+                  }
+                }}
+                href={drawerData ? undefined : href}
+                target='_blank'
+                underline='always'
+                c='dark.0'
+                style={{
+                  textDecorationColor: theme.colors['guide'][9],
+                }}
+                className={className}
+                {...props}
+              >
+                {children}
+              </Anchor>
+            );
+          } else {
+            return (
+              <Anchor
+                onClick={(e) => {
+                  if (drawerData) {
+                    openDrawer({
+                      type: drawerData.type,
+                      data: drawerData.data,
+                      extra: { addToHistory: true },
+                    });
+                    e.preventDefault();
+                  }
+                }}
+                // Italicize spell links as done in the books
+                fs={contentData?.type === 'spell' ? 'italic' : undefined}
+                href={drawerData ? undefined : href}
+                target='_blank'
+                underline='hover'
+                c='guide.0'
+                className={className}
+                {...props}
+              >
+                {children}
+              </Anchor>
+            );
+          }
         },
         hr(innerProps) {
           const { className } = innerProps;
