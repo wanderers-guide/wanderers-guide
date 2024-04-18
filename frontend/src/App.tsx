@@ -232,7 +232,7 @@ export default function App() {
           </Anchor>
         )}
         <SearchSpotlight />
-        <Notifications position='top-right' zIndex={9400} containerWidth={300} />
+        <Notifications position='top-right' zIndex={9400} containerWidth={350} />
         <DrawerBase />
         <Layout>
           {/* Outlet is where react-router will render child routes */}

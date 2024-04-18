@@ -8,6 +8,7 @@ import type {
   ContentType,
   JSendResponse,
   PublicUser,
+  Trait,
 } from './content';
 
 export async function connect(
@@ -49,6 +50,7 @@ export async function connect(
       status: 200,
     });
   } catch (error) {
+    console.error(error);
     return new Response(
       JSON.stringify({
         status: 'fail',
@@ -138,6 +140,138 @@ export function convertContentTypeToTableName(type: ContentType): TableName | nu
   }
 }
 
+function hasUUID(tableName: TableName): boolean {
+  switch (tableName) {
+    case 'trait':
+      return true;
+    case 'item':
+      return true;
+    case 'spell':
+      return true;
+    case 'class':
+      return true;
+    case 'creature':
+      return true;
+    case 'ability_block':
+      return true;
+    case 'ancestry':
+      return true;
+    case 'background':
+      return true;
+    case 'language':
+      return true;
+    case 'content_source':
+      return false;
+    case 'content_update':
+      return false;
+    case 'campaign':
+      return false;
+    case 'character':
+      return false;
+    case 'archetype':
+      return false;
+    case 'versatile_heritage':
+      return false;
+    case 'public_user':
+      return false;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Handles the creation and updating of a trait for a given content type.
+ * @param client
+ * @param contentId
+ * @param type
+ * @param name
+ * @param contentSourceId
+ * @returns - The trait ID associated with the content.
+ */
+export async function handleAssociatedTrait(
+  client: SupabaseClient<any, 'public', any>,
+  contentId: number | undefined,
+  type: ContentType,
+  name: string,
+  contentSourceId: number
+): Promise<number | null> {
+  let traitName = '';
+  let traitDescription = '';
+  if (type === 'ancestry') {
+    traitName = `${name}`;
+    traitDescription = `This indicates content from the ${name.toLowerCase()} ancestry.`;
+  } else if (type === 'class') {
+    traitName = `${name}`;
+    traitDescription = `This indicates content from the ${name.toLowerCase()} class.`;
+  } else if (type === 'versatile-heritage') {
+    traitName = `${name}`;
+    traitDescription = `This indicates content from the ${name.toLowerCase()} versatile heritage.`;
+  } else if (type === 'archetype') {
+    traitName = `${name} Archetype`;
+    traitDescription = `This indicates content from the ${name.toLowerCase()} archetype.`;
+  }
+
+  let trait_id = null;
+  if (!contentId || contentId === -1) {
+    // Is a new, so we need to create a new trait
+    const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
+      client,
+      'trait',
+      {
+        name: traitName,
+        description: traitDescription,
+        content_source_id: contentSourceId,
+        meta_data: {
+          ancestry_trait: type === 'ancestry' ? true : undefined,
+          class_trait: type === 'class' ? true : undefined,
+          versatile_heritage_trait: type === 'versatile-heritage' ? true : undefined,
+          archetype_trait: type === 'archetype' ? true : undefined,
+        },
+      }
+    );
+    console.log(traitProcedure, traitResult);
+    if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
+      trait_id = (traitResult as Trait).id;
+    }
+    if (!trait_id) {
+      return null;
+    }
+  }
+
+  if (name && trait_id === undefined && contentId && contentId !== -1) {
+    const tableName = convertContentTypeToTableName(type);
+    if (!tableName) {
+      return null;
+    }
+
+    const records = await fetchData(client, tableName, [{ column: 'id', value: contentId }]);
+    const record = records[0];
+
+    if (!record || !record.trait_id) {
+      console.warn(`No trait ID found for ${type} with ID ${contentId}`);
+      return null;
+    }
+
+    name = name.trim();
+    // Update the trait name & description
+    await upsertData<Trait>(client, 'trait', {
+      id: record.trait_id,
+      name: traitName,
+      description: traitDescription,
+      content_source_id: contentSourceId,
+      meta_data: {
+        ancestry_trait: type === 'ancestry' ? true : undefined,
+        class_trait: type === 'class' ? true : undefined,
+        versatile_heritage_trait: type === 'versatile-heritage' ? true : undefined,
+        archetype_trait: type === 'archetype' ? true : undefined,
+      },
+    });
+
+    trait_id = record.trait_id as number;
+  }
+  return trait_id;
+}
+
 export function upsertResponseWrapper(procedure: 'insert' | 'update', result: any): JSendResponse {
   if (procedure === 'insert') {
     return {
@@ -225,8 +359,7 @@ export async function upsertData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   data: Record<string, undefined | null | string | number | boolean | Record<string, any>>,
-  type?: string,
-  hasUUID = true
+  type?: string
 ) {
   if (data.id && data.id !== -1) {
     const status = await updateData(client, tableName, data.id as number, data);
@@ -235,7 +368,7 @@ export async function upsertData<T = Record<string, any>>(
       result: { status },
     };
   } else {
-    const result = await insertData<T>(client, tableName, data, type, hasUUID);
+    const result = await insertData<T>(client, tableName, data, type);
     return {
       procedure: 'insert' as 'update' | 'insert',
       result,
@@ -247,11 +380,10 @@ export async function insertData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   data: Record<string, undefined | null | string | number | boolean | Record<string, any>>,
-  type?: string,
-  hasUUID = true
+  type?: string
 ) {
   // Add uuid to data, as way to track "identical" data
-  if (hasUUID) {
+  if (hasUUID(tableName)) {
     data = {
       ...data,
       uuid: uniqueId(
@@ -278,7 +410,7 @@ export async function insertData<T = Record<string, any>>(
 
   const { data: insertedData, error } = await client.from(tableName).insert(data).select();
   if (error) {
-    if (error.code === '23505' && hasUUID) {
+    if (error.code === '23505' && hasUUID(tableName)) {
       // Duplicate UUID, delete the old one and try again
       /* NOTE: Disable overriding existing uploaded content for now */
       // const { error } = await client.from(tableName).delete().eq('uuid', data.uuid);

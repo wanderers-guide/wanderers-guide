@@ -1,6 +1,12 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, fetchData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import {
+  connect,
+  fetchData,
+  handleAssociatedTrait,
+  upsertData,
+  upsertResponseWrapper,
+} from '../_shared/helpers.ts';
 import type { Class, Trait } from '../_shared/content';
 
 serve(async (req: Request) => {
@@ -17,48 +23,12 @@ serve(async (req: Request) => {
       version,
     } = body as Class;
 
-    let trait_id: number | undefined = undefined;
-    if (!id || id === -1) {
-      // Is a new class, so we need to create a new trait
-      const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
-        client,
-        'trait',
-        {
-          name,
-          description: `This indicates content from the ${name.toLowerCase()} class.`,
-          content_source_id,
-          meta_data: {
-            class_trait: true,
-          },
-        }
-      );
-      console.log('Trait result', traitResult);
-      if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
-        trait_id = (traitResult as Trait).id;
-      }
-      if (!trait_id) {
-        return {
-          status: 'error',
-          message: 'Trait could not be created.',
-        };
-      }
-    }
-
-    if (name && trait_id === undefined && id && id !== -1) {
-      const classes = await fetchData<Class>(client, 'class', [{ column: 'id', value: id }]);
-      const class_ = classes[0];
-
-      name = name.trim();
-      // Update the trait name & description
-      await upsertData<Trait>(client, 'trait', {
-        id: class_.trait_id,
-        name: name,
-        description: `This indicates content from the ${name.toLowerCase()} class.`,
-        content_source_id,
-        meta_data: {
-          class_trait: true,
-        },
-      });
+    const trait_id = await handleAssociatedTrait(client, id, 'class', name, content_source_id);
+    if (!trait_id) {
+      return {
+        status: 'error',
+        message: 'Trait could not be created.',
+      };
     }
 
     const { procedure, result } = await upsertData<Class>(client, 'class', {

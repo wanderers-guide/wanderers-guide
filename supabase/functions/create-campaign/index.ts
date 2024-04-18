@@ -1,7 +1,13 @@
 // @ts-ignore
 import { serve } from 'std/server';
 import type { Campaign } from '../_shared/content';
-import { connect, fetchData, getPublicUser, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import {
+  connect,
+  fetchData,
+  getPublicUser,
+  upsertData,
+  upsertResponseWrapper,
+} from '../_shared/helpers.ts';
 import { hasPatreonAccess } from '../_shared/patreon.ts';
 
 const CAMPAIGN_SLOT_CAP = 1;
@@ -44,24 +50,18 @@ serve(async (req: Request) => {
       }
     }
 
-    const { procedure, result } = await upsertData<Campaign>(
-      client,
-      'campaign',
-      {
-        id,
-        user_id: user.user_id,
-        name,
-        description,
-        notes,
-        recommended_options,
-        recommended_content_sources,
-        recommended_variants,
-        custom_operations,
-        meta_data,
-      },
-      undefined,
-      false,
-    );
+    const { procedure, result } = await upsertData<Campaign>(client, 'campaign', {
+      id,
+      user_id: user.user_id,
+      name,
+      description,
+      notes,
+      recommended_options,
+      recommended_content_sources,
+      recommended_variants,
+      custom_operations,
+      meta_data,
+    });
 
     return upsertResponseWrapper(procedure, result);
   });

@@ -5,6 +5,7 @@ import {
   convertContentTypeToTableName,
   deleteData,
   fetchData,
+  handleAssociatedTrait,
   insertData,
   updateData,
 } from '../_shared/helpers.ts';
@@ -59,13 +60,39 @@ serve(async (req: Request) => {
         };
 
       if (update.action === 'UPDATE' && update.ref_id) {
+        if (update.data.trait_id) {
+          // Update the associated trait's name & description
+          const trait_id = await handleAssociatedTrait(
+            client,
+            update.ref_id,
+            update.type,
+            update.data.name,
+            update.content_source_id
+          );
+          console.log('updated -> trait_id', trait_id);
+        }
+
         result = await updateData(client, tableName, update.ref_id, update.data);
       } else if (update.action === 'CREATE') {
+        let trait_id = null;
+        if (update.data.trait_id) {
+          // Create the associated trait
+          trait_id = await handleAssociatedTrait(
+            client,
+            undefined,
+            update.type,
+            update.data.name,
+            update.content_source_id
+          );
+          console.log('created -> trait_id', trait_id);
+        }
+
         const newData = await insertData(
           client,
           tableName,
           {
             ...update.data,
+            trait_id: trait_id ? trait_id : undefined,
             content_source_id: update.content_source_id,
           },
           update.data?.type

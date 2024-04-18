@@ -1,6 +1,5 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { v4 as uuidv4 } from 'uuid';
 import type { Campaign } from '../_shared/content';
 import { connect, getPublicUser, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
 
@@ -29,16 +28,10 @@ serve(async (req: Request) => {
 
     const payload = {
       id,
-      join_key: uuidv4(),
+      join_key:
+        Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8),
     };
-    const { procedure, result } = await upsertData<Campaign>(
-      client,
-      'campaign',
-      payload,
-      undefined,
-      false,
-    );
-
+    const { procedure, result } = await upsertData<Campaign>(client, 'campaign', payload);
 
     return upsertResponseWrapper(procedure, result);
   });

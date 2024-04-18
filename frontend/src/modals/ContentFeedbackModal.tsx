@@ -8,7 +8,7 @@ import { DrawerType } from '@typing/index';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconHash, IconStar, IconX } from '@tabler/icons-react';
 import { convertToContentType, getIconFromContentType } from '@content/content-utils';
-import { fetchContentById } from '@content/content-store';
+import { defineDefaultSources, fetchContentById, getDefaultSources } from '@content/content-store';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import {
   upsertClass,
@@ -46,6 +46,11 @@ export default function ContentFeedbackModal(props: {
     if (props.data.id === -1 && submitUpdate === null) {
       props.onStartFeedback();
       setSubmitUpdate({ id: undefined, content: props.type });
+
+      // Add the content source to make sure we can reference it's content. TODO: Add required sources too
+      if (props.data.contentSourceId && props.data.contentSourceId !== -1) {
+        defineDefaultSources(_.uniq([...getDefaultSources(), props.data.contentSourceId]));
+      }
     }
   }, []);
 
