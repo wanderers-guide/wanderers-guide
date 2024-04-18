@@ -10,7 +10,7 @@ import { useMantineTheme, Group, Stack, Box, Text } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { VariableListStr } from '@typing/variables';
 import { compactSenses, displayPrimaryVisionSense } from '@utils/senses';
-import { displayFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
+import { displayFinalProfValue, displayFinalVariableValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
@@ -97,7 +97,7 @@ export default function SpeedSection() {
                 Speed
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
-                {getFinalVariableValue('CHARACTER', 'SPEED').total}
+                {displayFinalVariableValue('CHARACTER', 'SPEED')}
                 <Text fz='xs' c='gray.3' span>
                   {' '}
                   ft.

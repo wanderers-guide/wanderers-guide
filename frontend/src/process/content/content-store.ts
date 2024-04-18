@@ -108,7 +108,7 @@ export function getCachedSources(): ContentSource[] {
 }
 
 export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {
-  if (!id) return null;
+  if (!id || id === -1) return null;
   return await fetchContent<T>(type, { id, content_sources: sources });
 }
 

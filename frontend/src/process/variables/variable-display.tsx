@@ -69,6 +69,29 @@ export function displayFinalProfValue(
   );
 }
 
+export function displayFinalVariableValue(id: StoreID, variableName: string) {
+  const finalData = getFinalVariableValue(id, variableName);
+  const breakdown = getVariableBreakdown(id, variableName);
+
+  return (
+    <span style={{ position: 'relative' }}>
+      {<>{finalData.total}</>}
+      {breakdown.conditionals.length > 0 ? (
+        <Text
+          c='guide.5'
+          style={{
+            position: 'absolute',
+            top: -6,
+            right: -7,
+          }}
+        >
+          *
+        </Text>
+      ) : null}
+    </span>
+  );
+}
+
 export function getFinalVariableValue(id: StoreID, variableName: string) {
   const variable = getVariable(id, variableName);
   const bonuses = getVariableBonuses(id, variableName);

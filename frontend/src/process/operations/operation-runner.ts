@@ -702,6 +702,7 @@ async function runRemoveLanguage(
   operation: OperationRemoveLanguage,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.languageId === -1) return null;
   const language = await fetchContentById<Language>('language', operation.data.languageId);
   if (!language) {
     displayError('Language not found', true);
@@ -732,6 +733,7 @@ async function runRemoveSpell(
   operation: OperationRemoveSpell,
   sourceLabel?: string
 ): Promise<OperationResult> {
+  if (operation.data.spellId === -1) return null;
   const spell = await fetchContentById<Spell>('spell', operation.data.spellId);
   if (!spell) {
     displayError('Spell not found', true);

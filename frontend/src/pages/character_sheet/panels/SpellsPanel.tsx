@@ -879,7 +879,7 @@ function SpellList(props: {
                             <SpellListEntry
                               key={index}
                               spell={innate.spell}
-                              exhausted={innate.casts_current >= innate.casts_max}
+                              exhausted={innate.casts_current >= innate.casts_max && innate.casts_max !== 0}
                               tradition={innate.tradition}
                               attribute={'ATTRIBUTE_CHA'}
                               onCastSpell={(cast: boolean) => {

@@ -6,7 +6,7 @@ import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { fetchContentPackage } from '@content/content-store';
+import { fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
 import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
@@ -59,6 +59,9 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
   const { data: content, isFetching } = useQuery({
     queryKey: [`find-content-${character?.id}`],
     queryFn: async () => {
+      // Prefetch content sources (to avoid multiple requests)
+      await fetchContentSources();
+
       const content = await fetchContentPackage(undefined, true);
       interval.stop();
       return content;
