@@ -529,7 +529,9 @@ CREATE TABLE public.public_user (
     summary text,
     subscribed_content_sources json,
     patreon jsonb,
-    organized_play_id character varying
+    organized_play_id character varying,
+    is_developer boolean,
+    is_community_paragon boolean
 );
 
 
