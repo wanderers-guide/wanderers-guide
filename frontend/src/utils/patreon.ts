@@ -11,6 +11,11 @@ export function hasPatreonAccess(user: PublicUser | null, accessLevel: 0 | 1 | 2
     return true;
   }
 
+  // If they're a great member of the community, they have access
+  if (user.is_community_paragon || user.is_developer) {
+    return true;
+  }
+
   if (accessLevel === 2)
     return user.patreon?.tier === 'WANDERER' || user.patreon?.tier === 'LEGEND' || user.patreon?.tier === 'GAME-MASTER';
   if (accessLevel === 1)

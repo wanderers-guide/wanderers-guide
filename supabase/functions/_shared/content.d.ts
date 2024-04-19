@@ -56,6 +56,8 @@ interface PublicUser {
   };
   is_admin: boolean;
   is_mod: boolean;
+  is_developer?: boolean;
+  is_community_paragon?: boolean;
   patreon?: {
     patreon_user_id?: string;
     patreon_name?: string;

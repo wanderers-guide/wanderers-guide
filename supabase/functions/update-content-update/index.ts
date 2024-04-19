@@ -9,7 +9,9 @@ import {
   insertData,
   updateData,
 } from '../_shared/helpers.ts';
-import type { ContentUpdate } from '../_shared/content';
+import type { ContentUpdate, PublicUser } from '../_shared/content';
+
+const CONTENT_TIER_ACCESS_THRESHOLD = 100;
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -58,6 +60,25 @@ serve(async (req: Request) => {
           status: 'error',
           message: 'Invalid content type',
         };
+
+      // If they've reached the threshold, update their tier
+      const contentUpdates: ContentUpdate[] = await fetchData<ContentUpdate>(
+        client,
+        'content_update',
+        [{ column: 'user_id', value: update.user_id }]
+      );
+      const approvedContent = contentUpdates.filter((update) => update.status.state === 'APPROVED');
+      if (approvedContent.length >= CONTENT_TIER_ACCESS_THRESHOLD) {
+        // Update the user's tier
+        const results = await fetchData<PublicUser>(client, 'public_user', [
+          { column: 'user_id', value: update.user_id },
+        ]);
+        if (results && results.length > 0 && !results[0].is_community_paragon) {
+          await updateData(client, 'public_user', results[0].id, {
+            is_community_paragon: true,
+          });
+        }
+      }
 
       if (update.action === 'UPDATE' && update.ref_id) {
         if (update.data.trait_id) {

@@ -45,6 +45,11 @@ async function checkAccessLevel(
     }
   }
 
+  // If they're a great member of the community, they have access
+  if (user.is_community_paragon || user.is_developer) {
+    return true;
+  }
+
   if (accessLevel === 2)
     return (
       user.patreon?.tier === 'WANDERER' ||

@@ -54,6 +54,7 @@ import { sessionState } from '@atoms/supabaseAtoms';
 import { modals } from '@mantine/modals';
 import { hasPatreonAccess } from '@utils/patreon';
 import { userState } from '@atoms/userAtoms';
+import { findApprovedContentUpdates } from '@content/content-update';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -141,6 +142,31 @@ function ProfileSection() {
     setLoading(false);
   };
 
+  // Get their content updates
+  const { data: approvedContentUpdates } = useQuery({
+    queryKey: [`find-approved-content-updates`],
+    queryFn: async () => {
+      return await findApprovedContentUpdates(user.user_id);
+    },
+  });
+
+  // Determine content tiers
+  let contentTier = '';
+  let contentColor: MantineColor = 'gray';
+  if (approvedContentUpdates) {
+    if (approvedContentUpdates.length >= 100) {
+      contentTier = 'Content Connoisseur';
+      contentColor = 'violet';
+    } else if (approvedContentUpdates.length >= 50) {
+      contentTier = 'Content Conservator';
+      contentColor = 'indigo';
+    } else if (approvedContentUpdates.length > 0) {
+      contentTier = 'Content Contributor';
+      contentColor = 'blue';
+    }
+  }
+
+  // Determine patron tier
   let patronTier = toLabel(user.patreon?.tier) || 'Non-Patron';
   let patronColor: MantineColor = 'gray';
   if (patronTier === 'Non-Patron') patronColor = 'gray';
@@ -561,6 +587,20 @@ function ProfileSection() {
                   Mod
                 </Badge>
               )}
+              {user.is_developer && (
+                <Badge
+                  variant='light'
+                  size='md'
+                  color='grape'
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                >
+                  Developer
+                </Badge>
+              )}
 
               <Badge
                 variant='light'
@@ -575,18 +615,33 @@ function ProfileSection() {
                 {patronTier}
               </Badge>
 
-              <Badge
-                variant='light'
-                size='md'
-                color='yellow'
-                styles={{
-                  root: {
-                    textTransform: 'initial',
-                  },
-                }}
-              >
-                New User
-              </Badge>
+              {contentTier ? (
+                <Badge
+                  variant='light'
+                  size='md'
+                  color={contentColor}
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                >
+                  {contentTier} {approvedContentUpdates ? `(${approvedContentUpdates.length})` : ''}
+                </Badge>
+              ) : (
+                <Badge
+                  variant='light'
+                  size='md'
+                  color='yellow'
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                >
+                  New User
+                </Badge>
+              )}
             </Group>
 
             <Divider />
