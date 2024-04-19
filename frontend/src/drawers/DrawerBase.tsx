@@ -1,5 +1,5 @@
 import { drawerState } from '@atoms/navAtoms';
-import { convertToContentType } from '@content/content-utils';
+import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
@@ -197,7 +197,9 @@ export default function DrawerBase() {
                   }}
                   onClick={() => {
                     setFeedbackData({
-                      type: _drawer.type as ContentType | AbilityBlockType,
+                      type: isAbilityBlockType(_drawer.type)
+                        ? _drawer.type
+                        : convertToContentType(_drawer.type as ContentType),
                       data: _drawer.data,
                     });
                   }}
