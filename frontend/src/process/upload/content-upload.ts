@@ -33,6 +33,7 @@ import { newImportHandler } from './creature-import';
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
 
 const DEBUG = true;
+const REQUIRE_REMASTER = false;
 
 let uploadStats: {
   total: number;
@@ -55,14 +56,26 @@ export function resetUploadStats() {
   uploadStats = emptyUploadStats();
 }
 
-export async function uploadContentList(type: ContentType | AbilityBlockType, files: FileWithPath[]) {
+export async function uploadContentList(sourceId: number, type: ContentType | AbilityBlockType, files: FileWithPath[]) {
   resetUploadStats();
 
   uploadStats.total = files.length;
 
+  const source = await findContentSource(sourceId);
+  if (!source || !source.foundry_id) {
+    showNotification({
+      id: 'unsupported-source',
+      title: `Unsupported Source`,
+      message: `This source does not have a Foundry ID associated with it.`,
+      autoClose: false,
+      color: 'red',
+    });
+    return;
+  }
+
   const addedIds = new Set<number>();
   for (let file of files) {
-    const result = await uploadContent(type, file);
+    const result = await uploadContent(source, type, file);
     if (result.success && result.id) {
       addedIds.add(result.id);
     }
@@ -106,24 +119,33 @@ export async function uploadContentList(type: ContentType | AbilityBlockType, fi
   console.groupEnd();
 }
 
-async function uploadContent(type: string, file: FileWithPath): Promise<UploadResult> {
+async function uploadContent(source: ContentSource, type: string, file: FileWithPath): Promise<UploadResult> {
   const jsonUrl = URL.createObjectURL(file);
 
   const res = await fetch(jsonUrl);
   const json = (await res.json()) as Record<string, any>;
 
-  const foundryId = (json.system?.publication?.title ||
+  const foundryId = source.foundry_id;
+  const foundFoundryId = (json.system?.publication?.title ||
     json.system?.details?.publication?.title ||
     json.system?.source?.value ||
     json.system?.details?.source?.value) as string;
-  const remaster = json.system?.publication?.remaster || json.system?.details?.publication?.remaster;
-  const source = await findContentSource(undefined, foundryId);
-  if (!source || !remaster) {
-    // Increase missing source count
-    uploadStats.missingSources.set(foundryId, (uploadStats.missingSources.get(foundryId) ?? 0) + 1);
+
+  if (foundFoundryId !== foundryId) {
     return {
       success: false,
     };
+  }
+
+  if (REQUIRE_REMASTER) {
+    const remaster = json.system?.publication?.remaster || json.system?.details?.publication?.remaster;
+    if (!remaster) {
+      // Increase missing source count
+      uploadStats.missingSources.set(foundryId, (uploadStats.missingSources.get(foundryId) ?? 0) + 1);
+      return {
+        success: false,
+      };
+    }
   }
 
   let result;

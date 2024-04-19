@@ -7,6 +7,7 @@ import {
 } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
 import { ActionCost, ContentSource, Language, Rarity, Size, Trait } from '@typing/content';
+import { labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
 
@@ -59,6 +60,71 @@ export function convertToSize(value?: string): Size {
   }
 }
 
+const FOUNDRY_TRAIT_MAP: Record<string, number> = {
+  DEADLY_D_12: 2529,
+  DEADLY_D_10: 1706,
+  DEADLY_D_8: 1852,
+  DEADLY_D_6: 1833,
+  DEADLY_D_4: 2743,
+  DEADLY_D12: 2529,
+  DEADLY_D10: 1706,
+  DEADLY_D8: 1852,
+  DEADLY_D6: 1833,
+  DEADLY_D4: 2743,
+  VOLLEY_15: 2754,
+  VOLLEY_20: 2762,
+  VOLLEY_30: 1684,
+  VOLLEY_60: 2753,
+  ADDITIVE_0: 2763,
+  ADDITIVE_1: 1518,
+  ADDITIVE_2: 1522,
+  ADDITIVE_3: 1509,
+  ADDITIVE0: 2763,
+  ADDITIVE1: 1518,
+  ADDITIVE2: 1522,
+  ADDITIVE3: 1509,
+  VERSATILE_B: 1690,
+  VERSATILE_P: 1854,
+  VERSATILE_S: 1837,
+  JOUSTING_D_4: 2744,
+  JOUSTING_D_6: 1649,
+  JOUSTING_D_8: 2745,
+  JOUSTING_D_10: 2746,
+  JOUSTING_D_12: 2747,
+  JOUSTING_D4: 2744,
+  JOUSTING_D6: 1649,
+  JOUSTING_D8: 2745,
+  JOUSTING_D10: 2746,
+  JOUSTING_D12: 2747,
+  TWO_HAND_D_4: 2750,
+  TWO_HAND_D_6: 2749,
+  TWO_HAND_D_8: 1831,
+  TWO_HAND_D_10: 1644,
+  TWO_HAND_D_12: 1597,
+  TWO_HAND_D4: 2750,
+  TWO_HAND_D6: 2749,
+  TWO_HAND_D8: 1831,
+  TWO_HAND_D10: 1644,
+  TWO_HAND_D12: 1597,
+  FREE_HAND: 1714,
+  THROWN_5: 2756,
+  THROWN_10: 1626,
+  THROWN_15: 2755,
+  THROWN_20: 1843,
+  THROWN_25: 2757,
+  THROWN_30: 2758,
+  FATAL_D_12: 1670,
+  FATAL_D_10: 1686,
+  FATAL_D_8: 1653,
+  FATAL_D_6: 2760,
+  FATAL_D_4: 2761,
+  FATAL_D12: 1670,
+  FATAL_D10: 1686,
+  FATAL_D8: 1653,
+  FATAL_D6: 2760,
+  FATAL_D4: 2761,
+};
+
 export async function getTraitIds(traitNames: string[], source: ContentSource) {
   const sources = await fetchContentSources();
 
@@ -69,6 +135,17 @@ export async function getTraitIds(traitNames: string[], source: ContentSource) {
       sources.map((s) => s.id)
     );
     if (!trait) {
+      const traitId = FOUNDRY_TRAIT_MAP[traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')];
+      if (traitId) {
+        traitIds.push(traitId);
+        continue;
+      }
+    }
+
+    if (!trait) {
+      console.error(
+        `Trait not found: ${traitName}, ${traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')}`
+      );
       await createTrait(_.startCase(traitName), '', source.id);
       trait = await fetchTraitByName(
         traitName,

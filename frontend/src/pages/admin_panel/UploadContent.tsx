@@ -1,12 +1,4 @@
-import {
-  Center,
-  Group,
-  Progress,
-  Select,
-  Text,
-  Title,
-  rem,
-} from '@mantine/core';
+import { Center, Group, Progress, Select, Text, Title, rem } from '@mantine/core';
 import { IconUpload, IconPhoto, IconX } from '@tabler/icons-react';
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import BlurBox from '@common/BlurBox';
@@ -15,20 +7,34 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
 import { AbilityBlockType, ContentType } from '@typing/content';
+import { fetchContentSources, defineDefaultSources } from '@content/content-store';
 
 export default function UploadContent() {
   const [contentType, setContentType] = useState<ContentType | AbilityBlockType | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showUploadStats, setShowUploadStats] = useState(false);
 
+  const [sourceId, setSourceId] = useState<number | undefined>(undefined);
+
+  const { data, isFetching } = useQuery({
+    queryKey: [`get-content-sources`],
+    queryFn: async () => {
+      const sources = await fetchContentSources({ homebrew: false, ids: 'all' });
+      defineDefaultSources(sources.map((source) => source.id));
+      return sources;
+    },
+    refetchInterval: 1000,
+  });
+
   const startUpload = async (files: FileWithPath[]) => {
+    if (!sourceId) return;
     if (!contentType) return;
     if (uploading) return;
     resetUploadStats();
     setTimeout(async () => {
       setUploading(true);
       setShowUploadStats(true);
-      await uploadContentList(contentType, files);
+      await uploadContentList(sourceId, contentType, files);
       setUploading(false);
       showNotification({
         title: 'Upload Complete',
@@ -63,10 +69,7 @@ export default function UploadContent() {
     for (const sourceMap of uploadStats.failedUploads.values()) {
       totalErrors = [...sourceMap.values()].reduce((acc, cur) => acc + cur, totalErrors);
     }
-    totalMissing = [...uploadStats.missingSources.values()].reduce(
-      (acc, cur) => acc + cur,
-      totalMissing
-    );
+    totalMissing = [...uploadStats.missingSources.values()].reduce((acc, cur) => acc + cur, totalMissing);
     total = uploadStats.total;
     totalFound = totalUploaded + totalErrors + totalMissing;
   }
@@ -76,6 +79,16 @@ export default function UploadContent() {
       <Center p='sm'>
         <Group>
           <Title order={3}>Upload Content</Title>
+          <Select
+            placeholder='Select content source'
+            data={(data ?? []).map((source) => ({
+              value: source.id + '',
+              label: source.name,
+            }))}
+            onChange={async (value) => {
+              setSourceId(value ? parseInt(value) : undefined);
+            }}
+          />
           <Select
             placeholder='Select content type'
             data={
@@ -101,11 +114,7 @@ export default function UploadContent() {
 
       {showUploadStats && totalFound > 0 && (
         <Progress.Root size='xl'>
-          <Progress.Section
-            animated={totalFound !== total}
-            value={Math.ceil((totalErrors / total) * 100)}
-            color='red'
-          >
+          <Progress.Section animated={totalFound !== total} value={Math.ceil((totalErrors / total) * 100)} color='red'>
             <Progress.Label>Errors - {totalErrors}</Progress.Label>
           </Progress.Section>
           <Progress.Section
@@ -115,10 +124,7 @@ export default function UploadContent() {
           >
             <Progress.Label>Missing Source - {totalMissing}</Progress.Label>
           </Progress.Section>
-          <Progress.Section
-            animated={totalFound !== total}
-            value={Math.ceil((totalUploaded / total) * 100)}
-          >
+          <Progress.Section animated={totalFound !== total} value={Math.ceil((totalUploaded / total) * 100)}>
             <Progress.Label>Uploaded - {totalUploaded}</Progress.Label>
           </Progress.Section>
         </Progress.Root>

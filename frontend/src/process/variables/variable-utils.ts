@@ -152,7 +152,7 @@ export function labelToVariable(label: string, trim = true) {
   }
   let cleanedString = label
     .toUpperCase()
-    .replace('-', '_')
+    .replace(/-/g, '_')
     .replace(/[^a-zA-Z_\s]/g, '');
   cleanedString = cleanedString.replace(/\s+/g, '_');
   return cleanedString;
@@ -303,7 +303,11 @@ export function isExtendedProficiencyType(value?: string): value is ExtendedProf
 }
 export function isListStr(value?: any): value is string[] {
   if (_.isString(value)) {
-    value = JSON.parse(value);
+    try {
+      value = JSON.parse(value);
+    } catch (e) {
+      value = null;
+    }
   }
   return Array.isArray(value) && value.every((v) => isString(v));
 }
