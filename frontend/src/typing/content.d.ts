@@ -460,6 +460,7 @@ interface Character {
     stamina?: boolean;
     free_archetype?: boolean;
     dual_class?: boolean;
+    gradual_attribute_boosts?: boolean;
   };
   content_sources?: {
     enabled?: number[];

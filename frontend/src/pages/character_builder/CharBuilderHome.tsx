@@ -460,6 +460,24 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                 />
                 <LinkSwitch
+                  label='Gradual Attribute Boosts'
+                  info={`In this variant, a character gains attribute boosts more gradually as they level up, rather than receiving four attribute boosts at 5th, 10th, 15th, and 20th levels. Each character gains one attribute boost when they reach each of 2nd, 3rd, 4th, and 5th levels. These are collectively a single set of attribute boosts, so a character can’t boost the same attribute more than once per set; players can put a dot next to each boosted attribute or otherwise mark it to keep track. PCs also receive an attribute boost at 7th, 8th, 9th, and 10th level (a second set); at 12th, 13th, 14th, and 15th level (a third set); and at 17th, 18th, 19th, and 20th level (the fourth and final set).\n\nThis spreads out the attribute boosts, and using them earlier means a character can increase their most important attribute modifiers at a lower level. This makes characters slightly more powerful on average, but it makes levels 5, 10, 15, and 20 less important since characters usually choose the least important attribute boost of the set at those levels.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=1300'
+                  enabled={character?.variants?.gradual_attribute_boosts}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          gradual_attribute_boosts: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
                   label='Proficiency without Level'
                   info={`This variant removes a character's level from their proficiency bonus, scaling it differently for a style of game that's outside the norm. This is a significant change to the system. The proficiency rank progression in Player Core is designed for heroic fantasy games where heroes rise from humble origins to world-shattering strength. For some games, this narrative arc doesn't fit. Such games are about hedging bets in an uncertain and gritty world, in which even the world's best fighter can't guarantee a win against a large group of moderately skilled brigands.`}
                   url='https://2e.aonprd.com/Rules.aspx?ID=2762'
@@ -477,7 +495,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     });
                   }}
                 />
-                <LinkSwitch
+                {/* <LinkSwitch
                   label='Stamina'
                   info={`In some fantasy stories, the heroes are able to avoid any serious injury until the situation gets dire, getting by with a graze or a flesh wound and needing nothing more than a quick rest to get back on their feet. If your group wants to tell tales like those, you can use the stamina variant to help make that happen.`}
                   url='https://2e.aonprd.com/Rules.aspx?ID=1378'
@@ -494,7 +512,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       };
                     });
                   }}
-                />
+                /> */}
               </Stack>
             </Tabs.Panel>
 

@@ -12,7 +12,7 @@ import {
 } from '@variables/variable-manager';
 import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
-import { hashData } from '@utils/numbers';
+import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
@@ -108,7 +108,7 @@ export async function executeCharacterOperations(
     });
 
   // Merge both but only keep one if they both have the same name and level
-  const classFeatures = _.unionWith(
+  let classFeatures = _.unionWith(
     classFeatures_1,
     classFeatures_2,
     (a, b) => a.name.trim() === b.name.trim() && a.level === b.level
@@ -199,6 +199,50 @@ export async function executeCharacterOperations(
     }
   }
 
+  // Gradual Attribute Boosts
+  if (character.variants?.gradual_attribute_boosts) {
+    const newClassFeatures: AbilityBlock[] = [];
+    for (const cf of classFeatures) {
+      if (!(cf.name.trim() === 'Attribute Boosts' && cf.operations?.length === 4) || cf.level === 1) {
+        newClassFeatures.push(cf);
+        continue;
+      }
+
+      const newBoostClassFeatures: AbilityBlock[] = [];
+      for (let i = 0; i < 4; i++) {
+        const newId = hashData({ name: 'attribute-boost', index: i, id: cf.id });
+        newBoostClassFeatures.push({
+          ...cf,
+          id: newId,
+          level: (cf.level ?? 0) - i,
+          description: `You gain a single boost in an attribute. If the attribute modifier is already +4 or higher, it takes two boosts to increase it; you get a partial boost and must boost the attribute again at a later level to increase it by 1.\n\n_You can't choose the same attribute more than once per set (${rankNumber((cf.level ?? 0) - 3)}-${rankNumber(cf.level ?? 0)} level boosts)._`,
+          operations: [
+            {
+              id: `32f84fc9-8e95-44c0-b096-54c392fccc6a-${newId}`,
+              type: 'select',
+              data: {
+                title: 'Select an Attribute',
+                modeType: 'FILTERED',
+                optionType: 'ADJ_VALUE',
+                optionsPredefined: [],
+                optionsFilters: {
+                  id: `03f5134a-4d00-4def-966f-a2deeb3259e7-${newId}`,
+                  type: 'ADJ_VALUE',
+                  group: 'ATTRIBUTE',
+                  value: {
+                    value: 1,
+                  },
+                },
+              },
+            },
+          ],
+        });
+      }
+      newClassFeatures.push(...newBoostClassFeatures);
+    }
+    classFeatures = newClassFeatures;
+  }
+
   const operationsPassthrough = async (options?: OperationOptions) => {
     let contentSourceResults: {
       baseSource: ContentSource;
@@ -234,7 +278,7 @@ export async function executeCharacterOperations(
       classResults = await executeOperations(
         'CHARACTER',
         'class',
-        getExtendedClassOperations('CHARACTER', class_, baseClassTrainings),
+        getAdjustedClassOperations('CHARACTER', class_, baseClassTrainings),
         options,
         class_.name
       );
@@ -250,7 +294,7 @@ export async function executeCharacterOperations(
       class2Results = await executeOperations(
         'CHARACTER',
         'class-2',
-        getExtendedClassOperations('CHARACTER', class_2, null),
+        getAdjustedClassOperations('CHARACTER', class_2, null),
         options,
         class_2.name
       );
@@ -516,13 +560,12 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   return operationResults;
 }
 
-export function getExtendedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
+export function getAdjustedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
   let classOperations = _.cloneDeep(class_.operations ?? []);
 
   if (baseTrainings !== null) {
     classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));
   }
-
   return classOperations;
 }
 
@@ -554,7 +597,8 @@ export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number):
   return operations;
 }
 
-export function getAdjustedAncestryOperations(varId: StoreID, character: Character, operations: Operation[]) {
+export function getAdjustedAncestryOperations(varId: StoreID, character: Character, inputOps: Operation[]) {
+  let operations = _.cloneDeep(inputOps);
   if (character.options?.alternate_ancestry_boosts) {
     // Remove all ancestry boost/flaws operations
     const newOps = operations.filter(
