@@ -177,7 +177,7 @@ export function OperationSection(props: {
               { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
               {
                 value: 'giveAbilityBlock:::class-feature',
-                label: 'Give Class Feature',
+                label: 'Give Other Class Feature',
               },
               { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
               { value: 'createValue', label: 'Create Value' },
