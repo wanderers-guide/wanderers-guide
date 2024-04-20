@@ -114,7 +114,8 @@ CREATE TABLE public.archetype (
     artwork_url character varying,
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
-    dedication_feat_id bigint NOT NULL
+    dedication_feat_id bigint NOT NULL,
+    uuid bigint
 );
 
 
@@ -642,7 +643,8 @@ CREATE TABLE public.versatile_heritage (
     artwork_url character varying,
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
-    heritage_id bigint NOT NULL
+    heritage_id bigint NOT NULL,
+    uuid bigint
 );
 
 
@@ -708,6 +710,14 @@ ALTER TABLE ONLY public.archetype
 
 ALTER TABLE ONLY public.archetype
     ADD CONSTRAINT archetype_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: archetype archetype_uuid_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.archetype
+    ADD CONSTRAINT archetype_uuid_key UNIQUE (uuid);
 
 
 --
@@ -908,6 +918,14 @@ ALTER TABLE ONLY public.versatile_heritage
 
 ALTER TABLE ONLY public.versatile_heritage
     ADD CONSTRAINT versatile_heritage_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: versatile_heritage versatile_heritage_uuid_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.versatile_heritage
+    ADD CONSTRAINT versatile_heritage_uuid_key UNIQUE (uuid);
 
 
 --
