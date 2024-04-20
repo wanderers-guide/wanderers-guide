@@ -1,5 +1,5 @@
 import { Item } from '@typing/content';
-import { StoreID, VariableBool, VariableListStr, VariableNum } from '@typing/variables';
+import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
@@ -56,9 +56,10 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
   const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
 
   ///
+  const profData = getProfTotal(id, item);
 
   const parts = new Map<string, number>();
-  parts.set('This is your proficiency bonus with this weapon.', getProfTotal(id, item));
+  parts.set('This is your proficiency bonus with this weapon.', profData.total);
 
   if (hasBrutal) {
     parts.set(
@@ -129,9 +130,10 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
 
   ///
+  const profData = getProfTotal(id, item);
 
   const parts = new Map<string, number>();
-  parts.set('This is your proficiency bonus with this weapon.', getProfTotal(id, item));
+  parts.set('This is your proficiency bonus with this weapon.', profData.total);
 
   if (hasFinesse && dexMod > strMod) {
     parts.set(
@@ -253,7 +255,28 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
     parts.set('This is a bonus you receive to damage for ranged attacks.', rangedAttackDamage);
   }
 
-  // TODO: Weapon Specialization
+  // Weapon Specialization
+  const profData = getProfTotal(id, item);
+  const hasWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false;
+  if (hasWeaponSpecialization) {
+    if (profData.prof === 'E') {
+      parts.set(`Since you're expert and have weapon specialization, you deal 2 additional damage.`, 2);
+    } else if (profData.prof === 'M') {
+      parts.set(`Since you're master and have weapon specialization, you deal 3 additional damage.`, 3);
+    } else if (profData.prof === 'L') {
+      parts.set(`Since you're legendary and have weapon specialization, you deal 4 additional damage.`, 4);
+    }
+  }
+  const hasGreaterWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
+  if (hasGreaterWeaponSpecialization) {
+    if (profData.prof === 'E') {
+      parts.set(`Since you're expert and have greater weapon specialization, you deal 4 additional damage.`, 4);
+    } else if (profData.prof === 'M') {
+      parts.set(`Since you're master and have greater weapon specialization, you deal 6 additional damage.`, 6);
+    } else if (profData.prof === 'L') {
+      parts.set(`Since you're legendary and have greater weapon specialization, you deal 8 additional damage.`, 8);
+    }
+  }
 
   return {
     total: [...parts.values()].reduce((a, b) => a + b, 0),
@@ -321,6 +344,29 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
     parts.set('This is a bonus you receive to damage for melee attacks.', meleeAttackDamage);
   }
 
+  // Weapon Specialization
+  const profData = getProfTotal(id, item);
+  const hasWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false;
+  if (hasWeaponSpecialization) {
+    if (profData.prof === 'E') {
+      parts.set(`Since you're expert and have weapon specialization, you deal 2 additional damage.`, 2);
+    } else if (profData.prof === 'M') {
+      parts.set(`Since you're master and have weapon specialization, you deal 3 additional damage.`, 3);
+    } else if (profData.prof === 'L') {
+      parts.set(`Since you're legendary and have weapon specialization, you deal 4 additional damage.`, 4);
+    }
+  }
+  const hasGreaterWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
+  if (hasGreaterWeaponSpecialization) {
+    if (profData.prof === 'E') {
+      parts.set(`Since you're expert and have greater weapon specialization, you deal 4 additional damage.`, 4);
+    } else if (profData.prof === 'M') {
+      parts.set(`Since you're master and have greater weapon specialization, you deal 6 additional damage.`, 6);
+    } else if (profData.prof === 'L') {
+      parts.set(`Since you're legendary and have greater weapon specialization, you deal 8 additional damage.`, 8);
+    }
+  }
+
   return {
     total: [...parts.values()].reduce((a, b) => a + b, 0),
     parts: parts,
@@ -350,36 +396,55 @@ function getProfTotal(id: StoreID, item: Item) {
     }
   }
 
+  let categoryVariable = '';
   let categoryProfTotal = 0;
   if (category === 'simple') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `SIMPLE_WEAPONS`));
+    categoryVariable = 'SIMPLE_WEAPONS';
   } else if (category === 'martial') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `MARTIAL_WEAPONS`));
+    categoryVariable = 'MARTIAL_WEAPONS';
   } else if (category === 'advanced') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `ADVANCED_WEAPONS`));
+    categoryVariable = 'ADVANCED_WEAPONS';
   } else if (category === 'unarmed_attack') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `UNARMED_ATTACKS`));
+    categoryVariable = 'UNARMED_ATTACKS';
   }
+  categoryProfTotal = parseInt(getFinalProfValue(id, categoryVariable));
 
   const group = item.meta_data?.group ?? 'brawling';
-  const groupProfTotal = parseInt(getFinalProfValue(id, `WEAPON_GROUP_${group.trim().toUpperCase()}`));
 
-  const individualProfTotal = parseInt(getFinalProfValue(id, `WEAPON_${labelToVariable(item.name)}`));
+  const groupVariable = `WEAPON_GROUP_${group.trim().toUpperCase()}`;
+  const groupProfTotal = parseInt(getFinalProfValue(id, groupVariable));
 
-  const profTotal = Math.max(categoryProfTotal, groupProfTotal, individualProfTotal);
+  const individualVariable = `WEAPON_${labelToVariable(item.name)}`;
+  const individualProfTotal = parseInt(getFinalProfValue(id, individualVariable));
+
+  let maxProfTotal = categoryProfTotal;
+  let maxVariable = categoryVariable;
+
+  if (groupProfTotal > maxProfTotal) {
+    maxProfTotal = groupProfTotal;
+    maxVariable = groupVariable;
+  }
+  if (individualProfTotal > maxProfTotal) {
+    maxProfTotal = individualProfTotal;
+    maxVariable = individualVariable;
+  }
 
   // "When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus."
   const martialExperience = getVariable<VariableBool>(id, 'MARTIAL_EXPERIENCE')?.value ?? false;
-  if (martialExperience && profTotal <= 0) {
+  if (martialExperience && maxProfTotal <= 0) {
     const profWithoutLevel = !!getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value;
     if (profWithoutLevel) {
-      return 0;
+      maxProfTotal = 0;
     } else {
-      return getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0;
+      maxProfTotal = getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0;
     }
   }
 
-  return profTotal;
+  return {
+    total: maxProfTotal,
+    variable: maxVariable,
+    prof: getVariable<VariableProf>(id, maxVariable)?.value.value,
+  };
 }
 
 function getMAPedTotal(id: StoreID, item: Item, total: number): [number, number, number] {
