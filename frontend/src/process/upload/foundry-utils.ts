@@ -126,7 +126,7 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
 };
 
 export async function getTraitIds(traitNames: string[], source: ContentSource) {
-  const sources = await fetchContentSources();
+  const sources = await fetchContentSources({ ids: 'all', homebrew: false });
 
   const traitIds: number[] = [];
   for (const traitName of traitNames) {

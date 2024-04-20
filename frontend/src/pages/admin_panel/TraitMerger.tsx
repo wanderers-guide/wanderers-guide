@@ -1,21 +1,10 @@
-import { fixBackgroundContent } from '@ai/open-ai-handler';
-import { queryByName } from '@ai/vector-db/vector-manager';
 import BlurBox from '@common/BlurBox';
-import {
-  deleteContent,
-  upsertAbilityBlock,
-  upsertBackground,
-  upsertCreature,
-  upsertItem,
-  upsertSpell,
-} from '@content/content-creation';
-import { fetchContentSources, defineDefaultSources, fetchContent, fetchContentPackage } from '@content/content-store';
+import { deleteContent, upsertAbilityBlock, upsertCreature, upsertItem, upsertSpell } from '@content/content-creation';
+import { fetchContentSources, defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { Center, Group, Title, Select, Button, List, Stack } from '@mantine/core';
-import { hideNotification, showNotification } from '@mantine/notifications';
+import { showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Background, ContentPackage, Trait } from '@typing/content';
-import { Operation } from '@typing/operations';
-import { labelToVariable } from '@variables/variable-utils';
+import { ContentPackage, Trait } from '@typing/content';
 import { useMemo, useState } from 'react';
 
 const ENABLED = false;
