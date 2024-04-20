@@ -211,7 +211,7 @@ export async function handleAssociatedTrait(
     traitDescription = `This indicates content from the ${name.toLowerCase()} archetype.`;
   }
 
-  let trait_id = null;
+  let trait_id = undefined;
   if (!contentId || contentId === -1) {
     // Is a new, so we need to create a new trait
     const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
@@ -269,7 +269,7 @@ export async function handleAssociatedTrait(
 
     trait_id = record.trait_id as number;
   }
-  return trait_id;
+  return trait_id ? trait_id : null;
 }
 
 export function upsertResponseWrapper(procedure: 'insert' | 'update', result: any): JSendResponse {
