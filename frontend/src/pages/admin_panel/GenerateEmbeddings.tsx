@@ -11,6 +11,8 @@ import { AbilityBlockType, ContentType } from '@typing/content';
 import { useState } from 'react';
 
 export default function GenerateEmbeddings() {
+  const [loading, setLoading] = useState(false);
+
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
@@ -34,12 +36,17 @@ export default function GenerateEmbeddings() {
               searchValue=''
               onChange={async (value) => {
                 if (!value) return;
+                setLoading(true);
                 await generateEmbeddings([parseInt(value)]);
+                setLoading(false);
               }}
             />
             <Button
+              disabled={loading || isFetching}
               onClick={async () => {
+                setLoading(true);
                 await generateEmbeddings(data?.map((source) => source.id) ?? []);
+                setLoading(false);
               }}
             >
               Do All
