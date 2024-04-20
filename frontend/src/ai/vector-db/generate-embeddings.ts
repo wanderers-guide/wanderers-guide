@@ -2,7 +2,7 @@ import { hideNotification, showNotification } from '@mantine/notifications';
 import { populateContent } from './vector-manager';
 import { fetchContentPackage } from '@content/content-store';
 
-export async function generateEmbeddings(sourceId: number) {
+export async function generateEmbeddings(sources: number[]) {
   showNotification({
     id: 'generate-embeddings',
     title: `Generating embeddings...`,
@@ -10,7 +10,7 @@ export async function generateEmbeddings(sourceId: number) {
     autoClose: false,
   });
 
-  const content = await fetchContentPackage([sourceId]);
+  const content = await fetchContentPackage(sources);
   const embeddings = await Promise.all([
     populateContent(
       'ancestry',
