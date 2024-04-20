@@ -48,15 +48,14 @@ export async function generateEmbeddings(sourceId: number) {
       'creature',
       content.creatures.map((n) => n.id)
     ),
-    // TODO: Add UUID fields to these so we can generate embeddings for them
-    // populateContent(
-    //   'archetype',
-    //   content.archetypes.map((n) => n.id)
-    // ),
-    // populateContent(
-    //   'versatile-heritage',
-    //   content.versatileHeritages.map((n) => n.id)
-    // ),
+    populateContent(
+      'archetype',
+      content.archetypes.map((n) => n.id)
+    ),
+    populateContent(
+      'versatile-heritage',
+      content.versatileHeritages.map((n) => n.id)
+    ),
   ]);
 
   hideNotification('generate-embeddings');

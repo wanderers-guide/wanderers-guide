@@ -26,6 +26,8 @@ import { ContentSourceDrawerTitle } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerTitle } from './types/ManageCoinsDrawer';
 import { CreatureDrawerTitle } from './types/CreatureDrawer';
 import { StatWeaponDrawerTitle } from './types/StatWeaponDrawer';
+import { ArchetypeDrawerTitle } from './types/ArchetypeDrawer';
+import { VersatileHeritageDrawerTitle } from './types/VersatileHeritageDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
   const _drawer = useRecoilValue(drawerState);
@@ -47,6 +49,9 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'heritage' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'sense' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'versatile-heritage' && <VersatileHeritageDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'archetype' && <ArchetypeDrawerTitle data={_drawer.data} />}
+
       {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerTitle data={_drawer.data} />}

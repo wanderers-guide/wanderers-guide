@@ -27,6 +27,8 @@ import { CreatureDrawerContent } from './types/CreatureDrawer';
 import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
 import { getCachedCustomization } from '@content/customization-cache';
 import _ from 'lodash-es';
+import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
+import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
@@ -61,6 +63,9 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'heritage' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'sense' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'versatile-heritage' && <VersatileHeritageDrawerContent data={drawerData} />}
+      {_drawer?.type === 'archetype' && <ArchetypeDrawerContent data={drawerData} />}
+
       {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerContent data={drawerData} />}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={drawerData} />}
       {_drawer?.type === 'stat-attr' && <StatAttrDrawerContent data={drawerData} />}

@@ -10,6 +10,7 @@ import {
   updateData,
 } from '../_shared/helpers.ts';
 import type { ContentUpdate, PublicUser } from '../_shared/content';
+import { populateCollection } from '../_shared/vector-db.ts';
 
 const CONTENT_TIER_ACCESS_THRESHOLD = 100;
 
@@ -80,6 +81,7 @@ serve(async (req: Request) => {
         }
       }
 
+      let content_id = update.ref_id;
       if (update.action === 'UPDATE' && update.ref_id) {
         if (update.data.trait_id) {
           // Update the associated trait's name & description
@@ -119,6 +121,7 @@ serve(async (req: Request) => {
           update.data?.type
         );
         result = newData ? 'SUCCESS' : 'ERROR_UNKNOWN';
+        content_id = newData?.id;
       } else if (update.action === 'DELETE' && update.ref_id) {
         result = await deleteData(client, tableName, update.ref_id);
       } else {
@@ -126,6 +129,12 @@ serve(async (req: Request) => {
           status: 'error',
           message: 'Invalid update action',
         };
+      }
+
+      // Generate embeddings for the updated content
+      console.log('content_id', content_id, 'result', result);
+      if (result === 'SUCCESS' && content_id) {
+        await populateCollection(client, 'name', update.type, [content_id]);
       }
     } else if (state === 'REJECT') {
       result = await updateData(client, 'content_update', update.id, {

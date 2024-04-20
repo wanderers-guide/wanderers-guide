@@ -160,6 +160,10 @@ function hasUUID(tableName: TableName): boolean {
       return true;
     case 'language':
       return true;
+    case 'archetype':
+      return true;
+    case 'versatile_heritage':
+      return true;
     case 'content_source':
       return false;
     case 'content_update':
@@ -167,10 +171,6 @@ function hasUUID(tableName: TableName): boolean {
     case 'campaign':
       return false;
     case 'character':
-      return false;
-    case 'archetype':
-      return false;
-    case 'versatile_heritage':
       return false;
     case 'public_user':
       return false;
