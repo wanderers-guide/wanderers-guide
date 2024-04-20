@@ -2,7 +2,7 @@ import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { BaseSelectionOption, SelectionOptionsInner, selectContent } from '@common/select/SelectContent';
 import {
-  deleteContentSource,
+  deleteContent,
   upsertAbilityBlock,
   upsertAncestry,
   upsertBackground,
@@ -925,7 +925,7 @@ function ContentList<
                   }}
                   onOptionsDelete={async () => {
                     setLoading(true);
-                    const response = await deleteContentSource(props.type, record.id);
+                    const response = await deleteContent(props.type, record.id);
                     handleReset();
                   }}
                 />

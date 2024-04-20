@@ -16,7 +16,7 @@ import {
 import * as _ from 'lodash-es';
 import { makeRequest } from '@requests/request-manager';
 
-export async function deleteContentSource(type: ContentType, id: number) {
+export async function deleteContent(type: ContentType, id: number) {
   const result = await makeRequest('delete-content', {
     id: id,
     type: type,

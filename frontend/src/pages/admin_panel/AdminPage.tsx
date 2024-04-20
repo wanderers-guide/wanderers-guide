@@ -6,6 +6,7 @@ import ImportLegacyContent from './ImportLegacyContent';
 import UploadContent from './UploadContent';
 import BackgroundFixer from './BackgroundFixer';
 import ImportPathbuilderContent from './ImportPathbuilderContent';
+import TraitMerger from './TraitMerger';
 
 export function Component() {
   setPageTitle(`Admin Panel`);
@@ -18,6 +19,7 @@ export function Component() {
       <ImportLegacyContent />
       <ImportPathbuilderContent />
       <BackgroundFixer />
+      <TraitMerger />
     </Stack>
   );
 }
