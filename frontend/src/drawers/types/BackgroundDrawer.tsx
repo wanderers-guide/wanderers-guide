@@ -131,7 +131,7 @@ export function BackgroundInitialOverview(props: {
   // Split the description, remove the first intro paragraph
   let description = props.background.description;
   let introParagraph = ``;
-  const descMatch = /^\s*(\> _.+?_)/gm.exec(props.background.description);
+  const descMatch = /^\s*(\> .+?\n)/gm.exec(props.background.description);
   if (descMatch && descMatch.length > 1) {
     description = description.replace(descMatch[0], ``).trim();
     introParagraph = descMatch[1].trim();
@@ -165,7 +165,13 @@ export function BackgroundInitialOverview(props: {
               src={props.background.artwork_url}
             />
           )}
-          <RichText ta='justify'>{introParagraph || description}</RichText>
+          {introParagraph ? (
+            <RichText ta='justify' fs='italic'>
+              {introParagraph}
+            </RichText>
+          ) : (
+            <RichText ta='justify'>{description}</RichText>
+          )}
         </Box>
         <Anchor
           size='sm'
