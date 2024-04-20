@@ -11,7 +11,7 @@ const ENABLED = false;
 
 export default function TraitMerger() {
   const { data, isFetching } = useQuery({
-    queryKey: [`get-traits`],
+    queryKey: [`get-content-package-for-trait-merging`],
     queryFn: async () => {
       const sources = await fetchContentSources({ homebrew: false, ids: 'all' });
       defineDefaultSources(sources.map((source) => source.id));

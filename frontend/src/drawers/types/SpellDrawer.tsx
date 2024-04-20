@@ -201,8 +201,6 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
     );
   }
 
-  const heightened = spell.heightened;
-
   return (
     <Box>
       {spell.meta_data?.image_url && (
@@ -256,7 +254,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
           {spell.description}
         </RichText>
 
-        {spell.heightened && spell.heightened.text && (
+        {spell.heightened && spell.heightened.text && spell.heightened.text.length > 0 && (
           <Box>
             <Divider />
             {spell.heightened.text.map((text, index) => (
@@ -264,7 +262,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
                 <Text fw={600} c='gray.5' span>
                   Heightened {text.amount}
                 </Text>{' '}
-                {text.text}
+                <RichText span>{text.text}</RichText>
               </IndentedText>
             ))}
           </Box>

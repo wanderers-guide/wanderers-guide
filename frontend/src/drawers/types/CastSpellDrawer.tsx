@@ -319,7 +319,7 @@ export function CastSpellDrawerContent(props: {
                 <Text fw={600} c='gray.5' span>
                   Heightened {text.amount}
                 </Text>{' '}
-                {text.text}
+                <RichText span>{text.text}</RichText>
               </IndentedText>
             ))}
           </Box>
