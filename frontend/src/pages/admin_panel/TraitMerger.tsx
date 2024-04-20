@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ContentPackage, Trait } from '@typing/content';
 import { useMemo, useState } from 'react';
 
-const ENABLED = false;
+const ENABLED = true;
 
 export default function TraitMerger() {
   const { data, isFetching } = useQuery({

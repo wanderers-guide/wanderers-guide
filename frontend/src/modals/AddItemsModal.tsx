@@ -56,10 +56,12 @@ export default function AddItemsModal({
   const { data: rawItems, isFetching } = useQuery({
     queryKey: [`find-items`],
     queryFn: async () => {
-      return (await fetchContentAll<Item>('item')).sort((a, b) => {
-        if (a.level === b.level) return a.name.localeCompare(b.name);
-        return a.level - b.level;
-      });
+      return (await fetchContentAll<Item>('item'))
+        .sort((a, b) => {
+          if (a.level === b.level) return a.name.localeCompare(b.name);
+          return a.level - b.level;
+        })
+        .filter((item) => item.meta_data?.unselectable !== true);
     },
   });
 
