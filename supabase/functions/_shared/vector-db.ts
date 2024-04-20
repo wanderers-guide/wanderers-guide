@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ContentType, JSendResponse } from './content';
-import { convertContentTypeToTableName, fetchData } from './helpers';
+import { convertContentTypeToTableName, fetchData } from './helpers.ts';
 
 export async function populateCollection(
   client: SupabaseClient<any, 'public', any>,

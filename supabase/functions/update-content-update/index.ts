@@ -121,6 +121,7 @@ serve(async (req: Request) => {
           update.data?.type
         );
         result = newData ? 'SUCCESS' : 'ERROR_UNKNOWN';
+        console.log('created -> content_id', newData?.id);
         content_id = newData?.id;
       } else if (update.action === 'DELETE' && update.ref_id) {
         result = await deleteData(client, tableName, update.ref_id);
