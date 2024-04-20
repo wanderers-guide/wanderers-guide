@@ -1,4 +1,4 @@
-![Wanderer's Guide](https://wanderersguide.app/images/logo.png "Wanderer's Guide logo")
+![Wanderer's Guide](https://legacy.wanderersguide.app/images/logo.png "Wanderer's Guide logo")
 
 ## Quick links
 
@@ -36,5 +36,6 @@ To properly access the website you need to register a user.
 id,created_at,user_id,display_name,image_url,background_image_url,site_theme,is_admin,is_mod,deactivated,summary,subscribed_content_sources,patreon,organized_play_id
 1,2024-04-03 21:30:01.720023+00,UUID HERE,User name,,,,false,false,false,,,,
 ```
+
 4. Go to the Table Editor page and select the `public_user` table. Insert the CSV in the table
 5. Login with the email and password
