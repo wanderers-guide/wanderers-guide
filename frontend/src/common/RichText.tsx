@@ -123,6 +123,14 @@ export default function RichText(props: RichTextProps) {
           const { children, className } = innerProps;
           return <List className={className}>{children}</List>;
         },
+        ol(innerProps) {
+          const { children, className } = innerProps;
+          return (
+            <List type='ordered' className={className}>
+              {children}
+            </List>
+          );
+        },
         li(innerProps) {
           const { children, className } = innerProps;
           return (
