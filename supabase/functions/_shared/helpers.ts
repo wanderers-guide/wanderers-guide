@@ -223,12 +223,16 @@ export async function handleAssociatedTrait(
       { column: 'content_source_id', value: contentSourceId },
     ]);
 
+    if (foundTraits.length > 0) {
+      trait_id = foundTraits[0].id;
+    }
+
     // Create/update a new trait
     const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
       client,
       'trait',
       {
-        id: foundTraits.length > 0 ? foundTraits[0].id : -1,
+        id: trait_id,
         name: traitName,
         description: traitDescription,
         content_source_id: contentSourceId,
