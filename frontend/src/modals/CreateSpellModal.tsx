@@ -55,6 +55,7 @@ export function CreateSpellModal(props: {
   editSpell?: Spell;
   onComplete: (spell: Spell) => void;
   onCancel: () => void;
+  onNameBlur?: (name: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
@@ -215,6 +216,7 @@ export function CreateSpellModal(props: {
                       form.setFieldValue('name', startCase(text));
                     }
                   }}
+                  onBlur={() => props.onNameBlur?.(form.values.name)}
                 />
 
                 <Select

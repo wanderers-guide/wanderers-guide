@@ -195,6 +195,8 @@ export async function handleAssociatedTrait(
   name: string,
   contentSourceId: number
 ): Promise<number | null> {
+  name = name.trim();
+
   let traitName = '';
   let traitDescription = '';
   if (type === 'ancestry') {
@@ -214,10 +216,19 @@ export async function handleAssociatedTrait(
   let trait_id = undefined;
   if (!contentId || contentId === -1) {
     // Is a new, so we need to create a new trait
+
+    // Attempt to find existing trait already
+    const foundTraits = await fetchData<Trait>(client, 'trait', [
+      { column: 'name', value: name, options: { ignoreCase: true } },
+      { column: 'content_source_id', value: contentSourceId },
+    ]);
+
+    // Create/update a new trait
     const { procedure: traitProcedure, result: traitResult } = await upsertData<Trait>(
       client,
       'trait',
       {
+        id: foundTraits.length > 0 ? foundTraits[0].id : -1,
         name: traitName,
         description: traitDescription,
         content_source_id: contentSourceId,

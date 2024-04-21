@@ -62,6 +62,7 @@ export function CreateCreatureModal(props: {
   editCreature?: Creature;
   onComplete: (creature: Creature) => void;
   onCancel: () => void;
+  onNameBlur?: (name: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
@@ -201,6 +202,7 @@ export function CreateCreatureModal(props: {
                       form.setFieldValue('name', startCase(text));
                     }
                   }}
+                  onBlur={() => props.onNameBlur?.(form.values.name)}
                 />
                 <Select
                   label='Level'

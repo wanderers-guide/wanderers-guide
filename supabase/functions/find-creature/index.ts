@@ -5,13 +5,15 @@ import type { Creature } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id, content_sources } = body as {
+    let { id, name, content_sources } = body as {
       id?: number | number[];
+      name?: string;
       content_sources?: number[];
     };
 
     const results = await fetchData<Creature>(client, 'creature', [
       { column: 'id', value: id },
+      { column: 'name', value: name, options: { ignoreCase: true } },
       { column: 'content_source_id', value: content_sources },
     ]);
 

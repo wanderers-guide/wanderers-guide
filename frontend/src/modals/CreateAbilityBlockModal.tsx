@@ -58,6 +58,7 @@ export function CreateAbilityBlockModal(props: {
   type: AbilityBlockType;
   onComplete: (abilityBlock: AbilityBlock) => void;
   onCancel: () => void;
+  onNameBlur?: (name: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
@@ -220,6 +221,7 @@ export function CreateAbilityBlockModal(props: {
                       form.setFieldValue('name', startCase(text));
                     }
                   }}
+                  onBlur={() => props.onNameBlur?.(form.values.name)}
                 />
                 {(props.type === 'action' || props.type === 'feat' || props.type === 'physical-feature') && (
                   <ActionsInput label='Actions' w={100} {...form.getInputProps('actions')} />

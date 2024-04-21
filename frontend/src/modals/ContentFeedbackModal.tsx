@@ -8,7 +8,16 @@ import { DrawerType } from '@typing/index';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconHash, IconStar, IconX } from '@tabler/icons-react';
 import { convertToContentType, getIconFromContentType } from '@content/content-utils';
-import { defineDefaultSources, fetchContentById, getDefaultSources } from '@content/content-store';
+import {
+  defineDefaultSources,
+  fetchAbilityBlockByName,
+  fetchContentById,
+  fetchCreatureByName,
+  fetchItemByName,
+  fetchSpellByName,
+  fetchTraitByName,
+  getDefaultSources,
+} from '@content/content-store';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import {
   upsertClass,
@@ -129,6 +138,18 @@ export default function ContentFeedbackModal(props: {
                 await handleComplete(abilityBlock.id, abilityBlock.content_source_id, abilityBlock);
               }}
               onCancel={() => handleReset()}
+              onNameBlur={async (name) => {
+                if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
+                const abs = await fetchAbilityBlockByName(name, [props.data.contentSourceId]);
+                if ((abs ?? []).length > 0) {
+                  showNotification({
+                    id: 'record-exists',
+                    title: 'Already Exists',
+                    message: `A record with the name "${name}" already exists.`,
+                    color: 'red',
+                  });
+                }
+              }}
             />
           )}
 
@@ -140,6 +161,18 @@ export default function ContentFeedbackModal(props: {
                 await handleComplete(spell.id, spell.content_source_id, spell);
               }}
               onCancel={() => handleReset()}
+              onNameBlur={async (name) => {
+                if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
+                const spells = await fetchSpellByName(name, [props.data.contentSourceId]);
+                if ((spells ?? []).length > 0) {
+                  showNotification({
+                    id: 'record-exists',
+                    title: 'Already Exists',
+                    message: `A spell with the name "${name}" already exists.`,
+                    color: 'red',
+                  });
+                }
+              }}
             />
           )}
 
@@ -206,6 +239,18 @@ export default function ContentFeedbackModal(props: {
                 await handleComplete(trait.id, trait.content_source_id, trait);
               }}
               onCancel={() => handleReset()}
+              onNameBlur={async (name) => {
+                if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
+                const trait = await fetchTraitByName(name, [props.data.contentSourceId]);
+                if (trait) {
+                  showNotification({
+                    id: 'record-exists',
+                    title: 'Already Exists',
+                    message: `A trait with the name "${name}" already exists.`,
+                    color: 'red',
+                  });
+                }
+              }}
             />
           )}
 
@@ -228,6 +273,18 @@ export default function ContentFeedbackModal(props: {
                 await handleComplete(item.id, item.content_source_id, item);
               }}
               onCancel={() => handleReset()}
+              onNameBlur={async (name) => {
+                if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
+                const items = await fetchItemByName(name, [props.data.contentSourceId]);
+                if ((items ?? []).length > 0) {
+                  showNotification({
+                    id: 'record-exists',
+                    title: 'Already Exists',
+                    message: `An item with the name "${name}" already exists.`,
+                    color: 'red',
+                  });
+                }
+              }}
             />
           )}
 
@@ -239,6 +296,18 @@ export default function ContentFeedbackModal(props: {
                 await handleComplete(creature.id, creature.content_source_id, creature);
               }}
               onCancel={() => handleReset()}
+              onNameBlur={async (name) => {
+                if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
+                const creatures = await fetchCreatureByName(name, [props.data.contentSourceId]);
+                if ((creatures ?? []).length > 0) {
+                  showNotification({
+                    id: 'record-exists',
+                    title: 'Already Exists',
+                    message: `A creature with the name "${name}" already exists.`,
+                    color: 'red',
+                  });
+                }
+              }}
             />
           )}
         </Box>

@@ -58,6 +58,7 @@ export function CreateItemModal(props: {
   zIndex?: number;
   onComplete: (item: Item) => void;
   onCancel: () => void;
+  onNameBlur?: (name: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
@@ -332,6 +333,7 @@ export function CreateItemModal(props: {
                       form.setFieldValue('name', startCase(text));
                     }
                   }}
+                  onBlur={() => props.onNameBlur?.(form.values.name)}
                 />
                 <Select
                   label='Level'

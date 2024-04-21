@@ -326,3 +326,10 @@ export async function fetchSpellByName(name?: string, sources?: number[], id?: n
     content_sources: sources ?? defaultSources,
   });
 }
+export async function fetchCreatureByName(name?: string, sources?: number[], id?: number) {
+  return await fetchContent<Creature[]>('creature', {
+    id,
+    name,
+    content_sources: sources ?? defaultSources,
+  });
+}

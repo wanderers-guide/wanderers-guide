@@ -41,6 +41,7 @@ export function CreateTraitModal(props: {
   editTrait?: Trait;
   onComplete: (trait: Trait) => void;
   onCancel: () => void;
+  onNameBlur?: (name: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const theme = useMantineTheme();
@@ -165,7 +166,12 @@ export function CreateTraitModal(props: {
           <Stack gap={10}>
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
-                <TextInput label='Name' required {...form.getInputProps('name')} />
+                <TextInput
+                  label='Name'
+                  required
+                  {...form.getInputProps('name')}
+                  onBlur={() => props.onNameBlur?.(form.values.name)}
+                />
               </Group>
             </Group>
 

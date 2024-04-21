@@ -1,8 +1,5 @@
 import { drawerState } from '@atoms/navAtoms';
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
 import {
   ActionSelectionOption,
   AncestrySelectionOption,
@@ -15,32 +12,12 @@ import {
   SpellSelectionOption,
   TraitSelectionOption,
 } from '@common/select/SelectContent';
-import { fetchContentById, fetchContentPackage, fetchContentSources } from '@content/content-store';
-import { convertToContentType } from '@content/content-utils';
+import { fetchContentPackage, fetchContentSources } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import {
-  Title,
-  Text,
-  Image,
-  Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Button,
-  Accordion,
-  Badge,
-  Select,
-} from '@mantine/core';
-import { modals } from '@mantine/modals';
-import ContentFeedbackModal from '@modals/ContentFeedbackModal';
+import { Title, Text, Loader, Group, Divider, Box, Button, Accordion, Badge, Select } from '@mantine/core';
 import { IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, AbilityBlockType, ContentSource, ContentType } from '@typing/content';
-import { Operation } from '@typing/operations';
-import { displayComingSoon } from '@utils/notifications';
-import { useState } from 'react';
+import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import { useRecoilState } from 'recoil';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
