@@ -10,7 +10,7 @@ import {
 import type { Character } from '../_shared/content';
 import { hasPatreonAccess } from '../_shared/patreon.ts';
 
-const CHARACTER_SLOT_CAP = 3;
+const CHARACTER_SLOT_CAP = 6;
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
