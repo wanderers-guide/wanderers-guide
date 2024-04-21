@@ -354,7 +354,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 />
                 <LinksGroup
                   icon={IconArchive}
-                  label={'Legacy Backports'}
+                  label={'Core Backports'}
                   links={books
                     .filter((book) => book.group === 'legacy')
                     .map((book) => ({
