@@ -431,6 +431,36 @@ export default function Layout(props: { children: React.ReactNode }) {
             >
               Sign in / Register
             </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href={DISCORD_URL}
+              onClick={() => {
+                window.location.href = DISCORD_URL;
+              }}
+            >
+              Community
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href={PATREON_URL}
+              onClick={() => {
+                window.location.href = PATREON_URL;
+              }}
+            >
+              Support
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
+              href={LEGACY_URL}
+              onClick={() => {
+                window.location.href = LEGACY_URL;
+              }}
+            >
+              Legacy Site
+            </UnstyledButton>
           </Stack>
         )}
       </AppShell.Navbar>
