@@ -173,7 +173,7 @@ export default function App() {
             openDrawer(drawerData);
           }, 500);
         }
-        removeQueryParam('open');
+        //removeQueryParam('open');
       }
     })();
   }, [location]);

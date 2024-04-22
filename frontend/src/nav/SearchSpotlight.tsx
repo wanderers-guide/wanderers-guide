@@ -32,6 +32,7 @@ import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
 import { displayComingSoon } from '@utils/notifications';
 import { pluralize, toLabel } from '@utils/strings';
+import { setQueryParam } from '@utils/url';
 import { labelToVariable } from '@variables/variable-utils';
 import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
@@ -324,6 +325,7 @@ async function queryResults(
       label: `${data.name}`,
       description: data.description ? description : undefined,
       onClick: () => {
+        setQueryParam('open', `link_${abilityBlockType ?? data._type}_${data.id}`);
         openDrawer({
           type: (abilityBlockType ?? data._type) as DrawerType,
           data: { id: data.id },
@@ -352,6 +354,7 @@ async function fetchBooks(
       label: source.name,
       description: truncate(source.description, { length: 80 }),
       onClick: () => {
+        setQueryParam('open', `link_content-source_${source.id}`);
         openDrawer({
           type: 'content-source',
           data: { id: source.id },
