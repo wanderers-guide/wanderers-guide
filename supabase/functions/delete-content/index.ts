@@ -36,6 +36,7 @@ serve(async (req: Request) => {
         'spell',
         'creature',
         'language',
+        'encounter',
       ].includes(tableName)
     ) {
       return {
