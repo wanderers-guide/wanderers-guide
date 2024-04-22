@@ -16,6 +16,7 @@ import {
   Button,
   ButtonProps,
   Center,
+  Checkbox,
   CloseButton,
   Divider,
   FocusTrap,
@@ -29,7 +30,6 @@ import {
   Popover,
   ScrollArea,
   Stack,
-  Switch,
   Tabs,
   Text,
   TextInput,
@@ -37,7 +37,7 @@ import {
   Title,
   Transition,
   rem,
-  useMantineTheme,
+  useMantineTheme
 } from '@mantine/core';
 import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
@@ -97,15 +97,7 @@ import {
   Trait,
   VersatileHeritage,
 } from '../../typing/content';
-
-interface FilterOptions {
-  options: {
-    title: string;
-    type: 'MULTI-SELECT' | 'SELECT' | 'TRAITS-SELECT' | 'TEXT-INPUT' | 'NUMBER-INPUT' | 'CHECKBOX';
-    key: string;
-    options?: string[] | { label: string; value: string }[];
-  }[];
-}
+import { FilterOptions, SelectedFilter } from './filters';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -175,6 +167,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         selectedId: selected?.id,
         // @ts-ignore
         filterFn: props.options?.filterFn,
+        filterOptions: props.options?.filterOptions,
         showButton: props.options?.showButton,
         includeOptions: props.options?.includeOptions,
       }
@@ -317,10 +310,11 @@ export default function SelectContentModal({
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
   const [selectedSource, setSelectedSource] = useState<number | 'all'>('all');
 
-  const [filterSelections, setFilterSelections] = useState<Record<string, any>>({});
+  const [filterSelections, setFilterSelections] = useState<Record<string, SelectedFilter>>({});
   const [openedFilters, setOpenedFilters] = useState(false);
 
-  const updateFilterSelection = (key: string, value: any) => {
+  const updateFilterSelection = (key: string, selectedFilter: SelectedFilter) => {
+    const value = selectedFilter.value;
     if (!value || (Array.isArray(value) && value.length === 0)) {
       // Remove
       const newFilterSelections = { ...filterSelections };
@@ -328,7 +322,7 @@ export default function SelectContentModal({
       setFilterSelections(newFilterSelections);
     } else {
       // Add
-      setFilterSelections((prev) => ({ ...prev, [key]: value }));
+      setFilterSelections((prev) => ({ ...prev, [key]: selectedFilter }));
     }
   };
 
@@ -336,7 +330,11 @@ export default function SelectContentModal({
     const newFilterFn = (option: Record<string, any>) => {
       for (const key of Object.keys(filterSelections)) {
         const value = option[key];
-        const filterValue = filterSelections[key];
+        const selectedFilter = filterSelections[key];
+        if (selectedFilter.filter.filterFn) {
+          return selectedFilter.filter.filterFn(option);
+        }
+        const filterValue = selectedFilter.value;
         if (Array.isArray(value)) {
           if (Array.isArray(filterValue)) {
             if (!value.some((val) => filterValue.includes(val))) {
@@ -492,9 +490,24 @@ export default function SelectContentModal({
                         label={option.title}
                         data={option.options ?? []}
                         onChange={(value) => {
-                          updateFilterSelection(option.key, value);
+                          updateFilterSelection(option.key, { filter: option, value });
                         }}
-                        value={filterSelections[option.key] ?? []}
+                        value={filterSelections[option.key].value ?? []}
+                      />
+                    )}
+                    {option.type === 'CHECKBOX' && (
+                      <Checkbox
+                        label={option.title}
+                        checked={filterSelections[option.key]?.value ?? false}
+                        onChange={(event) => {
+                          updateFilterSelection(
+                            option.key,
+                            {
+                              filter: option,
+                              value: event.currentTarget.checked,
+                            }
+                          );
+                        }}
                       />
                     )}
                   </Box>
@@ -1001,19 +1014,6 @@ function SelectionOptions(props: {
     options = options.filter((option) => !featIds.includes(option.id) || option.meta_data?.can_select_multiple_times);
   }
 
-  const shouldShowPrereqSwitch = props.type === 'ability-block' && props.abilityBlockType === 'feat';
-
-  // Filter out prerequisites
-  const [showPrereqOnly, onPrereqChange] = useState(true);
-  if (shouldShowPrereqSwitch) {
-    if (showPrereqOnly) {
-      options = options.filter((feat) => {
-        const prereqMet = meetsPrerequisites('CHARACTER', feat.prerequisites);
-        return prereqMet.result !== 'NOT';
-      })
-    }
-  }
-
   // Filter out already selected languages
   if (
     props.overrideOptions &&
@@ -1063,27 +1063,19 @@ function SelectionOptions(props: {
 
 
   return (
-    <>
-      {
-        shouldShowPrereqSwitch &&
-        <Switch
-          checked={showPrereqOnly}
-          onChange={() => { onPrereqChange(!showPrereqOnly) }}
-          label="Show only prerequisites met"
-        />
-      }
-      <SelectionOptionsInner
-        options={filteredOptions}
-        type={props.type}
-        skillAdjustment={props.skillAdjustment}
-        abilityBlockType={props.abilityBlockType}
-        isLoading={isFetching || !options}
-        onClick={props.onClick}
-        selectedId={props.selectedId}
-        showButton={props.showButton}
-        includeOptions={props.includeOptions}
-      />
-    </>
+
+    <SelectionOptionsInner
+      options={filteredOptions}
+      type={props.type}
+      skillAdjustment={props.skillAdjustment}
+      abilityBlockType={props.abilityBlockType}
+      isLoading={isFetching || !options}
+      onClick={props.onClick}
+      selectedId={props.selectedId}
+      showButton={props.showButton}
+      includeOptions={props.includeOptions}
+    />
+
   );
 }
 

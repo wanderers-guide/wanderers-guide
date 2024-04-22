@@ -5,6 +5,7 @@ import { CharacterInfo } from '@common/CharacterInfo';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
+import { prereqFilterOption } from '@common/select/filters';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
@@ -22,12 +23,11 @@ import {
   Group,
   ScrollArea,
   Stack,
-  Tabs,
   Text,
   Title,
-  useMantineTheme,
+  useMantineTheme
 } from '@mantine/core';
-import { useDebouncedValue, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
@@ -40,7 +40,6 @@ import { OperationResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import { hasTraitType } from '@utils/traits';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
@@ -1518,15 +1517,15 @@ function AncestryAccordionItem(props: {
   let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
   const ancestryInitialOverviewDisplay = props.ancestry
     ? convertAncestryOperationsIntoUI(
-        props.ancestry,
-        physicalFeatures,
-        senses,
-        languages,
-        'READ/WRITE',
-        props.operationResults?.ancestryResults ?? [],
-        [character, setCharacter],
-        openDrawer
-      )
+      props.ancestry,
+      physicalFeatures,
+      senses,
+      languages,
+      'READ/WRITE',
+      props.operationResults?.ancestryResults ?? [],
+      [character, setCharacter],
+      openDrawer
+    )
     : null;
   if (ancestryInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the ancestry overview
@@ -1632,12 +1631,12 @@ function BackgroundAccordionItem(props: {
   let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
   const backgroundInitialOverviewDisplay = props.background
     ? convertBackgroundOperationsIntoUI(
-        props.background,
-        'READ/WRITE',
-        props.operationResults?.backgroundResults ?? [],
-        [character, setCharacter],
-        openDrawer
-      )
+      props.background,
+      'READ/WRITE',
+      props.operationResults?.backgroundResults ?? [],
+      [character, setCharacter],
+      openDrawer
+    )
     : null;
   if (backgroundInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the background overview
@@ -1741,12 +1740,12 @@ function ClassAccordionItem(props: {
     (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [];
   const classInitialOverviewDisplay = props.class_
     ? convertClassOperationsIntoUI(
-        props.class_,
-        'READ/WRITE',
-        (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
-        [character, setCharacter],
-        props.isClass2
-      )
+      props.class_,
+      'READ/WRITE',
+      (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
+      [character, setCharacter],
+      props.isClass2
+    )
     : null;
   if (classInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the class overview
@@ -2065,6 +2064,16 @@ function OperationResultSelector(props: {
   level?: number;
   onChange: (path: string, value: string) => void;
 }) {
+  const showPrereqFilter = () => {
+    if ((props.result?.selection?.options ?? []).length == 0) {
+      return false;
+    }
+    return props.result?.selection?.options[0]._content_type === 'ability-block' && props.result?.selection?.options[0].type === 'feat'
+  }
+  let filterOptions = undefined;
+  if (showPrereqFilter()) {
+    filterOptions = { options: [prereqFilterOption] };
+  }
   return (
     <SelectContentButton
       type={
@@ -2088,6 +2097,7 @@ function OperationResultSelector(props: {
         abilityBlockType:
           (props.result?.selection?.options ?? []).length > 0 ? props.result?.selection?.options[0].type : undefined,
         skillAdjustment: props.result?.selection?.skillAdjustment,
+        filterOptions,
       }}
     />
   );

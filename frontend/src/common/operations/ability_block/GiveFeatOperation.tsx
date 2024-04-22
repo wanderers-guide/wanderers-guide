@@ -1,6 +1,7 @@
 import { SelectContentButton } from '@common/select/SelectContent';
 import { AbilityBlock } from '@typing/content';
 import { OperationWrapper } from '../Operations';
+import { prereqFilterOption } from '@common/select/filters';
 
 export function GiveFeatOperation(props: {
   selectedId: number;
@@ -18,6 +19,11 @@ export function GiveFeatOperation(props: {
         options={{
           abilityBlockType: 'feat',
           showButton: false,
+          filterOptions: {
+            options: [
+              prereqFilterOption,
+            ],
+          },
         }}
       />
     </OperationWrapper>
