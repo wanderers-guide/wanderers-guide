@@ -880,7 +880,11 @@ export default function DiceRoller(props: {
           </Box>
         </Stack>
       </Drawer>
-      <Portal>
+      <Portal
+        style={{
+          zIndex: diceOverlay ? OVERLAY_INDEX : -1 * OVERLAY_INDEX,
+        }}
+      >
         <Box
           style={{
             position: 'absolute',
