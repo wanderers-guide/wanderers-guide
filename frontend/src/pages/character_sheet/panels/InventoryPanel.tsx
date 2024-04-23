@@ -488,7 +488,7 @@ export function CoinSection(props: {
           <Avatar src={GoldCoin} alt='Gold Coins' radius='xs' size='xs' />
         </Group>
       )}
-      {true && ( // Always show silver coins, even if 0
+      {(sp || (!pp && !gp && !cp)) && ( // Always show silver coins, even if 0
         <Group wrap='nowrap' gap={5}>
           <Text c='gray.4' fz='md' fw={600}>
             {sp.toLocaleString()}
