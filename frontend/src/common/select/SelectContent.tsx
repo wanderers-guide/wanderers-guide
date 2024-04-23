@@ -37,7 +37,7 @@ import {
   Title,
   Transition,
   rem,
-  useMantineTheme
+  useMantineTheme,
 } from '@mantine/core';
 import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
@@ -55,7 +55,7 @@ import {
   IconTransform,
   IconTrash,
   IconX,
-  IconZoomCheck
+  IconZoomCheck,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { DrawerType } from '@typing/index';
@@ -389,7 +389,7 @@ export default function SelectContentModal({
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { }] = queryKey;
+      const [_key, {}] = queryKey;
       return await fetchContentSources();
     },
     enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
@@ -482,7 +482,7 @@ export default function SelectContentModal({
                 />
               </Group>
               <Divider mt={5} />
-              <Stack gap={10}>
+              <Stack gap={10} pt={5}>
                 {innerProps.options.filterOptions.options.map((option, index) => (
                   <Box key={index}>
                     {option.type === 'MULTI-SELECT' && (
@@ -500,13 +500,10 @@ export default function SelectContentModal({
                         label={option.title}
                         checked={filterSelections[option.key]?.value ?? false}
                         onChange={(event) => {
-                          updateFilterSelection(
-                            option.key,
-                            {
-                              filter: option,
-                              value: event.currentTarget.checked,
-                            }
-                          );
+                          updateFilterSelection(option.key, {
+                            filter: option,
+                            value: event.currentTarget.checked,
+                          });
                         }}
                       />
                     )}
@@ -744,9 +741,9 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!(option);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!(option);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={getMergedFilterFn()}
@@ -769,15 +766,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!({
-                          ...option,
-                          // Need this for selection ops to work correctly
-                          // since we're not using the override options
-                          _select_uuid: `${option.id}`,
-                          _content_type: 'ability-block',
-                        } satisfies ObjectWithUUID);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -805,15 +802,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!({
-                          ...option,
-                          // Need this for selection ops to work correctly
-                          // since we're not using the override options
-                          _select_uuid: `${option.id}`,
-                          _content_type: 'ability-block',
-                        } satisfies ObjectWithUUID);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -849,9 +846,9 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!(option);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!(option);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -876,15 +873,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!({
-                          ...option,
-                          // Need this for selection ops to work correctly
-                          // since we're not using the override options
-                          _select_uuid: `${option.id}`,
-                          _content_type: 'ability-block',
-                        } satisfies ObjectWithUUID);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
@@ -911,9 +908,9 @@ export default function SelectContentModal({
               onClick={
                 innerProps.onClick
                   ? (option) => {
-                    innerProps.onClick!(option);
-                    context.closeModal(id);
-                  }
+                      innerProps.onClick!(option);
+                      context.closeModal(id);
+                    }
                   : undefined
               }
               filterFn={getMergedFilterFn()}
@@ -1060,10 +1057,7 @@ function SelectionOptions(props: {
     return a.name.localeCompare(b.name);
   });
 
-
-
   return (
-
     <SelectionOptionsInner
       options={filteredOptions}
       type={props.type}
@@ -1075,7 +1069,6 @@ function SelectionOptions(props: {
       showButton={props.showButton}
       includeOptions={props.includeOptions}
     />
-
   );
 }
 
@@ -1134,7 +1127,7 @@ export function SelectionOptionsInner(props: {
             type={props.type}
             skillAdjustment={props.skillAdjustment}
             abilityBlockType={props.abilityBlockType}
-            onClick={props.onClick ? props.onClick : () => { }}
+            onClick={props.onClick ? props.onClick : () => {}}
             selectedId={props.selectedId}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
@@ -2242,9 +2235,9 @@ export function ClassSelectionOption(props: {
     attributes.length > 0
       ? attributes[0]
       : {
-        ui: null,
-        operation: null,
-      };
+          ui: null,
+          operation: null,
+        };
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -2254,7 +2247,7 @@ export function ClassSelectionOption(props: {
         <Text size='sm'>Are you sure you want to change your class? Any previous class selections will be erased.</Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => { },
+      onCancel: () => {},
       onConfirm: () => props.onClick(props.class_),
     });
 
@@ -2383,7 +2376,7 @@ export function AncestrySelectionOption(props: {
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => { },
+      onCancel: () => {},
       onConfirm: () => props.onClick(props.ancestry),
     });
 
@@ -2511,7 +2504,7 @@ export function BackgroundSelectionOption(props: {
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => { },
+      onCancel: () => {},
       onConfirm: () => props.onClick(props.background),
     });
 
@@ -2619,16 +2612,16 @@ export function ItemSelectionOption(props: {
       onClick={
         props.onClick
           ? () =>
-            openDrawer({
-              type: 'item',
-              data: {
-                id: props.item.id,
-                onSelect:
-                  props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
-              },
-              extra: { addToHistory: true },
-            })
-          : () => { }
+              openDrawer({
+                type: 'item',
+                data: {
+                  id: props.item.id,
+                  onSelect:
+                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
+                },
+                extra: { addToHistory: true },
+              })
+          : () => {}
       }
       level={props.item.level}
       buttonOverride={
@@ -2706,16 +2699,16 @@ export function SpellSelectionOption(props: {
       onClick={
         props.onClick
           ? () =>
-            openDrawer({
-              type: 'spell',
-              data: {
-                id: props.spell.id,
-                onSelect:
-                  props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
-              },
-              extra: { addToHistory: true },
-            })
-          : () => { }
+              openDrawer({
+                type: 'spell',
+                data: {
+                  id: props.spell.id,
+                  onSelect:
+                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
+                },
+                extra: { addToHistory: true },
+              })
+          : () => {}
       }
       buttonTitle='Select'
       disableButton={props.selected}

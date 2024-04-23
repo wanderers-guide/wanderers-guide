@@ -1,5 +1,5 @@
-import { AbilityBlock } from "@typing/content";
-import { meetsPrerequisites } from "@variables/prereq-detection";
+import { AbilityBlock } from '@typing/content';
+import { meetsPrerequisites } from '@variables/prereq-detection';
 
 export interface FilterOption {
   title: string;
@@ -19,11 +19,11 @@ export interface SelectedFilter {
 }
 
 export const prereqFilterOption: FilterOption = {
-  title: "Only prerequisites met",
+  title: 'Only prerequisites met',
   type: 'CHECKBOX',
   key: 'prereq',
   filterFn: (option: Record<string, any>) => {
     const prereqMet = meetsPrerequisites('CHARACTER', (option as AbilityBlock).prerequisites);
     return prereqMet.result !== 'NOT';
   },
-}
+};
