@@ -41,7 +41,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
-import { displayResistWeak } from '@utils/resist-weaks';
+import { displayResistWeak, getResistWeaks } from '@utils/resist-weaks';
 import {
   displayFinalProfValue,
   getBonusText,
@@ -80,8 +80,8 @@ export function StatResistWeakDrawerTitle(props: { data: {} }) {
 }
 
 export function StatResistWeakDrawerContent(props: { data: {} }) {
-  const resistVar = getVariable<VariableListStr>('CHARACTER', 'RESISTANCES');
-  const weakVar = getVariable<VariableListStr>('CHARACTER', 'WEAKNESSES');
+  const resists = getResistWeaks('CHARACTER', 'RESISTANCES');
+  const weaks = getResistWeaks('CHARACTER', 'WEAKNESSES');
   const immuneVar = getVariable<VariableListStr>('CHARACTER', 'IMMUNITIES');
 
   return (
@@ -132,21 +132,21 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                     <Text fz='sm' c='gray.5' span>
-                      {resistVar?.value.length}
+                      {resists.length}
                     </Text>
                   </Badge>
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
                 <List>
-                  {resistVar?.value.map((opt, index) => (
+                  {resists.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {displayResistWeak('CHARACTER', opt)}
+                        {opt}
                       </Text>
                     </List.Item>
                   ))}
-                  {resistVar?.value.length === 0 && (
+                  {resists.length === 0 && (
                     <Text fz='sm' c='dimmed' ta='center' fs='italic'>
                       No resistances found.
                     </Text>
@@ -203,21 +203,21 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
                     <Text fz='sm' c='gray.5' span>
-                      {weakVar?.value.length}
+                      {weaks.length}
                     </Text>
                   </Badge>
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
                 <List>
-                  {weakVar?.value.map((opt, index) => (
+                  {weaks.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {displayResistWeak('CHARACTER', opt)}
+                        {opt}
                       </Text>
                     </List.Item>
                   ))}
-                  {weakVar?.value.length === 0 && (
+                  {weaks.length === 0 && (
                     <Text fz='sm' c='dimmed' ta='center' fs='italic'>
                       No weaknesses found.
                     </Text>
