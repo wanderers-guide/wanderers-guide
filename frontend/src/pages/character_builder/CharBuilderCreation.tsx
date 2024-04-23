@@ -2064,7 +2064,12 @@ function OperationResultSelector(props: {
   level?: number;
   onChange: (path: string, value: string) => void;
 }) {
+  const character = useRecoilValue(characterState);
   const showPrereqFilter = () => {
+    const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
+    if (!DETECT_PREREQUS) {
+      return false;
+    }
     if ((props.result?.selection?.options ?? []).length == 0) {
       return false;
     }
