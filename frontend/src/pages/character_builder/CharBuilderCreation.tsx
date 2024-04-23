@@ -62,7 +62,7 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
       // Prefetch content sources (to avoid multiple requests)
       await fetchContentSources();
 
-      const content = await fetchContentPackage(undefined, true);
+      const content = await fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: false });
       interval.stop();
       return content;
     },

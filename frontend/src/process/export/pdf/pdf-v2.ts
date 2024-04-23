@@ -96,7 +96,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   await fetchContentSources();
 
   // Fetch the content package
-  const content = await fetchContentPackage(undefined, true);
+  const content = await fetchContentPackage(undefined, { fetchSources: true });
   const STORE_ID = 'CHARACTER';
 
   // Execute all operations (to update the variables)

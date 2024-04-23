@@ -194,7 +194,7 @@ export async function importFromFTC(d: FTC) {
   defineDefaultSources(character.content_sources?.enabled ?? []);
 
   // Fetch the content package
-  const content = await fetchContentPackage(undefined, true);
+  const content = await fetchContentPackage(undefined, { fetchSources: true });
 
   // Set the character's class
   if (data.class === 'RANDOM') {

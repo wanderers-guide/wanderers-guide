@@ -102,7 +102,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      const content = await fetchContentPackage([props.sourceId], true);
+      const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
       const source = content.sources?.find((i) => i.id === props.sourceId);
       if (!source) return null;
 

@@ -53,6 +53,20 @@ function emptyIdStore() {
   return newStore;
 }
 
+function getStoredNames(type: ContentType, data: Record<string, any>) {
+  if (!data.name) return null;
+  if (_.isString(data.name)) {
+    const contentMap = idStore.get(type);
+    if (!contentMap) return null;
+    for (const content of contentMap.values()) {
+      if (content?.name && content.name.toUpperCase().trim() === data.name.toUpperCase().trim()) {
+        return content;
+      }
+    }
+  }
+  return null;
+}
+
 function getStoredIds(type: ContentType, data: Record<string, any>) {
   if (!data.id) return null;
   if (Array.isArray(data.id)) {
@@ -143,10 +157,13 @@ export async function fetchContent<T = Record<string, any>>(
 
   const storedIds = getStoredIds(type, data);
   const storedFetch = getStoredFetch(type, data);
+  const storedNames = getStoredNames(type, data);
   if (storedFetch) {
     return storedFetch as T;
   } else if (storedIds) {
     return storedIds as T;
+  } else if (storedNames) {
+    return storedNames as T;
   } else {
     // Make sure we're always filtering by content source
     const newData = { ...data };
@@ -197,7 +214,13 @@ export async function fetchContentSources(options?: {
   return sources.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function fetchContentPackage(sources?: number[], fetchSources?: boolean): Promise<ContentPackage> {
+export async function fetchContentPackage(
+  sources?: number[],
+  options?: {
+    fetchSources?: boolean;
+    fetchCreatures?: boolean;
+  }
+): Promise<ContentPackage> {
   const content = await Promise.all([
     fetchContentAll<Ancestry>('ancestry', sources),
     fetchContentAll<Background>('background', sources),
@@ -207,11 +230,11 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
     fetchContentAll<Language>('language', sources),
     fetchContentAll<Spell>('spell', sources),
     fetchContentAll<Trait>('trait', sources),
-    fetchContentAll<Creature>('creature', sources),
+    options?.fetchCreatures ? fetchContentAll<Creature>('creature', sources) : [],
     fetchContentAll<Archetype>('archetype', sources),
     fetchContentAll<VersatileHeritage>('versatile-heritage', sources),
+    options?.fetchSources ? fetchContentSources({ ids: sources }) : null,
   ]);
-  const contentSources = fetchSources ? await fetchContentSources({ ids: sources }) : null;
 
   return {
     ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => a.name.localeCompare(b.name)),
@@ -225,7 +248,7 @@ export async function fetchContentPackage(sources?: number[], fetchSources?: boo
     creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => a.name.localeCompare(b.name)),
     archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => a.name.localeCompare(b.name)),
     versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => a.name.localeCompare(b.name)),
-    sources: contentSources ?? undefined,
+    sources: content[11] as ContentSource[],
   } satisfies ContentPackage;
 }
 

@@ -84,7 +84,7 @@ export function ContentSourceDrawerContent(props: {
       // eslint-disable-next-line
       const [_key, { id, source }] = queryKey;
       const _id = id ?? source?.id;
-      return await fetchContentPackage([_id], true);
+      return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
     },
   });
   const source = content && content.sources && content.sources.length > 0 ? content.sources[0] : null;

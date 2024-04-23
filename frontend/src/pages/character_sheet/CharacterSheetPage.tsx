@@ -100,7 +100,7 @@ export function Component(props: {}) {
       await fetchContentSources();
 
       // Fetch content
-      const content = await fetchContentPackage(undefined, true);
+      const content = await fetchContentPackage(undefined, { fetchSources: true });
       interval.stop();
       return content;
     },
