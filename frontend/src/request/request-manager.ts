@@ -1,8 +1,4 @@
-import {
-  FunctionsHttpError,
-  FunctionsRelayError,
-  FunctionsFetchError,
-} from '@supabase/supabase-js';
+import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
 import { supabase } from '../main';
 import { JSendResponse, RequestType } from '@typing/requests';
 import { displayError, throwError } from '@utils/notifications';
@@ -21,7 +17,7 @@ export async function makeRequest<T = Record<string, any>>(
     console.error('Request Relay error:', error.message);
   } else if (error instanceof FunctionsFetchError) {
     console.error('Request Fetch error:', error.message);
-    if (attempt < MAX_ATTEMPTS) {
+    if (attempt <= MAX_ATTEMPTS) {
       return await makeRequest<T>(type, body, attempt + 1);
     }
   } else if (error) {
