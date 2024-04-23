@@ -158,7 +158,7 @@ export default function RichText(props: RichTextProps) {
           const contentData = getContentDataFromHref(href ?? '');
           const drawerData = contentData ? convertContentLink(contentData) : null;
 
-          if (contentData?.type === 'trait') {
+          if (contentData?.type === 'trait' || contentData?.type === 'condition') {
             return (
               <Anchor
                 onClick={(e) => {
