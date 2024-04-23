@@ -24,7 +24,6 @@ export const prereqFilterOption: FilterOption = {
   key: 'prereq',
   filterFn: (option: Record<string, any>) => {
     const prereqMet = meetsPrerequisites('CHARACTER', (option as AbilityBlock).prerequisites);
-    console.log('prereqMet', prereqMet);
     return prereqMet.result !== 'NOT';
   },
 }
