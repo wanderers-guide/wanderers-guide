@@ -98,7 +98,8 @@ export type TableName =
   | 'item'
   | 'spell'
   | 'creature'
-  | 'language';
+  | 'language'
+  | 'encounter';
 
 interface SelectFilter {
   column: string;
