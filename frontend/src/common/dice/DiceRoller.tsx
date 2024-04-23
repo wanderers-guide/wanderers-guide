@@ -882,7 +882,7 @@ export default function DiceRoller(props: {
       </Drawer>
       <Portal
         style={{
-          zIndex: diceOverlay ? OVERLAY_INDEX : -1 * OVERLAY_INDEX,
+          zIndex: OVERLAY_INDEX,
         }}
       >
         <Box
