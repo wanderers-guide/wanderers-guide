@@ -164,34 +164,39 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const [character, setCharacter] = useRecoilState(characterState);
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
+  const handleFetchedCharacter = (resultCharacter: Character | null) => {
+    if (resultCharacter) {
+      // Make sure we sync the enabled content sources
+      defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+
+      // Cache character customization for fast loading
+      saveCustomization({
+        background_image_url:
+          resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
+        sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
+      });
+    } else {
+      // Character not found, probably due to unauthorized access
+      window.location.href = '/sheet-unauthorized';
+    }
+
+    if (!_.isEqual(character, resultCharacter)) {
+      setCharacter(resultCharacter);
+    }
+    if (!_.isEqual(inventory, getInventory(resultCharacter))) {
+      setInventory(getInventory(resultCharacter));
+    }
+  };
+
   // Fetch character from db
-  const {
-    data: resultCharacter,
-    isLoading,
-    isInitialLoading,
-  } = useQuery({
+  const { isLoading, isInitialLoading } = useQuery({
     queryKey: [`find-character-${props.characterId}`],
     queryFn: async () => {
       const resultCharacter = await makeRequest<Character>('find-character', {
         id: props.characterId,
       });
-
-      if (resultCharacter) {
-        // Make sure we sync the enabled content sources
-        defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
-
-        // Cache character customization for fast loading
-        saveCustomization({
-          background_image_url:
-            resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
-          sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
-        });
-      } else {
-        // Character not found, probably due to unauthorized access
-        window.location.href = '/sheet-unauthorized';
-      }
-
-      return resultCharacter;
+      handleFetchedCharacter(resultCharacter);
+      return true;
     },
     refetchOnWindowFocus: false,
   });
@@ -240,15 +245,6 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     }, 1);
   }, [character]);
 
-  //
-
-  useEffect(() => {
-    if (!resultCharacter) return;
-    // Update character nav state
-    setCharacter(resultCharacter);
-    setInventory(getInventory(resultCharacter));
-  }, [resultCharacter]);
-
   // Update character in db when state changed
   const [debouncedCharacter] = useDebouncedValue(character, 500);
   useDidUpdate(() => {
@@ -280,16 +276,17 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   // Update character stats
   const { mutate: mutateCharacter } = useMutation(
     async (data: Record<string, any>) => {
-      const response = await makeRequest<JSendResponse>('update-character', {
+      const resData = await makeRequest('update-character', {
         id: props.characterId,
         ...data,
       });
-      return response ? response.status === 'success' : false;
+      if (_.isArray(resData) && resData.length > 0) {
+        handleFetchedCharacter(resData[0]);
+      }
+      return true;
     },
     {
-      onSuccess: () => {
-        //queryClient.invalidateQueries([`find-character-${props.characterId}`]);
-      },
+      onSuccess: () => {},
     }
   );
 

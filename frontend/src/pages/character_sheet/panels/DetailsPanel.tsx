@@ -831,10 +831,10 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
 
   const { mutate: mutateUser } = useMutation(
     async (data: Record<string, any>) => {
-      const response = await makeRequest<JSendResponse>('update-user', {
+      const response = await makeRequest('update-user', {
         ...data,
       });
-      return response ? response.status === 'success' : false;
+      return response;
     },
     {
       onSuccess: () => {

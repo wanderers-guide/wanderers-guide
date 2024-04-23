@@ -18,6 +18,7 @@ import { Title, Text, Loader, Group, Divider, Box, Button, Accordion, Badge, Sel
 import { IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
+import { useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
@@ -75,6 +76,9 @@ export function ContentSourceDrawerContent(props: {
 }) {
   const id = props.data.id;
 
+  const missingSelectRef = useRef<HTMLInputElement>(null);
+  const [searchValue, setSearchValue] = useState('');
+
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: content } = useQuery({
@@ -113,7 +117,9 @@ export function ContentSourceDrawerContent(props: {
 
   return (
     <Box>
-      <RichText ta='justify'>{description}</RichText>
+      <RichText ta='justify' fs='italic'>
+        {description}
+      </RichText>
 
       <Box>
         <Accordion
@@ -471,6 +477,8 @@ export function ContentSourceDrawerContent(props: {
       <Box>
         <Divider my='sm' />
         <Select
+          ref={missingSelectRef}
+          searchable
           placeholder='Missing something?'
           data={
             [
@@ -497,8 +505,12 @@ export function ContentSourceDrawerContent(props: {
               zIndex: 10000,
             },
           }}
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
           onChange={(value) => {
             if (!value) return;
+            missingSelectRef.current?.blur();
+            setSearchValue('');
             props.data.onFeedback?.(value as ContentType | AbilityBlockType, -1, source.id);
           }}
         />

@@ -30,6 +30,7 @@ import { useRecoilState } from 'recoil';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
 import { getCachedPublicUser } from '@auth/user-manager';
+import _ from 'lodash-es';
 
 export function Component() {
   setPageTitle(`Builder`);
@@ -59,47 +60,41 @@ export function Component() {
   const stepIconStyle = { width: rem(18), height: rem(18) };
   const pageHeight = 550;
 
-  const queryClient = useQueryClient();
-
   const [character, setCharacter] = useRecoilState(characterState);
 
+  const handleFetchedCharacter = (resultCharacter: Character | null) => {
+    if (resultCharacter) {
+      // Make sure we sync the enabled content sources
+      defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+
+      // Cache character customization for fast loading
+      saveCustomization({
+        background_image_url:
+          resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
+        sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
+      });
+    } else {
+      // Character not found, redirect to characters
+      window.location.href = '/characters';
+    }
+
+    if (!_.isEqual(character, resultCharacter)) {
+      setCharacter(resultCharacter);
+    }
+  };
+
   // Fetch character from db
-  const {
-    data: resultCharacter,
-    isLoading,
-    isInitialLoading,
-  } = useQuery({
+  const { isLoading, isInitialLoading } = useQuery({
     queryKey: [`find-character-${characterId}`],
     queryFn: async () => {
       const resultCharacter = await makeRequest<Character>('find-character', {
         id: characterId,
       });
-
-      if (resultCharacter) {
-        // Make sure we sync the enabled content sources
-        defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
-
-        // Cache character customization for fast loading
-        saveCustomization({
-          background_image_url:
-            resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
-          sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
-        });
-      } else {
-        // Character not found, redirect to characters
-        window.location.href = '/characters';
-      }
-
-      return resultCharacter;
+      handleFetchedCharacter(resultCharacter);
+      return true;
     },
     refetchOnWindowFocus: false,
   });
-
-  useEffect(() => {
-    if (!resultCharacter) return;
-    // Update character nav state
-    setCharacter(resultCharacter);
-  }, [resultCharacter]);
 
   // Update character in db when state changed
   const [debouncedCharacter] = useDebouncedValue(character, 200);
@@ -131,16 +126,17 @@ export function Component() {
       options?: any;
       custom_operations?: any;
     }) => {
-      const response = await makeRequest<JSendResponse>('update-character', {
+      const resData = await makeRequest('update-character', {
         id: characterId,
         ...data,
       });
-      return response ? response.status === 'success' : false;
+      if (_.isArray(resData) && resData.length > 0) {
+        handleFetchedCharacter(resData[0]);
+      }
+      return true;
     },
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries([`find-character-${characterId}`]);
-      },
+      onSuccess: () => {},
     }
   );
 
