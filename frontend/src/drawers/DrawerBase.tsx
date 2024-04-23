@@ -42,7 +42,6 @@ export default function DrawerBase() {
   */
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const isPhone = useMediaQuery(phoneQuery());
 
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
@@ -164,12 +163,7 @@ export default function DrawerBase() {
         }}
         transitionProps={{ duration: 200 }}
       >
-        <ScrollArea
-          viewportRef={viewport}
-          h={isPhone ? '80%' : `calc(100vh - (${titleHeight || 30}px + 48px))`}
-          pr={16}
-          scrollbars='y'
-        >
+        <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={16} scrollbars='y'>
           <Box
             pt={2}
             style={{
