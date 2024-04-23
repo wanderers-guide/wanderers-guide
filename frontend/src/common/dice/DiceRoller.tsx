@@ -18,6 +18,7 @@ import {
   Divider,
   useMantineTheme,
   Collapse,
+  Portal,
 } from '@mantine/core';
 import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { tabletQuery } from '@utils/mobile-responsive';
@@ -879,41 +880,43 @@ export default function DiceRoller(props: {
           </Box>
         </Stack>
       </Drawer>
-      <Box
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          zIndex: diceOverlay ? OVERLAY_INDEX : -1 * OVERLAY_INDEX,
-          height: '100dvh',
-          width: isTablet ? '100dvw' : `calc(100dvw - min(100dvw, 400px))`,
-        }}
-        onClick={() => {
-          closeDiceTray();
-        }}
-      >
+      <Portal>
         <Box
           style={{
             position: 'absolute',
-            top: 5,
-            right: 5,
-            zIndex: OVERLAY_INDEX + 1,
+            top: 0,
+            right: 0,
+            zIndex: diceOverlay ? OVERLAY_INDEX : -1 * OVERLAY_INDEX,
+            height: '100dvh',
+            width: isTablet ? '100dvw' : `calc(100dvw - min(100dvw, 400px))`,
+          }}
+          onClick={() => {
+            closeDiceTray();
           }}
         >
-          <GiRollingDiceCup size='1.3rem' />
+          <Box
+            style={{
+              position: 'absolute',
+              top: 5,
+              right: 5,
+              zIndex: OVERLAY_INDEX + 1,
+            }}
+          >
+            <GiRollingDiceCup size='1.3rem' />
+          </Box>
+          <canvas
+            ref={canvasRef}
+            style={{
+              position: 'absolute',
+              //border: 'solid',
+              marginTop: 15,
+              width: '95%',
+              height: '95%',
+              zIndex: OVERLAY_INDEX + 1,
+            }}
+          />
         </Box>
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: 'absolute',
-            //border: 'solid',
-            marginTop: 15,
-            width: '95%',
-            height: '95%',
-            zIndex: OVERLAY_INDEX + 1,
-          }}
-        />
-      </Box>
+      </Portal>
     </>
   );
 }
