@@ -29,8 +29,8 @@ export function Component() {
 
   return (
     <>
-      <Stack mih={'80vh'} justify='center' align='center'>
-        <Box p={30} mb={'15vh'}>
+      <Stack mih={'80dvh'} justify='center' align='center'>
+        <Box p={30} mb={'15dvh'}>
           <Title fz={'3em'} c='gray.0' ta='center' fs='italic'>
             Journey with Guidance
           </Title>
@@ -96,8 +96,8 @@ export function Component() {
         src={background?.url ?? ''}
         radius={0}
         style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000 }}
-        w='100vw'
-        h='100vh'
+        w='100dvw'
+        h='100dvh'
       />
       {background?.source?.trim() && !isPhone && (
         <Anchor href={background.source_url} target='_blank' underline='hover'>

@@ -537,7 +537,7 @@ function SectionPanels(props: {
                 {openedPhonePanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown w={'100vw'}>
+            <Popover.Dropdown w={'100dvw'}>
               <Box>
                 <Stack>
                   <Button

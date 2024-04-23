@@ -185,8 +185,8 @@ export default function App() {
           src={background?.url ?? ''}
           radius={0}
           style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000 }}
-          w='100vw'
-          h='100vh'
+          w='100dvw'
+          h='100dvh'
         />
         {background?.source?.trim() && !isPhone && (
           <Anchor href={background.source_url} target='_blank' underline='hover'>

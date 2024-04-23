@@ -551,7 +551,7 @@ export default function DiceRoller(props: {
             </Button>
           </Group>
         }
-        size={'calc(min(100vw, 400px))'}
+        size={'calc(min(100dvw, 400px))'}
         overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}
         styles={{
           title: {
@@ -835,7 +835,7 @@ export default function DiceRoller(props: {
                           </Group>
                         </Box>
                         <Box>
-                          <ScrollArea h={`calc(min(40vh, 350px))`} scrollbars='y'>
+                          <ScrollArea h={`calc(min(40dvh, 350px))`} scrollbars='y'>
                             {getPresetList()}
                           </ScrollArea>
                         </Box>
@@ -865,7 +865,7 @@ export default function DiceRoller(props: {
                             </Group>
                           </Box>
                           <Box>
-                            <ScrollArea h={`calc(min(40vh, 350px))`} scrollbars='y' viewportRef={rollHistoryViewport}>
+                            <ScrollArea h={`calc(min(40dvh, 350px))`} scrollbars='y' viewportRef={rollHistoryViewport}>
                               {getRollHistory()}
                             </ScrollArea>
                           </Box>
@@ -885,8 +885,8 @@ export default function DiceRoller(props: {
           top: 0,
           right: 0,
           zIndex: diceOverlay ? OVERLAY_INDEX : -1 * OVERLAY_INDEX,
-          height: '100vh',
-          width: isTablet ? '100vw' : `calc(100vw - min(100vw, 400px))`,
+          height: '100dvh',
+          width: isTablet ? '100dvw' : `calc(100dvw - min(100dvw, 400px))`,
         }}
         onClick={() => {
           closeDiceTray();

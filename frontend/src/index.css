@@ -2,14 +2,6 @@
 :root {
   --text-color: var(--mantine-color-dark-0);
   --_text-line-height: 1.75;
-  --unit-100vh: 100vh;
-}
-
-/* Fix iOS 100vh bug */
-@supports (height: 100dvh) {
-  :root {
-      --unit-100vh: 100dvh;
-  }
 }
 
 @font-face {

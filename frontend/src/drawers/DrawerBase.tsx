@@ -163,7 +163,7 @@ export default function DrawerBase() {
         }}
         transitionProps={{ duration: 200 }}
       >
-        <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={16} scrollbars='y'>
+        <ScrollArea viewportRef={viewport} h={`calc(100dvh - (${titleHeight || 30}px + 48px))`} pr={16} scrollbars='y'>
           <Box
             pt={2}
             style={{

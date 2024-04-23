@@ -498,7 +498,7 @@ export default function Layout(props: { children: React.ReactNode }) {
       </AppShell.Navbar>
 
       <ScrollArea
-        h={'100vh'}
+        h={'100dvh'}
         type='auto'
         scrollbars='y'
         onScrollPositionChange={(pos) => {

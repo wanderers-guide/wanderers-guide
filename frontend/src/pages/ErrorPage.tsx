@@ -7,7 +7,7 @@ export function ErrorPage() {
   setPageTitle(`Error 500`);
 
   return (
-    <Box className={classes.root} h={'100vh'}>
+    <Box className={classes.root} h={'100dvh'}>
       <Container>
         <div className={classes.label}>500</div>
         <Title className={classes.title}>We just rolled a Nat 1...</Title>
