@@ -166,7 +166,7 @@ export default function DrawerBase() {
       >
         <ScrollArea
           viewportRef={viewport}
-          h={isPhone ? '90vh' : `calc(100vh - (${titleHeight || 30}px + 48px))`}
+          h={isPhone ? '75vh' : `calc(100vh - (${titleHeight || 30}px + 48px))`}
           pr={16}
           scrollbars='y'
         >
