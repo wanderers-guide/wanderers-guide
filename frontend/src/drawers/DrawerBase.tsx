@@ -1,7 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
-import { useDidUpdate, useElementSize, useLocalStorage } from '@mantine/hooks';
+import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import { Suspense, lazy, useRef, useState } from 'react';
@@ -10,6 +10,7 @@ import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
 import { modals } from '@mantine/modals';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -41,6 +42,7 @@ export default function DrawerBase() {
   */
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const isPhone = useMediaQuery(phoneQuery());
 
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
@@ -162,7 +164,12 @@ export default function DrawerBase() {
         }}
         transitionProps={{ duration: 200 }}
       >
-        <ScrollArea viewportRef={viewport} h={`calc(100vh - (${titleHeight || 30}px + 48px))`} pr={16} scrollbars='y'>
+        <ScrollArea
+          viewportRef={viewport}
+          h={isPhone ? undefined : `calc(100vh - (${titleHeight || 30}px + 48px))`}
+          pr={16}
+          scrollbars='y'
+        >
           <Box
             pt={2}
             style={{
