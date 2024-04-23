@@ -378,7 +378,7 @@ export async function upsertData<T = Record<string, any>>(
   type?: string
 ) {
   if (data.id && data.id !== -1) {
-    const status = await updateData(client, tableName, data.id as number, data);
+    const { status } = await updateData(client, tableName, data.id as number, data);
     return {
       procedure: 'update' as 'update' | 'insert',
       result: { status },
@@ -485,8 +485,9 @@ export async function updateData(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
   id: number,
-  data: Record<string, undefined | null | string | number | boolean | Record<string, any>>
-): Promise<'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN'> {
+  data: Record<string, undefined | null | string | number | boolean | Record<string, any>>,
+  returnData?: boolean
+): Promise<{ status: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN'; data: any }> {
   // Trim all string values
   for (let key in data) {
     const value = data[key];
@@ -513,18 +514,28 @@ export async function updateData(
   delete data.content_source_id;
   delete data.user_id;
 
-  const { error } = await client.from(tableName).update(data).eq('id', id);
+  let error: any = null;
+  let dataResult: any = null;
+
+  if (returnData) {
+    const res = await client.from(tableName).update(data).eq('id', id).select();
+    error = res.error;
+    dataResult = res.data;
+  } else {
+    const res = await client.from(tableName).update(data).eq('id', id);
+    error = res.error;
+  }
   if (error) {
     if (error.code === '23505') {
       // Duplicate UUID, delete the old one and try again
-      return 'ERROR_DUPLICATE';
+      return { status: 'ERROR_DUPLICATE', data: dataResult };
     } else {
       throw error;
-      return 'ERROR_UNKNOWN';
+      return { status: 'ERROR_UNKNOWN', data: dataResult };
     }
   }
 
-  return 'SUCCESS';
+  return { status: 'SUCCESS', data: dataResult };
 }
 
 export async function deleteData(

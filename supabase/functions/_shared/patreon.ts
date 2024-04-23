@@ -83,7 +83,7 @@ async function removePatreonData(
     refresh_token: undefined,
     game_master: removeVirtualTier ? undefined : user.patreon?.game_master,
   };
-  const status = await updateData(client, 'public_user', user.id, {
+  const { status } = await updateData(client, 'public_user', user.id, {
     patreon: user.patreon,
   });
   return {
@@ -114,7 +114,7 @@ async function addPatreonData(
     access_token: data.access_token,
     refresh_token: data.refresh_token,
   };
-  const status = await updateData(client, 'public_user', user.id, {
+  const { status } = await updateData(client, 'public_user', user.id, {
     patreon: user.patreon,
   });
   return {
@@ -212,7 +212,7 @@ export async function addToGameMasterGroup(
       },
     },
   };
-  const status = await updateData(client, 'public_user', user.id, {
+  const { status } = await updateData(client, 'public_user', user.id, {
     patreon: user.patreon,
   });
   return {
@@ -255,7 +255,7 @@ export async function removeFromGameMasterGroup(currentUser: PublicUser, userId:
       virtual_tier: undefined,
     },
   };
-  const status = await updateData(client, 'public_user', user.id, {
+  const { status } = await updateData(client, 'public_user', user.id, {
     patreon: user.patreon,
   });
   return {
@@ -308,7 +308,7 @@ export async function regenerateGameMasterAccessCode(
       virtual_tier: user.patreon?.game_master?.virtual_tier,
     },
   };
-  const status = await updateData(client, 'public_user', user.id, {
+  const { status } = await updateData(client, 'public_user', user.id, {
     patreon: user.patreon,
   });
   return {
@@ -442,7 +442,7 @@ async function attemptAccessTokenRefresh(
       access_token: tokenResult.access_token,
       refresh_token: tokenResult.refresh_token,
     };
-    const status = await updateData(client, 'public_user', user.id, {
+    const { status } = await updateData(client, 'public_user', user.id, {
       patreon: user.patreon,
     });
     return {

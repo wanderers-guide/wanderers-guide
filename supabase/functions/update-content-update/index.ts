@@ -46,13 +46,14 @@ serve(async (req: Request) => {
 
     let result: 'SUCCESS' | 'ERROR_DUPLICATE' | 'ERROR_UNKNOWN' = 'ERROR_UNKNOWN';
     if (state === 'APPROVE') {
-      result = await updateData(client, 'content_update', update.id, {
+      const updateRes = await updateData(client, 'content_update', update.id, {
         status: {
           state: 'APPROVED',
           discord_user_id: discord_user_id,
           discord_user_name: discord_user_name,
         },
       });
+      result = updateRes.status;
 
       // If the update was approved, apply the changes
       const tableName = convertContentTypeToTableName(update.type);
@@ -95,7 +96,8 @@ serve(async (req: Request) => {
           console.log('updated -> trait_id', trait_id);
         }
 
-        result = await updateData(client, tableName, update.ref_id, update.data);
+        const updateRes = await updateData(client, tableName, update.ref_id, update.data);
+        result = updateRes.status;
       } else if (update.action === 'CREATE') {
         let trait_id = null;
         if (update.data.trait_id) {
@@ -138,13 +140,14 @@ serve(async (req: Request) => {
         await populateCollection(client, 'name', update.type, [content_id]);
       }
     } else if (state === 'REJECT') {
-      result = await updateData(client, 'content_update', update.id, {
+      const updateRes = await updateData(client, 'content_update', update.id, {
         status: {
           state: 'REJECTED',
           discord_user_id: discord_user_id,
           discord_user_name: discord_user_name,
         },
       });
+      result = updateRes.status;
     } else if (state === 'UPVOTE') {
       // Remove all upvotes and downvotes from the user
       update.upvotes = update.upvotes.filter((u) => u.discord_user_id !== discord_user_id);
@@ -153,10 +156,11 @@ serve(async (req: Request) => {
       // Add the upvote
       update.upvotes = [...update.upvotes, { discord_user_id }];
 
-      result = await updateData(client, 'content_update', update.id, {
+      const updateRes = await updateData(client, 'content_update', update.id, {
         upvotes: update.upvotes,
         downvotes: update.downvotes,
       });
+      result = updateRes.status;
     } else if (state === 'DOWNVOTE') {
       // Remove all upvotes and downvotes from the user
       update.upvotes = update.upvotes.filter((u) => u.discord_user_id !== discord_user_id);
@@ -165,10 +169,11 @@ serve(async (req: Request) => {
       // Add the downvote
       update.downvotes = [...update.downvotes, { discord_user_id }];
 
-      result = await updateData(client, 'content_update', update.id, {
+      const updateRes = await updateData(client, 'content_update', update.id, {
         upvotes: update.upvotes,
         downvotes: update.downvotes,
       });
+      result = updateRes.status;
     }
 
     if (result === 'SUCCESS') {

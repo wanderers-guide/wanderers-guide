@@ -17,7 +17,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const status = await updateData(client, 'public_user', user.id, {
+    const { status } = await updateData(client, 'public_user', user.id, {
       display_name,
       summary,
       image_url,

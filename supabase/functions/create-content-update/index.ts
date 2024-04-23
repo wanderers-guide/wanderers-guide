@@ -23,27 +23,21 @@ serve(async (req: Request) => {
       };
 
     // Create the content_update record
-    const result = await insertData<ContentUpdate>(
-      client,
-      'content_update',
-      {
-        user_id: user.id,
-        type: type,
-        ref_id: ref_id,
-        action: action,
-        data: data,
-        content_source_id: content_source_id,
-        status: {
-          state: 'PENDING',
-          discord_user_id: undefined,
-          discord_user_name: undefined,
-        },
-        upvotes: [],
-        downvotes: [],
+    const result = await insertData<ContentUpdate>(client, 'content_update', {
+      user_id: user.id,
+      type: type,
+      ref_id: ref_id,
+      action: action,
+      data: data,
+      content_source_id: content_source_id,
+      status: {
+        state: 'PENDING',
+        discord_user_id: undefined,
+        discord_user_name: undefined,
       },
-      undefined,
-      false
-    );
+      upvotes: [],
+      downvotes: [],
+    });
 
     if (result) {
       // Get content source name
@@ -79,7 +73,7 @@ serve(async (req: Request) => {
 
         if (messageId) {
           // Update the content_update with the Discord message_id
-          const updateStatus = await updateData(client, 'content_update', result.id, {
+          const { status: updateStatus } = await updateData(client, 'content_update', result.id, {
             discord_msg_id: messageId,
           });
 

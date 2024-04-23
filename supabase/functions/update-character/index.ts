@@ -30,34 +30,40 @@ serve(async (req: Request) => {
       campaign_id,
     } = body as Character;
 
-    const status = await updateData(client, 'character', id, {
-      name,
-      level,
-      details,
-      content_sources,
-      operation_data,
-      notes,
-      companions,
-      spells,
-      variants,
-      options,
-      meta_data,
-      roll_history,
-      custom_operations,
-      inventory,
-      resolve_current,
-      experience,
-      hp_current,
-      hp_temp,
-      hero_points,
-      stamina_current,
-      campaign_id,
-    });
+    const { status, data } = await updateData(
+      client,
+      'character',
+      id,
+      {
+        name,
+        level,
+        details,
+        content_sources,
+        operation_data,
+        notes,
+        companions,
+        spells,
+        variants,
+        options,
+        meta_data,
+        roll_history,
+        custom_operations,
+        inventory,
+        resolve_current,
+        experience,
+        hp_current,
+        hp_temp,
+        hero_points,
+        stamina_current,
+        campaign_id,
+      },
+      true
+    );
 
     if (status === 'SUCCESS') {
       return {
         status: 'success',
-        data: true,
+        data: data,
       };
     } else {
       return {
