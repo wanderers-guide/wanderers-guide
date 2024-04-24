@@ -5,7 +5,7 @@ import { CharacterInfo } from '@common/CharacterInfo';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
-import { prereqFilterOption } from '@common/select/filters';
+import { FilterOptions, defaultFeatOptions, prereqFilterOption } from '@common/select/filters';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
@@ -2075,9 +2075,9 @@ function OperationResultSelector(props: {
     }
     return props.result?.selection?.options[0]._content_type === 'ability-block' && props.result?.selection?.options[0].type === 'feat'
   }
-  let filterOptions = undefined;
+  let filterOptions: FilterOptions = { options: defaultFeatOptions };
   if (showPrereqFilter()) {
-    filterOptions = { options: [prereqFilterOption] };
+    filterOptions = { options: [prereqFilterOption, ...defaultFeatOptions] };
   }
   return (
     <SelectContentButton
