@@ -307,7 +307,8 @@ CREATE TABLE public.content_source (
     is_published boolean DEFAULT false NOT NULL,
     required_content_sources bigint[],
     "group" character varying,
-    meta_data json
+    meta_data json,
+    artwork_url character varying
 );
 
 
@@ -528,7 +529,7 @@ CREATE TABLE public.public_user (
     is_mod boolean DEFAULT false NOT NULL,
     deactivated boolean DEFAULT false NOT NULL,
     summary text,
-    subscribed_content_sources json,
+    subscribed_content_sources jsonb,
     patreon jsonb,
     organized_play_id character varying,
     is_developer boolean,
