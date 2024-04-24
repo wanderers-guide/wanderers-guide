@@ -92,6 +92,10 @@ const router = createBrowserRouter([
         ],
       },
       {
+        path: 'homebrew',
+        lazy: () => import('@pages/homebrew/HomebrewPage.tsx'),
+      },
+      {
         path: 'sheet/:characterId',
         lazy: () => import('@pages/character_sheet/CharacterSheetPage.tsx'),
         loader: async ({ params }: { params: any }) => {

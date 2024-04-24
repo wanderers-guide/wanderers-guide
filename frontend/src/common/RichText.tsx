@@ -57,6 +57,8 @@ export default function RichText(props: RichTextProps) {
     return `[${match}](link_condition_persistent~damage)`;
   });
 
+  console.log(convertedChildren);
+
   return (
     <Markdown
       children={convertedChildren}

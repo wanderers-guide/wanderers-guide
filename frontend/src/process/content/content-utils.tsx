@@ -20,7 +20,8 @@ import Turndown from 'turndown';
 export function toMarkdown(html: any) {
   if (!isString(html)) return undefined;
   const td = new Turndown({
-    hr: '',
+    // Why was hr removed?
+    //hr: '',
   });
   td.keep(['abbr']);
   return td.turndown(html) || undefined;

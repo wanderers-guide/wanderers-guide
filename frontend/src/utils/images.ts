@@ -1,5 +1,10 @@
-export async function getIcon(content: string) {
+export async function getShapeIcon(content: string) {
   const res = await fetch(`https://api.dicebear.com/7.x/shapes/svg?seed=${content}`);
+  return res.ok ? await res.text() : '';
+}
+
+export async function getRingIcon(content: string) {
+  const res = await fetch(`https://api.dicebear.com/7.x/rings/svg?seed=${content}`);
   return res.ok ? await res.text() : '';
 }
 

@@ -30,7 +30,6 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { getIcon } from '@utils/images';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';

@@ -1,4 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
+import { userState } from '@atoms/userAtoms';
+import { getPublicUser } from '@auth/user-manager';
 import RichText from '@common/RichText';
 import {
   ActionSelectionOption,
@@ -14,8 +16,22 @@ import {
 } from '@common/select/SelectContent';
 import { fetchContentPackage, fetchContentSources } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Title, Text, Loader, Group, Divider, Box, Button, Accordion, Badge, Select } from '@mantine/core';
-import { IconExternalLink } from '@tabler/icons-react';
+import {
+  Title,
+  Text,
+  Loader,
+  Group,
+  Divider,
+  Box,
+  Button,
+  Accordion,
+  Badge,
+  Select,
+  Stack,
+  ActionIcon,
+} from '@mantine/core';
+import { makeRequest } from '@requests/request-manager';
+import { IconExternalLink, IconKey } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import { useRef, useState } from 'react';
@@ -39,6 +55,35 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
   });
   const source = props.data.source ?? _source;
 
+  // Get if user is subscribed to this source
+  const [user, setUser] = useRecoilState(userState);
+  const { refetch } = useQuery({
+    queryKey: [`find-account-self`],
+    queryFn: async () => {
+      const user = await getPublicUser();
+      setUser(user);
+      return user;
+    },
+    enabled: !!source?.user_id,
+  });
+  const subscribed = user?.subscribed_content_sources?.find((src) => src.source_id === source?.id);
+
+  const onSubscribe = async (add: boolean) => {
+    if (!user || !source) return;
+
+    const subscriptions = add
+      ? [
+          ...(user.subscribed_content_sources ?? []),
+          { source_id: source.id, source_name: source.name, added_at: `${new Date().getTime()}` },
+        ]
+      : user.subscribed_content_sources?.filter((src) => src.source_id !== source?.id);
+
+    setUser({ ...user, subscribed_content_sources: subscriptions });
+    await makeRequest('update-user', {
+      subscribed_content_sources: subscriptions ?? [],
+    });
+  };
+
   return (
     <>
       <Group justify='space-between' wrap='nowrap'>
@@ -46,21 +91,45 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
           <Title order={3}>{source?.name}</Title>
         </Box>
 
-        <Box>
-          {source?.url && (
-            <Button
-              component='a'
-              href={source.url}
-              target='_blank'
-              variant='light'
-              size='compact-xs'
-              radius='xl'
-              rightSection={<IconExternalLink size={14} />}
-            >
-              Source
-            </Button>
+        <Group gap={5}>
+          {source?.user_id ? (
+            <>
+              <Button
+                variant={subscribed ? 'light' : 'filled'}
+                size='compact-xs'
+                radius='xl'
+                rightSection={source.require_key ? <IconKey size={14} /> : undefined}
+                onClick={async () => {
+                  await onSubscribe(!subscribed);
+                  refetch();
+                }}
+              >
+                {subscribed ? 'Subscribed' : 'Subscribe'}
+              </Button>
+              {source?.url && (
+                <ActionIcon component='a' href={source.url} target='_blank' variant='light' size='sm' radius='xl'>
+                  <IconExternalLink size={14} />
+                </ActionIcon>
+              )}
+            </>
+          ) : (
+            <>
+              {source?.url && (
+                <Button
+                  component='a'
+                  href={source.url}
+                  target='_blank'
+                  variant='light'
+                  size='compact-xs'
+                  radius='xl'
+                  rightSection={<IconExternalLink size={14} />}
+                >
+                  Source
+                </Button>
+              )}
+            </>
           )}
-        </Box>
+        </Group>
       </Group>
     </>
   );
@@ -120,6 +189,9 @@ export function ContentSourceDrawerContent(props: {
       <RichText ta='justify' fs='italic'>
         {description}
       </RichText>
+
+      {source.contact_info?.trim() && <Text>{source.contact_info}</Text>}
+      {/* TODO: Required sources */}
 
       <Box>
         <Accordion
@@ -474,47 +546,49 @@ export function ContentSourceDrawerContent(props: {
 
       {props.data.showOperations && <ShowOperationsButton name={source.name} operations={source.operations} />}
 
-      <Box>
-        <Divider my='sm' />
-        <Select
-          ref={missingSelectRef}
-          searchable
-          placeholder='Missing something?'
-          data={
-            [
-              { label: 'Action', value: 'action' },
-              { label: 'Ancestry', value: 'ancestry' },
-              { label: 'Archetype', value: 'archetype' },
-              { label: 'Background', value: 'background' },
-              { label: 'Class', value: 'class' },
-              { label: 'Class Feature', value: 'class-feature' },
-              { label: 'Creature', value: 'creature' },
-              { label: 'Feat', value: 'feat' },
-              { label: 'Heritage', value: 'heritage' },
-              { label: 'Item', value: 'item' },
-              { label: 'Language', value: 'language' },
-              { label: 'Physical Feature', value: 'physical-feature' },
-              { label: 'Sense', value: 'sense' },
-              { label: 'Spell', value: 'spell' },
-              { label: 'Trait', value: 'trait' },
-              { label: 'Versatile Heritage', value: 'versatile-heritage' },
-            ] satisfies { label: string; value: ContentType | AbilityBlockType }[]
-          }
-          styles={{
-            dropdown: {
-              zIndex: 10000,
-            },
-          }}
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
-          onChange={(value) => {
-            if (!value) return;
-            missingSelectRef.current?.blur();
-            setSearchValue('');
-            props.data.onFeedback?.(value as ContentType | AbilityBlockType, -1, source.id);
-          }}
-        />
-      </Box>
+      {!source.user_id && (
+        <Box>
+          <Divider my='sm' />
+          <Select
+            ref={missingSelectRef}
+            searchable
+            placeholder='Missing something?'
+            data={
+              [
+                { label: 'Action', value: 'action' },
+                { label: 'Ancestry', value: 'ancestry' },
+                { label: 'Archetype', value: 'archetype' },
+                { label: 'Background', value: 'background' },
+                { label: 'Class', value: 'class' },
+                { label: 'Class Feature', value: 'class-feature' },
+                { label: 'Creature', value: 'creature' },
+                { label: 'Feat', value: 'feat' },
+                { label: 'Heritage', value: 'heritage' },
+                { label: 'Item', value: 'item' },
+                { label: 'Language', value: 'language' },
+                { label: 'Physical Feature', value: 'physical-feature' },
+                { label: 'Sense', value: 'sense' },
+                { label: 'Spell', value: 'spell' },
+                { label: 'Trait', value: 'trait' },
+                { label: 'Versatile Heritage', value: 'versatile-heritage' },
+              ] satisfies { label: string; value: ContentType | AbilityBlockType }[]
+            }
+            styles={{
+              dropdown: {
+                zIndex: 10000,
+              },
+            }}
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+            onChange={(value) => {
+              if (!value) return;
+              missingSelectRef.current?.blur();
+              setSearchValue('');
+              props.data.onFeedback?.(value as ContentType | AbilityBlockType, -1, source.id);
+            }}
+          />
+        </Box>
+      )}
     </Box>
   );
 }

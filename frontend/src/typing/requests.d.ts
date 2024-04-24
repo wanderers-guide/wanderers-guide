@@ -39,6 +39,7 @@ export type RequestType =
   | 'update-character'
   | 'create-content-update'
   | 'find-content-update'
+  | 'get-content-source-stats'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 

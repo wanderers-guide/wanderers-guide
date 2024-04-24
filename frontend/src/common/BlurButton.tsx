@@ -20,11 +20,16 @@ export default function BlurButton(props: BlurButtonProps) {
       color='gray.2'
       radius='xl'
       ref={ref}
-      style={{ flex: 1, backgroundColor: hovered ? ICON_BG_COLOR_HOVER : undefined }}
       onClick={props.onClick}
       component='a'
       href={props.href}
       {...props}
+      style={{
+        flex: 1,
+        backdropFilter: 'blur(6px)',
+        backgroundColor: hovered ? ICON_BG_COLOR_HOVER : undefined,
+        ...props.style,
+      }}
     >
       {props.children}
     </Button>

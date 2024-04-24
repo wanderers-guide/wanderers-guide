@@ -371,12 +371,14 @@ interface ContentSource {
   foundry_id: string;
   url: string;
   description: string;
-  operations: Operation[];
+  operations?: Operation[];
   user_id: string;
   contact_info: string;
   require_key: boolean;
   is_published: boolean;
   required_content_sources: number[];
+  group: string;
+  artwork_url?: string;
   meta_data?: {
     counts?: Record<ContentType | AbilityBlockType, number>;
   };

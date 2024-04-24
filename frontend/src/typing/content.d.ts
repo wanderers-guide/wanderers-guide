@@ -622,6 +622,7 @@ interface ContentSource {
   is_published: boolean;
   required_content_sources: number[];
   group: string;
+  artwork_url?: string;
   meta_data?: {
     counts?: Record<ContentType | AbilityBlockType, number>;
   };
