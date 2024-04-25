@@ -25,6 +25,7 @@ import {
   Loader,
   Menu,
   MultiSelect,
+  MultiSelectProps,
   Overlay,
   Pagination,
   Popover,
@@ -86,6 +87,7 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   AbilityBlock,
   AbilityBlockType,
+  ActionCost,
   Ancestry,
   Background,
   Class,
@@ -375,6 +377,8 @@ export default function SelectContentModal({
               return false;
             }
           }
+        } else if (!value) {
+          return false;
         }
       }
       return innerProps.options?.filterFn ? innerProps.options.filterFn(option) : true;
@@ -389,7 +393,7 @@ export default function SelectContentModal({
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, {}] = queryKey;
+      const [_key, { }] = queryKey;
       return await fetchContentSources();
     },
     enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
@@ -406,118 +410,124 @@ export default function SelectContentModal({
       0
     ) ?? 0;
 
-  const getSelectionContents = (selectionOptions: React.ReactNode) => (
-    <Stack gap={10}>
-      <Group wrap='nowrap'>
-        <FocusTrap active={true}>
-          <TextInput
-            data-autofocus
-            style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            styles={{
-              input: {
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
-              },
-            }}
-          />
-        </FocusTrap>
-        {innerProps.options?.groupBySource && (
-          <Button
-            size='compact-lg'
-            fz='xs'
-            variant='light'
-            onClick={() => setOpenedDrawer(true)}
-            rightSection={<IconChevronDown size='1.1rem' />}
-            styles={{
-              section: {
-                marginLeft: 3,
-              },
-            }}
-          >
-            {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
-          </Button>
-        )}
+  const getSelectionContents = (selectionOptions: React.ReactNode) => {
+    const renderActionOption: MultiSelectProps['renderOption'] = ({ option }) => (
+      <ActionSymbol gap={10} size="xl" cost={option.value as ActionCost} />
+    );
+    return (
+      <Stack gap={10}>
+        <Group wrap='nowrap'>
+          <FocusTrap active={true}>
+            <TextInput
+              data-autofocus
+              style={{ flex: 1 }}
+              leftSection={<IconSearch size='0.9rem' />}
+              placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              styles={{
+                input: {
+                  borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+                },
+              }}
+            />
+          </FocusTrap>
+          {innerProps.options?.groupBySource && (
+            <Button
+              size='compact-lg'
+              fz='xs'
+              variant='light'
+              onClick={() => setOpenedDrawer(true)}
+              rightSection={<IconChevronDown size='1.1rem' />}
+              styles={{
+                section: {
+                  marginLeft: 3,
+                },
+              }}
+            >
+              {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
+            </Button>
+          )}
 
-        {innerProps.options?.filterOptions && (
-          <Popover
-            width={200}
-            position='bottom'
-            withArrow
-            shadow='md'
-            opened={openedFilters}
-            closeOnClickOutside={false}
-          >
-            <Popover.Target>
-              <Indicator
-                inline
-                label={`${Object.keys(filterSelections).length}`}
-                size={16}
-                zIndex={1000}
-                disabled={Object.keys(filterSelections).length === 0}
-              >
-                <ActionIcon
-                  size='lg'
-                  variant='light'
-                  radius='md'
-                  aria-label='Filters'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setOpenedFilters(!openedFilters);
-                  }}
+          {innerProps.options?.filterOptions && (
+            <Popover
+              width={200}
+              position='bottom'
+              withArrow
+              shadow='md'
+              opened={openedFilters}
+              closeOnClickOutside={false}
+            >
+              <Popover.Target>
+                <Indicator
+                  inline
+                  label={`${Object.keys(filterSelections).length}`}
+                  size={16}
+                  zIndex={1000}
+                  disabled={Object.keys(filterSelections).length === 0}
                 >
-                  <IconFilter size='1rem' />
-                </ActionIcon>
-              </Indicator>
-            </Popover.Target>
-            <Popover.Dropdown>
-              <Group wrap='nowrap' justify='space-between'>
-                <Title order={5}>Filters</Title>
-                <CloseButton
-                  onClick={() => {
-                    setOpenedFilters(false);
-                  }}
-                />
-              </Group>
-              <Divider mt={5} />
-              <Stack gap={10} pt={5}>
-                {innerProps.options.filterOptions.options.map((option, index) => (
-                  <Box key={index}>
-                    {option.type === 'MULTI-SELECT' && (
-                      <MultiSelect
-                        label={option.title}
-                        data={option.options ?? []}
-                        onChange={(value) => {
-                          updateFilterSelection(option.key, { filter: option, value });
-                        }}
-                        value={filterSelections[option.key].value ?? []}
-                      />
-                    )}
-                    {option.type === 'CHECKBOX' && (
-                      <Checkbox
-                        label={option.title}
-                        checked={filterSelections[option.key]?.value ?? false}
-                        onChange={(event) => {
-                          updateFilterSelection(option.key, {
-                            filter: option,
-                            value: event.currentTarget.checked,
-                          });
-                        }}
-                      />
-                    )}
-                  </Box>
-                ))}
-              </Stack>
-            </Popover.Dropdown>
-          </Popover>
-        )}
-      </Group>
+                  <ActionIcon
+                    size='lg'
+                    variant='light'
+                    radius='md'
+                    aria-label='Filters'
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setOpenedFilters(!openedFilters);
+                    }}
+                  >
+                    <IconFilter size='1rem' />
+                  </ActionIcon>
+                </Indicator>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <Group wrap='nowrap' justify='space-between'>
+                  <Title order={5}>Filters</Title>
+                  <CloseButton
+                    onClick={() => {
+                      setOpenedFilters(false);
+                    }}
+                  />
+                </Group>
+                <Divider mt={5} />
+                <Stack gap={10} pt={5}>
+                  {innerProps.options.filterOptions.options.map((option, index) => (
+                    <Box key={index}>
+                      {option.type === 'MULTI-SELECT' && (
+                        <MultiSelect
+                          label={option.title}
+                          renderOption={option.isActionOption ? renderActionOption : undefined}
+                          data={option.options ?? []}
+                          onChange={(value) => {
+                            updateFilterSelection(option.key, { filter: option, value });
+                          }}
+                          value={filterSelections[option.key]?.value ?? []}
+                        />
+                      )}
+                      {option.type === 'CHECKBOX' && (
+                        <Checkbox
+                          label={option.title}
+                          checked={filterSelections[option.key]?.value ?? false}
+                          onChange={(event) => {
+                            updateFilterSelection(option.key, {
+                              filter: option,
+                              value: event.currentTarget.checked,
+                            });
+                          }}
+                        />
+                      )}
+                    </Box>
+                  ))}
+                </Stack>
+              </Popover.Dropdown>
+            </Popover>
+          )}
+        </Group>
 
-      {selectionOptions}
-    </Stack>
-  );
+        {selectionOptions}
+      </Stack>
+    );
+  }
 
   /// Handle Class Feats ///
 
@@ -741,9 +751,9 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                          innerProps.onClick!(option);
-                          context.closeModal(id);
-                        }
+                        innerProps.onClick!(option);
+                        context.closeModal(id);
+                      }
                       : undefined
                   }
                   filterFn={getMergedFilterFn()}
@@ -766,15 +776,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
+                        innerProps.onClick!({
+                          ...option,
+                          // Need this for selection ops to work correctly
+                          // since we're not using the override options
+                          _select_uuid: `${option.id}`,
+                          _content_type: 'ability-block',
+                        } satisfies ObjectWithUUID);
+                        context.closeModal(id);
+                      }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -802,15 +812,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
+                        innerProps.onClick!({
+                          ...option,
+                          // Need this for selection ops to work correctly
+                          // since we're not using the override options
+                          _select_uuid: `${option.id}`,
+                          _content_type: 'ability-block',
+                        } satisfies ObjectWithUUID);
+                        context.closeModal(id);
+                      }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -846,9 +856,9 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                          innerProps.onClick!(option);
-                          context.closeModal(id);
-                        }
+                        innerProps.onClick!(option);
+                        context.closeModal(id);
+                      }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -873,15 +883,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
+                        innerProps.onClick!({
+                          ...option,
+                          // Need this for selection ops to work correctly
+                          // since we're not using the override options
+                          _select_uuid: `${option.id}`,
+                          _content_type: 'ability-block',
+                        } satisfies ObjectWithUUID);
+                        context.closeModal(id);
+                      }
                       : undefined
                   }
                   filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
@@ -908,9 +918,9 @@ export default function SelectContentModal({
               onClick={
                 innerProps.onClick
                   ? (option) => {
-                      innerProps.onClick!(option);
-                      context.closeModal(id);
-                    }
+                    innerProps.onClick!(option);
+                    context.closeModal(id);
+                  }
                   : undefined
               }
               filterFn={getMergedFilterFn()}
@@ -1127,7 +1137,7 @@ export function SelectionOptionsInner(props: {
             type={props.type}
             skillAdjustment={props.skillAdjustment}
             abilityBlockType={props.abilityBlockType}
-            onClick={props.onClick ? props.onClick : () => {}}
+            onClick={props.onClick ? props.onClick : () => { }}
             selectedId={props.selectedId}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
@@ -2235,9 +2245,9 @@ export function ClassSelectionOption(props: {
     attributes.length > 0
       ? attributes[0]
       : {
-          ui: null,
-          operation: null,
-        };
+        ui: null,
+        operation: null,
+      };
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -2247,7 +2257,7 @@ export function ClassSelectionOption(props: {
         <Text size='sm'>Are you sure you want to change your class? Any previous class selections will be erased.</Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => {},
+      onCancel: () => { },
       onConfirm: () => props.onClick(props.class_),
     });
 
@@ -2376,7 +2386,7 @@ export function AncestrySelectionOption(props: {
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => {},
+      onCancel: () => { },
       onConfirm: () => props.onClick(props.ancestry),
     });
 
@@ -2504,7 +2514,7 @@ export function BackgroundSelectionOption(props: {
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => {},
+      onCancel: () => { },
       onConfirm: () => props.onClick(props.background),
     });
 
@@ -2612,16 +2622,16 @@ export function ItemSelectionOption(props: {
       onClick={
         props.onClick
           ? () =>
-              openDrawer({
-                type: 'item',
-                data: {
-                  id: props.item.id,
-                  onSelect:
-                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
-                },
-                extra: { addToHistory: true },
-              })
-          : () => {}
+            openDrawer({
+              type: 'item',
+              data: {
+                id: props.item.id,
+                onSelect:
+                  props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
+              },
+              extra: { addToHistory: true },
+            })
+          : () => { }
       }
       level={props.item.level}
       buttonOverride={
@@ -2699,16 +2709,16 @@ export function SpellSelectionOption(props: {
       onClick={
         props.onClick
           ? () =>
-              openDrawer({
-                type: 'spell',
-                data: {
-                  id: props.spell.id,
-                  onSelect:
-                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
-                },
-                extra: { addToHistory: true },
-              })
-          : () => {}
+            openDrawer({
+              type: 'spell',
+              data: {
+                id: props.spell.id,
+                onSelect:
+                  props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
+              },
+              extra: { addToHistory: true },
+            })
+          : () => { }
       }
       buttonTitle='Select'
       disableButton={props.selected}
