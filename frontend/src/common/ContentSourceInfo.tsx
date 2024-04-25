@@ -65,7 +65,6 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
       });
     },
   });
-  console.log(data);
 
   let noteableStats: { label: string; value: number; notability: number; type: ContentType }[] = [];
   for (const [key, value] of Object.entries(props.source.meta_data?.counts ?? {})) {

@@ -16,7 +16,12 @@ import {
   upsertArchetype,
   upsertVersatileHeritage,
 } from '@content/content-creation';
-import { defineDefaultSources, fetchContentPackage, resetContentStore } from '@content/content-store';
+import {
+  defineDefaultSources,
+  fetchContentPackage,
+  fetchContentSources,
+  resetContentStore,
+} from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
 import {
   Anchor,
@@ -97,17 +102,44 @@ import Paginator from '@common/Paginator';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ActionSymbol } from '@common/Actions';
 import { modals } from '@mantine/modals';
+import useRefresh from '@utils/use-refresh';
+import { getPublicUser } from '@auth/user-manager';
 
-export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
+export function CreateContentSourceModal(props: {
+  opened: boolean;
+  sourceId: number;
+  onUpdate?: () => void;
+  onClose: () => void;
+}) {
   const theme = useMantineTheme();
+
+  const [displayDescription, refreshDisplayDescription] = useRefresh();
   const [description, setDescription] = useState<JSONContent>();
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
+      console.log('got here', props.sourceId);
+
+      resetContentStore(true);
+
+      const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
+      const user = await getPublicUser();
+      // All official sources + user's subscribed sources
+      defineDefaultSources([
+        ...allSources.map((source) => source.id),
+        ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []),
+        props.sourceId,
+      ]);
+
+      // Fill content store with all content (async)
+      fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: true });
+
+      // Fetch the source's content
       const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
       const source = content.sources?.find((i) => i.id === props.sourceId);
+
       if (!source) return null;
 
       form.setInitialValues({
@@ -128,6 +160,9 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
         keys: source.keys,
       });
       form.reset();
+      refreshDisplayDescription();
+
+      console.log('got here', content, source);
 
       return {
         content,
@@ -183,10 +218,12 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
       message: `Successfully updated bundle.`,
       autoClose: 3000,
     });
+    props.onUpdate?.();
   };
 
   const onReset = () => {
     form.reset();
+    setDescription(undefined);
   };
 
   return (
@@ -222,7 +259,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 <TextInput label='Image URL' {...form.getInputProps('artwork_url')} />
               </Group>
 
-              {(description || form.values.description) && (
+              {displayDescription && (
                 <RichTextInput
                   label='Description'
                   required
@@ -636,6 +673,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 type='ability-block'
                 abilityBlockType='action'
                 content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'action')}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -645,19 +683,35 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 type='ability-block'
                 abilityBlockType='feat'
                 content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'feat')}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
             <Tabs.Panel value='items'>
-              <ContentList<Item> sourceId={props.sourceId} type='item' content={data?.content.items ?? []} />
+              <ContentList<Item>
+                sourceId={props.sourceId}
+                type='item'
+                content={data?.content.items ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='spells'>
-              <ContentList<Spell> sourceId={props.sourceId} type='spell' content={data?.content.spells ?? []} />
+              <ContentList<Spell>
+                sourceId={props.sourceId}
+                type='spell'
+                content={data?.content.spells ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='traits'>
-              <ContentList<Trait> sourceId={props.sourceId} type='trait' content={data?.content.traits ?? []} />
+              <ContentList<Trait>
+                sourceId={props.sourceId}
+                type='trait'
+                content={data?.content.traits ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='languages'>
@@ -665,6 +719,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='language'
                 content={data?.content.languages ?? []}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -673,6 +728,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='creature'
                 content={data?.content.creatures ?? []}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -681,6 +737,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='ancestry'
                 content={data?.content.ancestries ?? []}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -690,6 +747,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 type='ability-block'
                 abilityBlockType='heritage'
                 content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'heritage')}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -699,6 +757,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 type='ability-block'
                 abilityBlockType='sense'
                 content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'sense')}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -708,6 +767,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 type='ability-block'
                 abilityBlockType='physical-feature'
                 content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'physical-feature')}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -716,11 +776,17 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='background'
                 content={data?.content.backgrounds ?? []}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
             <Tabs.Panel value='classes'>
-              <ContentList<Class> sourceId={props.sourceId} type='class' content={data?.content.classes ?? []} />
+              <ContentList<Class>
+                sourceId={props.sourceId}
+                type='class'
+                content={data?.content.classes ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='class-features'>
@@ -729,6 +795,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 type='ability-block'
                 abilityBlockType='class-feature'
                 content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'class-feature')}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -737,6 +804,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='archetype'
                 content={data?.content.archetypes ?? []}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
 
@@ -745,6 +813,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 sourceId={props.sourceId}
                 type='versatile-heritage'
                 content={data?.content.versatileHeritages ?? []}
+                onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
           </Tabs>
@@ -761,7 +830,13 @@ function ContentList<
     rank?: number;
     type?: AbilityBlockType;
   },
->(props: { sourceId: number; type: ContentType; content: T[]; abilityBlockType?: AbilityBlockType }) {
+>(props: {
+  sourceId: number;
+  type: ContentType;
+  content: T[];
+  abilityBlockType?: AbilityBlockType;
+  onUpdate: () => void;
+}) {
   const queryClient = useQueryClient();
   const theme = useMantineTheme();
   const [openedId, setOpenedId] = useState<number | undefined>();
@@ -809,11 +884,11 @@ function ContentList<
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();
-      resetContentStore(false);
       queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
 
       setSearchQuery(query);
       setLoading(false);
+      props.onUpdate();
     }, 500);
   };
 

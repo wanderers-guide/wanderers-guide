@@ -7,7 +7,9 @@ import BlurButton from '@common/BlurButton';
 import { CharacterDetailedInfo, CharacterInfo } from '@common/CharacterInfo';
 import { ContentSourceInfo } from '@common/ContentSourceInfo';
 import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
-import { fetchContentSources } from '@content/content-store';
+import { deleteContent, upsertContentSource } from '@content/content-creation';
+import { fetchContentSources, resetContentStore } from '@content/content-store';
+import { updateSubscriptions } from '@content/homebrew';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
@@ -65,6 +67,7 @@ import { Character, ContentSource } from '@typing/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
+import _ from 'lodash-es';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -136,7 +139,7 @@ function BrowseSection(props: {}) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-homebrew-content-sources`],
+    queryKey: [`get-homebrew-content-sources-public`],
     queryFn: async () => {
       return (await fetchContentSources({ ids: 'all', homebrew: true, published: true })).filter((c) => c.user_id);
     },
@@ -209,9 +212,9 @@ function SubscriptionsSection(props: {}) {
     isFetching,
     refetch: refetchSources,
   } = useQuery({
-    queryKey: [`get-homebrew-content-sources`],
+    queryKey: [`get-homebrew-content-sources-subscribed`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true })).filter(
+      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
     },
@@ -237,7 +240,7 @@ function SubscriptionsSection(props: {}) {
             key={index}
             source={source}
             onDelete={async () => {
-              const subscriptions = user?.subscribed_content_sources?.filter((src) => src.source_id !== source?.id);
+              const subscriptions = await updateSubscriptions(user, source, false);
               await makeRequest('update-user', {
                 subscribed_content_sources: subscriptions ?? [],
               });
@@ -265,6 +268,7 @@ function SubscriptionsSection(props: {}) {
 function CreationsSection(props: {}) {
   const theme = useMantineTheme();
   const [sourceId, setSourceId] = useState<number | undefined>(undefined);
+  const [loadingCreate, setLoadingCreate] = useState(false);
 
   const [user, setUser] = useRecoilState(userState);
   const { refetch } = useQuery({
@@ -276,10 +280,15 @@ function CreationsSection(props: {}) {
     },
   });
 
-  const { data, isFetching } = useQuery({
-    queryKey: [`get-homebrew-content-sources`],
+  const {
+    data,
+    isFetching,
+    refetch: refetchBundles,
+  } = useQuery({
+    queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true })).filter(
+      resetContentStore(true);
+      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
         (c) => c.user_id && c.user_id === user?.user_id
       );
     },
@@ -314,7 +323,47 @@ function CreationsSection(props: {}) {
             right: 15,
           }}
         >
-          <Button variant='outline' color='gray.0' radius='xl' size='xs' onClick={() => {}}>
+          <Button
+            loading={loadingCreate}
+            variant='outline'
+            color='gray.0'
+            radius='xl'
+            size='xs'
+            onClick={async () => {
+              setLoadingCreate(true);
+              const source = await upsertContentSource({
+                id: -1,
+                created_at: '',
+                user_id: '',
+                name: 'New Bundle',
+                foundry_id: undefined,
+                url: '',
+                description: '',
+                operations: [],
+                contact_info: '',
+                group: '',
+                require_key: false,
+                keys: undefined,
+                is_published: false,
+                artwork_url: '',
+                required_content_sources: [],
+                meta_data: {},
+              });
+              if (source && user) {
+                // Auto subscribe to the new source
+                const subscriptions = await updateSubscriptions(user, source, true);
+                setUser({ ...user, subscribed_content_sources: subscriptions });
+                await makeRequest('update-user', {
+                  subscribed_content_sources: subscriptions ?? [],
+                });
+
+                // Open the new source
+                setSourceId(source.id);
+              }
+              refetchBundles();
+              setLoadingCreate(false);
+            }}
+          >
             Create Bundle
           </Button>
           <Menu shadow='md' width={160} position='bottom-end'>
@@ -355,7 +404,10 @@ function CreationsSection(props: {}) {
               onEdit={() => {
                 setSourceId(source.id);
               }}
-              onDelete={() => {}}
+              onDelete={async () => {
+                await deleteContent('content-source', source.id);
+                refetchBundles();
+              }}
               deleteTitle='Delete Bundle'
               deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
             />
@@ -364,7 +416,7 @@ function CreationsSection(props: {}) {
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
-                No homebrew bundles found.
+                No in progress bundles.
               </Text>
             </Stack>
           </BlurBox>
@@ -411,7 +463,10 @@ function CreationsSection(props: {}) {
               onEdit={() => {
                 setSourceId(source.id);
               }}
-              onDelete={() => {}}
+              onDelete={async () => {
+                await deleteContent('content-source', source.id);
+                refetchBundles();
+              }}
               deleteTitle='Delete Bundle'
               deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
             />
@@ -420,7 +475,7 @@ function CreationsSection(props: {}) {
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
-                No homebrew bundles found.
+                No published bundles.
               </Text>
             </Stack>
           </BlurBox>
@@ -428,7 +483,14 @@ function CreationsSection(props: {}) {
       </Group>
 
       {sourceId && (
-        <CreateContentSourceModal opened={true} sourceId={sourceId} onClose={() => setSourceId(undefined)} />
+        <CreateContentSourceModal
+          opened={true}
+          sourceId={sourceId}
+          onClose={() => setSourceId(undefined)}
+          onUpdate={() => {
+            refetchBundles();
+          }}
+        />
       )}
     </Stack>
   );

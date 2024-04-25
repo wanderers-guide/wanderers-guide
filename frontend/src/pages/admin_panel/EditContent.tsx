@@ -30,8 +30,8 @@ export default function EditContent() {
                 value: source.id + '',
                 label: source.name,
               }))}
+              searchable
               value=''
-              searchValue=''
               onChange={async (value) => {
                 if (!value) return;
                 setSourceId(parseInt(value));

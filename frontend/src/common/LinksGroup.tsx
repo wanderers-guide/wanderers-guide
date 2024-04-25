@@ -57,44 +57,15 @@ export function LinksGroup({
   const items = (hasLinks ? links : [])
     .sort((a, b) => a.label.localeCompare(b.label))
     .map((link, index) => (
-      <Group key={index} gap={0}>
-        <Text<'a'> component='a' className={classes.link} key={link.label}>
-          <Switch
-            label={link.label}
-            size='xs'
-            checked={link.enabled}
-            onChange={(event) => onLinkChange && onLinkChange(link.id, event.target.checked)}
-            classNames={switchClasses}
-          />
-        </Text>
-        <HoverCard shadow='md' position='top' openDelay={500} withinPortal withArrow>
-          <HoverCard.Target>
-            <ActionIcon
-              mr={40}
-              color='gray.9'
-              variant='transparent'
-              size='xs'
-              radius='xl'
-              aria-label='Source Info'
-              onClick={() => {
-                openDrawer({
-                  type: 'content-source',
-                  data: {
-                    id: link.id,
-                    showOperations: true,
-                    onFeedback: onFeedback,
-                  },
-                });
-              }}
-            >
-              <IconExternalLink size='0.6rem' stroke={1.5} />
-            </ActionIcon>
-          </HoverCard.Target>
-          <HoverCard.Dropdown px={10} py={5}>
-            <Text size='sm'>Open Source Info</Text>
-          </HoverCard.Dropdown>
-        </HoverCard>
-      </Group>
+      <GroupLinkSwitch
+        key={index}
+        label={link.label}
+        id={link.id}
+        url={link.url}
+        enabled={link.enabled}
+        onLinkChange={onLinkChange}
+        onFeedback={onFeedback}
+      />
     ));
 
   return (
@@ -155,6 +126,58 @@ export function LinksGroup({
         </Collapse>
       )}
     </>
+  );
+}
+
+export function GroupLinkSwitch(props: {
+  label: string;
+  id: number;
+  url: string;
+  enabled?: boolean | undefined;
+  onLinkChange?: (id: number, enabled: boolean) => void;
+  onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <Group gap={0}>
+      <Text<'a'> component='a' className={classes.link} key={props.label}>
+        <Switch
+          label={props.label}
+          size='xs'
+          checked={props.enabled}
+          onChange={(event) => props.onLinkChange && props.onLinkChange(props.id, event.target.checked)}
+          classNames={switchClasses}
+        />
+      </Text>
+      <HoverCard shadow='md' position='top' openDelay={500} withinPortal withArrow>
+        <HoverCard.Target>
+          <ActionIcon
+            mr={40}
+            color='gray.9'
+            variant='transparent'
+            size='xs'
+            radius='xl'
+            aria-label='Source Info'
+            onClick={() => {
+              openDrawer({
+                type: 'content-source',
+                data: {
+                  id: props.id,
+                  showOperations: true,
+                  onFeedback: props.onFeedback,
+                },
+              });
+            }}
+          >
+            <IconExternalLink size='0.6rem' stroke={1.5} />
+          </ActionIcon>
+        </HoverCard.Target>
+        <HoverCard.Dropdown px={10} py={5}>
+          <Text size='sm'>Open Source Info</Text>
+        </HoverCard.Dropdown>
+      </HoverCard>
+    </Group>
   );
 }
 

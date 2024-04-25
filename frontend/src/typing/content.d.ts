@@ -612,7 +612,7 @@ interface ContentSource {
   id: number;
   created_at: string;
   name: string;
-  foundry_id: string;
+  foundry_id?: string;
   url: string;
   description: string;
   operations?: Operation[];

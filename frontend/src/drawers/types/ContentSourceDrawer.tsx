@@ -15,6 +15,7 @@ import {
   TraitSelectionOption,
 } from '@common/select/SelectContent';
 import { fetchContentPackage, fetchContentSources } from '@content/content-store';
+import { updateSubscriptions } from '@content/homebrew';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import {
   Title,
@@ -34,6 +35,7 @@ import { makeRequest } from '@requests/request-manager';
 import { IconExternalLink, IconKey } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
+import _ from 'lodash-es';
 import { useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -71,13 +73,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
   const onSubscribe = async (add: boolean) => {
     if (!user || !source) return;
 
-    const subscriptions = add
-      ? [
-          ...(user.subscribed_content_sources ?? []),
-          { source_id: source.id, source_name: source.name, added_at: `${new Date().getTime()}` },
-        ]
-      : user.subscribed_content_sources?.filter((src) => src.source_id !== source?.id);
-
+    const subscriptions = await updateSubscriptions(user, source, add);
     setUser({ ...user, subscribed_content_sources: subscriptions });
     await makeRequest('update-user', {
       subscribed_content_sources: subscriptions ?? [],

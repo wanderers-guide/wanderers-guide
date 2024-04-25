@@ -13,7 +13,7 @@ import { Character } from '@typing/content';
 import { OperationResultPackage } from '@typing/operations';
 import { selectRandom } from '@utils/random';
 import { labelToVariable } from '@variables/variable-utils';
-import _ from 'lodash';
+import _ from 'lodash-es';
 
 /**
  * FTC - Finder 2e Character - A universal file structure for Pathfinder 2e and Starfinder 2e characters.

@@ -1,6 +1,6 @@
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { characterState } from '@atoms/characterAtoms';
-import { LinkSwitch, LinksGroup } from '@common/LinksGroup';
+import { GroupLinkSwitch, LinkSwitch, LinksGroup } from '@common/LinksGroup';
 import { GUIDE_BLUE } from '@constants/data';
 import {
   Stack,
@@ -63,7 +63,7 @@ import {
   resetContentStore,
 } from '@content/content-store';
 import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
-import { getCachedPublicUser } from '@auth/user-manager';
+import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
 import CustomOperationsModal from '@modals/CustomOperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
@@ -72,6 +72,7 @@ import RichText from '@common/RichText';
 import { drawerState } from '@atoms/navAtoms';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
+import { userState } from '@atoms/userAtoms';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -92,6 +93,16 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const [displayNameInput, refreshNameInput] = useRefresh();
 
   const [openedOperations, setOpenedOperations] = useState(false);
+
+  const [user, setUser] = useRecoilState(userState);
+  useQuery({
+    queryKey: [`find-account-self`],
+    queryFn: async () => {
+      const user = await getPublicUser();
+      setUser(user);
+      return user;
+    },
+  });
 
   const { data: fetchedBooks, refetch } = useQuery({
     queryKey: [`get-content-sources`],
@@ -211,6 +222,8 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
   const iconStyle = { width: rem(12), height: rem(12) };
 
+  console.log(user?.subscribed_content_sources);
+
   const getOptionsSection = () => (
     <Box h='100%'>
       <Paper
@@ -226,7 +239,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
               <Tabs.Tab value='books' leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}>
                 <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
               </Tabs.Tab>
-              <Tabs.Tab value='homebrew' leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />} disabled>
+              <Tabs.Tab value='homebrew' leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}>
                 <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
               </Tabs.Tab>
               <Tabs.Tab value='variants' leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}>
@@ -396,6 +409,21 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
+              </Stack>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='homebrew'>
+              <Stack gap={0} pt='sm'>
+                {user?.subscribed_content_sources?.map((s, index) => (
+                  <GroupLinkSwitch
+                    key={index}
+                    label={s.source_name}
+                    id={s.source_id}
+                    url={''}
+                    enabled={character?.content_sources?.enabled?.includes(s.source_id)}
+                    onLinkChange={(id, enabled) => setBooksEnabled([id], enabled)}
+                  />
+                ))}
               </Stack>
             </Tabs.Panel>
 
