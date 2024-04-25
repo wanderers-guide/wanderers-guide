@@ -164,6 +164,9 @@ export default function DrawerBase() {
           },
         }}
         transitionProps={{ duration: 200 }}
+        style={{
+          overflow: 'hidden',
+        }}
       >
         <ScrollArea
           viewportRef={viewport}
