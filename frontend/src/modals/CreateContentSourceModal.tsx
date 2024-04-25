@@ -29,10 +29,12 @@ import {
   Divider,
   Group,
   HoverCard,
+  List,
   LoadingOverlay,
   Menu,
   Modal,
   Stack,
+  Switch,
   Tabs,
   Text,
   TextInput,
@@ -63,6 +65,7 @@ import {
   Archetype,
   Background,
   Class,
+  ContentSource,
   ContentType,
   Creature,
   Item,
@@ -93,6 +96,7 @@ import { useRecoilState } from 'recoil';
 import Paginator from '@common/Paginator';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ActionSymbol } from '@common/Actions';
+import { modals } from '@mantine/modals';
 
 export function CreateContentSourceModal(props: { opened: boolean; sourceId: number; onClose: () => void }) {
   const theme = useMantineTheme();
@@ -107,6 +111,10 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
       if (!source) return null;
 
       form.setInitialValues({
+        id: source.id,
+        created_at: source.created_at,
+        user_id: source.user_id,
+        required_content_sources: source.required_content_sources,
         name: source.name,
         foundry_id: source.foundry_id,
         url: source.url,
@@ -114,6 +122,10 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
         operations: source.operations ?? [],
         contact_info: source.contact_info,
         group: source.group,
+        is_published: source.is_published,
+        artwork_url: source.artwork_url ?? '',
+        require_key: source.require_key,
+        keys: source.keys,
       });
       form.reset();
 
@@ -125,8 +137,12 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
     refetchOnWindowFocus: false,
   });
 
-  const form = useForm({
+  const form = useForm<ContentSource>({
     initialValues: {
+      id: -1,
+      created_at: '',
+      user_id: '',
+      required_content_sources: [],
       name: '',
       foundry_id: '',
       url: '',
@@ -134,6 +150,12 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
       operations: [] as Operation[],
       contact_info: '',
       group: '',
+      is_published: false,
+      artwork_url: '',
+      require_key: false,
+      keys: {
+        access_key: '',
+      },
     },
   });
 
@@ -149,14 +171,16 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
       operations: values.operations,
       contact_info: values.contact_info,
       group: values.group,
-      require_key: data?.source.require_key ?? false,
-      is_published: data?.source.is_published ?? false,
+      require_key: values.require_key,
+      keys: values.keys,
+      is_published: values.is_published,
+      artwork_url: values.artwork_url,
       required_content_sources: data?.source.required_content_sources ?? [],
       meta_data: data?.source.meta_data ?? {},
     });
     showNotification({
       title: `Updated ${values.name}`,
-      message: `Successfully updated content source.`,
+      message: `Successfully updated bundle.`,
       autoClose: 3000,
     });
   };
@@ -172,7 +196,7 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
         props.onClose();
         onReset();
       }}
-      title={<Title order={3}>{'Update Content Source'}</Title>}
+      title={<Title order={3}>{'Update Bundle'}</Title>}
       styles={{
         body: {
           paddingRight: 2,
@@ -190,20 +214,12 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
             <Stack gap={10}>
               <Group wrap='nowrap' justify='space-between'>
                 <TextInput label='Name' required {...form.getInputProps('name')} />
-
-                <TextInput label='Foundry ID' required {...form.getInputProps('foundry_id')} />
+                <TextInput label='Contact Info' {...form.getInputProps('contact_info')} />
               </Group>
 
-              <TextInput label='URL' {...form.getInputProps('url')} />
-
               <Group wrap='nowrap' justify='space-between'>
-                <TextInput label='Contact Info' {...form.getInputProps('contact_info')} />
-
-                <Autocomplete
-                  label='Group'
-                  data={['core', 'lost-omens', 'adventure-path', 'standalone-adventure', 'misc']}
-                  {...form.getInputProps('group')}
-                />
+                <TextInput label='Source URL' {...form.getInputProps('url')} />
+                <TextInput label='Image URL' {...form.getInputProps('artwork_url')} />
               </Group>
 
               {(description || form.values.description) && (
@@ -219,7 +235,6 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
               )}
 
               <Divider
-                my='xs'
                 label={
                   <Group gap={3} wrap='nowrap'>
                     <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
@@ -271,19 +286,95 @@ export function CreateContentSourceModal(props: { opened: boolean; sourceId: num
                 </Stack>
               </Collapse>
 
-              <Group justify='flex-end'>
-                <Button
-                  variant='default'
-                  size='compact-sm'
-                  onClick={() => {
-                    onReset();
+              <Group wrap='nowrap' justify='space-between' h={40}>
+                <Switch
+                  pl='xs'
+                  size='sm'
+                  checked={form.values.require_key}
+                  onChange={(e) => {
+                    form.setValues({ ...form.values, require_key: e.currentTarget.checked });
                   }}
-                >
-                  Cancel
-                </Button>
-                <Button size='compact-sm' type='submit'>
-                  Save
-                </Button>
+                  label='Require Key'
+                />
+                {form.values.require_key && (
+                  <TextInput size='xs' readOnly placeholder='Access Key' value={form.values.keys?.access_key} />
+                )}
+              </Group>
+
+              <Group justify='space-between'>
+                <Box>
+                  <Switch
+                    pl='xs'
+                    size='sm'
+                    checked={form.values.is_published}
+                    onChange={(e) => {
+                      if (e.currentTarget.checked) {
+                        modals.openConfirmModal({
+                          title: <Title order={3}>Publish Bundle</Title>,
+                          children: (
+                            <Stack pr='sm'>
+                              <Text size='sm'>
+                                By clicking publish, you are agreeing to the following about the content you are
+                                publishing:
+                              </Text>
+                              <List>
+                                <List.Item>
+                                  <Text size='sm'>
+                                    The content is published under the ORC license and complies with Paizo's Community
+                                    Use Policy.
+                                  </Text>
+                                </List.Item>
+                                <List.Item>
+                                  <Text size='sm'>
+                                    The content does not contain any third party’s intellectual property without their
+                                    permission.
+                                  </Text>
+                                </List.Item>
+                                <List.Item>
+                                  <Text size='sm'>
+                                    The content preserves a high standard of quality; it is not "low-effort content."
+                                  </Text>
+                                </List.Item>
+                                <List.Item>
+                                  <Text size='sm'>
+                                    The content does not contain material that the general public would classify as
+                                    "adult content," offensive, or inappropriate for minors.
+                                  </Text>
+                                </List.Item>
+                              </List>
+                              <Text size='sm'>
+                                Failure to comply with these agreements may result in your content being removed and
+                                potentially further repercussions.
+                              </Text>
+                            </Stack>
+                          ),
+                          labels: { confirm: 'Publish', cancel: 'Cancel' },
+                          onCancel: () => {},
+                          onConfirm: () => {
+                            form.setValues({ ...form.values, is_published: true });
+                          },
+                        });
+                      } else {
+                        form.setValues({ ...form.values, is_published: false });
+                      }
+                    }}
+                    label='Published'
+                  />
+                </Box>
+                <Group justify='flex-end'>
+                  <Button
+                    variant='default'
+                    size='compact-sm'
+                    onClick={() => {
+                      onReset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button size='compact-sm' type='submit'>
+                    Save
+                  </Button>
+                </Group>
               </Group>
             </Stack>
           </Center>

@@ -619,6 +619,9 @@ interface ContentSource {
   user_id: string;
   contact_info: string;
   require_key: boolean;
+  keys?: {
+    access_key?: string;
+  };
   is_published: boolean;
   required_content_sources: number[];
   group: string;

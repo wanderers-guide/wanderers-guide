@@ -36,6 +36,7 @@ import {
   Tabs,
   MantineProvider,
   TextInput,
+  Badge,
 } from '@mantine/core';
 import { useMediaQuery, useHover } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
@@ -57,6 +58,7 @@ import {
   IconDots,
   IconFileTypePdf,
   IconTrash,
+  IconChevronDown,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, ContentSource } from '@typing/content';
@@ -287,7 +289,50 @@ function CreationsSection(props: {}) {
   console.log(data);
 
   return (
-    <Stack w='100%' gap={5}>
+    <Stack w='100%' gap={15}>
+      <Box
+        p='xs'
+        style={{
+          backgroundColor: 'rgba(233, 236, 239, 0.1)',
+          backdropFilter: 'blur(6px)',
+          borderRadius: theme.radius.xl,
+          position: 'relative',
+        }}
+      >
+        <Stack gap={10}>
+          <Title ta='center' c='gray.0' order={3}>
+            In Progress
+          </Title>
+          <Center>
+            <Divider w={50} color='gray.3' size='sm' />
+          </Center>
+        </Stack>
+        <Button.Group
+          style={{
+            position: 'absolute',
+            top: 15,
+            right: 15,
+          }}
+        >
+          <Button variant='outline' color='gray.0' radius='xl' size='xs' onClick={() => {}}>
+            Create Bundle
+          </Button>
+          <Menu shadow='md' width={160} position='bottom-end'>
+            <Menu.Target>
+              <Button variant='outline' color='gray.0' px={5} size='xs'>
+                <IconChevronDown size='1.2rem' />
+              </Button>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Item leftSection={<IconUpload size='1rem' />} onClick={() => {}}>
+                Import from Custom Pack
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Button.Group>
+      </Box>
+
       <Group>
         {isFetching && (
           <Loader
@@ -301,21 +346,23 @@ function CreationsSection(props: {}) {
             }}
           />
         )}
-        {(data ?? []).map((source, index) => (
-          <ContentSourceCard
-            key={index}
-            source={source}
-            onEdit={() => {
-              setSourceId(source.id);
-            }}
-            onDelete={() => {}}
-            deleteTitle='Delete Bundle'
-            deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
-          />
-        ))}
-        {!isFetching && (data ?? []).length === 0 && (
-          <BlurBox w={'100%'} h={200}>
-            <Stack mt={50} gap={10}>
+        {(data ?? [])
+          .filter((c) => !c.is_published)
+          .map((source, index) => (
+            <ContentSourceCard
+              key={index}
+              source={source}
+              onEdit={() => {
+                setSourceId(source.id);
+              }}
+              onDelete={() => {}}
+              deleteTitle='Delete Bundle'
+              deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
+            />
+          ))}
+        {!isFetching && (data ?? []).filter((c) => !c.is_published).length === 0 && (
+          <BlurBox w={'100%'} h={100}>
+            <Stack mt={30} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
                 No homebrew bundles found.
               </Text>
@@ -323,6 +370,63 @@ function CreationsSection(props: {}) {
           </BlurBox>
         )}
       </Group>
+
+      <Box
+        p='xs'
+        style={{
+          backgroundColor: 'rgba(233, 236, 239, 0.1)',
+          backdropFilter: 'blur(6px)',
+          borderRadius: theme.radius.xl,
+        }}
+      >
+        <Stack gap={10}>
+          <Title ta='center' c='gray.0' order={3}>
+            Published
+          </Title>
+          <Center>
+            <Divider w={50} color='gray.3' size='sm' />
+          </Center>
+        </Stack>
+      </Box>
+
+      <Group>
+        {isFetching && (
+          <Loader
+            size='lg'
+            type='bars'
+            style={{
+              position: 'absolute',
+              top: '30%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        )}
+        {(data ?? [])
+          .filter((c) => c.is_published)
+          .map((source, index) => (
+            <ContentSourceCard
+              key={index}
+              source={source}
+              onEdit={() => {
+                setSourceId(source.id);
+              }}
+              onDelete={() => {}}
+              deleteTitle='Delete Bundle'
+              deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
+            />
+          ))}
+        {!isFetching && (data ?? []).filter((c) => c.is_published).length === 0 && (
+          <BlurBox w={'100%'} h={100}>
+            <Stack mt={30} gap={10}>
+              <Text ta='center' c='gray.5' fs='italic'>
+                No homebrew bundles found.
+              </Text>
+            </Stack>
+          </BlurBox>
+        )}
+      </Group>
+
       {sourceId && (
         <CreateContentSourceModal opened={true} sourceId={sourceId} onClose={() => setSourceId(undefined)} />
       )}
