@@ -308,7 +308,8 @@ CREATE TABLE public.content_source (
     required_content_sources bigint[],
     "group" character varying,
     meta_data json,
-    artwork_url character varying
+    artwork_url character varying,
+    keys jsonb
 );
 
 
