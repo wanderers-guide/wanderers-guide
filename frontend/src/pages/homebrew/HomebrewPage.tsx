@@ -151,12 +151,16 @@ function BrowseSection(props: {}) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-homebrew-content-sources-public`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true })).filter((c) => c.user_id);
+      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true }))
+        .filter((c) => c.user_id)
+        .sort((a, b) => {
+          if (a.require_key && !b.require_key) return 1;
+          if (!a.require_key && b.require_key) return -1;
+          return a.name.localeCompare(b.name);
+        });
     },
     refetchOnWindowFocus: false,
   });
-
-  console.log(data);
 
   return (
     <Stack w='100%' gap={5}>
@@ -285,7 +289,7 @@ function CreationsSection(props: {}) {
   const jsonImportRef = useRef<HTMLButtonElement>(null);
 
   const [user, setUser] = useRecoilState(userState);
-  const { isFetching: isFetchingUser, refetch } = useQuery({
+  useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
       const user = await getPublicUser();
@@ -310,7 +314,7 @@ function CreationsSection(props: {}) {
     enabled: !!user,
     refetchOnWindowFocus: false,
   });
-  const isFetching = isFetchingBundles || isFetchingUser;
+  const isFetching = isFetchingBundles || !user;
 
   return (
     <Stack w='100%' gap={15}>
@@ -365,13 +369,6 @@ function CreationsSection(props: {}) {
                 meta_data: {},
               });
               if (source && user) {
-                // Auto subscribe to the new source
-                const subscriptions = await updateSubscriptions(user, source, true);
-                setUser({ ...user, subscribed_content_sources: subscriptions });
-                await makeRequest('update-user', {
-                  subscribed_content_sources: subscriptions ?? [],
-                });
-
                 // Open the new source
                 setSourceId(source.id);
               }
@@ -409,13 +406,6 @@ function CreationsSection(props: {}) {
               setLoadingCreate(true);
               const source = await importFromCustomPack(file);
               if (source && user) {
-                // Auto subscribe to the new source
-                const subscriptions = await updateSubscriptions(user, source, true);
-                setUser({ ...user, subscribed_content_sources: subscriptions });
-                await makeRequest('update-user', {
-                  subscribed_content_sources: subscriptions ?? [],
-                });
-
                 // Open the new source
                 setSourceId(source.id);
               }
@@ -542,7 +532,18 @@ function CreationsSection(props: {}) {
           opened={true}
           sourceId={sourceId}
           onClose={() => setSourceId(undefined)}
-          onUpdate={() => {
+          onUpdate={async () => {
+            // Make direct request to circumvent the cache
+            const source = await makeRequest<ContentSource>('find-content-source', { id: sourceId });
+            if (user && source) {
+              // Auto subscribe to the source
+              const subscriptions = await updateSubscriptions(user, source, true);
+              setUser({ ...user, subscribed_content_sources: subscriptions });
+              await makeRequest('update-user', {
+                subscribed_content_sources: subscriptions ?? [],
+              });
+            }
+
             refetchBundles();
           }}
         />
@@ -572,7 +573,6 @@ function ContentSourceCard(props: {
         w='100%'
         h='100%'
         px='xs'
-        pb={10}
         ref={refMain}
         style={{
           cursor: 'pointer',

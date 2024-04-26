@@ -5,6 +5,7 @@ import RichText from '@common/RichText';
 import {
   ActionSelectionOption,
   AncestrySelectionOption,
+  ArchetypeSelectionOption,
   BackgroundSelectionOption,
   ClassSelectionOption,
   CreatureSelectionOption,
@@ -13,9 +14,15 @@ import {
   LanguageSelectionOption,
   SpellSelectionOption,
   TraitSelectionOption,
+  VersatileHeritageSelectionOption,
 } from '@common/select/SelectContent';
-import { fetchContentPackage, fetchContentSources } from '@content/content-store';
-import { updateSubscriptions } from '@content/homebrew';
+import {
+  defineDefaultSources,
+  fetchContentPackage,
+  fetchContentSources,
+  getDefaultSources,
+} from '@content/content-store';
+import { defineDefaultSourcesForSource, updateSubscriptions } from '@content/homebrew';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import {
   Title,
@@ -81,6 +88,11 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
       subscribed_content_sources: subscriptions ?? [],
     });
   };
+
+  useEffect(() => {
+    if (!source) return;
+    defineDefaultSourcesForSource(source);
+  }, [source]);
 
   return (
     <>
@@ -342,6 +354,72 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'class',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {content.archetypes.length > 0 && (
+            <Accordion.Item value={'archetypes'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>
+                    Archetypes
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {content.archetypes.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {content.archetypes.map((record, index) => (
+                  <ArchetypeSelectionOption
+                    key={index}
+                    archetype={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: 'archetype',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {content.versatileHeritages.length > 0 && (
+            <Accordion.Item value={'versatile-heritages'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>
+                    Versatile Heritages
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {content.versatileHeritages.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {content.versatileHeritages.map((record, index) => (
+                  <VersatileHeritageSelectionOption
+                    key={index}
+                    versatileHeritage={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: 'versatile-heritage',
                         data: { id: a.id },
                         extra: { addToHistory: true },
                       });

@@ -169,10 +169,11 @@ export function CreateAbilityBlockModal(props: {
   };
 
   const onReset = () => {
-    form.reset();
-    setTraits([]);
-    setMetaData({});
-    setDescription(undefined);
+    // Comment this out because, if request fails, we end up wiping things that we'd want to resubmit
+    // form.reset();
+    // setTraits([]);
+    // setMetaData({});
+    // setDescription(undefined);
   };
 
   const miscSectionCount =

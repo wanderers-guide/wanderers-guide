@@ -222,8 +222,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
   const iconStyle = { width: rem(12), height: rem(12) };
 
-  console.log(user?.subscribed_content_sources);
-
   const getOptionsSection = () => (
     <Box h='100%'>
       <Paper

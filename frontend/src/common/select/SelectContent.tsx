@@ -89,6 +89,7 @@ import {
   AbilityBlockType,
   ActionCost,
   Ancestry,
+  Archetype,
   Background,
   Class,
   ContentType,
@@ -393,7 +394,7 @@ export default function SelectContentModal({
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
-      const [_key, { }] = queryKey;
+      const [_key, {}] = queryKey;
       return await fetchContentSources();
     },
     enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
@@ -412,7 +413,7 @@ export default function SelectContentModal({
 
   const getSelectionContents = (selectionOptions: React.ReactNode) => {
     const renderActionOption: MultiSelectProps['renderOption'] = ({ option }) => (
-      <ActionSymbol gap={10} size="xl" cost={option.value as ActionCost} />
+      <ActionSymbol gap={10} size='xl' cost={option.value as ActionCost} />
     );
     return (
       <Stack gap={10}>
@@ -527,7 +528,7 @@ export default function SelectContentModal({
         {selectionOptions}
       </Stack>
     );
-  }
+  };
 
   /// Handle Class Feats ///
 
@@ -751,9 +752,9 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!(option);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!(option);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={getMergedFilterFn()}
@@ -776,15 +777,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!({
-                          ...option,
-                          // Need this for selection ops to work correctly
-                          // since we're not using the override options
-                          _select_uuid: `${option.id}`,
-                          _content_type: 'ability-block',
-                        } satisfies ObjectWithUUID);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -812,15 +813,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!({
-                          ...option,
-                          // Need this for selection ops to work correctly
-                          // since we're not using the override options
-                          _select_uuid: `${option.id}`,
-                          _content_type: 'ability-block',
-                        } satisfies ObjectWithUUID);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -856,9 +857,9 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!(option);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!(option);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) =>
@@ -883,15 +884,15 @@ export default function SelectContentModal({
                   onClick={
                     innerProps.onClick
                       ? (option) => {
-                        innerProps.onClick!({
-                          ...option,
-                          // Need this for selection ops to work correctly
-                          // since we're not using the override options
-                          _select_uuid: `${option.id}`,
-                          _content_type: 'ability-block',
-                        } satisfies ObjectWithUUID);
-                        context.closeModal(id);
-                      }
+                          innerProps.onClick!({
+                            ...option,
+                            // Need this for selection ops to work correctly
+                            // since we're not using the override options
+                            _select_uuid: `${option.id}`,
+                            _content_type: 'ability-block',
+                          } satisfies ObjectWithUUID);
+                          context.closeModal(id);
+                        }
                       : undefined
                   }
                   filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
@@ -918,9 +919,9 @@ export default function SelectContentModal({
               onClick={
                 innerProps.onClick
                   ? (option) => {
-                    innerProps.onClick!(option);
-                    context.closeModal(id);
-                  }
+                      innerProps.onClick!(option);
+                      context.closeModal(id);
+                    }
                   : undefined
               }
               filterFn={getMergedFilterFn()}
@@ -1137,7 +1138,7 @@ export function SelectionOptionsInner(props: {
             type={props.type}
             skillAdjustment={props.skillAdjustment}
             abilityBlockType={props.abilityBlockType}
-            onClick={props.onClick ? props.onClick : () => { }}
+            onClick={props.onClick ? props.onClick : () => {}}
             selectedId={props.selectedId}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
@@ -1327,6 +1328,44 @@ function SelectionOptionsRoot(props: {
             ancestry={ancestry as Ancestry}
             onClick={props.onClick}
             selected={props.selectedId === ancestry.id}
+            hasSelected={props.selectedId !== undefined}
+            showButton={props.showButton}
+            includeOptions={props.includeOptions}
+            onDelete={props.onDelete}
+            onCopy={props.onCopy}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'archetype') {
+    return (
+      <>
+        {props.options.map((archetype, index) => (
+          <ArchetypeSelectionOption
+            key={'archetype-' + index}
+            archetype={archetype as Archetype}
+            onClick={props.onClick}
+            selected={props.selectedId === archetype.id}
+            hasSelected={props.selectedId !== undefined}
+            showButton={props.showButton}
+            includeOptions={props.includeOptions}
+            onDelete={props.onDelete}
+            onCopy={props.onCopy}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'versatile-heritage') {
+    return (
+      <>
+        {props.options.map((versatileHeritage, index) => (
+          <VersatileHeritageSelectionOption
+            key={'versatile-heritage-' + index}
+            versatileHeritage={versatileHeritage as VersatileHeritage}
+            onClick={props.onClick}
+            selected={props.selectedId === versatileHeritage.id}
             hasSelected={props.selectedId !== undefined}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
@@ -2245,9 +2284,9 @@ export function ClassSelectionOption(props: {
     attributes.length > 0
       ? attributes[0]
       : {
-        ui: null,
-        operation: null,
-      };
+          ui: null,
+          operation: null,
+        };
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -2257,7 +2296,7 @@ export function ClassSelectionOption(props: {
         <Text size='sm'>Are you sure you want to change your class? Any previous class selections will be erased.</Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => { },
+      onCancel: () => {},
       onConfirm: () => props.onClick(props.class_),
     });
 
@@ -2386,7 +2425,7 @@ export function AncestrySelectionOption(props: {
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => { },
+      onCancel: () => {},
       onConfirm: () => props.onClick(props.ancestry),
     });
 
@@ -2514,7 +2553,7 @@ export function BackgroundSelectionOption(props: {
         </Text>
       ),
       labels: { confirm: 'Confirm', cancel: 'Cancel' },
-      onCancel: () => { },
+      onCancel: () => {},
       onConfirm: () => props.onClick(props.background),
     });
 
@@ -2586,6 +2625,124 @@ export function BackgroundSelectionOption(props: {
   );
 }
 
+export function ArchetypeSelectionOption(props: {
+  archetype: Archetype;
+  onClick: (archetype: Archetype) => void;
+  selected?: boolean;
+  hasSelected?: boolean;
+  showButton?: boolean;
+  includeOptions?: boolean;
+  onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap'>
+          <Avatar
+            src={props.archetype.artwork_url}
+            radius='sm'
+            styles={{
+              image: {
+                objectFit: 'contain',
+              },
+            }}
+          />
+
+          <div style={{ flex: 1 }}>
+            <Text size='sm' fw={500}>
+              {props.archetype.name}
+            </Text>
+          </div>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.archetype.rarity} />}
+      showButton={props.showButton}
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'archetype',
+          data: {
+            id: props.archetype.id,
+            onSelect:
+              props.showButton || props.showButton === undefined ? () => props.onClick(props.archetype) : undefined,
+          },
+          extra: { addToHistory: true },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.archetype)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.archetype.id)}
+      onOptionsCopy={() => props.onCopy?.(props.archetype.id)}
+    />
+  );
+}
+
+export function VersatileHeritageSelectionOption(props: {
+  versatileHeritage: VersatileHeritage;
+  onClick: (versatileHeritage: VersatileHeritage) => void;
+  selected?: boolean;
+  hasSelected?: boolean;
+  showButton?: boolean;
+  includeOptions?: boolean;
+  onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap'>
+          <Avatar
+            src={props.versatileHeritage.artwork_url}
+            radius='sm'
+            styles={{
+              image: {
+                objectFit: 'contain',
+              },
+            }}
+          />
+
+          <div style={{ flex: 1 }}>
+            <Text size='sm' fw={500}>
+              {props.versatileHeritage.name}
+            </Text>
+          </div>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.versatileHeritage.rarity} />
+      }
+      showButton={props.showButton}
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'versatile-heritage',
+          data: {
+            id: props.versatileHeritage.id,
+            onSelect:
+              props.showButton || props.showButton === undefined
+                ? () => props.onClick(props.versatileHeritage)
+                : undefined,
+          },
+          extra: { addToHistory: true },
+        })
+      }
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.versatileHeritage)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.versatileHeritage.id)}
+      onOptionsCopy={() => props.onCopy?.(props.versatileHeritage.id)}
+    />
+  );
+}
+
 export function ItemSelectionOption(props: {
   item: Item;
   onClick?: (item: Item) => void;
@@ -2622,16 +2779,16 @@ export function ItemSelectionOption(props: {
       onClick={
         props.onClick
           ? () =>
-            openDrawer({
-              type: 'item',
-              data: {
-                id: props.item.id,
-                onSelect:
-                  props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
-              },
-              extra: { addToHistory: true },
-            })
-          : () => { }
+              openDrawer({
+                type: 'item',
+                data: {
+                  id: props.item.id,
+                  onSelect:
+                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.item) : undefined,
+                },
+                extra: { addToHistory: true },
+              })
+          : () => {}
       }
       level={props.item.level}
       buttonOverride={
@@ -2709,16 +2866,16 @@ export function SpellSelectionOption(props: {
       onClick={
         props.onClick
           ? () =>
-            openDrawer({
-              type: 'spell',
-              data: {
-                id: props.spell.id,
-                onSelect:
-                  props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
-              },
-              extra: { addToHistory: true },
-            })
-          : () => { }
+              openDrawer({
+                type: 'spell',
+                data: {
+                  id: props.spell.id,
+                  onSelect:
+                    props.showButton || props.showButton === undefined ? () => props.onClick?.(props.spell) : undefined,
+                },
+                extra: { addToHistory: true },
+              })
+          : () => {}
       }
       buttonTitle='Select'
       disableButton={props.selected}

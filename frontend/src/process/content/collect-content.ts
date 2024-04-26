@@ -9,7 +9,7 @@ import {
   SenseWithRange,
 } from '@typing/content';
 import { GiveSpellData, SpellMetadata } from '@typing/operations';
-import { StoreID, VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr, VariableNum } from '@typing/variables';
 import { attemptToFindSense, compactSensesWithRange } from '@utils/senses';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
@@ -226,7 +226,10 @@ export function collectCharacterSpellcasting(character: Character) {
 }
 
 export function getFocusPoints(character: Character, focusSpells: Record<string, any>[]) {
-  const maxFocusPoints = Math.min(focusSpells.filter((f) => f?.rank !== 0).length ?? 0, 3);
+  const fromSpells = focusSpells.filter((f) => f?.rank !== 0).length ?? 0;
+  const extra = getVariable<VariableNum>('CHARACTER', 'FOCUS_POINT_BONUS')?.value ?? 0;
+
+  const maxFocusPoints = Math.min(fromSpells + extra, 3);
   return {
     current: character.spells?.focus_point_current ?? maxFocusPoints,
     max: maxFocusPoints,

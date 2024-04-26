@@ -107,6 +107,7 @@ import { ActionSymbol } from '@common/Actions';
 import { modals } from '@mantine/modals';
 import useRefresh from '@utils/use-refresh';
 import { getPublicUser } from '@auth/user-manager';
+import { defineDefaultSourcesForSource } from '@content/homebrew';
 
 export function CreateContentSourceModal(props: {
   opened: boolean;
@@ -123,25 +124,14 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      resetContentStore(true);
-
-      const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
-      const user = await getPublicUser();
-      // All official sources + user's subscribed sources
-      defineDefaultSources([
-        ...allSources.map((source) => source.id),
-        ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []),
-        props.sourceId,
-      ]);
+      const source = (await fetchContentSources({ ids: [props.sourceId] }))[0];
+      await defineDefaultSourcesForSource(source);
 
       // Fill content store with all content (async)
       fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: true });
 
       // Fetch the source's content
       const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
-      const source = content.sources?.find((i) => i.id === props.sourceId);
-
-      if (!source) return null;
 
       form.setInitialValues({
         id: source.id,
@@ -903,6 +893,7 @@ function ContentList<
   const handleReset = () => {
     const query = searchQuery;
     setSearchQuery('');
+    resetContentStore(true);
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();

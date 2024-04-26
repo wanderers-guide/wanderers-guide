@@ -132,6 +132,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   CASTING_SOURCES: newVariable('list-str', 'CASTING_SOURCES'), // Hidden
   SPELL_SLOTS: newVariable('list-str', 'SPELL_SLOTS'), // Hidden
   SPELL_DATA: newVariable('list-str', 'SPELL_DATA'), // Hidden
+  FOCUS_POINT_BONUS: newVariable('num', 'FOCUS_POINT_BONUS'),
 
   LIGHT_ARMOR: newVariable('prof', 'LIGHT_ARMOR'),
   MEDIUM_ARMOR: newVariable('prof', 'MEDIUM_ARMOR'),
