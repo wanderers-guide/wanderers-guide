@@ -1,4 +1,16 @@
-import { Text, TextInput, Stack, Button, Group, Loader, Avatar, Modal, Title, Box } from '@mantine/core';
+import {
+  Text,
+  TextInput,
+  Stack,
+  Button,
+  Group,
+  Loader,
+  Avatar,
+  Modal,
+  Title,
+  Box,
+  useMantineTheme,
+} from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
 import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
 import * as _ from 'lodash-es';
@@ -79,8 +91,6 @@ export default function ContentFeedbackModal(props: {
       autoClose: false,
       loading: true,
     });
-
-    console.log(refId, props.data);
 
     const result = await submitContentUpdate(
       convertToContentType(props.type),
@@ -321,6 +331,7 @@ function ContentFeedbackSection(props: {
   data: { id?: number };
   onSubmitUpdate: (id: number, content: any) => void;
 }) {
+  const theme = useMantineTheme();
   const contentId = props.data.id;
 
   const { data, isFetching } = useQuery({
@@ -385,18 +396,30 @@ function ContentFeedbackSection(props: {
           </div>
         </Group>
       </div>
-      <Group justify='center'>
-        <Button
-          fullWidth
-          variant='light'
-          onClick={() => {
-            if (!data.content) return;
-            props.onSubmitUpdate(data.content.id, data.content);
-          }}
+      {data.source.user_id ? (
+        <Group
+          justify='center'
+          p='xs'
+          style={{ border: `1px solid ${theme.colors.gray[6]}`, borderRadius: theme.radius.md }}
         >
-          Submit Content Update
-        </Button>
-      </Group>
+          <Text fz='sm'>
+            <b>Contact Info:</b> {data.source.contact_info || 'Not Provided'}
+          </Text>
+        </Group>
+      ) : (
+        <Group justify='center'>
+          <Button
+            fullWidth
+            variant='light'
+            onClick={() => {
+              if (!data.content) return;
+              props.onSubmitUpdate(data.content.id, data.content);
+            }}
+          >
+            Submit Content Update
+          </Button>
+        </Group>
+      )}
     </Stack>
   );
 }
