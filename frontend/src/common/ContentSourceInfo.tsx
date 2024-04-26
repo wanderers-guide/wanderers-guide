@@ -81,7 +81,7 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
   noteableStats = noteableStats.sort((a, b) => b.notability - a.notability).slice(0, 3);
 
   return (
-    <Box mih={100}>
+    <Box mih={105}>
       <Stack gap={0} w='100%'>
         <Group gap={0} wrap='nowrap' justify='space-between'>
           <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>

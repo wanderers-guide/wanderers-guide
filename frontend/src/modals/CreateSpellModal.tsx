@@ -349,6 +349,17 @@ export function CreateSpellModal(props: {
                       })
                     }
                   />
+                  <Switch
+                    label='Ritual Spell'
+                    labelPosition='left'
+                    checked={metaData.ritual}
+                    onChange={(event) =>
+                      setMetaData({
+                        ...metaData,
+                        ritual: event.currentTarget.checked,
+                      })
+                    }
+                  />
                 </Stack>
 
                 <TextInput
