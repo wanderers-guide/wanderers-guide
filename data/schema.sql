@@ -1141,7 +1141,7 @@ ALTER TABLE ONLY public.versatile_heritage
 --
 
 ALTER TABLE ONLY public.spell
-    ADD CONSTRAINT spell_content_source_id_fkey FOREIGN KEY (content_source_id) REFERENCES public.content_source(id);
+    ADD CONSTRAINT spell_content_source_id_fkey FOREIGN KEY (content_source_id) REFERENCES public.content_source(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
