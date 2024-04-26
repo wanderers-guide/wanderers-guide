@@ -330,24 +330,26 @@ export async function fetchData<T = Record<string, any>>(
 ) {
   let query = client.from(tableName).select();
   for (const filter of filters) {
-    if (
-      filter.column === 'content_source_id' &&
-      ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
-    ) {
-      // Limit it to only official published books
-      const sources = await fetchData<ContentSource>(client, 'content_source', [
-        { column: 'user_id', value: null },
-        { column: 'is_published', value: true },
-      ]);
-      query = query.in(
-        'content_source_id',
-        sources.map((s) => s.id)
-      );
-      continue;
-    }
+    // TODO, why did this exist? It breaks viewing homebrew content
+    // if (
+    //   filter.column === 'content_source_id' &&
+    //   ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
+    // ) {
+    //   // Limit it to only official published books
+    //   const sources = await fetchData<ContentSource>(client, 'content_source', [
+    //     { column: 'user_id', value: null },
+    //     { column: 'is_published', value: true },
+    //   ]);
+    //   query = query.in(
+    //     'content_source_id',
+    //     sources.map((s) => s.id)
+    //   );
+    //   continue;
+    // }
     if (filter.value === undefined) continue;
 
     if (Array.isArray(filter.value)) {
+      if (filter.value.length === 0) continue;
       if (filter.options?.arrayContains) {
         query = query.contains(filter.column, filter.value);
       } else {
