@@ -169,7 +169,7 @@ export async function fetchContent<T = Record<string, any>>(
     const newData = { ...data };
     if (type !== 'content-source' && !newData.content_sources) {
       // This will fetch the default content sources...
-      const sources = await fetchContentSources(); // TODO: Add homebrew
+      const sources = await fetchContentSources();
       newData.content_sources = sources.map((source) => source.id);
     }
 

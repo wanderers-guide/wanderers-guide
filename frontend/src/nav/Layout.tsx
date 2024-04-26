@@ -228,7 +228,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         href='/homebrew'
                         onClick={(e) => {
                           e.preventDefault();
-                          displayComingSoon();
+                          navigate('/homebrew');
                         }}
                       >
                         Homebrew
@@ -350,7 +350,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               href='/homebrew'
               onClick={(e) => {
                 e.preventDefault();
-                displayComingSoon();
+                navigate('/homebrew');
                 close();
               }}
             >

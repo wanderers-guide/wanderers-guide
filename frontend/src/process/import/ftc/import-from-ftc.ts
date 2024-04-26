@@ -33,15 +33,15 @@ export interface FTC {
     experience?: number;
     content_sources: string[] | 'ALL';
     selections: { name: string | 'RANDOM'; level: number }[] | 'RANDOM';
-    items: { name: string; level?: number }[]; // TODO
+    items: { name: string; level?: number }[];
     coins?: {
       cp?: number;
       sp?: number;
       gp?: number;
       pp?: number;
     };
-    spells: { source: string; name: string; rank: number }[]; // TODO
-    conditions: { name: string; value?: string }[]; // TODO
+    spells: { source: string; name: string; rank: number }[];
+    conditions: { name: string; value?: string }[];
     hp?: number;
     temp_hp?: number;
     hero_points?: number;

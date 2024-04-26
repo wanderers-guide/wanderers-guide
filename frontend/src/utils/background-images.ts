@@ -1,7 +1,6 @@
 import { ImageOption } from '@typing/index';
 import * as _ from 'lodash-es';
 
-// TODO: Move this to the db?
 const imageStore: Record<string, ImageOption[]> = {
   general: [
     {

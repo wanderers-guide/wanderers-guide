@@ -24,6 +24,7 @@ import {
 } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
 import {
+  ActionIcon,
   Anchor,
   Autocomplete,
   Badge,
@@ -54,6 +55,7 @@ import {
   IconArrowsLeftRight,
   IconChevronDown,
   IconDatabaseImport,
+  IconFlagPlus,
   IconMessageCircle,
   IconPhoto,
   IconPlus,
@@ -120,8 +122,6 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      console.log('got here', props.sourceId);
-
       resetContentStore(true);
 
       const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
@@ -162,8 +162,6 @@ export function CreateContentSourceModal(props: {
       form.reset();
       refreshDisplayDescription();
 
-      console.log('got here', content, source);
-
       return {
         content,
         source,
@@ -195,6 +193,8 @@ export function CreateContentSourceModal(props: {
   });
 
   const onSave = async (values: typeof form.values) => {
+    console.log('values', values);
+
     await upsertContentSource({
       id: props.sourceId,
       created_at: data?.source.created_at ?? '',
@@ -334,7 +334,27 @@ export function CreateContentSourceModal(props: {
                   label='Require Key'
                 />
                 {form.values.require_key && (
-                  <TextInput size='xs' readOnly placeholder='Access Key' value={form.values.keys?.access_key} />
+                  <TextInput
+                    size='xs'
+                    placeholder='Access Key'
+                    value={form.values.keys?.access_key}
+                    onChange={(e) => {
+                      form.setValues({ ...form.values, keys: { access_key: e.currentTarget.value } });
+                    }}
+                    rightSection={
+                      <ActionIcon
+                        size={22}
+                        radius='xl'
+                        color={theme.primaryColor}
+                        variant='light'
+                        onClick={() => {
+                          //
+                        }}
+                      >
+                        <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                      </ActionIcon>
+                    }
+                  />
                 )}
               </Group>
 
