@@ -12,6 +12,7 @@ import { fetchContentSources, resetContentStore } from '@content/content-store';
 import { updateSubscriptions } from '@content/homebrew';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
+import { importFromCustomPack } from '@homebrew/import/pathbuilder-custom-packs';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
 import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
 import importFromJSON from '@import/json/import-from-json';
@@ -69,8 +70,8 @@ import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';
 import { hasPatreonAccess } from '@utils/patreon';
-import _ from 'lodash-es';
-import { useState } from 'react';
+import _, { set } from 'lodash-es';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
@@ -281,6 +282,7 @@ function CreationsSection(props: {}) {
   const theme = useMantineTheme();
   const [sourceId, setSourceId] = useState<number | undefined>(undefined);
   const [loadingCreate, setLoadingCreate] = useState(false);
+  const jsonImportRef = useRef<HTMLButtonElement>(null);
 
   const [user, setUser] = useRecoilState(userState);
   const { isFetching: isFetchingUser, refetch } = useQuery({
@@ -387,12 +389,48 @@ function CreationsSection(props: {}) {
             </Menu.Target>
 
             <Menu.Dropdown>
-              <Menu.Item leftSection={<IconUpload size='1rem' />} onClick={() => {}}>
+              <Menu.Item
+                leftSection={<IconUpload size='1rem' />}
+                onClick={() => {
+                  jsonImportRef.current?.click();
+                }}
+              >
                 Import from Custom Pack
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
         </Button.Group>
+
+        <VisuallyHidden>
+          {/* This is a hack to get the FileButton to work with the Menu component */}
+          <FileButton
+            onChange={async (file) => {
+              if (!file) return;
+              setLoadingCreate(true);
+              const source = await importFromCustomPack(file);
+              if (source && user) {
+                // Auto subscribe to the new source
+                const subscriptions = await updateSubscriptions(user, source, true);
+                setUser({ ...user, subscribed_content_sources: subscriptions });
+                await makeRequest('update-user', {
+                  subscribed_content_sources: subscriptions ?? [],
+                });
+
+                // Open the new source
+                setSourceId(source.id);
+              }
+              refetchBundles();
+              setLoadingCreate(false);
+            }}
+            accept='application/JSON'
+          >
+            {(props) => (
+              <Button ref={jsonImportRef} {...props}>
+                Import from Custom Pack
+              </Button>
+            )}
+          </FileButton>
+        </VisuallyHidden>
       </Box>
 
       <Group>

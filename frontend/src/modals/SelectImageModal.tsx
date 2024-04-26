@@ -12,9 +12,11 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
+import { showNotification } from '@mantine/notifications';
 import { IconBrush, IconUpload } from '@tabler/icons-react';
 import { ImageOption } from '@typing/index';
 import { uploadImage } from '@upload/image-upload';
+import { isValidImage } from '@utils/images';
 import { displayPatronOnly } from '@utils/notifications';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useState } from 'react';
@@ -71,6 +73,15 @@ export default function SelectImageModal({
               if (file) {
                 setLoading(true);
                 path = await uploadImage(file, innerProps.category);
+              }
+
+              const valid = await isValidImage(path);
+              if (!valid) {
+                showNotification({
+                  title: 'Invalid Image',
+                  message: 'Your image failed to upload. It may be too large or not an image file.',
+                  color: 'red',
+                });
               }
 
               // Construct image option

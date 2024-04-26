@@ -65,6 +65,7 @@ export function LinksGroup({
         enabled={link.enabled}
         onLinkChange={onLinkChange}
         onFeedback={onFeedback}
+        linkCss
       />
     ));
 
@@ -134,6 +135,7 @@ export function GroupLinkSwitch(props: {
   id: number;
   url: string;
   enabled?: boolean | undefined;
+  linkCss?: boolean;
   onLinkChange?: (id: number, enabled: boolean) => void;
   onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
 }) {
@@ -141,7 +143,7 @@ export function GroupLinkSwitch(props: {
 
   return (
     <Group gap={0}>
-      <Text<'a'> component='a' className={classes.link} key={props.label}>
+      <Text<'a'> component='a' className={props.linkCss ? classes.link : undefined} key={props.label}>
         <Switch
           label={props.label}
           size='xs'

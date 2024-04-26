@@ -5,7 +5,6 @@ import GenerateEmbeddings from './GenerateEmbeddings';
 import ImportLegacyContent from './ImportLegacyContent';
 import UploadContent from './UploadContent';
 import BackgroundFixer from './BackgroundFixer';
-import ImportPathbuilderContent from './ImportPathbuilderContent';
 import TraitMerger from './TraitMerger';
 
 export function Component() {
@@ -17,7 +16,6 @@ export function Component() {
       <UploadContent />
       <EditContent />
       <ImportLegacyContent />
-      <ImportPathbuilderContent />
       <BackgroundFixer />
       <TraitMerger />
     </Stack>
