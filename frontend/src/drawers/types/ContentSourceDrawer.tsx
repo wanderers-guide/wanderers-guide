@@ -1,6 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { userState } from '@atoms/userAtoms';
-import { getPublicUser } from '@auth/user-manager';
+import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import RichText from '@common/RichText';
 import {
   ActionSelectionOption,
@@ -31,12 +31,14 @@ import {
   Stack,
   ActionIcon,
 } from '@mantine/core';
+import { openContextModal } from '@mantine/modals';
+import UnlockHomebrewModal from '@modals/UnlockHomebrewModal';
 import { makeRequest } from '@requests/request-manager';
 import { IconExternalLink, IconKey } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import _ from 'lodash-es';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
@@ -94,7 +96,6 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
                 variant={subscribed ? 'light' : 'filled'}
                 size='compact-xs'
                 radius='xl'
-                rightSection={source.require_key ? <IconKey size={14} /> : undefined}
                 onClick={async () => {
                   await onSubscribe(!subscribed);
                   refetch();
@@ -157,6 +158,17 @@ export function ContentSourceDrawerContent(props: {
     },
   });
   const source = content && content.sources && content.sources.length > 0 ? content.sources[0] : null;
+
+  const [openedUnlockModal, setOpenedUnlockModal] = useState(false);
+  useEffect(() => {
+    // TODO, this should be done on the backend. And we shouldn't be leaking keys to the client
+    if (
+      source?.require_key &&
+      getCachedPublicUser()?.subscribed_content_sources?.find((src) => src.source_id === source.id) === undefined
+    ) {
+      setOpenedUnlockModal(true);
+    }
+  }, [source]);
 
   if (!content || !source) {
     return (
@@ -585,6 +597,17 @@ export function ContentSourceDrawerContent(props: {
           />
         </Box>
       )}
+
+      <UnlockHomebrewModal
+        opened={openedUnlockModal}
+        source={source}
+        onSuccess={() => {
+          setOpenedUnlockModal(false);
+        }}
+        onClose={() => {
+          openDrawer(null);
+        }}
+      />
     </Box>
   );
 }

@@ -100,7 +100,7 @@ export function displayPatronOnly(message = 'This feature is only available to p
     message: (
       <>
         {message} Consider supporting me on{' '}
-        <Anchor href={PATREON_URL} target='_blank'>
+        <Anchor href={PATREON_URL} size='sm' target='_blank'>
           Patreon
         </Anchor>{' '}
         :)

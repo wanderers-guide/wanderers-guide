@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
-import { IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
+import { IconKey, IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import { getRingIcon } from '@utils/images';
@@ -90,6 +90,11 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
                 {truncate(props.source.name, {
                   length: props.nameCutOff ?? 26,
                 })}
+                {props.source.require_key ? (
+                  <Text pl={5} span>
+                    <IconKey size={14} />
+                  </Text>
+                ) : undefined}
               </Text>
             </HoverCard.Target>
             <HoverCard.Dropdown py={5} px={10}>

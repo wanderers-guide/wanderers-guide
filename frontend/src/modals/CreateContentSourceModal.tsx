@@ -59,6 +59,7 @@ import {
   IconMessageCircle,
   IconPhoto,
   IconPlus,
+  IconRefreshDot,
   IconSearch,
   IconSettings,
   IconTrash,
@@ -348,10 +349,11 @@ export function CreateContentSourceModal(props: {
                         color={theme.primaryColor}
                         variant='light'
                         onClick={() => {
-                          //
+                          const randKey = crypto.randomUUID().slice(0, 18);
+                          form.setValues({ ...form.values, keys: { access_key: randKey } });
                         }}
                       >
-                        <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                        <IconRefreshDot style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                       </ActionIcon>
                     }
                   />

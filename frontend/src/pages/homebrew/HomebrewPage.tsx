@@ -1,7 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { userState } from '@atoms/userAtoms';
-import { getPublicUser } from '@auth/user-manager';
+import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterDetailedInfo, CharacterInfo } from '@common/CharacterInfo';
@@ -67,6 +67,8 @@ import { Character, ContentSource } from '@typing/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { displayPatronOnly } from '@utils/notifications';
+import { hasPatreonAccess } from '@utils/patreon';
 import _ from 'lodash-es';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -116,7 +118,14 @@ export function Component() {
                 style={
                   tab === 2 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }
-                onClick={() => setTab(2)}
+                onClick={() => {
+                  if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+                    displayPatronOnly();
+                    return;
+                  }
+
+                  setTab(2);
+                }}
               >
                 My Creations
               </BlurButton>
@@ -143,6 +152,7 @@ function BrowseSection(props: {}) {
     queryFn: async () => {
       return (await fetchContentSources({ ids: 'all', homebrew: true, published: true })).filter((c) => c.user_id);
     },
+    refetchOnWindowFocus: false,
   });
 
   console.log(data);
@@ -205,6 +215,7 @@ function SubscriptionsSection(props: {}) {
       setUser(user);
       return user;
     },
+    refetchOnWindowFocus: false,
   });
 
   const {
@@ -218,6 +229,7 @@ function SubscriptionsSection(props: {}) {
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
     },
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -271,18 +283,19 @@ function CreationsSection(props: {}) {
   const [loadingCreate, setLoadingCreate] = useState(false);
 
   const [user, setUser] = useRecoilState(userState);
-  const { refetch } = useQuery({
+  const { isFetching: isFetchingUser, refetch } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
       const user = await getPublicUser();
       setUser(user);
       return user;
     },
+    refetchOnWindowFocus: false,
   });
 
   const {
     data,
-    isFetching,
+    isFetching: isFetchingBundles,
     refetch: refetchBundles,
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-creations`],
@@ -293,9 +306,9 @@ function CreationsSection(props: {}) {
       );
     },
     enabled: !!user,
+    refetchOnWindowFocus: false,
   });
-
-  console.log(data);
+  const isFetching = isFetchingBundles || isFetchingUser;
 
   return (
     <Stack w='100%' gap={15}>
@@ -384,39 +397,42 @@ function CreationsSection(props: {}) {
 
       <Group>
         {isFetching && (
-          <Loader
-            size='lg'
-            type='bars'
-            style={{
-              position: 'absolute',
-              top: '30%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-          />
-        )}
-        {(data ?? [])
-          .filter((c) => !c.is_published)
-          .map((source, index) => (
-            <ContentSourceCard
-              key={index}
-              source={source}
-              onEdit={() => {
-                setSourceId(source.id);
+          <Center h={100}>
+            <Loader
+              size='lg'
+              type='bars'
+              style={{
+                position: 'absolute',
+                top: '30%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
               }}
-              onDelete={async () => {
-                await deleteContent('content-source', source.id);
-                refetchBundles();
-              }}
-              deleteTitle='Delete Bundle'
-              deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
             />
-          ))}
+          </Center>
+        )}
+        {!isFetching &&
+          (data ?? [])
+            .filter((c) => !c.is_published)
+            .map((source, index) => (
+              <ContentSourceCard
+                key={index}
+                source={source}
+                onEdit={() => {
+                  setSourceId(source.id);
+                }}
+                onDelete={async () => {
+                  await deleteContent('content-source', source.id);
+                  refetchBundles();
+                }}
+                deleteTitle='Delete Bundle'
+                deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
+              />
+            ))}
         {!isFetching && (data ?? []).filter((c) => !c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
-                No in progress bundles.
+                No bundles in progress.
               </Text>
             </Stack>
           </BlurBox>
@@ -454,23 +470,24 @@ function CreationsSection(props: {}) {
             }}
           />
         )}
-        {(data ?? [])
-          .filter((c) => c.is_published)
-          .map((source, index) => (
-            <ContentSourceCard
-              key={index}
-              source={source}
-              onEdit={() => {
-                setSourceId(source.id);
-              }}
-              onDelete={async () => {
-                await deleteContent('content-source', source.id);
-                refetchBundles();
-              }}
-              deleteTitle='Delete Bundle'
-              deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
-            />
-          ))}
+        {!isFetching &&
+          (data ?? [])
+            .filter((c) => c.is_published)
+            .map((source, index) => (
+              <ContentSourceCard
+                key={index}
+                source={source}
+                onEdit={() => {
+                  setSourceId(source.id);
+                }}
+                onDelete={async () => {
+                  await deleteContent('content-source', source.id);
+                  refetchBundles();
+                }}
+                deleteTitle='Delete Bundle'
+                deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
+              />
+            ))}
         {!isFetching && (data ?? []).filter((c) => c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
