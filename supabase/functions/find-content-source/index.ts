@@ -21,7 +21,7 @@ serve(async (req: Request) => {
     ]);
 
     // Filter out homebrew content
-    if (homebrew === undefined || homebrew === false) {
+    if (!id && (homebrew === undefined || homebrew === false)) {
       results = results.filter((result) => result.user_id === null);
     }
 
