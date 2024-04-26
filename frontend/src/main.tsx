@@ -89,11 +89,11 @@ const router = createBrowserRouter([
               return { characterId: params.characterId };
             },
           },
+          {
+            path: 'homebrew',
+            lazy: () => import('@pages/homebrew/HomebrewPage.tsx'),
+          },
         ],
-      },
-      {
-        path: 'homebrew',
-        lazy: () => import('@pages/homebrew/HomebrewPage.tsx'),
       },
       {
         path: 'sheet/:characterId',
