@@ -9,7 +9,6 @@ import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
-import { color } from 'framer-motion';
 import * as _ from 'lodash-es';
 import { SetterOrUpdater } from 'recoil';
 
@@ -168,9 +167,9 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
             ...item,
             meta_data: item.meta_data
               ? {
-                  ...item.meta_data,
-                  base_item_content: baseItem,
-                }
+                ...item.meta_data,
+                base_item_content: baseItem,
+              }
               : undefined,
           },
           is_formula: false,
@@ -417,7 +416,19 @@ export function isItemWithPropertyRunes(item: Item) {
  * @returns - Whether the item is consumable
  */
 export function isItemWithQuantity(item: Item) {
-  return hasTraitType('CONSUMABLE', item.traits) || (item.meta_data?.quantity && item.meta_data.quantity > 1);
+  const nonConsumableItemFns = [
+    isItemWeapon,
+    isItemArmor,
+    isItemShield,
+    isItemContainer,
+    isItemInvestable,
+  ]
+  for (const nonConsumableFn of nonConsumableItemFns) {
+    if (nonConsumableFn(item)) {
+      return false;
+    }
+  }
+  return hasTraitType('CONSUMABLE', item.traits) || (item.meta_data?.quantity && item.meta_data.quantity > 0);
 }
 
 /**
