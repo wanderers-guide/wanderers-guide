@@ -19,6 +19,7 @@ import {
   OperationGiveSpell,
   OperationGiveSpellSlot,
   OperationGiveTrait,
+  OperationInjectSelectOption,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -56,6 +57,7 @@ import { isProficiencyTypeGreaterOrEqual, labelToVariable, variableToLabel } fro
 import * as _ from 'lodash-es';
 import { OperationResult } from './operation-runner';
 import { throwError } from '@utils/notifications';
+import { InjectedSelectOption } from '@common/operations/selection/InjectSelectOptionOperation';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -165,6 +167,15 @@ export function createDefaultOperation<T = Operation>(type: OperationType): T {
         value: ':::-:::ARCANE:::ATTRIBUTE_STR',
       },
     } satisfies OperationDefineCastingSource as T;
+  } else if (type === 'injectSelectOption') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        variable: 'INJECT_SELECT_OPTIONS',
+        value: '',
+      },
+    } satisfies OperationInjectSelectOption as T;
   } else if (type === 'removeAbilityBlock') {
     return {
       id: crypto.randomUUID(),
@@ -503,6 +514,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
 
 export async function determinePredefinedSelectionList(
   id: StoreID,
+  operationId: string,
   type: OperationSelectOptionType,
   options: OperationSelectOption[]
 ): Promise<ObjectWithUUID[]> {
@@ -515,7 +527,7 @@ export async function determinePredefinedSelectionList(
   } else if (type === 'ADJ_VALUE') {
     return await getAdjValuePredefinedList(id, options as OperationSelectOptionAdjValue[]);
   } else if (type === 'CUSTOM') {
-    return await getCustomPredefinedList(options as OperationSelectOptionCustom[]);
+    return await getCustomPredefinedList(id, operationId, options as OperationSelectOptionCustom[]);
   }
   return [];
 }
@@ -595,8 +607,23 @@ async function getAdjValuePredefinedList(id: StoreID, options: OperationSelectOp
   });
 }
 
-async function getCustomPredefinedList(options: OperationSelectOptionCustom[]) {
-  return options.map((option) => {
+async function getCustomPredefinedList(id: StoreID, operationId: string, options: OperationSelectOptionCustom[]) {
+  const allInjectableData = (getVariable<VariableListStr>(id, 'INJECT_SELECT_OPTIONS')?.value ?? []).filter((v) =>
+    // Quick way to filter out misc inject options
+    v.includes(operationId)
+  );
+  const injectedOptions = allInjectableData
+    .map((v) => {
+      try {
+        return JSON.parse(v) as InjectedSelectOption;
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((v) => v && v?.opId === operationId)
+    .map((v) => v!.option);
+
+  return [...options, ...injectedOptions].map((option) => {
     return {
       _select_uuid: option.id,
       _content_type: 'ability-block' as ContentType,

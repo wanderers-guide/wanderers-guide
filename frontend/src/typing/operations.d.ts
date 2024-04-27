@@ -49,6 +49,7 @@ export type Operation =
   | OperationGiveSpellSlot
   | OperationGiveItem
   | OperationGiveTrait
+  | OperationInjectSelectOption
   | OperationDefineCastingSource;
 
 export type OperationType =
@@ -67,6 +68,7 @@ export type OperationType =
   | 'giveItem'
   | 'giveTrait'
   | 'giveSpellSlot'
+  | 'injectSelectOption'
   | 'defineCastingSource';
 
 interface OperationBase {
@@ -189,6 +191,14 @@ export interface OperationDefineCastingSource extends OperationAdjValue {
   readonly type: 'defineCastingSource';
   data: {
     variable: 'CASTING_SOURCES';
+    value: VariableValue;
+  };
+}
+
+export interface OperationInjectSelectOption extends OperationAdjValue {
+  readonly type: 'injectSelectOption';
+  data: {
+    variable: 'INJECT_SELECT_OPTIONS';
     value: VariableValue;
   };
 }

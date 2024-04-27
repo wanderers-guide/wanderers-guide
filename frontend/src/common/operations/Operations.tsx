@@ -30,6 +30,7 @@ import {
   OperationGiveSpell,
   OperationGiveSpellSlot,
   OperationGiveTrait,
+  OperationInjectSelectOption,
   OperationSelect,
   OperationSetValue,
   OperationType,
@@ -57,6 +58,7 @@ import { DefineCastingSourceOperation } from './spell/DefineCastingSourceOperati
 import { GiveItemOperation } from './item/GiveItemOperation';
 import { GiveTraitOperation } from './trait/GiveTraitOperation';
 import useRefresh from '@utils/use-refresh';
+import { InjectSelectOptionOperation } from './selection/InjectSelectOptionOperation';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -179,12 +181,11 @@ export function OperationSection(props: {
                 value: 'giveAbilityBlock:::class-feature',
                 label: 'Give Other Class Feature',
               },
-              { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
               { value: 'createValue', label: 'Create Value' },
               { value: 'setValue', label: 'Override Value' },
-              { value: 'injectSelectOption', label: 'Inject Select Option' }, // TODO, run at create create variable time.
-              // - Store in a variable with stringified JSON of the selection option. Inject it at execution time.
-              { value: 'RESO', label: 'RESO' }, // TODO
+              { value: 'injectSelectOption', label: 'Inject Select Option' },
+              // { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
+              // { value: 'RESO', label: 'RESO' }, // TODO
             ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
             searchable
             searchValue={searchValue}
@@ -362,6 +363,19 @@ export function OperationDisplay(props: {
             opDefineCastingSource.data.value = value;
 
             props.onChange(_.cloneDeep(opDefineCastingSource));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'injectSelectOption':
+      let opInjectSelectOption = props.operation as OperationInjectSelectOption;
+      return (
+        <InjectSelectOptionOperation
+          value={opInjectSelectOption.data.value as string}
+          onSelect={(value) => {
+            opInjectSelectOption.data.value = value;
+
+            props.onChange(_.cloneDeep(opInjectSelectOption));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

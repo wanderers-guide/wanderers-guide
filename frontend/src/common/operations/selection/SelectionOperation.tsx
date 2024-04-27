@@ -1527,7 +1527,7 @@ function SelectionPredefinedCustom(props: {
   );
 }
 
-function SelectionPredefinedCustomOption(props: {
+export function SelectionPredefinedCustomOption(props: {
   option: OperationSelectOptionCustom;
   onChange: (option: OperationSelectOptionCustom) => void;
 }) {

@@ -14,6 +14,7 @@ import {
   OperationGiveSpell,
   OperationGiveSpellSlot,
   OperationGiveTrait,
+  OperationInjectSelectOption,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -68,6 +69,9 @@ export async function runOperations(
         return await runCreateValue(varId, operation, sourceLabel);
       } else if (operation.type === 'giveTrait') {
         return await runGiveTrait(varId, operation, sourceLabel);
+      } else if (operation.type === 'injectSelectOption') {
+        // Needs to be injected before the select operation
+        return await runInjectSelectOption(varId, operation, sourceLabel);
       } else if (operation.type === 'giveAbilityBlock') {
         // Run the ability block but only to pass the create variables
         return await runGiveAbilityBlock(varId, selectionTrack, operation, options, sourceLabel);
@@ -175,6 +179,7 @@ async function runSelect(
   } else if (operation.data.modeType === 'PREDEFINED' && operation.data.optionsPredefined) {
     optionList = await determinePredefinedSelectionList(
       'CHARACTER',
+      operation.id,
       operation.data.optionType,
       operation.data.optionsPredefined
     );
@@ -613,6 +618,15 @@ async function runDefineCastingSource(
   sourceLabel?: string
 ): Promise<OperationResult> {
   adjVariable(varId, 'CASTING_SOURCES', operation.data.value, sourceLabel);
+  return null;
+}
+
+async function runInjectSelectOption(
+  varId: StoreID,
+  operation: OperationInjectSelectOption,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  adjVariable(varId, 'INJECT_SELECT_OPTIONS', operation.data.value, sourceLabel);
   return null;
 }
 

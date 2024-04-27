@@ -35,6 +35,7 @@ export const HIDDEN_VARIABLES = [
   'SPELL_SLOTS',
   'SPELL_DATA',
   'PROF_WITHOUT_LEVEL',
+  'INJECT_SELECT_OPTIONS',
 ];
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
@@ -215,6 +216,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   BULK_LIMIT_BONUS: newVariable('num', 'BULK_LIMIT_BONUS'),
   INVEST_LIMIT_BONUS: newVariable('num', 'INVEST_LIMIT_BONUS'),
+
+  // Injected Selection Options
+  INJECT_SELECT_OPTIONS: newVariable('list-str', 'INJECT_SELECT_OPTIONS'), // Hidden
 
   // Specializations
   WEAPON_SPECIALIZATION: newVariable('bool', 'WEAPON_SPECIALIZATION'),
