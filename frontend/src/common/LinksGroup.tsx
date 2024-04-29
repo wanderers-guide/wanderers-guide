@@ -55,7 +55,15 @@ export function LinksGroup({
   const hasLinks = Array.isArray(links);
   const [opened, setOpened] = useState(initiallyOpened || false);
   const items = (hasLinks ? links : [])
-    .sort((a, b) => a.label.localeCompare(b.label))
+    .sort((a, b) => {
+      if (a.label.includes('(') && !b.label.includes('(')) {
+        return 1;
+      }
+      if (b.label.includes('(') && !a.label.includes('(')) {
+        return -1;
+      }
+      return a.label.localeCompare(b.label);
+    })
     .map((link, index) => (
       <GroupLinkSwitch
         key={index}
