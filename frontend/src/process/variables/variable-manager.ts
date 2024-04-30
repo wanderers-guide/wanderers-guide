@@ -475,8 +475,12 @@ export function removeVariable(id: StoreID, name: string) {
 /**
  * Resets all variables to their default values
  */
-export function resetVariables() {
-  variableMap.clear();
+export function resetVariables(id?: StoreID) {
+  if (id) {
+    variableMap.delete(id);
+  } else {
+    variableMap.clear();
+  }
 }
 
 /**

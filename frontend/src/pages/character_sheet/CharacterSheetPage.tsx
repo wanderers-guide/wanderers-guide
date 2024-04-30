@@ -43,7 +43,7 @@ import {
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, ContentPackage, Inventory } from '@typing/content';
-import { OperationResultPackage } from '@typing/operations';
+import { OperationCharacterResultPackage } from '@typing/operations';
 import { JSendResponse } from '@typing/requests';
 import { VariableListStr } from '@typing/variables';
 import { setPageTitle } from '@utils/document-change';
@@ -66,7 +66,7 @@ import SkillsActionsPanel from './panels/SkillsActionsPanel';
 import SpellsPanel from './panels/SpellsPanel';
 import ArmorSection from './sections/ArmorSection';
 import AttributeSection from './sections/AttributeSection';
-import CharacterInfoSection from './sections/CharacterInfoSection';
+import CharacterInfoSection from './sections/EntityInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
@@ -203,7 +203,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   });
 
   // Execute operations
-  const [operationResults, setOperationResults] = useState<OperationResultPackage>();
+  const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!character || executingOperations.current) return;

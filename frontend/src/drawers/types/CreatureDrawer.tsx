@@ -1,13 +1,50 @@
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
-import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentById } from '@content/content-store';
-import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { drawerState } from '@atoms/navAtoms';
+import { applyConditions } from '@conditions/condition-handler';
+import { fetchContentById, fetchContentPackage } from '@content/content-store';
+import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
+import {
+  Title,
+  Loader,
+  Group,
+  Stack,
+  Box,
+  ActionIcon,
+  Button,
+  Popover,
+  SimpleGrid,
+  Pill,
+  useMantineTheme,
+} from '@mantine/core';
+import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
+import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
+import EntityInfoSection from '@pages/character_sheet/sections/EntityInfoSection';
+import HealthSection from '@pages/character_sheet/sections/HealthSection';
+import { AltSpeedSection } from '@pages/character_sheet/sections/SpeedSection';
+import {
+  IconX,
+  IconLayoutGrid,
+  IconLayoutList,
+  IconBadgesFilled,
+  IconCaretLeftRight,
+  IconBackpack,
+  IconFlare,
+  IconNotebook,
+  IconListDetails,
+  IconPaw,
+  IconNotes,
+  IconBlockquote,
+} from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Creature } from '@typing/content';
+import { Creature } from '@typing/content';
+import { OperationCharacterResultPackage, OperationCreatureResultPackage } from '@typing/operations';
+import { VariableListStr } from '@typing/variables';
+import { convertToSetEntity } from '@utils/type-fixing';
+import { saveCalculatedStats } from '@variables/calculated-stats';
+import { getFinalHealthValue } from '@variables/variable-display';
+import { getAllAncestryTraitVariables, getVariable, setVariable } from '@variables/variable-manager';
+import { useEffect, useRef, useState } from 'react';
+import { useRecoilState } from 'recoil';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const id = props.data.id;
@@ -40,22 +77,67 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
   );
 }
 
-export function CreatureDrawerContent(props: { data: { id?: number; creature?: Creature; showOperations?: boolean } }) {
+export function CreatureDrawerContent(props: {
+  data: { id?: number; creature?: Creature; uuid?: string; showOperations?: boolean };
+}) {
   const id = props.data.id;
 
-  const { data: _creature } = useQuery({
-    queryKey: [`find-creature-${id}`, { id }],
+  const { data: content } = useQuery({
+    queryKey: [`find-creature-details-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await fetchContentById<Creature>('creature', id);
-    },
-    enabled: !!id,
-  });
-  const creature = props.data.creature ?? _creature;
 
-  if (!creature) {
+      if (id) {
+        const _creature = await fetchContentById<Creature>('creature', id);
+        setCreature(_creature);
+      }
+
+      const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+      return content;
+    },
+  });
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const theme = useMantineTheme();
+  const [loading, setLoading] = useState(true);
+  const [creature, setCreature] = useState<Creature | null>(props.data.creature ?? null);
+
+  const [openedSelectionPanel, setOpenedSelectionPanel] = useState(false);
+  const [activeTab, setActiveTab] = useState('main');
+
+  // Variable store ID
+  const STORE_ID = `CREATURE_${creature?.id}_${props.data.uuid}`;
+
+  const [operationResults, setOperationResults] = useState<OperationCreatureResultPackage>();
+  const executingOperations = useRef(false);
+  useEffect(() => {
+    if (!creature || !content || executingOperations.current) return;
+    setTimeout(() => {
+      if (!creature || !content || executingOperations.current) return;
+      executingOperations.current = true;
+      executeCreatureOperations(STORE_ID, creature, content).then((results) => {
+        // Apply conditions after everything else
+        applyConditions(STORE_ID, creature.details?.conditions ?? []);
+        if (creature.meta_data?.reset_hp !== false) {
+          // To reset hp, we need to confirm health
+          confirmHealth(`${getFinalHealthValue(STORE_ID)}`, STORE_ID, creature, convertToSetEntity(setCreature));
+        } else {
+          // Because of the drained condition, let's confirm health
+          confirmHealth(`${creature.hp_current}`, STORE_ID, creature, convertToSetEntity(setCreature));
+        }
+
+        setOperationResults(results);
+        executingOperations.current = false;
+
+        setTimeout(() => {
+          setLoading(false);
+        }, 100);
+      });
+    }, 1);
+  }, [creature, content]);
+
+  if (loading || !creature || !content) {
     return (
       <Loader
         type='bars'
@@ -69,29 +151,158 @@ export function CreatureDrawerContent(props: { data: { id?: number; creature?: C
     );
   }
 
-  return (
-    <Box>
-      {creature.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={creature.meta_data?.image_url}
-        />
-      )}
-      <Box>
-        {/* Note: Can't use a Stack here as it breaks the floating image */}
-        <Box pb={2}>
-          {/* <TraitsDisplay traitIds={creature.traits ?? []} rarity={creature.rarity} interactable /> */}
-        </Box>
+  const languages = (getVariable<VariableListStr>(STORE_ID, 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
+    const lang = content.languages.find((lang) => `${lang.id}` === langId);
+    return lang;
+  });
 
-        <RichText ta='justify'>{creature.details.description}</RichText>
-      </Box>
-    </Box>
+  const traits = getAllAncestryTraitVariables(STORE_ID).map((v) => {
+    const trait = content.traits.find((trait) => trait.id === v.value);
+    return trait;
+  });
+
+  return (
+    <Stack>
+      <Stack>
+        <EntityInfoSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+        <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+        <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+        <ArmorSection
+          id={STORE_ID}
+          inventory={
+            creature.inventory ?? {
+              coins: {
+                cp: 0,
+                sp: 0,
+                gp: 0,
+                pp: 0,
+              },
+              items: [],
+            }
+          }
+          setInventory={(updateInventory) => {
+            setCreature((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                inventory:
+                  typeof updateInventory === 'function' && prev.inventory ? updateInventory(prev.inventory) : undefined,
+              };
+            });
+          }}
+        />
+
+        <Box
+          style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+          }}
+        >
+          <Popover
+            position='top'
+            shadow='md'
+            withArrow
+            opened={openedSelectionPanel}
+            onChange={setOpenedSelectionPanel}
+            zIndex={1000}
+          >
+            <Popover.Target>
+              <ActionIcon
+                size={55}
+                variant='filled'
+                radius={100}
+                aria-label='Panel Grid'
+                onClick={() => setOpenedSelectionPanel((o) => !o)}
+              >
+                {openedSelectionPanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
+              </ActionIcon>
+            </Popover.Target>
+            <Popover.Dropdown w={'calc(min(100dvh, 430px))'}>
+              <Box>
+                <Stack>
+                  <Button
+                    leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
+                    variant={activeTab === 'main' ? 'filled' : 'outline'}
+                    onClick={() => {
+                      setActiveTab('main');
+                      setOpenedSelectionPanel(false);
+                    }}
+                  >
+                    Health, Conditions, Saves
+                  </Button>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'abilities' ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('abilities');
+                        setOpenedSelectionPanel(false);
+                      }}
+                    >
+                      Abilities
+                    </Button>
+                    <Button
+                      leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'skills-actions' ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('skills-actions');
+                        setOpenedSelectionPanel(false);
+                      }}
+                    >
+                      Skills
+                    </Button>
+                  </SimpleGrid>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconBackpack size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'inventory' ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('inventory');
+                        setOpenedSelectionPanel(false);
+                      }}
+                    >
+                      Inventory
+                    </Button>
+                    <Button
+                      leftSection={<IconFlare size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'spells' ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('spells');
+                        setOpenedSelectionPanel(false);
+                      }}
+                    >
+                      Spells
+                    </Button>
+                  </SimpleGrid>
+                  <SimpleGrid cols={2}>
+                    <Button
+                      leftSection={<IconNotebook size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'notes' ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('notes');
+                        setOpenedSelectionPanel(false);
+                      }}
+                    >
+                      Notes
+                    </Button>
+                    <Button
+                      leftSection={<IconListDetails size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'details' ? 'filled' : 'outline'}
+                      onClick={() => {
+                        setActiveTab('details');
+                        setOpenedSelectionPanel(false);
+                      }}
+                    >
+                      Details
+                    </Button>
+                  </SimpleGrid>
+                </Stack>
+              </Box>
+            </Popover.Dropdown>
+          </Popover>
+        </Box>
+      </Stack>
+    </Stack>
   );
 }

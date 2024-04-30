@@ -349,6 +349,10 @@ interface LivingEntity {
     // Used for tracking how many times an innate spell has been cast
     innate_casts: SpellInnateEntry[];
   };
+  operation_data?: {
+    selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
+    notes?: Record<string, string>; // TODO <op UUID> -> string
+  };
   meta_data?: Record<string, any>;
 }
 
@@ -366,7 +370,8 @@ interface Creature extends LivingEntity {
     description: string;
   };
   operations: Operation[] | undefined;
-  abilities?: AbilityBlock[];
+  abilities_base?: AbilityBlock[];
+  abilities_added?: number[];
   content_source_id: number;
   version: string;
 }
@@ -457,10 +462,6 @@ interface Character extends LivingEntity {
   };
   content_sources?: {
     enabled?: number[];
-  };
-  operation_data?: {
-    selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
-    notes?: Record<string, string>; // TODO <op UUID> -> string
   };
   companions?: Record<string, any>; // TODO
 }

@@ -76,7 +76,11 @@ export default function HealthSection(props: {
                     c='gray.3'
                     style={{ cursor: 'pointer' }}
                     onClick={() => {
-                      openDrawer({ type: 'stat-hp', data: {} });
+                      openDrawer({
+                        type: 'stat-hp',
+                        data: {},
+                        extra: { addToHistory: true },
+                      });
                     }}
                     underline='hover'
                   >
@@ -125,7 +129,11 @@ export default function HealthSection(props: {
             size='compact-xs'
             fw={400}
             onClick={() => {
-              openDrawer({ type: 'stat-resist-weak', data: {} });
+              openDrawer({
+                type: 'stat-resist-weak',
+                data: {},
+                extra: { addToHistory: true },
+              });
             }}
           >
             Resistances & Weaknesses

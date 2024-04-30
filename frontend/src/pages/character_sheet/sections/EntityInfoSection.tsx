@@ -16,7 +16,8 @@ import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { confirmExperience } from '../living-entity-utils';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@typing/content';
-import { isCharacter } from '@utils/type-fixing';
+import { isCharacter, isCreature } from '@utils/type-fixing';
+import { CreatureDetailedInfo } from '@common/CreatureInfo';
 
 export default function EntityInfoSection(props: {
   id: StoreID;
@@ -164,7 +165,7 @@ export default function EntityInfoSection(props: {
         }}
       >
         <Group gap={20} wrap='nowrap' align='flex-start'>
-          {isCharacter(props.entity) ? (
+          {isCharacter(props.entity) && (
             <CharacterInfo
               character={props.entity}
               color='gray.5'
@@ -173,30 +174,34 @@ export default function EntityInfoSection(props: {
                 openDrawer({
                   type: 'ancestry',
                   data: { id: (props.entity as Character)?.details?.ancestry?.id },
+                  extra: { addToHistory: true },
                 });
               }}
               onClickBackground={() => {
                 openDrawer({
                   type: 'background',
                   data: { id: (props.entity as Character)?.details?.background?.id },
+                  extra: { addToHistory: true },
                 });
               }}
               onClickClass={() => {
                 openDrawer({
                   type: 'class',
                   data: { id: (props.entity as Character)?.details?.class?.id },
+                  extra: { addToHistory: true },
                 });
               }}
               onClickClass2={() => {
                 openDrawer({
                   type: 'class',
                   data: { id: (props.entity as Character)?.details?.class_2?.id },
+                  extra: { addToHistory: true },
                 });
               }}
             />
-          ) : (
-            <></>
           )}
+          {isCreature(props.entity) && <CreatureDetailedInfo creature={props.entity} nameCutOff={20} />}
+
           <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
             <Stack gap={5}>
               <Box>

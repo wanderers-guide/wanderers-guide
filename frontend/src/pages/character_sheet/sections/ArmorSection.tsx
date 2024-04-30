@@ -35,6 +35,7 @@ export default function ArmorSection(props: {
     openDrawer({
       type: 'stat-prof',
       data: { variableName: save.name },
+      extra: { addToHistory: true },
     });
   };
 
@@ -101,6 +102,7 @@ export default function ArmorSection(props: {
                       });
                     },
                   },
+                  extra: { addToHistory: true },
                 });
               }}
             >
@@ -143,6 +145,7 @@ export default function ArmorSection(props: {
                           handleMoveItem(props.setInventory, invItem, containerItem);
                         },
                       },
+                      extra: { addToHistory: true },
                     });
                   }}
                 >

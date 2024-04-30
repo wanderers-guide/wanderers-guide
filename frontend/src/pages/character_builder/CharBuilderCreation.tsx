@@ -25,7 +25,7 @@ import {
   Stack,
   Text,
   Title,
-  useMantineTheme
+  useMantineTheme,
 } from '@mantine/core';
 import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
@@ -36,7 +36,7 @@ import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
-import { OperationResultPackage, OperationSelect } from '@typing/operations';
+import { OperationCharacterResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
@@ -123,7 +123,7 @@ export function CharBuilderCreationInner(props: {
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
   // Execute operations
-  const [operationResults, setOperationResults] = useState<OperationResultPackage>();
+  const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!character || executingOperations.current) return;
@@ -1072,7 +1072,7 @@ function LevelSection(props: {
   level: number;
   opened: boolean;
   content: ContentPackage;
-  operationResults?: OperationResultPackage;
+  operationResults?: OperationCharacterResultPackage;
 }) {
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -1361,7 +1361,7 @@ function AncestrySectionAccordionItem(props: {
 
 function InitialStatsLevelSection(props: {
   content: ContentPackage;
-  operationResults?: OperationResultPackage;
+  operationResults?: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
 }) {
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -1480,7 +1480,7 @@ function InitialStatsLevelSection(props: {
 function AncestryAccordionItem(props: {
   ancestry?: Ancestry;
   content: ContentPackage;
-  operationResults: OperationResultPackage;
+  operationResults: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1517,15 +1517,15 @@ function AncestryAccordionItem(props: {
   let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
   const ancestryInitialOverviewDisplay = props.ancestry
     ? convertAncestryOperationsIntoUI(
-      props.ancestry,
-      physicalFeatures,
-      senses,
-      languages,
-      'READ/WRITE',
-      props.operationResults?.ancestryResults ?? [],
-      [character, setCharacter],
-      openDrawer
-    )
+        props.ancestry,
+        physicalFeatures,
+        senses,
+        languages,
+        'READ/WRITE',
+        props.operationResults?.ancestryResults ?? [],
+        [character, setCharacter],
+        openDrawer
+      )
     : null;
   if (ancestryInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the ancestry overview
@@ -1600,7 +1600,7 @@ function AncestryAccordionItem(props: {
 
 function BackgroundAccordionItem(props: {
   background?: Background;
-  operationResults: OperationResultPackage;
+  operationResults: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1631,12 +1631,12 @@ function BackgroundAccordionItem(props: {
   let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
   const backgroundInitialOverviewDisplay = props.background
     ? convertBackgroundOperationsIntoUI(
-      props.background,
-      'READ/WRITE',
-      props.operationResults?.backgroundResults ?? [],
-      [character, setCharacter],
-      openDrawer
-    )
+        props.background,
+        'READ/WRITE',
+        props.operationResults?.backgroundResults ?? [],
+        [character, setCharacter],
+        openDrawer
+      )
     : null;
   if (backgroundInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the background overview
@@ -1707,7 +1707,7 @@ function BackgroundAccordionItem(props: {
 
 function ClassAccordionItem(props: {
   class_?: Class;
-  operationResults: OperationResultPackage;
+  operationResults: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
   isClass2?: boolean;
@@ -1740,12 +1740,12 @@ function ClassAccordionItem(props: {
     (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [];
   const classInitialOverviewDisplay = props.class_
     ? convertClassOperationsIntoUI(
-      props.class_,
-      'READ/WRITE',
-      (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
-      [character, setCharacter],
-      props.isClass2
-    )
+        props.class_,
+        'READ/WRITE',
+        (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
+        [character, setCharacter],
+        props.isClass2
+      )
     : null;
   if (classInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the class overview
@@ -1821,7 +1821,7 @@ function ClassAccordionItem(props: {
 }
 
 function BooksAccordionItem(props: {
-  operationResults: OperationResultPackage;
+  operationResults: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1887,7 +1887,7 @@ function BooksAccordionItem(props: {
 }
 
 function ItemsAccordionItem(props: {
-  operationResults: OperationResultPackage;
+  operationResults: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -1951,7 +1951,7 @@ function ItemsAccordionItem(props: {
 }
 
 function CustomAccordionItem(props: {
-  operationResults: OperationResultPackage;
+  operationResults: OperationCharacterResultPackage;
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
@@ -2073,8 +2073,11 @@ function OperationResultSelector(props: {
     if ((props.result?.selection?.options ?? []).length == 0) {
       return false;
     }
-    return props.result?.selection?.options[0]._content_type === 'ability-block' && props.result?.selection?.options[0].type === 'feat'
-  }
+    return (
+      props.result?.selection?.options[0]._content_type === 'ability-block' &&
+      props.result?.selection?.options[0].type === 'feat'
+    );
+  };
   let filterOptions: FilterOptions = { options: defaultFeatOptions };
   if (showPrereqFilter()) {
     filterOptions = { options: [prereqFilterOption, ...defaultFeatOptions] };

@@ -9,7 +9,7 @@ import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@
 import { makeRequest } from '@requests/request-manager';
 import { Session } from '@supabase/supabase-js';
 import { Character } from '@typing/content';
-import { OperationResultPackage } from '@typing/operations';
+import { OperationCharacterResultPackage } from '@typing/operations';
 import { selectRandom } from '@utils/random';
 import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
@@ -370,7 +370,7 @@ function findMatchingOption(selections: { name: string; level: number }[], optio
 }
 
 function findFirstSelection(
-  resultPackage: OperationResultPackage,
+  resultPackage: OperationCharacterResultPackage,
   checked: Set<string>
 ): {
   selection: OperationResult;

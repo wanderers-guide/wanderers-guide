@@ -16,6 +16,6 @@ export function isCreature(entity?: LivingEntity | null): entity is Creature {
   return entity.hasOwnProperty('abilities');
 }
 
-export function convertToSetEntity(setCharacter: SetterOrUpdater<Character | null>) {
-  return setCharacter as SetterOrUpdater<LivingEntity | null>;
+export function convertToSetEntity(setValue: SetterOrUpdater<Character | null> | SetterOrUpdater<Creature | null>) {
+  return setValue as SetterOrUpdater<LivingEntity | null>;
 }
