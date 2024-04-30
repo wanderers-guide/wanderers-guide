@@ -8,14 +8,19 @@ import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
 import { collectCharacterSenses } from '@content/collect-content';
 import { useMantineTheme, Group, Stack, Box, Text } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
-import { VariableListStr } from '@typing/variables';
+import { LivingEntity } from '@typing/content';
+import { StoreID, VariableListStr } from '@typing/variables';
 import { compactSenses, displayPrimaryVisionSense } from '@utils/senses';
 import { displayFinalProfValue, displayFinalVariableValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export default function SpeedSection() {
+export default function SpeedSection(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+}) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
@@ -24,7 +29,6 @@ export default function SpeedSection() {
   const { hovered: classDcHovered, ref: classDcRef } = useHover();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
   return (
     <BlurBox blur={10}>
@@ -65,10 +69,10 @@ export default function SpeedSection() {
                 Perception
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
-                {displayFinalProfValue('CHARACTER', 'PERCEPTION')}
+                {displayFinalProfValue(props.id, 'PERCEPTION')}
               </Text>
               <Text fz={10} c='gray.5' ta='center' truncate>
-                {displayPrimaryVisionSense('CHARACTER')}
+                {displayPrimaryVisionSense(props.id)}
               </Text>
             </Stack>
           </Box>
@@ -97,7 +101,7 @@ export default function SpeedSection() {
                 Speed
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
-                {displayFinalVariableValue('CHARACTER', 'SPEED')}
+                {displayFinalVariableValue(props.id, 'SPEED')}
                 <Text fz='xs' c='gray.3' span>
                   {' '}
                   ft.
@@ -133,7 +137,7 @@ export default function SpeedSection() {
                 Class DC
               </Text>
               <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
-                {displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}
+                {displayFinalProfValue(props.id, 'CLASS_DC', true)}
               </Text>
             </Stack>
           </Box>

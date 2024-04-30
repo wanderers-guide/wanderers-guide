@@ -1,7 +1,7 @@
 import { characterState } from '@atoms/characterAtoms';
 import { SelectContentButton, SpellSelectionOption, selectContent } from '@common/select/SelectContent';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { collectCharacterSpellcasting } from '@content/collect-content';
+import { collectEntitySpellcasting } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   Box,
@@ -74,7 +74,7 @@ export default function ManageSpellsModal(props: {
 
   const charData = useMemo(() => {
     if (!character) return null;
-    return collectCharacterSpellcasting(character);
+    return collectEntitySpellcasting('CHARACTER', character);
   }, [character]);
 
   const allFilteredSpells =

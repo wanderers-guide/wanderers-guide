@@ -1,7 +1,6 @@
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { randomCharacterInfo } from '@ai/open-ai-handler';
 import { getConditionByName } from '@conditions/condition-handler';
-import { collectCharacterSpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';

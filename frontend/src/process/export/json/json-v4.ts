@@ -1,7 +1,7 @@
 import {
   collectCharacterAbilityBlocks,
   collectCharacterSenses,
-  collectCharacterSpellcasting,
+  collectEntitySpellcasting,
 } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { downloadObjectAsJson } from '@export/export-to-json';
@@ -84,7 +84,7 @@ async function getContent(character: Character) {
   const flatItems = character.inventory ? getFlatInvItems(character.inventory) : [];
   const totalBulk = character.inventory ? labelizeBulk(getInvBulk(character.inventory), true) : null;
 
-  const spellData = collectCharacterSpellcasting(character);
+  const spellData = collectEntitySpellcasting(STORE_ID, character);
 
   const spellSourceStats = spellData.sources.map((source) => {
     return {

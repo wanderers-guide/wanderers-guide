@@ -3,77 +3,82 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
-import { collectCharacterSpellcasting, getFocusPoints } from '@content/collect-content';
+import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { useMantineTheme, Group, Stack, TextInput, Box, Text } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
-import { VariableAttr, VariableNum, VariableProf } from '@typing/variables';
+import { StoreID, VariableAttr, VariableNum, VariableProf } from '@typing/variables';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import _ from 'lodash-es';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
-import { confirmExperience } from '../character-utils';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { confirmExperience } from '../living-entity-utils';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
+import { Character, LivingEntity } from '@typing/content';
+import { isCharacter } from '@utils/type-fixing';
 
-export default function CharacterInfoSection() {
+export default function EntityInfoSection(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+}) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
   const expRef = useRef<HTMLInputElement>(null);
   const [exp, setExp] = useState<string | undefined>();
   useEffect(() => {
-    setExp(character?.experience ? `${character.experience}` : undefined);
-  }, [character]);
+    setExp(props.entity?.experience ? `${props.entity.experience}` : undefined);
+  }, [props.entity]);
 
   const handleExperienceSubmit = () => {
-    if (!character) return;
-    const finalExp = confirmExperience(exp ?? '0', character, setCharacter);
+    if (!props.entity) return;
+    const finalExp = confirmExperience(exp ?? '0', props.entity, props.setEntity);
     setExp(`${finalExp}`);
     expRef.current?.blur();
   };
 
   const handleRest = () => {
-    const newCharacter = _.cloneDeep(character);
-    if (!newCharacter) return;
+    const newEntity = _.cloneDeep(props.entity);
+    if (!newEntity) return;
 
     // Regen Health
-    const conMod = getVariable<VariableAttr>('CHARACTER', 'ATTRIBUTE_CON')?.value.value ?? 0;
-    const level = getVariable<VariableNum>('CHARACTER', 'LEVEL')!.value;
+    const conMod = getVariable<VariableAttr>(props.id, 'ATTRIBUTE_CON')?.value.value ?? 0;
+    const level = getVariable<VariableNum>(props.id, 'LEVEL')!.value;
     let regenAmount = level * (1 > conMod ? 1 : conMod);
 
-    const maxHealth = getFinalHealthValue('CHARACTER');
-    let currentHealth = character?.hp_current;
+    const maxHealth = getFinalHealthValue(props.id);
+    let currentHealth = props.entity?.hp_current;
     if (currentHealth === undefined || currentHealth < 0) {
       currentHealth = maxHealth;
     }
     if (currentHealth + regenAmount > maxHealth) {
       regenAmount = maxHealth - currentHealth;
     }
-    newCharacter.hp_current = currentHealth + regenAmount;
+    newEntity.hp_current = currentHealth + regenAmount;
 
     // Regen Stamina and Resolve
     if (true) {
-      const classHP = getVariable<VariableNum>('CHARACTER', 'MAX_HEALTH_CLASS_PER_LEVEL')!.value;
+      const classHP = getVariable<VariableNum>(props.id, 'MAX_HEALTH_CLASS_PER_LEVEL')!.value;
       const newStamina = (Math.floor(classHP / 2) + conMod) * level;
 
       let keyMod = 0;
-      const classDC = getVariable<VariableProf>('CHARACTER', 'CLASS_DC')!;
+      const classDC = getVariable<VariableProf>(props.id, 'CLASS_DC')!;
       if (classDC.value.attribute) {
-        keyMod = getVariable<VariableAttr>('CHARACTER', classDC.value.attribute)?.value.value ?? 0;
+        keyMod = getVariable<VariableAttr>(props.id, classDC.value.attribute)?.value.value ?? 0;
       }
       const newResolve = keyMod;
 
-      newCharacter.stamina_current = newStamina;
-      newCharacter.resolve_current = newResolve;
+      newEntity.stamina_current = newStamina;
+      newEntity.resolve_current = newResolve;
     }
 
     // Set spells to default
-    const spellData = collectCharacterSpellcasting(newCharacter);
-    newCharacter.spells = newCharacter.spells ?? {
+    const spellData = collectEntitySpellcasting(props.id, newEntity);
+    newEntity.spells = newEntity.spells ?? {
       slots: [],
       list: [],
       focus_point_current: 0,
@@ -81,10 +86,10 @@ export default function CharacterInfoSection() {
     };
 
     // Reset Innate Spells
-    newCharacter.spells = {
-      ...newCharacter.spells,
+    newEntity.spells = {
+      ...newEntity.spells,
       innate_casts:
-        newCharacter.spells?.innate_casts.map((casts) => {
+        newEntity.spells?.innate_casts.map((casts) => {
           return {
             ...casts,
             casts_current: 0,
@@ -93,17 +98,17 @@ export default function CharacterInfoSection() {
     };
 
     // Reset Focus Points
-    const focusPoints = getFocusPoints(newCharacter, spellData.focus);
-    newCharacter.spells = {
-      ...newCharacter.spells,
+    const focusPoints = getFocusPoints(props.id, newEntity, spellData.focus);
+    newEntity.spells = {
+      ...newEntity.spells,
       focus_point_current: focusPoints.max,
     };
 
     // Reset Spell Slots
-    newCharacter.spells = {
-      ...newCharacter.spells,
+    newEntity.spells = {
+      ...newEntity.spells,
       slots:
-        newCharacter.spells?.slots.map((slot) => {
+        newEntity.spells?.slots.map((slot) => {
           return {
             ...slot,
             exhausted: false,
@@ -112,11 +117,11 @@ export default function CharacterInfoSection() {
     };
 
     // Remove Fatigued Condition
-    let newConditions = _.cloneDeep(character?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
+    let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
 
     // Remove Wounded condition if we're now at full health
     const wounded = newConditions.find((c) => c.name === 'Wounded');
-    if (wounded && newCharacter.hp_current === maxHealth) {
+    if (wounded && newEntity.hp_current === maxHealth) {
       newConditions = newConditions.filter((c) => c.name !== 'Wounded');
     }
 
@@ -137,13 +142,13 @@ export default function CharacterInfoSection() {
         newConditions = newConditions.filter((c) => c.name !== 'Doomed');
       }
     }
-    newCharacter.details = {
-      ...newCharacter.details,
+    newEntity.details = {
+      ...newEntity.details,
       conditions: newConditions,
     };
 
     // Update the character
-    setCharacter(newCharacter);
+    props.setEntity(newEntity);
   };
 
   return (
@@ -159,35 +164,39 @@ export default function CharacterInfoSection() {
         }}
       >
         <Group gap={20} wrap='nowrap' align='flex-start'>
-          <CharacterInfo
-            character={character}
-            color='gray.5'
-            nameCutOff={20}
-            onClickAncestry={() => {
-              openDrawer({
-                type: 'ancestry',
-                data: { id: character?.details?.ancestry?.id },
-              });
-            }}
-            onClickBackground={() => {
-              openDrawer({
-                type: 'background',
-                data: { id: character?.details?.background?.id },
-              });
-            }}
-            onClickClass={() => {
-              openDrawer({
-                type: 'class',
-                data: { id: character?.details?.class?.id },
-              });
-            }}
-            onClickClass2={() => {
-              openDrawer({
-                type: 'class',
-                data: { id: character?.details?.class_2?.id },
-              });
-            }}
-          />
+          {isCharacter(props.entity) ? (
+            <CharacterInfo
+              character={props.entity}
+              color='gray.5'
+              nameCutOff={20}
+              onClickAncestry={() => {
+                openDrawer({
+                  type: 'ancestry',
+                  data: { id: (props.entity as Character)?.details?.ancestry?.id },
+                });
+              }}
+              onClickBackground={() => {
+                openDrawer({
+                  type: 'background',
+                  data: { id: (props.entity as Character)?.details?.background?.id },
+                });
+              }}
+              onClickClass={() => {
+                openDrawer({
+                  type: 'class',
+                  data: { id: (props.entity as Character)?.details?.class?.id },
+                });
+              }}
+              onClickClass2={() => {
+                openDrawer({
+                  type: 'class',
+                  data: { id: (props.entity as Character)?.details?.class_2?.id },
+                });
+              }}
+            />
+          ) : (
+            <></>
+          )}
           <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
             <Stack gap={5}>
               <Box>
@@ -198,9 +207,11 @@ export default function CharacterInfoSection() {
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    navigate(`/builder/${character?.id}`);
+                    if (isCharacter(props.entity)) {
+                      navigate(`/builder/${props.entity?.id}`);
+                    }
                   }}
-                  href={`/builder/${character?.id}`}
+                  href={isCharacter(props.entity) ? `/builder/${props.entity?.id}` : undefined}
                 >
                   Edit
                 </BlurButton>
@@ -214,7 +225,7 @@ export default function CharacterInfoSection() {
             <Stack gap={0}>
               <Box>
                 <Text fz='xs' ta='center' c='gray.3'>
-                  Lvl. {character?.level}
+                  Lvl. {props.entity?.level}
                 </Text>
               </Box>
               <Box>

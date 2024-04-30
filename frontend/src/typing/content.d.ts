@@ -98,7 +98,6 @@ interface Condition {
   description: string;
   value?: number;
   source?: string;
-  for_character: boolean;
   for_object: boolean;
   for_creature: boolean;
   pathfinder_only?: boolean;
@@ -249,48 +248,6 @@ interface Spell {
   version: string;
 }
 
-interface Creature {
-  id: number;
-  created_at: string;
-  name: string;
-  level: number;
-  rarity: Rarity;
-  size: Size;
-  traits: number[];
-  inventory?: Inventory;
-  notes?: {
-    contents: JSONContent;
-  };
-  details: {
-    image_url?: string;
-    background_image_url?: string;
-    conditions?: Condition[];
-    description: string;
-  };
-  roll_history?: {
-    rolls: {
-      type: string;
-      label: string;
-      result: number;
-      bonus: number;
-      timestamp: number;
-    }[];
-  };
-  operations: Operation[] | undefined;
-  abilities?: AbilityBlock[];
-  spells?: {
-    slots: SpellSlot[];
-    list: SpellListEntry[];
-    // The number of focus points
-    focus_point_current: number;
-    // Used for tracking how many times an innate spell has been cast
-    innate_casts: SpellInnateEntry[];
-  };
-  meta_data?: Record<string, any>; // TODO
-  content_source_id: number;
-  version: string;
-}
-
 interface Class {
   id: number;
   created_at: string;
@@ -361,20 +318,65 @@ interface AbilityBlock {
   version?: string;
 }
 
-interface Character {
+interface LivingEntity {
+  name: string;
+  level: number;
+  experience: number;
+  inventory?: Inventory;
+  hp_current: number;
+  hp_temp: number;
+  stamina_current: number;
+  resolve_current: number;
+  details?: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+  };
+  roll_history?: {
+    rolls: {
+      type: string;
+      label: string;
+      result: number;
+      bonus: number;
+      timestamp: number;
+    }[];
+  };
+  spells?: {
+    slots: SpellSlot[];
+    list: SpellListEntry[];
+    // The number of focus points
+    focus_point_current: number;
+    // Used for tracking how many times an innate spell has been cast
+    innate_casts: SpellInnateEntry[];
+  };
+  meta_data?: Record<string, any>;
+}
+
+interface Creature extends LivingEntity {
+  id: number;
+  created_at: string;
+  rarity: Rarity;
+  notes?: {
+    contents: JSONContent;
+  };
+  details: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+    description: string;
+  };
+  operations: Operation[] | undefined;
+  abilities?: AbilityBlock[];
+  content_source_id: number;
+  version: string;
+}
+
+interface Character extends LivingEntity {
   id: number;
   created_at: string;
   campaign_id?: number;
   user_id: string;
-  name: string;
-  level: number;
-  experience: number;
-  hp_current: number;
-  hp_temp: number;
   hero_points: number;
-  stamina_current: number;
-  resolve_current: number;
-  inventory?: Inventory;
   notes?: {
     pages: {
       name: string;
@@ -386,6 +388,7 @@ interface Character {
   details?: {
     image_url?: string;
     background_image_url?: string;
+    conditions?: Condition[];
     dice?: {
       default_theme?: string;
       opened_default_presets?: boolean;
@@ -420,18 +423,8 @@ interface Character {
       organized_play_id?: string;
       organized_play_adventures?: SocietyAdventureEntry[];
     };
-    conditions?: Condition[];
   };
   campaign_id?: number;
-  roll_history?: {
-    rolls: {
-      type: string;
-      label: string;
-      result: number;
-      bonus: number;
-      timestamp: number;
-    }[];
-  };
   custom_operations?: Operation[];
   meta_data?: {
     reset_hp?: boolean;
@@ -468,14 +461,6 @@ interface Character {
   operation_data?: {
     selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
     notes?: Record<string, string>; // TODO <op UUID> -> string
-  };
-  spells?: {
-    slots: SpellSlot[];
-    list: SpellListEntry[];
-    // The number of focus points
-    focus_point_current: number;
-    // Used for tracking how many times an innate spell has been cast
-    innate_casts: SpellInnateEntry[];
   };
   companions?: Record<string, any>; // TODO
 }

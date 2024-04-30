@@ -1,12 +1,18 @@
 import { getConditionByName } from '@conditions/condition-handler';
-import { Character } from '@typing/content';
+import { LivingEntity } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { getFinalHealthValue } from '@variables/variable-display';
 import _ from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { SetterOrUpdater } from 'recoil';
 
-export function confirmHealth(hp: string, character: Character, setCharacter: SetterOrUpdater<Character | null>) {
-  const maxHealth = getFinalHealthValue('CHARACTER');
+export function confirmHealth(
+  hp: string,
+  id: StoreID,
+  entity: LivingEntity,
+  setEntity: SetterOrUpdater<LivingEntity | null>
+) {
+  const maxHealth = getFinalHealthValue(id);
 
   let result = -1;
   try {
@@ -19,20 +25,20 @@ export function confirmHealth(hp: string, character: Character, setCharacter: Se
   if (result < 0) result = 0;
   if (result > maxHealth) result = maxHealth;
 
-  if (result === character.hp_current) return;
+  if (result === entity.hp_current) return;
 
   if (maxHealth === 0) return;
 
-  let newConditions = _.cloneDeep(character.details?.conditions ?? []);
+  let newConditions = _.cloneDeep(entity.details?.conditions ?? []);
   // Add dying condition
-  if (result === 0 && character.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {
+  if (result === 0 && entity.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {
     const dying = getConditionByName('Dying')!;
     const wounded = newConditions.find((c) => c.name === 'Wounded');
     if (wounded) {
       dying.value = 1 + wounded.value!;
     }
     newConditions.push(dying);
-  } else if (result > 0 && character.hp_current === 0) {
+  } else if (result > 0 && entity.hp_current === 0) {
     // Remove dying condition
     newConditions = newConditions.filter((c) => c.name !== 'Dying');
     // Increase wounded condition
@@ -44,7 +50,7 @@ export function confirmHealth(hp: string, character: Character, setCharacter: Se
     }
   }
 
-  setCharacter((c) => {
+  setEntity((c) => {
     if (!c) return c;
     return {
       ...c,
@@ -62,7 +68,7 @@ export function confirmHealth(hp: string, character: Character, setCharacter: Se
   return result;
 }
 
-export function confirmExperience(exp: string, character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+export function confirmExperience(exp: string, entity: LivingEntity, setEntity: SetterOrUpdater<LivingEntity | null>) {
   let result = -1;
   try {
     result = evaluate(exp);
@@ -73,7 +79,7 @@ export function confirmExperience(exp: string, character: Character, setCharacte
   result = Math.floor(result);
   if (result < 0) result = 0;
 
-  setCharacter((c) => {
+  setEntity((c) => {
     if (!c) return c;
     return {
       ...c,

@@ -87,7 +87,7 @@ export function CreatureDrawerContent(props: { data: { id?: number; creature?: C
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={creature.traits ?? []} rarity={creature.rarity} interactable />
+          {/* <TraitsDisplay traitIds={creature.traits ?? []} rarity={creature.rarity} interactable /> */}
         </Box>
 
         <RichText ta='justify'>{creature.details.description}</RichText>

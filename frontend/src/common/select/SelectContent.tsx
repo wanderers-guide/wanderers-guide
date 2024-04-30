@@ -3067,14 +3067,14 @@ export function CreatureSelectionOption(props: {
           </div>
         </Group>
       }
-      rightSection={
-        <TraitsDisplay
-          justify='flex-end'
-          size='xs'
-          traitIds={props.creature.traits ?? []}
-          rarity={props.creature.rarity}
-        />
-      }
+      // rightSection={
+      //   <TraitsDisplay
+      //     justify='flex-end'
+      //     size='xs'
+      //     traitIds={props.creature.traits ?? []}
+      //     rarity={props.creature.rarity}
+      //   />
+      // }
       showButton={props.showButton}
       selected={props.selected}
       level={props.creature.level}

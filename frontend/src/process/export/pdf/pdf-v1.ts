@@ -1,7 +1,7 @@
 import {
   collectCharacterAbilityBlocks,
   collectCharacterSenses,
-  collectCharacterSpellcasting,
+  collectEntitySpellcasting,
   getFocusPoints,
 } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
@@ -136,7 +136,7 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   const items = character.inventory ? getFlatInvItems(character.inventory) : [];
 
-  const spellData = collectCharacterSpellcasting(character);
+  const spellData = collectEntitySpellcasting(STORE_ID, character);
 
   //////////////////////////////////////////////////////////////////////////////////
 
@@ -729,7 +729,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     }
   }
 
-  const focusPoints = getFocusPoints(character, spellData.focus);
+  const focusPoints = getFocusPoints(STORE_ID, character, spellData.focus);
   if (focusPoints.current > 0) {
     form.getCheckBox('FP1').check();
   }

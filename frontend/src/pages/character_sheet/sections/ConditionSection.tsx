@@ -12,8 +12,10 @@ import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Tex
 import { useMediaQuery } from '@mantine/hooks';
 import { openContextModal, modals } from '@mantine/modals';
 import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-react';
-import { Character, Condition } from '@typing/content';
+import { Character, Condition, LivingEntity } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { isCharacter } from '@utils/type-fixing';
 import _ from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
@@ -30,7 +32,7 @@ export function selectCondition(currentConditions: Condition[], addCondition: (c
     },
     {
       overrideOptions: getAllConditions()
-        .filter((condition) => condition.for_character)
+        .filter((condition) => condition.for_creature)
         .map((condition, index) => ({
           id: index,
           name: condition.name,
@@ -45,12 +47,15 @@ export function selectCondition(currentConditions: Condition[], addCondition: (c
   );
 }
 
-export default function ConditionSection() {
+export default function ConditionSection(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+}) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
   return (
     <BlurBox blur={10}>
@@ -78,13 +83,13 @@ export default function ConditionSection() {
                 radius='xl'
                 color='gray'
                 onClick={() => {
-                  selectCondition(character?.details?.conditions ?? [], (condition) => {
-                    if (!character) return;
-                    setCharacter({
-                      ...character,
+                  selectCondition(props.entity?.details?.conditions ?? [], (condition) => {
+                    if (!props.entity) return;
+                    props.setEntity({
+                      ...props.entity,
                       details: {
-                        ...character.details,
-                        conditions: [...(character.details?.conditions ?? []), condition],
+                        ...props.entity.details,
+                        conditions: [...(props.entity.details?.conditions ?? []), condition],
                       },
                     });
                   });
@@ -95,7 +100,7 @@ export default function ConditionSection() {
             </Group>
             <ScrollArea h={70} scrollbars='y'>
               <Group gap={5} justify='center'>
-                {compiledConditions(character?.details?.conditions ?? []).map((condition, index) => (
+                {compiledConditions(props.entity?.details?.conditions ?? []).map((condition, index) => (
                   <ConditionPill
                     key={index}
                     text={condition.name}
@@ -106,9 +111,13 @@ export default function ConditionSection() {
                       // Check if the condition is from being over bulk limit
                       const isEncumberedFromBulk =
                         condition.name === 'Encumbered' &&
-                        character?.inventory &&
-                        getInvBulk(character.inventory) > getBulkLimit('CHARACTER');
-                      if (character?.options?.ignore_bulk_limit !== true && isEncumberedFromBulk) {
+                        props.entity?.inventory &&
+                        getInvBulk(props.entity.inventory) > getBulkLimit(props.id);
+                      if (
+                        isCharacter(props.entity) &&
+                        props.entity?.options?.ignore_bulk_limit !== true &&
+                        isEncumberedFromBulk
+                      ) {
                         source = 'Over Bulk Limit';
                       }
 
@@ -130,7 +139,7 @@ export default function ConditionSection() {
                                 onClick={() => {
                                   modals.closeAll();
 
-                                  let newConditions = _.cloneDeep(character?.details?.conditions ?? []);
+                                  let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []);
                                   // Remove condition
                                   newConditions = newConditions.filter((c) => c.name !== condition.name);
                                   // Add wounded condition if we're removing dying
@@ -143,7 +152,7 @@ export default function ConditionSection() {
                                     }
                                   }
 
-                                  setCharacter((c) => {
+                                  props.setEntity((c) => {
                                     if (!c) return c;
                                     return {
                                       ...c,
@@ -163,7 +172,7 @@ export default function ConditionSection() {
                         innerProps: {
                           condition: condition,
                           onValueChange: (condition, value) => {
-                            setCharacter((c) => {
+                            props.setEntity((c) => {
                               if (!c) return c;
                               return {
                                 ...c,
@@ -193,7 +202,7 @@ export default function ConditionSection() {
                     }}
                   />
                 ))}
-                {(character?.details?.conditions ?? []).length === 0 && (
+                {(props.entity?.details?.conditions ?? []).length === 0 && (
                   <Text c='gray.6' fz='xs' fs='italic'>
                     None active
                   </Text>
@@ -217,12 +226,12 @@ export default function ConditionSection() {
                 Hero Points
               </Text>
               <Group justify='center'>
-                {character && (
+                {isCharacter(props.entity) && (
                   <TokenSelect
                     count={3}
-                    value={character.hero_points ?? 0}
+                    value={props.entity.hero_points ?? 0}
                     onChange={(v) => {
-                      setCharacter((c) => {
+                      props.setEntity((c) => {
                         if (!c) return c;
                         return {
                           ...c,

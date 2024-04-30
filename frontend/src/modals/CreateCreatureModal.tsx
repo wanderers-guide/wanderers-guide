@@ -105,7 +105,7 @@ export function CreateCreatureModal(props: {
         // @ts-ignore
         level: creature.level.toString(),
       });
-      setTraits(await fetchTraits(creature.traits));
+      // setTraits(await fetchTraits(creature.traits));
       setTotaledOperations(totaledOperations);
 
       form.reset();
@@ -129,9 +129,12 @@ export function CreateCreatureModal(props: {
       created_at: '',
       name: '',
       level: -1,
+      experience: 0,
+      hp_current: 0,
+      hp_temp: 0,
+      stamina_current: 0,
+      resolve_current: 0,
       rarity: 'COMMON',
-      size: 'MEDIUM',
-      traits: [],
       inventory: undefined,
       notes: undefined,
       details: {
@@ -154,7 +157,7 @@ export function CreateCreatureModal(props: {
     props.onComplete({
       ...values,
       name: values.name.trim(),
-      traits: traits.map((trait) => trait.id),
+      // traits: traits.map((trait) => trait.id),
       operations: [...(values.operations ?? []), ...totaledOperations],
     });
     setTimeout(() => {
