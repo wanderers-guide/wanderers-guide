@@ -515,6 +515,7 @@ export function CreateItemModal(props: {
                                 { value: 'club', label: 'Club' },
                                 { value: 'crossbow', label: 'Crossbow' },
                                 { value: 'dart', label: 'Dart' },
+                                { value: 'firearm', label: 'Firearm' },
                                 { value: 'flail', label: 'Flail' },
                                 { value: 'hammer', label: 'Hammer' },
                                 { value: 'knife', label: 'Knife' },

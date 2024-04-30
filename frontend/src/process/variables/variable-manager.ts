@@ -264,6 +264,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   WEAPON_GROUP_CLUB: newVariable('prof', 'WEAPON_GROUP_CLUB'),
   WEAPON_GROUP_CROSSBOW: newVariable('prof', 'WEAPON_GROUP_CROSSBOW'),
   WEAPON_GROUP_DART: newVariable('prof', 'WEAPON_GROUP_DART'),
+  WEAPON_GROUP_FIREARM: newVariable('prof', 'WEAPON_GROUP_FIREARM'),
   WEAPON_GROUP_FLAIL: newVariable('prof', 'WEAPON_GROUP_FLAIL'),
   WEAPON_GROUP_HAMMER: newVariable('prof', 'WEAPON_GROUP_HAMMER'),
   WEAPON_GROUP_KNIFE: newVariable('prof', 'WEAPON_GROUP_KNIFE'),
