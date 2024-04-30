@@ -51,7 +51,8 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     },
     roll_history: undefined,
     operations: undefined,
-    abilities: undefined,
+    abilities_base: undefined,
+    abilities_added: undefined,
     spells: {
       slots: [],
       list: [],
@@ -91,7 +92,7 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   creature.operations = operations;
 
   // Abilities
-  creature.abilities = await getAbilities(json, source);
+  creature.abilities_base = await getAbilities(json, source);
 
   return creature;
 }

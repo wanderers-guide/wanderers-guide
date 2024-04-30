@@ -609,7 +609,7 @@ interface ContentSource {
     access_key?: string;
   };
   is_published: boolean;
-  required_content_sources: number[];
+  required_content_sources?: number[];
   group: string;
   artwork_url?: string;
   meta_data?: {
