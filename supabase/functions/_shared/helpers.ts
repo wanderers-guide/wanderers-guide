@@ -220,7 +220,7 @@ export async function handleAssociatedTrait(
 
     // Attempt to find existing trait already
     const foundTraits = await fetchData<Trait>(client, 'trait', [
-      { column: 'name', value: name, options: { ignoreCase: true } },
+      { column: 'name', value: traitName, options: { ignoreCase: true } },
       { column: 'content_source_id', value: contentSourceId },
     ]);
 

@@ -5,6 +5,7 @@ import '@mantine/spotlight/styles.css';
 import '@mantine/tiptap/styles.css';
 import '@mantine/carousel/styles.css';
 import '@mantine/dates/styles.css';
+import '@mantine/charts/styles.css';
 
 import { AuthRouteWrapper } from '@auth/AuthedRouteWrapper.tsx';
 import { createClient } from '@supabase/supabase-js';
@@ -116,6 +117,10 @@ const router = createBrowserRouter([
         loader: async ({ params }: { params: any }) => {
           return { updateId: params.id };
         },
+      },
+      {
+        path: 'content-update-overview',
+        lazy: () => import('@pages/ContentUpdateOverviewPage.tsx'),
       },
       {
         // Legacy Character Redirect

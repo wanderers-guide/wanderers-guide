@@ -10,6 +10,7 @@ import {
   Title,
   Box,
   useMantineTheme,
+  Anchor,
 } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
 import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
@@ -107,7 +108,16 @@ export default function ContentFeedbackModal(props: {
     } else {
       showNotification({
         id: 'submit-content-update',
-        title: 'Content Update Submitted 🎉',
+        title: (
+          <Anchor
+            href='/content-update-overview'
+            target='_blank'
+            variant='gradient'
+            gradient={{ from: 'green', to: 'guide' }}
+          >
+            Content Update Submitted 🎉
+          </Anchor>
+        ),
         message: 'Thanks for helping improve the site, please check our Discord for updates on your submission :)',
         color: 'green',
         autoClose: 8000,
