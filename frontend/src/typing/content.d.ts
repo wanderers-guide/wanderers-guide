@@ -356,6 +356,13 @@ interface LivingEntity {
   };
   meta_data?: {
     given_item_ids?: number[];
+    reset_hp?: boolean;
+    calculated_stats?: {
+      hp_max: number;
+      stamina_max: number;
+      resolve_max: number;
+      profs: Record<string, { total: number; type: ProficiencyType }>;
+    };
   };
 }
 
@@ -434,16 +441,6 @@ interface Character extends LivingEntity {
   };
   campaign_id?: number;
   custom_operations?: Operation[];
-  meta_data?: {
-    given_item_ids?: number[];
-    reset_hp?: boolean;
-    calculated_stats?: {
-      hp_max: number;
-      stamina_max: number;
-      resolve_max: number;
-      profs: Record<string, { total: number; type: ProficiencyType }>;
-    };
-  };
   options?: {
     is_public?: boolean;
     auto_detect_prerequisites?: boolean;
