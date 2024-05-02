@@ -153,10 +153,8 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
     const extraItems: InventoryItem[] = [];
     (getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []).forEach((itemId) => {
       const item = items.find((item) => `${item.id}` === itemId);
-      const itemExists = !!(
-        character?.inventory && getFlatInvItems(character?.inventory).find((i) => `${i.item.id}` === itemId)
-      );
-      if (item && !itemExists) {
+      const hasItemAdded = character.meta_data?.given_item_ids?.includes(parseInt(itemId));
+      if (item && !hasItemAdded) {
         const baseItem = item.meta_data?.base_item
           ? items.find((i) => labelToVariable(i.name) === labelToVariable(item.meta_data!.base_item!))
           : undefined;
@@ -167,9 +165,9 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
             ...item,
             meta_data: item.meta_data
               ? {
-                ...item.meta_data,
-                base_item_content: baseItem,
-              }
+                  ...item.meta_data,
+                  base_item_content: baseItem,
+                }
               : undefined,
           },
           is_formula: false,
@@ -188,7 +186,11 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
         ...c,
         inventory: {
           ...c.inventory!,
-          items: [...(c.inventory?.items ?? []), ...extraItems],
+          items: _.uniqBy([...(c.inventory?.items ?? []), ...extraItems], 'id'),
+        },
+        meta_data: {
+          ...c.meta_data!,
+          given_item_ids: _.uniq([...(c.meta_data?.given_item_ids ?? []), ...extraItems.map((item) => item.item.id)]),
         },
       };
     });
@@ -416,13 +418,7 @@ export function isItemWithPropertyRunes(item: Item) {
  * @returns - Whether the item is consumable
  */
 export function isItemWithQuantity(item: Item) {
-  const nonConsumableItemFns = [
-    isItemWeapon,
-    isItemArmor,
-    isItemShield,
-    isItemContainer,
-    isItemInvestable,
-  ]
+  const nonConsumableItemFns = [isItemWeapon, isItemArmor, isItemShield, isItemContainer, isItemInvestable];
   for (const nonConsumableFn of nonConsumableItemFns) {
     if (nonConsumableFn(item)) {
       return false;
