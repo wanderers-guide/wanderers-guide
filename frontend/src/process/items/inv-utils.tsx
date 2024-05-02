@@ -173,11 +173,12 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
 }
 
 export function addExtraItems(items: Item[], character: Character, setCharacter: SetterOrUpdater<Character | null>) {
-  setTimeout(() => {
+  setTimeout(async () => {
     if (!character.inventory) return;
 
     const extraItems: InventoryItem[] = [];
-    (getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []).forEach(async (itemId) => {
+
+    for (const itemId of getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []) {
       const item = items.find((item) => `${item.id}` === itemId);
       const hasItemAdded = character.meta_data?.given_item_ids?.includes(parseInt(itemId));
       if (item && !hasItemAdded) {
@@ -202,7 +203,7 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
           container_contents: await getDefaultContainerContents(item, items),
         });
       }
-    });
+    }
 
     if (extraItems.length === 0) return;
 
@@ -212,10 +213,10 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
         ...c,
         inventory: {
           ...c.inventory!,
-          items: _.uniqBy([...(c.inventory?.items ?? []), ...extraItems], 'id'),
+          items: _.uniqBy([...c.inventory!.items, ...extraItems], 'id'),
         },
         meta_data: {
-          ...c.meta_data!,
+          ...c.meta_data,
           given_item_ids: _.uniq([...(c.meta_data?.given_item_ids ?? []), ...extraItems.map((item) => item.item.id)]),
         },
       };
