@@ -147,6 +147,21 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   };
 
   const setBooksEnabled = async (inputIds: number[], enabled: boolean) => {
+    // For the sake of a responsive UI, let's change the clicked book immediately
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        content_sources: {
+          ...prev.content_sources,
+          enabled: enabled
+            ? _.uniq([...(prev.content_sources?.enabled ?? []), ...inputIds])
+            : prev.content_sources?.enabled?.filter((id: number) => !inputIds.includes(id)),
+        },
+      };
+    });
+    //
+
     const changeBooks = (bookIds: number[]) => {
       // Update character content sources
       setCharacter((prev) => {
@@ -166,9 +181,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         resetContentStore();
         defineDefaultSources(character?.content_sources?.enabled ?? []);
         refetch();
-        queryClient.invalidateQueries([`find-character-${character?.id}`]);
+        // queryClient.invalidateQueries([`find-character-${character?.id}`]);
         queryClient.invalidateQueries([`find-content-${character?.id}`]);
-      }, 500);
+      }, 200);
     };
 
     if (enabled) {
