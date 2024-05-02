@@ -11,6 +11,7 @@ import {
   compileTraits,
   isItemArchaic,
   isItemArmor,
+  isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
   isItemWithPropertyRunes,
@@ -439,7 +440,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   }
 
   let rangeAndReloadSection = null;
-  if (props.item.meta_data?.range || props.item.meta_data?.reload) {
+  if (isItemRangedWeapon(props.item)) {
     rangeAndReloadSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group wrap='nowrap' grow>
