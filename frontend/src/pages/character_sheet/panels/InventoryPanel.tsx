@@ -112,12 +112,12 @@ export default function InventoryPanel(props: {
         </Group>
       ),
       innerProps: {
-        onAddItem: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
+        onAddItem: async (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
           if (!character) return;
           if (type === 'BUY') {
             setConfirmBuyItem({ item });
           } else {
-            handleAddItem(props.setInventory, item, type === 'FORMULA');
+            await handleAddItem(props.setInventory, item, type === 'FORMULA');
           }
         },
       },
@@ -415,9 +415,9 @@ export default function InventoryPanel(props: {
           open={!!confirmBuyItem}
           inventory={props.inventory}
           item={confirmBuyItem.item}
-          onConfirm={(coins) => {
+          onConfirm={async (coins) => {
             if (!character) return;
-            handleAddItem(props.setInventory, confirmBuyItem.item, false);
+            await handleAddItem(props.setInventory, confirmBuyItem.item, false);
 
             // Update coins
             props.setInventory((prev) => {

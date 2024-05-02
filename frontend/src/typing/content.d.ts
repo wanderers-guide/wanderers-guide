@@ -151,7 +151,7 @@ interface Item {
       current?: number;
       max?: number;
     };
-    container_default_items?: { id: number; quantity: number }[];
+    container_default_items?: { id: number; name: string; quantity: number }[];
     group?: string;
     hardness?: number;
     hp?: number;
