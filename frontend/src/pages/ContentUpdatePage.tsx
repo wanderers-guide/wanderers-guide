@@ -313,7 +313,12 @@ export function Component(props: {}) {
                   </Group>
                   <Text ta='center' fz='xs' fs='italic'>
                     See{' '}
-                    <Anchor fz='sm' fs='italic' href={DISCORD_URL} target='_blank'>
+                    <Anchor
+                      fz='sm'
+                      fs='italic'
+                      href={`https://discord.com/channels/735260060682289254/1220411970654830743/${data.contentUpdate.discord_msg_id}`}
+                      target='_blank'
+                    >
                       Discord
                     </Anchor>{' '}
                     to approve / vote on this change.

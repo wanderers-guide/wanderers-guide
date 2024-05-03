@@ -50,6 +50,8 @@ export function mapToDrawerData(
     if (drawerType === 'language') key = 'language';
     if (drawerType === 'spell') key = 'spell';
     if (drawerType === 'trait') key = 'trait';
+    if (drawerType === 'archetype') key = 'archetype';
+    if (drawerType === 'versatile-heritage') key = 'versatileHeritage';
     drawerData = {
       [key]: data,
       ...(dataInject ?? {}),

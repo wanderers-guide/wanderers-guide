@@ -64,14 +64,17 @@ export function Component(props: {}) {
       );
 
       const updateDisplay =
-        updates?.map((update) => {
-          return {
-            title: `${update.action === 'UPDATE' ? 'Update:' : update.action === 'CREATE' ? 'Add:' : 'Remove:'} ${update.data.name}`,
-            state: update.status.state,
-            updateId: update.id,
-            discordMsgId: update.discord_msg_id,
-          };
-        }) ?? [];
+        updates
+          ?.filter((update) => update.discord_msg_id)
+          ?.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          ?.map((update) => {
+            return {
+              title: `${update.action === 'UPDATE' ? 'Update:' : update.action === 'CREATE' ? 'Add:' : 'Remove:'} ${update.data.name}`,
+              state: update.status.state,
+              updateId: update.id,
+              discordMsgId: update.discord_msg_id,
+            };
+          }) ?? [];
 
       return {
         updates,

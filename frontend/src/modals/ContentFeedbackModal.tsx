@@ -118,7 +118,19 @@ export default function ContentFeedbackModal(props: {
             Content Update Submitted 🎉
           </Anchor>
         ),
-        message: 'Thanks for helping improve the site, please check our Discord for updates on your submission :)',
+        message: (
+          <Text fz='sm'>
+            Thanks for helping improve the site, please check our{' '}
+            <Anchor
+              fz='sm'
+              href={`https://discord.com/channels/735260060682289254/1220411970654830743/${result.discord_msg_id}`}
+              target='_blank'
+            >
+              Discord
+            </Anchor>{' '}
+            for updates on your submission :)
+          </Text>
+        ),
         color: 'green',
         autoClose: 8000,
       });

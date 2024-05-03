@@ -148,6 +148,8 @@ export function ArchetypeDrawerContent(props: {
     </Accordion.Item>
   ));
 
+  console.log(data);
+
   if (!data || !data.archetype || !data.abilityBlocks) {
     return (
       <Loader
