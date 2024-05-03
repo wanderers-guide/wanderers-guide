@@ -44,7 +44,7 @@ export function Component(props: {}) {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-update-overview`],
     queryFn: async () => {
-      const updates = await findContentUpdates();
+      const updates = (await findContentUpdates())?.filter((update) => update.discord_msg_id) ?? [];
 
       const contributors = _.groupBy(updates, (update) => update.user_id);
       const contributorCounts = _.map(contributors, (contributor) => ({
@@ -65,9 +65,8 @@ export function Component(props: {}) {
 
       const updateDisplay =
         updates
-          ?.filter((update) => update.discord_msg_id)
-          ?.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          ?.map((update) => {
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .map((update) => {
             return {
               title: `${update.action === 'UPDATE' ? 'Update:' : update.action === 'CREATE' ? 'Add:' : 'Remove:'} ${update.data.name}`,
               state: update.status.state,
