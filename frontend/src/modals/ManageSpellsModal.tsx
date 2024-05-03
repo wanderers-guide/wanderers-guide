@@ -34,6 +34,7 @@ import * as JsSearch from 'js-search';
 import { VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import useRefresh from '@utils/use-refresh';
+import { isSpellVisible } from '@content/content-hidden';
 
 export default function ManageSpellsModal(props: {
   opened: boolean;
@@ -51,7 +52,7 @@ export default function ManageSpellsModal(props: {
   const { data: allRawSpells, isFetching } = useQuery({
     queryKey: [`find-spells`],
     queryFn: async () => {
-      return await fetchContentAll<Spell>('spell');
+      return (await fetchContentAll<Spell>('spell')).filter((spell) => isSpellVisible('CHARACTER', spell));
     },
   });
 

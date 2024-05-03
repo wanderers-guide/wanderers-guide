@@ -4,6 +4,7 @@ import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption, HeritageSelectionOption } from '@common/select/SelectContent';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
@@ -132,7 +133,7 @@ export function AncestryDrawerContent(props: {
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
             <Text fz='sm' c='gray.5' span>
-              {feats[level].filter((feat) => feat.meta_data?.unselectable !== true).length}
+              {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>
         </Group>
@@ -147,7 +148,7 @@ export function AncestryDrawerContent(props: {
         <Stack gap={0}>
           <Divider color='dark.6' />
           {feats[level]
-            .filter((feat) => feat.meta_data?.unselectable !== true)
+            .filter((feat) => isAbilityBlockVisible('CHARACTER', feat))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((feat, index) => (
               <FeatSelectionOption

@@ -101,6 +101,7 @@ import {
   VersatileHeritage,
 } from '../../typing/content';
 import { FilterOptions, SelectedFilter } from './filters';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -1962,7 +1963,7 @@ export function FeatSelectionOption(props: {
         <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
       }
       showButton={props.showButton}
-      level={props.displayLevel && !props.feat.meta_data?.unselectable ? props.feat.level : undefined}
+      level={props.displayLevel && props.feat.meta_data?.unselectable !== true ? props.feat.level : undefined}
       selected={props.selected}
       onClick={() =>
         openDrawer({

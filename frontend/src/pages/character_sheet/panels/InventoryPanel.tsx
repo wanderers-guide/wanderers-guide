@@ -65,6 +65,7 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { openContextModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
+import { isItemVisible } from '@content/content-hidden';
 
 export default function InventoryPanel(props: {
   content: ContentPackage;
@@ -82,7 +83,7 @@ export default function InventoryPanel(props: {
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
 
   const visibleInvItems = props.inventory.items.filter(
-    (invItem) => !(invItem.item.meta_data?.unselectable === true && invItem.is_equipped && isItemWeapon(invItem.item))
+    (invItem) => !(!isItemVisible('CHARACTER', invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
   );
   const invItems = searchQuery.trim()
     ? visibleInvItems.filter((invItem) => {

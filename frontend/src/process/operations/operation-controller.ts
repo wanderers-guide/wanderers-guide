@@ -31,6 +31,7 @@ import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -391,7 +392,7 @@ export async function executeCharacterOperations(
       baseSource: AbilityBlock;
       baseResults: OperationResult[];
     }[] = [];
-    for (const feature of classFeatures) {
+    for (const feature of classFeatures.filter((cf) => isAbilityBlockVisible('CHARACTER', cf))) {
       if (feature.level === undefined || feature.level <= character.level) {
         const results = await executeOperations(
           'CHARACTER',

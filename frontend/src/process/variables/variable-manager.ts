@@ -220,6 +220,12 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // Injected Selection Options
   INJECT_SELECT_OPTIONS: newVariable('list-str', 'INJECT_SELECT_OPTIONS'), // Hidden
 
+  // Blacklisted Ability Blocks
+  BLACKLIST_ABILITY_BLOCKS: newVariable('list-str', 'BLACKLIST_ABILITY_BLOCKS'),
+  BLACKLIST_TRAITS: newVariable('list-str', 'BLACKLIST_TRAITS'),
+  BLACKLIST_SPELLS: newVariable('list-str', 'BLACKLIST_SPELLS'),
+  BLACKLIST_ITEMS: newVariable('list-str', 'BLACKLIST_ITEMS'),
+
   // Specializations
   WEAPON_SPECIALIZATION: newVariable('bool', 'WEAPON_SPECIALIZATION'),
   WEAPON_SPECIALIZATION_GREATER: newVariable('bool', 'WEAPON_SPECIALIZATION_GREATER'),

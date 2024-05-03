@@ -354,17 +354,19 @@ export function CreateAbilityBlockModal(props: {
                       }
                     />
                   )}
-                  <Switch
-                    label='Hidden'
-                    labelPosition='left'
-                    checked={metaData.unselectable}
-                    onChange={(event) =>
-                      setMetaData({
-                        ...metaData,
-                        unselectable: event.currentTarget.checked,
-                      })
-                    }
-                  />
+                  {props.type === 'feat' && (
+                    <Switch
+                      label='Hidden'
+                      labelPosition='left'
+                      checked={metaData.unselectable}
+                      onChange={(event) =>
+                        setMetaData({
+                          ...metaData,
+                          unselectable: event.currentTarget.checked,
+                        })
+                      }
+                    />
+                  )}
                 </Stack>
 
                 <Divider />

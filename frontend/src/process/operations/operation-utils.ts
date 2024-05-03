@@ -58,6 +58,7 @@ import * as _ from 'lodash-es';
 import { OperationResult } from './operation-runner';
 import { throwError } from '@utils/notifications';
 import { InjectedSelectOption } from '@common/operations/selection/InjectSelectOptionOperation';
+import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/content-hidden';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -287,7 +288,7 @@ export async function determineFilteredSelectionList(
 async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
-  abilityBlocks = abilityBlocks.filter((ab) => ab.type !== 'feat' || ab.meta_data?.unselectable !== true);
+  abilityBlocks = abilityBlocks.filter((ab) => ab.type !== 'feat' || isAbilityBlockVisible(id, ab));
 
   if (filters.abilityBlockType !== undefined) {
     abilityBlocks = abilityBlocks.filter((ab) => ab.type === filters.abilityBlockType);
@@ -362,7 +363,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
 async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
   let spells = await fetchContentAll<Spell>('spell');
 
-  spells = spells.filter((spell) => spell.meta_data?.unselectable !== true);
+  spells = spells.filter((spell) => isSpellVisible('CHARACTER', spell));
 
   if (filters.level.min !== undefined) {
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
@@ -438,7 +439,7 @@ async function getLanguageList(id: StoreID, operationUUID: string, filters: Oper
 async function getTraitList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersTrait) {
   let traits = await fetchContentAll<Trait>('trait');
 
-  traits = traits.filter((traits) => traits.meta_data?.unselectable !== true);
+  traits = traits.filter((trait) => isTraitVisible(id, trait));
 
   if (filters.isCreature) {
     traits = traits.filter((trait) => trait.meta_data?.creature_trait);

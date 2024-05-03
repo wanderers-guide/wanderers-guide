@@ -4,6 +4,7 @@ import { ActionSymbol } from '@common/Actions';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { collectCharacterAbilityBlocks } from '@content/collect-content';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import {
@@ -77,7 +78,7 @@ export default function SkillsActionsPanel(props: {
   const actions = useMemo(() => {
     const allActions = props.content.abilityBlocks
       .filter((ab) => ab.type === 'action')
-      .filter((ab) => ab.meta_data?.unselectable !== true)
+      .filter((ab) => isAbilityBlockVisible('CHARACTER', ab))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Filter actions

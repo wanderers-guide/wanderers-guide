@@ -1,3 +1,4 @@
+import { isTraitVisible } from '@content/content-hidden';
 import { fetchContentAll } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
@@ -24,10 +25,7 @@ export default function TraitsInput(props: TraitsInputProps) {
       data
         .filter((trait) => trait)
         .sort((a, b) => a.name.localeCompare(b.name))
-        .filter((trait) => !trait.meta_data?.unselectable)) ??
-    // .filter((trait) =>
-    //   props.includeCreatureTraits ? true : !trait.meta_data?.creature_trait
-    // ))
+        .filter((trait) => isTraitVisible('CHARACTER', trait))) ??
     [];
 
   // Remove the added props so they don't get passed to TagsInput
