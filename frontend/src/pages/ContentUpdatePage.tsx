@@ -154,7 +154,7 @@ export function Component(props: {}) {
                               mapToDrawerData(
                                 data.contentUpdate.data?.type ?? data.contentUpdate.type,
                                 data.contentUpdate.ref_id,
-                                { noFeedback: true, showOperations: true }
+                                { showOperations: true }
                               )
                             );
                           }}
