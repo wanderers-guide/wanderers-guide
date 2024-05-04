@@ -434,7 +434,7 @@ function getProfTotal(id: StoreID, item: Item) {
   // "When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus."
   const martialExperience = getVariable<VariableBool>(id, 'MARTIAL_EXPERIENCE')?.value ?? false;
   if (martialExperience && maxProfTotal <= 0) {
-    const profWithoutLevel = !!getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value;
+    const profWithoutLevel = !!getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value;
     if (profWithoutLevel) {
       maxProfTotal = 0;
     } else {

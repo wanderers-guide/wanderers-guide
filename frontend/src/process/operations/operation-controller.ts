@@ -88,10 +88,10 @@ export async function executeCharacterOperations(
 ): Promise<OperationCharacterResultPackage> {
   resetVariables('CHARACTER');
   defineSelectionTree(character);
-  setVariable('ALL', 'PAGE_CONTEXT', context);
-  setVariable('ALL', 'PATHFINDER', playingPathfinder(character));
-  setVariable('ALL', 'STARFINDER', playingStarfinder(character));
-  setVariable('ALL', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
+  setVariable('CHARACTER', 'PAGE_CONTEXT', context);
+  setVariable('CHARACTER', 'PATHFINDER', playingPathfinder(character));
+  setVariable('CHARACTER', 'STARFINDER', playingStarfinder(character));
+  setVariable('CHARACTER', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
 
   setVariable('CHARACTER', 'LEVEL', character.level);
 
@@ -490,7 +490,7 @@ export async function executeCreatureOperations(
 ): Promise<OperationCreatureResultPackage> {
   resetVariables(id);
   defineSelectionTree(creature);
-  setVariable('ALL', 'PAGE_CONTEXT', 'CHARACTER-SHEET');
+  setVariable('CHARACTER', 'PAGE_CONTEXT', 'CHARACTER-SHEET');
 
   setVariable(id, 'LEVEL', creature.level);
 

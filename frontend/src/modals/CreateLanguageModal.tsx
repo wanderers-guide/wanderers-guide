@@ -128,7 +128,6 @@ export function CreateLanguageModal(props: {
               />
               <Select
                 label='Availability'
-                required
                 data={[
                   { value: 'STANDARD', label: 'Standard' },
                   { value: 'LIMITED', label: 'Limited' },

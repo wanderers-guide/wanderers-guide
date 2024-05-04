@@ -26,7 +26,7 @@ export function getFinalProfValue(
     if (isDC) {
       return '10';
     } else {
-      if (getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value) {
+      if (getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value) {
         return '-2';
       } else {
         return '+0';
@@ -158,7 +158,7 @@ export function getProfValueParts(
   const profType = overrideProfType ?? variable.value.value;
 
   let level = 0;
-  if (getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value) {
+  if (getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value) {
     level = profType !== 'U' ? 0 : -2;
   } else {
     level = profType !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;

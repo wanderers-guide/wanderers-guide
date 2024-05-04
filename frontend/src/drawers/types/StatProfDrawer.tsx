@@ -114,7 +114,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
   }
   timeline = timeline.sort((a, b) => a.timestamp - b.timestamp);
 
-  const profWithoutLevel = !!getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value;
+  const profWithoutLevel = !!getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value;
 
   return (
     <Box>

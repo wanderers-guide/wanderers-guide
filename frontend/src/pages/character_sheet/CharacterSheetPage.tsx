@@ -212,7 +212,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       executingOperations.current = true;
       executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
         if (character.variants?.proficiency_without_level) {
-          setVariable('ALL', 'PROF_WITHOUT_LEVEL', true);
+          setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
         }
 
         // Add the extra items to the inventory from variables

@@ -19,7 +19,7 @@ export function meetsPrerequisites(
   result: PrereqMet;
 } {
   const meetMap = new Map<string, PrereqMet>();
-  if (!prereqs || prereqs.length === 0 || getVariable('ALL', 'PAGE_CONTEXT')?.value !== 'CHARACTER-BUILDER') {
+  if (!prereqs || prereqs.length === 0 || getVariable('CHARACTER', 'PAGE_CONTEXT')?.value !== 'CHARACTER-BUILDER') {
     return {
       meetMap: meetMap,
       result: null,

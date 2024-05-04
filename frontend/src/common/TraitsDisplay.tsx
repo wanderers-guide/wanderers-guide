@@ -20,6 +20,8 @@ import RichText from './RichText';
 import { getTraitIdByType } from '@utils/traits';
 import _ from 'lodash-es';
 import { toLabel } from '@utils/strings';
+import { getVariable } from '@variables/variable-manager';
+import { VariableBool } from '@typing/variables';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -252,9 +254,14 @@ export function AvailabilityDisplay(props: { availability: Availability; interac
   let description = ``;
   let color = ``;
 
+  const isOrgPlay = getVariable<VariableBool>('CHARACTER', 'ORGANIZED_PLAY')?.value ?? false;
+  if (!isOrgPlay) {
+    return null;
+  }
+
   if (props.availability === 'LIMITED') {
     name = 'Limited';
-    description = `A limited option is rarer in organized play, but not unheard of. A limited option can be selected only if specifically allowed by a boon—whether from the Achievement Points system, a Chronicle Sheet, or another other option from a Society source—even if the option is common or if the character meets the normal prerequisites or access requirements printed in the option’s source.`;
+    description = `A limited option is rarer in organized play, but not unheard of. A limited option can be selected only if specifically allowed by a boon — whether from the Achievement Points system, a Chronicle Sheet, or another other option from a Society source — even if the option is common or if the character meets the normal prerequisites or access requirements printed in the option’s source.`;
     color = 'yellow';
   } else if (props.availability === 'RESTRICTED') {
     name = 'Restricted';
