@@ -600,7 +600,7 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue, so
   } else if (isVariableStr(variable) && _.isString(amount)) {
     variable.value += amount;
   } else if (isVariableBool(variable) && _.isBoolean(amount)) {
-    variable.value = variable.value && amount;
+    variable.value = amount ? true : variable.value;
   } else if (isVariableListStr(variable) && _.isString(amount)) {
     variable.value = _.uniq([...variable.value, amount]);
   } else {

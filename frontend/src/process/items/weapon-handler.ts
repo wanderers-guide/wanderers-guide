@@ -2,7 +2,7 @@ import { Item } from '@typing/content';
 import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
-import { getVariable } from '@variables/variable-manager';
+import { getVariable, getVariableStore } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 import { compileTraits, isItemRangedWeapon } from './inv-utils';
 
@@ -18,6 +18,8 @@ export function getWeaponStats(id: StoreID, item: Item) {
     damageType: string;
     bonus: number;
   }[] = [];
+
+  console.log(getAttackDamage(id, item));
 
   return {
     attack_bonus: getAttackBonus(id, item),
