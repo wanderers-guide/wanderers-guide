@@ -1,4 +1,4 @@
-import { startCase } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 import { ITheme, ThreeDDice } from 'dddice-js';
 
 type DiceTheme = {
@@ -1365,7 +1365,7 @@ export async function fetchDiceThemes(dddice: ThreeDDice) {
         }
 
         let name = theme.name ?? 'Unknown';
-        name = startCase(name).split('(')[0].trim();
+        name = toLabel(name).split('(')[0].trim();
         if (name.trim().endsWith('Dice')) {
           name = name.replace('Dice', '').trim();
         }

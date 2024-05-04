@@ -45,6 +45,7 @@ import { AbilityBlock } from '@typing/content';
 import { VariableBool, VariableListStr, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displaySense } from '@utils/senses';
+import { toLabel } from '@utils/strings';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
@@ -52,7 +53,6 @@ import {
   isProficiencyType,
   isProficiencyValue,
   proficiencyTypeToLabel,
-  variableNameToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -68,7 +68,7 @@ export function StatPerceptionDrawerTitle(props: { data: {} }) {
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{_.startCase(variableToLabel(variable))}</Title>
+              <Title order={3}>{variableToLabel(variable)}</Title>
             </Box>
           </Group>
           <Box>
@@ -476,8 +476,8 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
                         <Text c='gray.0' size='xs'>
-                          This proficiency is associated with the {variableNameToLabel(variable.value.attribute ?? '')}{' '}
-                          attribute, so you add your {variableNameToLabel(variable.value.attribute ?? '')} modifier.
+                          This proficiency is associated with the {toLabel(variable.value.attribute ?? '')} attribute,
+                          so you add your {toLabel(variable.value.attribute ?? '')} modifier.
                         </Text>
                       </HoverCard.Dropdown>
                     </HoverCard>

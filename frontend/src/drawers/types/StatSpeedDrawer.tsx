@@ -42,6 +42,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { VariableNum, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import {
   displayFinalProfValue,
   getBonusText,
@@ -55,7 +56,6 @@ import {
   isProficiencyType,
   isProficiencyValue,
   proficiencyTypeToLabel,
-  variableNameToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -171,7 +171,7 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Text c='gray.5' fw={700} fz='sm'>
-            {variable.name === 'SPEED' ? `Normal` : `${variableNameToLabel(variable.name)}`}
+            {variable.name === 'SPEED' ? `Normal` : `${toLabel(variable.name)}`}
           </Text>
           <Box mr='sm'>
             <Text fz='md' c='gray.4' fw={600} span>

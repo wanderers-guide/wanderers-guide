@@ -39,10 +39,9 @@ import { isValidImage } from '@utils/images';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
-import { json } from 'react-router-dom';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
-import { startCase } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 
 /**
  * Modal for creating or editing a creature
@@ -203,7 +202,7 @@ export function CreateCreatureModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', startCase(text));
+                      form.setFieldValue('name', toLabel(text));
                     }
                   }}
                   onBlur={() => props.onNameBlur?.(form.values.name)}

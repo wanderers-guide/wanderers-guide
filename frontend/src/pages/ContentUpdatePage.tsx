@@ -140,8 +140,8 @@ export function Component(props: {}) {
                 {data.contentUpdate.action === 'UPDATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      {_.startCase(data.contentUpdate.action.toLowerCase())} <b>{data.originalContent?.name}</b> from
-                      the <b>{data.source.name}</b>.
+                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from the{' '}
+                      <b>{data.source.name}</b>.
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
                       <Box>

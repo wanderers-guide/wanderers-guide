@@ -1,67 +1,9 @@
-import { drawerState } from '@atoms/navAtoms';
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { ActionSelectionOption, FeatSelectionOption } from '@common/select/SelectContent';
-import { ICON_BG_COLOR, ICON_BG_COLOR_HOVER, TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentAll, fetchContentById } from '@content/content-store';
-import {
-  Title,
-  Text,
-  Image,
-  Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Badge,
-  Accordion,
-  Kbd,
-  Timeline,
-  HoverCard,
-  List,
-} from '@mantine/core';
-import { useHover } from '@mantine/hooks';
-import {
-  IconBadgesFilled,
-  IconBlockquote,
-  IconCaretLeftRight,
-  IconFrame,
-  IconGitBranch,
-  IconGitCommit,
-  IconGitPullRequest,
-  IconMathSymbols,
-  IconMessageDots,
-  IconPlusMinus,
-  IconTimeline,
-} from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
-import { VariableListStr, VariableNum, VariableProf } from '@typing/variables';
-import { sign } from '@utils/numbers';
+import { Title, Text, Group, Stack, Box, Badge, Accordion, List } from '@mantine/core';
+import { VariableListStr } from '@typing/variables';
 import { displayResistWeak, getResistWeaks } from '@utils/resist-weaks';
-import {
-  displayFinalProfValue,
-  getBonusText,
-  getFinalVariableValue,
-  getProfValueParts,
-  getVariableBreakdown,
-} from '@variables/variable-display';
-import { getAllSpeedVariables, getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
-import {
-  compileExpressions,
-  getProficiencyTypeValue,
-  isProficiencyType,
-  isProficiencyValue,
-  proficiencyTypeToLabel,
-  variableNameToLabel,
-  variableToLabel,
-} from '@variables/variable-utils';
+import { getVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
-import { useState } from 'react';
-import { useRecoilState } from 'recoil';
 
 export function StatResistWeakDrawerTitle(props: { data: {} }) {
   return (

@@ -7,6 +7,7 @@ import {
 } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
 import { ActionCost, ContentSource, Language, Rarity, Size, Trait } from '@typing/content';
+import { toLabel } from '@utils/strings';
 import { labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
@@ -146,7 +147,7 @@ export async function getTraitIds(traitNames: string[], source: ContentSource) {
       console.error(
         `Trait not found: ${traitName}, ${traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')}`
       );
-      await createTrait(_.startCase(traitName), '', source.id);
+      await createTrait(toLabel(traitName), '', source.id);
       trait = await fetchTraitByName(
         traitName,
         sources.map((s) => s.id)
@@ -169,7 +170,7 @@ export async function getLanguageIds(languageNames: string[], source: ContentSou
       sources.map((s) => s.id)
     );
     if (!languages || languages.length === 0) {
-      await createLanguage(_.startCase(languageName), '', 'COMMON', source.id);
+      await createLanguage(toLabel(languageName), '', 'COMMON', source.id);
       languages = await fetchLanguageByName(
         languageName,
         sources.map((s) => s.id)
@@ -388,7 +389,7 @@ function stripCheckLinks(text: string, basic: boolean) {
     const type = match[1];
     const extra = match[2];
 
-    newText = newText.replace(match[0], `basic ${_.startCase(type)}`);
+    newText = newText.replace(match[0], `basic ${toLabel(type)}`);
   }
 
   // Alt version
@@ -397,7 +398,7 @@ function stripCheckLinks(text: string, basic: boolean) {
     const type = match[1];
     const dc = match[2];
 
-    newText = newText.replace(match[0], `${_.startCase(type)} ${dc}`);
+    newText = newText.replace(match[0], `${toLabel(type)} ${dc}`);
   }
 
   return newText;

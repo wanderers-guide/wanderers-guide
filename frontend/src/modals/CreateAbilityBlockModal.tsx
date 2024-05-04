@@ -33,7 +33,7 @@ import { JSONContent } from '@tiptap/react';
 import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
-import { startCase, toLabel } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
@@ -219,7 +219,7 @@ export function CreateAbilityBlockModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', startCase(text));
+                      form.setFieldValue('name', toLabel(text));
                     }
                   }}
                   onBlur={() => props.onNameBlur?.(form.values.name)}
@@ -327,8 +327,8 @@ export function CreateAbilityBlockModal(props: {
                     value={
                       metaData.skill
                         ? Array.isArray(metaData.skill)
-                          ? metaData.skill.map((s) => _.startCase(s.toLowerCase()))
-                          : [_.startCase(metaData.skill.toLowerCase())]
+                          ? metaData.skill.map((s) => toLabel(s))
+                          : [toLabel(metaData.skill)]
                         : []
                     }
                     onChange={(value) =>

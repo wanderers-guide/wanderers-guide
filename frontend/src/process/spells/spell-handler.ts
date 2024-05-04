@@ -1,7 +1,7 @@
 import { Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
+import { toLabel } from '@utils/strings';
 import { getFinalProfValue, getFinalVariableValue, getProfValueParts } from '@variables/variable-display';
-import { variableNameToLabel } from '@variables/variable-utils';
 
 export function getSpellStats(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   return {
@@ -27,7 +27,7 @@ function getSpellAttack(id: StoreID, spell: Spell | null, tradition: string, att
   parts.set('This is your proficiency bonus for spell attacks.', profParts.profValue + profParts.level);
 
   parts.set(
-    `This is your ${variableNameToLabel(attribute)} modifier. You add your ${variableNameToLabel(attribute)} modifier to spell attacks from this casting source.`,
+    `This is your ${toLabel(attribute)} modifier. You add your ${toLabel(attribute)} modifier to spell attacks from this casting source.`,
     profParts.attributeMod ?? 0
   );
 
@@ -73,7 +73,7 @@ function getSpellDC(id: StoreID, spell: Spell | null, tradition: string, attribu
   parts.set('This is your proficiency bonus for spell DCs.', profParts.profValue + profParts.level);
 
   parts.set(
-    `This is your ${variableNameToLabel(attribute)} modifier. You add your ${variableNameToLabel(attribute)} modifier to spell DCs from this casting source.`,
+    `This is your ${toLabel(attribute)} modifier. You add your ${toLabel(attribute)} modifier to spell DCs from this casting source.`,
     profParts.attributeMod ?? 0
   );
 

@@ -28,11 +28,11 @@ import { Spell, CastingSource, SpellSlot, SpellInnateEntry } from '@typing/conte
 import { rankNumber } from '@utils/numbers';
 import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
-import { variableNameToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
+import { toLabel } from '@utils/strings';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -421,7 +421,7 @@ function SpellList(props: {
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
-              {variableNameToLabel(props.source.name)} Spells
+              {toLabel(props.source.name)} Spells
             </Text>
             <Box mr={10}>
               <BlurButton
@@ -537,7 +537,7 @@ function SpellList(props: {
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
-              {variableNameToLabel(props.source.name)} Spells
+              {toLabel(props.source.name)} Spells
             </Text>
             <Box mr={10}>
               <BlurButton
@@ -688,7 +688,7 @@ function SpellList(props: {
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
-              {variableNameToLabel(props.source.name)} Focus Spells
+              {toLabel(props.source.name)} Focus Spells
             </Text>
             <Box mr={10}>
               <SpellSlotSelect

@@ -25,10 +25,11 @@ import { StoreID, VariableProf } from '@typing/variables';
 import { getAllSaveVariables, getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { DICE_THEMES } from './dice-tray';
 import { getFinalProfValue } from '@variables/variable-display';
-import { variableNameToLabel, variableToLabel } from '@variables/variable-utils';
+import { variableToLabel } from '@variables/variable-utils';
 import { isItemWeapon } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { getSpellStats } from '@spells/spell-handler';
+import { toLabel } from '@utils/strings';
 
 /**
  * Deletes a room on the DDDice server.
@@ -119,14 +120,14 @@ export function findDefaultPresets(id: StoreID, character: Character | null) {
   presets.push(
     ...getAllSaveVariables(id).map((save) => ({
       id: crypto.randomUUID(),
-      name: `${variableNameToLabel(save.name)} save`,
+      name: `${toLabel(save.name)} save`,
       dice: [
         {
           id: crypto.randomUUID(),
           type: 'd20',
           theme: theme,
           bonus: parseInt(getFinalProfValue(id, save.name)),
-          label: `${variableNameToLabel(save.name)} save`,
+          label: `${toLabel(save.name)} save`,
         },
       ],
     }))
@@ -153,14 +154,14 @@ export function findDefaultPresets(id: StoreID, character: Character | null) {
       .filter((skill) => skill.name !== 'SKILL_LORE____')
       .map((skill) => ({
         id: crypto.randomUUID(),
-        name: `${variableNameToLabel(skill.name)} check`,
+        name: `${toLabel(skill.name)} check`,
         dice: [
           {
             id: crypto.randomUUID(),
             type: 'd20',
             theme: theme,
             bonus: parseInt(getFinalProfValue(id, skill.name)),
-            label: `${variableNameToLabel(skill.name)} check`,
+            label: `${toLabel(skill.name)} check`,
           },
         ],
       }))

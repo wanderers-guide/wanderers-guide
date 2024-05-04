@@ -13,6 +13,7 @@ import { isCantrip, isRitual } from '@spells/spell-utils';
 import { Character, Spell } from '@typing/content';
 import { VariableListStr, VariableStr } from '@typing/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
+import { toLabel } from '@utils/strings';
 import {
   getFinalAcValue,
   getFinalHealthValue,
@@ -28,7 +29,6 @@ import {
   getVariableStore,
   getVariables,
 } from '@variables/variable-manager';
-import { variableNameToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 
 export default async function jsonV4(character: Character) {
@@ -153,7 +153,7 @@ async function getContent(character: Character) {
 
   const alltraits = content.traits;
 
-  const size = variableNameToLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value);
+  const size = toLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value);
   const maxHP = getFinalHealthValue(STORE_ID);
   const ac = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, character.inventory)?.item);
   const shield = getBestShield(STORE_ID, character.inventory);

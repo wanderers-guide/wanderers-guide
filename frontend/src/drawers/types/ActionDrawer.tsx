@@ -12,6 +12,7 @@ import { getSelectedOption } from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
+import { toLabel } from '@utils/strings';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
@@ -37,7 +38,7 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{action.name}</Title>
+              <Title order={3}>{toLabel(action.name)}</Title>
             </Box>
             <Box>
               <ActionSymbol cost={action.actions} size={'2.1rem'} />

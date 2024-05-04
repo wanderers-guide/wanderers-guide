@@ -3,7 +3,7 @@ import { StoreID, VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
-import { startCase, toLabel } from './strings';
+import { toLabel } from './strings';
 
 export function displaySense(sense: SenseWithRange) {
   return `${sense.senseName.replace('Low Light', 'Low-Light')} ${sense.range ? `(${sense.range} ft.)` : ''}`;
@@ -11,7 +11,7 @@ export function displaySense(sense: SenseWithRange) {
 
 export function displayPrimaryVisionSense(id: StoreID) {
   const senses = compactSenses(getVariable<VariableListStr>(id, 'SENSES_PRECISE')?.value ?? []);
-  return senses.length > 0 ? startCase(senses[0].replace('_', ' ')) : '';
+  return senses.length > 0 ? toLabel(senses[0].replace('_', ' ')) : '';
 }
 
 // Tracks //

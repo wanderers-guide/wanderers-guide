@@ -40,7 +40,7 @@ import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Item, ItemGroup, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
-import { startCase } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
@@ -338,7 +338,7 @@ export function CreateItemModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', startCase(text));
+                      form.setFieldValue('name', toLabel(text));
                     }
                   }}
                   onBlur={() => props.onNameBlur?.(form.values.name)}

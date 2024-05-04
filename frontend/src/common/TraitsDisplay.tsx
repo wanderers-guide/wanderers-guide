@@ -19,6 +19,7 @@ import { useRecoilState } from 'recoil';
 import RichText from './RichText';
 import { getTraitIdByType } from '@utils/traits';
 import _ from 'lodash-es';
+import { toLabel } from '@utils/strings';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -123,7 +124,7 @@ export function RarityDisplay(props: { rarity: Rarity; interactable?: boolean; s
         },
       }}
     >
-      {startCase(props.rarity.toLowerCase())}
+      {toLabel(props.rarity.toLowerCase())}
     </Badge>
   );
 }
@@ -149,7 +150,7 @@ export function SkillDisplay(props: { skill: string | string[]; interactable?: b
             },
           }}
         >
-          {startCase(skill.toLowerCase())}
+          {toLabel(skill.toLowerCase())}
         </Badge>
       ))}
     </>

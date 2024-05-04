@@ -5,8 +5,8 @@ import BlurButton from '@common/BlurButton';
 import { useMantineTheme, Group, SimpleGrid, Button, Box, Text } from '@mantine/core';
 import { LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
+import { toLabel } from '@utils/strings';
 import { displayAttributeValue } from '@variables/variable-display';
-import { variableNameToLabel } from '@variables/variable-utils';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
@@ -57,7 +57,7 @@ export default function AttributeSection(props: {
                     handleAttributeOpen(attribute);
                   }}
                 >
-                  {variableNameToLabel(attribute)}
+                  {toLabel(attribute)}
                 </BlurButton>
                 <Button
                   radius='xl'

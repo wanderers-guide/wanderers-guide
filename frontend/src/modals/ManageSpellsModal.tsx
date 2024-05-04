@@ -23,7 +23,7 @@ import { ContextModalProps, openContextModal } from '@mantine/modals';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, Spell, SpellListEntry, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
-import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
+import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -35,6 +35,7 @@ import { VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import useRefresh from '@utils/use-refresh';
 import { isSpellVisible } from '@content/content-hidden';
+import { toLabel } from '@utils/strings';
 
 export default function ManageSpellsModal(props: {
   opened: boolean;
@@ -118,7 +119,7 @@ export default function ManageSpellsModal(props: {
     <Modal
       opened={props.opened}
       onClose={props.onClose}
-      title={<Title order={3}>Manage {isRituals ? 'Rituals' : `Spells - ${variableNameToLabel(props.source)}`}</Title>}
+      title={<Title order={3}>Manage {isRituals ? 'Rituals' : `Spells - ${toLabel(props.source)}`}</Title>}
       styles={{
         body: {
           paddingRight: 2,

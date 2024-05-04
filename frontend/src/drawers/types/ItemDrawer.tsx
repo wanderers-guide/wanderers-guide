@@ -77,7 +77,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
           <Group wrap='nowrap' gap={10}>
             <Box>
               <Title order={3}>
-                {item.name}{' '}
+                {toLabel(item.name)}{' '}
                 {item.meta_data?.quantity && item.meta_data.quantity > 1 ? `(${item.meta_data.quantity})` : ''}
               </Title>
             </Box>

@@ -12,6 +12,7 @@ import { Operation } from '@typing/operations';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
+import { toLabel } from '@utils/strings';
 
 export type GenericData = {
   title: string;
@@ -28,7 +29,7 @@ export function GenericDrawerTitle(props: { data: GenericData }) {
       <Group justify='space-between' wrap='nowrap'>
         <Group wrap='nowrap' gap={10}>
           <Box>
-            <Title order={3}>{props.data.title}</Title>
+            <Title order={3}>{toLabel(props.data.title)}</Title>
           </Box>
           <Box></Box>
         </Group>

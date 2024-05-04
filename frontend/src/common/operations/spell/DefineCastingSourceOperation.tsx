@@ -5,9 +5,10 @@ import { Group, NumberInput, SegmentedControl, Stack, TextInput, Text, Box } fro
 import { useState } from 'react';
 import { useDidUpdate } from '@mantine/hooks';
 import { GiveSpellData } from '@typing/operations';
-import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
+import { labelToVariable } from '@variables/variable-utils';
 import { SlotSelect } from '@common/SlotSelect';
 import { getAllAttributeVariables } from '@variables/variable-manager';
+import { toLabel } from '@utils/strings';
 
 export function DefineCastingSourceOperation(props: {
   value: string;
@@ -83,7 +84,7 @@ export function DefineCastingSourceOperation(props: {
               orientation='vertical'
               onChange={(v) => setAttribute(v)}
               data={getAllAttributeVariables('CHARACTER').map((v) => ({
-                label: variableNameToLabel(v.name),
+                label: toLabel(v.name),
                 value: v.name,
               }))}
             />
