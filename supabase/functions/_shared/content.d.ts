@@ -133,6 +133,7 @@ interface Item {
   bulk?: string;
   level: number;
   rarity: Rarity;
+  availability?: Availability;
   traits?: number[];
   description: string;
   group: ItemGroup;
@@ -153,6 +154,7 @@ interface Spell {
   rank: number;
   traditions: string[];
   rarity: Rarity;
+  availability?: Availability;
   cast: ActionCost | string;
   traits?: number[];
   defense?: string;
@@ -252,6 +254,7 @@ interface AbilityBlock {
   actions: ActionCost;
   level?: number;
   rarity: Rarity;
+  availability?: Availability;
   prerequisites?: string[];
   frequency?: string;
   cost?: string;
@@ -420,4 +423,5 @@ type Language = {
   description: string;
   content_source_id: number;
   rarity: Rarity;
+  availability?: Availability;
 };

@@ -122,6 +122,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
           <TraitsDisplay
             traitIds={action.traits ?? []}
             rarity={action.rarity}
+            availability={action.availability}
             skill={action.meta_data?.skill}
             interactable
           />

@@ -207,6 +207,7 @@ export function ItemDrawerContent(props: {
           <TraitsDisplay
             traitIds={compileTraits(item)}
             rarity={item.rarity}
+            availability={item.availability}
             archaic={isItemArchaic(item)}
             interactable
           />

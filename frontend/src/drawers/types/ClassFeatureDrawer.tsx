@@ -101,7 +101,12 @@ export function ClassFeatureDrawerContent(props: {
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={classFeature.traits ?? []} rarity={classFeature.rarity} interactable />
+          <TraitsDisplay
+            traitIds={classFeature.traits ?? []}
+            rarity={classFeature.rarity}
+            availability={classFeature.availability}
+            interactable
+          />
         </Box>
         {classFeature.prerequisites && classFeature.prerequisites.length > 0 && (
           <IndentedText ta='justify'>

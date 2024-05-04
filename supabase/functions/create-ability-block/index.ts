@@ -1,7 +1,7 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect, insertData, upsertData, upsertResponseWrapper } from "../_shared/helpers.ts";
-import type { AbilityBlock, Trait } from "../_shared/content";
+import { serve } from 'std/server';
+import { connect, insertData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import type { AbilityBlock, Trait } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -12,6 +12,7 @@ serve(async (req: Request) => {
       actions,
       level,
       rarity,
+      availability,
       prerequisites,
       frequency,
       cost,
@@ -37,6 +38,7 @@ serve(async (req: Request) => {
         actions,
         level,
         rarity,
+        availability,
         prerequisites,
         frequency,
         cost,

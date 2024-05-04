@@ -91,6 +91,7 @@ export async function executeCharacterOperations(
   setVariable('ALL', 'PAGE_CONTEXT', context);
   setVariable('ALL', 'PATHFINDER', playingPathfinder(character));
   setVariable('ALL', 'STARFINDER', playingStarfinder(character));
+  setVariable('ALL', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
 
   setVariable('CHARACTER', 'LEVEL', character.level);
 

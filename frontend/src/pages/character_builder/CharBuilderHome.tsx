@@ -670,6 +670,23 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                 />
                 <LinkSwitch
+                  label='Organized Play'
+                  info={`Paizo Organized Play is a worldwide roleplaying organization where players can take the same character and play in any game around the globe.  Scenarios and quests are designed to bring players together as they explore new worlds, investigate mysteries and fight the forces of evil in a shared setting that responds to their decisions.`}
+                  enabled={character?.options?.organized_play}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        options: {
+                          ...prev.options,
+                          organized_play: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
                   label='Public Character'
                   info={`Makes your character public and viewable by anyone with your sheet link: \n\n _https://wanderersguide.app/sheet/${character?.id}_`}
                   enabled={character?.options?.is_public}

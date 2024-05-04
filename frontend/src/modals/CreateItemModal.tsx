@@ -38,7 +38,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Item, ItemGroup, Trait } from '@typing/content';
+import { Availability, Item, ItemGroup, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
@@ -157,6 +157,7 @@ export function CreateItemModal(props: {
       bulk: undefined,
       level: 0,
       rarity: 'COMMON',
+      availability: undefined as Availability | undefined,
       traits: [],
       description: '',
       group: 'GENERAL',
@@ -935,6 +936,19 @@ export function CreateItemModal(props: {
                               type: 'checkbox',
                             })}
                           />
+
+                          <Select
+                            label='Availability'
+                            required
+                            data={[
+                              { value: 'STANDARD', label: 'Standard' },
+                              { value: 'LIMITED', label: 'Limited' },
+                              { value: 'RESTRICTED', label: 'Restricted' },
+                            ]}
+                            w={140}
+                            {...form.getInputProps('availability')}
+                          />
+
                           <Switch
                             label='Shoddy Item'
                             labelPosition='left'

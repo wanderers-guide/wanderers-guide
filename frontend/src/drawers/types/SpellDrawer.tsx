@@ -220,7 +220,12 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={spell.traits ?? []} rarity={spell.rarity} interactable />
+          <TraitsDisplay
+            traitIds={spell.traits ?? []}
+            rarity={spell.rarity}
+            availability={spell.availability}
+            interactable
+          />
         </Box>
         {spell.traditions && spell.traditions.length > 0 && (
           <IndentedText ta='justify'>

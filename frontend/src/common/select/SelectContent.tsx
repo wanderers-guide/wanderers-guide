@@ -1961,7 +1961,13 @@ export function FeatSelectionOption(props: {
         </Group>
       }
       rightSection={
-        <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={props.feat.traits ?? []}
+          rarity={props.feat.rarity}
+          availability={props.feat.availability}
+        />
       }
       showButton={props.showButton}
       level={props.displayLevel && props.feat.meta_data?.unselectable !== true ? props.feat.level : undefined}
@@ -2015,6 +2021,7 @@ export function ActionSelectionOption(props: {
           size='xs'
           traitIds={props.action.traits ?? []}
           rarity={props.action.rarity}
+          availability={props.action.availability}
           skill={props.action.meta_data?.skill}
         />
       }
@@ -2084,6 +2091,7 @@ export function ClassFeatureSelectionOption(props: {
           size='xs'
           traitIds={props.classFeature.traits ?? []}
           rarity={props.classFeature.rarity}
+          availability={props.classFeature.availability}
           skill={props.classFeature.meta_data?.skill}
         />
       }
@@ -2140,6 +2148,7 @@ export function HeritageSelectionOption(props: {
           size='xs'
           traitIds={props.heritage.traits ?? []}
           rarity={props.heritage.rarity}
+          availability={props.heritage.availability}
           skill={props.heritage.meta_data?.skill}
         />
       }
@@ -2195,6 +2204,7 @@ export function PhysicalFeatureSelectionOption(props: {
           size='xs'
           traitIds={props.physicalFeature.traits ?? []}
           rarity={props.physicalFeature.rarity}
+          availability={props.physicalFeature.availability}
           skill={props.physicalFeature.meta_data?.skill}
         />
       }
@@ -2252,6 +2262,7 @@ export function SenseSelectionOption(props: {
           size='xs'
           traitIds={props.sense.traits ?? []}
           rarity={props.sense.rarity}
+          availability={props.sense.availability}
           skill={props.sense.meta_data?.skill}
         />
       }
@@ -2787,6 +2798,7 @@ export function ItemSelectionOption(props: {
           size='xs'
           traitIds={props.item.traits ?? []}
           rarity={props.item.rarity}
+          availability={props.item.availability}
           archaic={isItemArchaic(props.item)}
         />
       }
@@ -2871,7 +2883,13 @@ export function SpellSelectionOption(props: {
       }
       rightSection={
         props.hideTraits ? null : (
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.spell.traits ?? []}
+            rarity={props.spell.rarity}
+            availability={props.spell.availability}
+          />
         )
       }
       showButton={props.showButton}
@@ -2982,7 +3000,15 @@ export function LanguageSelectionOption(props: {
           )}
         </Group>
       }
-      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />}
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={[]}
+          rarity={props.language.rarity}
+          availability={props.language.availability}
+        />
+      }
       showButton={props.showButton}
       selected={props.selected}
       onClick={() =>

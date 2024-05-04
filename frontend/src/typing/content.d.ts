@@ -16,6 +16,7 @@ type ContentPackage = {
   sources?: ContentSource[];
 };
 
+type Availability = 'STANDARD' | 'LIMITED' | 'RESTRICTED';
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'UNIQUE';
 type Size = 'TINY' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'HUGE' | 'GARGANTUAN';
 type ActionCost =
@@ -118,6 +119,7 @@ interface Item {
   bulk?: string;
   level: number;
   rarity: Rarity;
+  availability?: Availability;
   traits?: number[];
   description: string;
   group: ItemGroup;
@@ -218,6 +220,7 @@ interface Spell {
   rank: number;
   traditions: string[];
   rarity: Rarity;
+  availability?: Availability;
   cast: ActionCost | string;
   traits?: number[];
   defense?: string;
@@ -297,6 +300,7 @@ interface AbilityBlock {
   actions: ActionCost;
   level?: number;
   rarity: Rarity;
+  availability?: Availability;
   prerequisites?: string[];
   frequency?: string;
   cost?: string;
@@ -451,6 +455,7 @@ interface Character extends LivingEntity {
     ignore_bulk_limit?: boolean;
     alternate_ancestry_boosts?: boolean;
     voluntary_flaws?: boolean;
+    organized_play?: boolean;
   };
   variants?: {
     ancestry_paragon?: boolean;
@@ -675,6 +680,7 @@ type Language = {
   description: string;
   content_source_id: number;
   rarity: Rarity;
+  availability?: Availability;
 };
 
 type SenseWithRange = {

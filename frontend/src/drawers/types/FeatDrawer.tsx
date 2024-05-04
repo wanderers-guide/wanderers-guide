@@ -218,7 +218,12 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
+          <TraitsDisplay
+            traitIds={feat.traits ?? []}
+            rarity={feat.rarity}
+            availability={feat.availability}
+            interactable
+          />
         </Box>
         {prereqUI && prereqUI.length > 0 && (
           <IndentedText ta='justify'>

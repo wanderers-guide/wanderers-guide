@@ -1078,6 +1078,7 @@ function ContentList<
                       size='xs'
                       traitIds={record.traits ?? []}
                       rarity={record.rarity}
+                      availability={record.availability}
                       skill={record.meta_data?.skill}
                     />
                   }

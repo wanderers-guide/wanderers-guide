@@ -28,7 +28,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Spell, Trait } from '@typing/content';
+import { Availability, Spell, Trait } from '@typing/content';
 import { actionCostToLabel } from '@utils/actions';
 import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
@@ -106,6 +106,7 @@ export function CreateSpellModal(props: {
       rank: 0,
       traditions: [],
       rarity: 'COMMON',
+      availability: undefined as Availability | undefined,
       cast: null,
       defense: '',
       cost: '',
@@ -361,6 +362,18 @@ export function CreateSpellModal(props: {
                     }
                   />
                 </Stack>
+
+                <Select
+                  label='Availability'
+                  required
+                  data={[
+                    { value: 'STANDARD', label: 'Standard' },
+                    { value: 'LIMITED', label: 'Limited' },
+                    { value: 'RESTRICTED', label: 'Restricted' },
+                  ]}
+                  w={140}
+                  {...form.getInputProps('availability')}
+                />
 
                 <TextInput
                   defaultValue={metaData.image_url ?? ''}

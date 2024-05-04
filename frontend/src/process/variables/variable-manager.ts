@@ -295,6 +295,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
   PATHFINDER: newVariable('bool', 'PATHFINDER', false),
   STARFINDER: newVariable('bool', 'STARFINDER', false),
+  ORGANIZED_PLAY: newVariable('bool', 'ORGANIZED_PLAY', false),
 
   PRIMARY_SHEET_TABS: newVariable('list-str', 'PRIMARY_SHEET_TABS', [
     'skills-actions',

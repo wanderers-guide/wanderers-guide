@@ -13,7 +13,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { Rarity } from '@typing/content';
+import { Availability, Rarity } from '@typing/content';
 import { startCase } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import RichText from './RichText';
@@ -26,6 +26,7 @@ export default function TraitsDisplay(props: {
   interactable?: boolean;
   size?: MantineSize;
   rarity?: Rarity;
+  availability?: Availability;
   skill?: string | string[];
   archaic?: boolean;
   broken?: boolean;
@@ -59,6 +60,9 @@ export default function TraitsDisplay(props: {
       {props.rarity && <RarityDisplay interactable={props.interactable} size={props.size} rarity={props.rarity} />}
       {props.skill && <SkillDisplay interactable={props.interactable} size={props.size} skill={props.skill} />}
       {props.broken && <BrokenDisplay interactable={props.interactable} size={props.size} />}
+      {props.availability && (
+        <AvailabilityDisplay interactable={props.interactable} size={props.size} availability={props.availability} />
+      )}
       {traits.map((trait, index) => (
         <HoverCard
           key={index}
@@ -225,6 +229,56 @@ export function ShoddyDisplay(props: { interactable?: boolean; size?: MantineSiz
           <Badge
             size={props.size ?? 'md'}
             color='yellow'
+            styles={{
+              root: {
+                textTransform: 'initial',
+                cursor: props.interactable ? 'pointer' : undefined,
+              },
+            }}
+          >
+            {name}
+          </Badge>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <TraitOverview name={name} description={description} important={false} />
+        </HoverCard.Dropdown>
+      </HoverCard>
+    </>
+  );
+}
+
+export function AvailabilityDisplay(props: { availability: Availability; interactable?: boolean; size?: MantineSize }) {
+  let name = ``;
+  let description = ``;
+  let color = ``;
+
+  if (props.availability === 'LIMITED') {
+    name = 'Limited';
+    description = `A limited option is rarer in organized play, but not unheard of. A limited option can be selected only if specifically allowed by a boon—whether from the Achievement Points system, a Chronicle Sheet, or another other option from a Society source—even if the option is common or if the character meets the normal prerequisites or access requirements printed in the option’s source.`;
+    color = 'yellow';
+  } else if (props.availability === 'RESTRICTED') {
+    name = 'Restricted';
+    description = `A restricted option is one that is not generally appropriate for all tables or conducive to the Society's shared campaign setting, such as a one-of-a-kind weapon, a horrific spell used by only the most evil magic-users, or player options that require high degrees of GM adjudication. Such options will generally be made available for Society Play in only a very few special cases, such as via boons given out as part of charity events, if at all.`;
+    color = 'red';
+  } else {
+    return null;
+  }
+
+  return (
+    <>
+      <HoverCard
+        disabled={!props.interactable}
+        width={265}
+        shadow='md'
+        zIndex={2000}
+        openDelay={500}
+        withinPortal
+        withArrow
+      >
+        <HoverCard.Target>
+          <Badge
+            size={props.size ?? 'md'}
+            color={color}
             styles={{
               root: {
                 textTransform: 'initial',

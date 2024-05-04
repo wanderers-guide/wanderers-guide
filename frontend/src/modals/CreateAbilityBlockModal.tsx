@@ -30,7 +30,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, AbilityBlockType, ActionCost, Rarity, Trait } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, ActionCost, Availability, Rarity, Trait } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
@@ -115,6 +115,7 @@ export function CreateAbilityBlockModal(props: {
       actions: null as ActionCost,
       level: undefined as number | undefined,
       rarity: 'COMMON' as Rarity,
+      availability: undefined as Availability | undefined,
       prerequisites: [] as string[],
       frequency: '' as string | undefined,
       cost: '',
@@ -367,6 +368,18 @@ export function CreateAbilityBlockModal(props: {
                       }
                     />
                   )}
+
+                  <Select
+                    label='Availability'
+                    required
+                    data={[
+                      { value: 'STANDARD', label: 'Standard' },
+                      { value: 'LIMITED', label: 'Limited' },
+                      { value: 'RESTRICTED', label: 'Restricted' },
+                    ]}
+                    w={140}
+                    {...form.getInputProps('availability')}
+                  />
                 </Stack>
 
                 <Divider />

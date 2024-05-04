@@ -1,7 +1,7 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect, insertData, upsertData, upsertResponseWrapper } from "../_shared/helpers.ts";
-import type { Spell } from "../_shared/content";
+import { serve } from 'std/server';
+import { connect, insertData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import type { Spell } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -12,6 +12,7 @@ serve(async (req: Request) => {
       traditions,
       rarity,
       cast,
+      availability,
       traits,
       defense,
       cost,
@@ -34,6 +35,7 @@ serve(async (req: Request) => {
       rank,
       traditions,
       rarity,
+      availability,
       cast,
       traits,
       defense,
