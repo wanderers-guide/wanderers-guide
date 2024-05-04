@@ -1,3 +1,4 @@
+import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import IndentedText from '@common/IndentedText';
@@ -7,10 +8,11 @@ import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor, Button } from '@mantine/core';
+import { getSelectedOption } from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
@@ -190,6 +192,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
 
 export function DisplayOperationSelectionOptions(props: { operations?: Operation[] | undefined }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
 
   const operations = (props.operations ?? []).filter(
     (op) => op.type === 'select' && (op as OperationSelect).data.optionType === 'CUSTOM'
@@ -197,35 +200,39 @@ export function DisplayOperationSelectionOptions(props: { operations?: Operation
   if (operations.length === 0) return null;
 
   return (
-    <Stack gap='sm'>
-      {operations.map((op, index) => (
-        <Box key={index} pt={5}>
-          <Text fz='md' fw={600}>
-            {op.data.title ?? 'Select an Option'}
-          </Text>
-          <List>
-            {((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]).map((option, index) => (
-              <List.Item key={index}>
-                <Anchor
-                  onClick={() => {
-                    openDrawer({
-                      type: 'generic',
-                      data: {
-                        title: option.title,
-                        description: option.description,
-                        operations: option.operations,
-                      },
-                      extra: { addToHistory: true },
-                    });
-                  }}
-                >
-                  {option.title}
-                </Anchor>
-              </List.Item>
-            ))}
-          </List>
-        </Box>
-      ))}
-    </Stack>
+    <Box>
+      <Divider mt={5} />
+      <Stack gap='sm'>
+        {operations.map((op, index) => (
+          <Box key={index} pt={5}>
+            <Text fz='md' fw={600}>
+              {op.data.title ?? 'Select an Option'}
+            </Text>
+            <List>
+              {((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]).map((option, index) => (
+                <List.Item key={index}>
+                  <Anchor
+                    onClick={() => {
+                      openDrawer({
+                        type: 'generic',
+                        data: {
+                          title: option.title,
+                          description: option.description,
+                          operations: option.operations,
+                        },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  >
+                    {option.title}
+                  </Anchor>
+                  {getSelectedOption(character, op)?.id === option.id ? ' (Selected)' : ''}
+                </List.Item>
+              ))}
+            </List>
+          </Box>
+        ))}
+      </Stack>
+    </Box>
   );
 }

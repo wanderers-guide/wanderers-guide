@@ -5,7 +5,7 @@ import {
   fetchTraitByName,
 } from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
-import { AbilityBlock, ContentType, Item, Language, Spell, Trait } from '@typing/content';
+import { AbilityBlock, ContentType, Item, Language, LivingEntity, Spell, Trait } from '@typing/content';
 import {
   Operation,
   OperationAddBonusToValue,
@@ -238,6 +238,21 @@ export const hasOperationSelection = (result: OperationResult) => {
   }
   return false;
 };
+
+export function getSelectedOption(entity: LivingEntity | null, op: Operation): OperationSelectOptionCustom | null {
+  if (!entity) return null;
+  if (op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM') {
+    // Custom select option
+  } else {
+    return null;
+  }
+
+  const selectionKey = Object.keys(entity?.operation_data?.selections ?? {}).find((key) => key.endsWith(op.id));
+  const selectedOption = selectionKey
+    ? op.data.optionsPredefined?.find((option) => option.id === entity!.operation_data!.selections![selectionKey])
+    : null;
+  return (selectedOption as OperationSelectOptionCustom) ?? null;
+}
 
 export function convertKeyToBasePrefix(key: string, id?: number): string {
   const mapping: { [key: string]: string } = {

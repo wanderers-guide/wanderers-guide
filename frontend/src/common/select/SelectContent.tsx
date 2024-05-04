@@ -43,7 +43,7 @@ import {
 import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
-import { ObjectWithUUID } from '@operations/operation-utils';
+import { ObjectWithUUID, getSelectedOption } from '@operations/operation-utils';
 import {
   IconCheck,
   IconChevronDown,
@@ -102,6 +102,7 @@ import {
 } from '../../typing/content';
 import { FilterOptions, SelectedFilter } from './filters';
 import { isAbilityBlockVisible } from '@content/content-hidden';
+import { OperationSelectOptionCustom } from '@typing/operations';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -2050,13 +2051,27 @@ export function ClassFeatureSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
+
+  // Find first selected option
+  let selectedOption: OperationSelectOptionCustom | null = null;
+  for (const op of props.classFeature.operations ?? []) {
+    const option = getSelectedOption(character, op);
+    if (option) {
+      selectedOption = option;
+      break;
+    }
+  }
 
   return (
     <BaseSelectionOption
       leftSection={
         <Group wrap='nowrap' gap={5}>
           <Box pl={8}>
-            <Text fz='sm'>{props.classFeature.name}</Text>
+            <Text fz='sm'>
+              {props.classFeature.name}
+              {selectedOption ? ` — ${selectedOption.title}` : ''}
+            </Text>
           </Box>
           <Box>
             <ActionSymbol cost={props.classFeature.actions} gap={5} />

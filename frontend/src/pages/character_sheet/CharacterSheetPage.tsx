@@ -398,7 +398,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 setOpenedDiceRoller(true);
               }}
             >
-              <GiRollingDices size='1.8rem' stroke={1.5} />
+              <GiRollingDices size='1.8rem' stroke={'1.5px'} />
             </ActionIcon>
           )}
         </Stack>
