@@ -18,21 +18,16 @@ import {
   Grid,
   LoadingOverlay,
 } from '@mantine/core';
-import { getHotkeyHandler } from '@mantine/hooks';
-import { ContextModalProps, openContextModal } from '@mantine/modals';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, Spell, SpellListEntry, SpellSlot } from '@typing/content';
+import { useQuery } from '@tanstack/react-query';
+import { Spell, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
-import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { drawerState } from '@atoms/navAtoms';
 import * as JsSearch from 'js-search';
-import { VariableListStr } from '@typing/variables';
-import { getVariable } from '@variables/variable-manager';
 import useRefresh from '@utils/use-refresh';
 import { isSpellVisible } from '@content/content-hidden';
 import { toLabel } from '@utils/strings';
@@ -463,7 +458,7 @@ const ListSection = (props: {
             <SpellSelectionOption
               spell={spell}
               onClick={(spell) => {
-                openDrawer({ type: 'spell', data: { id: spell.id } });
+                openDrawer({ type: 'spell', data: { spell: spell } });
               }}
               onDelete={(spellId) => {
                 setCharacter((c) => {
