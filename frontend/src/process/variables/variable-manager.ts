@@ -469,7 +469,7 @@ export function addVariable(
   let variable = getVariables(id)[name];
   if (variable) {
     // Already exists
-    if (defaultValue) {
+    if (defaultValue && type === 'prof') {
       adjVariable(id, name, defaultValue, source);
     }
   } else {
