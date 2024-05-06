@@ -279,6 +279,7 @@ export function selectContent<T = Record<string, any>>(
   openContextModal({
     modal: 'selectContent',
     title: <Title order={3}>{label}</Title>,
+    size: 'xl',
     innerProps: {
       type,
       onClick: onClick ? (option) => onClick(option as T) : undefined,
@@ -1474,6 +1475,7 @@ function SelectionOptionsRoot(props: {
       openContextModal({
         modal: 'addNewLore',
         title: <Title order={3}>Add New Lore</Title>,
+        size: 'xl',
         innerProps: {
           onConfirm: (loreName) => {
             props.onClick({
