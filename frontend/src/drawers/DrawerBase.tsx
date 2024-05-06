@@ -32,6 +32,7 @@ const NO_FEEDBACK_DRAWERS = [
   'stat-resist-weak',
   'add-spell',
   'inv-item',
+  'creature',
 ];
 
 export default function DrawerBase() {

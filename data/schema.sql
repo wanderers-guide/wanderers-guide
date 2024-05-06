@@ -45,7 +45,8 @@ CREATE TABLE public.ability_block (
     traits bigint[],
     content_source_id bigint NOT NULL,
     version character varying,
-    uuid bigint NOT NULL
+    uuid bigint NOT NULL,
+    availability character varying
 );
 
 
@@ -461,7 +462,8 @@ CREATE TABLE public.item (
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
     price json,
-    traits bigint[]
+    traits bigint[],
+    availability character varying
 );
 
 
@@ -494,7 +496,8 @@ CREATE TABLE public.language (
     description text,
     content_source_id bigint,
     rarity character varying DEFAULT 'COMMON'::character varying NOT NULL,
-    uuid bigint NOT NULL
+    uuid bigint NOT NULL,
+    availability character varying
 );
 
 
@@ -580,7 +583,8 @@ CREATE TABLE public.spell (
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
-    heightened json
+    heightened json,
+    availability character varying
 );
 
 

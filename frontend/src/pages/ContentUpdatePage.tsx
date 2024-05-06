@@ -140,8 +140,8 @@ export function Component(props: {}) {
                 {data.contentUpdate.action === 'UPDATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      {_.startCase(data.contentUpdate.action.toLowerCase())} <b>{data.originalContent?.name}</b> from
-                      the <b>{data.source.name}</b>.
+                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from the{' '}
+                      <b>{data.source.name}</b>.
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
                       <Box>
@@ -154,7 +154,7 @@ export function Component(props: {}) {
                               mapToDrawerData(
                                 data.contentUpdate.data?.type ?? data.contentUpdate.type,
                                 data.contentUpdate.ref_id,
-                                { noFeedback: true, showOperations: true }
+                                { showOperations: true }
                               )
                             );
                           }}
@@ -313,7 +313,12 @@ export function Component(props: {}) {
                   </Group>
                   <Text ta='center' fz='xs' fs='italic'>
                     See{' '}
-                    <Anchor fz='sm' fs='italic' href={DISCORD_URL} target='_blank'>
+                    <Anchor
+                      fz='sm'
+                      fs='italic'
+                      href={`https://discord.com/channels/735260060682289254/1220411970654830743/${data.contentUpdate.discord_msg_id}`}
+                      target='_blank'
+                    >
                       Discord
                     </Anchor>{' '}
                     to approve / vote on this change.

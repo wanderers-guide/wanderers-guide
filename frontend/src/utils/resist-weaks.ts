@@ -2,9 +2,10 @@ import { StoreID, VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import { compileExpressions } from '@variables/variable-utils';
 import _ from 'lodash-es';
+import { toLabel } from './strings';
 
 export function displayResistWeak(id: StoreID, text: string) {
-  return _.startCase((compileExpressions(id, text.replace(',', ' '), true)?.replace(' 0', ' 1') ?? '').toLowerCase());
+  return toLabel(compileExpressions(id, text.replace(',', ' '), true)?.replace(' 0', ' 1') ?? '');
 }
 
 export function getResistWeaks(id: StoreID, type: 'RESISTANCES' | 'WEAKNESSES') {
@@ -46,7 +47,7 @@ export function getResistWeaks(id: StoreID, type: 'RESISTANCES' | 'WEAKNESSES') 
     if (value === 'REMOVE') {
       continue;
     }
-    results.push(_.startCase(`${key} ${value}`));
+    results.push(toLabel(`${key} ${value}`));
   }
 
   return results;

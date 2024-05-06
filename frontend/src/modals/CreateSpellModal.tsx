@@ -28,10 +28,10 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Spell, Trait } from '@typing/content';
+import { Availability, Spell, Trait } from '@typing/content';
 import { actionCostToLabel } from '@utils/actions';
 import { isValidImage } from '@utils/images';
-import { startCase } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
@@ -106,6 +106,7 @@ export function CreateSpellModal(props: {
       rank: 0,
       traditions: [],
       rarity: 'COMMON',
+      availability: undefined as Availability | undefined,
       cast: null,
       defense: '',
       cost: '',
@@ -213,7 +214,7 @@ export function CreateSpellModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', startCase(text));
+                      form.setFieldValue('name', toLabel(text));
                     }
                   }}
                   onBlur={() => props.onNameBlur?.(form.values.name)}
@@ -361,6 +362,17 @@ export function CreateSpellModal(props: {
                     }
                   />
                 </Stack>
+
+                <Select
+                  label='Availability'
+                  data={[
+                    { value: 'STANDARD', label: 'Standard' },
+                    { value: 'LIMITED', label: 'Limited' },
+                    { value: 'RESTRICTED', label: 'Restricted' },
+                  ]}
+                  w={140}
+                  {...form.getInputProps('availability')}
+                />
 
                 <TextInput
                   defaultValue={metaData.image_url ?? ''}

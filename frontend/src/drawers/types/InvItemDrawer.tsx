@@ -9,6 +9,7 @@ import {
   isItemArmor,
   isItemBroken,
   isItemContainer,
+  isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
   isItemWithPropertyRunes,
@@ -674,7 +675,7 @@ function InvItemSections(props: {
   }
 
   let rangeAndReloadSection = null;
-  if (props.invItem.item.meta_data?.range || props.invItem.item.meta_data?.reload) {
+  if (isItemRangedWeapon(props.invItem.item)) {
     rangeAndReloadSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={0}>

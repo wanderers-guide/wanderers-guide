@@ -1,7 +1,7 @@
 import { characterState } from '@atoms/characterAtoms';
 import { SelectContentButton, SpellSelectionOption, selectContent } from '@common/select/SelectContent';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { collectCharacterSpellcasting } from '@content/collect-content';
+import { collectEntitySpellcasting } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   Box,
@@ -18,22 +18,19 @@ import {
   Grid,
   LoadingOverlay,
 } from '@mantine/core';
-import { getHotkeyHandler } from '@mantine/hooks';
-import { ContextModalProps, openContextModal } from '@mantine/modals';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, Spell, SpellListEntry, SpellSlot } from '@typing/content';
+import { useQuery } from '@tanstack/react-query';
+import { Spell, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
-import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { drawerState } from '@atoms/navAtoms';
 import * as JsSearch from 'js-search';
-import { VariableListStr } from '@typing/variables';
-import { getVariable } from '@variables/variable-manager';
 import useRefresh from '@utils/use-refresh';
+import { isSpellVisible } from '@content/content-hidden';
+import { toLabel } from '@utils/strings';
 
 export default function ManageSpellsModal(props: {
   opened: boolean;
@@ -51,7 +48,7 @@ export default function ManageSpellsModal(props: {
   const { data: allRawSpells, isFetching } = useQuery({
     queryKey: [`find-spells`],
     queryFn: async () => {
-      return await fetchContentAll<Spell>('spell');
+      return (await fetchContentAll<Spell>('spell')).filter((spell) => isSpellVisible('CHARACTER', spell));
     },
   });
 
@@ -74,7 +71,7 @@ export default function ManageSpellsModal(props: {
 
   const charData = useMemo(() => {
     if (!character) return null;
-    return collectCharacterSpellcasting(character);
+    return collectEntitySpellcasting('CHARACTER', character);
   }, [character]);
 
   const allFilteredSpells =
@@ -117,7 +114,7 @@ export default function ManageSpellsModal(props: {
     <Modal
       opened={props.opened}
       onClose={props.onClose}
-      title={<Title order={3}>Manage {isRituals ? 'Rituals' : `Spells - ${variableNameToLabel(props.source)}`}</Title>}
+      title={<Title order={3}>Manage {isRituals ? 'Rituals' : `Spells - ${toLabel(props.source)}`}</Title>}
       styles={{
         body: {
           paddingRight: 2,
@@ -461,7 +458,7 @@ const ListSection = (props: {
             <SpellSelectionOption
               spell={spell}
               onClick={(spell) => {
-                openDrawer({ type: 'spell', data: { id: spell.id } });
+                openDrawer({ type: 'spell', data: { spell: spell } });
               }}
               onDelete={(spellId) => {
                 setCharacter((c) => {

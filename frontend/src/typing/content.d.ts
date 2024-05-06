@@ -16,6 +16,7 @@ type ContentPackage = {
   sources?: ContentSource[];
 };
 
+type Availability = 'STANDARD' | 'LIMITED' | 'RESTRICTED';
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'UNIQUE';
 type Size = 'TINY' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'HUGE' | 'GARGANTUAN';
 type ActionCost =
@@ -98,7 +99,6 @@ interface Condition {
   description: string;
   value?: number;
   source?: string;
-  for_character: boolean;
   for_object: boolean;
   for_creature: boolean;
   pathfinder_only?: boolean;
@@ -119,6 +119,7 @@ interface Item {
   bulk?: string;
   level: number;
   rarity: Rarity;
+  availability?: Availability;
   traits?: number[];
   description: string;
   group: ItemGroup;
@@ -152,6 +153,7 @@ interface Item {
       current?: number;
       max?: number;
     };
+    container_default_items?: { id: number; name: string; quantity: number }[];
     group?: string;
     hardness?: number;
     hp?: number;
@@ -218,6 +220,7 @@ interface Spell {
   rank: number;
   traditions: string[];
   rarity: Rarity;
+  availability?: Availability;
   cast: ActionCost | string;
   traits?: number[];
   defense?: string;
@@ -245,48 +248,6 @@ interface Spell {
     unselectable?: boolean;
     image_url?: string;
   };
-  content_source_id: number;
-  version: string;
-}
-
-interface Creature {
-  id: number;
-  created_at: string;
-  name: string;
-  level: number;
-  rarity: Rarity;
-  size: Size;
-  traits: number[];
-  inventory?: Inventory;
-  notes?: {
-    contents: JSONContent;
-  };
-  details: {
-    image_url?: string;
-    background_image_url?: string;
-    conditions?: Condition[];
-    description: string;
-  };
-  roll_history?: {
-    rolls: {
-      type: string;
-      label: string;
-      result: number;
-      bonus: number;
-      timestamp: number;
-    }[];
-  };
-  operations: Operation[] | undefined;
-  abilities?: AbilityBlock[];
-  spells?: {
-    slots: SpellSlot[];
-    list: SpellListEntry[];
-    // The number of focus points
-    focus_point_current: number;
-    // Used for tracking how many times an innate spell has been cast
-    innate_casts: SpellInnateEntry[];
-  };
-  meta_data?: Record<string, any>; // TODO
   content_source_id: number;
   version: string;
 }
@@ -339,6 +300,7 @@ interface AbilityBlock {
   actions: ActionCost;
   level?: number;
   rarity: Rarity;
+  availability?: Availability;
   prerequisites?: string[];
   frequency?: string;
   cost?: string;
@@ -361,20 +323,79 @@ interface AbilityBlock {
   version?: string;
 }
 
-interface Character {
+interface LivingEntity {
+  name: string;
+  level: number;
+  experience: number;
+  inventory?: Inventory;
+  hp_current: number;
+  hp_temp: number;
+  stamina_current: number;
+  resolve_current: number;
+  details?: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+  };
+  roll_history?: {
+    rolls: {
+      type: string;
+      label: string;
+      result: number;
+      bonus: number;
+      timestamp: number;
+    }[];
+  };
+  spells?: {
+    slots: SpellSlot[];
+    list: SpellListEntry[];
+    // The number of focus points
+    focus_point_current: number;
+    // Used for tracking how many times an innate spell has been cast
+    innate_casts: SpellInnateEntry[];
+  };
+  operation_data?: {
+    selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
+    notes?: Record<string, string>; // TODO <op UUID> -> string
+  };
+  meta_data?: {
+    given_item_ids?: number[];
+    reset_hp?: boolean;
+    calculated_stats?: {
+      hp_max: number;
+      stamina_max: number;
+      resolve_max: number;
+      profs: Record<string, { total: number; type: ProficiencyType }>;
+    };
+  };
+}
+
+interface Creature extends LivingEntity {
+  id: number;
+  created_at: string;
+  rarity: Rarity;
+  notes?: {
+    contents: JSONContent;
+  };
+  details: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+    description: string;
+  };
+  operations: Operation[] | undefined;
+  abilities_base?: AbilityBlock[];
+  abilities_added?: number[];
+  content_source_id: number;
+  version: string;
+}
+
+interface Character extends LivingEntity {
   id: number;
   created_at: string;
   campaign_id?: number;
   user_id: string;
-  name: string;
-  level: number;
-  experience: number;
-  hp_current: number;
-  hp_temp: number;
   hero_points: number;
-  stamina_current: number;
-  resolve_current: number;
-  inventory?: Inventory;
   notes?: {
     pages: {
       name: string;
@@ -386,6 +407,7 @@ interface Character {
   details?: {
     image_url?: string;
     background_image_url?: string;
+    conditions?: Condition[];
     dice?: {
       default_theme?: string;
       opened_default_presets?: boolean;
@@ -420,28 +442,9 @@ interface Character {
       organized_play_id?: string;
       organized_play_adventures?: SocietyAdventureEntry[];
     };
-    conditions?: Condition[];
   };
   campaign_id?: number;
-  roll_history?: {
-    rolls: {
-      type: string;
-      label: string;
-      result: number;
-      bonus: number;
-      timestamp: number;
-    }[];
-  };
   custom_operations?: Operation[];
-  meta_data?: {
-    reset_hp?: boolean;
-    calculated_stats?: {
-      hp_max: number;
-      stamina_max: number;
-      resolve_max: number;
-      profs: Record<string, { total: number; type: ProficiencyType }>;
-    };
-  };
   options?: {
     is_public?: boolean;
     auto_detect_prerequisites?: boolean;
@@ -452,6 +455,7 @@ interface Character {
     ignore_bulk_limit?: boolean;
     alternate_ancestry_boosts?: boolean;
     voluntary_flaws?: boolean;
+    organized_play?: boolean;
   };
   variants?: {
     ancestry_paragon?: boolean;
@@ -464,18 +468,6 @@ interface Character {
   };
   content_sources?: {
     enabled?: number[];
-  };
-  operation_data?: {
-    selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
-    notes?: Record<string, string>; // TODO <op UUID> -> string
-  };
-  spells?: {
-    slots: SpellSlot[];
-    list: SpellListEntry[];
-    // The number of focus points
-    focus_point_current: number;
-    // Used for tracking how many times an innate spell has been cast
-    innate_casts: SpellInnateEntry[];
   };
   companions?: Record<string, any>; // TODO
 }
@@ -623,7 +615,7 @@ interface ContentSource {
     access_key?: string;
   };
   is_published: boolean;
-  required_content_sources: number[];
+  required_content_sources?: number[];
   group: string;
   artwork_url?: string;
   meta_data?: {
@@ -688,6 +680,7 @@ type Language = {
   description: string;
   content_source_id: number;
   rarity: Rarity;
+  availability?: Availability;
 };
 
 type SenseWithRange = {

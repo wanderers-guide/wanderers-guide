@@ -1,6 +1,6 @@
 import { ItemIcon } from '@common/ItemIcon';
 import { getConditionByName } from '@conditions/condition-handler';
-import { getCachedSources } from '@content/content-store';
+import { fetchContentAll, getCachedSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
 import { Character, Inventory, InventoryItem, Item } from '@typing/content';
@@ -67,11 +67,12 @@ export function getInvBulk(inv: Inventory) {
  * @param item - Item to add
  * @param is_formula - Whether the item is a formula
  */
-export const handleAddItem = (
+export const handleAddItem = async (
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
   item: Item,
   is_formula: boolean
 ) => {
+  const container_contents = await getDefaultContainerContents(item);
   setInventory((prev) => {
     const newItems = [
       ..._.cloneDeep(prev.items),
@@ -81,7 +82,7 @@ export const handleAddItem = (
         is_formula: is_formula,
         is_equipped: false,
         is_invested: false,
-        container_contents: [],
+        container_contents,
       },
     ].sort((a, b) => a.item.name.localeCompare(b.item.name));
     return {
@@ -96,6 +97,31 @@ export const handleAddItem = (
     autoClose: 1000,
   });
 };
+
+async function getDefaultContainerContents(item: Item, allItems?: Item[], count = 1): Promise<InventoryItem[]> {
+  if (count > 10) return [];
+  if ((item.meta_data?.container_default_items ?? []).length === 0) return [];
+  const items = allItems ? allItems : await fetchContentAll<Item>('item');
+
+  const invItems: InventoryItem[] = [];
+  for (const record of item.meta_data?.container_default_items ?? []) {
+    const containerItem = _.cloneDeep(items.find((i) => i.id === record.id));
+    if (!containerItem) continue;
+    if (containerItem.meta_data) {
+      containerItem.meta_data.quantity = record.quantity;
+    }
+    invItems.push({
+      id: crypto.randomUUID(),
+      item: containerItem,
+      is_formula: false,
+      is_equipped: false,
+      is_invested: false,
+      container_contents: await getDefaultContainerContents(containerItem, items, count++),
+    });
+  }
+
+  return invItems;
+}
 
 export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
   setTimeout(() => {
@@ -147,16 +173,15 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
 }
 
 export function addExtraItems(items: Item[], character: Character, setCharacter: SetterOrUpdater<Character | null>) {
-  setTimeout(() => {
+  setTimeout(async () => {
     if (!character.inventory) return;
 
     const extraItems: InventoryItem[] = [];
-    (getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []).forEach((itemId) => {
+
+    for (const itemId of getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []) {
       const item = items.find((item) => `${item.id}` === itemId);
-      const itemExists = !!(
-        character?.inventory && getFlatInvItems(character?.inventory).find((i) => `${i.item.id}` === itemId)
-      );
-      if (item && !itemExists) {
+      const hasItemAdded = character.meta_data?.given_item_ids?.includes(parseInt(itemId));
+      if (item && !hasItemAdded) {
         const baseItem = item.meta_data?.base_item
           ? items.find((i) => labelToVariable(i.name) === labelToVariable(item.meta_data!.base_item!))
           : undefined;
@@ -167,18 +192,18 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
             ...item,
             meta_data: item.meta_data
               ? {
-                ...item.meta_data,
-                base_item_content: baseItem,
-              }
+                  ...item.meta_data,
+                  base_item_content: baseItem,
+                }
               : undefined,
           },
           is_formula: false,
           is_equipped: isItemEquippable(item),
           is_invested: isItemInvestable(item),
-          container_contents: [],
+          container_contents: await getDefaultContainerContents(item, items),
         });
       }
-    });
+    }
 
     if (extraItems.length === 0) return;
 
@@ -188,7 +213,11 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
         ...c,
         inventory: {
           ...c.inventory!,
-          items: [...(c.inventory?.items ?? []), ...extraItems],
+          items: _.uniqBy([...c.inventory!.items, ...extraItems], 'id'),
+        },
+        meta_data: {
+          ...c.meta_data,
+          given_item_ids: _.uniq([...(c.meta_data?.given_item_ids ?? []), ...extraItems.map((item) => item.item.id)]),
         },
       };
     });
@@ -416,13 +445,7 @@ export function isItemWithPropertyRunes(item: Item) {
  * @returns - Whether the item is consumable
  */
 export function isItemWithQuantity(item: Item) {
-  const nonConsumableItemFns = [
-    isItemWeapon,
-    isItemArmor,
-    isItemShield,
-    isItemContainer,
-    isItemInvestable,
-  ]
+  const nonConsumableItemFns = [isItemWeapon, isItemArmor, isItemShield, isItemContainer, isItemInvestable];
   for (const nonConsumableFn of nonConsumableItemFns) {
     if (nonConsumableFn(item)) {
       return false;

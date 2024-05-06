@@ -7,6 +7,7 @@ import {
   SpellInnateEntry,
   CastingSource,
   SenseWithRange,
+  LivingEntity,
 } from '@typing/content';
 import { GiveSpellData, SpellMetadata } from '@typing/operations';
 import { StoreID, VariableListStr, VariableNum } from '@typing/variables';
@@ -23,9 +24,10 @@ export function collectCharacterAbilityBlocks(
   blocks: AbilityBlock[],
   options?: { filterBasicClassFeatures?: boolean }
 ) {
+  const id = 'CHARACTER';
   // Feats ///////////////////////////////
 
-  const featIds = getVariable<VariableListStr>('CHARACTER', 'FEAT_IDS')?.value ?? [];
+  const featIds = getVariable<VariableListStr>(id, 'FEAT_IDS')?.value ?? [];
   const feats = blocks
     .filter((block) => block.type === 'feat' && featIds.includes(`${block.id}`))
     .sort((a, b) => {
@@ -55,7 +57,7 @@ export function collectCharacterAbilityBlocks(
 
   // Features ////////////////////////////
 
-  const classFeatureIds = getVariable<VariableListStr>('CHARACTER', 'CLASS_FEATURE_IDS')?.value ?? [];
+  const classFeatureIds = getVariable<VariableListStr>(id, 'CLASS_FEATURE_IDS')?.value ?? [];
   let classFeatures = blocks.filter(
     (block) => block.type === 'class-feature' && classFeatureIds.includes(`${block.id}`)
   );
@@ -71,12 +73,12 @@ export function collectCharacterAbilityBlocks(
     classFeatures = classFeatures.filter((feature) => !BASIC_NAMES.includes(feature.name));
   }
 
-  const physicalFeatureIds = getVariable<VariableListStr>('CHARACTER', 'PHYSICAL_FEATURE_IDS')?.value ?? [];
+  const physicalFeatureIds = getVariable<VariableListStr>(id, 'PHYSICAL_FEATURE_IDS')?.value ?? [];
   const physicalFeatures = blocks.filter(
     (block) => block.type === 'physical-feature' && physicalFeatureIds.includes(`${block.id}`)
   );
 
-  const heritageIds = getVariable<VariableListStr>('CHARACTER', 'HERITAGE_IDS')?.value ?? [];
+  const heritageIds = getVariable<VariableListStr>(id, 'HERITAGE_IDS')?.value ?? [];
   const heritages = blocks.filter((block) => block.type === 'heritage' && heritageIds.includes(`${block.id}`));
 
   return {
@@ -140,17 +142,17 @@ export function collectCharacterSenses(id: StoreID, blocks: AbilityBlock[]) {
   };
 }
 
-export function collectCharacterSpellcasting(character: Character) {
-  const castingSources = getVariable<VariableListStr>('CHARACTER', 'CASTING_SOURCES')?.value ?? [];
-  const spellDatas = getVariable<VariableListStr>('CHARACTER', 'SPELL_DATA')?.value ?? [];
-  const spellSlots = getVariable<VariableListStr>('CHARACTER', 'SPELL_SLOTS')?.value ?? [];
+export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
+  const castingSources = getVariable<VariableListStr>(id, 'CASTING_SOURCES')?.value ?? [];
+  const spellDatas = getVariable<VariableListStr>(id, 'SPELL_DATA')?.value ?? [];
+  const spellSlots = getVariable<VariableListStr>(id, 'SPELL_SLOTS')?.value ?? [];
 
   // Prefill slots from computed results
   let slots: SpellSlot[] = [];
   for (const strS of spellSlots) {
     const slot = JSON.parse(strS) as { lvl: number; rank: number; amt: number; source: string };
     for (let i = 0; i < slot.amt; i++) {
-      if (slot.lvl !== character.level) continue;
+      if (slot.lvl !== entity.level) continue;
       slots.push({
         rank: slot.rank,
         source: slot.source,
@@ -161,11 +163,11 @@ export function collectCharacterSpellcasting(character: Character) {
     }
   }
 
-  // Fill slot data from saved character data
-  slots = mergeSpellSlots(slots, character.spells?.slots ?? []);
+  // Fill slot data from saved entity data
+  slots = mergeSpellSlots(slots, entity.spells?.slots ?? []);
 
-  // List of character's spells
-  let list = _.cloneDeep(character.spells?.list ?? []);
+  // List of entity's spells
+  let list = _.cloneDeep(entity.spells?.list ?? []);
   let focus: { spell_id: number; source: string; rank: number | undefined }[] = [];
   let innate: SpellInnateEntry[] = [];
   for (const strD of spellDatas) {
@@ -199,7 +201,7 @@ export function collectCharacterSpellcasting(character: Character) {
   innate = _.uniqWith(innate, _.isEqual);
 
   // Fill current casts from saved character data
-  innate = mergeInnateSpells(innate, character.spells?.innate_casts ?? []);
+  innate = mergeInnateSpells(innate, entity.spells?.innate_casts ?? []);
 
   return {
     slots,
@@ -225,13 +227,13 @@ export function collectCharacterSpellcasting(character: Character) {
   };
 }
 
-export function getFocusPoints(character: Character, focusSpells: Record<string, any>[]) {
+export function getFocusPoints(id: StoreID, entity: LivingEntity, focusSpells: Record<string, any>[]) {
   const fromSpells = focusSpells.filter((f) => f?.rank !== 0).length ?? 0;
-  const extra = getVariable<VariableNum>('CHARACTER', 'FOCUS_POINT_BONUS')?.value ?? 0;
+  const extra = getVariable<VariableNum>(id, 'FOCUS_POINT_BONUS')?.value ?? 0;
 
   const maxFocusPoints = Math.min(fromSpells + extra, 3);
   return {
-    current: character.spells?.focus_point_current ?? maxFocusPoints,
+    current: entity.spells?.focus_point_current ?? maxFocusPoints,
     max: maxFocusPoints,
   };
 }

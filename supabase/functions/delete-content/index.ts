@@ -37,6 +37,8 @@ serve(async (req: Request) => {
         'creature',
         'language',
         'encounter',
+        'archetype',
+        'versatile_heritage',
       ].includes(tableName)
     ) {
       return {

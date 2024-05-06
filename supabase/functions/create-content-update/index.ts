@@ -84,7 +84,10 @@ serve(async (req: Request) => {
             };
           }
 
-          return upsertResponseWrapper('insert', result);
+          return upsertResponseWrapper('insert', {
+            ...result,
+            discord_msg_id: messageId,
+          });
         }
       } catch (e) {}
     }

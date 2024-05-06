@@ -50,7 +50,7 @@ import { SelectionOperation } from './selection/SelectionOperation';
 import { GiveLanguageOperation } from './language/GiveLanguageOperation';
 import { GiveSenseOperation } from './ability_block/GiveSenseOperation';
 import { GivePhysicalFeatureOperation } from './ability_block/GivePhysicalFeatureOperation';
-import { addVariable, resetVariables } from '@variables/variable-manager';
+import { addVariable, getVariable, resetVariables } from '@variables/variable-manager';
 import { GiveHeritageOperation } from './ability_block/GiveHeritageOperation';
 import { AddBonusToValOperation } from './variables/AddBonusToValOperation';
 import { GiveSpellSlotOperation } from './spell/GiveSpellSlotOperation';
@@ -146,6 +146,12 @@ export function OperationSection(props: {
     for (let op of props.operations ?? []) {
       if (op.type === 'createValue') {
         addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value);
+      } else if (op.type === 'conditional') {
+        for (const check of op.data.conditions) {
+          if (check.operator && check.value && !getVariable('CHARACTER', check.name)) {
+            addVariable('CHARACTER', 'prof', check.name);
+          }
+        }
       }
     }
   }, [props.operations]);

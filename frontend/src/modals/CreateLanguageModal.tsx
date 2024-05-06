@@ -17,7 +17,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Language, Rarity } from '@typing/content';
+import { Availability, Language, Rarity } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
 
@@ -67,6 +67,7 @@ export function CreateLanguageModal(props: {
       script: '',
       description: '',
       rarity: 'COMMON' as Rarity,
+      availability: undefined as Availability | undefined,
       content_source_id: -1,
     },
   });
@@ -124,6 +125,16 @@ export function CreateLanguageModal(props: {
                 ]}
                 w={140}
                 {...form.getInputProps('rarity')}
+              />
+              <Select
+                label='Availability'
+                data={[
+                  { value: 'STANDARD', label: 'Standard' },
+                  { value: 'LIMITED', label: 'Limited' },
+                  { value: 'RESTRICTED', label: 'Restricted' },
+                ]}
+                w={140}
+                {...form.getInputProps('availability')}
               />
             </Group>
 

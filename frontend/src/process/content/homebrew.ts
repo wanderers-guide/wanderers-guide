@@ -26,7 +26,7 @@ export async function defineDefaultSourcesForSource(source: ContentSource) {
   defineDefaultSources([
     ...allSources.map((source) => source.id), // shouldn't be needed
     ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []), // shouldn't be needed
-    ...source.required_content_sources,
+    ...(source.required_content_sources ?? []),
     source.id,
   ]);
 }

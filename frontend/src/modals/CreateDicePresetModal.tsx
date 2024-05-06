@@ -1,7 +1,6 @@
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
-import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
 import { useState } from 'react';
 
 export default function CreateDicePresetModal({

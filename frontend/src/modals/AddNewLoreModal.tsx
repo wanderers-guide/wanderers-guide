@@ -1,7 +1,8 @@
 import { Button, Group, Stack, Text, TextInput } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
-import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
+import { toLabel } from '@utils/strings';
+import { labelToVariable } from '@variables/variable-utils';
 import { useState } from 'react';
 
 export default function AddNewLoreModal({
@@ -31,8 +32,8 @@ export default function AddNewLoreModal({
           ['Enter', handleSubmit],
         ])}
       />
-      {loreName && variableNameToLabel(labelToVariable(loreName)) !== loreName.trim() && (
-        <Text fz='sm'>Resulting Name: {variableNameToLabel(labelToVariable(loreName))}</Text>
+      {loreName && toLabel(labelToVariable(loreName)) !== loreName.trim() && (
+        <Text fz='sm'>Resulting Name: {toLabel(labelToVariable(loreName))}</Text>
       )}
       <Group justify='flex-end'>
         <Button variant='default' onClick={() => context.closeModal(id)}>

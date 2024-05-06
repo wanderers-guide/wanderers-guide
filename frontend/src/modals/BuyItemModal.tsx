@@ -1,11 +1,6 @@
-import { Text, TextInput, Stack, Button, Group, Modal, Title, Box } from '@mantine/core';
-import { ContextModalProps } from '@mantine/modals';
-import { Character, Inventory, Item } from '@typing/content';
+import { Text, Stack, Button, Group, Modal, Title, Box } from '@mantine/core';
+import { Inventory, Item } from '@typing/content';
 import * as _ from 'lodash-es';
-import { isValidImage } from '@utils/images';
-import { useState } from 'react';
-import { labelToVariable, variableNameToLabel } from '@variables/variable-utils';
-import { getHotkeyHandler } from '@mantine/hooks';
 import { CoinSection } from '@pages/character_sheet/panels/InventoryPanel';
 import { convertToCp, purchase } from '@items/currency-handler';
 

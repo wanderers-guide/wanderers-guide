@@ -9,7 +9,7 @@ import { getBestArmor, getBestShield, handleUpdateItem, handleDeleteItem, handle
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { Inventory, InventoryItem } from '@typing/content';
-import { VariableProf } from '@typing/variables';
+import { StoreID, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSaveVariables } from '@variables/variable-manager';
@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
 export default function ArmorSection(props: {
+  id: StoreID;
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
@@ -26,7 +27,6 @@ export default function ArmorSection(props: {
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilState(characterState);
 
   const { hovered: armorHovered, ref: armorRef } = useHover();
   const { hovered: shieldHovered, ref: shieldRef } = useHover();
@@ -35,11 +35,12 @@ export default function ArmorSection(props: {
     openDrawer({
       type: 'stat-prof',
       data: { variableName: save.name },
+      extra: { addToHistory: true },
     });
   };
 
-  const bestArmor = getBestArmor('CHARACTER', props.inventory);
-  const bestShield = getBestShield('CHARACTER', props.inventory);
+  const bestArmor = getBestArmor(props.id, props.inventory);
+  const bestShield = getBestShield(props.id, props.inventory);
 
   if (bestArmor?.item.meta_data?.runes?.resilient) {
     const resilientRune = bestArmor?.item.meta_data?.runes?.resilient;
@@ -52,9 +53,9 @@ export default function ArmorSection(props: {
       resilientLabel = 'Major Resilient';
     }
 
-    addVariableBonus('CHARACTER', 'AC_BONUS', resilientRune, 'item', '', resilientLabel + ' Rune');
-    for (const save of getAllSaveVariables('CHARACTER')) {
-      addVariableBonus('CHARACTER', save.name, resilientRune, 'item', '', resilientLabel + ' Rune');
+    addVariableBonus(props.id, 'AC_BONUS', resilientRune, 'item', '', resilientLabel + ' Rune');
+    for (const save of getAllSaveVariables(props.id)) {
+      addVariableBonus(props.id, save.name, resilientRune, 'item', '', resilientLabel + ' Rune');
     }
   }
 
@@ -101,6 +102,7 @@ export default function ArmorSection(props: {
                       });
                     },
                   },
+                  extra: { addToHistory: true },
                 });
               }}
             >
@@ -115,7 +117,7 @@ export default function ArmorSection(props: {
                 }}
               >
                 <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em'>
-                  {displayFinalAcValue('CHARACTER', bestArmor?.item)}
+                  {displayFinalAcValue(props.id, bestArmor?.item)}
                 </Text>
                 <Text ta='center' c='gray.5' fz='xs'>
                   AC
@@ -143,6 +145,7 @@ export default function ArmorSection(props: {
                           handleMoveItem(props.setInventory, invItem, containerItem);
                         },
                       },
+                      extra: { addToHistory: true },
                     });
                   }}
                 >
@@ -187,7 +190,7 @@ export default function ArmorSection(props: {
             </Box>
           </Group>
           <Stack gap={8}>
-            {getAllSaveVariables('CHARACTER').map((save, index) => (
+            {getAllSaveVariables(props.id).map((save, index) => (
               <Button.Group key={index}>
                 <BlurButton size='compact-xs' fw={400} onClick={() => handleSaveOpen(save)}>
                   {variableToLabel(save)}
@@ -202,7 +205,7 @@ export default function ArmorSection(props: {
                   onClick={() => handleSaveOpen(save)}
                 >
                   <Text c='gray.0' fz='xs' pr={15}>
-                    {displayFinalProfValue('CHARACTER', save.name)}
+                    {displayFinalProfValue(props.id, save.name)}
                   </Text>
                   <Badge
                     size='xs'

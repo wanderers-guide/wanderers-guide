@@ -125,17 +125,6 @@ async function mergeTraits(removeTraitId: number, mergeTraitId: number, content:
     }
   }
 
-  for (const creature of content.creatures) {
-    if (creature.traits?.includes(removeTraitId)) {
-      creature.traits = creature.traits.filter((id) => id !== removeTraitId);
-      if (!creature.traits.includes(mergeTraitId)) {
-        creature.traits.push(mergeTraitId);
-      }
-      console.log('Updating creature', creature.id, creature.name, creature.traits);
-      await upsertCreature(creature);
-    }
-  }
-
   for (const item of content.items) {
     if (item.traits?.includes(removeTraitId)) {
       item.traits = item.traits.filter((id) => id !== removeTraitId);

@@ -19,8 +19,10 @@ import {
   VariableValue,
 } from 'src/typing/variables';
 import { getVariables } from './variable-manager';
-import { evaluate } from 'mathjs/number';
+import { evaluate, to } from 'mathjs/number';
 import { getFinalVariableValue } from './variable-display';
+import { titleCase } from 'title-case';
+import { toLabel } from '@utils/strings';
 
 export function newVariable(type: VariableType, name: string, defaultValue?: VariableValue): Variable {
   if (type === 'attr') {
@@ -76,74 +78,7 @@ export function newVariable(type: VariableType, name: string, defaultValue?: Var
 }
 
 export function variableToLabel(variable: Variable) {
-  return variableNameToLabel(variable.name);
-}
-
-export function variableNameToLabel(variableName?: string | null) {
-  if (!variableName) return '';
-  const OVERRIDE_CHANGES = {
-    'fort ': 'Fortitude ',
-    'str ': 'Strength ',
-    'dex ': 'Dexterity ',
-    'con ': 'Constitution ',
-    'int ': 'Intelligence ',
-    'wis ': 'Wisdom ',
-    'cha ': 'Charisma ',
-    ' dc': ' DC',
-    ' hp': ' HP',
-    'hp ': 'HP ',
-    'Simple Weapons': 'simple weapons',
-    'Martial Weapons': 'martial weapons',
-    'Advanced Weapons': 'advanced weapons',
-    'Unarmed Attacks': 'unarmed attacks',
-    'Light Armor': 'light armor',
-    'Medium Armor': 'medium armor',
-    'Heavy Armor': 'heavy armor',
-    'Unarmored Defense': 'unarmored defense',
-    'Class DC': 'class DC',
-    'Class Dc': 'class DC',
-  };
-  const REMOVAL_CHANGES = [
-    'skill_',
-    'save_',
-    'weapon_group_',
-    'weapon_',
-    'armor_group_',
-    'armor_',
-    'attribute_',
-    'speed_',
-  ];
-
-  let label = variableName.trim().toLowerCase();
-  for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
-    label = ` ${label} `.replace(key, value);
-  }
-  for (const value of REMOVAL_CHANGES) {
-    label = label.replace(value, '');
-  }
-  label = label.replace(/_/g, ' ');
-  label = _.startCase(label);
-
-  // Run thru the override again to fix capitalization
-  for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
-    label = label.replace(key, value);
-  }
-
-  // Lore switch
-  if (label.startsWith('Lore ')) {
-    label = label.replace('Lore ', '');
-    label = `${label} Lore`;
-  }
-
-  // Capitalize AC and DC
-  if (label.endsWith('Ac')) {
-    label = label.slice(0, -2) + 'AC';
-  }
-  if (label.endsWith('Dc')) {
-    label = label.slice(0, -2) + 'DC';
-  }
-
-  return label.trim();
+  return toLabel(variable.name);
 }
 
 export function labelToVariable(label: string, trim = true) {

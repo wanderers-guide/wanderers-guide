@@ -11,6 +11,7 @@ import {
   compileTraits,
   isItemArchaic,
   isItemArmor,
+  isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
   isItemWithPropertyRunes,
@@ -76,7 +77,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
           <Group wrap='nowrap' gap={10}>
             <Box>
               <Title order={3}>
-                {item.name}{' '}
+                {toLabel(item.name)}{' '}
                 {item.meta_data?.quantity && item.meta_data.quantity > 1 ? `(${item.meta_data.quantity})` : ''}
               </Title>
             </Box>
@@ -206,6 +207,7 @@ export function ItemDrawerContent(props: {
           <TraitsDisplay
             traitIds={compileTraits(item)}
             rarity={item.rarity}
+            availability={item.availability}
             archaic={isItemArchaic(item)}
             interactable
           />
@@ -439,7 +441,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   }
 
   let rangeAndReloadSection = null;
-  if (props.item.meta_data?.range || props.item.meta_data?.reload) {
+  if (isItemRangedWeapon(props.item)) {
     rangeAndReloadSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group wrap='nowrap' grow>

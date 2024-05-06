@@ -41,6 +41,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { VariableBool, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
@@ -49,7 +50,6 @@ import {
   isProficiencyValue,
   labelToVariable,
   proficiencyTypeToLabel,
-  variableNameToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -64,7 +64,7 @@ export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{_.startCase(variableToLabel(variable))}</Title>
+              <Title order={3}>{variableToLabel(variable)}</Title>
             </Box>
           </Group>
           <Box>
@@ -114,7 +114,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
   }
   timeline = timeline.sort((a, b) => a.timestamp - b.timestamp);
 
-  const profWithoutLevel = !!getVariable<VariableBool>('ALL', 'PROF_WITHOUT_LEVEL')?.value;
+  const profWithoutLevel = !!getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value;
 
   return (
     <Box>
@@ -202,8 +202,8 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
                         <Text c='gray.0' size='xs'>
-                          This proficiency is associated with the {variableNameToLabel(variable.value.attribute ?? '')}{' '}
-                          attribute, so you add your {variableNameToLabel(variable.value.attribute ?? '')} modifier.
+                          This proficiency is associated with the {toLabel(variable.value.attribute ?? '')} attribute,
+                          so you add your {toLabel(variable.value.attribute ?? '')} modifier.
                         </Text>
                       </HoverCard.Dropdown>
                     </HoverCard>

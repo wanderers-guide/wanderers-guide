@@ -33,9 +33,14 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     created_at: '',
     name: toText(json.name) ?? '',
     level: json.system?.details?.level?.value,
+    experience: 0,
+    hp_current: 0,
+    hp_temp: 0,
+    stamina_current: 0,
+    resolve_current: 0,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    traits: await getTraitIds(json.system?.traits?.value ?? [], source),
-    size: convertToSize(json.system?.traits?.size?.value),
+    //traits: await getTraitIds(json.system?.traits?.value ?? [], source),
+    //size: convertToSize(json.system?.traits?.size?.value),
     inventory: undefined,
     notes: undefined,
     details: {
@@ -46,7 +51,8 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     },
     roll_history: undefined,
     operations: undefined,
-    abilities: undefined,
+    abilities_base: undefined,
+    abilities_added: undefined,
     spells: {
       slots: [],
       list: [],
@@ -86,7 +92,7 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   creature.operations = operations;
 
   // Abilities
-  creature.abilities = await getAbilities(json, source);
+  creature.abilities_base = await getAbilities(json, source);
 
   return creature;
 }

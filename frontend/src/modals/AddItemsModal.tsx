@@ -40,6 +40,7 @@ import _ from 'lodash-es';
 import { compileTraits } from '@items/inv-utils';
 import TraitsInput from '@common/TraitsInput';
 import useRefresh from '@utils/use-refresh';
+import { isItemVisible } from '@content/content-hidden';
 
 export default function AddItemsModal({
   context,
@@ -61,7 +62,7 @@ export default function AddItemsModal({
           if (a.level === b.level) return a.name.localeCompare(b.name);
           return a.level - b.level;
         })
-        .filter((item) => item.meta_data?.unselectable !== true);
+        .filter((item) => isItemVisible('CHARACTER', item));
     },
   });
 

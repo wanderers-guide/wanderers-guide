@@ -31,7 +31,7 @@ export function LanguageDrawerTitle(props: { data: { id?: number; language?: Lan
               <Title order={3}>{language.name}</Title>
             </Box>
             <Box>
-              <TraitsDisplay traitIds={[]} rarity={language.rarity} />
+              <TraitsDisplay traitIds={[]} rarity={language.rarity} availability={language.availability} />
             </Box>
           </Group>
         </Group>

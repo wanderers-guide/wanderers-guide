@@ -1,64 +1,7 @@
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
-import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentById } from '@content/content-store';
-import {
-  Title,
-  Text,
-  Image,
-  Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Badge,
-  Accordion,
-  Kbd,
-  Timeline,
-  HoverCard,
-  List,
-  Table,
-  useMantineTheme,
-} from '@mantine/core';
-import {
-  IconBadgesFilled,
-  IconFrame,
-  IconGitBranch,
-  IconGitCommit,
-  IconGitPullRequest,
-  IconMathSymbols,
-  IconMessageDots,
-  IconPlusMinus,
-  IconTimeline,
-} from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
-import { AttributeValue, VariableAttr, VariableProf, VariableValue } from '@typing/variables';
+import { Title, Text, Group, Divider, Box, Accordion, Kbd, HoverCard, List } from '@mantine/core';
+import { IconMathSymbols } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
-import {
-  displayFinalHealthValue,
-  displayFinalProfValue,
-  getBonusText,
-  getHealthValueParts,
-  getProfValueParts,
-} from '@variables/variable-display';
-import {
-  getAllAttributeVariables,
-  getVariable,
-  getVariableBonuses,
-  getVariableHistory,
-} from '@variables/variable-manager';
-import {
-  compactLabels,
-  getProficiencyTypeValue,
-  isProficiencyType,
-  proficiencyTypeToLabel,
-  variableNameToLabel,
-  variableToLabel,
-} from '@variables/variable-utils';
+import { displayFinalHealthValue, getHealthValueParts } from '@variables/variable-display';
 import * as _ from 'lodash-es';
 
 export function StatHealthDrawerTitle(props: { data: {} }) {

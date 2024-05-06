@@ -220,6 +220,12 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // Injected Selection Options
   INJECT_SELECT_OPTIONS: newVariable('list-str', 'INJECT_SELECT_OPTIONS'), // Hidden
 
+  // Blacklisted Ability Blocks
+  BLACKLIST_ABILITY_BLOCKS: newVariable('list-str', 'BLACKLIST_ABILITY_BLOCKS'),
+  BLACKLIST_TRAITS: newVariable('list-str', 'BLACKLIST_TRAITS'),
+  BLACKLIST_SPELLS: newVariable('list-str', 'BLACKLIST_SPELLS'),
+  BLACKLIST_ITEMS: newVariable('list-str', 'BLACKLIST_ITEMS'),
+
   // Specializations
   WEAPON_SPECIALIZATION: newVariable('bool', 'WEAPON_SPECIALIZATION'),
   WEAPON_SPECIALIZATION_GREATER: newVariable('bool', 'WEAPON_SPECIALIZATION_GREATER'),
@@ -236,6 +242,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   // When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus.
   MARTIAL_EXPERIENCE: newVariable('bool', 'MARTIAL_EXPERIENCE'),
+
+  // Your proficiency bonus to untrained skills is equal to <>. ex. {{level/2}}
+  UNTRAINED_IMPROVISATION: newVariable('str', 'UNTRAINED_IMPROVISATION'),
 
   // When you take Multilingual, you gain 3 languages instead of 2.
   IMPROVED_MULTILINGUAL: newVariable('bool', 'IMPROVED_MULTILINGUAL'),
@@ -264,6 +273,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   WEAPON_GROUP_CLUB: newVariable('prof', 'WEAPON_GROUP_CLUB'),
   WEAPON_GROUP_CROSSBOW: newVariable('prof', 'WEAPON_GROUP_CROSSBOW'),
   WEAPON_GROUP_DART: newVariable('prof', 'WEAPON_GROUP_DART'),
+  WEAPON_GROUP_FIREARM: newVariable('prof', 'WEAPON_GROUP_FIREARM'),
   WEAPON_GROUP_FLAIL: newVariable('prof', 'WEAPON_GROUP_FLAIL'),
   WEAPON_GROUP_HAMMER: newVariable('prof', 'WEAPON_GROUP_HAMMER'),
   WEAPON_GROUP_KNIFE: newVariable('prof', 'WEAPON_GROUP_KNIFE'),
@@ -288,6 +298,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   PAGE_CONTEXT: newVariable('str', 'PAGE_CONTEXT', 'OUTSIDE'),
   PATHFINDER: newVariable('bool', 'PATHFINDER', false),
   STARFINDER: newVariable('bool', 'STARFINDER', false),
+  ORGANIZED_PLAY: newVariable('bool', 'ORGANIZED_PLAY', false),
 
   PRIMARY_SHEET_TABS: newVariable('list-str', 'PRIMARY_SHEET_TABS', [
     'skills-actions',
@@ -455,12 +466,20 @@ export function addVariable(
   defaultValue?: VariableValue,
   source?: string
 ) {
-  const variable = newVariable(type, name, defaultValue);
-  getVariables(id)[variable.name] = variable;
+  let variable = getVariables(id)[name];
+  if (variable) {
+    // Already exists
+    if (defaultValue) {
+      adjVariable(id, name, defaultValue, source);
+    }
+  } else {
+    // New variable
+    variable = newVariable(type, name, defaultValue);
+    getVariables(id)[variable.name] = variable;
 
-  // Add to history
-  //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
-
+    // Add to history
+    //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
+  }
   return _.cloneDeep(variable);
 }
 
@@ -475,8 +494,12 @@ export function removeVariable(id: StoreID, name: string) {
 /**
  * Resets all variables to their default values
  */
-export function resetVariables() {
-  variableMap.clear();
+export function resetVariables(id?: StoreID) {
+  if (id) {
+    variableMap.delete(id);
+  } else {
+    variableMap.clear();
+  }
 }
 
 /**
@@ -589,7 +612,7 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue, so
   } else if (isVariableStr(variable) && _.isString(amount)) {
     variable.value += amount;
   } else if (isVariableBool(variable) && _.isBoolean(amount)) {
-    variable.value = variable.value && amount;
+    variable.value = amount ? true : variable.value;
   } else if (isVariableListStr(variable) && _.isString(amount)) {
     variable.value = _.uniq([...variable.value, amount]);
   } else {

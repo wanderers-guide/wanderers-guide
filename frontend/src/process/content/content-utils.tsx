@@ -11,7 +11,7 @@ import {
   IconVocabulary,
   IconWindow,
 } from '@tabler/icons-react';
-import { AbilityBlockType, ActionCost, ContentType } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, ActionCost, ContentType, LivingEntity } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isString } from 'lodash-es';
 import * as showdown from 'showdown';

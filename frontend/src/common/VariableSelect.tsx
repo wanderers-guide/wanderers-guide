@@ -17,7 +17,7 @@ export default function VariableSelect(props: {
       value={props.value}
       onChange={(value) => {
         const variable = value.toUpperCase().replace(/\s/g, '_');
-        props.onChange(value, getVariables('CHARACTER')[variable]);
+        props.onChange(variable, getVariables('CHARACTER')[variable]);
       }}
       data={Object.keys(getVariables('CHARACTER'))
         .filter((variable) =>

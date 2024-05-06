@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurButton from '@common/BlurButton';
 import TokenSelect from '@common/TokenSelect';
 import { SpellSelectionOption } from '@common/select/SelectContent';
-import { collectCharacterSpellcasting, getFocusPoints } from '@content/collect-content';
+import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   useMantineTheme,
@@ -28,11 +28,11 @@ import { Spell, CastingSource, SpellSlot, SpellInnateEntry } from '@typing/conte
 import { rankNumber } from '@utils/numbers';
 import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
-import { variableNameToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
+import { toLabel } from '@utils/strings';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -59,7 +59,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
 
   const charData = useMemo(() => {
     if (!character) return null;
-    return collectCharacterSpellcasting(character);
+    return collectEntitySpellcasting('CHARACTER', character);
   }, [character]);
 
   // Filter options based on search query
@@ -256,7 +256,7 @@ function SpellList(props: {
     if (props.type === 'PREPARED' && props.source) {
       setCharacter((c) => {
         if (!c) return c;
-        const newUpdatedSlots = collectCharacterSpellcasting(c).slots.map((slot) => {
+        const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map((slot) => {
           if (slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name) {
             return {
               ...slot,
@@ -284,7 +284,7 @@ function SpellList(props: {
       setCharacter((c) => {
         if (!c) return c;
         let added = false;
-        const newUpdatedSlots = collectCharacterSpellcasting(c).slots.map((slot) => {
+        const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map((slot) => {
           if (!added && slot.rank === spell.rank && slot.source === props.source!.name && !slot.exhausted === cast) {
             added = true;
             return {
@@ -332,7 +332,7 @@ function SpellList(props: {
       setCharacter((c) => {
         if (!c) return c;
 
-        const innates = collectCharacterSpellcasting(c).innate.map((innate) => {
+        const innates = collectEntitySpellcasting('CHARACTER', c).innate.map((innate) => {
           if (innate.spell_id === spell.id && innate.rank === spell.rank) {
             return {
               ...innate,
@@ -421,7 +421,7 @@ function SpellList(props: {
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
-              {variableNameToLabel(props.source.name)} Spells
+              {toLabel(props.source.name)} Spells
             </Text>
             <Box mr={10}>
               <BlurButton
@@ -537,7 +537,7 @@ function SpellList(props: {
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
-              {variableNameToLabel(props.source.name)} Spells
+              {toLabel(props.source.name)} Spells
             </Text>
             <Box mr={10}>
               <BlurButton
@@ -605,7 +605,7 @@ function SpellList(props: {
                                     if (!c) return c;
 
                                     let count = 0;
-                                    const slots = collectCharacterSpellcasting(c).slots;
+                                    const slots = collectEntitySpellcasting('CHARACTER', c).slots;
                                     for (const slot of slots) {
                                       if (slot.rank === parseInt(rank) && slot.source === props.source?.name) {
                                         slot.exhausted = count < v;
@@ -681,14 +681,14 @@ function SpellList(props: {
       return null;
     }
 
-    const focusPoints = getFocusPoints(character, _.flatMap(spells));
+    const focusPoints = getFocusPoints('CHARACTER', character, _.flatMap(spells));
 
     return (
       <Accordion.Item value={props.index}>
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
-              {variableNameToLabel(props.source.name)} Focus Spells
+              {toLabel(props.source.name)} Focus Spells
             </Text>
             <Box mr={10}>
               <SpellSlotSelect

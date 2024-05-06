@@ -13,9 +13,9 @@ export function playingStarfinder(character: Character) {
 }
 
 export function isPlayingPathfinder() {
-  return getVariable<VariableBool>('ALL', 'PATHFINDER')!.value;
+  return getVariable<VariableBool>('CHARACTER', 'PATHFINDER')!.value;
 }
 
 export function isPlayingStarfinder() {
-  return getVariable<VariableBool>('ALL', 'STARFINDER')!.value;
+  return getVariable<VariableBool>('CHARACTER', 'STARFINDER')!.value;
 }

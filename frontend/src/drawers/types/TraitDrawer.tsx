@@ -8,6 +8,7 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Trait } from '@typing/content';
 import { Operation } from '@typing/operations';
+import { toLabel } from '@utils/strings';
 
 export function TraitDrawerTitle(props: { data: { id?: number; trait?: Trait } }) {
   const id = props.data.id;
@@ -30,7 +31,7 @@ export function TraitDrawerTitle(props: { data: { id?: number; trait?: Trait } }
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{trait.name}</Title>
+              <Title order={3}>{toLabel(trait.name)}</Title>
             </Box>
             <Box></Box>
           </Group>

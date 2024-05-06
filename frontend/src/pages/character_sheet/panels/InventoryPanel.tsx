@@ -65,6 +65,7 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { openContextModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
+import { isItemVisible } from '@content/content-hidden';
 
 export default function InventoryPanel(props: {
   content: ContentPackage;
@@ -82,7 +83,7 @@ export default function InventoryPanel(props: {
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
 
   const visibleInvItems = props.inventory.items.filter(
-    (invItem) => !(invItem.item.meta_data?.unselectable === true && invItem.is_equipped && isItemWeapon(invItem.item))
+    (invItem) => !(!isItemVisible('CHARACTER', invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
   );
   const invItems = searchQuery.trim()
     ? visibleInvItems.filter((invItem) => {
@@ -113,12 +114,12 @@ export default function InventoryPanel(props: {
         </Group>
       ),
       innerProps: {
-        onAddItem: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
+        onAddItem: async (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
           if (!character) return;
           if (type === 'BUY') {
             setConfirmBuyItem({ item });
           } else {
-            handleAddItem(props.setInventory, item, type === 'FORMULA');
+            await handleAddItem(props.setInventory, item, type === 'FORMULA');
           }
         },
       },
@@ -416,9 +417,9 @@ export default function InventoryPanel(props: {
           open={!!confirmBuyItem}
           inventory={props.inventory}
           item={confirmBuyItem.item}
-          onConfirm={(coins) => {
+          onConfirm={async (coins) => {
             if (!character) return;
-            handleAddItem(props.setInventory, confirmBuyItem.item, false);
+            await handleAddItem(props.setInventory, confirmBuyItem.item, false);
 
             // Update coins
             props.setInventory((prev) => {

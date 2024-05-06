@@ -11,6 +11,7 @@ import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
+import { toLabel } from '@utils/strings';
 import { useRecoilValue } from 'recoil';
 
 export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }) {
@@ -56,7 +57,7 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{spell.name}</Title>
+              <Title order={3}>{toLabel(spell.name)}</Title>
             </Box>
             {isActionCost(cast) && (
               <Box>
@@ -219,7 +220,12 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={spell.traits ?? []} rarity={spell.rarity} interactable />
+          <TraitsDisplay
+            traitIds={spell.traits ?? []}
+            rarity={spell.rarity}
+            availability={spell.availability}
+            interactable
+          />
         </Box>
         {spell.traditions && spell.traditions.length > 0 && (
           <IndentedText ta='justify'>

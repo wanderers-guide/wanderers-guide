@@ -1,6 +1,21 @@
-import { AbilityBlock, Ancestry, Character, Class, ContentPackage, ContentSource, Item } from '@typing/content';
+import {
+  AbilityBlock,
+  Ancestry,
+  Character,
+  Class,
+  ContentPackage,
+  ContentSource,
+  Creature,
+  Item,
+  LivingEntity,
+} from '@typing/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
-import { Operation, OperationResultPackage, OperationSelect } from '@typing/operations';
+import {
+  Operation,
+  OperationCharacterResultPackage,
+  OperationCreatureResultPackage,
+  OperationSelect,
+} from '@typing/operations';
 import { OperationOptions, OperationResult, runOperations } from './operation-runner';
 import {
   addVariable,
@@ -16,11 +31,12 @@ import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 
-function defineSelectionTree(character: Character) {
-  if (character.operation_data?.selections) {
+function defineSelectionTree(entity: LivingEntity) {
+  if (entity.operation_data?.selections) {
     setSelections(
-      [...Object.entries(character.operation_data.selections)].map(([key, value]) => ({
+      [...Object.entries(entity.operation_data.selections)].map(([key, value]) => ({
         key,
         value,
       }))
@@ -69,12 +85,13 @@ export async function executeCharacterOperations(
   character: Character,
   content: ContentPackage,
   context: string
-): Promise<OperationResultPackage> {
-  resetVariables();
+): Promise<OperationCharacterResultPackage> {
+  resetVariables('CHARACTER');
   defineSelectionTree(character);
-  setVariable('ALL', 'PAGE_CONTEXT', context);
-  setVariable('ALL', 'PATHFINDER', playingPathfinder(character));
-  setVariable('ALL', 'STARFINDER', playingStarfinder(character));
+  setVariable('CHARACTER', 'PAGE_CONTEXT', context);
+  setVariable('CHARACTER', 'PATHFINDER', playingPathfinder(character));
+  setVariable('CHARACTER', 'STARFINDER', playingStarfinder(character));
+  setVariable('CHARACTER', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
 
   setVariable('CHARACTER', 'LEVEL', character.level);
 
@@ -376,7 +393,7 @@ export async function executeCharacterOperations(
       baseSource: AbilityBlock;
       baseResults: OperationResult[];
     }[] = [];
-    for (const feature of classFeatures) {
+    for (const feature of classFeatures.filter((cf) => isAbilityBlockVisible('CHARACTER', cf))) {
       if (feature.level === undefined || feature.level <= character.level) {
         const results = await executeOperations(
           'CHARACTER',
@@ -461,6 +478,111 @@ export async function executeCharacterOperations(
       ...(class_ ? addedClassSkillTrainings('CHARACTER', baseClassTrainings) : []).map((op) => op.id),
       ...(ancestry ? addedAncestryLanguages('CHARACTER', ancestry) : []).map((op) => op.id),
     ],
+  });
+
+  return mergeOperationResults(results, conditionalResults) as typeof results;
+}
+
+export async function executeCreatureOperations(
+  id: StoreID,
+  creature: Creature,
+  content: ContentPackage
+): Promise<OperationCreatureResultPackage> {
+  resetVariables(id);
+  defineSelectionTree(creature);
+  setVariable('CHARACTER', 'PAGE_CONTEXT', 'CHARACTER-SHEET');
+
+  setVariable(id, 'LEVEL', creature.level);
+
+  const abilities = [
+    ...(creature.abilities_base ?? []),
+    ...((creature.abilities_added
+      ?.map((id) => {
+        return content.abilityBlocks.find((ab) => ab.id === id);
+      })
+      .filter((ab) => ab) ?? []) as AbilityBlock[]),
+  ];
+
+  const operationsPassthrough = async (options?: OperationOptions) => {
+    let creatureResults = await executeOperations(id, 'creature', creature.operations ?? [], options, creature.name);
+
+    let abilityResults: {
+      baseSource: AbilityBlock;
+      baseResults: OperationResult[];
+    }[] = [];
+    for (const ability of abilities) {
+      const results = await executeOperations(
+        id,
+        `ability-${ability.id}`,
+        ability.operations ?? [],
+        options,
+        ability.name
+      );
+
+      abilityResults.push({
+        baseSource: ability,
+        baseResults: results,
+      });
+
+      // Add ability to variables
+      adjVariable(id, 'FEAT_IDS', `${ability.id}`, undefined);
+      adjVariable(id, 'FEAT_NAMES', ability.name.toUpperCase(), undefined);
+    }
+
+    let itemResults: { baseSource: Item; baseResults: OperationResult[] }[] = [];
+    for (const invItem of creature.inventory ? getFlatInvItems(creature.inventory) : []) {
+      // If item can be invested, only run operations if it is
+      if (isItemInvestable(invItem.item) && !invItem.is_invested) {
+        continue;
+      }
+      // If item can be equipped, only run operations if it is
+      if (isItemEquippable(invItem.item) && !invItem.is_equipped) {
+        continue;
+      }
+
+      const results = await executeOperations(
+        id,
+        `item-${invItem.item.id}`,
+        invItem.item.operations ?? [],
+        options,
+        invItem.item.name
+      );
+
+      if (results.length > 0) {
+        itemResults.push({
+          baseSource: invItem.item,
+          baseResults: results,
+        });
+      }
+    }
+
+    return {
+      creatureResults,
+      abilityResults,
+      itemResults,
+    };
+  };
+
+  // Value creation round //
+  await operationsPassthrough({ doOnlyValueCreation: true });
+  // define values for any weapons or lores
+  for (const value of Object.values(creature?.operation_data?.selections ?? {})) {
+    if (value.startsWith('SKILL_LORE_')) {
+      addVariable(id, 'prof', value, {
+        value: 'U',
+        attribute: 'ATTRIBUTE_INT',
+      });
+    } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
+      addVariable(id, 'prof', value);
+    }
+  }
+
+  // Normal round //
+  const results = await operationsPassthrough();
+
+  // Conditional round //
+  const conditionalResults = await operationsPassthrough({
+    doOnlyConditionals: true,
   });
 
   return mergeOperationResults(results, conditionalResults) as typeof results;

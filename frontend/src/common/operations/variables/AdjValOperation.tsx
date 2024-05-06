@@ -1,6 +1,6 @@
 import { OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AttributeValue,
   ExtendedProficiencyValue,
@@ -67,6 +67,23 @@ export function AdjustValueInput(props: {
     profExtended?: boolean;
   };
 }) {
+  useEffect(() => {
+    // Empty value
+    if (props.value === '') {
+      if (props.variableType === 'attr') {
+        props.onChange({ value: 0 });
+      } else if (props.variableType === 'num') {
+        props.onChange(0);
+      } else if (props.variableType === 'bool') {
+        props.onChange(false);
+      } else if (props.variableType === 'str' || props.variableType === 'list-str') {
+        props.onChange('');
+      } else if (props.variableType === 'prof') {
+        props.onChange({ value: 'U' });
+      }
+    }
+  }, []);
+
   if (props.variableType === 'attr') {
     const value = props.value as AttributeValue;
     return (

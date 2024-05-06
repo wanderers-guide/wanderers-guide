@@ -25,7 +25,7 @@ import {
 import { IconCheck, IconZoomCheck, IconX, IconQuestionMark } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { listToLabel } from '@utils/strings';
+import { listToLabel, toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -63,7 +63,7 @@ export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBloc
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{feat.name}</Title>
+              <Title order={3}>{toLabel(feat.name)}</Title>
             </Box>
             <Box>
               <ActionSymbol cost={feat.actions} size={'2.1rem'} />
@@ -218,7 +218,12 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
-          <TraitsDisplay traitIds={feat.traits ?? []} rarity={feat.rarity} interactable />
+          <TraitsDisplay
+            traitIds={feat.traits ?? []}
+            rarity={feat.rarity}
+            availability={feat.availability}
+            interactable
+          />
         </Box>
         {prereqUI && prereqUI.length > 0 && (
           <IndentedText ta='justify'>

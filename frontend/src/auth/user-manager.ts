@@ -6,7 +6,10 @@ export async function getPublicUser(id?: string) {
     id,
   });
 
-  localStorage.setItem('user-data', JSON.stringify(user ?? {}));
+  if (!id) {
+    // Only store if we're fetching the current user
+    localStorage.setItem('user-data', JSON.stringify(user ?? {}));
+  }
   return user;
 }
 

@@ -43,7 +43,7 @@ import {
 import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
-import { ObjectWithUUID } from '@operations/operation-utils';
+import { ObjectWithUUID, getSelectedOption } from '@operations/operation-utils';
 import {
   IconCheck,
   IconChevronDown,
@@ -101,6 +101,8 @@ import {
   VersatileHeritage,
 } from '../../typing/content';
 import { FilterOptions, SelectedFilter } from './filters';
+import { isAbilityBlockVisible } from '@content/content-hidden';
+import { OperationSelectOptionCustom } from '@typing/operations';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -1961,10 +1963,16 @@ export function FeatSelectionOption(props: {
         </Group>
       }
       rightSection={
-        <TraitsDisplay justify='flex-end' size='xs' traitIds={props.feat.traits ?? []} rarity={props.feat.rarity} />
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={props.feat.traits ?? []}
+          rarity={props.feat.rarity}
+          availability={props.feat.availability}
+        />
       }
       showButton={props.showButton}
-      level={props.displayLevel && !props.feat.meta_data?.unselectable ? props.feat.level : undefined}
+      level={props.displayLevel && props.feat.meta_data?.unselectable !== true ? props.feat.level : undefined}
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -2015,6 +2023,7 @@ export function ActionSelectionOption(props: {
           size='xs'
           traitIds={props.action.traits ?? []}
           rarity={props.action.rarity}
+          availability={props.action.availability}
           skill={props.action.meta_data?.skill}
         />
       }
@@ -2051,13 +2060,27 @@ export function ClassFeatureSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
+
+  // Find first selected option
+  let selectedOption: OperationSelectOptionCustom | null = null;
+  for (const op of props.classFeature.operations ?? []) {
+    const option = getSelectedOption(character, op);
+    if (option) {
+      selectedOption = option;
+      break;
+    }
+  }
 
   return (
     <BaseSelectionOption
       leftSection={
         <Group wrap='nowrap' gap={5}>
           <Box pl={8}>
-            <Text fz='sm'>{props.classFeature.name}</Text>
+            <Text fz='sm'>
+              {props.classFeature.name}
+              {selectedOption ? ` — ${selectedOption.title}` : ''}
+            </Text>
           </Box>
           <Box>
             <ActionSymbol cost={props.classFeature.actions} gap={5} />
@@ -2070,6 +2093,7 @@ export function ClassFeatureSelectionOption(props: {
           size='xs'
           traitIds={props.classFeature.traits ?? []}
           rarity={props.classFeature.rarity}
+          availability={props.classFeature.availability}
           skill={props.classFeature.meta_data?.skill}
         />
       }
@@ -2126,6 +2150,7 @@ export function HeritageSelectionOption(props: {
           size='xs'
           traitIds={props.heritage.traits ?? []}
           rarity={props.heritage.rarity}
+          availability={props.heritage.availability}
           skill={props.heritage.meta_data?.skill}
         />
       }
@@ -2181,6 +2206,7 @@ export function PhysicalFeatureSelectionOption(props: {
           size='xs'
           traitIds={props.physicalFeature.traits ?? []}
           rarity={props.physicalFeature.rarity}
+          availability={props.physicalFeature.availability}
           skill={props.physicalFeature.meta_data?.skill}
         />
       }
@@ -2238,6 +2264,7 @@ export function SenseSelectionOption(props: {
           size='xs'
           traitIds={props.sense.traits ?? []}
           rarity={props.sense.rarity}
+          availability={props.sense.availability}
           skill={props.sense.meta_data?.skill}
         />
       }
@@ -2773,6 +2800,7 @@ export function ItemSelectionOption(props: {
           size='xs'
           traitIds={props.item.traits ?? []}
           rarity={props.item.rarity}
+          availability={props.item.availability}
           archaic={isItemArchaic(props.item)}
         />
       }
@@ -2857,7 +2885,13 @@ export function SpellSelectionOption(props: {
       }
       rightSection={
         props.hideTraits ? null : (
-          <TraitsDisplay justify='flex-end' size='xs' traitIds={props.spell.traits ?? []} rarity={props.spell.rarity} />
+          <TraitsDisplay
+            justify='flex-end'
+            size='xs'
+            traitIds={props.spell.traits ?? []}
+            rarity={props.spell.rarity}
+            availability={props.spell.availability}
+          />
         )
       }
       showButton={props.showButton}
@@ -2968,7 +3002,15 @@ export function LanguageSelectionOption(props: {
           )}
         </Group>
       }
-      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.language.rarity} />}
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={[]}
+          rarity={props.language.rarity}
+          availability={props.language.availability}
+        />
+      }
       showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
@@ -3069,14 +3111,14 @@ export function CreatureSelectionOption(props: {
           </div>
         </Group>
       }
-      rightSection={
-        <TraitsDisplay
-          justify='flex-end'
-          size='xs'
-          traitIds={props.creature.traits ?? []}
-          rarity={props.creature.rarity}
-        />
-      }
+      // rightSection={
+      //   <TraitsDisplay
+      //     justify='flex-end'
+      //     size='xs'
+      //     traitIds={props.creature.traits ?? []}
+      //     rarity={props.creature.rarity}
+      //   />
+      // }
       showButton={props.showButton}
       selected={props.selected}
       level={props.creature.level}

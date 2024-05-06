@@ -17,6 +17,10 @@ export async function submitContentUpdate(
   });
 }
 
+export async function findContentUpdates() {
+  return await makeRequest<ContentUpdate[]>('find-content-update', {});
+}
+
 export async function findContentUpdate(updateId: number) {
   return await makeRequest<ContentUpdate>('find-content-update', { id: updateId });
 }

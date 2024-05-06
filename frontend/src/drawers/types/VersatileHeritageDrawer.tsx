@@ -2,6 +2,7 @@ import { drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption } from '@common/select/SelectContent';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
@@ -113,7 +114,7 @@ export function VersatileHeritageDrawerContent(props: {
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
             <Text fz='sm' c='gray.5' span>
-              {feats[level].filter((feat) => feat.meta_data?.unselectable !== true).length}
+              {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>
         </Group>
@@ -128,7 +129,7 @@ export function VersatileHeritageDrawerContent(props: {
         <Stack gap={0}>
           <Divider color='dark.6' />
           {feats[level]
-            .filter((feat) => feat.meta_data?.unselectable !== true)
+            .filter((feat) => isAbilityBlockVisible('CHARACTER', feat))
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((feat, index) => (
               <FeatSelectionOption

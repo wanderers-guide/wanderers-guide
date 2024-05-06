@@ -4,6 +4,7 @@ import { ActionSymbol } from '@common/Actions';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { collectCharacterAbilityBlocks } from '@content/collect-content';
+import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import {
@@ -27,10 +28,11 @@ import { DrawerType } from '@typing/index';
 import { findActions } from '@utils/actions';
 import { isPhoneSized, mobileQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import { displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
-import { variableToLabel, variableNameToLabel } from '@variables/variable-utils';
+import { variableToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useState, useMemo } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
@@ -77,7 +79,7 @@ export default function SkillsActionsPanel(props: {
   const actions = useMemo(() => {
     const allActions = props.content.abilityBlocks
       .filter((ab) => ab.type === 'action')
-      .filter((ab) => ab.meta_data?.unselectable !== true)
+      .filter((ab) => isAbilityBlockVisible('CHARACTER', ab))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Filter actions
@@ -306,7 +308,7 @@ export default function SkillsActionsPanel(props: {
                   variableToLabel(skill) // Normal filter by query
                     .toLowerCase()
                     .includes(skillsSearch.toLowerCase().trim()) || // If it starts with "Strength" find those skills
-                  variableNameToLabel(skill.value.attribute ?? '')
+                  toLabel(skill.value.attribute ?? '')
                     .toLowerCase()
                     .endsWith(skillsSearch.toLowerCase().trim()) || // If it starrts with "Str" find those skills
                   skill.value.attribute?.toLowerCase().endsWith(skillsSearch.toLowerCase().trim())

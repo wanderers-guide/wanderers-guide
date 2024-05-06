@@ -5,7 +5,7 @@ import {
   fetchTraitByName,
 } from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
-import { AbilityBlock, ContentType, Item, Language, Spell, Trait } from '@typing/content';
+import { AbilityBlock, ContentType, Item, Language, LivingEntity, Spell, Trait } from '@typing/content';
 import {
   Operation,
   OperationAddBonusToValue,
@@ -58,6 +58,7 @@ import * as _ from 'lodash-es';
 import { OperationResult } from './operation-runner';
 import { throwError } from '@utils/notifications';
 import { InjectedSelectOption } from '@common/operations/selection/InjectSelectOptionOperation';
+import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/content-hidden';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -238,6 +239,21 @@ export const hasOperationSelection = (result: OperationResult) => {
   return false;
 };
 
+export function getSelectedOption(entity: LivingEntity | null, op: Operation): OperationSelectOptionCustom | null {
+  if (!entity) return null;
+  if (op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM') {
+    // Custom select option
+  } else {
+    return null;
+  }
+
+  const selectionKey = Object.keys(entity?.operation_data?.selections ?? {}).find((key) => key.endsWith(op.id));
+  const selectedOption = selectionKey
+    ? op.data.optionsPredefined?.find((option) => option.id === entity!.operation_data!.selections![selectionKey])
+    : null;
+  return (selectedOption as OperationSelectOptionCustom) ?? null;
+}
+
 export function convertKeyToBasePrefix(key: string, id?: number): string {
   const mapping: { [key: string]: string } = {
     ancestryResults: `ancestry`,
@@ -287,7 +303,7 @@ export async function determineFilteredSelectionList(
 async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
   let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
 
-  abilityBlocks = abilityBlocks.filter((ab) => ab.type !== 'feat' || ab.meta_data?.unselectable !== true);
+  abilityBlocks = abilityBlocks.filter((ab) => ab.type !== 'feat' || isAbilityBlockVisible(id, ab));
 
   if (filters.abilityBlockType !== undefined) {
     abilityBlocks = abilityBlocks.filter((ab) => ab.type === filters.abilityBlockType);
@@ -362,7 +378,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
 async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
   let spells = await fetchContentAll<Spell>('spell');
 
-  spells = spells.filter((spell) => spell.meta_data?.unselectable !== true);
+  spells = spells.filter((spell) => isSpellVisible('CHARACTER', spell));
 
   if (filters.level.min !== undefined) {
     spells = spells.filter((spell) => spell.rank >= filters.level.min!);
@@ -438,7 +454,7 @@ async function getLanguageList(id: StoreID, operationUUID: string, filters: Oper
 async function getTraitList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersTrait) {
   let traits = await fetchContentAll<Trait>('trait');
 
-  traits = traits.filter((traits) => traits.meta_data?.unselectable !== true);
+  traits = traits.filter((trait) => isTraitVisible(id, trait));
 
   if (filters.isCreature) {
     traits = traits.filter((trait) => trait.meta_data?.creature_trait);

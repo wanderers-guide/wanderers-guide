@@ -9,7 +9,7 @@ import {
 import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource } from './content';
 import { OperationResult } from './../process/operations/operation-runner';
 
-export type OperationResultPackage = {
+export type OperationCharacterResultPackage = {
   contentSourceResults: {
     baseSource: ContentSource;
     baseResults: OperationResult[];
@@ -27,6 +27,18 @@ export type OperationResultPackage = {
     baseResults: OperationResult[];
   }[];
   backgroundResults: OperationResult[];
+  itemResults: {
+    baseSource: Item;
+    baseResults: OperationResult[];
+  }[];
+};
+
+export type OperationCreatureResultPackage = {
+  creatureResults: OperationResult[];
+  abilityResults: {
+    baseSource: AbilityBlock;
+    baseResults: OperationResult[];
+  }[];
   itemResults: {
     baseSource: Item;
     baseResults: OperationResult[];
@@ -141,6 +153,7 @@ export type ConditionCheckData = {
   id: string;
   name: string;
   data?: Variable;
+  type?: VariableType;
   operator: ConditionOperator;
   value: string;
 };

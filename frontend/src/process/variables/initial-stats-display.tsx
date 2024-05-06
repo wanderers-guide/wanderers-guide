@@ -20,7 +20,6 @@ import {
   isProficiencyValue,
   maxProficiencyType,
   proficiencyTypeToLabel,
-  variableNameToLabel,
   variableToLabel,
 } from './variable-utils';
 
@@ -298,7 +297,7 @@ export function getDisplay(
         );
       }
     } else {
-      const name = variableNameToLabel(variable?.name ?? '');
+      const name = toLabel(variable?.name ?? '');
       return <>{options?.fullNames ? name : `${compactLabels(name)}`}</>;
     }
   }
@@ -349,9 +348,7 @@ export function getDisplay(
       }
     } else {
       // Display as `Expert in Fortitude`
-      return `${proficiencyTypeToLabel((value as ProficiencyValue).value)} in ${variableNameToLabel(
-        variable?.name ?? ''
-      )
+      return `${proficiencyTypeToLabel((value as ProficiencyValue).value)} in ${toLabel(variable?.name ?? '')
         .replace('Spell DC', 'spell DC')
         .replace('Spell Attack', 'spell attack modifier')}`;
     }

@@ -38,6 +38,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { AttributeValue, VariableAttr, VariableProf, VariableValue } from '@typing/variables';
 import { sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
 import {
   getAllAttributeVariables,
@@ -50,7 +51,6 @@ import {
   getProficiencyTypeValue,
   isProficiencyType,
   proficiencyTypeToLabel,
-  variableNameToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -62,7 +62,7 @@ export function StatAttrDrawerTitle(props: { data: { attributeName?: string } })
         <Group wrap='nowrap' gap={10}>
           <Box>
             <Title order={3}>
-              {props.data.attributeName ? `Attribute: ${variableNameToLabel(props.data.attributeName)}` : 'Attributes'}
+              {props.data.attributeName ? `Attribute: ${toLabel(props.data.attributeName)}` : 'Attributes'}
             </Title>
           </Box>
         </Group>

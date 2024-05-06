@@ -30,6 +30,10 @@ const SPECIALIZATIONS = [
     description: `The target takes 1d6 persistent bleed damage. You gain an item bonus to this bleed damage equal to the weapon’s item bonus to attack rolls.`,
   },
   {
+    name: 'Firearm',
+    description: `The target must succeed at a Fortitude save against your class DC or be stunned 1.`,
+  },
+  {
     name: 'Flail',
     description: `The target is knocked prone unless they succeed at a Reflex save against your class DC.`,
   },

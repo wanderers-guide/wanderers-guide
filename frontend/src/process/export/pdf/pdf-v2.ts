@@ -1,7 +1,7 @@
 import {
   collectCharacterAbilityBlocks,
   collectCharacterSenses,
-  collectCharacterSpellcasting,
+  collectEntitySpellcasting,
   getFocusPoints,
 } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
@@ -36,13 +36,14 @@ import {
   getAllSkillVariables,
   getAllSpeedVariables,
 } from '@variables/variable-manager';
-import { variableNameToLabel, isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
+import { isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import stripMd from 'remove-markdown';
 
 import { PDFDocument, PDFForm } from 'pdf-lib';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
+import { toLabel } from '@utils/strings';
 
 export async function pdfV2(character: Character) {
   // Load your PDF
@@ -138,7 +139,7 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   const items = character.inventory ? getFlatInvItems(character.inventory) : [];
 
-  const spellData = collectCharacterSpellcasting(character);
+  const spellData = collectEntitySpellcasting(STORE_ID, character);
 
   //////////////////////////////////////////////////////////////////////////////////
 
@@ -150,7 +151,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form
     .getTextField('Heritage and Traits')
     .setText(`${featData.heritages.map((h) => h.name).join(', ')} | ${traits.map((t) => t?.name).join(', ')}`);
-  form.getTextField('Size').setText(variableNameToLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value));
+  form.getTextField('Size').setText(toLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value));
   form.getTextField('Background Notes').setText('');
   form.getTextField('Class Notes').setText('');
 
@@ -320,7 +321,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   if (lore1 !== '') {
     profFillIn(lore1, 'LORE1');
     profFillIn(lore1, 'LORE 1');
-    form.getTextField('LORE CATAGORY 1').setText(variableNameToLabel(lore1).replace(' Lore', ''));
+    form.getTextField('LORE CATAGORY 1').setText(toLabel(lore1).replace(' Lore', ''));
 
     const lore1Parts = getProfValueParts(STORE_ID, lore1);
     if (lore1Parts) {
@@ -331,7 +332,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   if (lore2 !== '') {
     profFillIn(lore2, 'LORE2');
     profFillIn(lore2, 'LORE 2');
-    form.getTextField('LORE CATEGORY 2').setText(variableNameToLabel(lore2).replace(' Lore', ''));
+    form.getTextField('LORE CATEGORY 2').setText(toLabel(lore2).replace(' Lore', ''));
 
     const lore2Parts = getProfValueParts(STORE_ID, lore2);
     if (lore2Parts) {
@@ -396,7 +397,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('RESISTANCE AND IMMUNITIES').setText(resistWeakImmune);
   form.getTextField('CONDITIONS').setText(conditions.map((c) => c.name).join(', '));
 
-  form.getTextField('LANGUAGES').setText(languages.map((l) => variableNameToLabel(l)).join('\n'));
+  form.getTextField('LANGUAGES').setText(languages.map((l) => toLabel(l)).join('\n'));
 
   const preciseVague =
     `Precise: ${senseData.precise.map((v) => displaySense(v)).join(', ') ?? ''}\nImprecise: ${senseData.imprecise.map((v) => displaySense(v)).join(', ') ?? ''}\nVague: ${senseData.vague.map((v) => displaySense(v)).join(', ') ?? ''}`.trim();
@@ -406,7 +407,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('SPECIAL MOVEMENT').setText(
     getAllSpeedVariables(STORE_ID)
       .filter((v) => v.value > 0 && v.name !== 'SPEED')
-      .map((v) => `${variableNameToLabel(v.name)} ${v.value}ft`)
+      .map((v) => `${toLabel(v.name)} ${v.value}ft`)
       .join('\n')
   );
 
@@ -748,7 +749,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     }
   }
 
-  const focusPoints = getFocusPoints(character, spellData.focus);
+  const focusPoints = getFocusPoints(STORE_ID, character, spellData.focus);
   if (focusPoints.current > 0) {
     form.getCheckBox('FP1').check();
   }

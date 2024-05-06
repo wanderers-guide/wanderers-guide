@@ -1,12 +1,16 @@
+import { drawerState } from '@atoms/navAtoms';
 import { ItemMultiSelect, ItemSelect } from '@common/ItemSelect';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
+import { selectContent } from '@common/select/SelectContent';
 import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
+import { convertToGp } from '@items/currency-handler';
 import {
   Accordion,
+  ActionIcon,
   Anchor,
   Badge,
   Box,
@@ -19,6 +23,7 @@ import {
   LoadingOverlay,
   Modal,
   NumberInput,
+  Paper,
   ScrollArea,
   Select,
   Stack,
@@ -30,14 +35,16 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
+import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Item, ItemGroup, Trait } from '@typing/content';
+import { Availability, Item, ItemGroup, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
-import { startCase } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
+import { useRecoilState } from 'recoil';
 
 /**
  * Modal for creating or editing an item
@@ -150,6 +157,7 @@ export function CreateItemModal(props: {
       bulk: undefined,
       level: 0,
       rarity: 'COMMON',
+      availability: undefined as Availability | undefined,
       traits: [],
       description: '',
       group: 'GENERAL',
@@ -289,6 +297,7 @@ export function CreateItemModal(props: {
     (form.values.meta_data?.broken_threshold && form.values.meta_data.broken_threshold > 0 ? 1 : 0) +
     (form.values.meta_data?.is_shoddy ? 1 : 0) +
     (form.values.meta_data?.unselectable ? 1 : 0) +
+    ((form.values.meta_data?.container_default_items ?? []).length > 0 ? 1 : 0) +
     (form.values.meta_data?.quantity && form.values.meta_data.quantity > 0 ? 1 : 0) +
     (form.values.meta_data?.image_url && form.values.meta_data.image_url.length > 0 ? 1 : 0);
 
@@ -330,7 +339,7 @@ export function CreateItemModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', startCase(text));
+                      form.setFieldValue('name', toLabel(text));
                     }
                   }}
                   onBlur={() => props.onNameBlur?.(form.values.name)}
@@ -515,6 +524,7 @@ export function CreateItemModal(props: {
                                 { value: 'club', label: 'Club' },
                                 { value: 'crossbow', label: 'Crossbow' },
                                 { value: 'dart', label: 'Dart' },
+                                { value: 'firearm', label: 'Firearm' },
                                 { value: 'flail', label: 'Flail' },
                                 { value: 'hammer', label: 'Hammer' },
                                 { value: 'knife', label: 'Knife' },
@@ -764,6 +774,88 @@ export function CreateItemModal(props: {
                               {...form.getInputProps('meta_data.bulk.ignored')}
                             />
                           </Group>
+
+                          <Box>
+                            <Group wrap='nowrap' justify='space-between'>
+                              <Text fz='sm'>Default Item Contents</Text>
+                              <ActionIcon
+                                variant='subtle'
+                                color='gray.5'
+                                radius='lg'
+                                aria-label='Add Item'
+                                onClick={() => {
+                                  selectContent<Item>(
+                                    'item',
+                                    (option) => {
+                                      const contents = [
+                                        ...(form.values.meta_data?.container_default_items ?? []),
+                                        { id: option.id, name: option.name, quantity: option.meta_data?.quantity ?? 1 },
+                                      ];
+                                      form.setFieldValue('meta_data.container_default_items', contents);
+                                    },
+                                    {
+                                      showButton: true,
+                                      groupBySource: true,
+                                    }
+                                  );
+                                }}
+                              >
+                                <IconCirclePlus style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                              </ActionIcon>
+                            </Group>
+                            <Paper withBorder p='xs'>
+                              <ScrollArea h={100} scrollbars='y'>
+                                <Group gap={8}>
+                                  {(form.values.meta_data?.container_default_items ?? []).map((record, i) => (
+                                    <Badge
+                                      key={i}
+                                      size='xs'
+                                      variant='light'
+                                      style={{ cursor: 'pointer' }}
+                                      styles={{
+                                        root: {
+                                          textTransform: 'initial',
+                                        },
+                                      }}
+                                      onClick={() => {
+                                        // Bug where it closes the modal by closing the source drawer
+                                        // openDrawer({
+                                        //   type: 'item',
+                                        //   data: { id: record.id },
+                                        // });
+                                      }}
+                                      pr={0}
+                                      rightSection={
+                                        <ActionIcon
+                                          variant='subtle'
+                                          color='gray'
+                                          size='xs'
+                                          aria-label='Remove Item'
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const records =
+                                              form.values.meta_data?.container_default_items?.filter(
+                                                (i) => i.id !== record.id
+                                              ) ?? [];
+                                            form.setFieldValue('meta_data.container_default_items', records);
+                                          }}
+                                        >
+                                          <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                                        </ActionIcon>
+                                      }
+                                    >
+                                      {_.truncate(`${record.name}`, { length: 22 })}
+                                    </Badge>
+                                  ))}
+                                </Group>
+                                {(form.values.meta_data?.container_default_items ?? []).length === 0 && (
+                                  <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                                    No default item contents.
+                                  </Text>
+                                )}
+                              </ScrollArea>
+                            </Paper>
+                          </Box>
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>
@@ -844,6 +936,18 @@ export function CreateItemModal(props: {
                               type: 'checkbox',
                             })}
                           />
+
+                          <Select
+                            label='Availability'
+                            data={[
+                              { value: 'STANDARD', label: 'Standard' },
+                              { value: 'LIMITED', label: 'Limited' },
+                              { value: 'RESTRICTED', label: 'Restricted' },
+                            ]}
+                            w={140}
+                            {...form.getInputProps('availability')}
+                          />
+
                           <Switch
                             label='Shoddy Item'
                             labelPosition='left'

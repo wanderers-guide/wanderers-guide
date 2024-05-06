@@ -36,6 +36,7 @@ import { selectContent } from '@common/select/SelectContent';
 import { convertToGp } from '@items/currency-handler';
 import { selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { modals } from '@mantine/modals';
+import { isItemVisible } from '@content/content-hidden';
 
 export function getGpGained(entry: SocietyAdventureEntry) {
   return (entry.items_total_sell ?? 0) / 2 - (entry.items_total_buy ?? 0) + (entry.items_total_extra ?? 0);
@@ -168,7 +169,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                 <ScrollArea h={100} scrollbars='y'>
                   <Group gap={8}>
                     {form.values.items_snapshot
-                      ?.filter((i) => i.meta_data?.unselectable !== true)
+                      ?.filter((i) => isItemVisible('CHARACTER', i))
                       .map((item, i) => (
                         <Badge
                           key={i}

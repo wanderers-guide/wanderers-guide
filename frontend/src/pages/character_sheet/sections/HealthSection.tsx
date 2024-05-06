@@ -7,23 +7,28 @@ import { interpolateHealth } from '@utils/colors';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { evaluate } from 'mathjs';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
-import { confirmHealth } from '../character-utils';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { confirmHealth } from '../living-entity-utils';
+import { StoreID } from '@typing/variables';
+import { LivingEntity } from '@typing/content';
 
-export default function HealthSection() {
+export default function HealthSection(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+}) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
-  const maxHealth = getFinalHealthValue('CHARACTER');
-  let currentHealth = character?.hp_current;
+  const maxHealth = getFinalHealthValue(props.id);
+  let currentHealth = props.entity?.hp_current;
   if (currentHealth === undefined || currentHealth < 0) {
     currentHealth = maxHealth;
   }
 
-  let tempHealth = character?.hp_temp;
+  let tempHealth = props.entity?.hp_temp;
   if (tempHealth === undefined || tempHealth < 0) {
     tempHealth = 0;
   }
@@ -56,8 +61,8 @@ export default function HealthSection() {
                   miw={20}
                   placeholder='HP'
                   onChange={(value) => {
-                    if (!character) return;
-                    confirmHealth(value, character, setCharacter);
+                    if (!props.entity) return;
+                    confirmHealth(value, props.id, props.entity, props.setEntity);
                   }}
                 />
                 <Box>
@@ -71,7 +76,11 @@ export default function HealthSection() {
                     c='gray.3'
                     style={{ cursor: 'pointer' }}
                     onClick={() => {
-                      openDrawer({ type: 'stat-hp', data: {} });
+                      openDrawer({
+                        type: 'stat-hp',
+                        data: {},
+                        extra: { addToHistory: true },
+                      });
                     }}
                     underline='hover'
                   >
@@ -103,7 +112,7 @@ export default function HealthSection() {
                   result = Math.floor(result);
                   if (result < 0) result = 0;
 
-                  setCharacter((c) => {
+                  props.setEntity((c) => {
                     if (!c) return c;
                     return {
                       ...c,
@@ -120,7 +129,11 @@ export default function HealthSection() {
             size='compact-xs'
             fw={400}
             onClick={() => {
-              openDrawer({ type: 'stat-resist-weak', data: {} });
+              openDrawer({
+                type: 'stat-resist-weak',
+                data: {},
+                extra: { addToHistory: true },
+              });
             }}
           >
             Resistances & Weaknesses

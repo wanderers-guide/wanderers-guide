@@ -10,53 +10,57 @@ export async function generateEmbeddings(sources: number[]) {
     autoClose: false,
   });
 
-  const content = await fetchContentPackage(sources);
-  const embeddings = await Promise.all([
-    populateContent(
-      'ancestry',
-      content.ancestries.map((n) => n.id)
-    ),
-    populateContent(
-      'background',
-      content.backgrounds.map((n) => n.id)
-    ),
-    populateContent(
-      'class',
-      content.classes.map((n) => n.id)
-    ),
-    populateContent(
-      'ability-block',
-      content.abilityBlocks.map((n) => n.id)
-    ),
-    populateContent(
-      'item',
-      content.items.map((n) => n.id)
-    ),
-    populateContent(
-      'language',
-      content.languages.map((n) => n.id)
-    ),
-    populateContent(
-      'spell',
-      content.spells.map((n) => n.id)
-    ),
-    populateContent(
-      'trait',
-      content.traits.map((n) => n.id)
-    ),
-    populateContent(
-      'creature',
-      content.creatures.map((n) => n.id)
-    ),
-    populateContent(
-      'archetype',
-      content.archetypes.map((n) => n.id)
-    ),
-    populateContent(
-      'versatile-heritage',
-      content.versatileHeritages.map((n) => n.id)
-    ),
-  ]);
+  for (const sourceId of sources) {
+    console.log(`Generating embeddings for source ${sourceId}`);
+    const content = await fetchContentPackage([sourceId]);
+    const embeddings = await Promise.all([
+      populateContent(
+        'ancestry',
+        content.ancestries.map((n) => n.id)
+      ),
+      populateContent(
+        'background',
+        content.backgrounds.map((n) => n.id)
+      ),
+      populateContent(
+        'class',
+        content.classes.map((n) => n.id)
+      ),
+      populateContent(
+        'ability-block',
+        content.abilityBlocks.map((n) => n.id)
+      ),
+      populateContent(
+        'item',
+        content.items.map((n) => n.id)
+      ),
+      populateContent(
+        'language',
+        content.languages.map((n) => n.id)
+      ),
+      populateContent(
+        'spell',
+        content.spells.map((n) => n.id)
+      ),
+      populateContent(
+        'trait',
+        content.traits.map((n) => n.id)
+      ),
+      populateContent(
+        'creature',
+        content.creatures.map((n) => n.id)
+      ),
+      populateContent(
+        'archetype',
+        content.archetypes.map((n) => n.id)
+      ),
+      populateContent(
+        'versatile-heritage',
+        content.versatileHeritages.map((n) => n.id)
+      ),
+    ]);
+    console.log(embeddings);
+  }
 
   hideNotification('generate-embeddings');
   showNotification({
@@ -65,7 +69,6 @@ export async function generateEmbeddings(sources: number[]) {
     message: `See logs for more details.`,
     autoClose: 6000,
   });
-  console.log(embeddings);
 
-  return embeddings;
+  return true;
 }

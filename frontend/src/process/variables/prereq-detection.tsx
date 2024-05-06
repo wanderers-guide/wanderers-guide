@@ -5,10 +5,10 @@ import {
   labelToProficiencyType,
   labelToVariable,
   maxProficiencyType,
-  variableNameToLabel,
 } from './variable-utils';
 import { getAllAttributeVariables, getAllSkillVariables, getVariable } from './variable-manager';
 import * as _ from 'lodash-es';
+import { toLabel } from '@utils/strings';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
 export function meetsPrerequisites(
@@ -19,7 +19,7 @@ export function meetsPrerequisites(
   result: PrereqMet;
 } {
   const meetMap = new Map<string, PrereqMet>();
-  if (!prereqs || prereqs.length === 0 || getVariable('ALL', 'PAGE_CONTEXT')?.value !== 'CHARACTER-BUILDER') {
+  if (!prereqs || prereqs.length === 0 || getVariable('CHARACTER', 'PAGE_CONTEXT')?.value !== 'CHARACTER-BUILDER') {
     return {
       meetMap: meetMap,
       result: null,
@@ -112,7 +112,7 @@ function checkForProf(id: StoreID, prereq: string): PrereqMet {
 }
 
 function checkForAttribute(id: StoreID, prereq: string): PrereqMet {
-  const attributes = getAllAttributeVariables(id).map((v) => variableNameToLabel(v.name.replace('ATTRIBUTE_', '')));
+  const attributes = getAllAttributeVariables(id).map((v) => toLabel(v.name.replace('ATTRIBUTE_', '')));
   const regex = new RegExp(`^(${attributes.join('|')}) (\\+?-?\\d+)$`, 'i');
 
   const match = prereq.match(regex);
@@ -133,7 +133,7 @@ function checkForAttribute(id: StoreID, prereq: string): PrereqMet {
 
 function checkForFeat(id: StoreID, prereq: string): PrereqMet {
   // Check if the way it's written is inline with how feats are written
-  if (_.startCase(prereq.toLowerCase()) !== prereq) return null;
+  if (toLabel(prereq) !== prereq) return null;
 
   return (getVariable(id, 'FEAT_NAMES')!.value as string[]).includes(prereq.toUpperCase()) ? 'FULLY' : 'NOT';
 }

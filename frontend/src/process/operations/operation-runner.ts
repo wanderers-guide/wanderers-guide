@@ -785,8 +785,21 @@ async function runConditional(
   sourceLabel?: string
 ): Promise<OperationResult> {
   const makeCheck = (check: ConditionCheckData) => {
-    const variable = getVariable(varId, check.name);
-    if (!variable) return false;
+    let variable = getVariable(varId, check.name);
+
+    if (!variable) {
+      // if (!check.type) {
+      //   return false;
+      // }
+      // // Create the variable if it doesn't exist with default values
+      // addVariable(varId, check.type, check.name);
+      // variable = getVariable(varId, check.name);
+
+      // if (!variable) {
+      //   return false;
+      // }
+      return false;
+    }
 
     if (variable.type === 'attr') {
       const value = parseInt(check.value);
@@ -820,11 +833,11 @@ async function runConditional(
       }
     } else if (variable.type === 'str') {
       if (check.operator === 'EQUALS') {
-        return variable.value === check.value;
+        return variable.value.toUpperCase() === check.value.toUpperCase();
       } else if (check.operator === 'NOT_EQUALS') {
-        return variable.value !== check.value;
+        return variable.value.toUpperCase() !== check.value.toUpperCase();
       } else if (check.operator === 'INCLUDES') {
-        return variable.value.includes(check.value);
+        return variable.value.includes(check.value.toUpperCase());
       }
     } else if (variable.type === 'bool') {
       if (check.operator === 'EQUALS') {
@@ -835,14 +848,14 @@ async function runConditional(
     } else if (variable.type === 'list-str') {
       let value: string[] = [];
       try {
-        value = JSON.parse(check.value);
+        value = JSON.parse(check.value.toUpperCase());
       } catch (e) {}
       if (check.operator === 'EQUALS') {
         return _.isEqual(variable.value, value);
       } else if (check.operator === 'NOT_EQUALS') {
         return !_.isEqual(variable.value, value);
       } else if (check.operator === 'INCLUDES') {
-        return variable.value.includes(check.value);
+        return variable.value.includes(check.value.toUpperCase());
       }
     } else if (variable.type === 'prof') {
       if (check.operator === 'EQUALS') {

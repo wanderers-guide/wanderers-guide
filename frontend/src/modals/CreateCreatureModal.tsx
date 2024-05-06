@@ -39,10 +39,9 @@ import { isValidImage } from '@utils/images';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
-import { json } from 'react-router-dom';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
-import { startCase } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 
 /**
  * Modal for creating or editing a creature
@@ -105,7 +104,7 @@ export function CreateCreatureModal(props: {
         // @ts-ignore
         level: creature.level.toString(),
       });
-      setTraits(await fetchTraits(creature.traits));
+      // setTraits(await fetchTraits(creature.traits));
       setTotaledOperations(totaledOperations);
 
       form.reset();
@@ -129,9 +128,12 @@ export function CreateCreatureModal(props: {
       created_at: '',
       name: '',
       level: -1,
+      experience: 0,
+      hp_current: 0,
+      hp_temp: 0,
+      stamina_current: 0,
+      resolve_current: 0,
       rarity: 'COMMON',
-      size: 'MEDIUM',
-      traits: [],
       inventory: undefined,
       notes: undefined,
       details: {
@@ -142,7 +144,8 @@ export function CreateCreatureModal(props: {
       },
       roll_history: undefined,
       operations: [],
-      abilities: [],
+      abilities_base: [],
+      abilities_added: [],
       spells: undefined,
       meta_data: undefined,
       content_source_id: -1,
@@ -154,7 +157,7 @@ export function CreateCreatureModal(props: {
     props.onComplete({
       ...values,
       name: values.name.trim(),
-      traits: traits.map((trait) => trait.id),
+      // traits: traits.map((trait) => trait.id),
       operations: [...(values.operations ?? []), ...totaledOperations],
     });
     setTimeout(() => {
@@ -199,7 +202,7 @@ export function CreateCreatureModal(props: {
                     const text = e.clipboardData.getData('text/plain');
                     if (text.toUpperCase() === text) {
                       e.preventDefault();
-                      form.setFieldValue('name', startCase(text));
+                      form.setFieldValue('name', toLabel(text));
                     }
                   }}
                   onBlur={() => props.onNameBlur?.(form.values.name)}
@@ -257,9 +260,9 @@ export function CreateCreatureModal(props: {
                   <Button variant={openedAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                     Abilities
                   </Button>
-                  {form.values.abilities && form.values.abilities.length > 0 && (
+                  {form.values.abilities_base && form.values.abilities_base.length > 0 && (
                     <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {form.values.abilities.length}
+                      {form.values.abilities_base.length}
                     </Badge>
                   )}
                 </Group>
@@ -284,7 +287,7 @@ export function CreateCreatureModal(props: {
                   </Group>
                 </Group>
 
-                {form.values.abilities?.map((ability, i) => (
+                {form.values.abilities_base?.map((ability, i) => (
                   <Box key={i}>
                     <Button
                       variant='outline'
@@ -524,12 +527,12 @@ export function CreateCreatureModal(props: {
             if (openedModal === -1) {
               form.setValues({
                 ...form.values,
-                abilities: [...(form.values.abilities ?? []), abilityBlock],
+                abilities_base: [...(form.values.abilities_base ?? []), abilityBlock],
               });
             } else {
               form.setValues({
                 ...form.values,
-                abilities: form.values.abilities?.map((ability) =>
+                abilities_base: form.values.abilities_base?.map((ability) =>
                   ability.name === abilityBlock.name ? abilityBlock : ability
                 ),
               });

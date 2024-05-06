@@ -3,17 +3,22 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { useMantineTheme, Group, SimpleGrid, Button, Box, Text } from '@mantine/core';
+import { LivingEntity } from '@typing/content';
+import { StoreID } from '@typing/variables';
+import { toLabel } from '@utils/strings';
 import { displayAttributeValue } from '@variables/variable-display';
-import { variableNameToLabel } from '@variables/variable-utils';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
-export default function AttributeSection() {
+export default function AttributeSection(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+}) {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
   // Ordered this way so it's in two columns of physical & mental
   const attributes = [
@@ -26,7 +31,7 @@ export default function AttributeSection() {
   ];
 
   const handleAttributeOpen = (attribute: string) => {
-    openDrawer({ type: 'stat-attr', data: { attributeName: attribute } });
+    openDrawer({ type: 'stat-attr', data: { attributeName: attribute }, extra: { addToHistory: true } });
   };
 
   return (
@@ -52,7 +57,7 @@ export default function AttributeSection() {
                     handleAttributeOpen(attribute);
                   }}
                 >
-                  {variableNameToLabel(attribute)}
+                  {toLabel(attribute)}
                 </BlurButton>
                 <Button
                   radius='xl'
@@ -64,7 +69,7 @@ export default function AttributeSection() {
                     handleAttributeOpen(attribute);
                   }}
                 >
-                  {displayAttributeValue('CHARACTER', attribute, {
+                  {displayAttributeValue(props.id, attribute, {
                     c: 'gray.0',
                     ta: 'center',
                     fz: 'xs',

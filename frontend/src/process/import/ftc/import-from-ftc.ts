@@ -1,7 +1,6 @@
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { randomCharacterInfo } from '@ai/open-ai-handler';
 import { getConditionByName } from '@conditions/condition-handler';
-import { collectCharacterSpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
@@ -10,7 +9,7 @@ import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@
 import { makeRequest } from '@requests/request-manager';
 import { Session } from '@supabase/supabase-js';
 import { Character } from '@typing/content';
-import { OperationResultPackage } from '@typing/operations';
+import { OperationCharacterResultPackage } from '@typing/operations';
 import { selectRandom } from '@utils/random';
 import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
@@ -371,7 +370,7 @@ function findMatchingOption(selections: { name: string; level: number }[], optio
 }
 
 function findFirstSelection(
-  resultPackage: OperationResultPackage,
+  resultPackage: OperationCharacterResultPackage,
   checked: Set<string>
 ): {
   selection: OperationResult;

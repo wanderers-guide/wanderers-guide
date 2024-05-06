@@ -43,7 +43,7 @@ import {
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, ContentPackage, Inventory } from '@typing/content';
-import { OperationResultPackage } from '@typing/operations';
+import { OperationCharacterResultPackage } from '@typing/operations';
 import { JSendResponse } from '@typing/requests';
 import { VariableListStr } from '@typing/variables';
 import { setPageTitle } from '@utils/document-change';
@@ -55,7 +55,7 @@ import * as _ from 'lodash-es';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
-import { confirmHealth } from './character-utils';
+import { confirmHealth } from './living-entity-utils';
 import CompanionsPanel from './panels/CompanionsPanel';
 import DetailsPanel from './panels/DetailsPanel';
 import ExtrasPanel from './panels/ExtrasPanel';
@@ -66,13 +66,14 @@ import SkillsActionsPanel from './panels/SkillsActionsPanel';
 import SpellsPanel from './panels/SpellsPanel';
 import ArmorSection from './sections/ArmorSection';
 import AttributeSection from './sections/AttributeSection';
-import CharacterInfoSection from './sections/CharacterInfoSection';
+import CharacterInfoSection from './sections/EntityInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
 import { GiRollingDices } from 'react-icons/gi';
 import { displayComingSoon } from '@utils/notifications';
 import { saveCalculatedStats } from '@variables/calculated-stats';
+import { convertToSetEntity } from '@utils/type-fixing';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -202,7 +203,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   });
 
   // Execute operations
-  const [operationResults, setOperationResults] = useState<OperationResultPackage>();
+  const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!character || executingOperations.current) return;
@@ -211,7 +212,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       executingOperations.current = true;
       executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
         if (character.variants?.proficiency_without_level) {
-          setVariable('ALL', 'PROF_WITHOUT_LEVEL', true);
+          setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
         }
 
         // Add the extra items to the inventory from variables
@@ -226,10 +227,15 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         applyConditions('CHARACTER', character.details?.conditions ?? []);
         if (character.meta_data?.reset_hp !== false) {
           // To reset hp, we need to confirm health
-          confirmHealth(`${getFinalHealthValue('CHARACTER')}`, character, setCharacter);
+          confirmHealth(
+            `${getFinalHealthValue('CHARACTER')}`,
+            'CHARACTER',
+            character,
+            convertToSetEntity(setCharacter)
+          );
         } else {
           // Because of the drained condition, let's confirm health
-          confirmHealth(`${character.hp_current}`, character, setCharacter);
+          confirmHealth(`${character.hp_current}`, 'CHARACTER', character, convertToSetEntity(setCharacter));
         }
 
         // Save calculated stats
@@ -326,14 +332,14 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
             <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>
-              <CharacterInfoSection />
+              <CharacterInfoSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
               {!hideSections && (
                 <>
-                  <HealthSection />
-                  <ConditionSection />
-                  <AttributeSection />
-                  <ArmorSection inventory={inventory} setInventory={setInventory} />
-                  <SpeedSection />
+                  <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+                  <ConditionSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+                  <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+                  <ArmorSection id='CHARACTER' inventory={inventory} setInventory={setInventory} />
+                  <SpeedSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                 </>
               )}
             </SimpleGrid>
@@ -392,7 +398,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 setOpenedDiceRoller(true);
               }}
             >
-              <GiRollingDices size='1.8rem' stroke={1.5} />
+              <GiRollingDices size='1.8rem' stroke={'1.5px'} />
             </ActionIcon>
           )}
         </Stack>
