@@ -466,12 +466,20 @@ export function addVariable(
   defaultValue?: VariableValue,
   source?: string
 ) {
-  const variable = newVariable(type, name, defaultValue);
-  getVariables(id)[variable.name] = variable;
+  let variable = getVariables(id)[name];
+  if (variable) {
+    // Already exists
+    if (defaultValue) {
+      adjVariable(id, name, defaultValue, source);
+    }
+  } else {
+    // New variable
+    variable = newVariable(type, name, defaultValue);
+    getVariables(id)[variable.name] = variable;
 
-  // Add to history
-  //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
-
+    // Add to history
+    //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
+  }
   return _.cloneDeep(variable);
 }
 
