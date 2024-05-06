@@ -6,11 +6,12 @@ import {
   VariableListStr,
   VariableBool,
   ProficiencyType,
+  VariableStr,
 } from '@typing/variables';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
-import { getProficiencyTypeValue } from './variable-utils';
+import { compileExpressions, getProficiencyTypeValue } from './variable-utils';
 import { CastingSource, Item } from '@typing/content';
 import { getAcParts } from '@items/armor-handler';
 
@@ -162,6 +163,14 @@ export function getProfValueParts(
     level = profType !== 'U' ? 0 : -2;
   } else {
     level = profType !== 'U' ? getVariable<VariableNum>(id, 'LEVEL')?.value ?? 0 : 0;
+  }
+
+  if (variableName.startsWith('SKILL_') && profType === 'U') {
+    const untrainedImprov = getVariable<VariableStr>(id, 'UNTRAINED_IMPROVISATION')?.value;
+    if (untrainedImprov) {
+      const result = parseInt(compileExpressions(id, untrainedImprov?.trim(), true) ?? '');
+      level = result;
+    }
   }
 
   const profValue = getProficiencyTypeValue(profType);

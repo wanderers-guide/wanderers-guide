@@ -243,6 +243,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus.
   MARTIAL_EXPERIENCE: newVariable('bool', 'MARTIAL_EXPERIENCE'),
 
+  // Your proficiency bonus to untrained skills is equal to <>. ex. {{level/2}}
+  UNTRAINED_IMPROVISATION: newVariable('str', 'UNTRAINED_IMPROVISATION'),
+
   // When you take Multilingual, you gain 3 languages instead of 2.
   IMPROVED_MULTILINGUAL: newVariable('bool', 'IMPROVED_MULTILINGUAL'),
 
