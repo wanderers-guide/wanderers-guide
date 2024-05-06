@@ -58,6 +58,7 @@ export function toLabel(text?: string | null) {
   }
   label = label.replace(/_/g, ' ');
   label = titleCase(label);
+  label = label.trim();
 
   // Run thru the override again to fix capitalization
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {

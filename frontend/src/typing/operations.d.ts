@@ -153,6 +153,7 @@ export type ConditionCheckData = {
   id: string;
   name: string;
   data?: Variable;
+  type?: VariableType;
   operator: ConditionOperator;
   value: string;
 };

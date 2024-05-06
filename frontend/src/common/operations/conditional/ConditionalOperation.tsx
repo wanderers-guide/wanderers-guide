@@ -60,11 +60,13 @@ export default function ConditionalOperation(props: {
               id={check.id}
               defaultName={check.name}
               defaultData={check.data}
+              defaultType={check.type}
               defaultOperator={check.operator}
               defaultValue={check.value}
               onChange={(data) => {
                 let newChecks = _.cloneDeep(checks);
                 newChecks[index] = data;
+                console.log(newChecks);
                 routeChange({
                   checks: newChecks,
                   trueOperations: props.trueOperations,
@@ -178,6 +180,7 @@ export function ConditionalCheck(props: {
   id: string;
   defaultName: string;
   defaultData?: Variable;
+  defaultType?: VariableType;
   defaultOperator: ConditionOperator;
   defaultValue: string;
   onChange: (data: ConditionCheckData) => void;
@@ -188,6 +191,7 @@ export function ConditionalCheck(props: {
 }) {
   const [variableName, setVariableName] = useState(props.defaultName);
   const [variableData, setVariableData] = useState<Variable | undefined>(props.defaultData);
+  const [variableType, setVariableType] = useState<VariableType | undefined>(props.defaultType);
 
   const [operator, setOperator] = useState(props.defaultOperator);
   const [value, setValue] = useState(props.defaultValue);
@@ -197,13 +201,15 @@ export function ConditionalCheck(props: {
       id: props.id,
       name: variableName,
       data: variableData,
+      type: variableType,
       operator: operator,
       value: value,
     });
-  }, [variableName, variableData, operator, value]);
+  }, [variableName, variableData, variableType, operator, value]);
 
   let operatorOptions: { value: ConditionOperator; label: string }[] = [];
-  if (variableData?.type === 'attr' || variableData?.type === 'num' || variableData?.type === 'prof') {
+  const varType = variableData?.type || variableType;
+  if (varType === 'attr' || varType === 'num' || varType === 'prof') {
     operatorOptions = [
       { value: 'LESS_THAN', label: '<' },
       { value: 'LESS_THAN_OR_EQUALS', label: '≤' },
@@ -213,20 +219,20 @@ export function ConditionalCheck(props: {
       { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
-  if (variableData?.type === 'bool') {
+  if (varType === 'bool') {
     operatorOptions = [
       { value: 'EQUALS', label: '=' },
       { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
-  if (variableData?.type === 'str' || variableData?.type === 'list-str') {
+  if (varType === 'str' || varType === 'list-str') {
     operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
       { value: 'EQUALS', label: '=' },
       { value: 'NOT_EQUALS', label: '≠' },
     ];
   }
-  if (!variableData) {
+  if (!varType) {
     operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
       { value: 'LESS_THAN', label: '<' },
@@ -239,7 +245,7 @@ export function ConditionalCheck(props: {
   }
 
   return (
-    <Group wrap='nowrap' style={{ position: 'relative' }}>
+    <Group wrap='nowrap' style={{ position: 'relative' }} align='flex-start'>
       {props.includeAnd && (
         <>
           <Text
@@ -295,10 +301,31 @@ export function ConditionalCheck(props: {
         onChange={(value, variable) => {
           setVariableName(value);
           setVariableData(variable);
+          setVariableType(variable?.type);
           setOperator('');
           setValue('');
         }}
       />
+      {!variableData && (
+        <Select
+          size='xs'
+          placeholder='Value Type'
+          w={100}
+          value={varType}
+          onChange={(value) => {
+            if (!value) return;
+            setVariableType(value as VariableType);
+          }}
+          data={[
+            { value: 'attr', label: 'Attr' },
+            { value: 'num', label: 'Number' },
+            { value: 'bool', label: 'Bool' },
+            { value: 'str', label: 'Text' },
+            { value: 'list-str', label: 'Text Array' },
+            { value: 'prof', label: 'Prof' },
+          ]}
+        />
+      )}
       {variableName && (
         <Select
           size='xs'
@@ -313,13 +340,8 @@ export function ConditionalCheck(props: {
           data={operatorOptions}
         />
       )}
-      {variableName && operator && (
-        <ConditionalValueSelect
-          variableType={variableData?.type || 'str'}
-          operationType={operator}
-          value={value}
-          onChange={setValue}
-        />
+      {variableName && operator && varType && (
+        <ConditionalValueSelect variableType={varType} operationType={operator} value={value} onChange={setValue} />
       )}
     </Group>
   );
