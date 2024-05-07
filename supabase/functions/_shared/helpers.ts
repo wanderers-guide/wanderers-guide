@@ -436,7 +436,15 @@ export async function insertData<T = Record<string, any>>(
       //   throw error;
       // }
       // return insertData<T>(client, tableName, data, type, hasUUID);
-      console.warn('Duplicate UUID', data.uuid, data.name, data.type, data.content_source_id);
+      console.warn(
+        'Duplicate UUID',
+        data.uuid,
+        data.name,
+        type ? type : tableName,
+        data.level ?? data.rank ?? 0,
+        data.content_source_id
+      );
+      console.warn(error);
       return null;
     } else {
       throw error;

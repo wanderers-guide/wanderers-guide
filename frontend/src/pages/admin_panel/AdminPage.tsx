@@ -6,6 +6,7 @@ import ImportLegacyContent from './ImportLegacyContent';
 import UploadContent from './UploadContent';
 import BackgroundFixer from './BackgroundFixer';
 import TraitMerger from './TraitMerger';
+import ContentUpdateRetrigger from './ContentUpdateRetrigger';
 
 export function Component() {
   setPageTitle(`Admin Panel`);
@@ -17,6 +18,7 @@ export function Component() {
       <EditContent />
       <ImportLegacyContent />
       <BackgroundFixer />
+      <ContentUpdateRetrigger />
       <TraitMerger />
     </Stack>
   );

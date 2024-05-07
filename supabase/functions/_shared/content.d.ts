@@ -230,7 +230,7 @@ interface Archetype {
   artwork_url: string;
   content_source_id: number;
   version: string;
-  dedication_feat_id: number;
+  dedication_feat_id?: number;
 }
 
 interface VersatileHeritage {

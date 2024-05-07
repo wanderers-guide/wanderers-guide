@@ -77,7 +77,7 @@ export function CreateArchetypeModal(props: {
       rarity: 'COMMON' as Rarity,
       description: '',
       trait_id: -1,
-      dedication_feat_id: -1,
+      dedication_feat_id: undefined,
       artwork_url: '',
       content_source_id: -1,
       version: '1.0',
@@ -85,7 +85,7 @@ export function CreateArchetypeModal(props: {
 
     validate: {
       rarity: (value) => (['COMMON', 'UNCOMMON', 'RARE', 'UNIQUE'].includes(value) ? null : 'Invalid rarity'),
-      dedication_feat_id: (value) => (value === -1 ? 'Dedication feat is required' : null),
+      // dedication_feat_id: (value) => (value === -1 ? 'Dedication feat is required' : null),
     },
   });
 
