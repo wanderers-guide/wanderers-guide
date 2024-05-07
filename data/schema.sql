@@ -115,7 +115,7 @@ CREATE TABLE public.archetype (
     artwork_url character varying,
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
-    dedication_feat_id bigint NOT NULL,
+    dedication_feat_id bigint,
     uuid bigint
 );
 
