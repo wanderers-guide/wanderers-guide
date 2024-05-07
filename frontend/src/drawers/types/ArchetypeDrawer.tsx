@@ -210,7 +210,9 @@ export function ArchetypeDrawerContent(props: {
       <Box>
         <Button
           fullWidth
+          disabled={!data.archetype?.dedication_feat_id}
           onClick={() => {
+            if (!data.archetype?.dedication_feat_id) return;
             openDrawer({
               type: 'feat',
               data: { id: data.archetype?.dedication_feat_id },
