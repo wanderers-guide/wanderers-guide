@@ -28,3 +28,6 @@ dist-ssr
 .env.local
 .env.stage
 .env.production
+
+# Test data
+public_user.csv

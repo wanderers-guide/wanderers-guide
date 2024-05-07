@@ -1,0 +1,72 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+env:
+  TEST_EMAIL: test@wanderersguide.app
+  TEST_PASSWORD: test1234
+  LOCAL_DB: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+  SUPABASE_URL: http://127.0.0.1:54321
+  SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+  BASE_URL: http://localhost:5173
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - name: Setup postgres
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb\_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+          sudo apt update
+          sudo apt install postgresql-client-15 postgresql-15 postgresql-common locate -y
+      # Supabase CLI
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start
+      - run: supabase functions serve &
+      # Restore database
+      - name: Restore database
+        run: ./create-db.sh postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        working-directory: ./data
+
+      - name: Install dependencies
+        run: npm i
+        working-directory: ./frontend
+      # Create test user
+      - name: Create test user
+        working-directory: ./frontend
+        run: |
+          node generateTestUser.js > public_user.csv
+          cat public_user.csv
+          psql -d ${{ env.LOCAL_DB }} -c "\copy public.public_user FROM './public_user.csv' DELIMITER ',' CSV HEADER;"
+      - name: Cypress run
+        env:
+          CYPRESS_BASE_URL: ${{ env.BASE_URL}}
+          CYPRESS_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          CYPRESS_TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+          VITE_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          VITE_SUPABASE_KEY: ${{ env.SUPABASE_KEY }}
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npm run dev
+          working-directory: ./frontend
