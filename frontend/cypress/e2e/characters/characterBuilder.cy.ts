@@ -16,7 +16,7 @@ describe('Characters', () => {
     });
 
     afterEach(() => {
-      cy.get('button').contains('User name').click();
+      cy.get('button').contains('User Name').click();
       cy.get('div.mantine-Menu-dropdown').contains('Characters').click();
       cy.location('pathname').should('eq', '/characters');
 
