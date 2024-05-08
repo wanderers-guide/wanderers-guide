@@ -35,21 +35,21 @@ Cypress.Commands.add('buildABC', (ancestry: string, background: string, playerCl
   // Ancestry
   cy.get('button').contains('Select Ancestry').click({ timeout: 5000 });
   cy.get('input[placeholder="Search ancestries"]').type(ancestry);
-  cy.wait(100); // Wait to filter
+  cy.wait(300); // Wait to filter
   cy.get('div.mantine-Modal-body').find('div.mantine-ScrollArea-root').find('div.mantine-Group-root').first().as('ancestry');
   cy.get('@ancestry').find('button').contains('Select').click();
 
   // Select background
   cy.get('button').contains('Select Background').click();
   cy.get('input[placeholder="Search backgrounds"]').type(background);
-  cy.wait(100); // Wait to filter
+  cy.wait(300); // Wait to filter
   cy.get('div.mantine-Modal-body').find('div.mantine-ScrollArea-root').find('div.mantine-Group-root').first().as('background');
   cy.get('@background').find('button').contains('Select').click();
 
   // Select class
   cy.get('button').contains('Select Class').click();
   cy.get('input[placeholder="Search classes"]').type(playerClass);
-  cy.wait(100); // Wait to filter
+  cy.wait(300); // Wait to filter
   cy.get('div.mantine-Modal-body').find('div.mantine-ScrollArea-root').find('div.mantine-Group-root').first().as('playerClass');
   cy.get('@playerClass').find('button').contains('Select').click();
 });
