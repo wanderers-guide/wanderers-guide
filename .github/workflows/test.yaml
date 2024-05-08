@@ -70,3 +70,10 @@ jobs:
           install: false
           start: npm run dev
           working-directory: ./frontend
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+            name: cypress-screenshots
+            path: ./frontend/cypress/screenshots
+            compression-level: 9
