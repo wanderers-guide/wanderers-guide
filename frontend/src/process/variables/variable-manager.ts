@@ -36,6 +36,7 @@ export const HIDDEN_VARIABLES = [
   'SPELL_DATA',
   'PROF_WITHOUT_LEVEL',
   'INJECT_SELECT_OPTIONS',
+  'INJECT_TEXT',
 ];
 
 const DEFAULT_VARIABLES: Record<string, Variable> = {
@@ -219,6 +220,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   // Injected Selection Options
   INJECT_SELECT_OPTIONS: newVariable('list-str', 'INJECT_SELECT_OPTIONS'), // Hidden
+
+  // Injected Text
+  INJECT_TEXT: newVariable('list-str', 'INJECT_TEXT'), // Hidden
 
   // Blacklisted Ability Blocks
   BLACKLIST_ABILITY_BLOCKS: newVariable('list-str', 'BLACKLIST_ABILITY_BLOCKS'),

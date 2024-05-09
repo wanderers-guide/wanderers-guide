@@ -6,7 +6,7 @@ import {
   ExtendedProficiencyValue,
   VariableValue,
 } from './variables';
-import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource } from './content';
+import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource, ContentType } from './content';
 import { OperationResult } from './../process/operations/operation-runner';
 
 export type OperationCharacterResultPackage = {
@@ -62,6 +62,7 @@ export type Operation =
   | OperationGiveItem
   | OperationGiveTrait
   | OperationInjectSelectOption
+  | OperationInjectText
   | OperationDefineCastingSource;
 
 export type OperationType =
@@ -81,6 +82,7 @@ export type OperationType =
   | 'giveTrait'
   | 'giveSpellSlot'
   | 'injectSelectOption'
+  | 'injectText'
   | 'defineCastingSource';
 
 interface OperationBase {
@@ -213,6 +215,15 @@ export interface OperationInjectSelectOption extends OperationAdjValue {
   data: {
     variable: 'INJECT_SELECT_OPTIONS';
     value: VariableValue;
+  };
+}
+
+export interface OperationInjectText extends OperationBase {
+  readonly type: 'injectText';
+  data: {
+    type: ContentType | AbilityBlockType;
+    id: number;
+    text: string;
   };
 }
 

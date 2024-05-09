@@ -39,6 +39,7 @@ import {
   OperationSelectOptionType,
   OperationSetValue,
   OperationType,
+  OperationInjectText,
 } from '@typing/operations';
 import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
@@ -177,6 +178,16 @@ export function createDefaultOperation<T = Operation>(type: OperationType): T {
         value: '',
       },
     } satisfies OperationInjectSelectOption as T;
+  } else if (type === 'injectText') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        type: 'feat',
+        id: -1,
+        text: '',
+      },
+    } satisfies OperationInjectText as T;
   } else if (type === 'removeAbilityBlock') {
     return {
       id: crypto.randomUUID(),

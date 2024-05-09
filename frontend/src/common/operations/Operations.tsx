@@ -31,6 +31,7 @@ import {
   OperationGiveSpellSlot,
   OperationGiveTrait,
   OperationInjectSelectOption,
+  OperationInjectText,
   OperationSelect,
   OperationSetValue,
   OperationType,
@@ -59,6 +60,7 @@ import { GiveItemOperation } from './item/GiveItemOperation';
 import { GiveTraitOperation } from './trait/GiveTraitOperation';
 import useRefresh from '@utils/use-refresh';
 import { InjectSelectOptionOperation } from './selection/InjectSelectOptionOperation';
+import { InjectTextOperation } from './variables/InjectTextOperation';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -190,6 +192,7 @@ export function OperationSection(props: {
               { value: 'createValue', label: 'Create Value' },
               { value: 'setValue', label: 'Override Value' },
               { value: 'injectSelectOption', label: 'Inject Select Option' },
+              { value: 'injectText', label: 'Inject Text' },
               // { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
               // { value: 'RESO', label: 'RESO' }, // TODO
             ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
@@ -382,6 +385,23 @@ export function OperationDisplay(props: {
             opInjectSelectOption.data.value = value;
 
             props.onChange(_.cloneDeep(opInjectSelectOption));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'injectText':
+      let opInjectText = props.operation as OperationInjectText;
+      return (
+        <InjectTextOperation
+          type={opInjectText.data.type}
+          id={opInjectText.data.id}
+          text={opInjectText.data.text}
+          onChange={(type, id, text) => {
+            opInjectText.data.type = type;
+            opInjectText.data.id = id;
+            opInjectText.data.text = text;
+
+            props.onChange(_.cloneDeep(opInjectText));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

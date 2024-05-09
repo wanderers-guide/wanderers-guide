@@ -6,6 +6,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor, Button } from '@mantine/core';
 import { getSelectedOption } from '@operations/operation-utils';
@@ -186,6 +187,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
           </Text>
         )}
       </Box>
+      <ShowInjectedText varId='CHARACTER' type='action' id={action.id} />
       <DisplayOperationSelectionOptions operations={action.operations} />
       {props.data.showOperations && <ShowOperationsButton name={action.name} operations={action.operations} />}
     </Box>

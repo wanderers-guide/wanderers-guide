@@ -6,6 +6,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
@@ -273,6 +274,8 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
             ))}
           </Box>
         )}
+
+        <ShowInjectedText varId='CHARACTER' type='spell' id={spell.id} />
       </Box>
     </Box>
   );

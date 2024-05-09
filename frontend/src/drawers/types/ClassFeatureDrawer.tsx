@@ -9,6 +9,7 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 
 export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
   const id = props.data.id;
@@ -167,6 +168,7 @@ export function ClassFeatureDrawerContent(props: {
           </Text>
         )}
       </Box>
+      <ShowInjectedText varId='CHARACTER' type='class-feature' id={classFeature.id} />
       <DisplayOperationSelectionOptions operations={classFeature.operations} />
       {props.data.showOperations && (
         <ShowOperationsButton name={classFeature.name} operations={classFeature.operations} />

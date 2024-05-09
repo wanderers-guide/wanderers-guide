@@ -30,6 +30,7 @@ import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
@@ -286,6 +287,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
 
         {<PrerequisiteForSection name={feat.name} />}
       </Box>
+      <ShowInjectedText varId='CHARACTER' type='feat' id={feat.id} />
       <DisplayOperationSelectionOptions operations={feat.operations} />
       {props.data.showOperations && <ShowOperationsButton name={feat.name} operations={feat.operations} />}
     </Box>

@@ -7,6 +7,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, Paper } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
@@ -325,6 +326,8 @@ export function CastSpellDrawerContent(props: {
             ))}
           </Box>
         )}
+
+        <ShowInjectedText varId='CHARACTER' type='spell' id={spell.id} />
       </Box>
     </Box>
   );

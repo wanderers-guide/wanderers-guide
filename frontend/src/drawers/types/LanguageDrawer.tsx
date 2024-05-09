@@ -3,6 +3,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Language } from '@typing/content';
@@ -90,6 +91,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
         )}
         {(language.speakers || language.script) && <Divider />}
         <RichText ta='justify'>{language.description || 'No description given.'}</RichText>
+        <ShowInjectedText varId='CHARACTER' type='language' id={language.id} />
       </Box>
     </Box>
   );

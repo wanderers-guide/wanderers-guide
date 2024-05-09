@@ -49,6 +49,7 @@ import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -233,6 +234,7 @@ export function ItemDrawerContent(props: {
           </>
         )}
       </Box>
+      <ShowInjectedText varId='CHARACTER' type='item' id={item.id} />
       {props.data.showOperations && <ShowOperationsButton name={item.name} operations={item.operations} />}
     </Box>
   );

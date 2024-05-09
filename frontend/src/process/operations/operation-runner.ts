@@ -15,6 +15,7 @@ import {
   OperationGiveSpellSlot,
   OperationGiveTrait,
   OperationInjectSelectOption,
+  OperationInjectText,
   OperationRemoveAbilityBlock,
   OperationRemoveLanguage,
   OperationRemoveSpell,
@@ -64,6 +65,7 @@ export async function runOperations(
   sourceLabel?: string
 ): Promise<OperationResult[]> {
   const runOp = async (operation: Operation): Promise<OperationResult> => {
+    // Value creation
     if (options?.doOnlyValueCreation) {
       if (operation.type === 'createValue') {
         return await runCreateValue(varId, operation, sourceLabel);
@@ -89,6 +91,7 @@ export async function runOperations(
       return null;
     }
 
+    // Conditionals
     if (options?.doOnlyConditionals) {
       if (operation.type === 'conditional') {
         return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
@@ -114,6 +117,7 @@ export async function runOperations(
       }
     }
 
+    // Normal
     if (options?.doConditionals && operation.type === 'conditional') {
       return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
     } else if (operation.type === 'adjValue') {
@@ -142,6 +146,8 @@ export async function runOperations(
       return await runRemoveLanguage(varId, operation, sourceLabel);
     } else if (operation.type === 'removeSpell') {
       return await runRemoveSpell(varId, operation, sourceLabel);
+    } else if (operation.type === 'injectText') {
+      return await runInjectText(varId, operation, sourceLabel);
     } else if (operation.type === 'select') {
       const subNode = selectionTrack.node?.children[operation.id];
       return await runSelect(
@@ -627,6 +633,24 @@ async function runInjectSelectOption(
   sourceLabel?: string
 ): Promise<OperationResult> {
   adjVariable(varId, 'INJECT_SELECT_OPTIONS', operation.data.value, sourceLabel);
+  return null;
+}
+
+async function runInjectText(
+  varId: StoreID,
+  operation: OperationInjectText,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  adjVariable(
+    varId,
+    'INJECT_TEXT',
+    JSON.stringify({
+      type: operation.data.type,
+      id: operation.data.id,
+      text: operation.data.text,
+    }),
+    sourceLabel
+  );
   return null;
 }
 

@@ -4,6 +4,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
+import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Trait } from '@typing/content';
@@ -74,6 +75,7 @@ export function TraitDrawerContent(props: { data: { id?: number; trait?: Trait }
     <Box>
       <Box>
         <RichText ta='justify'>{trait.description || 'No description given.'}</RichText>
+        <ShowInjectedText varId='CHARACTER' type='trait' id={trait.id} />
       </Box>
     </Box>
   );
