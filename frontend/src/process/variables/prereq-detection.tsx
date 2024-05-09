@@ -65,13 +65,13 @@ function meetPreq(id: StoreID, prereq: string): PrereqMet {
   result = checkForProf(id, prereq);
   if (result) return result;
 
+  result = checkForAttribute(id, prereq);
+  if (result) return result;
+
   result = checkForFeat(id, prereq);
   if (result) return result;
 
   result = checkForClassFeature(id, prereq);
-  if (result) return result;
-
-  result = checkForAttribute(id, prereq);
   if (result) return result;
 
   return 'UNKNOWN';

@@ -15,16 +15,15 @@ export function pluralize(word: string): string {
 export function toLabel(text?: string | null) {
   if (!text) return '';
   const OVERRIDE_CHANGES = {
-    'fort ': 'Fortitude ',
-    'str ': 'Strength ',
-    'dex ': 'Dexterity ',
-    'con ': 'Constitution ',
-    'int ': 'Intelligence ',
-    'wis ': 'Wisdom ',
-    'cha ': 'Charisma ',
-    ' dc': ' DC',
-    ' hp': ' HP',
-    'hp ': 'HP ',
+    fort: 'Fortitude',
+    str: 'Strength',
+    dex: 'Dexterity',
+    con: 'Constitution',
+    int: 'Intelligence',
+    wis: 'Wisdom',
+    cha: 'Charisma',
+    dc: 'DC',
+    hp: 'HP',
     'Simple Weapons': 'simple weapons',
     'Martial Weapons': 'martial weapons',
     'Advanced Weapons': 'advanced weapons',
@@ -51,7 +50,7 @@ export function toLabel(text?: string | null) {
 
   let label = text.trim().toLowerCase();
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
-    label = ` ${label} `.replace(key, value);
+    label = label.replace(new RegExp(`\\b${key}\\b`, 'g'), value);
   }
   for (const value of REMOVAL_CHANGES) {
     label = label.replace(value, '');
@@ -62,7 +61,7 @@ export function toLabel(text?: string | null) {
 
   // Run thru the override again to fix capitalization
   for (const [key, value] of Object.entries(OVERRIDE_CHANGES)) {
-    label = label.replace(key, value);
+    label = label.replace(new RegExp(`\\b${key}\\b`, 'g'), value);
   }
 
   // Fix incorrect capitalizations
