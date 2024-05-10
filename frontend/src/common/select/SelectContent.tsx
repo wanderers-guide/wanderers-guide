@@ -762,6 +762,7 @@ export default function SelectContentModal({
                   filterFn={getMergedFilterFn()}
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
+                  limitSelectedOptions={true}
                 />
               )}
             </Box>
@@ -798,6 +799,7 @@ export default function SelectContentModal({
                   }
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
+                  limitSelectedOptions={true}
                 />
               )}
             </Box>
@@ -831,6 +833,7 @@ export default function SelectContentModal({
                   }
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
+                  limitSelectedOptions={true}
                 />
               )}
             </Box>
@@ -869,6 +872,7 @@ export default function SelectContentModal({
                   }
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
+                  limitSelectedOptions={true}
                 />
               )}
             </Box>
@@ -900,6 +904,7 @@ export default function SelectContentModal({
                   filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
                   includeOptions={innerProps.options?.includeOptions}
                   showButton={innerProps.options?.showButton}
+                  limitSelectedOptions={true}
                 />
               )}
             </Box>
@@ -929,6 +934,7 @@ export default function SelectContentModal({
               filterFn={getMergedFilterFn()}
               includeOptions={innerProps.options?.includeOptions}
               showButton={innerProps.options?.showButton}
+              limitSelectedOptions={!!innerProps.options?.overrideOptions}
             />
           )}
         </Box>
@@ -987,6 +993,7 @@ function SelectionOptions(props: {
   filterFn?: (option: Record<string, any>) => boolean;
   includeOptions?: boolean;
   showButton?: boolean;
+  limitSelectedOptions: boolean;
 }) {
   const { data, isFetching } = useQuery({
     queryKey: [`select-content-options-${props.type}`, { sourceId: props.sourceId }],
@@ -1019,13 +1026,14 @@ function SelectionOptions(props: {
   }
 
   // Filter out already selected feats
-  if (props.abilityBlockType === 'feat') {
+  if (props.limitSelectedOptions && props.abilityBlockType === 'feat') {
     const featIds = getVariable<VariableListStr>('CHARACTER', 'FEAT_IDS')?.value.map((v) => parseInt(v)) ?? [];
     options = options.filter((option) => !featIds.includes(option.id) || option.meta_data?.can_select_multiple_times);
   }
 
   // Filter out already selected languages
   if (
+    props.limitSelectedOptions &&
     props.overrideOptions &&
     props.overrideOptions.length > 0 &&
     props.overrideOptions[0]._content_type === 'language'
