@@ -109,29 +109,57 @@ import useRefresh from '@utils/use-refresh';
 import { getPublicUser } from '@auth/user-manager';
 import { defineDefaultSourcesForSource } from '@content/homebrew';
 
-export function CreateContentSourceModal(props: {
+export function CreateContentSourceOnlyModal(props: {
+  opened: boolean;
+  editId: number;
+  onComplete: (source: ContentSource) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Modal
+      opened={props.opened}
+      onClose={() => {
+        props.onCancel();
+      }}
+      title={<Title order={3}>{'Update Content Source'}</Title>}
+      styles={{
+        body: {
+          paddingRight: 2,
+        },
+      }}
+      size={'md'}
+      closeOnClickOutside={false}
+      closeOnEscape={false}
+      keepMounted={false}
+    >
+      <ContentSourceEditor
+        opened={props.opened}
+        sourceId={props.editId}
+        onComplete={(source) => {
+          props.onComplete(source);
+        }}
+        onCancel={props.onCancel}
+      />
+    </Modal>
+  );
+}
+
+export function ContentSourceEditor(props: {
   opened: boolean;
   sourceId: number;
-  onUpdate?: () => void;
-  onClose: () => void;
+  onComplete: (source: ContentSource) => void;
+  onCancel: () => void;
 }) {
-  const theme = useMantineTheme();
-
   const [displayDescription, refreshDisplayDescription] = useRefresh();
   const [description, setDescription] = useState<JSONContent>();
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
+  const theme = useMantineTheme();
+
   const { data, isFetching } = useQuery({
-    queryKey: [`find-content-source-details-${props.sourceId}`],
+    queryKey: [`find-content-source-only-${props.sourceId}`],
     queryFn: async () => {
       const source = (await fetchContentSources({ ids: [props.sourceId] }))[0];
-      await defineDefaultSourcesForSource(source);
-
-      // Fill content store with all content (async)
-      fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: true });
-
-      // Fetch the source's content
-      const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
 
       form.setInitialValues({
         id: source.id,
@@ -153,10 +181,7 @@ export function CreateContentSourceModal(props: {
       form.reset();
       refreshDisplayDescription();
 
-      return {
-        content,
-        source,
-      };
+      return source;
     },
     refetchOnWindowFocus: false,
   });
@@ -183,9 +208,249 @@ export function CreateContentSourceModal(props: {
     },
   });
 
-  const onSave = async (values: typeof form.values) => {
-    console.log('values', values);
+  const onSubmit = async (values: typeof form.values) => {
+    // Combine the form values with the controlled state values
 
+    props.onComplete({
+      ...values,
+      name: values.name.trim(),
+      required_content_sources: values.required_content_sources ?? [],
+      meta_data: values.meta_data ?? {},
+    });
+    setTimeout(() => {
+      onReset();
+    }, 1000);
+  };
+
+  const onReset = () => {
+    form.reset();
+    setDescription(undefined);
+  };
+
+  return (
+    <form onSubmit={form.onSubmit(onSubmit)}>
+      <LoadingOverlay visible={isFetching} />
+      <Center maw={350}>
+        <Stack gap={10}>
+          <Group wrap='nowrap' justify='space-between'>
+            <TextInput label='Name' required {...form.getInputProps('name')} />
+            <TextInput label='Contact Info' {...form.getInputProps('contact_info')} />
+          </Group>
+
+          <Group wrap='nowrap' justify='space-between'>
+            <TextInput label='Source URL' {...form.getInputProps('url')} />
+            <TextInput label='Image URL' {...form.getInputProps('artwork_url')} />
+          </Group>
+
+          {displayDescription && (
+            <RichTextInput
+              label='Description'
+              required
+              value={description ?? toHTML(form.values.description)}
+              onChange={(text, json) => {
+                setDescription(json);
+                form.setFieldValue('description', text);
+              }}
+            />
+          )}
+
+          <Divider
+            label={
+              <Group gap={3} wrap='nowrap'>
+                <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                  Operations
+                </Button>
+                {form.values.operations && form.values.operations.length > 0 && (
+                  <Badge variant='light' color={theme.primaryColor} size='xs'>
+                    {form.values.operations.length}
+                  </Badge>
+                )}
+              </Group>
+            }
+            labelPosition='left'
+            onClick={toggleOperations}
+          />
+          <Collapse in={openedOperations}>
+            <Stack gap={10}>
+              <OperationSection
+                title={
+                  <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
+                    <HoverCard.Target>
+                      <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
+                        How to Use Operations
+                      </Anchor>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown>
+                      <Text size='sm'>
+                        Operations are used to make changes to a character. They can give feats, spells, and more, as
+                        well as change stats, skills, and other values.
+                      </Text>
+                      <Text size='sm'>
+                        Use conditionals to apply operations only when certain conditions are met and selections
+                        whenever a choice needs to be made.
+                      </Text>
+                      <Text size='xs' fs='italic'>
+                        For more help, see{' '}
+                        <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
+                          our Discord server
+                        </Anchor>
+                        .
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                }
+                operations={form.values.operations}
+                onChange={(operations) => form.setValues({ ...form.values, operations })}
+              />
+              <Divider />
+            </Stack>
+          </Collapse>
+
+          <Group wrap='nowrap' justify='space-between' h={40}>
+            <Switch
+              pl='xs'
+              size='sm'
+              checked={form.values.require_key}
+              onChange={(e) => {
+                form.setValues({ ...form.values, require_key: e.currentTarget.checked });
+              }}
+              label='Require Key'
+            />
+            {form.values.require_key && (
+              <TextInput
+                size='xs'
+                placeholder='Access Key'
+                value={form.values.keys?.access_key}
+                onChange={(e) => {
+                  form.setValues({ ...form.values, keys: { access_key: e.currentTarget.value } });
+                }}
+                rightSection={
+                  <ActionIcon
+                    size={22}
+                    radius='xl'
+                    color={theme.primaryColor}
+                    variant='light'
+                    onClick={() => {
+                      const randKey = crypto.randomUUID().slice(0, 18);
+                      form.setValues({ ...form.values, keys: { access_key: randKey } });
+                    }}
+                  >
+                    <IconRefreshDot style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                  </ActionIcon>
+                }
+              />
+            )}
+          </Group>
+
+          <Group justify='space-between'>
+            <Box>
+              <Switch
+                pl='xs'
+                size='sm'
+                checked={form.values.is_published}
+                onChange={(e) => {
+                  if (e.currentTarget.checked) {
+                    modals.openConfirmModal({
+                      title: <Title order={3}>Publish Bundle</Title>,
+                      children: (
+                        <Stack pr='sm'>
+                          <Text size='sm'>
+                            By clicking publish, you are agreeing to the following about the content you are publishing:
+                          </Text>
+                          <List>
+                            <List.Item>
+                              <Text size='sm'>
+                                The content is published under the ORC license and complies with Paizo's Community Use
+                                Policy.
+                              </Text>
+                            </List.Item>
+                            <List.Item>
+                              <Text size='sm'>
+                                The content does not contain any third party’s intellectual property without their
+                                permission.
+                              </Text>
+                            </List.Item>
+                            <List.Item>
+                              <Text size='sm'>
+                                The content preserves a high standard of quality; it is not "low-effort content."
+                              </Text>
+                            </List.Item>
+                            <List.Item>
+                              <Text size='sm'>
+                                The content does not contain material that the general public would classify as "adult
+                                content," offensive, or inappropriate for minors.
+                              </Text>
+                            </List.Item>
+                          </List>
+                          <Text size='sm'>
+                            Failure to comply with these agreements may result in your content being removed and
+                            potentially further repercussions.
+                          </Text>
+                        </Stack>
+                      ),
+                      labels: { confirm: 'Publish', cancel: 'Cancel' },
+                      onCancel: () => {},
+                      onConfirm: () => {
+                        form.setValues({ ...form.values, is_published: true });
+                      },
+                    });
+                  } else {
+                    form.setValues({ ...form.values, is_published: false });
+                  }
+                }}
+                label='Published'
+              />
+            </Box>
+            <Group justify='flex-end'>
+              <Button
+                variant='default'
+                size='compact-sm'
+                onClick={() => {
+                  onReset();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button size='compact-sm' type='submit'>
+                Save
+              </Button>
+            </Group>
+          </Group>
+        </Stack>
+      </Center>
+    </form>
+  );
+}
+
+export function CreateContentSourceModal(props: {
+  opened: boolean;
+  sourceId: number;
+  onUpdate?: () => void;
+  onClose: () => void;
+}) {
+  const theme = useMantineTheme();
+
+  const { data, isFetching } = useQuery({
+    queryKey: [`find-content-source-details-${props.sourceId}`],
+    queryFn: async () => {
+      const source = (await fetchContentSources({ ids: [props.sourceId] }))[0];
+      await defineDefaultSourcesForSource(source);
+
+      // Fill content store with all content (async)
+      fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: true });
+
+      // Fetch the source's content
+      const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
+
+      return {
+        content,
+        source,
+      };
+    },
+    refetchOnWindowFocus: false,
+  });
+
+  const onSave = async (values: ContentSource) => {
     await upsertContentSource({
       id: props.sourceId,
       created_at: data?.source.created_at ?? '',
@@ -212,17 +477,11 @@ export function CreateContentSourceModal(props: {
     props.onUpdate?.();
   };
 
-  const onReset = () => {
-    form.reset();
-    setDescription(undefined);
-  };
-
   return (
     <Modal
       opened={props.opened}
       onClose={() => {
         props.onClose();
-        onReset();
       }}
       title={<Title order={3}>{'Update Bundle'}</Title>}
       styles={{
@@ -237,197 +496,14 @@ export function CreateContentSourceModal(props: {
     >
       <LoadingOverlay visible={isFetching} />
       <Group align='flex-start'>
-        <form onSubmit={form.onSubmit(onSave)}>
-          <Center maw={350}>
-            <Stack gap={10}>
-              <Group wrap='nowrap' justify='space-between'>
-                <TextInput label='Name' required {...form.getInputProps('name')} />
-                <TextInput label='Contact Info' {...form.getInputProps('contact_info')} />
-              </Group>
-
-              <Group wrap='nowrap' justify='space-between'>
-                <TextInput label='Source URL' {...form.getInputProps('url')} />
-                <TextInput label='Image URL' {...form.getInputProps('artwork_url')} />
-              </Group>
-
-              {displayDescription && (
-                <RichTextInput
-                  label='Description'
-                  required
-                  value={description ?? toHTML(form.values.description)}
-                  onChange={(text, json) => {
-                    setDescription(json);
-                    form.setFieldValue('description', text);
-                  }}
-                />
-              )}
-
-              <Divider
-                label={
-                  <Group gap={3} wrap='nowrap'>
-                    <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                      Operations
-                    </Button>
-                    {form.values.operations && form.values.operations.length > 0 && (
-                      <Badge variant='light' color={theme.primaryColor} size='xs'>
-                        {form.values.operations.length}
-                      </Badge>
-                    )}
-                  </Group>
-                }
-                labelPosition='left'
-                onClick={toggleOperations}
-              />
-              <Collapse in={openedOperations}>
-                <Stack gap={10}>
-                  <OperationSection
-                    title={
-                      <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
-                        <HoverCard.Target>
-                          <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
-                            How to Use Operations
-                          </Anchor>
-                        </HoverCard.Target>
-                        <HoverCard.Dropdown>
-                          <Text size='sm'>
-                            Operations are used to make changes to a character. They can give feats, spells, and more,
-                            as well as change stats, skills, and other values.
-                          </Text>
-                          <Text size='sm'>
-                            Use conditionals to apply operations only when certain conditions are met and selections
-                            whenever a choice needs to be made.
-                          </Text>
-                          <Text size='xs' fs='italic'>
-                            For more help, see{' '}
-                            <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
-                              our Discord server
-                            </Anchor>
-                            .
-                          </Text>
-                        </HoverCard.Dropdown>
-                      </HoverCard>
-                    }
-                    operations={form.values.operations}
-                    onChange={(operations) => form.setValues({ ...form.values, operations })}
-                  />
-                  <Divider />
-                </Stack>
-              </Collapse>
-
-              <Group wrap='nowrap' justify='space-between' h={40}>
-                <Switch
-                  pl='xs'
-                  size='sm'
-                  checked={form.values.require_key}
-                  onChange={(e) => {
-                    form.setValues({ ...form.values, require_key: e.currentTarget.checked });
-                  }}
-                  label='Require Key'
-                />
-                {form.values.require_key && (
-                  <TextInput
-                    size='xs'
-                    placeholder='Access Key'
-                    value={form.values.keys?.access_key}
-                    onChange={(e) => {
-                      form.setValues({ ...form.values, keys: { access_key: e.currentTarget.value } });
-                    }}
-                    rightSection={
-                      <ActionIcon
-                        size={22}
-                        radius='xl'
-                        color={theme.primaryColor}
-                        variant='light'
-                        onClick={() => {
-                          const randKey = crypto.randomUUID().slice(0, 18);
-                          form.setValues({ ...form.values, keys: { access_key: randKey } });
-                        }}
-                      >
-                        <IconRefreshDot style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
-                      </ActionIcon>
-                    }
-                  />
-                )}
-              </Group>
-
-              <Group justify='space-between'>
-                <Box>
-                  <Switch
-                    pl='xs'
-                    size='sm'
-                    checked={form.values.is_published}
-                    onChange={(e) => {
-                      if (e.currentTarget.checked) {
-                        modals.openConfirmModal({
-                          title: <Title order={3}>Publish Bundle</Title>,
-                          children: (
-                            <Stack pr='sm'>
-                              <Text size='sm'>
-                                By clicking publish, you are agreeing to the following about the content you are
-                                publishing:
-                              </Text>
-                              <List>
-                                <List.Item>
-                                  <Text size='sm'>
-                                    The content is published under the ORC license and complies with Paizo's Community
-                                    Use Policy.
-                                  </Text>
-                                </List.Item>
-                                <List.Item>
-                                  <Text size='sm'>
-                                    The content does not contain any third party’s intellectual property without their
-                                    permission.
-                                  </Text>
-                                </List.Item>
-                                <List.Item>
-                                  <Text size='sm'>
-                                    The content preserves a high standard of quality; it is not "low-effort content."
-                                  </Text>
-                                </List.Item>
-                                <List.Item>
-                                  <Text size='sm'>
-                                    The content does not contain material that the general public would classify as
-                                    "adult content," offensive, or inappropriate for minors.
-                                  </Text>
-                                </List.Item>
-                              </List>
-                              <Text size='sm'>
-                                Failure to comply with these agreements may result in your content being removed and
-                                potentially further repercussions.
-                              </Text>
-                            </Stack>
-                          ),
-                          labels: { confirm: 'Publish', cancel: 'Cancel' },
-                          onCancel: () => {},
-                          onConfirm: () => {
-                            form.setValues({ ...form.values, is_published: true });
-                          },
-                        });
-                      } else {
-                        form.setValues({ ...form.values, is_published: false });
-                      }
-                    }}
-                    label='Published'
-                  />
-                </Box>
-                <Group justify='flex-end'>
-                  <Button
-                    variant='default'
-                    size='compact-sm'
-                    onClick={() => {
-                      onReset();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button size='compact-sm' type='submit'>
-                    Save
-                  </Button>
-                </Group>
-              </Group>
-            </Stack>
-          </Center>
-        </form>
+        <ContentSourceEditor
+          opened={props.opened}
+          sourceId={props.sourceId}
+          onComplete={(source) => {
+            onSave(source);
+          }}
+          onCancel={() => {}}
+        />
         <Center style={{ flex: 1 }}>
           <Tabs w='100%' variant='outline' defaultValue='feats' orientation='vertical' keepMounted={false}>
             <Tabs.List>

@@ -21,7 +21,6 @@ const NO_FEEDBACK_DRAWERS = [
   'generic',
   'character',
   'condition',
-  'content-source',
   'manage-coins',
   'stat-prof',
   'stat-attr',

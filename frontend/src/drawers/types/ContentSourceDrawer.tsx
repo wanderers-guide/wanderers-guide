@@ -169,7 +169,8 @@ export function ContentSourceDrawerContent(props: {
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
     },
   });
-  const source = content && content.sources && content.sources.length > 0 ? content.sources[0] : null;
+  const source =
+    props.data.source ?? (content && content.sources && content.sources.length > 0 ? content.sources[0] : null);
 
   const [openedUnlockModal, setOpenedUnlockModal] = useState(false);
   useEffect(() => {

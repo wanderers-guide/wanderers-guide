@@ -35,6 +35,8 @@ export function mapToDrawerData(
     drawerType = data.type;
   }
 
+  console.log('drawerType', drawerType, 'data', data, 'dataInject', dataInject);
+
   let drawerData: Record<string, any> = {};
   if (typeof data === 'number') {
     drawerData = { id: data, ...(dataInject ?? {}) };
@@ -52,6 +54,7 @@ export function mapToDrawerData(
     if (drawerType === 'trait') key = 'trait';
     if (drawerType === 'archetype') key = 'archetype';
     if (drawerType === 'versatile-heritage') key = 'versatileHeritage';
+    if (drawerType === 'content-source') key = 'source';
     drawerData = {
       [key]: data,
       ...(dataInject ?? {}),

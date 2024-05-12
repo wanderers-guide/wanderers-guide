@@ -53,6 +53,7 @@ import { displayError } from '@utils/notifications';
 import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
+import { CreateContentSourceModal, CreateContentSourceOnlyModal } from './CreateContentSourceModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -342,6 +343,17 @@ export default function ContentFeedbackModal(props: {
               }}
             />
           )}
+
+          {props.type === 'content-source' && submitUpdate.id && (
+            <CreateContentSourceOnlyModal
+              opened={true}
+              editId={submitUpdate.id}
+              onComplete={async (source) => {
+                await handleComplete(source.id, submitUpdate.id!, source);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
         </Box>
       )}
     </>
@@ -361,7 +373,7 @@ function ContentFeedbackSection(props: {
     queryFn: async () => {
       const content = await fetchContentById(props.type, contentId!);
       const source = content
-        ? await fetchContentById<ContentSource>('content-source', content.content_source_id)
+        ? await fetchContentById<ContentSource>('content-source', content.content_source_id ?? contentId)
         : null;
       return {
         content,
