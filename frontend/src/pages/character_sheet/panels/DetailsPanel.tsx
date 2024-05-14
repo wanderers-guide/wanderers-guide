@@ -1031,7 +1031,13 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
             <Accordion.Item value={`${index}`} key={index}>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' pr='xs'>
-                  <Text fz='md'>{adventure.name}</Text>
+                  {adventure.event_code !== '' ? (
+                    <Text fz='md'>
+                      {adventure.event_code}: {adventure.name}
+                    </Text>
+                  ) : (
+                    <Text fz='md'>{adventure.name}</Text>
+                  )}
                   <Button
                     size='compact-xs'
                     variant='light'
