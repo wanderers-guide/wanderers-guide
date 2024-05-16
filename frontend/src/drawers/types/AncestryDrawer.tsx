@@ -608,9 +608,9 @@ export function convertAncestryOperationsIntoUI(
   const size = getStatDisplay('CHARACTER', 'SIZE', ancestryOperations, MODE, writeDetails);
   const speed = getStatDisplay('CHARACTER', 'SPEED', ancestryOperations, MODE, writeDetails);
 
-  let coreLanguages = [];
+  let coreLanguages: string[] = [];
   for (const op of ancestryOperations) {
-    if (op.type === 'setValue') {
+    if (op.type === 'setValue' && op.data.variable === 'CORE_LANGUAGES') {
       try {
         coreLanguages = JSON.parse(op.data.value as string);
       } catch (e) {}
@@ -621,13 +621,19 @@ export function convertAncestryOperationsIntoUI(
   if (MODE === 'READ') {
     additionalLanguages = [
       {
-        ui: (
-          <>
-            Additional languages equal to your Intelligence modifier (if it's positive). Choose from{' '}
-            {coreLanguages.join(', ')}, and any other languages to which you have access (such as the languages
-            prevalent in your region).
-          </>
-        ),
+        ui:
+          coreLanguages.length > 0 ? (
+            <>
+              Additional languages equal to your Intelligence modifier (if it's positive). Choose from{' '}
+              {coreLanguages.join(', ')}, and any other languages to which you have access (such as the languages
+              prevalent in your region).
+            </>
+          ) : (
+            <>
+              Additional languages equal to your Intelligence modifier (if it's positive). Choose from any languages to
+              which you have access (such as the languages prevalent in your region).
+            </>
+          ),
         operation: null,
       },
     ];
