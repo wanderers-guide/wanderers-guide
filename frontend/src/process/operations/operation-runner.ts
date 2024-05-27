@@ -1,3 +1,4 @@
+import { fetchContentById } from '@content/content-store';
 import { AbilityBlock, Item, Language, Spell, Trait } from '@typing/content';
 import {
   ConditionCheckData,
@@ -22,19 +23,18 @@ import {
   OperationSelect,
   OperationSetValue,
 } from '@typing/operations';
-import { addVariable, addVariableBonus, adjVariable, getVariable, setVariable } from '@variables/variable-manager';
-import * as _ from 'lodash-es';
-import { SelectionTrack, SelectionTreeNode } from './selection-tree';
+import { ExtendedProficiencyType, ProficiencyType, ProficiencyValue, StoreID, VariableNum, VariableProf } from '@typing/variables';
 import { displayError, throwError } from '@utils/notifications';
+import { addVariable, addVariableBonus, adjVariable, getVariable, getVariables, setVariable } from '@variables/variable-manager';
+import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
+import * as _ from 'lodash-es';
 import {
   ObjectWithUUID,
   determineFilteredSelectionList,
   determinePredefinedSelectionList,
   extendOperations,
 } from './operation-utils';
-import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
-import { ExtendedProficiencyType, ProficiencyType, StoreID, VariableNum } from '@typing/variables';
-import { fetchContentById } from '@content/content-store';
+import { SelectionTrack } from './selection-tree';
 
 export type OperationOptions = {
   doOnlyValueCreation?: boolean;
@@ -121,7 +121,7 @@ export async function runOperations(
     if (options?.doConditionals && operation.type === 'conditional') {
       return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
     } else if (operation.type === 'adjValue') {
-      return await runAdjValue(varId, operation, sourceLabel);
+      return await runAdjValue(varId, operation, selectionTrack, sourceLabel);
     } else if (operation.type === 'setValue') {
       return await runSetValue(varId, operation, sourceLabel);
     } else if (operation.type === 'addBonusToValue') {
@@ -266,9 +266,9 @@ async function runSelect(
     },
     result: selected
       ? {
-          source: selected,
-          results,
-        }
+        source: selected,
+        results,
+      }
       : undefined,
   };
 }
@@ -384,11 +384,52 @@ async function updateVariables(
   }
 }
 
+function isProficientInAdjValue(varId: StoreID, operation: OperationAdjValue): boolean {
+  if (!operation.data.variable.includes('SKILL_')) {
+    // Not a skill adjustment
+    return false;
+  }
+  // If character has the skill proficiency, give another skill selection
+  let variable = getVariables(varId)[operation.data.variable] as VariableProf;
+  const maxProficiency = maxProficiencyType(
+    variable.value.value,
+    (operation.data.value as ProficiencyValue).value,
+  );
+  return maxProficiency === variable.value.value;
+}
+
 async function runAdjValue(
   varId: StoreID,
   operation: OperationAdjValue,
-  sourceLabel?: string
+  selectionTrack: SelectionTrack,
+  sourceLabel?: string,
 ): Promise<OperationResult> {
+  const isProficient = isProficientInAdjValue(varId, operation);
+  // If character has the skill proficiency, give another skill selection
+  if (isProficient) {
+    const subNode = selectionTrack.node?.children[operation.id];
+    return await runSelect(
+      varId,
+      { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+      {
+        type: 'select',
+        id: operation.id,
+        data: {
+          title: 'Select a Skill',
+          modeType: 'FILTERED',
+          optionType: 'ADJ_VALUE',
+          optionsPredefined: [],
+          optionsFilters: {
+            id: operation.id,
+            type: 'ADJ_VALUE',
+            group: 'SKILL',
+            value: operation.data.value
+          }
+        },
+      },
+    );
+  }
+  // Not a skill adjustment nor a character is proficient in the skill
   adjVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
   return null;
 }
@@ -873,7 +914,7 @@ async function runConditional(
       let value: string[] = [];
       try {
         value = JSON.parse(check.value.toUpperCase());
-      } catch (e) {}
+      } catch (e) { }
       if (check.operator === 'EQUALS') {
         return _.isEqual(variable.value, value);
       } else if (check.operator === 'NOT_EQUALS') {
