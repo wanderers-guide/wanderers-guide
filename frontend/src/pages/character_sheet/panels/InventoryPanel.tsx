@@ -582,7 +582,7 @@ function InvItemOption(props: {
                 <>
                   {' '}
                   <Text ta='center' fz='xs'>
-                    {labelizeBulk(props.invItem.item.bulk)}
+                    {labelizeBulk(props.invItem.is_formula ? '0' : props.invItem.item.bulk)}
                   </Text>
                 </>
               )}

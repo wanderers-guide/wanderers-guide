@@ -33,6 +33,7 @@ export default function TraitsDisplay(props: {
   archaic?: boolean;
   broken?: boolean;
   shoddy?: boolean;
+  formula?: boolean;
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
@@ -59,6 +60,7 @@ export default function TraitsDisplay(props: {
 
   return (
     <Group gap={3} justify={props.justify}>
+      {props.formula && <FormulaDisplay interactable={props.interactable} size={props.size} />}
       {props.rarity && <RarityDisplay interactable={props.interactable} size={props.size} rarity={props.rarity} />}
       {props.skill && <SkillDisplay interactable={props.interactable} size={props.size} skill={props.skill} />}
       {props.broken && <BrokenDisplay interactable={props.interactable} size={props.size} />}
@@ -159,6 +161,46 @@ export function SkillDisplay(props: { skill: string | string[]; interactable?: b
           {toLabel(skill.toLowerCase())}
         </Badge>
       ))}
+    </>
+  );
+}
+
+export function FormulaDisplay(props: { interactable?: boolean; size?: MantineSize }) {
+  const theme = useMantineTheme();
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <>
+      <HoverCard
+        disabled={!props.interactable}
+        width={265}
+        shadow='md'
+        zIndex={2000}
+        openDelay={500}
+        withinPortal
+        withArrow
+      >
+        <HoverCard.Target>
+          <Badge
+            size={props.size ?? 'md'}
+            color='green'
+            styles={{
+              root: {
+                textTransform: 'initial',
+              },
+            }}
+          >
+            Formula
+          </Badge>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <TraitOverview
+            name={'Formula'}
+            description={`Formulas are formalized instructions for making items. Their primary purpose is to reduce the time it takes you to start the Craft activity, which is helpful for items you'll make frequently. You can usually read a formula as long as you can read the language it's written in, even if you lack the skill to Craft the item. Often, alchemists and crafting guilds use obscure languages or create codes to protect their formulas. If you obtain a formula for an uncommon or rarer item, you have access to that item so you can Craft it. These formulas can be significantly more valuable—if you can find them at all!`}
+            important={false}
+          />
+        </HoverCard.Dropdown>
+      </HoverCard>
     </>
   );
 }

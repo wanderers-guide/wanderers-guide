@@ -41,6 +41,8 @@ export function getFlatInvItems(inv: Inventory) {
 export function getInvBulk(inv: Inventory) {
   let totalBulk = 0;
   for (const invItem of inv.items) {
+    if (isItemFormula(invItem)) continue;
+
     const bulk = invItem.is_equipped
       ? invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0)
       : parseFloat(invItem.item.bulk ?? '0') || 0;
@@ -397,6 +399,15 @@ export function isItemBroken(item: Item) {
  */
 export function isItemContainer(item: Item) {
   return item.meta_data?.bulk?.capacity !== undefined;
+}
+
+/**
+ * Utility function to determine if an inventory item is a formula
+ * @param item - Inventory item
+ * @returns - Whether the item is a formula
+ */
+export function isItemFormula(invItem: InventoryItem) {
+  return invItem.is_formula;
 }
 
 /**

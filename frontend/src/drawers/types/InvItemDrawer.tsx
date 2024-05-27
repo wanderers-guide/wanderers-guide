@@ -9,6 +9,7 @@ import {
   isItemArmor,
   isItemBroken,
   isItemContainer,
+  isItemFormula,
   isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
@@ -131,7 +132,7 @@ export function InvItemDrawerContent(props: {
         <Text key={1} fw={600} c='gray.5' span>
           Bulk
         </Text>{' '}
-        {labelizeBulk(invItem.item.bulk)}
+        {labelizeBulk(invItem.is_formula ? '0' : invItem.item.bulk)}
       </>
     );
   }
@@ -182,6 +183,7 @@ export function InvItemDrawerContent(props: {
             broken={isItemBroken(invItem.item)}
             shoddy={invItem.item.meta_data?.is_shoddy}
             archaic={isItemArchaic(invItem.item)}
+            formula={isItemFormula(invItem)}
             interactable
           />
         </Box>
