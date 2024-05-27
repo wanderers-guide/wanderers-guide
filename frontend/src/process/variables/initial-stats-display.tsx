@@ -357,31 +357,35 @@ export function getDisplay(
   // Handle numbers
   if (variable?.type === 'num') {
     if (operation) {
-      return (
-        <Box py={5}>
-          <SelectContentButton
-            type={'ability-block'}
-            onClick={(option) => {
-              updateCharacter(
-                writeDetails?.characterState,
-                `${writeDetails?.primarySource}_${operation.id}`,
-                option._select_uuid
-              );
-            }}
-            onClear={() => {
-              updateCharacter(writeDetails?.characterState, `${writeDetails?.primarySource}_${operation.id}`, '');
-            }}
-            selectedId={result?.result?.source?.id}
-            options={{
-              overrideOptions: result?.selection?.options,
-              overrideLabel: result?.selection?.title || 'Select an Option',
-              abilityBlockType:
-                (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
-              skillAdjustment: result?.selection?.skillAdjustment,
-            }}
-          />
-        </Box>
-      );
+      if (mode === 'READ/WRITE') {
+        return (
+          <Box py={5}>
+            <SelectContentButton
+              type={'ability-block'}
+              onClick={(option) => {
+                updateCharacter(
+                  writeDetails?.characterState,
+                  `${writeDetails?.primarySource}_${operation.id}`,
+                  option._select_uuid
+                );
+              }}
+              onClear={() => {
+                updateCharacter(writeDetails?.characterState, `${writeDetails?.primarySource}_${operation.id}`, '');
+              }}
+              selectedId={result?.result?.source?.id}
+              options={{
+                overrideOptions: result?.selection?.options,
+                overrideLabel: result?.selection?.title || 'Select an Option',
+                abilityBlockType:
+                  (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
+                skillAdjustment: result?.selection?.skillAdjustment,
+              }}
+            />
+          </Box>
+        );
+      } else {
+        return null;
+      }
     } else {
       return <>{value}</>;
     }
@@ -390,31 +394,35 @@ export function getDisplay(
   // Handle strings
   if (variable?.type === 'str' || variable?.type === 'list-str') {
     if (operation) {
-      return (
-        <Box py={5}>
-          <SelectContentButton
-            type={'ability-block'}
-            onClick={(option) => {
-              updateCharacter(
-                writeDetails?.characterState,
-                `${writeDetails?.primarySource}_${operation.id}`,
-                option._select_uuid
-              );
-            }}
-            onClear={() => {
-              updateCharacter(writeDetails?.characterState, `${writeDetails?.primarySource}_${operation.id}`, '');
-            }}
-            selectedId={result?.result?.source?.id}
-            options={{
-              overrideOptions: result?.selection?.options,
-              overrideLabel: result?.selection?.title || 'Select an Option',
-              abilityBlockType:
-                (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
-              skillAdjustment: result?.selection?.skillAdjustment,
-            }}
-          />
-        </Box>
-      );
+      if (mode === 'READ/WRITE') {
+        return (
+          <Box py={5}>
+            <SelectContentButton
+              type={'ability-block'}
+              onClick={(option) => {
+                updateCharacter(
+                  writeDetails?.characterState,
+                  `${writeDetails?.primarySource}_${operation.id}`,
+                  option._select_uuid
+                );
+              }}
+              onClear={() => {
+                updateCharacter(writeDetails?.characterState, `${writeDetails?.primarySource}_${operation.id}`, '');
+              }}
+              selectedId={result?.result?.source?.id}
+              options={{
+                overrideOptions: result?.selection?.options,
+                overrideLabel: result?.selection?.title || 'Select an Option',
+                abilityBlockType:
+                  (result?.selection?.options ?? []).length > 0 ? result?.selection?.options[0].type : undefined,
+                skillAdjustment: result?.selection?.skillAdjustment,
+              }}
+            />
+          </Box>
+        );
+      } else {
+        return null;
+      }
     } else {
       return <>{toLabel(value as string)}</>;
     }
