@@ -367,7 +367,7 @@ function ConditionalValueSelect(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={props.value || undefined}
+        value={props.value === 'TRUE' ? 'TRUE' : props.value === 'FALSE' ? 'FALSE' : undefined}
         onChange={props.onChange}
         defaultValue='TRUE'
         data={[

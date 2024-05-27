@@ -23,9 +23,23 @@ import {
   OperationSelect,
   OperationSetValue,
 } from '@typing/operations';
-import { ExtendedProficiencyType, ProficiencyType, ProficiencyValue, StoreID, VariableNum, VariableProf } from '@typing/variables';
+import {
+  ExtendedProficiencyType,
+  ProficiencyType,
+  ProficiencyValue,
+  StoreID,
+  VariableNum,
+  VariableProf,
+} from '@typing/variables';
 import { displayError, throwError } from '@utils/notifications';
-import { addVariable, addVariableBonus, adjVariable, getVariable, getVariables, setVariable } from '@variables/variable-manager';
+import {
+  addVariable,
+  addVariableBonus,
+  adjVariable,
+  getVariable,
+  getVariables,
+  setVariable,
+} from '@variables/variable-manager';
 import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import {
@@ -266,9 +280,9 @@ async function runSelect(
     },
     result: selected
       ? {
-        source: selected,
-        results,
-      }
+          source: selected,
+          results,
+        }
       : undefined,
   };
 }
@@ -391,10 +405,7 @@ function isProficientInAdjValue(varId: StoreID, operation: OperationAdjValue): b
   }
   // If character has the skill proficiency, give another skill selection
   let variable = getVariables(varId)[operation.data.variable] as VariableProf;
-  const maxProficiency = maxProficiencyType(
-    variable.value.value,
-    (operation.data.value as ProficiencyValue).value,
-  );
+  const maxProficiency = maxProficiencyType(variable.value.value, (operation.data.value as ProficiencyValue).value);
   return maxProficiency === variable.value.value;
 }
 
@@ -402,7 +413,7 @@ async function runAdjValue(
   varId: StoreID,
   operation: OperationAdjValue,
   selectionTrack: SelectionTrack,
-  sourceLabel?: string,
+  sourceLabel?: string
 ): Promise<OperationResult> {
   const isProficient = isProficientInAdjValue(varId, operation);
   // If character has the skill proficiency, give another skill selection
@@ -423,10 +434,10 @@ async function runAdjValue(
             id: operation.id,
             type: 'ADJ_VALUE',
             group: 'SKILL',
-            value: operation.data.value
-          }
+            value: operation.data.value,
+          },
         },
-      },
+      }
     );
   }
   // Not a skill adjustment nor a character is proficient in the skill
@@ -914,7 +925,7 @@ async function runConditional(
       let value: string[] = [];
       try {
         value = JSON.parse(check.value.toUpperCase());
-      } catch (e) { }
+      } catch (e) {}
       if (check.operator === 'EQUALS') {
         return _.isEqual(variable.value, value);
       } else if (check.operator === 'NOT_EQUALS') {

@@ -138,7 +138,7 @@ export function AdjustValueInput(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={value ? 'TRUE' : 'FALSE'}
+        value={value === true ? 'TRUE' : value === false ? 'FALSE' : undefined}
         onChange={(val) => props.onChange(val === 'TRUE' ? true : false)}
         defaultValue='TRUE'
         data={[

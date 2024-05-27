@@ -81,7 +81,7 @@ export function SetValueInput(props: {
           <Text fz={10}>Is Partial</Text>
           <SegmentedControl
             size='xs'
-            value={value.partial ? 'TRUE' : 'FALSE'}
+            value={value.partial === true ? 'TRUE' : value.partial === false ? 'FALSE' : undefined}
             onChange={(val) =>
               props.onChange({
                 value: value.value,
@@ -114,7 +114,7 @@ export function SetValueInput(props: {
     return (
       <SegmentedControl
         size='xs'
-        value={value ? 'TRUE' : 'FALSE'}
+        value={value === true ? 'TRUE' : value === false ? 'FALSE' : undefined}
         onChange={(val) => props.onChange(val === 'TRUE' ? true : false)}
         defaultValue='TRUE'
         data={[
