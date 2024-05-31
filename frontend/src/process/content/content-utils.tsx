@@ -37,7 +37,10 @@ export function toText(html: any) {
   if (!isString(html)) return undefined;
   let tmp = document.createElement('div');
   tmp.innerHTML = html;
-  return tmp.textContent || tmp.innerText || undefined;
+  const text = tmp.textContent || tmp.innerText || undefined;
+  if (!text) return undefined;
+
+  return text.replace(/’/g, "'").trim();
 }
 
 export function convertToContentType(type: ContentType | AbilityBlockType): ContentType {
