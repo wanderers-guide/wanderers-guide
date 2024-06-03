@@ -18,6 +18,7 @@ import {
 import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
 import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
+import AttributeSection from '@pages/character_sheet/sections/AttributeSection';
 import EntityInfoSection from '@pages/character_sheet/sections/EntityInfoSection';
 import HealthSection from '@pages/character_sheet/sections/HealthSection';
 import { AltSpeedSection } from '@pages/character_sheet/sections/SpeedSection';
@@ -191,6 +192,7 @@ export function CreatureDrawerContent(props: {
             });
           }}
         />
+        <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
 
         <Box
           style={{

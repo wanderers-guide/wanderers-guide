@@ -40,6 +40,7 @@ export type RequestType =
   | 'create-content-update'
   | 'find-content-update'
   | 'get-content-source-stats'
+  | 'find-campaigns'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 

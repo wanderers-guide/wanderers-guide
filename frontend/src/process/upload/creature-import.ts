@@ -16,6 +16,7 @@ import {
   Operation,
   OperationAddBonusToValue,
   OperationAdjValue,
+  OperationCreateValue,
   OperationDefineCastingSource,
   OperationGiveItem,
   OperationGiveLanguage,
@@ -414,17 +415,28 @@ function addPerceptionSenses(operations: Operation[], json: Record<string, any>)
 
 function addSkills(operations: Operation[], json: Record<string, any>) {
   for (const skill of findJsonItems(json, 'lore')) {
-    const variable = skill.name.endsWith(' Lore')
+    const isLore = skill.name.endsWith(' Lore');
+    const variable = isLore
       ? `SKILL_LORE_${labelToVariable(skill.name.replace(' Lore', ''))}_TOTAL`
       : `SKILL_${labelToVariable(skill.name)}_TOTAL`;
-
-    operations.push({
-      ...createDefaultOperation<OperationSetValue>('setValue'),
-      data: {
-        variable: variable,
-        value: skill.system.mod.value,
-      },
-    } satisfies OperationSetValue);
+    if (isLore) {
+      operations.push({
+        ...createDefaultOperation<OperationCreateValue>('createValue'),
+        data: {
+          variable: variable,
+          type: 'num',
+          value: skill.system.mod.value,
+        },
+      } satisfies OperationCreateValue);
+    } else {
+      operations.push({
+        ...createDefaultOperation<OperationSetValue>('setValue'),
+        data: {
+          variable: variable,
+          value: skill.system.mod.value,
+        },
+      } satisfies OperationSetValue);
+    }
   }
 
   return operations;
