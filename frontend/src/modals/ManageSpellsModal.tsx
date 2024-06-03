@@ -454,8 +454,9 @@ const ListSection = (props: {
       </Group>
       <ScrollArea h={`calc(min(70dvh, ${EDIT_MODAL_HEIGHT - 100}px))`} scrollbars='y'>
         <Stack gap={0}>
-          {props.spells.map((spell) => (
+          {props.spells.map((spell, index) => (
             <SpellSelectionOption
+              key={index}
               spell={spell}
               onClick={(spell) => {
                 openDrawer({ type: 'spell', data: { spell: spell } });
@@ -465,7 +466,7 @@ const ListSection = (props: {
                   if (!c) return c;
 
                   const list = (c.spells?.list ?? []).filter((entry) => {
-                    return !(entry.spell_id === spellId && entry.source === props.source);
+                    return !(entry.spell_id === spellId && entry.rank === spell.rank && entry.source === props.source);
                   });
 
                   return {

@@ -24,7 +24,7 @@ import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Spell, CastingSource, SpellSlot, SpellInnateEntry } from '@typing/content';
+import { Spell, CastingSource, SpellSlot, SpellInnateEntry, SpellListEntry } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
 import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
@@ -158,7 +158,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                           spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='SPONTANEOUS'
-                          extra={{ slots: charData.slots.filter((s) => s.source === source.name) }}
+                          extra={{ slots: charData.slots.filter((s) => s.source === source.name), charData: charData }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
                           hasFilters={!!searchQuery.trim()}
                         />
@@ -173,7 +173,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                           spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
                           allSpells={allSpells}
                           type='PREPARED'
-                          extra={{ slots: charData.slots.filter((s) => s.source === source.name) }}
+                          extra={{ slots: charData.slots.filter((s) => s.source === source.name), charData: charData }}
                           openManageSpells={(source, type) => setManageSpells({ source, type })}
                           hasFilters={!!searchQuery.trim()}
                         />
@@ -188,6 +188,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                       allSpells={allSpells}
                       type='FOCUS'
                       hasFilters={!!searchQuery.trim()}
+                      extra={{ charData: charData }}
                     />
                   )}
                 </div>
@@ -199,7 +200,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   spellIds={charData.innate.map((d) => d.spell_id)}
                   allSpells={allSpells}
                   type='INNATE'
-                  extra={{ innates: charData.innate }}
+                  extra={{ innates: charData.innate, charData: charData }}
                   hasFilters={!!searchQuery.trim()}
                 />
               )}
@@ -212,6 +213,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   type='RITUAL'
                   openManageSpells={(source, type) => setManageSpells({ source, type })}
                   hasFilters={!!searchQuery.trim()}
+                  extra={{ charData: charData }}
                 />
               )}
             </Accordion>
@@ -236,7 +238,18 @@ function SpellList(props: {
   spellIds: number[];
   allSpells: Spell[];
   type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
-  extra?: {
+  extra: {
+    charData: {
+      slots: SpellSlot[];
+      list: SpellListEntry[];
+      focus: {
+        spell_id: number;
+        source: string;
+        rank: number | undefined;
+      }[];
+      innate: SpellInnateEntry[];
+      sources: CastingSource[];
+    };
     slots?: SpellSlot[];
     innates?: SpellInnateEntry[];
   };
@@ -363,8 +376,27 @@ function SpellList(props: {
   // Display spells in an ordered list by rank
   const spells = useMemo(() => {
     const filteredSpells = props.spellIds
-      .map((id) => props.allSpells.find((spell) => spell.id === id))
+      .map((id) => {
+        const foundSpell = props.allSpells.find((spell) => spell.id === id);
+        if (!foundSpell) return null;
+        const entry = props.extra.charData.list.find((entry) => entry.spell_id === id);
+        // Don't add spell if we have an entry for it because we're going to add it later
+        if (entry) return null;
+        return foundSpell;
+      })
       .filter((spell) => spell) as Spell[];
+
+    // Add spells from entries (for overridded ranks)
+    for (const entry of props.extra.charData.list) {
+      const foundSpell = props.allSpells.find((spell) => spell.id === entry.spell_id);
+      if (foundSpell) {
+        filteredSpells.push({
+          ...foundSpell,
+          rank: entry.rank,
+        });
+      }
+    }
+
     return _.groupBy(filteredSpells, 'rank');
   }, [props.spellIds, props.allSpells]);
 
@@ -493,7 +525,7 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {slots[rank].map((slot, index) => (
-                            <SpellListEntry
+                            <SpellListEntrySection
                               key={index}
                               spell={slot.spell}
                               exhausted={!!slot.exhausted}
@@ -641,7 +673,7 @@ function SpellList(props: {
                         <Stack gap={5}>
                           <Divider color='dark.6' />
                           {spells[rank]?.map((spell, index) => (
-                            <SpellListEntry
+                            <SpellListEntrySection
                               key={index}
                               spell={spell}
                               exhausted={!slots[rank].find((s) => !s.exhausted)}
@@ -766,7 +798,7 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {spells[rank].map((spell, index) => (
-                            <SpellListEntry
+                            <SpellListEntrySection
                               key={index}
                               spell={{
                                 ...spell,
@@ -876,7 +908,7 @@ function SpellList(props: {
                       <Accordion.Panel>
                         <Stack gap={5}>
                           {innateSpells[rank].map((innate, index) => (
-                            <SpellListEntry
+                            <SpellListEntrySection
                               key={index}
                               spell={innate.spell}
                               exhausted={innate.casts_current >= innate.casts_max && innate.casts_max !== 0}
@@ -986,7 +1018,7 @@ function SpellList(props: {
               Object.keys(spells)
                 .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])
                 .map((spell, index) => (
-                  <SpellListEntry
+                  <SpellListEntrySection
                     key={index}
                     spell={spell}
                     exhausted={false}
@@ -1019,7 +1051,7 @@ function SpellList(props: {
   return null;
 }
 
-function SpellListEntry(props: {
+function SpellListEntrySection(props: {
   spell?: Spell;
   exhausted: boolean;
   tradition: string;
