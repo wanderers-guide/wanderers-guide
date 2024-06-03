@@ -280,13 +280,14 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
   const variables = Object.keys(getVariables(id));
 
   for (const expression of expressions) {
-    const innerExpression = expression.slice(2, -2);
-
-    let compiledExpression = innerExpression;
-    compiledExpression = compiledExpression.replace('\\', '');
+    let compiledExpression = expression.slice(2, -2);
+    compiledExpression = compiledExpression.replace(/\\/g, '');
     for (const variable of variables) {
-      const finalValue = getFinalVariableValue(id, variable).total;
-      compiledExpression = compiledExpression.replace(new RegExp(`\\b${variable}\\b`, 'gi'), finalValue.toString());
+      if (variable.trim() === '') continue;
+      if (compiledExpression.toUpperCase().includes(variable.toUpperCase())) {
+        const finalValue = getFinalVariableValue(id, variable).total;
+        compiledExpression = compiledExpression.replace(new RegExp(`\\b${variable}\\b`, 'gi'), finalValue.toString());
+      }
     }
 
     try {

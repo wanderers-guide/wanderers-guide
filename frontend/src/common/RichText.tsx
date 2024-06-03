@@ -31,8 +31,8 @@ export default function RichText(props: RichTextProps) {
     return null;
   }
 
-  if (convertedChildren && props.store) {
-    convertedChildren = compileExpressions(props.store, convertedChildren, true);
+  if (convertedChildren) {
+    convertedChildren = compileExpressions(props.store ?? 'CHARACTER', convertedChildren, true);
   }
 
   // Convert action symbol text of abbr to code markdown (then convert it back)
