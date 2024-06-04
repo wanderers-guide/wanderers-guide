@@ -6,33 +6,33 @@ import { SpellSelectionOption } from '@common/select/SelectContent';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
-  useMantineTheme,
-  Stack,
-  Group,
-  TextInput,
-  ScrollArea,
   Accordion,
-  Divider,
-  Badge,
-  HoverCard,
   ActionIcon,
+  Badge,
   Box,
+  Divider,
+  Group,
+  HoverCard,
+  ScrollArea,
+  Stack,
   Text,
+  TextInput,
+  useMantineTheme,
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Spell, CastingSource, SpellSlot, SpellInnateEntry, SpellListEntry } from '@typing/content';
+import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
-import { toLabel } from '@utils/strings';
+import _ from 'lodash-es';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -42,9 +42,9 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
   const [section, setSection] = useState<string>();
   const [manageSpells, setManageSpells] = useState<
     | {
-        source: string;
-        type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
-      }
+      source: string;
+      type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+    }
     | undefined
   >();
 
@@ -269,15 +269,11 @@ function SpellList(props: {
     if (props.type === 'PREPARED' && props.source) {
       setCharacter((c) => {
         if (!c) return c;
-        const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map((slot) => {
-          if (slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name) {
-            return {
-              ...slot,
-              exhausted: cast,
-            };
-          }
-          return slot;
-        });
+        const slots = collectEntitySpellcasting('CHARACTER', c).slots;
+        const slotIndex = slots.findIndex((slot) => slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name && !!slot.exhausted == !cast);
+        if (slotIndex === -1) return c; // Shouldn't happen
+        const newSlots = [...slots];
+        newSlots[slotIndex].exhausted = cast;
         return {
           ...c,
           spells: {
@@ -287,7 +283,7 @@ function SpellList(props: {
               focus_point_current: 0,
               innate_casts: [],
             }),
-            slots: newUpdatedSlots,
+            slots: newSlots,
           },
         };
       });
