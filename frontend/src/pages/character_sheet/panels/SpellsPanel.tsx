@@ -123,6 +123,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {charData && (
             <Accordion
+              data-wg-name='spells-accordion'
               variant='separated'
               multiple
               defaultValue={[
@@ -445,7 +446,7 @@ function SpellList(props: {
     }
 
     return (
-      <Accordion.Item value={props.index}>
+      <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
@@ -505,7 +506,7 @@ function SpellList(props: {
                     slots[rank].length > 0 && props.hasFilters ? slots[rank].find((s) => s.spell) : true
                   )
                   .map((rank, index) => (
-                    <Accordion.Item key={index} value={`rank-group-${index}`}>
+                    <Accordion.Item key={index} value={`rank-group-${index}`} data-wg-name={`rank-group-${index}`}>
                       <Accordion.Control>
                         <Group wrap='nowrap' justify='space-between' gap={0}>
                           <Text c='gray.5' fw={700} fz='sm'>

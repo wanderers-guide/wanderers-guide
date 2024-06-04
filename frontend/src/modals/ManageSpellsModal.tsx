@@ -172,7 +172,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
     <ScrollArea pr={14} h={`calc(min(80dvh, ${EDIT_MODAL_HEIGHT}px))`} scrollbars='y'>
       <Stack gap={10}>
         {Object.keys(props.slots).map((rank, index) => (
-          <Box key={index}>
+          <Box key={index} data-wg-name={`rank-${rank}`}>
             <Text size='md' pl={5}>
               {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
             </Text>
