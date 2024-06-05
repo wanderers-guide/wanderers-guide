@@ -6,33 +6,33 @@ import { SpellSelectionOption } from '@common/select/SelectContent';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
-  useMantineTheme,
-  Stack,
-  Group,
-  TextInput,
-  ScrollArea,
   Accordion,
-  Divider,
-  Badge,
-  HoverCard,
   ActionIcon,
+  Badge,
   Box,
+  Divider,
+  Group,
+  HoverCard,
+  ScrollArea,
+  Stack,
   Text,
+  TextInput,
+  useMantineTheme,
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Spell, CastingSource, SpellSlot, SpellInnateEntry, SpellListEntry } from '@typing/content';
+import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
-import { useState, useMemo, useRef, useEffect } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
-import { toLabel } from '@utils/strings';
+import _ from 'lodash-es';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -42,9 +42,9 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
   const [section, setSection] = useState<string>();
   const [manageSpells, setManageSpells] = useState<
     | {
-        source: string;
-        type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
-      }
+      source: string;
+      type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+    }
     | undefined
   >();
 
@@ -123,6 +123,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {charData && (
             <Accordion
+              data-wg-name='spells-accordion'
               variant='separated'
               multiple
               defaultValue={[
@@ -269,15 +270,11 @@ function SpellList(props: {
     if (props.type === 'PREPARED' && props.source) {
       setCharacter((c) => {
         if (!c) return c;
-        const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map((slot) => {
-          if (slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name) {
-            return {
-              ...slot,
-              exhausted: cast,
-            };
-          }
-          return slot;
-        });
+        const slots = collectEntitySpellcasting('CHARACTER', c).slots;
+        const slotIndex = slots.findIndex((slot) => slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name && !!slot.exhausted == !cast);
+        if (slotIndex === -1) return c; // Shouldn't happen
+        const newSlots = [...slots];
+        newSlots[slotIndex].exhausted = cast;
         return {
           ...c,
           spells: {
@@ -287,7 +284,7 @@ function SpellList(props: {
               focus_point_current: 0,
               innate_casts: [],
             }),
-            slots: newUpdatedSlots,
+            slots: newSlots,
           },
         };
       });
@@ -449,7 +446,7 @@ function SpellList(props: {
     }
 
     return (
-      <Accordion.Item value={props.index}>
+      <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
         <Accordion.Control>
           <Group wrap='nowrap' justify='space-between' gap={0}>
             <Text c='gray.5' fw={700} fz='sm'>
@@ -509,7 +506,7 @@ function SpellList(props: {
                     slots[rank].length > 0 && props.hasFilters ? slots[rank].find((s) => s.spell) : true
                   )
                   .map((rank, index) => (
-                    <Accordion.Item key={index} value={`rank-group-${index}`}>
+                    <Accordion.Item key={index} value={`rank-group-${index}`} data-wg-name={`rank-group-${index}`}>
                       <Accordion.Control>
                         <Group wrap='nowrap' justify='space-between' gap={0}>
                           <Text c='gray.5' fw={700} fz='sm'>
