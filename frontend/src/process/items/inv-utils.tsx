@@ -128,14 +128,14 @@ async function getDefaultContainerContents(item: Item, allItems?: Item[], count 
 export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
   setTimeout(() => {
     if (!character.inventory) return;
-    if (getInvBulk(character.inventory) > getBulkLimit('CHARACTER')) {
+    if (Math.floor(getInvBulk(character.inventory)) > getBulkLimit('CHARACTER')) {
       // Add encumbered condition
       const newConditions = _.cloneDeep(character.details?.conditions ?? []);
       const encumbered = newConditions.find((c) => c.name === 'Encumbered');
       if (!encumbered) {
         newConditions.push(getConditionByName('Encumbered')!);
 
-        // if (getInvBulk(character.inventory) > getBulkLimitImmobile('CHARACTER')) {
+        // if (Math.floor(getInvBulk(character.inventory)) > getBulkLimitImmobile('CHARACTER')) {
         //   const immobilized = newConditions.find((c) => c.name === 'Immobilized');
         //   if (!immobilized) {
         //     newConditions.push(getConditionByName('Immobilized')!);
@@ -564,7 +564,20 @@ export function labelizeBulk(bulk?: number | string, displayZero = false) {
   if (bulk === 0.1) {
     return 'L';
   }
-  return `${parseFloat(bulk.toFixed(1))}`;
+  const bulkFloat = parseFloat(bulk.toFixed(1));
+
+  const _bulk = Math.floor(bulkFloat);
+  const _light = Math.round((bulkFloat - _bulk) * 10);
+
+  if (_light === 0) {
+    return `${_bulk}`;
+  } else {
+    if (_bulk === 0) {
+      return `0.${_light}`;
+    } else {
+      return `${_bulk}.${_light}`;
+    }
+  }
 }
 
 export function getBulkLimit(id: StoreID) {

@@ -95,7 +95,7 @@ export function ConditionSection(props: {
                 const isEncumberedFromBulk =
                   condition.name === 'Encumbered' &&
                   props.entity?.inventory &&
-                  getInvBulk(props.entity.inventory) > getBulkLimit(props.id);
+                  Math.floor(getInvBulk(props.entity.inventory)) > getBulkLimit(props.id);
                 if (
                   isCharacter(props.entity) &&
                   props.entity?.options?.ignore_bulk_limit !== true &&
