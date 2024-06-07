@@ -77,58 +77,130 @@ function meetPreq(id: StoreID, prereq: string): PrereqMet {
   return 'UNKNOWN';
 }
 
+function checkingSplitter(checking: string) {
+  // Determine the conjunction type
+  let type: 'AND' | 'OR';
+  if (/ or /i.test(checking)) {
+    type = 'OR';
+  } else {
+    type = 'AND';
+  }
+
+  // Split the string into parts
+  let options: string[] = [];
+  if (type === 'OR') {
+    options = checking.split(/,?\s*or\s*/i).map((s) => s.trim());
+  } else {
+    options = checking.split(/,?\s*and\s*/i).map((s) => s.trim());
+  }
+
+  // Further split by comma if necessary
+  options = options.flatMap((option) => option.split(/,\s*/).map((s) => s.trim()));
+
+  return { options, type };
+}
+
+function handleChecking(text: string, checkFn: (text: string) => PrereqMet): PrereqMet {
+  let totalResult: PrereqMet = null;
+  const checkings = checkingSplitter(text);
+  for (const checking of checkings.options) {
+    const result = checkFn(checking);
+    if (checkings.type === 'OR') {
+      // Return the best result (fully > unknown > not)
+      if (result === 'FULLY') {
+        // Return early if it's already fully met
+        return 'FULLY';
+      } else if (result === 'UNKNOWN') {
+        totalResult = 'UNKNOWN';
+      } else if (result === 'NOT') {
+        if (totalResult === null) {
+          totalResult = 'NOT';
+        }
+      }
+    } else if (checkings.type === 'AND') {
+      if (result === 'NOT') {
+        return 'NOT';
+      } else if (result === 'FULLY') {
+        if (totalResult === null) {
+          totalResult = 'FULLY';
+        }
+      } else if (result === 'UNKNOWN') {
+        if (totalResult === 'FULLY') {
+          totalResult = 'PARTIALLY';
+        } else {
+          totalResult = 'UNKNOWN';
+        }
+      }
+    }
+  }
+  return totalResult;
+}
+
 function checkForProf(id: StoreID, prereq: string): PrereqMet {
-  const regex = /^(untrained|trained|expert|master|legendary) in ([a-zA-Z]+)$/i;
+  const regex = /^(untrained|trained|expert|master|legendary) in (.+)$/i;
 
   const match = prereq.match(regex);
   if (!match) {
     return null;
   }
 
-  const [_, rank, prof] = match;
+  const [_, rank, profText] = match;
   const profType = labelToProficiencyType(rank);
   if (!profType) {
     return 'UNKNOWN';
   }
 
-  // Handle Lore separately
-  if (prof.toUpperCase() === 'LORE') {
-    const lores = getAllSkillVariables(id).filter((v) => v.name.startsWith('SKILL_LORE_'));
-    for (const lore of lores) {
-      if (maxProficiencyType(lore.value.value, profType) === lore.value.value) {
-        return 'FULLY';
+  const checkProf = (prof: string) => {
+    // Handle Lore separately
+    if (prof.toUpperCase() === 'LORE') {
+      const lores = getAllSkillVariables(id).filter((v) => v.name.startsWith('SKILL_LORE_'));
+      for (const lore of lores) {
+        if (maxProficiencyType(lore.value.value, profType) === lore.value.value) {
+          return 'FULLY';
+        }
       }
+      return 'NOT';
     }
-    return 'NOT';
-  }
 
-  const variable = findVariable<VariableProf>(id, 'prof', prof);
+    const variable = findVariable<VariableProf>(id, 'prof', prof);
 
-  if (!variable) {
-    return 'UNKNOWN';
-  }
+    if (!variable) {
+      return 'UNKNOWN';
+    }
 
-  return maxProficiencyType(variable.value.value, profType) === variable.value.value ? 'FULLY' : 'NOT';
+    return maxProficiencyType(variable.value.value, profType) === variable.value.value ? 'FULLY' : 'NOT';
+  };
+
+  return handleChecking(profText, checkProf);
 }
 
 function checkForAttribute(id: StoreID, prereq: string): PrereqMet {
   const attributes = getAllAttributeVariables(id).map((v) => toLabel(v.name.replace('ATTRIBUTE_', '')));
-  const regex = new RegExp(`^(${attributes.join('|')}) (\\+?-?\\d+)$`, 'i');
+  const foundAttr = attributes.find((a) => prereq.includes(a));
+  if (!foundAttr) {
+    return null;
+  }
 
+  const regex = new RegExp(`^(.+) (\\+?-?\\d+)$`, 'i');
   const match = prereq.match(regex);
 
   if (!match) {
     return null;
   }
 
-  const [_, attribute, value] = match;
-  const variable = findVariable<VariableAttr>(id, 'attr', `ATTRIBUTE_${labelToVariable(compactLabels(attribute))}`);
+  const [_, attributeText, value] = match;
 
-  if (!variable) {
-    return 'UNKNOWN';
-  }
+  const checkAttr = (attr: string) => {
+    const variable = findVariable<VariableAttr>(id, 'attr', `ATTRIBUTE_${labelToVariable(compactLabels(attr))}`);
 
-  return variable.value.value >= parseInt(value) ? 'FULLY' : 'NOT';
+    if (!variable) {
+      return 'UNKNOWN';
+    }
+
+    return variable.value.value >= parseInt(value) ? 'FULLY' : 'NOT';
+  };
+
+  return handleChecking(attributeText, checkAttr);
 }
 
 function checkForFeat(id: StoreID, prereq: string): PrereqMet {
