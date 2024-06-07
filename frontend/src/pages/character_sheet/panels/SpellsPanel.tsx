@@ -387,13 +387,15 @@ function SpellList(props: {
       .filter((spell) => spell) as Spell[];
 
     // Add spells from entries (for overridded ranks)
-    for (const entry of props.extra.charData.list) {
-      const foundSpell = props.allSpells.find((spell) => spell.id === entry.spell_id);
-      if (foundSpell) {
-        filteredSpells.push({
-          ...foundSpell,
-          rank: entry.rank,
-        });
+    if (props.type === 'PREPARED' || props.type === 'SPONTANEOUS') {
+      for (const entry of props.extra.charData.list) {
+        const foundSpell = props.allSpells.find((spell) => spell.id === entry.spell_id);
+        if (foundSpell) {
+          filteredSpells.push({
+            ...foundSpell,
+            rank: entry.rank,
+          });
+        }
       }
     }
 
