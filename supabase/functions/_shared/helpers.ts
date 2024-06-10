@@ -421,6 +421,11 @@ export async function insertData<T = Record<string, any>>(
     }
   }
 
+  // Replace ’ with '
+  if (data.name && _.isString(data.name)) {
+    data.name = data.name.replace(/’/g, "'");
+  }
+
   // Delete forbidden keys
   delete data.id;
   delete data.created_at;
@@ -504,6 +509,11 @@ export async function updateData(
     if (_.isString(value)) {
       data[key] = value.trim();
     }
+  }
+
+  // Replace ’ with '
+  if (data.name && _.isString(data.name)) {
+    data.name = data.name.replace(/’/g, "'");
   }
 
   // Recalculate UUID
