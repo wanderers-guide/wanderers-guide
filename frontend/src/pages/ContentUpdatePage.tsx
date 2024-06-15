@@ -258,7 +258,7 @@ export function Component(props: {}) {
                             );
                           }}
                         >
-                          View New Content
+                          View {toLabel((data.contentUpdate.data.type ?? data.contentUpdate.type).replace(/-/g, ' '))}
                         </BlurButton>
                       </Box>
                     </Group>
