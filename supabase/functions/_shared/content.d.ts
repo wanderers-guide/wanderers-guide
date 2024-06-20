@@ -12,7 +12,14 @@ type ActionCost =
   | 'ONE-TO-THREE-ACTIONS'
   | 'TWO-TO-THREE-ACTIONS'
   | null;
-type AbilityBlockType = 'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature';
+type AbilityBlockType =
+  | 'action'
+  | 'feat'
+  | 'physical-feature'
+  | 'sense'
+  | 'class-feature'
+  | 'heritage'
+  | 'mode';
 type ContentType =
   | 'trait'
   | 'item'
