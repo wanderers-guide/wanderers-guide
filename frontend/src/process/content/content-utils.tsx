@@ -50,7 +50,7 @@ export function convertToContentType(type: ContentType | AbilityBlockType): Cont
   return (isAbilityBlockType(type) ? 'ability-block' : type) satisfies ContentType;
 }
 export function isAbilityBlockType(value: any): value is AbilityBlockType {
-  return ['action', 'feat', 'physical-feature', 'sense', 'class-feature', 'heritage'].includes(value ?? '');
+  return ['action', 'feat', 'physical-feature', 'sense', 'class-feature', 'heritage', 'mode'].includes(value ?? '');
 }
 
 export function isActionCost(value: string | null): value is ActionCost {

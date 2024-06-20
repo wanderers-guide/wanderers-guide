@@ -14,6 +14,7 @@ import {
   Center,
   Grid,
   Group,
+  Indicator,
   Menu,
   Popover,
   SimpleGrid,
@@ -39,6 +40,7 @@ import {
   IconNotebook,
   IconNotes,
   IconPaw,
+  IconShadow,
   IconX,
 } from '@tabler/icons-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -74,6 +76,8 @@ import { GiRollingDices } from 'react-icons/gi';
 import { displayComingSoon } from '@utils/notifications';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { convertToSetEntity } from '@utils/type-fixing';
+import ModeDrawer from '@common/modes/ModesDrawer';
+import ModesDrawer from '@common/modes/ModesDrawer';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -164,6 +168,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   const [character, setCharacter] = useRecoilState(characterState);
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
+
+  const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
 
   const handleFetchedCharacter = (resultCharacter: Character | null) => {
     if (resultCharacter) {
@@ -326,6 +332,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
   const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
 
+  const [openedModes, setOpenedModes] = useState(false);
+
   return (
     <Center>
       <Box maw={1000} w='100%' pb='sm'>
@@ -364,6 +372,25 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         }}
       >
         <Stack>
+          {props.content.abilityBlocks.filter((b) => b.type === 'mode').length > 0 && (
+            <Indicator disabled={activeModes.length === 0} label={activeModes.length} size={14} offset={4}>
+              <ActionIcon
+                size={40}
+                variant='light'
+                style={{
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                radius={100}
+                aria-label='Modes'
+                onClick={() => {
+                  setOpenedModes((prev) => !prev);
+                }}
+              >
+                <IconShadow size='1.7rem' stroke={1.5} />
+              </ActionIcon>
+            </Indicator>
+          )}
           {character?.campaign_id && (
             <ActionIcon
               size={40}
@@ -413,6 +440,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           />
         </Suspense>
       )}
+      {openedModes && <ModesDrawer content={props.content} opened={true} onClose={() => setOpenedModes(false)} />}
     </Center>
   );
 }

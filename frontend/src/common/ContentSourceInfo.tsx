@@ -42,6 +42,7 @@ const NOTABILITY_MAP: Record<ContentType | AbilityBlockType, number> = {
   feat: 10,
   'physical-feature': 2,
   sense: 2,
+  mode: 2,
   'ability-block': 1,
 };
 

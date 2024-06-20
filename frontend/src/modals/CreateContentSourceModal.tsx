@@ -753,6 +753,22 @@ export function CreateContentSourceModal(props: {
               >
                 Versatile Heritages
               </Tabs.Tab>
+              <Tabs.Tab
+                value='modes'
+                leftSection={getIconFromContentType('ability-block', '1rem')}
+                rightSection={
+                  <>
+                    {data?.content.abilityBlocks &&
+                      data?.content.abilityBlocks.filter((i) => i.type === 'mode').length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {data?.content.abilityBlocks.filter((i) => i.type === 'mode').length}
+                        </Badge>
+                      )}
+                  </>
+                }
+              >
+                Modes
+              </Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value='actions'>
@@ -901,6 +917,16 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='versatile-heritage'
                 content={data?.content.versatileHeritages ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value='modes'>
+              <ContentList<AbilityBlock>
+                sourceId={props.sourceId}
+                type='ability-block'
+                abilityBlockType='mode'
+                content={(data?.content.abilityBlocks ?? []).filter((item) => item.type === 'mode')}
                 onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>

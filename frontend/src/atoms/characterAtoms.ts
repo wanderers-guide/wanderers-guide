@@ -1,5 +1,5 @@
-import { Character } from "@typing/content";
-import { atom, selector } from "recoil";
+import { Character } from '@typing/content';
+import { atom, selector } from 'recoil';
 
 const _internal_characterState = atom({
   key: 'character-active-internal',
@@ -22,7 +22,6 @@ const characterState = selector({
     set(_internal_characterState, newValue);
   },
 });
-
 
 function saveCharacter(character: Character) {
   //localStorage.setItem('character', JSON.stringify(character));

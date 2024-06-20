@@ -33,7 +33,7 @@ type ActionCost =
   | 'THREE-TO-TWO-ROUNDS'
   | 'THREE-TO-THREE-ROUNDS'
   | null;
-type AbilityBlockType = 'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage';
+type AbilityBlockType = 'action' | 'feat' | 'physical-feature' | 'sense' | 'class-feature' | 'heritage' | 'mode';
 type ContentType =
   | 'trait'
   | 'item'

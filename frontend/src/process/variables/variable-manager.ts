@@ -305,6 +305,8 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   STARFINDER: newVariable('bool', 'STARFINDER', false),
   ORGANIZED_PLAY: newVariable('bool', 'ORGANIZED_PLAY', false),
 
+  ACTIVE_MODES: newVariable('list-str', 'ACTIVE_MODES', []),
+
   PRIMARY_SHEET_TABS: newVariable('list-str', 'PRIMARY_SHEET_TABS', [
     'skills-actions',
     'inventory',

@@ -39,6 +39,7 @@ export function InjectTextOperation(props: {
                 { value: 'trait', label: 'Trait' },
                 { value: 'class-feature', label: 'Class Feature' },
                 { value: 'physical-feature', label: 'Physical Feature' },
+                { value: 'mode', label: 'Mode' },
                 { value: 'sense', label: 'Sense' },
                 { value: 'heritage', label: 'Heritage' },
                 { value: 'language', label: 'Language' },

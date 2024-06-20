@@ -1272,6 +1272,23 @@ function SelectionOptionsRoot(props: {
           ))}
         </>
       );
+    } else if (props.abilityBlockType === 'mode') {
+      return (
+        <>
+          {props.options.map((mode, index) => (
+            <ModeSelectionOption
+              key={'mode-' + index}
+              mode={mode as AbilityBlock}
+              onClick={props.onClick}
+              selected={props.selectedId === mode.id}
+              showButton={props.showButton}
+              includeOptions={props.includeOptions}
+              onDelete={props.onDelete}
+              onCopy={props.onCopy}
+            />
+          ))}
+        </>
+      );
     } else if (props.abilityBlockType === 'heritage') {
       return (
         <>
@@ -2237,6 +2254,61 @@ export function PhysicalFeatureSelectionOption(props: {
       includeOptions={props.includeOptions}
       onOptionsDelete={() => props.onDelete?.(props.physicalFeature.id)}
       onOptionsCopy={() => props.onCopy?.(props.physicalFeature.id)}
+    />
+  );
+}
+
+export function ModeSelectionOption(props: {
+  mode: AbilityBlock;
+  onClick: (mode: AbilityBlock) => void;
+  selected?: boolean;
+  showButton?: boolean;
+  buttonTitle?: string;
+  buttonProps?: ButtonProps;
+  includeOptions?: boolean;
+  onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.mode.name}</Text>
+          </Box>
+        </Group>
+      }
+      rightSection={
+        <TraitsDisplay
+          justify='flex-end'
+          size='xs'
+          traitIds={props.mode.traits ?? []}
+          rarity={props.mode.rarity}
+          availability={props.mode.availability}
+          skill={props.mode.meta_data?.skill}
+        />
+      }
+      showButton={props.showButton}
+      selected={props.selected}
+      onClick={() =>
+        openDrawer({
+          type: 'mode',
+          data: {
+            id: props.mode.id,
+            onSelect: props.showButton || props.showButton === undefined ? () => props.onClick(props.mode) : undefined,
+          },
+          extra: { addToHistory: true },
+        })
+      }
+      buttonTitle={props.buttonTitle ?? 'Select'}
+      buttonProps={props.buttonProps}
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.mode)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.mode.id)}
+      onOptionsCopy={() => props.onCopy?.(props.mode.id)}
     />
   );
 }

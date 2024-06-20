@@ -95,6 +95,16 @@ export async function executeCharacterOperations(
 
   setVariable('CHARACTER', 'LEVEL', character.level);
 
+  try {
+    setVariable(
+      'CHARACTER',
+      'ACTIVE_MODES',
+      JSON.parse(localStorage.getItem(`active-modes-${character.id}`) || '[]'),
+      'Loaded'
+    );
+  } catch (e) {}
+  const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
+
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
   const class_2 = content.classes.find((c) => c.id === character.details?.class_2?.id);
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
@@ -441,6 +451,25 @@ export async function executeCharacterOperations(
       }
     }
 
+    let modeResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
+    const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
+    for (const mode of modes.filter((m) => activeModes.includes(labelToVariable(m.name)))) {
+      const results = await executeOperations(
+        'CHARACTER',
+        `mode-${mode.id}`,
+        mode.operations ?? [],
+        options,
+        `${mode.name} Mode`
+      );
+
+      if (results.length > 0) {
+        modeResults.push({
+          baseSource: mode,
+          baseResults: results,
+        });
+      }
+    }
+
     return {
       contentSourceResults,
       characterResults,
@@ -451,6 +480,7 @@ export async function executeCharacterOperations(
       ancestrySectionResults,
       backgroundResults,
       itemResults,
+      modeResults, // TODO, Not used atm
     };
   };
 

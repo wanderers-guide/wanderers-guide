@@ -63,6 +63,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'heritage' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'sense' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'physical-feature' && <ActionDrawerContent data={drawerData} />}
+      {_drawer?.type === 'mode' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'versatile-heritage' && <VersatileHeritageDrawerContent data={drawerData} />}
       {_drawer?.type === 'archetype' && <ArchetypeDrawerContent data={drawerData} />}
 

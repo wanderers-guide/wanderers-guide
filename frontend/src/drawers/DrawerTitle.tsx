@@ -49,6 +49,7 @@ const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
       {_drawer?.type === 'heritage' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'sense' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'physical-feature' && <ActionDrawerTitle data={_drawer.data} />}
+      {_drawer?.type === 'mode' && <ActionDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'versatile-heritage' && <VersatileHeritageDrawerTitle data={_drawer.data} />}
       {_drawer?.type === 'archetype' && <ArchetypeDrawerTitle data={_drawer.data} />}
 

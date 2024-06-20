@@ -45,7 +45,7 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
               <ActionSymbol cost={action.actions} size={'2.1rem'} />
             </Box>
           </Group>
-          {props.data.onSelect && (
+          {props.data.onSelect ? (
             <Button
               variant='filled'
               radius='xl'
@@ -58,6 +58,8 @@ export function ActionDrawerTitle(props: { data: { id?: number; action?: Ability
             >
               Select
             </Button>
+          ) : (
+            <Text style={{ textWrap: 'nowrap' }}>{action.type !== 'action' ? toLabel(action.type) : ''}</Text>
           )}
         </Group>
       )}

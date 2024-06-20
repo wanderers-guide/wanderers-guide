@@ -12,6 +12,8 @@ import {
   FeatSelectionOption,
   ItemSelectionOption,
   LanguageSelectionOption,
+  ModeSelectionOption,
+  PhysicalFeatureSelectionOption,
   SpellSelectionOption,
   TraitSelectionOption,
   VersatileHeritageSelectionOption,
@@ -204,6 +206,8 @@ export function ContentSourceDrawerContent(props: {
 
   const actions = content.abilityBlocks.filter((block) => block.type === 'action');
   const feats = content.abilityBlocks.filter((block) => block.type === 'feat');
+  const physicalFeatures = content.abilityBlocks.filter((block) => block.type === 'physical-feature');
+  const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
 
   return (
     <Box>
@@ -553,6 +557,72 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'language',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {modes.length > 0 && (
+            <Accordion.Item value={'modes'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>
+                    Modes
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {modes.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {modes.map((record, index) => (
+                  <ModeSelectionOption
+                    key={index}
+                    mode={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: 'mode',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {physicalFeatures.length > 0 && (
+            <Accordion.Item value={'physical-features'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>
+                    Physical Features
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {physicalFeatures.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {physicalFeatures.map((record, index) => (
+                  <PhysicalFeatureSelectionOption
+                    key={index}
+                    physicalFeature={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: 'physical-feature',
                         data: { id: a.id },
                         extra: { addToHistory: true },
                       });
