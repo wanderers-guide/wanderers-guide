@@ -723,6 +723,7 @@ export function ContentSourceDrawerContent(props: {
                 { label: 'Heritage', value: 'heritage' },
                 { label: 'Item', value: 'item' },
                 { label: 'Language', value: 'language' },
+                { label: 'Mode', value: 'mode' },
                 { label: 'Physical Feature', value: 'physical-feature' },
                 { label: 'Sense', value: 'sense' },
                 { label: 'Spell', value: 'spell' },
