@@ -114,9 +114,11 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
                   localStorage.setItem(`active-modes-${character?.id}`, JSON.stringify(activeModes));
 
                   // Trigger character update (to re-execute operations)
-                  setCharacter((prev) => {
-                    return _.cloneDeep(prev);
-                  });
+                  setTimeout(() => {
+                    setCharacter((prev) => {
+                      return _.cloneDeep(prev);
+                    });
+                  }, 100);
                 }}
               />
             ))}

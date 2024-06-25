@@ -34,7 +34,7 @@ import { displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { variableToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 
 interface ActionItem {
@@ -126,6 +126,7 @@ export default function SkillsActionsPanel(props: {
       : weapons;
   }, [props.inventory.items, actionTypeFilter, searchQuery]);
 
+  const [updateWeaponAttacks, setUpdateWeaponAttacks] = useState(0);
   const weaponAttacks = useMemo(() => {
     return weapons.map((invItem) => {
       const weaponStats = getWeaponStats('CHARACTER', invItem.item);
@@ -147,7 +148,14 @@ export default function SkillsActionsPanel(props: {
         ),
       };
     });
-  }, [weapons]);
+  }, [weapons, updateWeaponAttacks]);
+
+  // Update the weapon attacks after character is updated (delay so operations are -roughly- executed first)
+  useEffect(() => {
+    setTimeout(() => {
+      setUpdateWeaponAttacks((x) => x + 1);
+    }, 500);
+  }, [character]);
 
   const basicActions = useMemo(() => {
     return actions.filter(
