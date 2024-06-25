@@ -96,6 +96,7 @@ export async function executeCharacterOperations(
   setVariable('CHARACTER', 'LEVEL', character.level);
 
   try {
+    console.log(JSON.parse(localStorage.getItem(`active-modes-${character.id}`) || '[]'));
     setVariable(
       'CHARACTER',
       'ACTIVE_MODES',
@@ -453,6 +454,10 @@ export async function executeCharacterOperations(
 
     let modeResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
+    console.log(
+      activeModes,
+      modes.filter((m) => activeModes.includes(labelToVariable(m.name)))
+    );
     for (const mode of modes.filter((m) => activeModes.includes(labelToVariable(m.name)))) {
       const results = await executeOperations(
         'CHARACTER',

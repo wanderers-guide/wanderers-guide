@@ -245,7 +245,7 @@ async function runSelect(
 
     // Run the operations of the selected option
     const subOperations = await extendOperations(selectedOption, selectedOption.operations);
-    if (subOperations.length > 0) {
+    if (subOperations.length > 0 && selectedOption.type !== 'mode') {
       const subNode = selectionTrack.node?.children[selectedOption._select_uuid];
       results = await runOperations(
         varId,
@@ -520,7 +520,7 @@ async function runGiveAbilityBlock(
 
   let results: OperationResult[] = [];
   const subOperations = await extendOperations(abilityBlock, abilityBlock.operations);
-  if (subOperations.length > 0) {
+  if (subOperations.length > 0 && operation.data.type !== 'mode') {
     const subNode = selectionTrack.node?.children[operation.id];
     results = await runOperations(
       varId,
