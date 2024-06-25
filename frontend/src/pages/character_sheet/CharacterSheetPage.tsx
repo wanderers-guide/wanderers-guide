@@ -54,7 +54,7 @@ import { toLabel } from '@utils/strings';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable, setVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 import { confirmHealth } from './living-entity-utils';
@@ -334,6 +334,11 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   const [openedModes, setOpenedModes] = useState(false);
 
+  const modes = useMemo(() => {
+    const givenModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
+    return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
+  }, [character, operationResults, props.content]);
+
   return (
     <Center>
       <Box maw={1000} w='100%' pb='sm'>
@@ -372,7 +377,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         }}
       >
         <Stack>
-          {props.content.abilityBlocks.filter((b) => b.type === 'mode').length > 0 && (
+          {modes.length > 0 && (
             <Indicator disabled={activeModes.length === 0} label={activeModes.length} size={14} offset={4}>
               <ActionIcon
                 size={40}

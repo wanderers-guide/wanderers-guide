@@ -61,6 +61,7 @@ import { GiveTraitOperation } from './trait/GiveTraitOperation';
 import useRefresh from '@utils/use-refresh';
 import { InjectSelectOptionOperation } from './selection/InjectSelectOptionOperation';
 import { InjectTextOperation } from './variables/InjectTextOperation';
+import { GiveModeOperation } from './ability_block/GiveModeOperation';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -185,6 +186,7 @@ export function OperationSection(props: {
               { value: 'giveItem', label: 'Give Item' },
               { value: 'giveTrait', label: 'Give Trait' },
               { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
+              { value: 'giveAbilityBlock:::mode', label: 'Give Mode' },
               {
                 value: 'giveAbilityBlock:::class-feature',
                 label: 'Give Other Class Feature',
@@ -304,6 +306,17 @@ export function OperationDisplay(props: {
         case 'sense':
           return (
             <GiveSenseOperation
+              selectedId={opGiveAbilBlock.data.abilityBlockId}
+              onSelect={(option) => {
+                opGiveAbilBlock.data.abilityBlockId = option.id;
+                props.onChange(_.cloneDeep(opGiveAbilBlock));
+              }}
+              onRemove={() => props.onRemove(props.operation.id)}
+            />
+          );
+        case 'mode':
+          return (
+            <GiveModeOperation
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;

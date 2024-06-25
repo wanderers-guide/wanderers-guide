@@ -354,6 +354,9 @@ async function updateVariables(
     } else if (selectedOption.type === 'physical-feature') {
       adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${selectedOption.id}`, sourceLabel);
       adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
+    } else if (selectedOption.type === 'mode') {
+      adjVariable(varId, 'MODE_IDS', `${selectedOption.id}`, sourceLabel);
+      adjVariable(varId, 'MODE_NAMES', selectedOption.name.toUpperCase(), sourceLabel);
     } else {
       throwError(`Invalid ability block type: ${selectedOption.type}`);
     }
@@ -509,6 +512,9 @@ async function runGiveAbilityBlock(
     } else if (operation.data.type === 'physical-feature') {
       adjVariable(varId, 'PHYSICAL_FEATURE_IDS', `${abilityBlock.id}`, sourceLabel);
       adjVariable(varId, 'PHYSICAL_FEATURE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
+    } else if (operation.data.type === 'mode') {
+      adjVariable(varId, 'MODE_IDS', `${abilityBlock.id}`, sourceLabel);
+      adjVariable(varId, 'MODE_NAMES', abilityBlock.name.toUpperCase(), sourceLabel);
     }
   }
 
@@ -785,6 +791,19 @@ async function runRemoveAbilityBlock(
       varId,
       'PHYSICAL_FEATURE_NAMES',
       getVariableList(varId, 'PHYSICAL_FEATURE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
+      sourceLabel
+    );
+  } else if (operation.data.type === 'mode') {
+    setVariable(
+      varId,
+      'MODE_IDS',
+      getVariableList(varId, 'MODE_IDS').filter((id) => id !== `${abilityBlock.id}`),
+      sourceLabel
+    );
+    setVariable(
+      varId,
+      'MODE_NAMES',
+      getVariableList(varId, 'MODE_NAMES').filter((name) => name !== abilityBlock.name.toUpperCase()),
       sourceLabel
     );
   }

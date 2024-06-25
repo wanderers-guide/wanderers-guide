@@ -49,7 +49,8 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const modes = useMemo(() => {
-    return props.content.abilityBlocks.filter((block) => block.type === 'mode');
+    const givenModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
+    return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
   }, [props.content]);
 
   const hasModeActive = (mode: AbilityBlock) => {

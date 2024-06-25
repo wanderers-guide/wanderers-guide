@@ -185,6 +185,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   // List variables, just storing the names (as uppercase)
   SENSE_NAMES: newVariable('list-str', 'SENSE_NAMES'),
+  MODE_NAMES: newVariable('list-str', 'MODE_NAMES'),
   CLASS_NAMES: newVariable('list-str', 'CLASS_NAMES'),
   ANCESTRY_NAMES: newVariable('list-str', 'ANCESTRY_NAMES'),
   BACKGROUND_NAMES: newVariable('list-str', 'BACKGROUND_NAMES'),
@@ -199,6 +200,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   //
   // List variables, storing the IDs
   SENSE_IDS: newVariable('list-str', 'SENSE_IDS'),
+  MODE_IDS: newVariable('list-str', 'MODE_IDS'),
   CLASS_IDS: newVariable('list-str', 'CLASS_IDS'),
   ANCESTRY_IDS: newVariable('list-str', 'ANCESTRY_IDS'),
   BACKGROUND_IDS: newVariable('list-str', 'BACKGROUND_IDS'),
