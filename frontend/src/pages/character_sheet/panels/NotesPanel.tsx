@@ -72,9 +72,10 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
           placeholder='Your notes...'
           value={page.contents}
           onChange={(text, json) => {
-            setDebouncedJson({ index: index, json: json });
+              setDebouncedJson({ index: index, json: json });
           }}
           minHeight={props.panelHeight}
+          hasColorOptions={true}
         />
         {isPhone && (
           <Menu shadow='md' width={160}>
