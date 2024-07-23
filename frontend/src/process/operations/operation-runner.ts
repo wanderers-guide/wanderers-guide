@@ -950,7 +950,7 @@ async function runConditional(
       } else if (check.operator === 'NOT_EQUALS') {
         return !_.isEqual(variable.value, value);
       } else if (check.operator === 'INCLUDES') {
-        return variable.value.includes(check.value.toUpperCase());
+        return variable.value.includes(labelToVariable(check.value));
       }
     } else if (variable.type === 'prof') {
       if (check.operator === 'EQUALS') {

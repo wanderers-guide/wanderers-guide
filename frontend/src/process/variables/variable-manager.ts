@@ -165,7 +165,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // ARMOR_CHECK_PENALTY: newVariable('num', 'ARMOR_CHECK_PENALTY'),
   // ARMOR_SPEED_PENALTY: newVariable('num', 'ARMOR_SPEED_PENALTY'),
   // DEX_CAP: newVariable('num', 'DEX_CAP'),
-  UNARMORED: newVariable('bool', 'UNARMORED'),
+  // UNARMORED: newVariable('bool', 'UNARMORED'),
 
   SPEED: newVariable('num', 'SPEED'),
   SPEED_FLY: newVariable('num', 'SPEED_FLY'),
