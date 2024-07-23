@@ -2,6 +2,7 @@ export type RequestType =
   | 'get-sheet-content'
   | 'upload-public-file'
   | 'handle-patreon-redirect'
+  | 'search-data'
   | 'gm-add-to-group'
   | 'gm-remove-from-group'
   | 'gm-regenerate-code'

@@ -1,6 +1,7 @@
 import { queryByName } from '@ai/vector-db/vector-manager';
 import { drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { fetchContentSources } from '@content/content-store';
@@ -303,11 +304,56 @@ async function queryResults(
   openDrawer: DrawerStateSet,
   theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
-  const result = await queryByName(query, {
-    amount: 10,
-    applyWeights: true,
-  });
+  // Vector search
+  // const result = await queryByName(query, {
+  //   amount: 10,
+  //   applyWeights: true,
+  // });
 
+  // Traditional search
+  const queryDbSearch = async () => {
+    // Filter out all sources that's not been subscribed or official
+    let user = getCachedPublicUser();
+    if (!user) {
+      user = await getPublicUser();
+    }
+    const validSources = (await fetchContentSources({ ids: 'all', homebrew: true })).filter((c) => {
+      if (c.user_id) {
+        return user?.subscribed_content_sources?.find((src) => src.source_id === c.id);
+      } else {
+        return true;
+      }
+    });
+
+    // Fetch search results
+    const searchData =
+      (await makeRequest('search-data', {
+        text: query,
+        content_sources: validSources.map((c) => c.id),
+      })) ?? {};
+
+    // Format results to single array
+    const result: Record<string, any>[] = []
+      .concat(searchData.ability_blocks.map((a: any) => ({ ...a, _type: 'ability-block' })))
+      .concat(searchData.ancestries.map((a: any) => ({ ...a, _type: 'ancestry' })))
+      .concat(searchData.archetypes.map((a: any) => ({ ...a, _type: 'archetype' })))
+      .concat(searchData.backgrounds.map((a: any) => ({ ...a, _type: 'background' })))
+      .concat(searchData.classes.map((a: any) => ({ ...a, _type: 'class' })))
+      .concat(searchData.creatures.map((a: any) => ({ ...a, _type: 'creature' })))
+      .concat(searchData.items.map((a: any) => ({ ...a, _type: 'item' })))
+      .concat(searchData.languages.map((a: any) => ({ ...a, _type: 'language' })))
+      .concat(searchData.spells.map((a: any) => ({ ...a, _type: 'spell' })))
+      .concat(searchData.traits.map((a: any) => ({ ...a, _type: 'trait' })))
+      .concat(searchData.versatile_heritages.map((a: any) => ({ ...a, _type: 'versatile-heritage' })));
+
+    return result;
+    // Filter out results again, just in case
+    //return result.filter((a) => validSources.find((c) => c.id === a.content_source_id));
+  };
+
+  const result = await queryDbSearch();
+
+  // Format results to spotlight actions
   return result.map((data) => {
     let description = `${stripMd(`${data.description}`)}`.split('.')[0] + '.';
 
