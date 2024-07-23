@@ -185,7 +185,11 @@ export const CharacterInfo = forwardRef(
   }
 );
 
-export function CharacterDetailedInfo(props: { character: Character | null; nameCutOff?: number }) {
+export function CharacterDetailedInfo(props: {
+  character: Character | null;
+  nameCutOff?: number;
+  onClick?: () => void;
+}) {
   const theme = useMantineTheme();
   const isPhone = useMediaQuery(phoneQuery());
 
@@ -198,7 +202,18 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
 
   return (
     <div style={{ width: isPhone ? undefined : 240 }}>
-      <Group wrap='nowrap' align='flex-start' gap={0}>
+      <Group
+        wrap='nowrap'
+        align='flex-start'
+        gap={0}
+        style={{ cursor: props.onClick ? 'pointer' : 'auto' }}
+        onClick={(e) => {
+          if (props.onClick) {
+            e.stopPropagation();
+            props.onClick();
+          }
+        }}
+      >
         <Box style={{ position: 'relative' }} mt={0} mr={10}>
           {conditions.length > 0 && (
             <HoverCard shadow='md' openDelay={250}>

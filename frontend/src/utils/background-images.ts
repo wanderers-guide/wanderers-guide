@@ -528,6 +528,10 @@ export function getDefaultBackgroundImage() {
   return _.cloneDeep(imageStore.general[0]);
 }
 
+export function getDefaultCampaignBackgroundImage() {
+  return _.cloneDeep(imageStore.general[2]);
+}
+
 export function getHomeBackgroundImage() {
   return _.cloneDeep(imageStore.jorge_jacinto[0]);
 }

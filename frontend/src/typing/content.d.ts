@@ -485,11 +485,6 @@ interface Campaign {
       color: string;
       contents: JSONContent;
     }[];
-    sessions: {
-      id: string;
-      name: string;
-      contents: JSONContent;
-    }[];
   };
   recommended_options?: {
     is_public?: boolean;
@@ -541,6 +536,25 @@ interface Campaign {
       }[];
     };
   };
+}
+
+interface CampaignSessionIdea {
+  name: string;
+  outline: string;
+  actions: {
+    name: string;
+    description: string;
+    type: 'NPC' | 'ENCOUNTER';
+  }[];
+}
+
+interface CampaignNPC {
+  name: string;
+  description: string;
+  level: number;
+  class: string;
+  background: string;
+  ancestry: string;
 }
 
 interface Encounter {

@@ -1,8 +1,9 @@
+import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
 import { makeRequest } from '@requests/request-manager';
-import { Character } from '@typing/content';
+import { Campaign, CampaignNPC, CampaignSessionIdea, Character } from '@typing/content';
 import yaml from 'js-yaml';
 
-export async function generateCompletion(prompt?: string, model = 'gpt-4-turbo') {
+export async function generateCompletion(prompt?: string, model = 'gpt-4o-mini') {
   if (!prompt) return null;
   const result = await makeRequest<string>('open-ai-request', {
     content: prompt.trim(),
@@ -52,7 +53,7 @@ export async function randomCharacterInfo(character: Character) {
   Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
   The resulting object:
   `.trim();
-  const result = await generateCompletion(prompt, 'gpt-3.5-turbo');
+  const result = await generateCompletion(prompt, 'gpt-4o-mini');
   try {
     const data = yaml.load(result ?? '') as any;
     character.details = {
@@ -110,6 +111,156 @@ export async function classifySkillForAction(description: string) {
     LORE
   `.trim();
   return await generateCompletion(prompt);
+}
+
+export async function generateNPC(
+  campaign: Campaign,
+  players: Character[],
+  notePages: number[],
+  additional?: string
+): Promise<CampaignNPC | null> {
+  const prompt = `
+  I’m going to give you some information about a Pathfinder/ Starfinder / D&D campaign and I need you to generate an NPC for it.
+  Be creative and have fun with it, the most interesting NPCs are ones that embrace archetypes and are complex and interesting.
+  The ancestry, background, and class should be the name from the options you could select in Pathfinder / Starfinder.
+  The NPC level should be within the range 1-20.
+
+  # Campaign Basic Info:
+  Name: ${campaign.name}
+  Description: ${campaign.description}
+  Additional Info: ${additional ?? 'None provided'}
+
+
+  # Players:
+  ${players
+    .map((player) => {
+      return `Name: ${player.name}\n Level: ${player.level}\n Class: ${player.details?.class?.name}\n Background: ${player.details?.background?.name}\n Ancestry: ${player.details?.ancestry?.name} \n Details: ${JSON.stringify(player.details?.info ?? {})}\n`;
+    })
+    .join('\n\n-----\n\n')}
+
+
+  # Campaign Notes:
+  ${campaign.notes?.pages
+    .filter((_page, index) => notePages.includes(index))
+    ?.map((page) => '### ' + page.name + '\n' + convertTiptapToMarkdown(page.contents))
+    .join('\n\n')}
+
+      
+  # Output Format:
+  {
+    name: string;
+    description: string;
+    level: number;
+    class: string;
+    background: string;
+    ancestry: string;
+  }
+
+
+  Use markdown to format your output. at the Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  # Output:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-4o-mini');
+
+  try {
+    return yaml.load(result ?? '') as any;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return null;
+  }
+}
+
+export async function generateSessionIdea(
+  campaign: Campaign,
+  players: Character[],
+  notePages: number[],
+  additional?: string
+): Promise<CampaignSessionIdea | null> {
+  const prompt = `
+  I’m going to give you some information about a Pathfinder/ Starfinder / D&D campaign and I need you to generate a campaign the next session idea for it.
+  This should be an outline of what should happen in the next session. Be creative and have fun with it.
+
+  In your output outline, include a name and a detailed session outline.
+
+  # Campaign Basic Info:
+  Name: ${campaign.name}
+  Description: ${campaign.description}
+  Additional Info: ${additional ?? 'None provided'}
+
+
+  # Players:
+  ${players
+    .map((player) => {
+      return `Name: ${player.name}\n Level: ${player.level}\n Class: ${player.details?.class?.name}\n Background: ${player.details?.background?.name}\n Ancestry: ${player.details?.ancestry?.name} \n Details: ${JSON.stringify(player.details?.info ?? {})}\n`;
+    })
+    .join('\n\n-----\n\n')}
+
+
+  # Campaign Notes:
+  ${campaign.notes?.pages
+    .filter((_page, index) => notePages.includes(index))
+    ?.map((page) => '### ' + page.name + '\n' + convertTiptapToMarkdown(page.contents))
+    .join('\n\n')}
+
+      
+  # Output Format:
+  {
+    name: string;
+    outline: string;
+  }
+
+
+  Use markdown to format your output. at the Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  # Output:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-4o-mini');
+
+  try {
+    const r = yaml.load(result ?? '') as any;
+    const actions = await generateSessionIdeaActions(r.outline);
+    return {
+      name: r.name,
+      outline: r.outline.replace(/^### .+\n/, ''),
+      actions: actions?.actions ?? [],
+    };
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return null;
+  }
+}
+
+async function generateSessionIdeaActions(
+  outline: string
+): Promise<{ actions: { name: string; description: string; type: 'NPC' | 'ENCOUNTER' }[] } | null> {
+  const prompt = `
+  I’m going to give you an outline for a Pathfinder / Starfinder / D&D campaign session and I need you to generate some optional actions that includes info that could be used in the future to produce the NPCs or encounters for the session.
+  These could be a basic outline of an NPC for the session or an basic description of an encounter in the session.
+
+  
+  # Session Outline:
+  ${outline}
+
+
+  # Output Format:
+  {
+    actions: {
+      name: string;
+      description: string;
+      type: 'NPC' | 'ENCOUNTER';
+    }[];
+  }
+
+
+  Use markdown to format your output. Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  # Output:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-4o-mini');
+  try {
+    return yaml.load(result ?? '') as any;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return null;
+  }
 }
 
 /**

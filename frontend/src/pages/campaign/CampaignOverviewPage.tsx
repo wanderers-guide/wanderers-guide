@@ -24,8 +24,10 @@ import {
   Tabs,
   ScrollArea,
   TextInput,
+  Card,
+  Image,
 } from '@mantine/core';
-import { useElementSize, useHover, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDebouncedValue, useElementSize, useHover, useMediaQuery } from '@mantine/hooks';
 import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
 import AttributeSection from '@pages/character_sheet/sections/AttributeSection';
 import ConditionSection from '@pages/character_sheet/sections/ConditionSection';
@@ -53,6 +55,8 @@ import {
   IconSwords,
   IconX,
   IconKey,
+  IconHeart,
+  IconRefreshDot,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character } from '@typing/content';
@@ -73,10 +77,12 @@ import DetailsPanel from '@pages/character_sheet/panels/DetailsPanel';
 import ExtrasPanel from '@pages/character_sheet/panels/ExtrasPanel';
 import FeatsFeaturesPanel from '@pages/character_sheet/panels/FeatsFeaturesPanel';
 import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
-import NotesPanel from '@pages/character_sheet/panels/NotesPanel';
 import SkillsActionsPanel from '@pages/character_sheet/panels/SkillsActionsPanel';
 import SpellsPanel from '@pages/character_sheet/panels/SpellsPanel';
 import { toLabel } from '@utils/strings';
+import { getBackgroundImageFromName, getDefaultCampaignBackgroundImage } from '@utils/background-images';
+import NotesPanel from './panels/NotesPanel';
+import InspirationPanel from './panels/InspirationPanel';
 
 export function Component() {
   setPageTitle(`Campaign`);
@@ -89,16 +95,35 @@ export function Component() {
     campaignId: number;
   };
 
-  const { data: campaign, isFetching } = useQuery({
+  const { data, isFetching } = useQuery({
     queryKey: [`find-campaign-${campaignId}`],
     queryFn: async () => {
       const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
         id: campaignId,
       });
-      return campaigns?.length ? campaigns[0] : null;
+      const camp = campaigns?.length ? campaigns[0] : null;
+      updateCampaign(camp);
+      return camp;
     },
     refetchOnWindowFocus: false,
   });
+
+  const [_campaign, _setCampaign] = useState<Campaign | null>(null);
+  const [debouncedCampaign] = useDebouncedValue(_campaign, 200);
+  const campaign = _campaign ?? data ?? null;
+
+  const updateCampaign = async (campaign: Campaign | null) => {
+    if (!campaign) return;
+    _setCampaign(campaign);
+  };
+
+  useEffect(() => {
+    (async () => {
+      await makeRequest('create-campaign', {
+        ...debouncedCampaign,
+      });
+    })();
+  }, [debouncedCampaign]);
 
   const {
     data: characters,
@@ -123,7 +148,7 @@ export function Component() {
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
-  console.log(characters);
+  //console.log(characters);
 
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
   const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
@@ -137,77 +162,51 @@ export function Component() {
               <Grid>
                 <Grid.Col span={isTablet ? 12 : 4}>
                   <BlurBox blur={10} h={255}>
-                    <Box
-                      pt='xs'
-                      pb={5}
-                      px='xs'
-                      style={{
-                        borderTopLeftRadius: theme.radius.md,
-                        borderTopRightRadius: theme.radius.md,
-                        position: 'relative',
-                      }}
-                      h='100%'
-                    >
-                      <div>
-                        <Group wrap='nowrap' align='flex-start' gap={5}>
-                          <Stack gap={5}>
-                            <Box style={{ position: 'relative' }} mt={0} mr={10}>
-                              <Avatar
-                                src={campaign?.meta_data?.image_url}
-                                alt='Campaign Image'
-                                size={75}
-                                radius={75}
-                                variant='transparent'
-                                color='dark.3'
-                                bg={theme.colors.dark[6]}
-                              />
-                            </Box>
-                            <Stack gap={0} align='center'>
-                              <Group gap={3}>
-                                <IconKey size='0.6rem' />
-                                <Text fz={12} ta='center' fw={600}>
-                                  Join Key
-                                </Text>
-                              </Group>
-                              <TextInput readOnly value='test-121-1' size='xs' w='75' />
-                              <Button size='compact-xs' w='75' mt={5}>
-                                Regen
-                              </Button>
-                            </Stack>
-                          </Stack>
+                    <Card radius='md' p='md' style={{ backgroundColor: 'transparent' }}>
+                      <Card.Section>
+                        <Image
+                          src={campaign?.meta_data?.image_url}
+                          alt={campaign?.name}
+                          height={70}
+                          fallbackSrc={getDefaultCampaignBackgroundImage().url}
+                        />
+                      </Card.Section>
 
-                          <div style={{ flex: 1 }}>
-                            <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
-                              <HoverCard.Target>
-                                <Text
-                                  c='gray.0'
-                                  fz={campaign && campaign.name.length >= 16 ? '0.9rem' : 'xl'}
-                                  fw={500}
-                                  className={classes.name}
-                                >
-                                  {truncate(campaign?.name, {
-                                    length: 18,
-                                  })}
-                                </Text>
-                              </HoverCard.Target>
-                              <HoverCard.Dropdown py={5} px={10}>
-                                <Text c='gray.0' size='sm'>
-                                  {campaign?.name}
-                                </Text>
-                              </HoverCard.Dropdown>
-                            </HoverCard>
+                      <Card.Section className={classes.section} mt='md' px='md'>
+                        <Group justify='apart'>
+                          <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
+                            <HoverCard.Target>
+                              <Title c='gray.3' order={4} className={classes.name}>
+                                {truncate(campaign?.name, {
+                                  length: 30,
+                                })}
+                              </Title>
+                            </HoverCard.Target>
+                            <HoverCard.Dropdown py={5} px={10}>
+                              <Text c='gray.3' size='sm'>
+                                {campaign?.name}
+                              </Text>
+                            </HoverCard.Dropdown>
+                          </HoverCard>
 
-                            <Stack gap={3}>
-                              <ScrollArea h={200} scrollbars='y' pr={14}>
-                                <RichText ta='justify' fz='xs'>
-                                  {campaign?.description}
-                                </RichText>
-                              </ScrollArea>
-                            </Stack>
-                          </div>
+                          <Badge size='sm' variant='light'>
+                            {(characters?.length || 0) + ' players'}
+                          </Badge>
                         </Group>
-                      </div>
-                    </Box>
+                        <ScrollArea h={80} mt='xs'>
+                          <Text fz='sm'>{campaign?.description}</Text>
+                        </ScrollArea>
+                      </Card.Section>
+
+                      <Group mt='xs'>
+                        <Button radius='md' size='xs' variant='light' color='gray' style={{ flex: 1 }}>
+                          Reveal Join Key
+                        </Button>
+                        <ActionIcon variant='light' color='gray' radius='md' size={30}>
+                          <IconRefreshDot size='1.1rem' stroke={1.5} />
+                        </ActionIcon>
+                      </Group>
+                    </Card>
                   </BlurBox>
                 </Grid.Col>
                 <Grid.Col span={isTablet ? 12 : 8}>
@@ -216,7 +215,12 @@ export function Component() {
                       <Group>
                         {characters?.map((character) => (
                           <BlurBox blur={10} maw={280} py={5} px='sm'>
-                            <CharacterDetailedInfo character={character} />
+                            <CharacterDetailedInfo
+                              character={character}
+                              onClick={() => {
+                                window.open(`/sheet/${character.id}`, '_blank');
+                              }}
+                            />
                           </BlurBox>
                         ))}
                       </Group>
@@ -227,6 +231,9 @@ export function Component() {
             </Box>
 
             <SectionPanels
+              players={characters ?? []}
+              campaign={campaign}
+              setCampaign={updateCampaign}
               isLoaded={isLoaded}
               panelHeight={panelHeight}
               panelWidth={panelWidth}
@@ -279,6 +286,10 @@ export function Component() {
 }
 
 function SectionPanels(props: {
+  players: Character[];
+  campaign: Campaign | null;
+  setCampaign: (campaign: Campaign) => void;
+
   isLoaded: boolean;
   hideSections: boolean;
   onHideSections: (hide: boolean) => void;
@@ -319,6 +330,8 @@ function SectionPanels(props: {
       setActiveTab('notes');
     }
   }, [props.isLoaded, activeTab]);
+
+  if (!props.campaign) return <></>;
 
   if (isPhone) {
     return (
@@ -496,7 +509,12 @@ function SectionPanels(props: {
             </Tabs.List>
 
             <Tabs.Panel value='notes'>
-              <></>
+              <NotesPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='encounters'>
@@ -508,7 +526,13 @@ function SectionPanels(props: {
             </Tabs.Panel>
 
             <Tabs.Panel value='inspiration'>
-              <></>
+              <InspirationPanel
+                players={props.players}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='notes'>

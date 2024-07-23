@@ -6,7 +6,7 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
-import { useMantineTheme, Text, Box } from '@mantine/core';
+import { useMantineTheme, Text, Box, FocusTrap } from '@mantine/core';
 import { ContentLink } from './ContentLinkExtension';
 import ContentLinkControl from './ContentLinkControl';
 import { useRecoilState } from 'recoil';
@@ -15,7 +15,7 @@ import { toMarkdown } from '@content/content-utils';
 import { ActionSymbol } from './ActionSymbolExtension';
 import ActionSymbolControl from './ActionSymbolControl';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useElementSize } from '@mantine/hooks';
+import { useDisclosure, useElementSize } from '@mantine/hooks';
 import AutoContentLinkControl from './AutoContentLinkControl';
 
 interface RichTextInputProps {
@@ -52,6 +52,8 @@ export default function RichTextInput(props: RichTextInputProps) {
     },
   });
 
+  const [active, { toggle }] = useDisclosure(false);
+
   const { ref, width, height } = useElementSize();
   const isSmall = width < 510;
   const isVerySmall = width < 395;
@@ -68,6 +70,7 @@ export default function RichTextInput(props: RichTextInputProps) {
           )}
         </Text>
       )}
+
       <RichTextEditor
         ref={ref}
         editor={editor}
@@ -124,7 +127,11 @@ export default function RichTextInput(props: RichTextInputProps) {
           )}
         </RichTextEditor.Toolbar>
 
-        <RichTextEditor.Content />
+        <FocusTrap active={active}>
+          <Box onClick={toggle} style={{ cursor: 'text' }}>
+            <RichTextEditor.Content />
+          </Box>
+        </FocusTrap>
       </RichTextEditor>
     </Box>
   );

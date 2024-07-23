@@ -41,6 +41,7 @@ export type RequestType =
   | 'find-content-update'
   | 'get-content-source-stats'
   | 'find-campaigns'
+  | 'create-campaign'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 
