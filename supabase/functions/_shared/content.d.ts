@@ -312,6 +312,7 @@ interface Campaign {
   description: {
     contents: JSONContent;
   };
+  join_key: string;
   notes?: {
     pages: {
       name: string;
@@ -334,9 +335,6 @@ interface Campaign {
   meta_data?: {
     settings?: {
       show_party_member_status?: 'OFF' | 'STATUS' | 'DETAILED';
-    };
-    access?: {
-      join_key?: string;
     };
     image_url?: string;
     dice?: {

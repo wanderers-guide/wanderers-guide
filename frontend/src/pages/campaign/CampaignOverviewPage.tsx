@@ -214,7 +214,7 @@ export function Component() {
                               setRevealedKey(true);
                             } else {
                               // Copy key to clipboard
-                              navigator.clipboard.writeText(campaign?.meta_data?.access?.join_key || '');
+                              navigator.clipboard.writeText(campaign?.join_key || '');
                               showNotification({
                                 title: 'Copied Join Key',
                                 message: `Join key copied to clipboard!`,
@@ -225,7 +225,7 @@ export function Component() {
                           }}
                           leftSection={revealedKey ? <IconCopy size='0.9rem' /> : <></>}
                         >
-                          {revealedKey ? campaign?.meta_data?.access?.join_key : 'Reveal Join Key'}
+                          {revealedKey ? campaign?.join_key : 'Reveal Join Key'}
                         </Button>
                         <ActionIcon
                           variant='light'

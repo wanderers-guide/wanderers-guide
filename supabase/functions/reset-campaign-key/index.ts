@@ -42,16 +42,10 @@ serve(async (req: Request) => {
 
     const payload = {
       id,
-      meta_data: {
-        ...campaigns[0].meta_data,
-        access: {
-          ...campaigns[0].meta_data?.access,
-          join_key:
-            Math.random().toString(36).substring(2, 8) +
-            '-' +
-            Math.random().toString(36).substring(2, 8),
-        },
-      },
+      join_key:
+        Math.random().toString(36).substring(2, 8) +
+        '-' +
+        Math.random().toString(36).substring(2, 8),
     };
     const { procedure, result } = await upsertData<Campaign>(client, 'campaign', payload);
 

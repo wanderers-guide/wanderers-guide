@@ -110,6 +110,7 @@ export function Component() {
       variants: debouncedCharacter.variants,
       options: debouncedCharacter.options,
       custom_operations: debouncedCharacter.custom_operations,
+      campaign_id: debouncedCharacter.campaign_id,
     });
   }, [debouncedCharacter]);
 
@@ -125,6 +126,7 @@ export function Component() {
       variants?: any;
       options?: any;
       custom_operations?: any;
+      campaign_id?: number;
     }) => {
       const resData = await makeRequest('update-character', {
         id: characterId,

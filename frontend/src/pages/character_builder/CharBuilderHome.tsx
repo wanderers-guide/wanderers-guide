@@ -47,6 +47,8 @@ import {
   IconFlagPlus,
   IconKey,
   IconArchive,
+  IconFlag,
+  IconX,
 } from '@tabler/icons-react';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
@@ -70,9 +72,11 @@ import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
 import RichText from '@common/RichText';
 import { drawerState } from '@atoms/navAtoms';
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, Campaign, ContentType } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
+import { makeRequest } from '@requests/request-manager';
+import { set } from 'node_modules/cypress/types/lodash';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -789,30 +793,58 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         }}
       >
         <Stack>
-          <PasswordInput
-            radius='xl'
-            size='xs'
-            label={<Text fz='sm'>Campaign</Text>}
-            placeholder='Enter Join Key'
-            rightSectionWidth={28}
-            leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
-            rightSection={
-              <ActionIcon
-                size={22}
-                radius='xl'
-                color={theme.primaryColor}
-                variant='light'
-                onClick={() => {
-                  //
-                }}
-              >
-                <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
-              </ActionIcon>
-            }
-            onClick={() => {
-              displayComingSoon();
-            }}
-          />
+          {campaign ? (
+            <TextInput
+              radius='xl'
+              size='xs'
+              label={<Text fz='sm'>Campaign</Text>}
+              placeholder='Campaign Name'
+              value={campaign.name}
+              readOnly
+              rightSectionWidth={28}
+              leftSection={<IconFlag style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
+              rightSection={
+                <ActionIcon
+                  size={22}
+                  radius='xl'
+                  color='gray'
+                  variant='subtle'
+                  onClick={async () => {
+                    await leaveCampaign();
+                  }}
+                >
+                  <IconX style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                </ActionIcon>
+              }
+            />
+          ) : (
+            <PasswordInput
+              radius='xl'
+              size='xs'
+              label={<Text fz='sm'>Campaign</Text>}
+              placeholder='Enter Join Key'
+              value={campaignKey}
+              onChange={(e) => {
+                setCampaignKey(e.target.value);
+              }}
+              rightSectionWidth={28}
+              leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
+              rightSection={
+                <ActionIcon
+                  size={22}
+                  radius='xl'
+                  disabled={!campaignKey}
+                  color={theme.primaryColor}
+                  variant='light'
+                  onClick={async () => {
+                    await joinCampaign();
+                  }}
+                >
+                  <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                </ActionIcon>
+              }
+            />
+          )}
           <ColorInput
             radius='xl'
             size='xs'
@@ -900,6 +932,127 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       </Paper>
     </Box>
   );
+
+  // Campaign Section
+  const [campaignKey, setCampaignKey] = useState('');
+  const { data: campaign, refetch: refetchCampaign } = useQuery({
+    queryKey: [`find-campaign-${character?.campaign_id}`, { campaign_id: character?.campaign_id }],
+    queryFn: async ({ queryKey }) => {
+      // @ts-ignore
+      // eslint-disable-next-line
+      const [_key, { campaign_id }] = queryKey;
+
+      const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
+        id: campaign_id,
+      });
+      return campaigns?.length ? campaigns[0] : null;
+    },
+    enabled: !!character?.campaign_id,
+    refetchOnWindowFocus: false,
+  });
+
+  const joinCampaign = async () => {
+    // TODO: Secure this joining process
+    const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
+      join_key: campaignKey,
+    });
+    const campaign = campaigns?.length ? campaigns[0] : null;
+    setCampaignKey('');
+    if (campaign) {
+      setCharacter((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          campaign_id: campaign.id,
+        };
+      });
+
+      setTimeout(() => {
+        refetchCampaign();
+      }, 3000);
+
+      // Check if the campaign has recommended settings for the character
+      if (
+        !_.isEqual(
+          {
+            sources: character?.content_sources,
+            variants: character?.variants,
+            options: character?.options,
+            custom_operations: character?.custom_operations,
+          },
+          {
+            sources: campaign?.recommended_content_sources,
+            variants: campaign?.recommended_variants,
+            options: campaign?.recommended_options,
+            custom_operations: campaign?.custom_operations,
+          }
+        )
+      ) {
+        modals.openConfirmModal({
+          id: 'campaign-recommended-settings',
+          title: <Title order={4}>Campaign Default Settings</Title>,
+          children: (
+            <Text size='sm'>
+              It’s recommended to use your campaign’s default settings but doing so will override your current settings.
+              Are you sure you want to?
+            </Text>
+          ),
+          labels: { confirm: 'Apply Settings', cancel: 'Skip' },
+          onCancel: () => {},
+          onConfirm: () => {
+            setCharacter((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                content_sources: campaign?.recommended_content_sources,
+                variants: campaign?.recommended_variants,
+                options: campaign?.recommended_options,
+                custom_operations: campaign?.custom_operations,
+              };
+            });
+          },
+        });
+      } else {
+        showNotification({
+          title: 'Joined Campaign!',
+          message: `You've joined "${campaign.name}"`,
+          color: 'blue',
+          icon: null,
+          autoClose: 3000,
+        });
+      }
+    } else {
+      showNotification({
+        title: 'Invalid Join Key',
+        message: 'Please ask your GM for a valid key.',
+        color: 'red',
+        icon: null,
+        autoClose: 3000,
+      });
+    }
+  };
+
+  const leaveCampaign = () => {
+    setCharacter((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        campaign_id: -1,
+      };
+    });
+
+    setTimeout(() => {
+      refetchCampaign();
+    }, 3000);
+
+    showNotification({
+      title: 'Left Campaign',
+      message: 'You have left the campaign.',
+      color: 'blue',
+      icon: null,
+      autoClose: 3000,
+    });
+  };
 
   return (
     <Stack gap={topGap}>
