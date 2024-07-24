@@ -496,6 +496,7 @@ interface Campaign {
     ignore_bulk_limit?: boolean;
     alternate_ancestry_boosts?: boolean;
     voluntary_flaws?: boolean;
+    organized_play?: boolean;
   };
   recommended_variants?: {
     ancestry_paragon?: boolean;
@@ -504,6 +505,7 @@ interface Campaign {
     stamina?: boolean;
     free_archetype?: boolean;
     dual_class?: boolean;
+    gradual_attribute_boosts?: boolean;
   };
   recommended_content_sources?: {
     enabled?: number[];
@@ -511,7 +513,7 @@ interface Campaign {
   custom_operations?: Operation[];
   meta_data?: {
     settings?: {
-      show_party_member_status?: boolean;
+      show_party_member_status?: 'OFF' | 'STATUS' | 'DETAILED';
     };
     access?: {
       join_key?: string;

@@ -1519,15 +1519,15 @@ function AncestryAccordionItem(props: {
   let ancestryOperationResults = props.operationResults?.ancestryResults ?? [];
   const ancestryInitialOverviewDisplay = props.ancestry
     ? convertAncestryOperationsIntoUI(
-      props.ancestry,
-      physicalFeatures,
-      senses,
-      languages,
-      'READ/WRITE',
-      props.operationResults?.ancestryResults ?? [],
-      [character, setCharacter],
-      openDrawer
-    )
+        props.ancestry,
+        physicalFeatures,
+        senses,
+        languages,
+        'READ/WRITE',
+        props.operationResults?.ancestryResults ?? [],
+        [character, setCharacter],
+        openDrawer
+      )
     : null;
   if (ancestryInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the ancestry overview
@@ -1633,12 +1633,12 @@ function BackgroundAccordionItem(props: {
   let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
   const backgroundInitialOverviewDisplay = props.background
     ? convertBackgroundOperationsIntoUI(
-      props.background,
-      'READ/WRITE',
-      props.operationResults?.backgroundResults ?? [],
-      [character, setCharacter],
-      openDrawer
-    )
+        props.background,
+        'READ/WRITE',
+        props.operationResults?.backgroundResults ?? [],
+        [character, setCharacter],
+        openDrawer
+      )
     : null;
   if (backgroundInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the background overview
@@ -1742,12 +1742,12 @@ function ClassAccordionItem(props: {
     (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [];
   const classInitialOverviewDisplay = props.class_
     ? convertClassOperationsIntoUI(
-      props.class_,
-      'READ/WRITE',
-      (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
-      [character, setCharacter],
-      props.isClass2
-    )
+        props.class_,
+        'READ/WRITE',
+        (props.isClass2 ? props.operationResults?.class2Results : props.operationResults?.classResults) ?? [],
+        [character, setCharacter],
+        props.isClass2
+      )
     : null;
   if (classInitialOverviewDisplay) {
     // Filter out operation results that are already displayed in the class overview

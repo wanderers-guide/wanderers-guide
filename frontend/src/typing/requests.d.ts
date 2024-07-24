@@ -43,6 +43,7 @@ export type RequestType =
   | 'get-content-source-stats'
   | 'find-campaigns'
   | 'create-campaign'
+  | 'reset-campaign-key'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 

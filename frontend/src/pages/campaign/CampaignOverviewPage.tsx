@@ -57,6 +57,7 @@ import {
   IconKey,
   IconHeart,
   IconRefreshDot,
+  IconCopy,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character } from '@typing/content';
@@ -83,6 +84,9 @@ import { toLabel } from '@utils/strings';
 import { getBackgroundImageFromName, getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import NotesPanel from './panels/NotesPanel';
 import InspirationPanel from './panels/InspirationPanel';
+import SettingsPanel from './panels/SettingsPanel';
+import { showNotification } from '@mantine/notifications';
+import { set } from 'node_modules/cypress/types/lodash';
 
 export function Component() {
   setPageTitle(`Campaign`);
@@ -95,7 +99,7 @@ export function Component() {
     campaignId: number;
   };
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-campaign-${campaignId}`],
     queryFn: async () => {
       const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
@@ -125,11 +129,7 @@ export function Component() {
     })();
   }, [debouncedCampaign]);
 
-  const {
-    data: characters,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data: characters, isLoading } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', {
@@ -149,6 +149,9 @@ export function Component() {
   const [hideSections, setHideSections] = useState(false);
 
   //console.log(characters);
+
+  const [revealedKey, setRevealedKey] = useState(false);
+  const [loadingKey, setLoadingKey] = useState(false);
 
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
   const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
@@ -177,14 +180,14 @@ export function Component() {
                           <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
                             <HoverCard.Target>
                               <Title c='gray.3' order={4} className={classes.name}>
-                                {truncate(campaign?.name, {
+                                {truncate(campaign?.name || 'My Campaign', {
                                   length: 30,
                                 })}
                               </Title>
                             </HoverCard.Target>
                             <HoverCard.Dropdown py={5} px={10}>
                               <Text c='gray.3' size='sm'>
-                                {campaign?.name}
+                                {campaign?.name || 'My Campaign'}
                               </Text>
                             </HoverCard.Dropdown>
                           </HoverCard>
@@ -194,15 +197,59 @@ export function Component() {
                           </Badge>
                         </Group>
                         <ScrollArea h={80} mt='xs'>
-                          <Text fz='sm'>{campaign?.description}</Text>
+                          <Text fz='sm'>{campaign?.description || 'A new adventure begins...'}</Text>
                         </ScrollArea>
                       </Card.Section>
 
                       <Group mt='xs'>
-                        <Button radius='md' size='xs' variant='light' color='gray' style={{ flex: 1 }}>
-                          Reveal Join Key
+                        <Button
+                          radius='md'
+                          size='xs'
+                          variant='light'
+                          color='gray'
+                          style={{ flex: 1 }}
+                          onClick={() => {
+                            setTimeout(() => setRevealedKey(false), 5000);
+                            if (!revealedKey) {
+                              setRevealedKey(true);
+                            } else {
+                              // Copy key to clipboard
+                              navigator.clipboard.writeText(campaign?.meta_data?.access?.join_key || '');
+                              showNotification({
+                                title: 'Copied Join Key',
+                                message: `Join key copied to clipboard!`,
+                                icon: <IconCopy size='1.1rem' />,
+                                autoClose: 3000,
+                              });
+                            }
+                          }}
+                          leftSection={revealedKey ? <IconCopy size='0.9rem' /> : <></>}
+                        >
+                          {revealedKey ? campaign?.meta_data?.access?.join_key : 'Reveal Join Key'}
                         </Button>
-                        <ActionIcon variant='light' color='gray' radius='md' size={30}>
+                        <ActionIcon
+                          variant='light'
+                          color='gray'
+                          radius='md'
+                          size={30}
+                          onClick={async () => {
+                            if (!campaign) return;
+
+                            setLoadingKey(true);
+                            const result = await makeRequest('reset-campaign-key', {
+                              id: campaign.id,
+                            });
+                            refetch();
+
+                            // Reveal key
+                            setTimeout(() => {
+                              setLoadingKey(false);
+                              setRevealedKey(true);
+                              setTimeout(() => setRevealedKey(false), 10000);
+                            }, 2000);
+                          }}
+                          loading={loadingKey}
+                        >
                           <IconRefreshDot size='1.1rem' stroke={1.5} />
                         </ActionIcon>
                       </Group>
@@ -535,8 +582,14 @@ function SectionPanels(props: {
               />
             </Tabs.Panel>
 
-            <Tabs.Panel value='notes'>
-              <></>
+            <Tabs.Panel value='settings'>
+              <SettingsPanel
+                players={props.players}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+              />
             </Tabs.Panel>
           </Tabs>
         </BlurBox>

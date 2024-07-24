@@ -333,9 +333,11 @@ interface Campaign {
   custom_operations?: Operation[];
   meta_data?: {
     settings?: {
-      show_party_member_status?: boolean;
+      show_party_member_status?: 'OFF' | 'STATUS' | 'DETAILED';
     };
-    join_key?: string;
+    access?: {
+      join_key?: string;
+    };
     image_url?: string;
     dice?: {
       default_theme?: string;
