@@ -209,7 +209,7 @@ export default function SettingsPanel(props: {
 
   const getOptionsSection = () => (
     <Box h='100%'>
-      <Title order={3} px='xs'>
+      <Title order={4} px='xs'>
         Player Recommendations
       </Title>
       <Paper
@@ -707,7 +707,7 @@ export default function SettingsPanel(props: {
 
   const getSidebarSection = () => (
     <Box h='100%'>
-      <Title order={3} px='xs'>
+      <Title order={4} px='xs'>
         Game Config
       </Title>
       <Paper

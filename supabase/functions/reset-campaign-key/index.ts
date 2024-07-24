@@ -47,7 +47,9 @@ serve(async (req: Request) => {
         access: {
           ...campaigns[0].meta_data?.access,
           join_key:
-            Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8),
+            Math.random().toString(36).substring(2, 8) +
+            '-' +
+            Math.random().toString(36).substring(2, 8),
         },
       },
     };

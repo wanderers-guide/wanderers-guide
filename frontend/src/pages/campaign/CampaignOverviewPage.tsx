@@ -164,7 +164,7 @@ export function Component() {
             <Box>
               <Grid>
                 <Grid.Col span={isTablet ? 12 : 4}>
-                  <BlurBox blur={10} h={255}>
+                  <BlurBox blur={10} h={235}>
                     <Card radius='md' p='md' style={{ backgroundColor: 'transparent' }}>
                       <Card.Section>
                         <Image
@@ -196,7 +196,7 @@ export function Component() {
                             {(characters?.length || 0) + ' players'}
                           </Badge>
                         </Group>
-                        <ScrollArea h={80} mt='xs'>
+                        <ScrollArea h={60} mt='xs'>
                           <Text fz='sm'>{campaign?.description || 'A new adventure begins...'}</Text>
                         </ScrollArea>
                       </Card.Section>
@@ -258,7 +258,7 @@ export function Component() {
                 </Grid.Col>
                 <Grid.Col span={isTablet ? 12 : 8}>
                   <BlurBox blur={10} p='sm'>
-                    <ScrollArea h={230} scrollbars='y'>
+                    <ScrollArea h={210} scrollbars='y'>
                       <Group>
                         {characters?.map((character) => (
                           <BlurBox blur={10} maw={280} py={5} px='sm'>
