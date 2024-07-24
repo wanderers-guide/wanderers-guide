@@ -49,6 +49,7 @@ import {
   IconArchive,
   IconFlag,
   IconX,
+  IconExternalLink,
 } from '@tabler/icons-react';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
@@ -77,6 +78,7 @@ import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
 import { set } from 'node_modules/cypress/types/lodash';
+import { updateSubscriptions } from '@content/homebrew';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -999,17 +1001,102 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           ),
           labels: { confirm: 'Apply Settings', cancel: 'Skip' },
           onCancel: () => {},
-          onConfirm: () => {
-            setCharacter((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                content_sources: campaign?.recommended_content_sources,
-                variants: campaign?.recommended_variants,
-                options: campaign?.recommended_options,
-                custom_operations: campaign?.custom_operations,
-              };
+          onConfirm: async () => {
+            // Find the missing content sources that need to be subscribed to
+            const homebrewSources = campaign?.recommended_content_sources?.enabled?.filter((id: number) => {
+              return !books.find((book) => book.id === id);
             });
+            const subscribedSources = user?.subscribed_content_sources?.map((src) => src.source_id) ?? [];
+
+            const missingSourceIds = homebrewSources?.filter((id: number) => !subscribedSources.includes(id));
+            const missingSources =
+              missingSourceIds && missingSourceIds.length > 0
+                ? await fetchContentSources({ homebrew: true, ids: missingSourceIds })
+                : [];
+
+            const subscribeToMissingSources = async () => {
+              if (!user) return;
+              for (const source of missingSources) {
+                const subscriptions = await updateSubscriptions(user, source, true);
+                setUser({ ...user, subscribed_content_sources: subscriptions });
+                await makeRequest('update-user', {
+                  subscribed_content_sources: subscriptions ?? [],
+                });
+              }
+            };
+
+            const applySettings = async () => {
+              setCharacter((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  content_sources: campaign?.recommended_content_sources,
+                  variants: campaign?.recommended_variants,
+                  options: campaign?.recommended_options,
+                  custom_operations: campaign?.custom_operations,
+                };
+              });
+            };
+
+            if (missingSources.length > 0) {
+              modals.openConfirmModal({
+                id: 'campaign-default-homebrew',
+                title: <Title order={4}>Campaign Default Homebrew</Title>,
+                children: (
+                  <Box>
+                    <Text size='sm'>
+                      This campaign also has some default homebrew enabled. If you accept, you’ll automatically be
+                      subscribed to each of these bundles which you can use in your current or future characters:
+                    </Text>
+                    <List>
+                      {missingSources.map((source, index) => (
+                        <List.Item key={index}>
+                          <Group gap={3}>
+                            <Text size='sm'>{source.name}</Text>
+                            <HoverCard shadow='md' position='top' openDelay={500} withinPortal withArrow>
+                              <HoverCard.Target>
+                                <ActionIcon
+                                  mr={40}
+                                  color='gray.9'
+                                  variant='transparent'
+                                  size='xs'
+                                  radius='xl'
+                                  aria-label='Source Info'
+                                  onClick={() => {
+                                    openDrawer({
+                                      type: 'content-source',
+                                      data: {
+                                        id: source.id,
+                                        showOperations: true,
+                                      },
+                                    });
+                                  }}
+                                >
+                                  <IconExternalLink size='0.6rem' stroke={1.5} />
+                                </ActionIcon>
+                              </HoverCard.Target>
+                              <HoverCard.Dropdown px={10} py={5}>
+                                <Text size='sm'>Open Source Info</Text>
+                              </HoverCard.Dropdown>
+                            </HoverCard>
+                          </Group>
+                        </List.Item>
+                      ))}
+                    </List>
+                  </Box>
+                ),
+                labels: { confirm: 'Accept', cancel: 'Cancel' },
+                onCancel: () => {},
+                onConfirm: async () => {
+                  // Subscribe to missing sources then apply settings
+                  // (so that the sources are available before we add them)
+                  await subscribeToMissingSources();
+                  await applySettings();
+                },
+              });
+            } else {
+              await applySettings();
+            }
           },
         });
       } else {
