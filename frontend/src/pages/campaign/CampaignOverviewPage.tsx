@@ -49,6 +49,8 @@ import NotesPanel from './panels/NotesPanel';
 import InspirationPanel from './panels/InspirationPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import { showNotification } from '@mantine/notifications';
+import EncountersPanel from './panels/EncountersPanel';
+import ShopsPanel from './panels/ShopsPanel';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -65,6 +67,12 @@ export function Component() {
         id: campaignId,
       });
       const camp = campaigns?.length ? campaigns[0] : null;
+
+      if (!camp) {
+        window.location.href = '/campaigns';
+        return null;
+      }
+
       updateCampaign(camp);
       return camp;
     },
@@ -83,6 +91,8 @@ export function Component() {
 
   useEffect(() => {
     (async () => {
+      if (!debouncedCampaign) return;
+      // Update the campaign
       await makeRequest('create-campaign', {
         ...debouncedCampaign,
       });
@@ -344,15 +354,52 @@ function SectionPanels(props: {
       <Box>
         {props.hideSections && (
           <BlurBox blur={10} p='sm' mih={props.panelHeight}>
-            {activeTab === 'notes' && <></>}
+            {activeTab === 'notes' && (
+              <NotesPanel
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+              />
+            )}
 
-            {activeTab === 'encounters' && <></>}
+            {activeTab === 'encounters' && (
+              <EncountersPanel
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+              />
+            )}
 
-            {activeTab === 'shops' && <></>}
+            {activeTab === 'shops' && (
+              <ShopsPanel
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+              />
+            )}
 
-            {activeTab === 'inspiration' && <></>}
+            {activeTab === 'inspiration' && (
+              <InspirationPanel
+                players={props.players}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+              />
+            )}
 
-            {activeTab === 'settings' && <></>}
+            {activeTab === 'settings' && (
+              <SettingsPanel
+                players={props.players}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+              />
+            )}
           </BlurBox>
         )}
 
@@ -524,11 +571,21 @@ function SectionPanels(props: {
             </Tabs.Panel>
 
             <Tabs.Panel value='encounters'>
-              <></>
+              <EncountersPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='shops'>
-              <></>
+              <ShopsPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='inspiration'>

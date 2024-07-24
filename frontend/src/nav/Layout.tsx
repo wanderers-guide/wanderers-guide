@@ -235,6 +235,23 @@ export default function Layout(props: { children: React.ReactNode }) {
                       </Menu.Item>
                       <Menu.Item
                         leftSection={
+                          <IconFlag
+                            style={{ width: rem(16), height: rem(16) }}
+                            color={theme.colors.violet[4]}
+                            stroke={1.5}
+                          />
+                        }
+                        component='a'
+                        href='/campaigns'
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate('/campaigns');
+                        }}
+                      >
+                        Campaigns
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={
                           <IconSwords
                             style={{ width: rem(16), height: rem(16) }}
                             color={theme.colors.teal[6]}
@@ -249,23 +266,6 @@ export default function Layout(props: { children: React.ReactNode }) {
                         }}
                       >
                         Encounters
-                      </Menu.Item>
-                      <Menu.Item
-                        leftSection={
-                          <IconFlag
-                            style={{ width: rem(16), height: rem(16) }}
-                            color={theme.colors.violet[4]}
-                            stroke={1.5}
-                          />
-                        }
-                        component='a'
-                        href='/campaigns'
-                        onClick={(e) => {
-                          e.preventDefault();
-                          displayComingSoon();
-                        }}
-                      >
-                        Campaigns
                       </Menu.Item>
 
                       {user?.is_admin && (
@@ -359,6 +359,18 @@ export default function Layout(props: { children: React.ReactNode }) {
             <UnstyledButton
               className={classes.control}
               component='a'
+              href='/campaigns'
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/campaigns');
+                close();
+              }}
+            >
+              Campaigns
+            </UnstyledButton>
+            <UnstyledButton
+              className={classes.control}
+              component='a'
               href='/encounters'
               onClick={(e) => {
                 e.preventDefault();
@@ -367,18 +379,6 @@ export default function Layout(props: { children: React.ReactNode }) {
               }}
             >
               Encounters
-            </UnstyledButton>
-            <UnstyledButton
-              className={classes.control}
-              component='a'
-              href='/campaigns'
-              onClick={(e) => {
-                e.preventDefault();
-                displayComingSoon();
-                close();
-              }}
-            >
-              Campaigns
             </UnstyledButton>
 
             {user?.is_admin && (
