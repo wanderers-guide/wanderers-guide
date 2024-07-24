@@ -210,7 +210,7 @@ export default function SettingsPanel(props: {
   const getOptionsSection = () => (
     <Box h='100%'>
       <Title order={4} px='xs'>
-        Player Recommendations
+        Player Default Settings
       </Title>
       <Paper
         shadow='sm'

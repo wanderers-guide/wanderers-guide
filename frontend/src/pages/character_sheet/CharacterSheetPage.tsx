@@ -78,6 +78,7 @@ import { saveCalculatedStats } from '@variables/calculated-stats';
 import { convertToSetEntity } from '@utils/type-fixing';
 import ModeDrawer from '@common/modes/ModesDrawer';
 import ModesDrawer from '@common/modes/ModesDrawer';
+import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -332,6 +333,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
   const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
 
+  const [openedCampaign, setOpenedCampaign] = useState(false);
   const [openedModes, setOpenedModes] = useState(false);
 
   const modes = useMemo(() => {
@@ -407,7 +409,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               radius={100}
               aria-label='Campaigns View'
               onClick={() => {
-                displayComingSoon();
+                setOpenedCampaign((prev) => !prev);
               }}
             >
               <IconFlag size='1.7rem' stroke={1.5} />
@@ -446,6 +448,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         </Suspense>
       )}
       {openedModes && <ModesDrawer content={props.content} opened={true} onClose={() => setOpenedModes(false)} />}
+      {openedCampaign && character?.campaign_id && (
+        <CampaignDrawer campaignId={character?.campaign_id} opened={true} onClose={() => setOpenedCampaign(false)} />
+      )}
     </Center>
   );
 }

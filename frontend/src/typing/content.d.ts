@@ -393,7 +393,7 @@ interface Creature extends LivingEntity {
 interface Character extends LivingEntity {
   id: number;
   created_at: string;
-  campaign_id?: number;
+  campaign_id?: number | null;
   user_id: string;
   hero_points: number;
   notes?: {

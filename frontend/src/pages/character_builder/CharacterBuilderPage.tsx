@@ -126,7 +126,7 @@ export function Component() {
       variants?: any;
       options?: any;
       custom_operations?: any;
-      campaign_id?: number;
+      campaign_id?: number | null;
     }) => {
       const resData = await makeRequest('update-character', {
         id: characterId,

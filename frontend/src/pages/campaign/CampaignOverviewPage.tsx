@@ -1,17 +1,14 @@
-import { sessionState } from '@atoms/supabaseAtoms';
 import BlurBox from '@common/BlurBox';
-import { CharacterDetailedInfo, CharacterInfo } from '@common/CharacterInfo';
+import { CharacterDetailedInfo } from '@common/CharacterInfo';
 import DiceRoller from '@common/dice/DiceRoller';
 import {
   ActionIcon,
-  Avatar,
   Badge,
   Box,
   Center,
   Grid,
   Group,
   HoverCard,
-  RingProgress,
   SimpleGrid,
   Stack,
   Title,
@@ -19,79 +16,41 @@ import {
   useMantineTheme,
   rem,
   Button,
-  Menu,
   Popover,
   Tabs,
   ScrollArea,
-  TextInput,
   Card,
   Image,
 } from '@mantine/core';
-import { useDebouncedState, useDebouncedValue, useElementSize, useHover, useMediaQuery } from '@mantine/hooks';
-import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
-import AttributeSection from '@pages/character_sheet/sections/AttributeSection';
-import ConditionSection from '@pages/character_sheet/sections/ConditionSection';
-import HealthSection from '@pages/character_sheet/sections/HealthSection';
-import SpeedSection from '@pages/character_sheet/sections/SpeedSection';
+import { useDebouncedValue, useElementSize, useHover, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import {
-  IconTree,
-  IconWindow,
-  IconVocabulary,
-  IconBackpack,
-  IconBadgesFilled,
   IconBuildingStore,
-  IconCaretLeftRight,
-  IconDots,
-  IconFlare,
   IconLayoutGrid,
-  IconLayoutList,
-  IconListDetails,
   IconNotebook,
-  IconNotes,
-  IconPaw,
   IconSettings,
   IconSparkles,
   IconSwords,
   IconX,
-  IconKey,
-  IconHeart,
   IconRefreshDot,
   IconCopy,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character } from '@typing/content';
-import { interpolateHealth } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
-import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
-import { convertToSetEntity } from '@utils/type-fixing';
+import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';
-import { props } from 'node_modules/cypress/types/bluebird';
 import { Suspense, useEffect, useState } from 'react';
 import { GiRollingDices } from 'react-icons/gi';
 import { useLoaderData } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
 import classes from '@css/UserInfoIcons.module.css';
-import RichText from '@common/RichText';
-import CompanionsPanel from '@pages/character_sheet/panels/CompanionsPanel';
-import DetailsPanel from '@pages/character_sheet/panels/DetailsPanel';
-import ExtrasPanel from '@pages/character_sheet/panels/ExtrasPanel';
-import FeatsFeaturesPanel from '@pages/character_sheet/panels/FeatsFeaturesPanel';
-import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
-import SkillsActionsPanel from '@pages/character_sheet/panels/SkillsActionsPanel';
-import SpellsPanel from '@pages/character_sheet/panels/SpellsPanel';
-import { toLabel } from '@utils/strings';
-import { getBackgroundImageFromName, getDefaultCampaignBackgroundImage } from '@utils/background-images';
+import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import NotesPanel from './panels/NotesPanel';
 import InspirationPanel from './panels/InspirationPanel';
 import SettingsPanel from './panels/SettingsPanel';
 import { showNotification } from '@mantine/notifications';
-import { set } from 'node_modules/cypress/types/lodash';
 
 export function Component() {
-  setPageTitle(`Campaign`);
-  const session = useRecoilValue(sessionState);
-
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
 
@@ -111,6 +70,7 @@ export function Component() {
     },
     refetchOnWindowFocus: false,
   });
+  setPageTitle(data?.name ?? `Campaign`);
 
   const [_campaign, _setCampaign] = useState<Campaign | null>(null);
   const [debouncedCampaign] = useDebouncedValue(_campaign, 200);
@@ -130,13 +90,12 @@ export function Component() {
   }, [debouncedCampaign]);
 
   const { data: characters, isLoading } = useQuery({
-    queryKey: [`find-character`],
+    queryKey: [`find-campaign-characters`],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', {
-        user_id: session?.user.id,
+        campaign_id: campaignId,
       });
     },
-    enabled: !!session,
     refetchInterval: 400,
   });
 

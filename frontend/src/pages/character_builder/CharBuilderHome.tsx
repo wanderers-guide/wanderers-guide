@@ -1124,7 +1124,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       if (!prev) return prev;
       return {
         ...prev,
-        campaign_id: -1,
+        campaign_id: null,
       };
     });
 
