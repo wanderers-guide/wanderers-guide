@@ -802,8 +802,12 @@ export default function SettingsPanel(props: {
                       children: <Text size='sm'>{`Are you sure you want to remove this player?`}</Text>,
                       labels: { confirm: 'Yep, bye 👋', cancel: 'Cancel' },
                       onCancel: () => {},
-                      onConfirm: () => {
-                        // TODO: remove player
+                      onConfirm: async () => {
+                        await makeRequest('update-character', {
+                          id: player.id,
+                          campaign_id: null,
+                        });
+                        window.location.reload();
                       },
                     });
                   }}

@@ -48,7 +48,7 @@ export function Component() {
   } = useQuery({
     queryKey: [`find-campaigns`],
     queryFn: async () => {
-      return await makeRequest<Campaign[]>('find-campaigns', {
+      return await makeRequest<Campaign[]>('find-campaign', {
         user_id: session?.user.id,
       });
     },

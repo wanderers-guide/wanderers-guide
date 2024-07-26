@@ -44,7 +44,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
   const { data: campaign } = useQuery({
     queryKey: [`find-campaign-${props.campaignId}`],
     queryFn: async () => {
-      const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
+      const campaigns = await makeRequest<Campaign[]>('find-campaign', {
         id: props.campaignId,
       });
       const camp = campaigns?.length ? campaigns[0] : null;
@@ -143,7 +143,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
             </Paper>
 
             {campaign?.meta_data?.settings?.show_party_member_status !== 'OFF' && (
-              <ScrollArea mt={15} h={400}>
+              <ScrollArea mt={15} h={500}>
                 {characters?.map((character, index) => (
                   <Box key={index}>
                     {campaign?.meta_data?.settings?.show_party_member_status === 'STATUS'

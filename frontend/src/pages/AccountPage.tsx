@@ -42,7 +42,7 @@ import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
 import { IconAdjustments, IconBrandPatreon, IconReload, IconUpload } from '@tabler/icons-react';
-import { Character, PublicUser } from '@typing/content';
+import { Campaign, Character, PublicUser } from '@typing/content';
 import { useEffect, useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
@@ -55,6 +55,7 @@ import { modals } from '@mantine/modals';
 import { hasPatreonAccess } from '@utils/patreon';
 import { userState } from '@atoms/userAtoms';
 import { findApprovedContentUpdates } from '@content/content-update';
+import { resetContentStore, fetchContentSources } from '@content/content-store';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -111,6 +112,27 @@ function ProfileSection() {
       return await makeRequest<Character[]>('find-character', {
         user_id: session?.user.id,
       });
+    },
+    enabled: !!session,
+  });
+
+  const { data: campaigns } = useQuery({
+    queryKey: [`find-campaigns`],
+    queryFn: async () => {
+      return await makeRequest<Campaign[]>('find-campaign', {
+        user_id: session?.user.id,
+      });
+    },
+    enabled: !!session,
+  });
+
+  const { data: bundles } = useQuery({
+    queryKey: [`get-homebrew-content-sources-creations`],
+    queryFn: async () => {
+      resetContentStore(true);
+      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
+        (c) => c.user_id && c.user_id === session?.user.id
+      );
     },
     enabled: !!session,
   });
@@ -528,7 +550,7 @@ function ProfileSection() {
               </Box>
               <Box>
                 <Text ta='center' fz='lg' fw={500}>
-                  0
+                  {bundles ? bundles.length : '...'}
                 </Text>
                 <Text ta='center' fz='sm' c='dimmed' lh={1}>
                   Bundles
@@ -536,7 +558,7 @@ function ProfileSection() {
               </Box>
               <Box>
                 <Text ta='center' fz='lg' fw={500}>
-                  0
+                  {campaigns ? campaigns.length : '...'}
                 </Text>
                 <Text ta='center' fz='sm' c='dimmed' lh={1}>
                   Campaigns

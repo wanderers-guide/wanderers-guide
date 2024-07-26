@@ -51,10 +51,13 @@ import SettingsPanel from './panels/SettingsPanel';
 import { showNotification } from '@mantine/notifications';
 import EncountersPanel from './panels/EncountersPanel';
 import ShopsPanel from './panels/ShopsPanel';
+import { sessionState } from '@atoms/supabaseAtoms';
+import { useRecoilValue } from 'recoil';
 
 export function Component() {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
+  const session = useRecoilValue(sessionState);
 
   const { campaignId } = useLoaderData() as {
     campaignId: number;
@@ -63,12 +66,13 @@ export function Component() {
   const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-campaign-${campaignId}`],
     queryFn: async () => {
-      const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
+      const campaigns = await makeRequest<Campaign[]>('find-campaign', {
+        user_id: session?.user.id,
         id: campaignId,
       });
       const camp = campaigns?.length ? campaigns[0] : null;
 
-      if (!camp) {
+      if (!camp || camp?.user_id !== session?.user.id) {
         window.location.href = '/campaigns';
         return null;
       }
@@ -239,6 +243,13 @@ export function Component() {
                             />
                           </BlurBox>
                         ))}
+                        {characters?.length === 0 && (
+                          <Center h={150} w='100%'>
+                            <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                              No players found, invite some using your join key!
+                            </Text>
+                          </Center>
+                        )}
                       </Group>
                     </ScrollArea>
                   </BlurBox>
