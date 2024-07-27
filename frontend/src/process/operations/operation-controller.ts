@@ -96,7 +96,6 @@ export async function executeCharacterOperations(
   setVariable('CHARACTER', 'LEVEL', character.level);
 
   try {
-    console.log(JSON.parse(localStorage.getItem(`active-modes-${character.id}`) || '[]'));
     setVariable(
       'CHARACTER',
       'ACTIVE_MODES',
@@ -454,10 +453,6 @@ export async function executeCharacterOperations(
 
     let modeResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
-    console.log(
-      activeModes,
-      modes.filter((m) => activeModes.includes(labelToVariable(m.name)))
-    );
     for (const mode of modes.filter((m) => activeModes.includes(labelToVariable(m.name)))) {
       const results = await executeOperations(
         'CHARACTER',
@@ -648,17 +643,21 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
         const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
         if (duplicate) {
           v.baseResults = _.mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
-            // Only update "null" or "undefined" values
+            // Update is value is "null" or "undefined"
             if (objValue === null || objValue === undefined) {
               return srcValue;
             }
-          });
 
-          /* Old way of merging, but doesn't work with nested arrays
-          // 'Duplicate', v.baseSource?.id, duplicate.baseResults);
-          v.baseResults.unshift(...duplicate.baseResults);
-          v.baseResults = _.uniq(v.baseResults);
-          */
+            // If value array, traverse and update "null" or "undefined" values
+            if (Array.isArray(objValue) && Array.isArray(srcValue) && srcValue.length === objValue.length) {
+              for (let i = 0; i < objValue.length; i++) {
+                if (objValue[i] === null || objValue[i] === undefined) {
+                  objValue[i] = srcValue[i];
+                }
+              }
+              return objValue;
+            }
+          });
         }
         if (!newValue.find((v2) => v2.baseSource?.id === v.baseSource?.id)) {
           newValue.push(v);

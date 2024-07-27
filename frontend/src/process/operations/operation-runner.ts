@@ -135,7 +135,7 @@ export async function runOperations(
     if (options?.doConditionals && operation.type === 'conditional') {
       return await runConditional(varId, selectionTrack, operation, options, sourceLabel);
     } else if (operation.type === 'adjValue') {
-      return await runAdjValue(varId, operation, selectionTrack, sourceLabel);
+      return await runAdjValue(varId, operation, selectionTrack, options, sourceLabel);
     } else if (operation.type === 'setValue') {
       return await runSetValue(varId, operation, sourceLabel);
     } else if (operation.type === 'addBonusToValue') {
@@ -416,6 +416,7 @@ async function runAdjValue(
   varId: StoreID,
   operation: OperationAdjValue,
   selectionTrack: SelectionTrack,
+  options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
   const isProficient = isProficientInAdjValue(varId, operation);
@@ -429,7 +430,7 @@ async function runAdjValue(
         type: 'select',
         id: operation.id,
         data: {
-          title: 'Select a Skill',
+          title: 'Select a Skill to be Trained',
           modeType: 'FILTERED',
           optionType: 'ADJ_VALUE',
           optionsPredefined: [],
@@ -440,7 +441,9 @@ async function runAdjValue(
             value: operation.data.value,
           },
         },
-      }
+      },
+      options,
+      sourceLabel
     );
   }
   // Not a skill adjustment nor a character is proficient in the skill

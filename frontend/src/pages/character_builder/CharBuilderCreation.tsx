@@ -1982,6 +1982,8 @@ function CustomAccordionItem(props: {
 
   const selections = props.operationResults.characterResults.filter((result) => hasOperationSelection(result));
 
+  console.log(props.operationResults.characterResults);
+
   return (
     <Accordion.Item
       value='custom'
