@@ -3,7 +3,7 @@ import { getConditionByName } from '@conditions/condition-handler';
 import { fetchContentAll, getCachedSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
-import { Character, Inventory, InventoryItem, Item } from '@typing/content';
+import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
@@ -367,6 +367,52 @@ export function getBestShield(id: StoreID, inv?: Inventory) {
     }
   }
   return bestShield;
+}
+
+export function getItemOperations(item: Item, content: ContentPackage) {
+  let baseOps = item.operations ?? [];
+
+  if (isItemWithRunes(item)) {
+    if (isItemArmor(item)) {
+      // Armor potency // Hardcoded names
+      const potency = item.meta_data?.runes?.potency;
+      if (potency) {
+        const potencyRune = content.items.find((i) => i.name === `Armor Potency (+${potency})`);
+        if (potencyRune) {
+          baseOps.push(...getItemOperations(potencyRune, content));
+        }
+      }
+
+      // Armor resilient // Hardcoded names
+      const resilient = item.meta_data?.runes?.resilient;
+      if (resilient) {
+        let resilientItemName = '';
+        if (resilient === 1) {
+          resilientItemName = 'Resilient';
+        } else if (resilient === 2) {
+          resilientItemName = 'Resilient (Greater)';
+        } else if (resilient === 3) {
+          resilientItemName = 'Resilient (Major)';
+        }
+
+        const resilientRune = content.items.find((i) => i.name === resilientItemName);
+        if (resilientRune) {
+          baseOps.push(...getItemOperations(resilientRune, content));
+        }
+      }
+    }
+
+    if (item.meta_data?.runes?.property) {
+      for (const property of item.meta_data.runes.property) {
+        const propertyRune = content.items.find((i) => i.id === property.id);
+        if (propertyRune) {
+          baseOps.push(...getItemOperations(propertyRune, content));
+        }
+      }
+    }
+  }
+
+  return baseOps;
 }
 
 /**

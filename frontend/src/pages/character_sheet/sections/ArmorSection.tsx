@@ -42,23 +42,6 @@ export default function ArmorSection(props: {
   const bestArmor = getBestArmor(props.id, props.inventory);
   const bestShield = getBestShield(props.id, props.inventory);
 
-  if (bestArmor?.item.meta_data?.runes?.resilient) {
-    const resilientRune = bestArmor?.item.meta_data?.runes?.resilient;
-    let resilientLabel = '';
-    if (resilientRune === 1) {
-      resilientLabel = 'Resilient';
-    } else if (resilientRune === 2) {
-      resilientLabel = 'Greater Resilient';
-    } else if (resilientRune === 3) {
-      resilientLabel = 'Major Resilient';
-    }
-
-    addVariableBonus(props.id, 'AC_BONUS', resilientRune, 'item', '', resilientLabel + ' Rune');
-    for (const save of getAllSaveVariables(props.id)) {
-      addVariableBonus(props.id, save.name, resilientRune, 'item', '', resilientLabel + ' Rune');
-    }
-  }
-
   return (
     <BlurBox blur={10}>
       <Box

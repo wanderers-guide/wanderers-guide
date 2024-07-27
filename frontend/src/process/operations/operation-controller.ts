@@ -29,7 +29,7 @@ import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
-import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
+import { getFlatInvItems, getItemOperations, isItemEquippable, isItemInvestable } from '@items/inv-utils';
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 
@@ -439,7 +439,7 @@ export async function executeCharacterOperations(
       const results = await executeOperations(
         'CHARACTER',
         `item-${invItem.item.id}`,
-        invItem.item.operations ?? [],
+        getItemOperations(invItem.item, content),
         options,
         invItem.item.name
       );
@@ -578,7 +578,7 @@ export async function executeCreatureOperations(
       const results = await executeOperations(
         id,
         `item-${invItem.item.id}`,
-        invItem.item.operations ?? [],
+        getItemOperations(invItem.item, content),
         options,
         invItem.item.name
       );
