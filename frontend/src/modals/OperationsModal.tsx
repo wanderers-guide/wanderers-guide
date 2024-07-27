@@ -18,7 +18,8 @@ import { OperationSection } from '@common/operations/Operations';
 import { DISCORD_URL } from '@constants/data';
 import _ from 'lodash-es';
 
-export default function CustomOperationsModal(props: {
+export default function OperationsModal(props: {
+  title: string;
   opened: boolean;
   onClose: () => void;
   operations: Operation[];
@@ -30,7 +31,7 @@ export default function CustomOperationsModal(props: {
       onClose={() => {
         props.onClose();
       }}
-      title={<Title order={3}>Custom Operations</Title>}
+      title={<Title order={3}>{props.title}</Title>}
       styles={{
         body: {
           paddingRight: 2,

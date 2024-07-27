@@ -108,6 +108,7 @@ import { modals } from '@mantine/modals';
 import useRefresh from '@utils/use-refresh';
 import { getPublicUser } from '@auth/user-manager';
 import { defineDefaultSourcesForSource } from '@content/homebrew';
+import OperationsModal from './OperationsModal';
 
 export function CreateContentSourceOnlyModal(props: {
   opened: boolean;
@@ -152,7 +153,7 @@ export function ContentSourceEditor(props: {
 }) {
   const [displayDescription, refreshDisplayDescription] = useRefresh();
   const [description, setDescription] = useState<JSONContent>();
-  const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
+  const [openedOperations, setOpenedOperations] = useState(false);
 
   const theme = useMantineTheme();
 
@@ -268,43 +269,16 @@ export function ContentSourceEditor(props: {
               </Group>
             }
             labelPosition='left'
-            onClick={toggleOperations}
+            onClick={() => setOpenedOperations((o) => !o)}
           />
-          <Collapse in={openedOperations}>
-            <Stack gap={10}>
-              <OperationSection
-                title={
-                  <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
-                    <HoverCard.Target>
-                      <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
-                        How to Use Operations
-                      </Anchor>
-                    </HoverCard.Target>
-                    <HoverCard.Dropdown>
-                      <Text size='sm'>
-                        Operations are used to make changes to a character. They can give feats, spells, and more, as
-                        well as change stats, skills, and other values.
-                      </Text>
-                      <Text size='sm'>
-                        Use conditionals to apply operations only when certain conditions are met and selections
-                        whenever a choice needs to be made.
-                      </Text>
-                      <Text size='xs' fs='italic'>
-                        For more help, see{' '}
-                        <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
-                          our Discord server
-                        </Anchor>
-                        .
-                      </Text>
-                    </HoverCard.Dropdown>
-                  </HoverCard>
-                }
-                operations={form.values.operations}
-                onChange={(operations) => form.setValues({ ...form.values, operations })}
-              />
-              <Divider />
-            </Stack>
-          </Collapse>
+
+          <OperationsModal
+            title='Content Source Operations'
+            opened={openedOperations}
+            onClose={() => setOpenedOperations(false)}
+            operations={form.values.operations ?? []}
+            onChange={(operations) => form.setValues({ ...form.values, operations })}
+          />
 
           <Group wrap='nowrap' justify='space-between' h={40}>
             <Switch

@@ -68,7 +68,7 @@ import {
 import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
-import CustomOperationsModal from '@modals/CustomOperationsModal';
+import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
 import RichText from '@common/RichText';
@@ -758,7 +758,8 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                         ? `(${character.custom_operations.length})`
                         : ''}
                     </BlurButton>
-                    <CustomOperationsModal
+                    <OperationsModal
+                      title='Custom Operations'
                       opened={openedOperations}
                       onClose={() => setOpenedOperations(false)}
                       operations={_.cloneDeep(character.custom_operations ?? [])}
