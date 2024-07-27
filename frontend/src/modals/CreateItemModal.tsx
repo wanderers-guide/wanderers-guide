@@ -393,7 +393,7 @@ export function CreateItemModal(props: {
                 ]}
                 {...form.getInputProps('size')}
               />
-              <NumberInput label='Bulk' placeholder='Bulk' min={0} decimalScale={1} {...form.getInputProps('bulk')} />
+              <NumberInput label='Bulk' placeholder='Bulk' min={0} decimalScale={2} {...form.getInputProps('bulk')} />
             </Group>
             <Group wrap='nowrap'>
               <Select
