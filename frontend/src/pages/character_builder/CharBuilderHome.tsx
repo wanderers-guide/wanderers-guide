@@ -944,7 +944,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       // eslint-disable-next-line
       const [_key, { campaign_id }] = queryKey;
 
-      const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
+      const campaigns = await makeRequest<Campaign[]>('find-campaign', {
         id: campaign_id,
       });
       return campaigns?.length ? campaigns[0] : null;
@@ -955,7 +955,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
   const joinCampaign = async () => {
     // TODO: Secure this joining process
-    const campaigns = await makeRequest<Campaign[]>('find-campaigns', {
+    const campaigns = await makeRequest<Campaign[]>('find-campaign', {
       join_key: campaignKey,
     });
     const campaign = campaigns?.length ? campaigns[0] : null;
