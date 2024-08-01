@@ -1,9 +1,10 @@
-import { Accordion, Badge, Divider, Group, Stack, Text } from "@mantine/core";
+import { Accordion, Badge, Divider, Group, Paper, Stack, Text } from "@mantine/core";
+import { getSpellStats } from "@spells/spell-handler";
 import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from "@typing/content";
-import { rankNumber } from "@utils/numbers";
+import { rankNumber, sign } from "@utils/numbers";
 import { Dictionary } from "node_modules/cypress/types/lodash";
 import { SetterOrUpdater } from "recoil";
-import {  SpellSlotSelect } from "../SpellsPanel";
+import { SpellSlotSelect } from "../SpellsPanel";
 import SpellListEntrySection from "./SpellListEntrySection";
 
 export default function InnateSpellsList(props: {
@@ -50,6 +51,7 @@ export default function InnateSpellsList(props: {
   ) {
     return null;
   }
+
 
   return (
     <Accordion.Item value={props.index}>

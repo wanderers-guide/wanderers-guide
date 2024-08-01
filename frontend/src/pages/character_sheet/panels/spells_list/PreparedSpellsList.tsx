@@ -1,7 +1,8 @@
 import BlurButton from "@common/BlurButton";
-import { Accordion, Badge, Box, Divider, Group, Stack, Text } from "@mantine/core";
+import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from "@mantine/core";
+import { getSpellStats } from "@spells/spell-handler";
 import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from "@typing/content";
-import { rankNumber } from "@utils/numbers";
+import { rankNumber, sign } from "@utils/numbers";
 import { toLabel } from "@utils/strings";
 import { Dictionary } from "node_modules/cypress/types/lodash";
 import SpellListEntrySection from "./SpellListEntrySection";
@@ -48,6 +49,8 @@ export default function PreparedSpellsList(props: {
     return null;
   }
 
+  const spellStats = getSpellStats('CHARACTER', null, props.source!.tradition, props.source!.attribute);
+
   return (
     <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
       <Accordion.Control>
@@ -55,6 +58,7 @@ export default function PreparedSpellsList(props: {
           <Text c='gray.5' fw={700} fz='sm'>
             {toLabel(props.source!.name)} Spells
           </Text>
+
           <Box mr={10}>
             <BlurButton
               size='xs'
@@ -103,6 +107,29 @@ export default function PreparedSpellsList(props: {
               },
             }}
           >
+            <Group wrap='nowrap' mb="sm">
+              <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+                <Group wrap='nowrap' gap={10}>
+                  <Text fw={600} c='gray.5' fz='sm' span>
+                    Spell Attack
+                  </Text>
+                  <Text c='gray.5' fz='sm' span>
+                    {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
+                    {sign(spellStats.spell_attack.total[2])}
+                  </Text>
+                </Group>
+              </Paper>
+              <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+                <Group wrap='nowrap' gap={10}>
+                  <Text fw={600} c='gray.5' fz='sm' span>
+                    Spell DC
+                  </Text>
+                  <Text c='gray.5' fz='sm' span>
+                    {spellStats.spell_dc.total}
+                  </Text>
+                </Group>
+              </Paper>
+            </Group>
             {slots &&
               Object.keys(slots)
                 .filter((rank) =>
