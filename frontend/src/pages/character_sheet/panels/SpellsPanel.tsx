@@ -8,6 +8,7 @@ import {
   Accordion,
   ActionIcon,
   Box,
+  CloseButton,
   Group,
   HoverCard,
   ScrollArea,
@@ -87,7 +88,6 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
   const allSpells = searchSpells.filter((spell) => spell.cast === actionTypeFilter || actionTypeFilter === 'ALL');
   const hasFilters = searchQuery.trim().length > 0 || actionTypeFilter !== 'ALL';
 
-
   return (
     <Box h='100%'>
       <Stack gap={10}>
@@ -96,7 +96,15 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search spells`}
+            value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
+            rightSection={
+              <CloseButton
+                aria-label="Clear input"
+                onClick={() => setSearchQuery('')}
+                style={{ display: searchQuery.trim() ? undefined : 'none' }}
+              />
+            }
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
