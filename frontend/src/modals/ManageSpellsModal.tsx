@@ -1,36 +1,36 @@
 import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
 import { SelectContentButton, SpellSelectionOption, selectContent } from '@common/select/SelectContent';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { collectEntitySpellcasting } from '@content/collect-content';
+import { isSpellVisible } from '@content/content-hidden';
 import { fetchContentAll } from '@content/content-store';
 import {
   Box,
   Button,
   Divider,
+  Grid,
   Group,
+  LoadingOverlay,
   Modal,
   ScrollArea,
   Stack,
   Text,
-  Title,
   TextInput,
+  Title,
   useMantineTheme,
-  Grid,
-  LoadingOverlay,
 } from '@mantine/core';
+import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
+import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Spell, SpellSlot } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
+import useRefresh from '@utils/use-refresh';
+import * as JsSearch from 'js-search';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
-import { IconPlus, IconSearch } from '@tabler/icons-react';
-import { drawerState } from '@atoms/navAtoms';
-import * as JsSearch from 'js-search';
-import useRefresh from '@utils/use-refresh';
-import { isSpellVisible } from '@content/content-hidden';
-import { toLabel } from '@utils/strings';
 
 export default function ManageSpellsModal(props: {
   opened: boolean;
@@ -168,10 +168,22 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
   const [character, setCharacter] = useRecoilState(characterState);
   const [displaySlots, refreshSlots] = useRefresh();
 
+  props.slots;
+
+  const { slots } = props;
+  // Filter the slots to only show the slots for the source
+  const slotsForSource = Object.keys(slots).reduce((acc, key) => {
+    const slots = props.slots[key].filter((slot) => slot.source === props.source);
+    if (slots.length > 0) {
+      acc[key] = slots;
+    }
+    return acc;
+  }, {} as Record<string, SpellSlot[]>);
+
   return (
     <ScrollArea pr={14} h={`calc(min(80dvh, ${EDIT_MODAL_HEIGHT}px))`} scrollbars='y'>
       <Stack gap={10}>
-        {Object.keys(props.slots).map((rank, index) => (
+        {Object.keys(slotsForSource).map((rank, index) => (
           <Box key={index} data-wg-name={`rank-${rank}`}>
             <Text size='md' pl={5}>
               {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
@@ -179,7 +191,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
             <Divider pt={0} pb={10} />
             {displaySlots && (
               <Group key={index} gap={10}>
-                {props.slots[rank].map((slot, index) => (
+                {slotsForSource[rank].map((slot, index) => (
                   <Box key={index}>
                     <SelectContentButton
                       type='spell'
