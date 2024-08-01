@@ -510,7 +510,7 @@ function SpellList(props: {
     if (props.type === 'PREPARED' || props.type === 'SPONTANEOUS') {
       for (const entry of props.extra.charData.list) {
         const foundSpell = props.allSpells.find((spell) => spell.id === entry.spell_id);
-        if (foundSpell) {
+        if (foundSpell && props.spellIds.includes(foundSpell.id)) {
           filteredSpells.push({
             ...foundSpell,
             rank: entry.rank,
