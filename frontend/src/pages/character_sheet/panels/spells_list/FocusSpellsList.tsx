@@ -7,7 +7,8 @@ import { getTraitIdByType } from "@utils/traits";
 import _ from 'lodash-es';
 import { Dictionary } from "node_modules/cypress/types/lodash";
 import { SetterOrUpdater } from "recoil";
-import { SpellListEntrySection, SpellSlotSelect } from "../SpellsPanel";
+import { SpellSlotSelect } from "../SpellsPanel";
+import SpellListEntrySection from "./SpellListEntrySection";
 
 export default function FocusSpellsList(props: {
   index: string;

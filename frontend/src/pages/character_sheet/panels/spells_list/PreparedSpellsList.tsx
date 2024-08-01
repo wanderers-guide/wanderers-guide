@@ -4,14 +4,13 @@ import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } fro
 import { rankNumber } from "@utils/numbers";
 import { toLabel } from "@utils/strings";
 import { Dictionary } from "node_modules/cypress/types/lodash";
-import { SpellListEntrySection } from "../SpellsPanel";
+import SpellListEntrySection from "./SpellListEntrySection";
 
 export default function PreparedSpellsList(props: {
   index: string;
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
   extra: {
     charData: {
       slots: SpellSlot[];

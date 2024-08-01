@@ -3,7 +3,8 @@ import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, Spel
 import { rankNumber } from "@utils/numbers";
 import { Dictionary } from "node_modules/cypress/types/lodash";
 import { SetterOrUpdater } from "recoil";
-import { SpellListEntrySection, SpellSlotSelect } from "../SpellsPanel";
+import {  SpellSlotSelect } from "../SpellsPanel";
+import SpellListEntrySection from "./SpellListEntrySection";
 
 export default function InnateSpellsList(props: {
   index: string;
