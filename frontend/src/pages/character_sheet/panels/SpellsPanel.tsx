@@ -1,23 +1,20 @@
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
-import BlurButton from '@common/BlurButton';
 import TokenSelect from '@common/TokenSelect';
 import { SpellSelectionOption } from '@common/select/SelectContent';
-import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
+import { collectEntitySpellcasting } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
-  Badge,
   Box,
-  Divider,
   Group,
   HoverCard,
   ScrollArea,
   Stack,
   Text,
   TextInput,
-  useMantineTheme,
+  useMantineTheme
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
@@ -25,14 +22,16 @@ import { isCantrip, isRitual } from '@spells/spell-utils';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
-import { rankNumber } from '@utils/numbers';
-import { toLabel } from '@utils/strings';
-import { getTraitIdByType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
+import FocusSpellsList from './spells_list/FocusSpellsList';
+import InnateSpellsList from './spells_list/InnateSpellsList';
+import PreparedSpellsList from './spells_list/PreparedSpellsList';
+import RitualSpellsList from './spells_list/RitualSpellsList';
+import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -438,619 +437,29 @@ function SpellList(props: {
   }, [props.extra?.innates, props.allSpells]);
 
   if (props.type === 'PREPARED' && props.source) {
-    // If there are no spells to display, and there are filters, return null
-    if (
-      props.hasFilters &&
-      slots &&
-      Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0
-    ) {
-      return null;
-    }
-
-    return (
-      <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
-        <Accordion.Control>
-          <Group wrap='nowrap' justify='space-between' gap={0}>
-            <Text c='gray.5' fw={700} fz='sm'>
-              {toLabel(props.source.name)} Spells
-            </Text>
-            <Box mr={10}>
-              <BlurButton
-                size='xs'
-                fw={500}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  props.openManageSpells?.(
-                    props.source!.name,
-                    props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                  );
-                }}
-              >
-                Manage
-              </BlurButton>
-            </Box>
-          </Group>
-        </Accordion.Control>
-        <Accordion.Panel
-          styles={{
-            content: {
-              padding: 0,
-            },
-          }}
-        >
-          <Stack gap={0}>
-            {/* <Divider color='dark.6' /> */}
-            <Accordion
-              px={10}
-              pb={5}
-              variant='separated'
-              multiple
-              defaultValue={[]}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {slots &&
-                Object.keys(slots)
-                  .filter((rank) =>
-                    slots[rank].length > 0 && props.hasFilters ? slots[rank].find((s) => s.spell) : true
-                  )
-                  .map((rank, index) => (
-                    <Accordion.Item key={index} value={`rank-group-${index}`} data-wg-name={`rank-group-${index}`}>
-                      <Accordion.Control>
-                        <Group wrap='nowrap' justify='space-between' gap={0}>
-                          <Text c='gray.5' fw={700} fz='sm'>
-                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
-                          </Text>
-                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                            <Text fz='sm' c='gray.5' span>
-                              {props.hasFilters ? slots[rank].filter((s) => s.spell).length : slots[rank].length}
-                            </Text>
-                          </Badge>
-                        </Group>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <Stack gap={5}>
-                          {slots[rank].map((slot, index) => (
-                            <SpellListEntrySection
-                              key={index}
-                              spell={slot.spell}
-                              exhausted={!!slot.exhausted}
-                              tradition={props.source!.tradition}
-                              attribute={props.source!.attribute}
-                              onCastSpell={(cast: boolean) => {
-                                if (slot.spell) castSpell(cast, slot.spell);
-                              }}
-                              onOpenManageSpells={() => {
-                                props.openManageSpells?.(
-                                  props.source!.name,
-                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                                );
-                              }}
-                              hasFilters={props.hasFilters}
-                            />
-                          ))}
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-            </Accordion>
-          </Stack>
-        </Accordion.Panel>
-      </Accordion.Item>
-    );
+    return <PreparedSpellsList {...props} slots={slots} castSpell={castSpell} />;
   }
 
   if (props.type === 'SPONTANEOUS' && props.source) {
-    // If there are no spells to display, and there are filters, return null
-    if (
-      props.hasFilters &&
-      slots &&
-      Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0
-    ) {
-      return null;
-    }
-
-    return (
-      <Accordion.Item value={props.index}>
-        <Accordion.Control>
-          <Group wrap='nowrap' justify='space-between' gap={0}>
-            <Text c='gray.5' fw={700} fz='sm'>
-              {toLabel(props.source.name)} Spells
-            </Text>
-            <Box mr={10}>
-              <BlurButton
-                size='xs'
-                fw={500}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  props.openManageSpells?.(props.source!.name, 'LIST-ONLY');
-                }}
-              >
-                Manage
-              </BlurButton>
-            </Box>
-          </Group>
-        </Accordion.Control>
-        <Accordion.Panel
-          styles={{
-            content: {
-              padding: 0,
-            },
-          }}
-        >
-          <Stack gap={0}>
-            {/* <Divider color='dark.6' /> */}
-            <Accordion
-              px={10}
-              pb={5}
-              variant='separated'
-              multiple
-              defaultValue={[]}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {slots &&
-                Object.keys(slots)
-                  .filter((rank) => slots[rank] && slots[rank].length > 0)
-                  .map((rank, index) => (
-                    <Accordion.Item value={`rank-group-${index}`}>
-                      <Accordion.Control>
-                        <Group wrap='nowrap' justify='space-between' gap={0}>
-                          <Group wrap='nowrap'>
-                            <Text c='gray.5' fw={700} fz='sm' w={70}>
-                              {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
-                            </Text>
-                            {rank !== '0' && (
-                              <SpellSlotSelect
-                                text='Spell Slots'
-                                current={slots[rank].filter((slot) => `${slot.rank}` === rank && slot.exhausted).length}
-                                max={slots[rank].filter((slot) => `${slot.rank}` === rank).length}
-                                onChange={(v) => {
-                                  setCharacter((c) => {
-                                    if (!c) return c;
-
-                                    let count = 0;
-                                    const slots = collectEntitySpellcasting('CHARACTER', c).slots;
-                                    for (const slot of slots) {
-                                      if (slot.rank === parseInt(rank) && slot.source === props.source?.name) {
-                                        slot.exhausted = count < v;
-                                        count++;
-                                      }
-                                    }
-
-                                    return {
-                                      ...c,
-                                      spells: {
-                                        ...(c.spells ?? {
-                                          slots: [],
-                                          list: [],
-                                          focus_point_current: 0,
-                                          innate_casts: [],
-                                        }),
-                                        slots: slots,
-                                      },
-                                    };
-                                  });
-                                }}
-                              />
-                            )}
-                          </Group>
-                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                            <Text fz='sm' c='gray.5' span>
-                              {spells[rank]?.length ?? 0}
-                            </Text>
-                          </Badge>
-                        </Group>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <Stack gap={5}>
-                          <Divider color='dark.6' />
-                          {spells[rank]?.map((spell, index) => (
-                            <SpellListEntrySection
-                              key={index}
-                              spell={spell}
-                              exhausted={!slots[rank].find((s) => !s.exhausted)}
-                              tradition={props.source!.tradition}
-                              attribute={props.source!.attribute}
-                              onCastSpell={(cast: boolean) => {
-                                castSpell(cast, spell);
-                              }}
-                              onOpenManageSpells={() => {
-                                props.openManageSpells?.(
-                                  props.source!.name,
-                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                                );
-                              }}
-                              hasFilters={props.hasFilters}
-                            />
-                          ))}
-                          {(!spells[rank] || spells[rank].length === 0) && (
-                            <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
-                              No spells known
-                            </Text>
-                          )}
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-            </Accordion>
-          </Stack>
-        </Accordion.Panel>
-      </Accordion.Item>
-    );
+    return <SpontaneousSpellsList {...props} slots={slots} castSpell={castSpell} spells={spells} setCharacter={setCharacter} />;
   }
 
   if (props.type === 'FOCUS' && props.source && character) {
-    // If there are no spells to display, and there are filters, return null
-    if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
-      return null;
-    }
-
-    const focusPoints = getFocusPoints('CHARACTER', character, _.flatMap(spells));
-
-    return (
-      <Accordion.Item value={props.index}>
-        <Accordion.Control>
-          <Group wrap='nowrap' justify='space-between' gap={0}>
-            <Text c='gray.5' fw={700} fz='sm'>
-              {toLabel(props.source.name)} Focus Spells
-            </Text>
-            <Box mr={10}>
-              <SpellSlotSelect
-                text='Focus Points'
-                current={focusPoints.max - focusPoints.current}
-                max={focusPoints.max}
-                onChange={(v) => {
-                  setCharacter((c) => {
-                    if (!c) return c;
-                    return {
-                      ...c,
-                      spells: {
-                        ...(c.spells ?? {
-                          slots: [],
-                          list: [],
-                          focus_point_current: 0,
-                          innate_casts: [],
-                        }),
-                        focus_point_current: Math.max(focusPoints.max - v, 0),
-                      },
-                    };
-                  });
-                }}
-              />
-            </Box>
-          </Group>
-        </Accordion.Control>
-        <Accordion.Panel
-          styles={{
-            content: {
-              padding: 0,
-            },
-          }}
-        >
-          <Stack gap={0}>
-            {/* <Divider color='dark.6' /> */}
-            <Accordion
-              px={10}
-              pb={5}
-              variant='separated'
-              multiple
-              defaultValue={[]}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {spells &&
-                Object.keys(spells)
-                  .filter((rank) => spells[rank].length > 0)
-                  .map((rank, index) => (
-                    <Accordion.Item value={`rank-group-${index}`}>
-                      <Accordion.Control>
-                        <Group wrap='nowrap' justify='space-between' gap={0}>
-                          <Text c='gray.5' fw={700} fz='sm'>
-                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
-                          </Text>
-                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                            <Text fz='sm' c='gray.5' span>
-                              {spells[rank].length}
-                            </Text>
-                          </Badge>
-                        </Group>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <Stack gap={5}>
-                          {spells[rank].map((spell, index) => (
-                            <SpellListEntrySection
-                              key={index}
-                              spell={{
-                                ...spell,
-                                // Add focus trait in case it doesn't have it
-                                traits: _.uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
-                              }}
-                              exhausted={
-                                character?.spells?.focus_point_current === undefined
-                                  ? false
-                                  : character.spells.focus_point_current <= 0
-                              }
-                              tradition={props.source!.tradition}
-                              attribute={props.source!.attribute}
-                              onCastSpell={(cast: boolean) => {
-                                castSpell(cast, spell);
-                              }}
-                              onOpenManageSpells={() => {
-                                props.openManageSpells?.(
-                                  props.source!.name,
-                                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                                );
-                              }}
-                              hasFilters={props.hasFilters}
-                            />
-                          ))}
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-            </Accordion>
-          </Stack>
-        </Accordion.Panel>
-      </Accordion.Item>
-    );
+    return <FocusSpellsList {...props} castSpell={castSpell} spells={spells} character={character} setCharacter={setCharacter} />;
   }
 
   if (props.type === 'INNATE' && props.extra?.innates) {
-    // If there are no spells to display, and there are filters, return null
-    if (
-      props.hasFilters &&
-      innateSpells &&
-      Object.keys(innateSpells).filter((rank) => innateSpells[rank].find((s) => s.spell)).length === 0
-    ) {
-      return null;
-    }
-
-    return (
-      <Accordion.Item value={props.index}>
-        <Accordion.Control>
-          <Group wrap='nowrap' justify='space-between' gap={0}>
-            <Text c='gray.5' fw={700} fz='sm'>
-              Innate Spells
-            </Text>
-          </Group>
-        </Accordion.Control>
-        <Accordion.Panel
-          styles={{
-            content: {
-              padding: 0,
-            },
-          }}
-        >
-          <Stack gap={0}>
-            {/* <Divider color='dark.6' /> */}
-            <Accordion
-              px={10}
-              pb={5}
-              variant='separated'
-              multiple
-              defaultValue={[]}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {innateSpells &&
-                Object.keys(innateSpells)
-                  .filter((rank) =>
-                    innateSpells[rank].length > 0 && props.hasFilters ? innateSpells[rank].find((s) => s.spell) : true
-                  )
-                  .map((rank, index) => (
-                    <Accordion.Item value={`rank-group-${index}`}>
-                      <Accordion.Control>
-                        <Group wrap='nowrap' justify='space-between' gap={0}>
-                          <Text c='gray.5' fw={700} fz='sm'>
-                            {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
-                          </Text>
-                          <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                            <Text fz='sm' c='gray.5' span>
-                              {props.hasFilters
-                                ? innateSpells[rank].filter((s) => s.spell).length
-                                : innateSpells[rank].length}
-                            </Text>
-                          </Badge>
-                        </Group>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <Stack gap={5}>
-                          {innateSpells[rank].map((innate, index) => (
-                            <SpellListEntrySection
-                              key={index}
-                              spell={innate.spell}
-                              exhausted={innate.casts_current >= innate.casts_max && innate.casts_max !== 0}
-                              tradition={innate.tradition}
-                              attribute={'ATTRIBUTE_CHA'}
-                              onCastSpell={(cast: boolean) => {
-                                if (innate.spell) castSpell(cast, innate.spell);
-                              }}
-                              hasFilters={props.hasFilters}
-                              leftSection={
-                                <SpellSlotSelect
-                                  text='Remaining Casts'
-                                  current={innate.casts_current}
-                                  max={innate.casts_max}
-                                  onChange={(v) => {
-                                    setCharacter((c) => {
-                                      if (!c) return c;
-
-                                      const innates = (props.extra?.innates ?? []).map((inn) => {
-                                        if (inn.spell_id === innate.spell_id && inn.rank === innate.rank) {
-                                          return {
-                                            ...inn,
-                                            casts_current: v,
-                                          };
-                                        }
-                                        return inn;
-                                      });
-
-                                      return {
-                                        ...c,
-                                        spells: {
-                                          ...(c.spells ?? {
-                                            slots: [],
-                                            list: [],
-                                            focus_point_current: 0,
-                                            innate_casts: [],
-                                          }),
-                                          innate_casts: innates,
-                                        },
-                                      };
-                                    });
-                                  }}
-                                />
-                              }
-                            />
-                          ))}
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ))}
-            </Accordion>
-          </Stack>
-        </Accordion.Panel>
-      </Accordion.Item>
-    );
+    return <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setCharacter={setCharacter} />;
   }
 
   if (props.type === 'RITUAL') {
-    // If there are no spells to display, and there are filters, return null
-    if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
-      return null;
-    }
-
-    return (
-      <Accordion.Item value={props.index}>
-        <Accordion.Control>
-          <Group wrap='nowrap' justify='space-between' gap={0}>
-            <Group gap={10}>
-              <Text c='gray.5' fw={700} fz='sm'>
-                Rituals
-              </Text>
-              <Badge variant='outline' color='gray.5' size='xs'>
-                <Text fz='sm' c='gray.5' span>
-                  {props.spellIds.length}
-                </Text>
-              </Badge>
-            </Group>
-
-            <Box mr={10}>
-              <BlurButton
-                size='xs'
-                fw={500}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-
-                  props.openManageSpells?.('RITUALS', 'LIST-ONLY');
-                }}
-              >
-                Manage
-              </BlurButton>
-            </Box>
-          </Group>
-        </Accordion.Control>
-        <Accordion.Panel
-          styles={{
-            content: {
-              padding: 0,
-            },
-          }}
-          px={10}
-          pb={10}
-        >
-          <Stack gap={5}>
-            {/* <Divider color='dark.6' /> */}
-            {spells &&
-              Object.keys(spells)
-                .reduce((acc, rank) => acc.concat(spells[rank]), [] as Spell[])
-                .map((spell, index) => (
-                  <SpellListEntrySection
-                    key={index}
-                    spell={spell}
-                    exhausted={false}
-                    tradition={'NONE'}
-                    attribute={'ATTRIBUTE_CHA'}
-                    onCastSpell={(cast: boolean) => {
-                      castSpell(cast, spell);
-                    }}
-                    onOpenManageSpells={() => {
-                      props.openManageSpells?.(
-                        props.source!.name,
-                        props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
-                      );
-                    }}
-                    hasFilters={props.hasFilters}
-                  />
-                ))}
-
-            {props.spellIds.length === 0 && (
-              <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
-                No rituals known
-              </Text>
-            )}
-          </Stack>
-        </Accordion.Panel>
-      </Accordion.Item>
-    );
+    return <RitualSpellsList {...props} spells={spells} castSpell={castSpell} />;
   }
 
   return null;
 }
 
-function SpellListEntrySection(props: {
+export function SpellListEntrySection(props: {
   spell?: Spell;
   exhausted: boolean;
   tradition: string;
@@ -1127,7 +536,7 @@ function SpellListEntrySection(props: {
   );
 }
 
-function SpellSlotSelect(props: { current: number; max: number; onChange: (v: number) => void; text: string }) {
+export function SpellSlotSelect(props: { current: number; max: number; onChange: (v: number) => void; text: string }) {
   const [displaySlots, refreshDisplaySlots] = useRefresh();
 
   useEffect(() => {
