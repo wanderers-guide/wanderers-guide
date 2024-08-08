@@ -57,21 +57,20 @@ describe('Character builder', () => {
 
     // Cast charm
     cy.get('[data-wg-name="rank-group-1"]').as("rank1");
-    cy.get('@rank1').click();
     cy.get('@rank1').contains('Charm').first().click();
     cy.contains('Cast Spell 1').click();
-    cy.get('@rank1').find("div.mantine-Accordion-content").find("button").eq(0).contains("Charm").should('have.css', 'text-decoration').and('include', 'line-through');
-    cy.get('@rank1').find("div.mantine-Accordion-content").find("button").eq(1).contains('Charm').last().should('have.css', 'text-decoration').and('not.include', 'line-through');
+    cy.get('@rank1').find("button").eq(0).contains("Charm").should('have.css', 'text-decoration').and('include', 'line-through');
+    cy.get('@rank1').find("button").eq(1).contains('Charm').last().should('have.css', 'text-decoration').and('not.include', 'line-through');
 
     // Cast charm again
-    cy.get('@rank1').find("div.mantine-Accordion-content").find("button").eq(1).click();
+    cy.get('@rank1').find("button").eq(1).click();
     cy.contains('Cast Spell 1').click();
-    cy.get('@rank1').find("div.mantine-Accordion-content").find("button").eq(1).contains("Charm").should('have.css', 'text-decoration').and('include', 'line-through');
+    cy.get('@rank1').find("button").eq(1).contains("Charm").should('have.css', 'text-decoration').and('include', 'line-through');
 
     // Recover one cast
     cy.get('@rank1').contains('Charm').first().click();
     cy.contains('Recover Spell 1').click();
-    cy.get('@rank1').find("div.mantine-Accordion-content").find("button").eq(0).contains("Charm").should('have.css', 'text-decoration').and('not.include', 'line-through');
-    cy.get('@rank1').find("div.mantine-Accordion-content").find("button").eq(1).contains('Charm').last().should('have.css', 'text-decoration').and('include', 'line-through');
+    cy.get('@rank1').find("button").eq(0).contains("Charm").should('have.css', 'text-decoration').and('not.include', 'line-through');
+    cy.get('@rank1').find("button").eq(1).contains('Charm').last().should('have.css', 'text-decoration').and('include', 'line-through');
   });
 });
