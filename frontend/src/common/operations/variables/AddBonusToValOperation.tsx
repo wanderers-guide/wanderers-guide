@@ -5,13 +5,14 @@ import { Variable } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import { useState } from 'react';
 import { OperationWrapper } from '../Operations';
+import _ from 'lodash-es';
 
 export function AddBonusToValOperation(props: {
   variable: string;
-  bonusValue: number | undefined;
+  bonusValue: number | string | undefined;
   bonusType: string | undefined;
   text: string;
-  onValueChange: (data: { bonusValue?: number; bonusType?: string; text: string }) => void;
+  onValueChange: (data: { bonusValue?: number | string; bonusType?: string; text: string }) => void;
   onSelect: (variable: string) => void;
   onRemove: () => void;
   showTotalVars?: boolean;
@@ -70,21 +71,26 @@ export function AddBonusToValOperation(props: {
 }
 
 function AddBonusInput(props: {
-  bonusValue: number | undefined;
+  bonusValue: string | number | undefined;
   bonusType: string | undefined;
   text: string;
-  onChange: (data: { bonusValue?: number; bonusType?: string; text: string }) => void;
+  onChange: (data: { bonusValue?: string | number; bonusType?: string; text: string }) => void;
 }) {
   return (
     <Stack>
       <Group wrap='nowrap'>
-        <NumberInput
+        <TextInput
           size='xs'
-          prefix={(props.bonusValue ?? -1) >= 0 ? '+' : undefined}
+          prefix={_.isNumber(props.bonusValue) && (props.bonusValue ?? -1) >= 0 ? '+' : undefined}
           placeholder='Bonus Amount'
           value={props.bonusValue}
-          onChange={(value) => props.onChange({ ...props, bonusValue: parseInt(`${value}`) })}
-          allowDecimal={false}
+          onChange={(e) => {
+            if (_.isNumber(e.target.value)) {
+              props.onChange({ ...props, bonusValue: parseInt(`${e.target.value}`) });
+            } else {
+              props.onChange({ ...props, bonusValue: e.target.value });
+            }
+          }}
         />
         <TextInput
           size='xs'

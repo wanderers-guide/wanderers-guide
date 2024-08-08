@@ -40,7 +40,7 @@ import {
   getVariables,
   setVariable,
 } from '@variables/variable-manager';
-import { labelToVariable, maxProficiencyType } from '@variables/variable-utils';
+import { compileExpressions, labelToVariable, maxProficiencyType } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import {
   ObjectWithUUID,
@@ -936,6 +936,8 @@ async function runConditional(
         return variable.value.toUpperCase() !== check.value.toUpperCase();
       } else if (check.operator === 'INCLUDES') {
         return variable.value.includes(check.value.toUpperCase());
+      } else if (check.operator === 'NOT_INCLUDES') {
+        return !variable.value.includes(check.value.toUpperCase());
       }
     } else if (variable.type === 'bool') {
       if (check.operator === 'EQUALS') {
@@ -954,6 +956,8 @@ async function runConditional(
         return !_.isEqual(variable.value, value);
       } else if (check.operator === 'INCLUDES') {
         return variable.value.includes(labelToVariable(check.value));
+      } else if (check.operator === 'NOT_INCLUDES') {
+        return !variable.value.includes(labelToVariable(check.value));
       }
     } else if (variable.type === 'prof') {
       if (check.operator === 'EQUALS') {

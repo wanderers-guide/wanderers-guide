@@ -103,7 +103,7 @@ export interface OperationAddBonusToValue extends OperationBase {
   readonly type: 'addBonusToValue';
   data: {
     variable: string;
-    value?: number;
+    value?: number | string;
     type?: string;
     text: string;
   };
@@ -163,6 +163,7 @@ export type ConditionCheckData = {
 export type ConditionOperator =
   | ''
   | 'INCLUDES'
+  | 'NOT_INCLUDES'
   | 'EQUALS'
   | 'NOT_EQUALS'
   | 'LESS_THAN'

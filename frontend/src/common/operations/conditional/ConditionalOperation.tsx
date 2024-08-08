@@ -228,6 +228,7 @@ export function ConditionalCheck(props: {
   if (varType === 'str' || varType === 'list-str') {
     operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
+      { value: 'NOT_INCLUDES', label: 'not includes' },
       { value: 'EQUALS', label: '=' },
       { value: 'NOT_EQUALS', label: '≠' },
     ];
@@ -235,6 +236,7 @@ export function ConditionalCheck(props: {
   if (!varType) {
     operatorOptions = [
       { value: 'INCLUDES', label: 'includes' },
+      { value: 'NOT_INCLUDES', label: 'not includes' },
       { value: 'LESS_THAN', label: '<' },
       { value: 'LESS_THAN_OR_EQUALS', label: '≤' },
       { value: 'GREATER_THAN', label: '>' },
@@ -378,7 +380,8 @@ function ConditionalValueSelect(props: {
     );
   } else if (
     props.variableType === 'str' ||
-    (props.variableType === 'list-str' && props.operationType === 'INCLUDES')
+    (props.variableType === 'list-str' &&
+      (props.operationType === 'INCLUDES' || props.operationType === 'NOT_INCLUDES'))
   ) {
     return (
       <TextInput

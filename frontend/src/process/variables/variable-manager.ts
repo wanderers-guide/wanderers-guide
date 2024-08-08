@@ -25,6 +25,7 @@ import {
   prevProficiencyType,
   isProficiencyValue,
   isExtendedProficiencyValue,
+  compileExpressions,
 } from './variable-utils';
 import * as _ from 'lodash-es';
 import { throwError } from '@utils/notifications';
@@ -403,16 +404,39 @@ export function getVariable<T = Variable>(id: StoreID, name: string): T | null {
 /**
  * Gets the bonuses for a variable
  * @param name - name of the variable to get
- * @returns - the bonus array
+ * @returns - the bonus array, compiles any string expressions
  */
-export function getVariableBonuses(id: StoreID, name: string) {
-  return _.cloneDeep(getVariableStore(id).bonuses[name]) ?? [];
+export function getVariableBonuses(
+  id: StoreID,
+  name: string
+): {
+  value?: number | undefined;
+  type?: string | undefined;
+  text: string;
+  source: string;
+  timestamp: number;
+}[] {
+  const rawBonuses = _.cloneDeep(getVariableStore(id).bonuses[name]) ?? [];
+
+  return rawBonuses.map((bonus) => {
+    if (_.isString(bonus.value)) {
+      const c = parseInt(compileExpressions(id, bonus.value.trim(), true) ?? '');
+      return {
+        ...bonus,
+        value: c,
+      };
+    }
+    return {
+      ...bonus,
+      value: bonus.value,
+    };
+  });
 }
 
 export function addVariableBonus(
   id: StoreID,
   name: string,
-  value: number | undefined,
+  value: string | number | undefined,
   type: string | undefined,
   text: string,
   source: string
