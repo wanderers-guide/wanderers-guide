@@ -213,9 +213,6 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
 
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
-  const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
-
-  ///
 
   const parts = new Map<string, number>();
 
@@ -226,11 +223,11 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
     );
   } else if (hasPropulsive) {
     if (strMod >= 0) {
-      let strAmt = Math.floor(strMod / 2);
-      if (strAmt != 0) {
+      let halfStr = Math.floor(strMod / 2);
+      if (halfStr != 0) {
         parts.set(
           'This is half of your Strength modifier. Because this weapon has the propulsive trait and you have a positive Strength modifier, you add half of your Strength modifier (rounded down) to the damage.',
-          strMod
+          halfStr
         );
       }
     } else {
