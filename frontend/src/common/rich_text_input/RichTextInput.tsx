@@ -6,7 +6,9 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
-import { useMantineTheme, Text, Box, FocusTrap } from '@mantine/core';
+import Color from '@tiptap/extension-color';
+import TextStyle from '@tiptap/extension-text-style';
+import { useMantineTheme, Text, Box } from '@mantine/core';
 import { ContentLink } from './ContentLinkExtension';
 import ContentLinkControl from './ContentLinkControl';
 import { useRecoilState } from 'recoil';
@@ -15,8 +17,9 @@ import { toMarkdown } from '@content/content-utils';
 import { ActionSymbol } from './ActionSymbolExtension';
 import ActionSymbolControl from './ActionSymbolControl';
 import Placeholder from '@tiptap/extension-placeholder';
-import { useDisclosure, useElementSize } from '@mantine/hooks';
+import { useElementSize } from '@mantine/hooks';
 import AutoContentLinkControl from './AutoContentLinkControl';
+import { HighlightColorControl } from './HighlightColorControl';
 
 interface RichTextInputProps {
   label?: string;
@@ -25,6 +28,7 @@ interface RichTextInputProps {
   onChange?: (text: string, json: JSONContent) => void;
   placeholder?: string;
   minHeight?: number;
+  hasColorOptions?: boolean;
 }
 
 export default function RichTextInput(props: RichTextInputProps) {
@@ -39,7 +43,9 @@ export default function RichTextInput(props: RichTextInputProps) {
       ActionSymbol,
       Superscript,
       SubScript,
-      Highlight,
+      Highlight.configure({ multicolor: true }),
+      TextStyle,
+      Color,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder: props.placeholder }),
     ],
@@ -52,10 +58,26 @@ export default function RichTextInput(props: RichTextInputProps) {
     },
   });
 
-  const [active, { toggle }] = useDisclosure(false);
+  const defaultColors = [
+    '#25262b',
+    '#868e96',
+    '#fa5252',
+    '#e64980',
+    '#be4bdb',
+    '#7950f2',
+    '#4c6ef5',
+    '#228be6',
+    '#15aabf',
+    '#12b886',
+    '#40c057',
+    '#82c91e',
+    '#fab005',
+    '#fd7e14',
+  ];
 
   const { ref, width, height } = useElementSize();
   const isSmall = width < 510;
+  const isPrettySmall = width < 450;
   const isVerySmall = width < 395;
 
   return (
@@ -70,7 +92,6 @@ export default function RichTextInput(props: RichTextInputProps) {
           )}
         </Text>
       )}
-
       <RichTextEditor
         ref={ref}
         editor={editor}
@@ -120,6 +141,18 @@ export default function RichTextInput(props: RichTextInputProps) {
               <RichTextEditor.H4 />
             </RichTextEditor.ControlsGroup>
           )}
+          
+          {!isPrettySmall && props.hasColorOptions && (
+            <RichTextEditor.ControlsGroup>
+             <HighlightColorControl
+                colors={defaultColors}
+              />
+              <RichTextEditor.ColorPicker
+                colors={defaultColors}
+              />
+            </RichTextEditor.ControlsGroup>
+          )}
+          
           {!isVerySmall && (
             <RichTextEditor.ControlsGroup>
               <AutoContentLinkControl />
@@ -127,11 +160,7 @@ export default function RichTextInput(props: RichTextInputProps) {
           )}
         </RichTextEditor.Toolbar>
 
-        <FocusTrap active={active}>
-          <Box onClick={toggle} style={{ cursor: 'text' }}>
-            <RichTextEditor.Content />
-          </Box>
-        </FocusTrap>
+        <RichTextEditor.Content />
       </RichTextEditor>
     </Box>
   );
