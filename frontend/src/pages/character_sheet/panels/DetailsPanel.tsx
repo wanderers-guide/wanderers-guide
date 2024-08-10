@@ -47,8 +47,9 @@ import { useMutation } from '@tanstack/react-query';
 import { JSendResponse } from '@typing/requests';
 import { useState } from 'react';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
-import { CreateSocietyAdventureEntryModal, getGpGained } from '@modals/CreateSocietyAdventureEntryModal';
+import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
 import _ from 'lodash-es';
+import { Money, getGpGained } from '@utils/money';
 
 const SECTION_WIDTH = 280;
 
@@ -983,12 +984,12 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
             <Center>
               <Badge size='lg' variant='light'>
                 <Text fz='sm'>
-                  {Math.round(
+                  {
                     (character?.details?.info?.organized_play_adventures ?? []).reduce(
-                      (acc, a) => acc + getGpGained(a),
-                      0
-                    ) * 100
-                  ) / 100}
+                      (acc, a) => acc.add(getGpGained(a)),
+                      new Money(0)
+                    ).value
+                  }
                 </Text>
               </Badge>
             </Center>
@@ -1069,7 +1070,7 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
                   <Stack gap={0}>
                     <Text ta='center'>+GP</Text>
                     <Text ta='center' fw={600}>
-                      {getGpGained(adventure)}
+                      {getGpGained(adventure).value}
                     </Text>
                   </Stack>
                   <Stack gap={0}>
