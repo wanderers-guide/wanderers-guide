@@ -51,6 +51,39 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
             </Group>
           </Accordion.Panel>
         </Accordion.Item>
+
+        <Accordion.Item value='damage-breakdown'>
+          <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Damage Breakdown</Accordion.Control>
+          <Accordion.Panel>
+            <Group gap={8} align='center'>
+              <Text c='gray.5' span>
+                {stats.damage.dice}
+                {stats.damage.die} + {stats.damage.bonus.total} {stats.damage.damageType}
+                {/* {stats.damage.extra ? `+ ${stats.damage.extra}` : ''} */}
+              </Text>
+              =
+              <Text c='gray.5' span>
+                {stats.damage.dice}
+                {stats.damage.die} {stats.damage.damageType} +
+              </Text>
+              {[...stats.damage.bonus.parts.keys()].map((part, index) => (
+                <Group gap={8} align='center' key={index}>
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }}>{stats.damage.bonus.parts.get(part)}</Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        {part}
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                  {index < [...stats.damage.bonus.parts.keys()].length - 1 ? '+' : ''}
+                </Group>
+              ))}
+            </Group>
+          </Accordion.Panel>
+        </Accordion.Item>
       </Accordion>
     </Box>
   );
