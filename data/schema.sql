@@ -81,7 +81,8 @@ CREATE TABLE public.ancestry (
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     operations json[],
-    uuid bigint NOT NULL
+    uuid bigint NOT NULL,
+    deprecated boolean
 );
 
 
@@ -116,7 +117,8 @@ CREATE TABLE public.archetype (
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     dedication_feat_id bigint,
-    uuid bigint
+    uuid bigint,
+    deprecated boolean
 );
 
 
@@ -150,7 +152,8 @@ CREATE TABLE public.background (
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
-    artwork_url character varying
+    artwork_url character varying,
+    deprecated boolean
 );
 
 
@@ -270,7 +273,8 @@ CREATE TABLE public.class (
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
-    skill_training_base integer DEFAULT 3 NOT NULL
+    skill_training_base integer DEFAULT 3 NOT NULL,
+    deprecated boolean
 );
 
 
@@ -310,7 +314,8 @@ CREATE TABLE public.content_source (
     "group" character varying,
     meta_data json,
     artwork_url character varying,
-    keys jsonb
+    keys jsonb,
+    deprecated boolean
 );
 
 
@@ -388,7 +393,8 @@ CREATE TABLE public.creature (
     roll_history json,
     operations json[],
     abilities json[],
-    spells json
+    spells json,
+    deprecated boolean
 );
 
 
@@ -497,7 +503,8 @@ CREATE TABLE public.language (
     content_source_id bigint,
     rarity character varying DEFAULT 'COMMON'::character varying NOT NULL,
     uuid bigint NOT NULL,
-    availability character varying
+    availability character varying,
+    deprecated boolean
 );
 
 
@@ -650,7 +657,8 @@ CREATE TABLE public.versatile_heritage (
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     heritage_id bigint NOT NULL,
-    uuid bigint
+    uuid bigint,
+    deprecated boolean
 );
 
 
