@@ -83,6 +83,7 @@ interface Trait {
   name: string;
   description: string;
   meta_data?: {
+    deprecated?: boolean;
     important?: boolean;
     creature_trait?: boolean;
     unselectable?: boolean;
@@ -128,6 +129,7 @@ interface Item {
   craft_requirements?: string;
   usage?: string;
   meta_data?: {
+    deprecated?: boolean;
     image_url?: string;
     base_item?: string;
     base_item_content?: Item;
@@ -246,6 +248,7 @@ interface Spell {
     ritual?: Record<string, any>;
     foundry?: Record<string, any>;
     unselectable?: boolean;
+    deprecated?: boolean;
     image_url?: string;
   };
   content_source_id: number;
@@ -262,6 +265,7 @@ interface Class {
   skill_training_base: number;
   trait_id: number;
   artwork_url: string;
+  deprecated?: boolean;
   content_source_id: number;
   version: string;
 }
@@ -275,6 +279,7 @@ interface Archetype {
   trait_id: number;
   artwork_url: string;
   content_source_id: number;
+  deprecated?: boolean;
   version: string;
   dedication_feat_id?: number;
 }
@@ -288,6 +293,7 @@ interface VersatileHeritage {
   trait_id: number;
   artwork_url: string;
   content_source_id: number;
+  deprecated?: boolean;
   version: string;
   heritage_id: number;
 }
@@ -312,6 +318,7 @@ interface AbilityBlock {
   type: AbilityBlockType;
   meta_data?: {
     unselectable?: boolean;
+    deprecated?: boolean;
     can_select_multiple_times?: boolean;
     skill?: string | string[];
     image_url?: string;
@@ -387,6 +394,7 @@ interface Creature extends LivingEntity {
   abilities_base?: AbilityBlock[];
   abilities_added?: number[];
   content_source_id: number;
+  deprecated?: boolean;
   version: string;
 }
 
@@ -627,6 +635,7 @@ interface ContentSource {
     access_key?: string;
   };
   is_published: boolean;
+  deprecated?: boolean;
   required_content_sources?: number[];
   group: string;
   artwork_url?: string;
@@ -667,6 +676,7 @@ interface Ancestry {
   trait_id: number;
   artwork_url: string;
   content_source_id: number;
+  deprecated?: boolean;
   version: string;
   operations: Operation[] | undefined;
 }
@@ -679,6 +689,7 @@ type Background = {
   description: string;
   artwork_url: string;
   operations: Operation[] | undefined;
+  deprecated?: boolean;
   content_source_id: number;
   version: string;
 };
@@ -691,6 +702,7 @@ type Language = {
   script: string;
   description: string;
   content_source_id: number;
+  deprecated?: boolean;
   rarity: Rarity;
   availability?: Availability;
 };

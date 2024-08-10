@@ -113,7 +113,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const { data: fetchedBooks, refetch } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      return await fetchContentSources({ ids: 'all' });
+      return (await fetchContentSources({ ids: 'all' })).filter((book) => book.deprecated !== true);
     },
   });
   const books = fetchedBooks ?? [];

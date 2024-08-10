@@ -1949,6 +1949,9 @@ export function FeatSelectionOption(props: {
 
   const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', props.feat.prerequisites);
 
+  // Hide deprecated options
+  if (props.feat.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2028,6 +2031,9 @@ export function ActionSelectionOption(props: {
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Hide deprecated options
+  if (props.action.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2095,6 +2101,9 @@ export function ClassFeatureSelectionOption(props: {
     }
   }
 
+  // Hide deprecated options
+  if (props.classFeature.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2155,6 +2164,9 @@ export function HeritageSelectionOption(props: {
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Hide deprecated options
+  if (props.heritage.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2210,6 +2222,9 @@ export function PhysicalFeatureSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.physicalFeature.meta_data?.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -2271,6 +2286,9 @@ export function ModeSelectionOption(props: {
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Hide deprecated options
+  if (props.mode.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2323,6 +2341,9 @@ export function SenseSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.sense.meta_data?.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -2414,6 +2435,9 @@ export function ClassSelectionOption(props: {
       props.onClick(props.class_);
     }
   };
+
+  // Hide deprecated options
+  if (props.class_.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -2543,6 +2567,9 @@ export function AncestrySelectionOption(props: {
       props.onClick(props.ancestry);
     }
   };
+
+  // Hide deprecated options
+  if (props.ancestry.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -2679,6 +2706,9 @@ export function BackgroundSelectionOption(props: {
     }
   };
 
+  // Hide deprecated options
+  if (props.background.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2744,6 +2774,9 @@ export function ArchetypeSelectionOption(props: {
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Hide deprecated options
+  if (props.archetype.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -2800,6 +2833,9 @@ export function VersatileHeritageSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.versatileHeritage.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -2862,6 +2898,9 @@ export function ItemSelectionOption(props: {
   onAdd?: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.item.meta_data?.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -2944,6 +2983,9 @@ export function SpellSelectionOption(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const isPhone = useMediaQuery(phoneQuery());
 
+  // Hide deprecated options
+  if (props.spell.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -3013,6 +3055,9 @@ export function TraitSelectionOption(props: {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Hide deprecated options
+  if (props.trait.meta_data?.deprecated && !props.selected) return null;
+
   return (
     <BaseSelectionOption
       leftSection={
@@ -3064,6 +3109,9 @@ export function LanguageSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.language.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
@@ -3123,6 +3171,9 @@ export function CreatureSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.creature.deprecated && !props.selected) return null;
 
   return (
     <BaseSelectionOption
