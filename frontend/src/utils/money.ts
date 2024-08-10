@@ -9,13 +9,14 @@ export class Money {
 
   constructor(value: number, scale?: boolean) {
     if (scale === true || scale === undefined) {
-      value = Math.round(value / this.scale);
+      this._value = value * this.scale;
+    } else {
+      this._value = value;
     }
-    this._value = value;
   }
 
   get value(): number {
-    return this._value * this.scale;
+    return this._value / this.scale;
   }
 
   add(delta: Money): Money {
