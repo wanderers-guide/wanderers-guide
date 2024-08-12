@@ -1,16 +1,16 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import ClickEditText from '@common/ClickEditText';
-import { useMantineTheme, Group, Anchor, Button, Box, Text } from '@mantine/core';
+import { Anchor, Box, Button, Group, Stack, Text, useMantineTheme } from '@mantine/core';
+import { LivingEntity } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { interpolateHealth } from '@utils/colors';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { evaluate } from 'mathjs';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
+import RestButton from '../components/RestButton';
 import { confirmHealth } from '../living-entity-utils';
-import { StoreID } from '@typing/variables';
-import { LivingEntity } from '@typing/content';
 
 export default function HealthSection(props: {
   id: StoreID;
@@ -46,7 +46,7 @@ export default function HealthSection(props: {
         }}
         h='100%'
       >
-        <Group justify='space-between' style={{ flexDirection: 'column' }} h='100%' gap={0}>
+        <Stack justify='space-between' h='100%' gap={0}>
           <Group wrap='nowrap' justify='space-between' align='flex-start' w='100%' gap={0} grow>
             <Box>
               <Text ta='center' fz='md' fw={500} c='gray.0'>
@@ -123,22 +123,28 @@ export default function HealthSection(props: {
               />
             </Box>
           </Group>
-          <Button
-            variant='subtle'
-            color='gray.5'
-            size='compact-xs'
-            fw={400}
-            onClick={() => {
-              openDrawer({
-                type: 'stat-resist-weak',
-                data: {},
-                extra: { addToHistory: true },
-              });
-            }}
-          >
-            Resistances & Weaknesses
-          </Button>
-        </Group>
+
+          <Group justify='space-evenly'>
+            <Button
+              variant='subtle'
+              color='gray.5'
+              size='compact-xs'
+              fw={400}
+              onClick={() => {
+                openDrawer({
+                  type: 'stat-resist-weak',
+                  data: {},
+                  extra: { addToHistory: true },
+                });
+              }}
+            >
+              Resistances & Weaknesses
+            </Button>
+            <Box>
+              <RestButton {...props} />
+            </Box>
+          </Group>
+        </Stack>
       </Box>
     </BlurBox>
   );
