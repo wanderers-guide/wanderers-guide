@@ -1,5 +1,6 @@
 import BlurButton from "@common/BlurButton";
 import { collectEntitySpellcasting, getFocusPoints } from "@content/collect-content";
+import { Button } from "@mantine/core";
 import { IconBed } from "@tabler/icons-react";
 import { LivingEntity } from "@typing/content";
 import { StoreID, VariableAttr, VariableNum, VariableProf } from "@typing/variables";
@@ -124,7 +125,8 @@ export default function RestButton(props: {
   };
 
   return (
-    <BlurButton
+    <Button
+      variant='light'
       size='compact-xs'
       fw={500}
       fullWidth
@@ -132,6 +134,6 @@ export default function RestButton(props: {
       leftSection={<IconBed size='0.9rem' />}
     >
       Rest
-    </BlurButton>
+    </Button>
   );
 };
