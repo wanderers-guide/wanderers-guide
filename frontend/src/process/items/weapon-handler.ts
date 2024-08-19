@@ -137,7 +137,9 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   const parts = new Map<string, number>();
   parts.set('This is your proficiency bonus with this weapon.', profData.total);
 
-  if (hasFinesse && dexMod > strMod) {
+  const usesDex = hasFinesse && dexMod > strMod;
+
+  if (usesDex) {
     parts.set(
       'This is your Dexterity modifier. Because this weapon has the finesse trait, you can use your Dexterity modifier instead of Strength on attack rolls.',
       dexMod
@@ -157,11 +159,11 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
     parts.set('This is a bonus you receive to all attack rolls.', attackBonus);
   }
 
-  if (dexAttackBonus) {
+  if (dexAttackBonus && usesDex) {
     parts.set('This is a bonus you receive to Dexterity-based attack rolls.', dexAttackBonus);
   }
 
-  if (strAttackBonus) {
+  if (strAttackBonus && !usesDex) {
     parts.set('This is a bonus you receive to Strength-based attack rolls.', strAttackBonus);
   }
 
