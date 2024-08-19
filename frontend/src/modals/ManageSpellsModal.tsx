@@ -269,7 +269,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                           //     ? props.spells.find((s) => s.id === spell.id)
                           //     : undefined;
                           // if (props.spells !== undefined && !foundSpell) return false;
-
+                          
                           if (rank === '0') {
                             return isNormalSpell(spell) && isCantrip(spell);
                           } else {
@@ -287,7 +287,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                                 { label: 'Occult', value: 'occult' },
                                 { label: 'Primal', value: 'primal' },
                               ],
-                              key: 'tradition',
+                              key: 'traditions',
                             },
                             {
                               title: 'Rank',
