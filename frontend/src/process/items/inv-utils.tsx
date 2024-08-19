@@ -64,6 +64,26 @@ export function getInvBulk(inv: Inventory) {
 }
 
 /**
+ * Get the total bulk of an item with quantity
+ * @param invItem - InventoryItem
+ * @returns - Item bulk as a number
+ */
+export function getItemBulk(invItem: InventoryItem) {
+  if (isItemFormula(invItem)) return 0;
+
+  let totalBulk = 0;
+
+  if (invItem.item.bulk === 'L') {
+    totalBulk = 0.1 * getItemQuantity(invItem.item);
+  }
+
+  totalBulk = parseFloat(invItem.item.bulk ?? '0') * getItemQuantity(invItem.item);
+
+  // If the total bulk is less than 1 bulk, it counts as light bulk
+  return totalBulk >= 0.1 && totalBulk < 1 ? 0.1 : Math.floor(totalBulk);
+}
+
+/**
  * Utility function to handle adding an item to the inventory
  * @param setInventory - Inventory state setter
  * @param item - Item to add
@@ -194,9 +214,9 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
             ...item,
             meta_data: item.meta_data
               ? {
-                  ...item.meta_data,
-                  base_item_content: baseItem,
-                }
+                ...item.meta_data,
+                base_item_content: baseItem,
+              }
               : undefined,
           },
           is_formula: false,

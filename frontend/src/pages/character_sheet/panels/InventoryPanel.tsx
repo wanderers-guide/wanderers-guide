@@ -1,71 +1,66 @@
-import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
-import { ItemIcon } from '@common/ItemIcon';
-import { priceToString } from '@items/currency-handler';
-import {
-  isItemWeapon,
-  handleAddItem,
-  labelizeBulk,
-  getInvBulk,
-  getBulkLimit,
-  isItemContainer,
-  handleUpdateItem,
-  handleDeleteItem,
-  handleMoveItem,
-  isItemWithQuantity,
-  getItemQuantity,
-  isItemInvestable,
-  reachedInvestedLimit,
-  isItemEquippable,
-} from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
-import {
-  useMantineTheme,
-  Stack,
-  Group,
-  TextInput,
-  Badge,
-  Button,
-  ScrollArea,
-  Grid,
-  Accordion,
-  Anchor,
-  Avatar,
-  Box,
-  Text,
-  Menu,
-  ActionIcon,
-  rem,
-  Title,
-} from '@mantine/core';
-import { BuyItemModal } from '@modals/BuyItemModal';
-import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import {
-  IconSearch,
-  IconPlus,
-  IconArrowsLeftRight,
-  IconMenu2,
-  IconMessageCircle,
-  IconPhoto,
-  IconSettings,
-  IconTrash,
-  IconCoins,
-} from '@tabler/icons-react';
-import { ContentPackage, Inventory, Item, InventoryItem, Character } from '@typing/content';
-import _ from 'lodash-es';
-import { useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import classes from '@css/FaqSimple.module.css';
 import CopperCoin from '@assets/images/currency/copper.png';
 import GoldCoin from '@assets/images/currency/gold.png';
 import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
-import { sign } from '@utils/numbers';
-import { isPhoneSized } from '@utils/mobile-responsive';
-import { isPlayingStarfinder } from '@content/system-handler';
-import { openContextModal } from '@mantine/modals';
-import { showNotification } from '@mantine/notifications';
+import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
+import { ItemIcon } from '@common/ItemIcon';
 import { isItemVisible } from '@content/content-hidden';
+import { isPlayingStarfinder } from '@content/system-handler';
+import classes from '@css/FaqSimple.module.css';
+import { priceToString } from '@items/currency-handler';
+import {
+  getBulkLimit,
+  getInvBulk,
+  getItemBulk,
+  getItemQuantity,
+  handleAddItem,
+  handleDeleteItem,
+  handleMoveItem,
+  handleUpdateItem,
+  isItemContainer,
+  isItemEquippable,
+  isItemInvestable,
+  isItemWeapon,
+  isItemWithQuantity,
+  labelizeBulk,
+  reachedInvestedLimit,
+} from '@items/inv-utils';
+import { getWeaponStats } from '@items/weapon-handler';
+import {
+  Accordion,
+  ActionIcon,
+  Anchor,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Grid,
+  Group,
+  Menu,
+  rem,
+  ScrollArea,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+  useMantineTheme,
+} from '@mantine/core';
+import { openContextModal } from '@mantine/modals';
+import { BuyItemModal } from '@modals/BuyItemModal';
+import { StatButton } from '@pages/character_builder/CharBuilderCreation';
+import {
+  IconCoins,
+  IconMenu2,
+  IconPlus,
+  IconSearch
+} from '@tabler/icons-react';
+import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
+import { isPhoneSized } from '@utils/mobile-responsive';
+import { sign } from '@utils/numbers';
+import _ from 'lodash-es';
+import { useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export default function InventoryPanel(props: {
   content: ContentPackage;
@@ -87,20 +82,20 @@ export default function InventoryPanel(props: {
   );
   const invItems = searchQuery.trim()
     ? visibleInvItems.filter((invItem) => {
-        // Custom search, alt could be to use JsSearch here
-        const query = searchQuery.trim().toLowerCase();
+      // Custom search, alt could be to use JsSearch here
+      const query = searchQuery.trim().toLowerCase();
 
-        const checkInvItem = (invItem: InventoryItem) => {
-          if (invItem.item.name.toLowerCase().includes(query)) return true;
-          if (invItem.item.description.toLowerCase().includes(query)) return true;
-          if (invItem.item.group.toLowerCase().includes(query)) return true;
-          return false;
-        };
-
-        if (checkInvItem(invItem)) return true;
-        if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
+      const checkInvItem = (invItem: InventoryItem) => {
+        if (invItem.item.name.toLowerCase().includes(query)) return true;
+        if (invItem.item.description.toLowerCase().includes(query)) return true;
+        if (invItem.item.group.toLowerCase().includes(query)) return true;
         return false;
-      })
+      };
+
+      if (checkInvItem(invItem)) return true;
+      if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
+      return false;
+    })
     : visibleInvItems;
 
   const openAddItemDrawer = () => {
@@ -582,7 +577,7 @@ function InvItemOption(props: {
                 <>
                   {' '}
                   <Text ta='center' fz='xs'>
-                    {labelizeBulk(props.invItem.is_formula ? '0' : props.invItem.item.bulk)}
+                    {labelizeBulk(getItemBulk(props.invItem))}
                   </Text>
                 </>
               )}
