@@ -3,6 +3,7 @@ import { Box, BoxComponentProps, Button, ButtonProps, useMantineTheme } from '@m
 import { useHover } from '@mantine/hooks';
 
 interface BlurButtonProps extends ButtonProps {
+  bgColor?: string;
   children: React.ReactNode;
   onClick?: React.MouseEventHandler<HTMLAnchorElement>;
   href?: string;
@@ -27,7 +28,7 @@ export default function BlurButton(props: BlurButtonProps) {
       style={{
         flex: 1,
         backdropFilter: 'blur(6px)',
-        backgroundColor: hovered ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered ? ICON_BG_COLOR_HOVER : props.bgColor,
         ...props.style,
       }}
     >

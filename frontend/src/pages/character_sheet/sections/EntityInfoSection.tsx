@@ -4,7 +4,7 @@ import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
-import { useMantineTheme, Group, Stack, TextInput, Box, Text } from '@mantine/core';
+import { useMantineTheme, Group, Stack, TextInput, Box, Text, Title } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { StoreID, VariableAttr, VariableNum, VariableProf } from '@typing/variables';
 import { getFinalHealthValue } from '@variables/variable-display';
@@ -18,6 +18,8 @@ import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@typing/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
+import { ICON_BG_COLOR } from '@constants/data';
+import { modals } from '@mantine/modals';
 
 export default function EntityInfoSection(props: {
   id: StoreID;
@@ -207,6 +209,7 @@ export default function EntityInfoSection(props: {
               <Box>
                 <BlurButton
                   size='compact-xs'
+                  bgColor={ICON_BG_COLOR}
                   fw={500}
                   fullWidth
                   onClick={(e) => {
@@ -222,7 +225,31 @@ export default function EntityInfoSection(props: {
                 </BlurButton>
               </Box>
               <Box>
-                <BlurButton size='compact-xs' fw={500} fullWidth onClick={handleRest}>
+                <BlurButton
+                  size='compact-xs'
+                  bgColor={ICON_BG_COLOR}
+                  fw={500}
+                  fullWidth
+                  onClick={() => {
+                    modals.openConfirmModal({
+                      id: 'click-rest',
+                      title: <Title order={4}>Are you sure you want to rest?</Title>,
+                      children: (
+                        <Box>
+                          <Text size='sm'>
+                            You will regain some HP (Con. mod × level), reset spell slots / focus points, and you might
+                            recover from or improve certain conditions.
+                          </Text>
+                        </Box>
+                      ),
+                      labels: { confirm: 'Rest', cancel: 'Cancel' },
+                      onCancel: () => {},
+                      onConfirm: () => {
+                        handleRest();
+                      },
+                    });
+                  }}
+                >
                   Rest
                 </BlurButton>
               </Box>
