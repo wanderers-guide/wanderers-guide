@@ -37,10 +37,7 @@ import { convertToGp } from '@items/currency-handler';
 import { selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { modals } from '@mantine/modals';
 import { isItemVisible } from '@content/content-hidden';
-
-export function getGpGained(entry: SocietyAdventureEntry) {
-  return (entry.items_total_sell ?? 0) / 2 - (entry.items_total_buy ?? 0) + (entry.items_total_extra ?? 0);
-}
+import { getGpGained } from '@utils/money';
 
 export function CreateSocietyAdventureEntryModal(props: {
   opened: boolean;
@@ -372,7 +369,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                 label='GP Gained'
                 placeholder='Result'
                 readOnly
-                value={getGpGained(form.values)}
+                value={getGpGained(form.values).value}
                 style={{
                   whiteSpace: 'nowrap',
                 }}
