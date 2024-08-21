@@ -180,6 +180,7 @@ export default function PreparedSpellsList(props: {
                               props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
                               {
                                 traditions: [props.source!.tradition.toLowerCase()],
+                                ranks: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
                               },
                             );
                           }}
