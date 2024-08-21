@@ -6,6 +6,7 @@ export interface FilterOption {
   type: 'MULTI-SELECT' | 'SELECT' | 'TRAITS-SELECT' | 'TEXT-INPUT' | 'NUMBER-INPUT' | 'CHECKBOX';
   key: string;
   options?: string[] | { label: string; value: string }[];
+  default?: string[];
   isActionOption?: boolean
   filterFn?: (option: Record<string, any>) => boolean;
 }

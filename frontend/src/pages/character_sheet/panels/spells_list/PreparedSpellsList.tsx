@@ -28,7 +28,14 @@ export default function PreparedSpellsList(props: {
     innates?: SpellInnateEntry[];
   };
   hasFilters: boolean;
-  openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
+  openManageSpells?: (
+    source: string,
+    type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
+    filter?: {
+      traditions?: string[];
+      ranks?: string[];
+    },
+  ) => void;
   slots: Dictionary<{
     spell: Spell | undefined;
     rank: number;
@@ -40,6 +47,10 @@ export default function PreparedSpellsList(props: {
   castSpell: (cast: boolean, spell: Spell) => void;
 }) {
   const { slots, castSpell } = props;
+  const highestRank = Object.keys(slots || {}).reduce(
+    (acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc),
+    0,
+  );
   // If there are no spells to display, and there are filters, return null
   if (
     props.hasFilters &&
@@ -68,7 +79,11 @@ export default function PreparedSpellsList(props: {
                 e.preventDefault();
                 props.openManageSpells?.(
                   props.source!.name,
-                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
+                  {
+                    traditions: [props.source!.tradition.toLowerCase()],
+                    ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
+                  },
                 );
               }}
             >
@@ -162,7 +177,11 @@ export default function PreparedSpellsList(props: {
                           onOpenManageSpells={() => {
                             props.openManageSpells?.(
                               props.source!.name,
-                              props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                              props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
+                              {
+                                traditions: [props.source!.tradition.toLowerCase()],
+                                ranks: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
+                              },
                             );
                           }}
                           hasFilters={props.hasFilters}

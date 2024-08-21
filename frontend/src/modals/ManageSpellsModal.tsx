@@ -37,6 +37,10 @@ export default function ManageSpellsModal(props: {
   onClose: () => void;
   source: string;
   type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+  filter?: {
+    traditions?: string[];
+    ranks?: string[];
+  };
 }) {
   const isRituals = props.source === 'RITUALS';
 
@@ -130,6 +134,7 @@ export default function ManageSpellsModal(props: {
             spells={spells ?? []}
             source={props.source}
             searchQuery={searchQuery}
+            filter={props.filter}
             setSearchQuery={(val) => {
               setSearchQuery(val);
             }}
@@ -141,6 +146,7 @@ export default function ManageSpellsModal(props: {
                 spells={spells ?? []}
                 source={props.source}
                 searchQuery={searchQuery}
+                filter={props.filter}
                 setSearchQuery={(val) => {
                   setSearchQuery(val);
                 }}
@@ -148,13 +154,22 @@ export default function ManageSpellsModal(props: {
             </Grid.Col>
             <Grid.Col span={6}>
               <LoadingOverlay visible={isFetching} />
-              <SlotsSection slots={slots} spells={spells ?? []} source={props.source} />
+              <SlotsSection
+                filter={props.filter}
+                slots={slots}
+                spells={spells ?? []}
+                source={props.source}
+              />
             </Grid.Col>
           </Grid>
         ) : (
           <>
             <LoadingOverlay visible={isFetching} />
-            <SlotsSection slots={slots} source={props.source} />
+            <SlotsSection
+              filter={props.filter}
+              slots={slots}
+              source={props.source}
+            />
           </>
         )}
       </Stack>
@@ -162,7 +177,15 @@ export default function ManageSpellsModal(props: {
   );
 }
 
-const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spell[]; source: string }) => {
+const SlotsSection = (props: {
+  slots: Record<string, SpellSlot[]>;
+  spells?: Spell[];
+  source: string;
+  filter?: {
+    traditions?: string[];
+    ranks?: string[];
+  };
+}) => {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [character, setCharacter] = useRecoilState(characterState);
@@ -269,7 +292,7 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                           //     ? props.spells.find((s) => s.id === spell.id)
                           //     : undefined;
                           // if (props.spells !== undefined && !foundSpell) return false;
-                          
+
                           if (rank === '0') {
                             return isNormalSpell(spell) && isCantrip(spell);
                           } else {
@@ -288,10 +311,12 @@ const SlotsSection = (props: { slots: Record<string, SpellSlot[]>; spells?: Spel
                                 { label: 'Primal', value: 'primal' },
                               ],
                               key: 'traditions',
+                              default: props.filter?.traditions,
                             },
                             {
                               title: 'Rank',
                               type: 'MULTI-SELECT',
+                              default: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
                               options: [
                                 { label: 'Cantrip', value: '0' },
                                 { label: '1st', value: '1' },
@@ -328,6 +353,10 @@ const ListSection = (props: {
   source: string;
   searchQuery: string;
   setSearchQuery: (val: string) => void;
+  filter?: {
+    traditions?: string[];
+    ranks?: string[];
+  };
 }) => {
   const isRituals = props.source === 'RITUALS';
 
@@ -429,6 +458,7 @@ const ListSection = (props: {
                     {
                       title: 'Tradition',
                       type: 'MULTI-SELECT',
+                      default: props.filter?.traditions,
                       options: [
                         { label: 'Arcane', value: 'arcane' },
                         { label: 'Divine', value: 'divine' },
@@ -440,6 +470,7 @@ const ListSection = (props: {
                     {
                       title: 'Rank',
                       type: 'MULTI-SELECT',
+                      default: props.filter?.ranks,
                       options: [
                         { label: 'Cantrip', value: '0' },
                         { label: '1st', value: '1' },
