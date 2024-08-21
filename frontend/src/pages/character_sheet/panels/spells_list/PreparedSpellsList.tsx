@@ -28,7 +28,14 @@ export default function PreparedSpellsList(props: {
     innates?: SpellInnateEntry[];
   };
   hasFilters: boolean;
-  openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
+  openManageSpells?: (
+    source: string,
+    type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
+    filter?: {
+      traditions?: string[];
+      ranks?: string[];
+    },
+  ) => void;
   slots: Dictionary<{
     spell: Spell | undefined;
     rank: number;
@@ -68,7 +75,10 @@ export default function PreparedSpellsList(props: {
                 e.preventDefault();
                 props.openManageSpells?.(
                   props.source!.name,
-                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                  props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
+                  {
+                    traditions: [props.source!.tradition.toLowerCase()],
+                  },
                 );
               }}
             >
@@ -162,7 +172,10 @@ export default function PreparedSpellsList(props: {
                           onOpenManageSpells={() => {
                             props.openManageSpells?.(
                               props.source!.name,
-                              props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY'
+                              props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
+                              {
+                                traditions: [props.source!.tradition.toLowerCase()],
+                              },
                             );
                           }}
                           hasFilters={props.hasFilters}
