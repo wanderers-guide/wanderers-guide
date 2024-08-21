@@ -43,7 +43,7 @@ import {
 import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
-import { ObjectWithUUID, getSelectedOption } from '@operations/operation-utils';
+import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
 import {
   IconCheck,
   IconChevronDown,
@@ -2094,7 +2094,7 @@ export function ClassFeatureSelectionOption(props: {
   // Find first selected option
   let selectedOption: OperationSelectOptionCustom | null = null;
   for (const op of props.classFeature.operations ?? []) {
-    const option = getSelectedOption(character, op);
+    const option = getSelectedCustomOption(character, op);
     if (option) {
       selectedOption = option;
       break;

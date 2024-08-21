@@ -285,7 +285,7 @@ interface OperationSelectOptionBase {
   readonly type: OperationSelectOptionType;
 }
 
-interface OperationSelectOptionCustom extends OperationSelectOptionBase {
+export interface OperationSelectOptionCustom extends OperationSelectOptionBase {
   readonly type: 'CUSTOM';
   title: string;
   description: string;
