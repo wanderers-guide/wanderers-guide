@@ -316,7 +316,7 @@ const SlotsSection = (props: {
                             {
                               title: 'Rank',
                               type: 'MULTI-SELECT',
-                              default: props.filter?.ranks,
+                              default: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
                               options: [
                                 { label: 'Cantrip', value: '0' },
                                 { label: '1st', value: '1' },

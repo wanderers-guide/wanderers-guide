@@ -47,6 +47,10 @@ export default function PreparedSpellsList(props: {
   castSpell: (cast: boolean, spell: Spell) => void;
 }) {
   const { slots, castSpell } = props;
+  const highestRank = Object.keys(slots || {}).reduce(
+    (acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc),
+    0,
+  );
   // If there are no spells to display, and there are filters, return null
   if (
     props.hasFilters &&
@@ -78,6 +82,7 @@ export default function PreparedSpellsList(props: {
                   props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
                   {
                     traditions: [props.source!.tradition.toLowerCase()],
+                    ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
                   },
                 );
               }}

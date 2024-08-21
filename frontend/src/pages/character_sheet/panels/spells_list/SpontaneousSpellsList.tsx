@@ -53,6 +53,10 @@ export default function SpontaneousSpellsList(props: {
   setCharacter: SetterOrUpdater<Character | null>;
 }) {
   const { slots, castSpell, spells, setCharacter, } = props;
+  const highestRank = Object.keys(slots || {}).reduce(
+    (acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc),
+    0,
+  );
   // If there are no spells to display, and there are filters, return null
   if (
     props.hasFilters &&
@@ -84,6 +88,7 @@ export default function SpontaneousSpellsList(props: {
                   'LIST-ONLY',
                   {
                     traditions: [props.source!.tradition.toLowerCase()],
+                    ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
                   },
                 );
               }}
