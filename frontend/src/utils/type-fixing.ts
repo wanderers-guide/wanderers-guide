@@ -22,5 +22,6 @@ export function convertToSetEntity(setValue: SetterOrUpdater<Character | null> |
 }
 
 export function instanceOfOperationSelectOptionCustom(object: any): object is OperationSelectOptionCustom {
+  if (!object) return false;
   return 'type' in object && 'title' in object && 'description' in object && 'operations' in object;
 }
