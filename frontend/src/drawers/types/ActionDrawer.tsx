@@ -14,6 +14,7 @@ import {
   getSelectedCustomOption,
   getSelectedOption,
   ObjectWithUUID,
+  sortObjectByName,
 } from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
@@ -228,13 +229,13 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
       if (op.data.modeType === 'PREDEFINED') {
         setOptions((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]);
       } else {
-        setOptions(
-          await determineFilteredSelectionList(
-            op.data.optionType,
-            op.id,
-            (op.data.optionsFilters ?? []) as OperationSelectFilters
-          )
+        const ops = await determineFilteredSelectionList(
+          op.data.optionType,
+          op.id,
+          (op.data.optionsFilters ?? []) as OperationSelectFilters
         );
+        ops.sort(sortObjectByName);
+        setOptions(ops);
       }
     }
     getOptions();

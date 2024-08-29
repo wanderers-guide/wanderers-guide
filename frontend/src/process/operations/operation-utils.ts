@@ -324,6 +324,18 @@ export interface ObjectWithUUID {
   _meta_data?: Record<string, any>;
 }
 
+export function sortObjectByName(a: ObjectWithUUID, b: ObjectWithUUID) {
+  const aName = a.name?.toLowerCase();
+  const bName = b.name?.toLowerCase();
+  if (aName < bName) {
+    return -1;
+  } else if (aName > bName) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 export async function determineFilteredSelectionList(
   id: StoreID,
   operationUUID: string,
