@@ -24,6 +24,8 @@ import { instanceOfOperationSelectOptionCustom } from '@utils/type-fixing';
 import { useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
+const SELECTION_DISPLAY_LIMIT = 25;
+
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
 
@@ -235,6 +237,9 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
           (op.data.optionsFilters ?? []) as OperationSelectFilters
         );
         ops.sort(sortObjectByName);
+        if (ops.length > SELECTION_DISPLAY_LIMIT) {
+          ops.length = SELECTION_DISPLAY_LIMIT;
+        }
         setOptions(ops);
       }
     }
