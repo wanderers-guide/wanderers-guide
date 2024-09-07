@@ -24,6 +24,8 @@ import { instanceOfOperationSelectOptionCustom } from '@utils/type-fixing';
 import { useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
+const SELECTION_DISPLAY_LIMIT = 25;
+
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
 
@@ -223,6 +225,7 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
   const character = useRecoilValue(characterState);
 
   const [options, setOptions] = useState([] as OperationSelectOptionCustom[] | ObjectWithUUID[]);
+  const [more, setMore] = useState(null as string | null);
   useEffect(() => {
     // React advises to declare the async function directly inside useEffect
     async function getOptions() {
@@ -235,6 +238,10 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
           (op.data.optionsFilters ?? []) as OperationSelectFilters
         );
         ops.sort(sortObjectByName);
+        if (ops.length > SELECTION_DISPLAY_LIMIT) {
+          setMore(`and ${ops.length - SELECTION_DISPLAY_LIMIT} more...`);
+          ops.length = SELECTION_DISPLAY_LIMIT;
+        }
         setOptions(ops);
       }
     }
@@ -291,6 +298,7 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
                 : ''}
           </List.Item>
         ))}
+        {more === null ? null : <List.Item key={options.length}>{more}</List.Item>}
       </List>
     </Box>
   );
