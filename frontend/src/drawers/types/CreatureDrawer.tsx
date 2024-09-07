@@ -14,9 +14,13 @@ import {
   SimpleGrid,
   Pill,
   useMantineTheme,
+  Avatar,
 } from '@mantine/core';
+import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import DetailsPanel from '@pages/character_sheet/panels/DetailsPanel';
+import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
 import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
 import AttributeSection from '@pages/character_sheet/sections/AttributeSection';
 import EntityInfoSection from '@pages/character_sheet/sections/EntityInfoSection';
@@ -44,10 +48,12 @@ import { convertToSetEntity } from '@utils/type-fixing';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getAllAncestryTraitVariables, getVariable, setVariable } from '@variables/variable-manager';
+import _ from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
+  const theme = useMantineTheme();
   const id = props.data.id;
 
   const { data: _creature } = useQuery({
@@ -67,6 +73,18 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
       {creature && (
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
+            {creature?.details?.image_url && (
+              <Avatar
+                src={creature?.details?.image_url}
+                alt='Creature Artwork'
+                size={75}
+                radius={75}
+                variant='transparent'
+                color='dark.3'
+                bg={theme.colors.dark[6]}
+              />
+            )}
+
             <Box>
               <Title order={3}>{creature.name}</Title>
             </Box>
@@ -107,6 +125,10 @@ export function CreatureDrawerContent(props: {
   const [openedSelectionPanel, setOpenedSelectionPanel] = useState(false);
   const [activeTab, setActiveTab] = useState('main');
 
+  // Panel dimensions
+  const panelWidth = 400;
+  const panelHeight = 500;
+
   // Variable store ID
   const STORE_ID = `CREATURE_${creature?.id}_${props.data.uuid}`;
 
@@ -138,6 +160,31 @@ export function CreatureDrawerContent(props: {
     }, 1);
   }, [creature, content]);
 
+  // Inventory saving & management
+  const getInventory = (creature: Creature | null) => {
+    return (
+      creature?.inventory ?? {
+        coins: {
+          cp: 0,
+          sp: 0,
+          gp: 0,
+          pp: 0,
+        },
+        items: [],
+      }
+    );
+  };
+  const setInventory = (updateInventory: any) => {
+    setCreature((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        inventory:
+          typeof updateInventory === 'function' && prev.inventory ? updateInventory(prev.inventory) : undefined,
+      };
+    });
+  };
+
   if (loading || !creature || !content) {
     return (
       <Loader
@@ -165,34 +212,29 @@ export function CreatureDrawerContent(props: {
   return (
     <Stack>
       <Stack>
-        <EntityInfoSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-        <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-        <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-        <ArmorSection
-          id={STORE_ID}
-          inventory={
-            creature.inventory ?? {
-              coins: {
-                cp: 0,
-                sp: 0,
-                gp: 0,
-                pp: 0,
-              },
-              items: [],
-            }
-          }
-          setInventory={(updateInventory) => {
-            setCreature((prev) => {
-              if (!prev) return null;
-              return {
-                ...prev,
-                inventory:
-                  typeof updateInventory === 'function' && prev.inventory ? updateInventory(prev.inventory) : undefined,
-              };
-            });
-          }}
-        />
-        <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+        {activeTab === 'main' && (
+          <Stack>
+            {/* <EntityInfoSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} /> */}
+            <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+            <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+            <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
+            <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+          </Stack>
+        )}
+
+        {activeTab === 'inventory' && (
+          <InventoryPanel
+            content={content}
+            panelHeight={panelHeight}
+            panelWidth={panelWidth}
+            inventory={getInventory(creature)}
+            setInventory={setInventory}
+          />
+        )}
+
+        {activeTab === 'details' && (
+          <DetailsPanel content={content} panelHeight={panelHeight} panelWidth={panelWidth} />
+        )}
 
         <Box
           style={{

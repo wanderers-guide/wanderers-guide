@@ -91,6 +91,7 @@ interface Trait {
     ancestry_trait?: boolean;
     archetype_trait?: boolean;
     versatile_heritage_trait?: boolean;
+    companion_type_trait?: boolean;
   };
   content_source_id: number;
 }

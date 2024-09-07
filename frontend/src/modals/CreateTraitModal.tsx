@@ -76,6 +76,7 @@ export function CreateTraitModal(props: {
           ancestry_trait: trait.meta_data.ancestry_trait ?? false,
           archetype_trait: trait.meta_data.archetype_trait ?? false,
           versatile_heritage_trait: trait.meta_data.versatile_heritage_trait ?? false,
+          companion_type_trait: trait.meta_data.companion_type_trait ?? false,
         });
       }
       refreshDisplayDescription();
@@ -95,6 +96,7 @@ export function CreateTraitModal(props: {
     ancestry_trait: false,
     archetype_trait: false,
     versatile_heritage_trait: false,
+    companion_type_trait: false,
   });
 
   // Initialize form
@@ -138,6 +140,7 @@ export function CreateTraitModal(props: {
       ancestry_trait: false,
       archetype_trait: false,
       versatile_heritage_trait: false,
+      companion_type_trait: false,
     });
     setDescription(undefined);
   };
@@ -269,6 +272,18 @@ export function CreateTraitModal(props: {
                     setMetaData({
                       ...metaData,
                       versatile_heritage_trait: event.currentTarget.checked,
+                    })
+                  }
+                />
+
+                <Switch
+                  label='Companion Type Trait'
+                  labelPosition='left'
+                  checked={metaData.companion_type_trait}
+                  onChange={(event) =>
+                    setMetaData({
+                      ...metaData,
+                      companion_type_trait: event.currentTarget.checked,
                     })
                   }
                 />
