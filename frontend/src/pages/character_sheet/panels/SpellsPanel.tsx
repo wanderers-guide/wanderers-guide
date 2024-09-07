@@ -15,7 +15,7 @@ import {
   Stack,
   Text,
   TextInput,
-  useMantineTheme
+  useMantineTheme,
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { isCantrip } from '@spells/spell-utils';
@@ -33,8 +33,6 @@ import PreparedSpellsList from './spells_list/PreparedSpellsList';
 import RitualSpellsList from './spells_list/RitualSpellsList';
 import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 
-
-
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
@@ -43,13 +41,13 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
   const [section, setSection] = useState<string>();
   const [manageSpells, setManageSpells] = useState<
     | {
-      source: string;
-      type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
-      filter?: {
-        traditions?: string[];
-        ranks?: string[];
-      };
-    }
+        source: string;
+        type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+        filter?: {
+          traditions?: string[];
+          ranks?: string[];
+        };
+      }
     | undefined
   >();
 
@@ -87,7 +85,6 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
   // Filter spells by action cost
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
 
-
   const searchSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
   const allSpells = searchSpells.filter((spell) => spell.cast === actionTypeFilter || actionTypeFilter === 'ALL');
   const hasFilters = searchQuery.trim().length > 0 || actionTypeFilter !== 'ALL';
@@ -104,7 +101,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
             onChange={(event) => setSearchQuery(event.target.value)}
             rightSection={
               <CloseButton
-                aria-label="Clear input"
+                aria-label='Clear input'
                 onClick={() => setSearchQuery('')}
                 style={{ display: searchQuery.trim() ? undefined : 'none' }}
               />
@@ -261,104 +258,106 @@ function ActionFilter(props: {
   const { actionTypeFilter, setActionTypeFilter } = props;
   const theme = useMantineTheme();
 
-  return <Group gap={5}>
-    <ActionIcon
-      variant='subtle'
-      color='dark'
-      radius='xl'
-      size='lg'
-      aria-label='Filter One Action'
-      style={{
-        backgroundColor: actionTypeFilter === 'ALL' ? theme.colors.dark[6] : undefined,
-        borderColor: actionTypeFilter === 'ALL' ? theme.colors.dark[4] : undefined,
-      }}
-      onClick={() => {
-        setActionTypeFilter('ALL');
-      }}
-    >
-      <Text c='gray.3'>All</Text>
-    </ActionIcon>
-    <ActionIcon
-      variant='subtle'
-      color='dark'
-      radius='xl'
-      size='lg'
-      aria-label='Filter One Action'
-      style={{
-        backgroundColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
-        borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors['guide'][8] : undefined,
-      }}
-      onClick={() => {
-        setActionTypeFilter('ONE-ACTION');
-      }}
-    >
-      <ActionSymbol cost={'ONE-ACTION'} size={'1.9rem'} />
-    </ActionIcon>
-    <ActionIcon
-      variant='subtle'
-      color='dark'
-      radius='xl'
-      size='lg'
-      aria-label='Filter Two Actions'
-      style={{
-        backgroundColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
-        borderColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors['guide'][8] : undefined,
-      }}
-      onClick={() => {
-        setActionTypeFilter('TWO-ACTIONS');
-      }}
-    >
-      <ActionSymbol cost={'TWO-ACTIONS'} size={'1.9rem'} />
-    </ActionIcon>
-    <ActionIcon
-      variant='subtle'
-      color='dark'
-      radius='xl'
-      size='lg'
-      aria-label='Filter Three Actions'
-      style={{
-        backgroundColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
-        borderColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors['guide'][8] : undefined,
-      }}
-      onClick={() => {
-        setActionTypeFilter('THREE-ACTIONS');
-      }}
-    >
-      <ActionSymbol cost={'THREE-ACTIONS'} size={'1.9rem'} />
-    </ActionIcon>
-    <ActionIcon
-      variant='subtle'
-      color='dark'
-      radius='xl'
-      size='lg'
-      aria-label='Filter Free Action'
-      style={{
-        backgroundColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
-        borderColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors['guide'][8] : undefined,
-      }}
-      onClick={() => {
-        setActionTypeFilter('FREE-ACTION');
-      }}
-    >
-      <ActionSymbol cost={'FREE-ACTION'} size={'1.9rem'} />
-    </ActionIcon>
-    <ActionIcon
-      variant='subtle'
-      color='dark'
-      radius='xl'
-      size='lg'
-      aria-label='Filter Reaction'
-      style={{
-        backgroundColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
-        borderColor: actionTypeFilter === 'REACTION' ? theme.colors['guide'][8] : undefined,
-      }}
-      onClick={() => {
-        setActionTypeFilter('REACTION');
-      }}
-    >
-      <ActionSymbol cost={'REACTION'} size={'1.9rem'} />
-    </ActionIcon>
-  </Group>;
+  return (
+    <Group gap={5}>
+      <ActionIcon
+        variant='subtle'
+        color='dark'
+        radius='xl'
+        size='lg'
+        aria-label='Filter One Action'
+        style={{
+          backgroundColor: actionTypeFilter === 'ALL' ? theme.colors.dark[6] : undefined,
+          borderColor: actionTypeFilter === 'ALL' ? theme.colors.dark[4] : undefined,
+        }}
+        onClick={() => {
+          setActionTypeFilter('ALL');
+        }}
+      >
+        <Text c='gray.3'>All</Text>
+      </ActionIcon>
+      <ActionIcon
+        variant='subtle'
+        color='dark'
+        radius='xl'
+        size='lg'
+        aria-label='Filter One Action'
+        style={{
+          backgroundColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
+          borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors['guide'][8] : undefined,
+        }}
+        onClick={() => {
+          setActionTypeFilter('ONE-ACTION');
+        }}
+      >
+        <ActionSymbol cost={'ONE-ACTION'} size={'1.9rem'} />
+      </ActionIcon>
+      <ActionIcon
+        variant='subtle'
+        color='dark'
+        radius='xl'
+        size='lg'
+        aria-label='Filter Two Actions'
+        style={{
+          backgroundColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
+          borderColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors['guide'][8] : undefined,
+        }}
+        onClick={() => {
+          setActionTypeFilter('TWO-ACTIONS');
+        }}
+      >
+        <ActionSymbol cost={'TWO-ACTIONS'} size={'1.9rem'} />
+      </ActionIcon>
+      <ActionIcon
+        variant='subtle'
+        color='dark'
+        radius='xl'
+        size='lg'
+        aria-label='Filter Three Actions'
+        style={{
+          backgroundColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
+          borderColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors['guide'][8] : undefined,
+        }}
+        onClick={() => {
+          setActionTypeFilter('THREE-ACTIONS');
+        }}
+      >
+        <ActionSymbol cost={'THREE-ACTIONS'} size={'1.9rem'} />
+      </ActionIcon>
+      <ActionIcon
+        variant='subtle'
+        color='dark'
+        radius='xl'
+        size='lg'
+        aria-label='Filter Free Action'
+        style={{
+          backgroundColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
+          borderColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors['guide'][8] : undefined,
+        }}
+        onClick={() => {
+          setActionTypeFilter('FREE-ACTION');
+        }}
+      >
+        <ActionSymbol cost={'FREE-ACTION'} size={'1.9rem'} />
+      </ActionIcon>
+      <ActionIcon
+        variant='subtle'
+        color='dark'
+        radius='xl'
+        size='lg'
+        aria-label='Filter Reaction'
+        style={{
+          backgroundColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
+          borderColor: actionTypeFilter === 'REACTION' ? theme.colors['guide'][8] : undefined,
+        }}
+        onClick={() => {
+          setActionTypeFilter('REACTION');
+        }}
+      >
+        <ActionSymbol cost={'REACTION'} size={'1.9rem'} />
+      </ActionIcon>
+    </Group>
+  );
 }
 
 function SpellList(props: {
@@ -384,12 +383,12 @@ function SpellList(props: {
   };
   hasFilters: boolean;
   openManageSpells?: (
-    source: string, 
+    source: string,
     type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
     filter?: {
       traditions?: string[];
       ranks?: string[];
-    },
+    }
   ) => void;
 }) {
   const [character, setCharacter] = useRecoilState(characterState);
@@ -406,7 +405,13 @@ function SpellList(props: {
       setCharacter((c) => {
         if (!c) return c;
         const slots = collectEntitySpellcasting('CHARACTER', c).slots;
-        const slotIndex = slots.findIndex((slot) => slot.spell_id === spell.id && slot.rank === spell.rank && slot.source === props.source!.name && !!slot.exhausted == !cast);
+        const slotIndex = slots.findIndex(
+          (slot) =>
+            slot.spell_id === spell.id &&
+            slot.rank === spell.rank &&
+            slot.source === props.source!.name &&
+            !!slot.exhausted == !cast
+        );
         if (slotIndex === -1) return c; // Shouldn't happen
         const newSlots = [...slots];
         newSlots[slotIndex].exhausted = cast;
@@ -513,7 +518,7 @@ function SpellList(props: {
         if (!foundSpell) return null;
         const entry = props.extra.charData.list.find((entry) => entry.spell_id === id);
         // Don't add spell if we have an entry for it because we're going to add it later
-        if (entry) return null;
+        if (entry && entry.source !== 'RITUALS') return null;
         return foundSpell;
       })
       .filter((spell) => spell) as Spell[];
@@ -577,15 +582,33 @@ function SpellList(props: {
   }
 
   if (props.type === 'SPONTANEOUS' && props.source) {
-    return <SpontaneousSpellsList {...props} slots={slots} castSpell={castSpell} spells={spells} setCharacter={setCharacter} />;
+    return (
+      <SpontaneousSpellsList
+        {...props}
+        slots={slots}
+        castSpell={castSpell}
+        spells={spells}
+        setCharacter={setCharacter}
+      />
+    );
   }
 
   if (props.type === 'FOCUS' && props.source && character) {
-    return <FocusSpellsList {...props} castSpell={castSpell} spells={spells} character={character} setCharacter={setCharacter} />;
+    return (
+      <FocusSpellsList
+        {...props}
+        castSpell={castSpell}
+        spells={spells}
+        character={character}
+        setCharacter={setCharacter}
+      />
+    );
   }
 
   if (props.type === 'INNATE' && props.extra?.innates) {
-    return <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setCharacter={setCharacter} />;
+    return (
+      <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setCharacter={setCharacter} />
+    );
   }
 
   if (props.type === 'RITUAL') {
