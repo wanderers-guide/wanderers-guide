@@ -41,23 +41,15 @@ export function getFlatInvItems(inv: Inventory) {
 export function getInvBulk(inv: Inventory) {
   let totalBulk = 0;
   for (const invItem of inv.items) {
-    if (isItemFormula(invItem)) continue;
-
-    const bulk = invItem.is_equipped
-      ? invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0)
-      : parseFloat(invItem.item.bulk ?? '0') || 0;
-    totalBulk += bulk * getItemQuantity(invItem.item);
+    totalBulk += getItemBulk(invItem);
 
     if (isItemContainer(invItem.item)) {
       const ignoredBulk = invItem.item.meta_data?.bulk.ignored ?? 0;
-      let containerTotalBulk = 0;
-      for (const containerItem of invItem.container_contents) {
-        const innerBulk =
-          containerItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(containerItem.item.bulk ?? '0') || 0);
-        containerTotalBulk += innerBulk * getItemQuantity(containerItem.item);
-      }
-      containerTotalBulk -= ignoredBulk;
-      totalBulk += Math.max(containerTotalBulk, 0);
+      const containerTotalBulk = invItem.container_contents.reduce(
+        (acc, containerItem) => acc + getItemBulk(containerItem),
+        0,
+      );
+      totalBulk += Math.max(containerTotalBulk - ignoredBulk, 0);
     }
   }
   return totalBulk;
@@ -77,7 +69,14 @@ export function getItemBulk(invItem: InventoryItem) {
     totalBulk = 0.1 * getItemQuantity(invItem.item);
   }
 
-  totalBulk = parseFloat(invItem.item.bulk ?? '0') * getItemQuantity(invItem.item);
+  // If the armor isn't being worn it counts as 1 bulk more
+  const armorWornModifier = isItemArmor(invItem.item) && !invItem.is_equipped ? 1 : 0;
+
+  const baseItemBulk = invItem.is_equipped
+    ? invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0)
+    : parseFloat(invItem.item.bulk ?? '0') || 0;
+
+  totalBulk = (baseItemBulk + armorWornModifier) * getItemQuantity(invItem.item);
 
   // If the total bulk is less than 1 bulk, it counts as light bulk
   return totalBulk >= 0.1 && totalBulk < 1 ? 0.1 : Math.floor(totalBulk);

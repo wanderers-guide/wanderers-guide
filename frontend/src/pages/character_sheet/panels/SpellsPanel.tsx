@@ -45,6 +45,10 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
     | {
       source: string;
       type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
+      filter?: {
+        traditions?: string[];
+        ranks?: string[];
+      };
     }
     | undefined
   >();
@@ -176,7 +180,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                           allSpells={allSpells}
                           type='SPONTANEOUS'
                           extra={{ slots: charData.slots.filter((s) => s.source === source.name), charData: charData }}
-                          openManageSpells={(source, type) => setManageSpells({ source, type })}
+                          openManageSpells={(source, type, filter) => setManageSpells({ source, type, filter })}
                           hasFilters={hasFilters}
                         />
                       }
@@ -191,7 +195,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                           allSpells={allSpells}
                           type='PREPARED'
                           extra={{ slots: charData.slots.filter((s) => s.source === source.name), charData: charData }}
-                          openManageSpells={(source, type) => setManageSpells({ source, type })}
+                          openManageSpells={(source, type, filter) => setManageSpells({ source, type, filter })}
                           hasFilters={hasFilters}
                         />
                       }
@@ -243,6 +247,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
           onClose={() => setManageSpells(undefined)}
           source={manageSpells.source}
           type={manageSpells.type}
+          filter={manageSpells.filter}
         />
       )}
     </Box>
@@ -378,7 +383,14 @@ function SpellList(props: {
     innates?: SpellInnateEntry[];
   };
   hasFilters: boolean;
-  openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
+  openManageSpells?: (
+    source: string, 
+    type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
+    filter?: {
+      traditions?: string[];
+      ranks?: string[];
+    },
+  ) => void;
 }) {
   const [character, setCharacter] = useRecoilState(characterState);
 

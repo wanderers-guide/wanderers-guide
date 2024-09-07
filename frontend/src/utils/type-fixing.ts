@@ -1,4 +1,5 @@
 import { Character, Creature, LivingEntity } from '@typing/content';
+import { OperationSelectOptionCustom } from '@typing/operations';
 import { DefaultValue, SetterOrUpdater } from 'recoil';
 
 // Recoil's DefaultValues are annoying to work with, so we just ignore them.
@@ -18,4 +19,9 @@ export function isCreature(entity?: LivingEntity | null): entity is Creature {
 
 export function convertToSetEntity(setValue: SetterOrUpdater<Character | null> | SetterOrUpdater<Creature | null>) {
   return setValue as SetterOrUpdater<LivingEntity | null>;
+}
+
+export function instanceOfOperationSelectOptionCustom(object: any): object is OperationSelectOptionCustom {
+  if (!object) return false;
+  return 'type' in object && 'title' in object && 'description' in object && 'operations' in object;
 }

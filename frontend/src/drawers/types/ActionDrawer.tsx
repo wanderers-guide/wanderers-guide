@@ -9,11 +9,19 @@ import { fetchContentById } from '@content/content-store';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, List, Anchor, Button } from '@mantine/core';
-import { getSelectedOption } from '@operations/operation-utils';
+import {
+  determineFilteredSelectionList,
+  getSelectedCustomOption,
+  getSelectedOption,
+  ObjectWithUUID,
+  sortObjectByName,
+} from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
+import { Operation, OperationSelect, OperationSelectFilters, OperationSelectOptionCustom } from '@typing/operations';
 import { toLabel } from '@utils/strings';
+import { instanceOfOperationSelectOptionCustom } from '@utils/type-fixing';
+import { useEffect, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
@@ -197,48 +205,93 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
 }
 
 export function DisplayOperationSelectionOptions(props: { operations?: Operation[] | undefined }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilValue(characterState);
-
   const operations = (props.operations ?? []).filter(
-    (op) => op.type === 'select' && (op as OperationSelect).data.optionType === 'CUSTOM'
+    (op) => op.type === 'select' && ['CUSTOM', 'ABILITY_BLOCK'].includes(op.data.optionType)
   ) as OperationSelect[];
   if (operations.length === 0) return null;
 
   return (
     <Box>
       <Divider mt={5} />
-      <Stack gap='sm'>
-        {operations.map((op, index) => (
-          <Box key={index} pt={5}>
-            <Text fz='md' fw={600}>
-              {op.data.title ?? 'Select an Option'}
-            </Text>
-            <List>
-              {((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]).map((option, index) => (
-                <List.Item key={index}>
-                  <Anchor
-                    onClick={() => {
-                      openDrawer({
-                        type: 'generic',
-                        data: {
-                          title: option.title,
-                          description: option.description,
-                          operations: option.operations,
-                        },
-                        extra: { addToHistory: true },
-                      });
-                    }}
-                  >
-                    {option.title}
-                  </Anchor>
-                  {getSelectedOption(character, op)?.id === option.id ? ' (Selected)' : ''}
-                </List.Item>
-              ))}
-            </List>
-          </Box>
+      <Stack gap='sm'>{operations.map(DisplayOperationSelection)}</Stack>
+    </Box>
+  );
+}
+
+export function DisplayOperationSelection(op: OperationSelect, index: number) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const character = useRecoilValue(characterState);
+
+  const [options, setOptions] = useState([] as OperationSelectOptionCustom[] | ObjectWithUUID[]);
+  useEffect(() => {
+    // React advises to declare the async function directly inside useEffect
+    async function getOptions() {
+      if (op.data.modeType === 'PREDEFINED') {
+        setOptions((op.data.optionsPredefined ?? []) as OperationSelectOptionCustom[]);
+      } else {
+        const ops = await determineFilteredSelectionList(
+          op.data.optionType,
+          op.id,
+          (op.data.optionsFilters ?? []) as OperationSelectFilters
+        );
+        ops.sort(sortObjectByName);
+        setOptions(ops);
+      }
+    }
+    getOptions();
+  }, [op]);
+
+  const [selectedOption, setSelectedOption] = useState(null as OperationSelectOptionCustom | ObjectWithUUID | null);
+  useEffect(() => {
+    async function getSelection() {
+      setSelectedOption(await getSelectedOption(character, op));
+    }
+    getSelection();
+  });
+  const selectedId = instanceOfOperationSelectOptionCustom(selectedOption)
+    ? selectedOption.id
+    : selectedOption?._select_uuid;
+  console.log(selectedOption);
+
+  return (
+    <Box key={index} pt={5}>
+      <Text fz='md' fw={600}>
+        {op.data.title ?? 'Select an Option'}
+      </Text>
+      <List>
+        {options.map((option, index) => (
+          <List.Item key={index}>
+            <Anchor
+              onClick={() => {
+                openDrawer({
+                  type: instanceOfOperationSelectOptionCustom(option)
+                    ? 'generic'
+                    : option._content_type === 'ability-block'
+                      ? option.type
+                      : option._content_type,
+                  data: instanceOfOperationSelectOptionCustom(option)
+                    ? {
+                        title: option.title,
+                        description: option.description,
+                        operations: option.operations,
+                      }
+                    : { id: option?.id, action: option },
+                  extra: { addToHistory: true },
+                });
+              }}
+            >
+              {instanceOfOperationSelectOptionCustom(option) ? option.title : option.name}
+            </Anchor>
+            {instanceOfOperationSelectOptionCustom(option)
+              ? selectedId === option.id
+                ? ' (Selected)'
+                : ''
+              : selectedId === option._select_uuid
+                ? ' (Selected)'
+                : ''}
+          </List.Item>
         ))}
-      </Stack>
+      </List>
     </Box>
   );
 }
