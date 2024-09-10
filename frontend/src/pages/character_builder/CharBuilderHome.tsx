@@ -47,6 +47,7 @@ import {
   IconFlagPlus,
   IconKey,
   IconArchive,
+  IconHexagonalPrism,
   IconFlag,
   IconX,
   IconExternalLink,
@@ -399,6 +400,28 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   onEnableAll={() => {
                     setBooksEnabled(
                       books.filter((book) => book.group === 'legacy').map((book) => book.id),
+                      true
+                    );
+                  }}
+                  onFeedback={(type, id, contentSourceId) => {
+                    setFeedbackData({ type, data: { id, contentSourceId } });
+                  }}
+                />
+                <LinksGroup
+                  icon={IconHexagonalPrism}
+                  label={'Playtest'}
+                  links={books
+                    .filter((book) => book.group === 'playtest')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
+                  onEnableAll={() => {
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'playtest').map((book) => book.id),
                       true
                     );
                   }}
