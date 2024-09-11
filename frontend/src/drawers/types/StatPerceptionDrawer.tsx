@@ -49,6 +49,7 @@ import { toLabel } from '@utils/strings';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
+  compileProficiencyType,
   getProficiencyTypeValue,
   isProficiencyType,
   isProficiencyValue,
@@ -72,7 +73,7 @@ export function StatPerceptionDrawerTitle(props: { data: {} }) {
             </Box>
           </Group>
           <Box>
-            <Badge>{proficiencyTypeToLabel(variable.value.value)}</Badge>
+            <Badge>{proficiencyTypeToLabel(compileProficiencyType(variable.value))}</Badge>
           </Box>
         </Group>
       )}
@@ -109,8 +110,8 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
     timestamp: number;
   }[] = [];
   for (const hist of history) {
-    const from = isProficiencyValue(hist.from) ? proficiencyTypeToLabel(hist.from.value) : hist.from;
-    const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
+    const from = isProficiencyValue(hist.from) ? proficiencyTypeToLabel(compileProficiencyType(hist.from)) : hist.from;
+    const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(compileProficiencyType(hist.to)) : hist.to;
     if (from === to) continue;
     timeline.push({
       type: 'ADJUSTMENT',
@@ -423,8 +424,9 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
                     <Text c='gray.0' size='xs'>
-                      You're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this proficiency, resulting
-                      in a {sign(getProficiencyTypeValue(variable.value.value))} bonus.
+                      You're {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
+                      proficiency, resulting in a{' '}
+                      {sign(getProficiencyTypeValue(compileProficiencyType(variable.value)))} bonus.
                     </Text>
                   </HoverCard.Dropdown>
                 </HoverCard>
@@ -437,28 +439,32 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                     <Text c='gray.0' size='xs'>
                       {profWithoutLevel ? (
                         <>
-                          {variable.value.value === 'U' ? (
+                          {compileProficiencyType(variable.value) === 'U' ? (
                             <>
-                              Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              Because you're{' '}
+                              {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
                               proficiency, you have a -2 modifier because of your variant rule.
                             </>
                           ) : (
                             <>
-                              Even though you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              Even though you're{' '}
+                              {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
                               proficiency, you don't add your level because of your variant rule.
                             </>
                           )}
                         </>
                       ) : (
                         <>
-                          {variable.value.value === 'U' ? (
+                          {compileProficiencyType(variable.value) === 'U' ? (
                             <>
-                              Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              Because you're{' '}
+                              {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
                               proficiency, you don't add your level.
                             </>
                           ) : (
                             <>
-                              Because you're {proficiencyTypeToLabel(variable.value.value).toLowerCase()} in this
+                              Because you're{' '}
+                              {proficiencyTypeToLabel(compileProficiencyType(variable.value)).toLowerCase()} in this
                               proficiency, you add your level.
                             </>
                           )}

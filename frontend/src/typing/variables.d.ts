@@ -1,7 +1,8 @@
 export type ProficiencyType = 'U' | 'T' | 'E' | 'M' | 'L';
 export type ExtendedProficiencyType = ProficiencyType | '1' | '-1';
 
-export type ProficiencyValue = { value: ProficiencyType; attribute?: string };
+export type CompiledProficiencyValue = { value: ProficiencyType; attribute?: string };
+export type ProficiencyValue = { value: ProficiencyType; increases: number; attribute?: string };
 export type ExtendedProficiencyValue = { value: ExtendedProficiencyType; attribute?: string };
 export type AttributeValue = { value: number; partial?: boolean };
 

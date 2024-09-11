@@ -11,7 +11,7 @@ import {
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
-import { compileExpressions, getProficiencyTypeValue } from './variable-utils';
+import { compileExpressions, compileProficiencyType, getProficiencyTypeValue } from './variable-utils';
 import { CastingSource, Item } from '@typing/content';
 import { getAcParts } from '@items/armor-handler';
 
@@ -156,7 +156,7 @@ export function getProfValueParts(
   if (!variable) return null;
   const breakdown = getVariableBreakdown(id, variableName);
   const hasConditionals = breakdown.conditionals.length > 0;
-  const profType = overrideProfType ?? variable.value.value;
+  const profType = overrideProfType ?? compileProficiencyType(variable.value);
 
   let level = 0;
   if (getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value) {

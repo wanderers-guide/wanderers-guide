@@ -491,6 +491,7 @@ export async function executeCharacterOperations(
     if (value.startsWith('SKILL_LORE_')) {
       addVariable('CHARACTER', 'prof', value, {
         value: 'U',
+        increases: 0,
         attribute: 'ATTRIBUTE_INT',
       });
     } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {
@@ -600,6 +601,7 @@ export async function executeCreatureOperations(
     if (value.startsWith('SKILL_LORE_')) {
       addVariable(id, 'prof', value, {
         value: 'U',
+        increases: 0,
         attribute: 'ATTRIBUTE_INT',
       });
     } else if (value.startsWith('WEAPON_') || value.startsWith('WEAPON_GROUP_')) {

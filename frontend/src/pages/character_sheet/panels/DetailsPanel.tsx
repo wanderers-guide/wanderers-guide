@@ -37,7 +37,7 @@ import {
   getAllArmorVariables,
   getAllAncestryTraitVariables,
 } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
+import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import classes from '@css/FaqSimple.module.css';
 import { isPhoneSized } from '@utils/mobile-responsive';
@@ -70,11 +70,15 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
     return trait;
   });
 
-  const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
-  const weaponProfs = getAllWeaponVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
+  const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter(
+    (prof) => compileProficiencyType(prof.value) !== 'U'
+  );
+  const weaponProfs = getAllWeaponVariables('CHARACTER').filter((prof) => compileProficiencyType(prof.value) !== 'U');
 
-  const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
-  const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
+  const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter(
+    (prof) => compileProficiencyType(prof.value) !== 'U'
+  );
+  const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => compileProficiencyType(prof.value) !== 'U');
 
   const characterInfo = character?.details?.info;
   const [debouncedInfo, setDebouncedInfo] = useDebouncedState<typeof characterInfo | null>(null, 200);
@@ -429,7 +433,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -448,7 +452,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -467,7 +471,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -486,7 +490,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -516,7 +520,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -535,7 +539,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -554,7 +558,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -573,7 +577,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -604,7 +608,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       <Group>
                         <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -624,7 +628,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       <Group>
                         <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -657,7 +661,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{weapon.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(weapon.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -690,7 +694,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{weapon.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(weapon.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -724,7 +728,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{armor.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(armor.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -757,7 +761,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{armor.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(armor.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -781,7 +785,9 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                 </Box>
                 <Group>
                   <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-                  <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}</Badge>
+                  <Badge variant='default'>
+                    {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value)}
+                  </Badge>
                 </Group>
               </StatButton>
             </Accordion>

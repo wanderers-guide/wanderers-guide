@@ -3,7 +3,7 @@ import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } fro
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable, getVariableStore } from '@variables/variable-manager';
-import { labelToVariable } from '@variables/variable-utils';
+import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, isItemRangedWeapon } from './inv-utils';
 
 export function getWeaponStats(id: StoreID, item: Item) {
@@ -18,8 +18,6 @@ export function getWeaponStats(id: StoreID, item: Item) {
     damageType: string;
     bonus: number;
   }[] = [];
-
-  console.log(getAttackDamage(id, item));
 
   return {
     attack_bonus: getAttackBonus(id, item),
@@ -444,7 +442,7 @@ function getProfTotal(id: StoreID, item: Item) {
   return {
     total: maxProfTotal,
     variable: maxVariable,
-    prof: getVariable<VariableProf>(id, maxVariable)?.value.value,
+    prof: compileProficiencyType(getVariable<VariableProf>(id, maxVariable)?.value),
   };
 }
 

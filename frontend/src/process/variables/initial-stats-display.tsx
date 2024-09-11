@@ -16,6 +16,7 @@ import { SetterOrUpdater } from 'recoil';
 import { getVariable } from './variable-manager';
 import {
   compactLabels,
+  compileProficiencyType,
   isAttributeValue,
   isProficiencyValue,
   maxProficiencyType,
@@ -121,8 +122,13 @@ export function getStatDisplay(
         return true;
       }
     } else if (variable.type === 'prof') {
+      // Compiles to the best value
       bestValue = {
-        value: maxProficiencyType((bestValue as ProficiencyValue).value, (value as ProficiencyValue).value),
+        value: maxProficiencyType(
+          compileProficiencyType(bestValue as ProficiencyValue),
+          compileProficiencyType(value as ProficiencyValue)
+        ),
+        increases: 0,
       };
       if (bestValue === value) return true;
     } else if (variable.type === 'attr') {

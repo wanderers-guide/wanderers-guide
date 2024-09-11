@@ -32,7 +32,7 @@ import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import { displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
+import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useState, useMemo, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
@@ -338,7 +338,7 @@ export default function SkillsActionsPanel(props: {
                   </Box>
                   <Group wrap='nowrap'>
                     <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
-                    <Badge variant='default'>{skill?.value.value}</Badge>
+                    <Badge variant='default'>{compileProficiencyType(skill?.value)}</Badge>
                   </Group>
                 </StatButton>
               ))}

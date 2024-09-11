@@ -785,7 +785,7 @@ export default function CreatureDetailsPanel(props: {
                 </Box>
                 <Group>
                   <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-                  <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}</Badge>
+                  <Badge variant='default'>{compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value)}</Badge>
                 </Group>
               </StatButton>
             </Accordion>

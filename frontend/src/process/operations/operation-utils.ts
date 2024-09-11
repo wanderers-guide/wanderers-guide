@@ -54,7 +54,12 @@ import {
   getAllWeaponGroupVariables,
   getVariable,
 } from '@variables/variable-manager';
-import { isProficiencyTypeGreaterOrEqual, labelToVariable, variableToLabel } from '@variables/variable-utils';
+import {
+  compileProficiencyType,
+  isProficiencyTypeGreaterOrEqual,
+  labelToVariable,
+  variableToLabel,
+} from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { OperationResult } from './operation-runner';
 import { throwError } from '@utils/notifications';
@@ -555,7 +560,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       return {
         name: `WEAPON_${labelToVariable(w.name)}`,
         type: 'prof',
-        value: { value: 'U' },
+        value: { value: 'U', increases: 0 },
       } satisfies VariableProf;
     });
   }
@@ -566,7 +571,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
       return {
         name: `ARMOR_${labelToVariable(a.name)}`,
         type: 'prof',
-        value: { value: 'U' },
+        value: { value: 'U', increases: 0 },
       } satisfies VariableProf;
     });
   }
@@ -743,5 +748,5 @@ export function isSkillAlreadyTrained(varId: StoreID, variableName: string, valu
   }
   const profType = (value as ProficiencyValue).value;
   if (profType !== 'T') return false;
-  return isProficiencyTypeGreaterOrEqual(variable.value.value, profType);
+  return isProficiencyTypeGreaterOrEqual(compileProficiencyType(variable.value), profType);
 }

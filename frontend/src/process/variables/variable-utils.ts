@@ -62,6 +62,7 @@ export function newVariable(type: VariableType, name: string, defaultValue?: Var
       type,
       value: {
         value: isProficiencyValue(defaultValue) ? defaultValue.value : 'U',
+        increases: isProficiencyValue(defaultValue) ? defaultValue.increases : 0,
         attribute: isProficiencyValue(defaultValue) ? defaultValue.attribute : undefined,
       },
     } satisfies VariableProf;
@@ -146,6 +147,20 @@ export function maxProficiencyType(profType1: ProficiencyType, profType2: Profic
     return 0;
   };
   return convertToNum(profType1) > convertToNum(profType2) ? profType1 : profType2;
+}
+
+export function compileProficiencyType(prof: ProficiencyValue | undefined) {
+  if (!prof) return 'U';
+  let value = prof.value;
+  const positive = prof.increases > 0;
+  for (let i = 0; i < Math.abs(prof.increases); i++) {
+    if (positive) {
+      value = nextProficiencyType(value) ?? value;
+    } else {
+      value = prevProficiencyType(value) ?? value;
+    }
+  }
+  return value;
 }
 
 export function isProficiencyTypeGreaterOrEqual(profType1: ProficiencyType, profType2: ProficiencyType) {

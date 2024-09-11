@@ -52,6 +52,7 @@ import {
 } from '@variables/variable-display';
 import { getAllSpeedVariables, getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
+  compileProficiencyType,
   getProficiencyTypeValue,
   isProficiencyType,
   isProficiencyValue,
@@ -146,8 +147,8 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
     timestamp: number;
   }[] = [];
   for (const hist of history) {
-    const from = isProficiencyValue(hist.from) ? proficiencyTypeToLabel(hist.from.value) : hist.from;
-    const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(hist.to.value) : hist.to;
+    const from = isProficiencyValue(hist.from) ? proficiencyTypeToLabel(compileProficiencyType(hist.from)) : hist.from;
+    const to = isProficiencyValue(hist.to) ? proficiencyTypeToLabel(compileProficiencyType(hist.to)) : hist.to;
     if (from === to) continue;
     timeline.push({
       type: 'ADJUSTMENT',

@@ -50,83 +50,103 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   SAVE_FORT: newVariable('prof', 'SAVE_FORT', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_CON',
   }),
   SAVE_REFLEX: newVariable('prof', 'SAVE_REFLEX', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_DEX',
   }),
   SAVE_WILL: newVariable('prof', 'SAVE_WILL', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_WIS',
   }),
 
   SKILL_ACROBATICS: newVariable('prof', 'SKILL_ACROBATICS', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_DEX',
   }),
   SKILL_ARCANA: newVariable('prof', 'SKILL_ARCANA', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_INT',
   }),
   SKILL_ATHLETICS: newVariable('prof', 'SKILL_ATHLETICS', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_STR',
   }),
   SKILL_CRAFTING: newVariable('prof', 'SKILL_CRAFTING', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_INT',
   }),
   SKILL_DECEPTION: newVariable('prof', 'SKILL_DECEPTION', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_CHA',
   }),
   SKILL_DIPLOMACY: newVariable('prof', 'SKILL_DIPLOMACY', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_CHA',
   }),
   SKILL_INTIMIDATION: newVariable('prof', 'SKILL_INTIMIDATION', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_CHA',
   }),
   SKILL_MEDICINE: newVariable('prof', 'SKILL_MEDICINE', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_WIS',
   }),
   SKILL_NATURE: newVariable('prof', 'SKILL_NATURE', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_WIS',
   }),
   SKILL_OCCULTISM: newVariable('prof', 'SKILL_OCCULTISM', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_INT',
   }),
   SKILL_PERFORMANCE: newVariable('prof', 'SKILL_PERFORMANCE', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_CHA',
   }),
   SKILL_RELIGION: newVariable('prof', 'SKILL_RELIGION', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_WIS',
   }),
   SKILL_SOCIETY: newVariable('prof', 'SKILL_SOCIETY', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_INT',
   }),
   SKILL_STEALTH: newVariable('prof', 'SKILL_STEALTH', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_DEX',
   }),
   SKILL_SURVIVAL: newVariable('prof', 'SKILL_SURVIVAL', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_WIS',
   }),
   SKILL_THIEVERY: newVariable('prof', 'SKILL_THIEVERY', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_DEX',
   }),
   SKILL_LORE____: newVariable('prof', 'SKILL_LORE____', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_INT',
   }), // Hidden
 
@@ -149,6 +169,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   PERCEPTION: newVariable('prof', 'PERCEPTION', {
     value: 'U',
+    increases: 0,
     attribute: 'ATTRIBUTE_WIS',
   }),
   CLASS_DC: newVariable('prof', 'CLASS_DC'),
@@ -606,9 +627,9 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue, so
         variable.value.value = maxProficiencyType(variable.value.value, value);
       } else if (isExtendedProficiencyType(value)) {
         if (value === '1') {
-          variable.value.value = nextProficiencyType(variable.value.value) ?? variable.value.value;
+          variable.value.increases += 1;
         } else if (value === '-1') {
-          variable.value.value = prevProficiencyType(variable.value.value) ?? variable.value.value;
+          variable.value.increases -= 1;
         } else {
           throwError(`Invalid adjust amount for extended prof: ${name}, ${JSON.stringify(amount)}`);
         }

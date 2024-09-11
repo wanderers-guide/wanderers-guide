@@ -79,7 +79,7 @@ export function AdjustValueInput(props: {
       } else if (props.variableType === 'str' || props.variableType === 'list-str') {
         props.onChange('');
       } else if (props.variableType === 'prof') {
-        props.onChange({ value: 'U' });
+        props.onChange({ value: 'U', increases: 0 });
       }
     }
   }, []);

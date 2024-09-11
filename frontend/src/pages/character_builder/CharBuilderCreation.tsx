@@ -42,7 +42,7 @@ import { displayResistWeak } from '@utils/resist-weaks';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
+import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -515,7 +515,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Box>
             <Group>
               <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-              <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value.value}</Badge>
+              <Badge variant='default'>
+                {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value)}
+              </Badge>
             </Group>
           </StatButton>
           <StatButton
@@ -533,7 +535,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             </Box>
             <Group>
               <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'PERCEPTION')}</Text>
-              <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value.value}</Badge>
+              <Badge variant='default'>
+                {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'PERCEPTION')?.value)}
+              </Badge>
             </Group>
           </StatButton>
           <Accordion
@@ -580,7 +584,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                         </Box>
                         <Group wrap='nowrap'>
                           <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
-                          <Badge variant='default'>{skill?.value.value}</Badge>
+                          <Badge variant='default'>{compileProficiencyType(skill?.value)}</Badge>
                         </Group>
                       </StatButton>
                     ))}
@@ -611,7 +615,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <Group>
                       <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_FORT')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SAVE_FORT')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SAVE_FORT')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -631,7 +635,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <Group>
                       <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_REFLEX')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SAVE_REFLEX')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SAVE_REFLEX')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -651,7 +655,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <Group>
                       <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SAVE_WILL')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SAVE_WILL')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SAVE_WILL')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -681,7 +685,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -700,7 +704,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -719,7 +723,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -738,7 +742,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -768,7 +772,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -787,7 +791,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -806,7 +810,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -825,7 +829,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -856,7 +860,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <Group>
                       <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
                       <Badge variant='default'>
-                        {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value)}
                       </Badge>
                     </Group>
                   </StatButton>
@@ -875,7 +879,9 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     </Box>
                     <Group>
                       <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
-                      <Badge variant='default'>{getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}</Badge>
+                      <Badge variant='default'>
+                        {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value)}
+                      </Badge>
                     </Group>
                   </StatButton>
                 </Stack>

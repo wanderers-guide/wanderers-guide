@@ -40,7 +40,12 @@ import {
   getVariables,
   setVariable,
 } from '@variables/variable-manager';
-import { compileExpressions, labelToVariable, maxProficiencyType } from '@variables/variable-utils';
+import {
+  compileExpressions,
+  compileProficiencyType,
+  labelToVariable,
+  maxProficiencyType,
+} from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import {
   ObjectWithUUID,
@@ -386,12 +391,12 @@ async function updateVariables(
         When you gain an innate spell, you become trained in the spell attack modifier
         and spell DC statistics. At 12th level, these proficiencies increase to expert.
       */
-      adjVariable(varId, 'SPELL_ATTACK', { value: 'T' }, sourceLabel);
-      adjVariable(varId, 'SPELL_DC', { value: 'T' }, sourceLabel);
+      adjVariable(varId, 'SPELL_ATTACK', { value: 'T', increases: 0 }, sourceLabel);
+      adjVariable(varId, 'SPELL_DC', { value: 'T', increases: 0 }, sourceLabel);
       const level = getVariable<VariableNum>(varId, 'LEVEL')?.value;
       if (level && level >= 12) {
-        adjVariable(varId, 'SPELL_ATTACK', { value: 'E' }, sourceLabel);
-        adjVariable(varId, 'SPELL_DC', { value: 'E' }, sourceLabel);
+        adjVariable(varId, 'SPELL_ATTACK', { value: 'E', increases: 0 }, sourceLabel);
+        adjVariable(varId, 'SPELL_DC', { value: 'E', increases: 0 }, sourceLabel);
       }
     }
   } else if (operation.data.optionType === 'ADJ_VALUE') {
@@ -408,8 +413,11 @@ function isProficientInAdjValue(varId: StoreID, operation: OperationAdjValue): b
   }
   // If character has the skill proficiency, give another skill selection
   let variable = getVariables(varId)[operation.data.variable] as VariableProf;
-  const maxProficiency = maxProficiencyType(variable.value.value, (operation.data.value as ProficiencyValue).value);
-  return maxProficiency === variable.value.value;
+  const maxProficiency = maxProficiencyType(
+    compileProficiencyType(variable.value),
+    (operation.data.value as ProficiencyValue).value
+  );
+  return maxProficiency === compileProficiencyType(variable.value);
 }
 
 async function runAdjValue(
@@ -648,12 +656,12 @@ async function runGiveSpell(
       When you gain an innate spell, you become trained in the spell attack modifier
       and spell DC statistics. At 12th level, these proficiencies increase to expert.
     */
-    adjVariable(varId, 'SPELL_ATTACK', { value: 'T' }, sourceLabel);
-    adjVariable(varId, 'SPELL_DC', { value: 'T' }, sourceLabel);
+    adjVariable(varId, 'SPELL_ATTACK', { value: 'T', increases: 0 }, sourceLabel);
+    adjVariable(varId, 'SPELL_DC', { value: 'T', increases: 0 }, sourceLabel);
     const level = getVariable<VariableNum>(varId, 'LEVEL')?.value;
     if (level && level >= 12) {
-      adjVariable(varId, 'SPELL_ATTACK', { value: 'E' }, sourceLabel);
-      adjVariable(varId, 'SPELL_DC', { value: 'E' }, sourceLabel);
+      adjVariable(varId, 'SPELL_ATTACK', { value: 'E', increases: 0 }, sourceLabel);
+      adjVariable(varId, 'SPELL_DC', { value: 'E', increases: 0 }, sourceLabel);
     }
   }
 
@@ -971,22 +979,23 @@ async function runConditional(
         return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
       }
     } else if (variable.type === 'prof') {
+      const profType = compileProficiencyType(variable.value);
       if (check.operator === 'EQUALS') {
-        return variable.value.value === check.value;
+        return profType === check.value;
       } else if (check.operator === 'GREATER_THAN') {
-        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
-        return bestProf === variable.value.value;
+        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
+        return bestProf === profType;
       } else if (check.operator === 'LESS_THAN') {
-        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
+        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
         return bestProf === check.value;
       } else if (check.operator === 'NOT_EQUALS') {
-        return variable.value.value !== check.value;
+        return profType !== check.value;
       } else if (check.operator === 'GREATER_THAN_OR_EQUALS') {
-        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
-        return bestProf === variable.value.value || variable.value.value === check.value;
+        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
+        return bestProf === profType || profType === check.value;
       } else if (check.operator === 'LESS_THAN_OR_EQUALS') {
-        const bestProf = maxProficiencyType(variable.value.value, check.value as ProficiencyType);
-        return bestProf === check.value || variable.value.value === check.value;
+        const bestProf = maxProficiencyType(profType, check.value as ProficiencyType);
+        return bestProf === check.value || profType === check.value;
       }
     }
     return false;

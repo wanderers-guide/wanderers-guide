@@ -1,6 +1,7 @@
 import { StoreID, VariableAttr, VariableProf } from '@typing/variables';
 import {
   compactLabels,
+  compileProficiencyType,
   findVariable,
   labelToProficiencyType,
   labelToVariable,
@@ -155,7 +156,7 @@ function checkForProf(id: StoreID, prereq: string): PrereqMet {
     if (prof.toUpperCase() === 'LORE') {
       const lores = getAllSkillVariables(id).filter((v) => v.name.startsWith('SKILL_LORE_'));
       for (const lore of lores) {
-        if (maxProficiencyType(lore.value.value, profType) === lore.value.value) {
+        if (maxProficiencyType(compileProficiencyType(lore.value), profType) === compileProficiencyType(lore.value)) {
           return 'FULLY';
         }
       }
@@ -168,7 +169,10 @@ function checkForProf(id: StoreID, prereq: string): PrereqMet {
       return 'UNKNOWN';
     }
 
-    return maxProficiencyType(variable.value.value, profType) === variable.value.value ? 'FULLY' : 'NOT';
+    return maxProficiencyType(compileProficiencyType(variable.value), profType) ===
+      compileProficiencyType(variable.value)
+      ? 'FULLY'
+      : 'NOT';
   };
 
   return handleChecking(profText, checkProf);

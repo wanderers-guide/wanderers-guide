@@ -232,6 +232,7 @@ async function processBackground(background: Background) {
         variable: 'SKILL_' + fixedBackground.skills[0],
         value: {
           value: 'T',
+          increases: 0,
         },
       },
     },

@@ -36,7 +36,7 @@ import {
   getAllSkillVariables,
   getAllSpeedVariables,
 } from '@variables/variable-manager';
-import { isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
+import { compileProficiencyType, isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import stripMd from 'remove-markdown';
 
@@ -256,16 +256,16 @@ async function fillPDF(form: PDFForm, character: Character) {
       }
     }
     try {
-      if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'T')) {
+      if (isProficiencyTypeGreaterOrEqual(compileProficiencyType(variable?.value), 'T')) {
         form.getCheckBox(sheetId + ' TRAINED').check();
       }
-      if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'E')) {
+      if (isProficiencyTypeGreaterOrEqual(compileProficiencyType(variable?.value), 'E')) {
         form.getCheckBox(sheetId + ' EXPERT').check();
       }
-      if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'M')) {
+      if (isProficiencyTypeGreaterOrEqual(compileProficiencyType(variable?.value), 'M')) {
         form.getCheckBox(sheetId + ' MASTER').check();
       }
-      if (isProficiencyTypeGreaterOrEqual(variable?.value.value ?? 'U', 'L')) {
+      if (isProficiencyTypeGreaterOrEqual(compileProficiencyType(variable?.value), 'L')) {
         form.getCheckBox(sheetId + ' LEGENDARY').check();
       }
     } catch (e) {

@@ -13,7 +13,7 @@ import { StoreID, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSaveVariables } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
+import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
@@ -201,7 +201,7 @@ export default function ArmorSection(props: {
                       transform: 'translate(-50%, -50%)',
                     }}
                   >
-                    {save?.value.value}
+                    {compileProficiencyType(save?.value)}
                   </Badge>
                 </Button>
               </Button.Group>
