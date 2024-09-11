@@ -931,13 +931,13 @@ async function runConditional(
       }
     } else if (variable.type === 'str') {
       if (check.operator === 'EQUALS') {
-        return variable.value.toUpperCase() === check.value.toUpperCase();
+        return labelToVariable(variable.value) === labelToVariable(check.value);
       } else if (check.operator === 'NOT_EQUALS') {
-        return variable.value.toUpperCase() !== check.value.toUpperCase();
+        return labelToVariable(variable.value) !== labelToVariable(check.value);
       } else if (check.operator === 'INCLUDES') {
-        return variable.value.includes(check.value.toUpperCase());
+        return labelToVariable(variable.value).includes(labelToVariable(check.value));
       } else if (check.operator === 'NOT_INCLUDES') {
-        return !variable.value.includes(check.value.toUpperCase());
+        return !labelToVariable(variable.value).includes(labelToVariable(check.value));
       }
     } else if (variable.type === 'bool') {
       if (check.operator === 'EQUALS') {
@@ -946,18 +946,29 @@ async function runConditional(
         return variable.value !== (check.value === 'TRUE');
       }
     } else if (variable.type === 'list-str') {
-      let value: string[] = [];
+      let varValue: string[] = [];
       try {
-        value = JSON.parse(check.value.toUpperCase());
+        if (typeof variable.value === 'string') {
+          // @ts-ignore, typing may be wrong and it's a string
+          varValue = JSON.parse(variable.value.toUpperCase());
+        } else {
+          varValue = variable.value;
+        }
+      } catch (e) {}
+      let checkValue: string[] = [];
+      try {
+        if (typeof check.value === 'string') {
+          checkValue = JSON.parse(check.value.toUpperCase());
+        }
       } catch (e) {}
       if (check.operator === 'EQUALS') {
-        return _.isEqual(variable.value, value);
+        return _.isEqual(varValue, checkValue);
       } else if (check.operator === 'NOT_EQUALS') {
-        return !_.isEqual(variable.value, value);
+        return !_.isEqual(varValue, checkValue);
       } else if (check.operator === 'INCLUDES') {
-        return variable.value.includes(labelToVariable(check.value));
+        return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
       } else if (check.operator === 'NOT_INCLUDES') {
-        return !variable.value.includes(labelToVariable(check.value));
+        return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
       }
     } else if (variable.type === 'prof') {
       if (check.operator === 'EQUALS') {
