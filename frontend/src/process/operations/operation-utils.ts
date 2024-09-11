@@ -271,7 +271,7 @@ export function getSelectedCustomOption(
 export async function getSelectedOption(
   entity: LivingEntity | null,
   op: OperationSelect
-): Promise<OperationSelectOptionCustom | ObjectWithUUID | null> {
+): Promise<OperationSelectOptionCustom | Record<string, any> | null> {
   if (!entity) return null;
   if (op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM') {
     // Custom select option
@@ -285,15 +285,12 @@ export async function getSelectedOption(
     if (!selectionKey) {
       return null;
     }
-    const options = await determineFilteredSelectionList(
-      op.data.optionType,
-      op.id,
-      (op.data.optionsFilters ?? []) as OperationSelectFilters
+    const options: Record<string, any>[] = await fetchContentAll(
+      op.data.optionsFilters?.type.toLowerCase().replace('_', '-') as ContentType
     );
-    const selectedOption = options.find(
-      (option) => option._select_uuid === entity!.operation_data!.selections![selectionKey]
-    );
-    return (selectedOption as ObjectWithUUID) ?? null;
+    const key: string = entity!.operation_data!.selections![selectionKey];
+    const selectedOption = options.find((option) => String(option.id) === key);
+    return selectedOption ?? null;
   }
 }
 

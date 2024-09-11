@@ -220,7 +220,7 @@ export function DisplayOperationSelectionOptions(props: { operations?: Operation
   );
 }
 
-export function DisplayOperationSelection(op: OperationSelect, index: number) {
+export function DisplayOperationSelection(op: OperationSelect) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const character = useRecoilValue(characterState);
 
@@ -248,26 +248,24 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
     getOptions();
   }, [op]);
 
-  const [selectedOption, setSelectedOption] = useState(null as OperationSelectOptionCustom | ObjectWithUUID | null);
+  const [selectedOption, setSelectedOption] = useState(
+    null as OperationSelectOptionCustom | Record<string, any> | null
+  );
   useEffect(() => {
     async function getSelection() {
       setSelectedOption(await getSelectedOption(character, op));
     }
     getSelection();
   });
-  const selectedId = instanceOfOperationSelectOptionCustom(selectedOption)
-    ? selectedOption.id
-    : selectedOption?._select_uuid;
-  console.log(selectedOption);
 
   return (
-    <Box key={index} pt={5}>
+    <Box key={op.id} pt={5}>
       <Text fz='md' fw={600}>
         {op.data.title ?? 'Select an Option'}
       </Text>
       <List>
-        {options.map((option, index) => (
-          <List.Item key={index}>
+        {options.map((option) => (
+          <List.Item key={option.id}>
             <Anchor
               onClick={() => {
                 openDrawer({
@@ -289,16 +287,10 @@ export function DisplayOperationSelection(op: OperationSelect, index: number) {
             >
               {instanceOfOperationSelectOptionCustom(option) ? option.title : option.name}
             </Anchor>
-            {instanceOfOperationSelectOptionCustom(option)
-              ? selectedId === option.id
-                ? ' (Selected)'
-                : ''
-              : selectedId === option._select_uuid
-                ? ' (Selected)'
-                : ''}
+            {selectedOption?.id === option.id ? ' (Selected)' : ''}
           </List.Item>
         ))}
-        {more === null ? null : <List.Item key={options.length}>{more}</List.Item>}
+        {more === null ? null : <List.Item key='more'>{more}</List.Item>}
       </List>
     </Box>
   );
