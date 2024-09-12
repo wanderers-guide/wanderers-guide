@@ -10,7 +10,6 @@ import { collectCharacterAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
 import {
   useMantineTheme,
   Group,

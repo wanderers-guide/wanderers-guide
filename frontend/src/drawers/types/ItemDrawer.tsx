@@ -19,7 +19,7 @@ import {
   isItemWithRunes,
   labelizeBulk,
 } from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
+import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Title,
   Text,
@@ -362,8 +362,9 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
             <Text c='gray.5' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
-              {damageBonus} {weaponStats.damage.damageType}{' '}
-              {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+              {damageBonus} {weaponStats.damage.damageType}
+              {parseOtherDamage(weaponStats.damage.other)}
+              {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
             </Text>
           </Group>
         </Group>

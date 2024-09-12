@@ -175,7 +175,7 @@ interface Item {
       striking?: number;
       resilient?: number;
       potency?: number;
-      property?: { name: string; id: number }[];
+      property?: { name: string; id: number, rune?: Item }[];
     };
     starfinder?: {
       capacity?: string;
