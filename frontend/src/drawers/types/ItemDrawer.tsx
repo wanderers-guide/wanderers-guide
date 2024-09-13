@@ -50,6 +50,7 @@ import { getWeaponSpecialization } from '@specializations/weapon-specializations
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
 import ShowInjectedText from '@drawers/ShowInjectedText';
+import { ItemRunesDescription } from '@common/ItemRunesDescription';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -226,6 +227,8 @@ export function ItemDrawerContent(props: {
         <RichText ta='justify' py={5}>
           {item.description}
         </RichText>
+
+        <ItemRunesDescription item={item} />
 
         {craftReq && (
           <>

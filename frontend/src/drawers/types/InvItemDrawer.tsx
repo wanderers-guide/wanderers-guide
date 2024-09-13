@@ -60,6 +60,7 @@ import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
 import { drawerState } from '@atoms/navAtoms';
 import TokenSelect from '@common/TokenSelect';
+import { ItemRunesDescription } from '@common/ItemRunesDescription';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -201,6 +202,8 @@ export function InvItemDrawerContent(props: {
         <RichText ta='justify' store='CHARACTER' py={5}>
           {invItem.item.description}
         </RichText>
+
+        <ItemRunesDescription item={invItem.item} />
 
         {craftReq && (
           <>
