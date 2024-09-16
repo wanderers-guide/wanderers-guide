@@ -7,6 +7,7 @@ import {
   VariableType,
   VariableValue,
   VariableNum,
+  ExtendedVariableValue,
 } from '@typing/variables';
 import {
   isAttributeValue,
@@ -612,7 +613,7 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
  * @param name - name of the variable to adjust
  * @param amount - new value to adjust by
  */
-export function adjVariable(id: StoreID, name: string, amount: VariableValue, source?: string) {
+export function adjVariable(id: StoreID, name: string, amount: VariableValue | ExtendedVariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
     throwError(`Invalid variable name: ${name}`);

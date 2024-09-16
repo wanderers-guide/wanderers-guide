@@ -18,7 +18,9 @@ export type VariableStore = {
 
 export type Variable = VariableNum | VariableStr | VariableBool | VariableProf | VariableAttr | VariableListStr;
 export type VariableType = 'num' | 'str' | 'bool' | 'prof' | 'attr' | 'list-str';
+
 export type VariableValue = number | string | boolean | ProficiencyValue | AttributeValue | string[];
+export type ExtendedVariableValue = number | string | boolean | ExtendedProficiencyValue | AttributeValue | string[];
 
 interface VariableBase {
   name: string;

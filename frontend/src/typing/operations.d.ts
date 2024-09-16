@@ -4,6 +4,7 @@ import {
   AttributeValue,
   ProficiencyType,
   ExtendedProficiencyValue,
+  ExtendedVariableValue,
   VariableValue,
 } from './variables';
 import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource, ContentType } from './content';
@@ -95,7 +96,7 @@ export interface OperationAdjValue extends OperationBase {
   readonly type: 'adjValue';
   data: {
     variable: string;
-    value: VariableValue;
+    value: ExtendedVariableValue;
   };
 }
 

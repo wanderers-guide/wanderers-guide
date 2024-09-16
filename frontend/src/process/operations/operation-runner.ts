@@ -25,6 +25,7 @@ import {
 } from '@typing/operations';
 import {
   ExtendedProficiencyType,
+  ExtendedProficiencyValue,
   ProficiencyType,
   ProficiencyValue,
   StoreID,
@@ -406,18 +407,21 @@ async function updateVariables(
   }
 }
 
-function isProficientInAdjValue(varId: StoreID, operation: OperationAdjValue): boolean {
+function isTrainedInAdjValue(varId: StoreID, operation: OperationAdjValue): boolean {
   if (!operation.data.variable.includes('SKILL_')) {
     // Not a skill adjustment
     return false;
   }
-  // If character has the skill proficiency, give another skill selection
+
+  // If the adj is not a training, don't give another skill selection
+  if (operation.data.value !== 'T') {
+    return false;
+  }
+
+  // If character is at least trained in skill, give another skill selection
   let variable = getVariables(varId)[operation.data.variable] as VariableProf;
-  const maxProficiency = maxProficiencyType(
-    compileProficiencyType(variable.value),
-    (operation.data.value as ProficiencyValue).value
-  );
-  return maxProficiency === compileProficiencyType(variable.value);
+  const currentProf = compileProficiencyType(variable.value);
+  return maxProficiencyType(currentProf, 'T') === currentProf;
 }
 
 async function runAdjValue(
@@ -427,9 +431,9 @@ async function runAdjValue(
   options?: OperationOptions,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const isProficient = isProficientInAdjValue(varId, operation);
-  // If character has the skill proficiency, give another skill selection
-  if (isProficient) {
+  const isTrained = isTrainedInAdjValue(varId, operation);
+  // If character is at least trained in skill, give another skill selection
+  if (isTrained) {
     const subNode = selectionTrack.node?.children[operation.id];
     return await runSelect(
       varId,
@@ -453,10 +457,11 @@ async function runAdjValue(
       options,
       sourceLabel
     );
+  } else {
+    // Adjust the variable like normal
+    adjVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
+    return null;
   }
-  // Not a skill adjustment nor a character is proficient in the skill
-  adjVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
-  return null;
 }
 
 async function runSetValue(

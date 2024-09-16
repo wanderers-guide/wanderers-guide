@@ -53,6 +53,9 @@ export function AdjValOperation(props: {
             setValue(value);
             props.onValueChange(value);
           }}
+          options={{
+            profExtended: variableData.type === 'prof',
+          }}
         />
       )}
     </OperationWrapper>

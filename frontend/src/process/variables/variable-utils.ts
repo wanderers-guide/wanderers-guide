@@ -197,13 +197,15 @@ export function prevProficiencyType(profType: ProficiencyType): ProficiencyType 
   return 'U';
 }
 
-export function proficiencyTypeToLabel(type: ProficiencyType) {
+export function proficiencyTypeToLabel(type: ProficiencyType | ExtendedProficiencyType) {
   if (type === 'U') return 'Untrained';
   if (type === 'T') return 'Trained';
   if (type === 'E') return 'Expert';
   if (type === 'M') return 'Master';
   if (type === 'L') return 'Legendary';
-  throwError(`Invalid proficiency type: ${type}`);
+  if (type === '1') return 'increase';
+  if (type === '-1') return 'decrease';
+  throwError(`Invalid extended proficiency type: ${type}`);
   return '';
 }
 

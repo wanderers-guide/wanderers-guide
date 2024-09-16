@@ -8,7 +8,15 @@ import {
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
 } from '@typing/operations';
-import { AttributeValue, ProficiencyValue, StoreID, Variable, VariableType, VariableValue } from '@typing/variables';
+import {
+  AttributeValue,
+  ExtendedProficiencyValue,
+  ProficiencyValue,
+  StoreID,
+  Variable,
+  VariableType,
+  VariableValue,
+} from '@typing/variables';
 import { listToLabel, toLabel } from '@utils/strings';
 import * as _ from 'lodash-es';
 import { ReactNode } from 'react';
