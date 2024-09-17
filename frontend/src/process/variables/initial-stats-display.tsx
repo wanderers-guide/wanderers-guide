@@ -162,7 +162,7 @@ export function getStatDisplay(
   for (const operation of operations) {
     if (operation.type === 'adjValue' || operation.type === 'setValue') {
       if (operation.data.variable === variableName) {
-        setBestValue(operation.data.value);
+        setBestValue(operation.data.value as VariableValue);
       }
     } else if (operation.type === 'select') {
       if (operation.data.optionType === 'ADJ_VALUE') {
@@ -185,7 +185,7 @@ export function getStatDisplay(
         // Check all the options in the select
         for (const option of (operation.data.optionsPredefined ?? []) as OperationSelectOptionAdjValue[]) {
           if (option.operation.data.variable === variableName) {
-            const changed = setBestValue(option.operation.data.value);
+            const changed = setBestValue(option.operation.data.value as VariableValue);
             if (changed) {
               bestOperation = operation;
 
@@ -203,7 +203,7 @@ export function getStatDisplay(
           for (const subop of option.operations ?? []) {
             if (subop.type === 'adjValue' || subop.type === 'setValue') {
               if (subop.data.variable === variableName) {
-                const changed = setBestValue(subop.data.value);
+                const changed = setBestValue(subop.data.value as VariableValue);
                 if (changed) bestOperation = operation;
                 found = true;
               }

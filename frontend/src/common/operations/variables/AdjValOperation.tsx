@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   AttributeValue,
   ExtendedProficiencyValue,
+  ExtendedVariableValue,
   ProficiencyType,
   ProficiencyValue,
   Variable,
@@ -17,16 +18,16 @@ import { useDidUpdate } from '@mantine/hooks';
 
 export function AdjValOperation(props: {
   variable: string;
-  value: VariableValue;
+  value: ExtendedVariableValue;
   onSelect: (variable: string) => void;
-  onValueChange: (value: VariableValue) => void;
+  onValueChange: (value: ExtendedVariableValue) => void;
   onRemove: () => void;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
   const [variableData, setVariableData] = useState<Variable | undefined>(
     getVariable('CHARACTER', props.variable) ?? undefined
   );
-  const [value, setValue] = useState<VariableValue>(props.value);
+  const [value, setValue] = useState<ExtendedVariableValue>(props.value);
 
   useDidUpdate(() => {
     setVariableName(props.variable);

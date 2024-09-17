@@ -49,7 +49,7 @@ import {
   OperationSelectOptionSpell,
   OperationSelectOptionType,
 } from '@typing/operations';
-import { ExtendedProficiencyValue, VariableType, VariableValue } from '@typing/variables';
+import { ExtendedProficiencyValue, ExtendedVariableValue, VariableType, VariableValue } from '@typing/variables';
 import useRefresh from '@utils/use-refresh';
 import { getVariable } from '@variables/variable-manager';
 import { useEffect, useState } from 'react';
@@ -1245,7 +1245,7 @@ function SelectionPredefinedAdjValue(props: {
       : 'prof'
   );
   const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);
-  const [adjustment, setAdjustment] = useState<VariableValue | undefined>(
+  const [adjustment, setAdjustment] = useState<ExtendedVariableValue | undefined>(
     (props.options ?? []).length > 0 ? props.options![0].operation.data.value : undefined
   );
 
