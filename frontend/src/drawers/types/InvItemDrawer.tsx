@@ -18,7 +18,7 @@ import {
   isItemWithRunes,
   labelizeBulk,
 } from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
+import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   ActionIcon,
   Badge,
@@ -60,6 +60,7 @@ import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
 import { drawerState } from '@atoms/navAtoms';
 import TokenSelect from '@common/TokenSelect';
+import { ItemRunesDescription } from '@common/ItemRunesDescription';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -201,6 +202,8 @@ export function InvItemDrawerContent(props: {
         <RichText ta='justify' store='CHARACTER' py={5}>
           {invItem.item.description}
         </RichText>
+
+        <ItemRunesDescription item={invItem.item} />
 
         {craftReq && (
           <>
@@ -596,8 +599,9 @@ function InvItemSections(props: {
             <Text c='gray.5' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
-              {damageBonus} {weaponStats.damage.damageType}{' '}
-              {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+              {damageBonus} {weaponStats.damage.damageType}
+              {parseOtherDamage(weaponStats.damage.other)}
+              {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
             </Text>
           </Group>
         </Group>

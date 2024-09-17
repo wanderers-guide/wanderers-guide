@@ -26,7 +26,7 @@ import {
   labelizeBulk,
   reachedInvestedLimit,
 } from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
+import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Accordion,
   ActionIcon,
@@ -551,7 +551,8 @@ function InvItemOption(props: {
                 {weaponStats.damage.die}
                 {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
                 {weaponStats.damage.damageType}
-                {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+                {parseOtherDamage(weaponStats.damage.other)}
+                {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
               </Text>
             </Group>
           )}

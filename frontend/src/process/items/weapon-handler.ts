@@ -2,9 +2,16 @@ import { Item } from '@typing/content';
 import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
-import { getVariable, getVariableStore } from '@variables/variable-manager';
+import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, isItemRangedWeapon } from './inv-utils';
+
+export function parseOtherDamage(damage: { dice: number; die: string; damageType: string; bonus: number }[]) {
+  return damage.map((d) => {
+    const damageString = ` + ${d.dice}${d.die} ${d.damageType}`;
+    return d.bonus > 0 ? `${damageString} + ${d.bonus}` : damageString;
+  });
+}
 
 export function getWeaponStats(id: StoreID, item: Item) {
   const dice = (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0);
@@ -18,6 +25,16 @@ export function getWeaponStats(id: StoreID, item: Item) {
     damageType: string;
     bonus: number;
   }[] = [];
+
+  const damageRunes = (item.meta_data?.runes?.property ?? []).filter((r) => !!r.rune?.meta_data?.damage?.die);
+  for (const rune of damageRunes) {
+    other.push({
+      dice: rune.rune!.meta_data!.damage!.dice,
+      die: rune.rune!.meta_data!.damage!.die,
+      damageType: convertDamageType(rune.rune?.meta_data?.damage?.damageType ?? ""),
+      bonus: 0,
+    });
+  }
 
   return {
     attack_bonus: getAttackBonus(id, item),

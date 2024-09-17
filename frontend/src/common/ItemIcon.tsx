@@ -29,7 +29,7 @@ type ItemIconType =
   | 'CONTAINER'
   | 'HIGH_TECH_GUN';
 
-const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
+export const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
   GENERAL: <GiSwapBag color={color} size={size} />,
   ARMOR: <GiChestArmor color={color} size={size} />,
   WEAPON: <GiBroadsword color={color} size={size} />,

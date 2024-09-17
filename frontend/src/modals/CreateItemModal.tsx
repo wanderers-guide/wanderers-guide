@@ -1,4 +1,3 @@
-import { drawerState } from '@atoms/navAtoms';
 import { ItemMultiSelect, ItemSelect } from '@common/ItemSelect';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
@@ -7,7 +6,6 @@ import { selectContent } from '@common/select/SelectContent';
 import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
-import { convertToGp } from '@items/currency-handler';
 import {
   Accordion,
   ActionIcon,
@@ -15,7 +13,6 @@ import {
   Badge,
   Box,
   Button,
-  Checkbox,
   Collapse,
   Divider,
   Group,
@@ -31,7 +28,7 @@ import {
   Text,
   TextInput,
   Title,
-  useMantineTheme,
+  useMantineTheme
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -44,7 +41,6 @@ import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
 
 /**
  * Modal for creating or editing an item
@@ -136,7 +132,7 @@ export function CreateItemModal(props: {
   const [strikingRune, setStrikingRune] = useState<number | undefined>(0);
   const [resilientRune, setResilientRune] = useState<number | undefined>(0);
   const [potencyRune, setPotencyRune] = useState<number | undefined>(0);
-  const [propertyRunes, setPropertyRunes] = useState<{ name: string; id: number }[] | undefined>([]);
+  const [propertyRunes, setPropertyRunes] = useState<{ name: string; id: number, rune?: Item }[] | undefined>([]);
 
   const [baseItem, setBaseItem] = useState<string | undefined>();
   const [baseItemContent, setBaseItemContent] = useState<Item | undefined>();
@@ -747,7 +743,7 @@ export function CreateItemModal(props: {
                               if ((items ?? []).length > (potencyRune ?? 0)) {
                                 return;
                               }
-                              setPropertyRunes(items?.map((item) => ({ name: item.name, id: item.id })) ?? []);
+                              setPropertyRunes(items?.map((item) => ({ name: item.name, id: item.id, rune: item, })) ?? []);
                             }}
                           />
                         </Stack>

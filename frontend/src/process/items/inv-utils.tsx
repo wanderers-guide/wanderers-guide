@@ -536,7 +536,7 @@ export function isItemWithQuantity(item: Item) {
  * @returns - Whether the item is a weapon
  */
 export function isItemWeapon(item: Item) {
-  return !!item.meta_data?.damage?.damageType;
+  return !!item.meta_data?.damage?.damageType && item.group === 'WEAPON';
 }
 
 /**

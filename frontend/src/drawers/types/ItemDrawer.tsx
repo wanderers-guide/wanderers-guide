@@ -19,7 +19,7 @@ import {
   isItemWithRunes,
   labelizeBulk,
 } from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
+import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Title,
   Text,
@@ -50,6 +50,7 @@ import { getWeaponSpecialization } from '@specializations/weapon-specializations
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
 import ShowInjectedText from '@drawers/ShowInjectedText';
+import { ItemRunesDescription } from '@common/ItemRunesDescription';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -227,6 +228,8 @@ export function ItemDrawerContent(props: {
           {item.description}
         </RichText>
 
+        <ItemRunesDescription item={item} />
+
         {craftReq && (
           <>
             <Divider />
@@ -362,8 +365,9 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
             <Text c='gray.5' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
-              {damageBonus} {weaponStats.damage.damageType}{' '}
-              {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+              {damageBonus} {weaponStats.damage.damageType}
+              {parseOtherDamage(weaponStats.damage.other)}
+              {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
             </Text>
           </Group>
         </Group>

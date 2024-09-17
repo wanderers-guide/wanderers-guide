@@ -6,7 +6,7 @@ import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { collectCharacterAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
-import { getWeaponStats } from '@items/weapon-handler';
+import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   useMantineTheme,
   Group,
@@ -85,20 +85,20 @@ export default function SkillsActionsPanel(props: {
     // Filter actions
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? allActions.filter((action) => {
-          // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+        // Custom search, alt could be to use JsSearch here
+        const query = searchQuery.trim().toLowerCase();
 
-          const checkAction = (action: AbilityBlock) => {
-            if (actionTypeFilter !== 'ALL' && action.actions !== actionTypeFilter) return false;
+        const checkAction = (action: AbilityBlock) => {
+          if (actionTypeFilter !== 'ALL' && action.actions !== actionTypeFilter) return false;
 
-            if (action.name.toLowerCase().includes(query)) return true;
-            //if (action.description.toLowerCase().includes(query)) return true;
-            return false;
-          };
-
-          if (checkAction(action)) return true;
+          if (action.name.toLowerCase().includes(query)) return true;
+          //if (action.description.toLowerCase().includes(query)) return true;
           return false;
-        })
+        };
+
+        if (checkAction(action)) return true;
+        return false;
+      })
       : allActions;
   }, [props.content.abilityBlocks, actionTypeFilter, searchQuery]);
 
@@ -110,19 +110,19 @@ export default function SkillsActionsPanel(props: {
     // Filter weapons
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? weapons.filter((invItem) => {
-          // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+        // Custom search, alt could be to use JsSearch here
+        const query = searchQuery.trim().toLowerCase();
 
-          const checkInvItem = (invItem: InventoryItem) => {
-            if (actionTypeFilter !== 'ALL') return false;
+        const checkInvItem = (invItem: InventoryItem) => {
+          if (actionTypeFilter !== 'ALL') return false;
 
-            if (invItem.item.name.toLowerCase().includes(query)) return true;
-            return false;
-          };
-
-          if (checkInvItem(invItem)) return true;
+          if (invItem.item.name.toLowerCase().includes(query)) return true;
           return false;
-        })
+        };
+
+        if (checkInvItem(invItem)) return true;
+        return false;
+      })
       : weapons;
   }, [props.inventory.items, actionTypeFilter, searchQuery]);
 
@@ -142,6 +142,7 @@ export default function SkillsActionsPanel(props: {
               {weaponStats.damage.die}
               {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
               {weaponStats.damage.damageType}
+              {parseOtherDamage(weaponStats.damage.other)}
               {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
             </Text>
           </Group>
@@ -238,25 +239,25 @@ export default function SkillsActionsPanel(props: {
     // Filter items
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? actionItems.filter((invItem) => {
-          // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+        // Custom search, alt could be to use JsSearch here
+        const query = searchQuery.trim().toLowerCase();
 
-          const checkInvItem = (invItem: InventoryItem) => {
-            if (actionTypeFilter !== 'ALL') {
-              const actions = findActions(invItem.item.description);
-              const hasAction = actions.find((action) => action === actionTypeFilter);
-              if (!hasAction) return false;
-            }
-            if (invItem.item.name.toLowerCase().includes(query)) return true;
-            if (invItem.item.description.toLowerCase().includes(query)) return true;
-            if (invItem.item.group.toLowerCase().includes(query)) return true;
-            return false;
-          };
-
-          if (checkInvItem(invItem)) return true;
-          if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
+        const checkInvItem = (invItem: InventoryItem) => {
+          if (actionTypeFilter !== 'ALL') {
+            const actions = findActions(invItem.item.description);
+            const hasAction = actions.find((action) => action === actionTypeFilter);
+            if (!hasAction) return false;
+          }
+          if (invItem.item.name.toLowerCase().includes(query)) return true;
+          if (invItem.item.description.toLowerCase().includes(query)) return true;
+          if (invItem.item.group.toLowerCase().includes(query)) return true;
           return false;
-        })
+        };
+
+        if (checkInvItem(invItem)) return true;
+        if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
+        return false;
+      })
       : actionItems;
   }, [props.inventory.items, actionTypeFilter, searchQuery]);
 
@@ -268,19 +269,19 @@ export default function SkillsActionsPanel(props: {
     // Filter feats
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
       ? feats.filter((feat) => {
-          // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+        // Custom search, alt could be to use JsSearch here
+        const query = searchQuery.trim().toLowerCase();
 
-          const checkFeat = (feat: AbilityBlock) => {
-            if (actionTypeFilter !== 'ALL' && feat.actions !== actionTypeFilter) return false;
+        const checkFeat = (feat: AbilityBlock) => {
+          if (actionTypeFilter !== 'ALL' && feat.actions !== actionTypeFilter) return false;
 
-            if (feat.name.toLowerCase().includes(query)) return true;
-            return false;
-          };
-
-          if (checkFeat(feat)) return true;
+          if (feat.name.toLowerCase().includes(query)) return true;
           return false;
-        })
+        };
+
+        if (checkFeat(feat)) return true;
+        return false;
+      })
       : feats;
   }, [character, props.content.abilityBlocks, actionTypeFilter, searchQuery]);
 
@@ -737,7 +738,7 @@ function ActionAccordionItem(props: {
       <Accordion.Panel>
         <Stack gap={5}>
           {props.actions.map((action, index) => (
-            <ActionSelectionOption key={index} action={action} onClick={() => {}} isPhone={props.isPhone} />
+            <ActionSelectionOption key={index} action={action} onClick={() => { }} isPhone={props.isPhone} />
           ))}
         </Stack>
       </Accordion.Panel>

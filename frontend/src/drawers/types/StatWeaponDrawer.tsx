@@ -1,9 +1,8 @@
-import { getWeaponStats } from '@items/weapon-handler';
-import { Title, Text, Group, Box, Accordion, Kbd, HoverCard } from '@mantine/core';
+import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
+import { Accordion, Box, Group, HoverCard, Kbd, Text, Title } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
 import { Item } from '@typing/content';
 import { sign } from '@utils/numbers';
-import * as _ from 'lodash-es';
 
 export function StatWeaponDrawerTitle(props: { data: { item: Item } }) {
   return (
@@ -59,7 +58,8 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
               <Text c='gray.5' span>
                 {stats.damage.dice}
                 {stats.damage.die} + {stats.damage.bonus.total} {stats.damage.damageType}
-                {/* {stats.damage.extra ? `+ ${stats.damage.extra}` : ''} */}
+                {parseOtherDamage(stats.damage.other)}
+                {stats.damage.extra ? `+ ${stats.damage.extra}` : ''}
               </Text>
               =
               <Text c='gray.5' span>
