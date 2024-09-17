@@ -133,6 +133,29 @@ export function listToLabel(nodes: ReactNode[], endingWord: string): ReactNode {
   }
 }
 
+export function parseDiceRoll(dice: string): { dice: number; die: string; bonus: number; suffix: string }[] {
+  const results: { dice: number; die: string; bonus: number; suffix: string }[] = [];
+
+  // Normalize the string by converting to lowercase and replacing semicolons and plus signs with commas
+  const normalizedDice = dice.toLowerCase().replace(/[.;]+/g, ',');
+
+  // Regular expression to match each dice roll part
+  const regex = /(\d+)d(\d+)(?: *([\+\-] *\d+))? *([a-zA-Z]*)/g;
+
+  let match;
+  while ((match = regex.exec(normalizedDice)) !== null) {
+    const [_, diceCount, die, bonusStr, suffix] = match;
+    results.push({
+      dice: parseInt(diceCount),
+      die: `d${die}`,
+      bonus: bonusStr ? parseInt(bonusStr.replace(/\s+/g, '')) : 0,
+      suffix: suffix || '',
+    });
+  }
+
+  return results;
+}
+
 // export function startCase(text: string) {
 //   text = text
 //     .trim()

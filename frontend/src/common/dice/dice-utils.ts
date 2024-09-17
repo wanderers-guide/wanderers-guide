@@ -21,15 +21,14 @@
 // }
 
 import { Character, Dice } from '@typing/content';
-import { StoreID, VariableProf } from '@typing/variables';
-import { getAllSaveVariables, getAllSkillVariables, getVariable } from '@variables/variable-manager';
+import { StoreID } from '@typing/variables';
+import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { DICE_THEMES } from './dice-tray';
 import { getFinalProfValue } from '@variables/variable-display';
-import { variableToLabel } from '@variables/variable-utils';
 import { isItemWeapon } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { getSpellStats } from '@spells/spell-handler';
-import { toLabel } from '@utils/strings';
+import { parseDiceRoll, toLabel } from '@utils/strings';
 
 /**
  * Deletes a room on the DDDice server.
@@ -100,6 +99,8 @@ export function findDefaultPresets(id: StoreID, character: Character | null) {
     if (!weaponStats.damage.die || weaponStats.damage.die === '1') continue;
 
     const weapDice: Dice[] = [];
+
+    // Add dice for base weapon damage + bonus
     for (let i = 0; i < weaponStats.damage.dice; i++) {
       weapDice.push({
         id: crypto.randomUUID(),
@@ -109,6 +110,44 @@ export function findDefaultPresets(id: StoreID, character: Character | null) {
         label: `${weaponStats.damage.damageType} dmg (${weapon.item.name})`,
       });
     }
+
+    // Add other damage
+    for (const part of weaponStats.damage.other) {
+      // Skip persistent damage (it's rolled at the end of each turn!)
+      if (part.damageType.includes('persistent')) continue;
+
+      for (let i = 0; i < part.dice; i++) {
+        // Format the damage source to just include name
+        const source = part.source?.match(/^<(.+?)>/)?.[1] ?? part.source;
+        weapDice.push({
+          id: crypto.randomUUID(),
+          type: part.die,
+          theme: theme,
+          bonus: i === part.dice - 1 ? part.bonus : 0,
+          label: `${part.damageType} dmg ${source ? `(${source})` : ``}`,
+        });
+      }
+    }
+
+    // Attempt to add extra damage
+    if (weaponStats.damage.extra) {
+      const parsedDamage = parseDiceRoll(weaponStats.damage.extra);
+      for (const part of parsedDamage) {
+        // Skip persistent damage (it's rolled at the end of each turn!)
+        if (part.suffix.includes('persistent')) continue;
+
+        for (let i = 0; i < part.dice; i++) {
+          weapDice.push({
+            id: crypto.randomUUID(),
+            type: part.die,
+            theme: theme,
+            bonus: i === part.dice - 1 ? part.bonus : 0,
+            label: `${part.suffix} dmg (Extra)`,
+          });
+        }
+      }
+    }
+
     presets.push({
       id: crypto.randomUUID(),
       name: `${weapon.item.name} (damage)`,
