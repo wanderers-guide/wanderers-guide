@@ -600,7 +600,7 @@ function InvItemSections(props: {
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
-              {parseOtherDamage(weaponStats.damage.other)}
+              {parseOtherDamage(weaponStats.damage.other)}{' '}
               {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
             </Text>
           </Group>

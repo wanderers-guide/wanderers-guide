@@ -58,7 +58,7 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
               <Text c='gray.5' span>
                 {stats.damage.dice}
                 {stats.damage.die} + {stats.damage.bonus.total} {stats.damage.damageType}
-                {parseOtherDamage(stats.damage.other)}
+                {parseOtherDamage(stats.damage.other)}{' '}
                 {stats.damage.extra ? `+ ${stats.damage.extra}` : ''}
               </Text>
               =
