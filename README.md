@@ -40,4 +40,3 @@ id,created_at,user_id,display_name,image_url,background_image_url,site_theme,is_
 1,2024-04-03 21:30:01.720023+00,UUID HERE,User Name,,,,false,false,false,,,,,true,
 ```
 4. Login with the email and password
-
