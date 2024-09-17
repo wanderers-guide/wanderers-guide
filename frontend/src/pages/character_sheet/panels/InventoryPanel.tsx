@@ -538,7 +538,7 @@ function InvItemOption(props: {
           )}
 
           {isItemWeapon(props.invItem.item) && !props.isPhone && weaponStats && (
-            <Group wrap='nowrap' gap={10}>
+            <Group wrap='nowrap' gap={10} maw={300}>
               <Text c='gray.6' fz='xs' fs='italic' span>
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>

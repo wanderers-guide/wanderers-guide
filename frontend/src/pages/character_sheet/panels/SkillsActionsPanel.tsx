@@ -134,7 +134,7 @@ export default function SkillsActionsPanel(props: {
       return {
         invItem: invItem,
         leftSection: (
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} maw={300}>
             <Text c='gray.6' fz='xs' fs='italic' span>
               {sign(weaponStats.attack_bonus.total[0])}
             </Text>
