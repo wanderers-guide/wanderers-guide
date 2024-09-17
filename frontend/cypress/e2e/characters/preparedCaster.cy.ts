@@ -18,8 +18,9 @@ describe('Character builder', () => {
   });
 
   after(() => {
-    cy.get('button').contains('User Name').click({force: true});
+    cy.get('button').contains('User Name').click({ force: true });
     cy.get('div.mantine-Menu-dropdown').contains('Characters').click();
+    cy.wait(500);
     cy.location('pathname').should('eq', '/characters');
 
     const removeCharacter = ($el: HTMLElement) => {
@@ -33,44 +34,71 @@ describe('Character builder', () => {
   });
 
   it('should cast only one prepared spell', () => {
-    cy.contains("Spells").click();
+    cy.contains('Spells').click();
 
-    cy.get('[data-wg-name="prepared-wizard"]').as("preparedSpells");
-    cy.get('@preparedSpells').contains("Manage").click();
+    cy.get('[data-wg-name="prepared-wizard"]').as('preparedSpells');
+    cy.get('@preparedSpells').contains('Manage').click();
 
     // Add charm to list
-    cy.contains("Add Spell").click();
-    cy.get("div.mantine-Modal-body").get('input[placeholder="Search spells"]').last().type("Charm");
+    cy.contains('Add Spell').click();
+    cy.get('div.mantine-Modal-body').get('input[placeholder="Search spells"]').last().type('Charm');
     cy.wait(300); // Wait to filter
-    cy.contains("Select").click();
+    cy.contains('Select').click();
 
     // Prepare charm twice
-    cy.get('[data-wg-name="rank-1"]').contains("Select Spell").first().click();
-    cy.get('input[placeholder="Search spells"]').last().type("Charm");
+    cy.get('[data-wg-name="rank-1"]').contains('Select Spell').first().click();
+    cy.get('input[placeholder="Search spells"]').last().type('Charm');
     cy.wait(300); // Wait to filter
-    cy.get('div.mantine-Group-root').contains("Select").click();
-    cy.get('[data-wg-name="rank-1"]').contains("Select Spell").first().click();
-    cy.get('input[placeholder="Search spells"]').last().type("Charm");
+    cy.get('div.mantine-Group-root').contains('Select').click();
+    cy.get('[data-wg-name="rank-1"]').contains('Select Spell').first().click();
+    cy.get('input[placeholder="Search spells"]').last().type('Charm');
     cy.wait(300); // Wait to filter
-    cy.get('div.mantine-Group-root').contains("Select").click();
+    cy.get('div.mantine-Group-root').contains('Select').click();
     cy.get('button.mantine-Modal-close').last().click();
 
     // Cast charm
-    cy.get('[data-wg-name="rank-group-1"]').as("rank1");
+    cy.get('[data-wg-name="rank-group-1"]').as('rank1');
     cy.get('@rank1').contains('Charm').first().click();
     cy.contains('Cast Spell 1').click();
-    cy.get('@rank1').find("button").eq(0).contains("Charm").should('have.css', 'text-decoration').and('include', 'line-through');
-    cy.get('@rank1').find("button").eq(1).contains('Charm').last().should('have.css', 'text-decoration').and('not.include', 'line-through');
+    cy.get('@rank1')
+      .find('button')
+      .eq(0)
+      .contains('Charm')
+      .should('have.css', 'text-decoration')
+      .and('include', 'line-through');
+    cy.get('@rank1')
+      .find('button')
+      .eq(1)
+      .contains('Charm')
+      .last()
+      .should('have.css', 'text-decoration')
+      .and('not.include', 'line-through');
 
     // Cast charm again
-    cy.get('@rank1').find("button").eq(1).click();
+    cy.get('@rank1').find('button').eq(1).click();
     cy.contains('Cast Spell 1').click();
-    cy.get('@rank1').find("button").eq(1).contains("Charm").should('have.css', 'text-decoration').and('include', 'line-through');
+    cy.get('@rank1')
+      .find('button')
+      .eq(1)
+      .contains('Charm')
+      .should('have.css', 'text-decoration')
+      .and('include', 'line-through');
 
     // Recover one cast
     cy.get('@rank1').contains('Charm').first().click();
     cy.contains('Recover Spell 1').click();
-    cy.get('@rank1').find("button").eq(0).contains("Charm").should('have.css', 'text-decoration').and('not.include', 'line-through');
-    cy.get('@rank1').find("button").eq(1).contains('Charm').last().should('have.css', 'text-decoration').and('include', 'line-through');
+    cy.get('@rank1')
+      .find('button')
+      .eq(0)
+      .contains('Charm')
+      .should('have.css', 'text-decoration')
+      .and('not.include', 'line-through');
+    cy.get('@rank1')
+      .find('button')
+      .eq(1)
+      .contains('Charm')
+      .last()
+      .should('have.css', 'text-decoration')
+      .and('include', 'line-through');
   });
 });
