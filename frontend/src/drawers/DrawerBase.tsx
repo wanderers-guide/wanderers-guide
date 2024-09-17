@@ -29,6 +29,7 @@ const NO_FEEDBACK_DRAWERS = [
   'stat-speed',
   'stat-perception',
   'stat-resist-weak',
+  'stat-weapon',
   'add-spell',
   'inv-item',
   'creature',

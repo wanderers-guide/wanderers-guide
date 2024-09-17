@@ -267,7 +267,7 @@ export default function DiceRoller(props: {
             </Group>
 
             <Group align='center' wrap='nowrap' px={5}>
-              <Badge variant='outline' size='xs' circle>
+              <Badge variant='outline' color='gray.7' size='xs' circle>
                 {preset.dice.length}
               </Badge>
               <Group gap={5} justify='space-between' align='end' wrap='nowrap'>
@@ -528,7 +528,7 @@ export default function DiceRoller(props: {
         title={
           <Group wrap='nowrap' gap={10} justify='space-between'>
             <Group wrap='nowrap' gap={10}>
-              <GiRollingDices size='1.6rem' stroke={1.5} />
+              <GiRollingDices size='1.6rem' stroke={'1.5'} />
               <Title order={3}>Dice Roller</Title>
             </Group>
             <Button
@@ -816,7 +816,7 @@ export default function DiceRoller(props: {
                                     modal: 'createDicePreset',
                                     title: <Title order={3}>Create Preset</Title>,
                                     innerProps: {
-                                      onConfirm: (name) => {
+                                      onConfirm: (name: string) => {
                                         setPresets((prev) => [
                                           ...prev,
                                           {

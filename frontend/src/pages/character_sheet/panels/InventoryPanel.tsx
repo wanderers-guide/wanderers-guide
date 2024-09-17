@@ -4,6 +4,7 @@ import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
+import { EllipsisText } from '@common/EllipsisText';
 import { ItemIcon } from '@common/ItemIcon';
 import { isItemVisible } from '@content/content-hidden';
 import { isPlayingStarfinder } from '@content/system-handler';
@@ -49,12 +50,7 @@ import {
 import { openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import {
-  IconCoins,
-  IconMenu2,
-  IconPlus,
-  IconSearch
-} from '@tabler/icons-react';
+import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
 import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
@@ -82,20 +78,20 @@ export default function InventoryPanel(props: {
   );
   const invItems = searchQuery.trim()
     ? visibleInvItems.filter((invItem) => {
-      // Custom search, alt could be to use JsSearch here
-      const query = searchQuery.trim().toLowerCase();
+        // Custom search, alt could be to use JsSearch here
+        const query = searchQuery.trim().toLowerCase();
 
-      const checkInvItem = (invItem: InventoryItem) => {
-        if (invItem.item.name.toLowerCase().includes(query)) return true;
-        if (invItem.item.description.toLowerCase().includes(query)) return true;
-        if (invItem.item.group.toLowerCase().includes(query)) return true;
+        const checkInvItem = (invItem: InventoryItem) => {
+          if (invItem.item.name.toLowerCase().includes(query)) return true;
+          if (invItem.item.description.toLowerCase().includes(query)) return true;
+          if (invItem.item.group.toLowerCase().includes(query)) return true;
+          return false;
+        };
+
+        if (checkInvItem(invItem)) return true;
+        if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
         return false;
-      };
-
-      if (checkInvItem(invItem)) return true;
-      if (invItem.container_contents.some((containedItem) => checkInvItem(containedItem))) return true;
-      return false;
-    })
+      })
     : visibleInvItems;
 
   const openAddItemDrawer = () => {
@@ -546,14 +542,14 @@ function InvItemOption(props: {
               <Text c='gray.6' fz='xs' fs='italic' span>
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>
-              <Text c='gray.6' fz='xs' fs='italic' span>
+              <EllipsisText c='gray.6' fz='xs' fs='italic' span>
                 {weaponStats.damage.dice}
                 {weaponStats.damage.die}
                 {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
                 {weaponStats.damage.damageType}
                 {parseOtherDamage(weaponStats.damage.other)}
-                {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
-              </Text>
+                {weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}
+              </EllipsisText>
             </Group>
           )}
         </Group>

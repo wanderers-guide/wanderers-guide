@@ -1,5 +1,8 @@
+import { getIconMap } from '@common/ItemIcon';
+import { ItemRunesDescription } from '@common/ItemRunesDescription';
+import { isItemWithPropertyRunes } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
-import { Accordion, Box, Group, HoverCard, Kbd, Text, Title } from '@mantine/core';
+import { Accordion, Box, Divider, Group, HoverCard, Kbd, Text, Title, useMantineTheme } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
 import { Item } from '@typing/content';
 import { sign } from '@utils/numbers';
@@ -23,10 +26,13 @@ export function StatWeaponDrawerTitle(props: { data: { item: Item } }) {
 
 export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
   const stats = getWeaponStats('CHARACTER', props.data.item);
+  const theme = useMantineTheme();
+
+  const hasRunes = isItemWithPropertyRunes(props.data.item);
 
   return (
     <Box>
-      <Accordion variant='separated' defaultValue='attack-breakdown'>
+      <Accordion variant='separated' defaultValue={hasRunes ? 'runes' : 'attack-breakdown'}>
         <Accordion.Item value='attack-breakdown'>
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Attack Breakdown</Accordion.Control>
           <Accordion.Panel>
@@ -55,17 +61,38 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Damage Breakdown</Accordion.Control>
           <Accordion.Panel>
             <Group gap={8} align='center'>
-              <Text c='gray.5' span>
-                {stats.damage.dice}
-                {stats.damage.die} + {stats.damage.bonus.total} {stats.damage.damageType}
-                {parseOtherDamage(stats.damage.other)}
-                {stats.damage.extra ? `+ ${stats.damage.extra}` : ''}
-              </Text>
-              =
-              <Text c='gray.5' span>
-                {stats.damage.dice}
-                {stats.damage.die} {stats.damage.damageType} +
-              </Text>
+              <Group gap={0} align='center'>
+                {/* Dice Amount */}
+                <Group gap={8} align='center'>
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }}>{stats.damage.dice}</Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        {'This is the amount of dice you roll when rolling for damage.'}
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </Group>
+                {/* Dice Type */}
+                <Group gap={8} align='center'>
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }}>{stats.damage.die}</Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        {'This is the type of die you roll for damage, such as d4, d6, d8, etc.'}
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </Group>
+              </Group>
+
+              {stats.damage.bonus.total !== 0 && ' + '}
+
+              {/* Damage Bonus */}
               {[...stats.damage.bonus.parts.keys()].map((part, index) => (
                 <Group gap={8} align='center' key={index}>
                   <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
@@ -81,9 +108,79 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
                   {index < [...stats.damage.bonus.parts.keys()].length - 1 ? '+' : ''}
                 </Group>
               ))}
+
+              {/* Damage Type */}
+              <Group gap={8} align='center'>
+                <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                  <HoverCard.Target>
+                    <Kbd style={{ cursor: 'pointer' }}>{stats.damage.damageType}</Kbd>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.0' size='xs'>
+                      {
+                        'The type of damage this weapon deals. The acronyms for bludgeoning, slashing, and piercing are B, S, and P, respectively. Some types of damage, such as vitality or spirit damage, have special rules associated with them (see Player Core pg. 407).'
+                      }
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              </Group>
+
+              {/* Other Damage */}
+              {stats.damage.other.length > 0 && (
+                <Group gap={8} align='center'>
+                  {' + '}
+                  {stats.damage.other.map((part, index) => (
+                    <Group gap={8} align='center' key={index}>
+                      <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                        <HoverCard.Target>
+                          <Kbd style={{ cursor: 'pointer' }}>{parseOtherDamage([part], '')}</Kbd>
+                        </HoverCard.Target>
+                        <HoverCard.Dropdown py={5} px={10}>
+                          <Text c='gray.0' size='xs'>
+                            {'This weapon deals additional damage from the following:'}
+                          </Text>
+                          <Divider my={2} />
+                          <Text c='gray.0' size='xs'>
+                            {part.source ?? 'Unknown source'}
+                          </Text>
+                        </HoverCard.Dropdown>
+                      </HoverCard>
+                      {index < stats.damage.other.length - 1 ? '+' : ''}
+                    </Group>
+                  ))}
+                </Group>
+              )}
+
+              {/* Extra Damage */}
+              {stats.damage.extra && (
+                <Group gap={8} align='center'>
+                  {' + '}
+                  <Group gap={8} align='center'>
+                    <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                      <HoverCard.Target>
+                        <Kbd style={{ cursor: 'pointer' }}>{stats.damage.extra}</Kbd>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown py={5} px={10}>
+                        <Text c='gray.0' size='xs'>
+                          {'This weapon deals extra damage from a custom adjustment to the item.'}
+                        </Text>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                  </Group>
+                </Group>
+              )}
             </Group>
           </Accordion.Panel>
         </Accordion.Item>
+
+        {hasRunes && (
+          <Accordion.Item value='runes'>
+            <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>Runes</Accordion.Control>
+            <Accordion.Panel>
+              <ItemRunesDescription item={props.data.item} />
+            </Accordion.Panel>
+          </Accordion.Item>
+        )}
       </Accordion>
     </Box>
   );

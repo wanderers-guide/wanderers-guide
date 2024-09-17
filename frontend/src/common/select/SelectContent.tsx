@@ -283,7 +283,7 @@ export function selectContent<T = Record<string, any>>(
     title: <Title order={3}>{label}</Title>,
     innerProps: {
       type,
-      onClick: onClick ? (option) => onClick(option as T) : undefined,
+      onClick: onClick ? (option: any) => onClick(option as T) : undefined,
       options,
     },
   });
@@ -1519,7 +1519,7 @@ function SelectionOptionsRoot(props: {
         modal: 'addNewLore',
         title: <Title order={3}>Add New Lore</Title>,
         innerProps: {
-          onConfirm: (loreName) => {
+          onConfirm: (loreName: string) => {
             props.onClick({
               ...option,
               _select_uuid: `SKILL_LORE_${loreName}`,

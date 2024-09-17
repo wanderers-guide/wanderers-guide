@@ -51,6 +51,7 @@ import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { ItemRunesDescription } from '@common/ItemRunesDescription';
+import { EllipsisText } from '@common/EllipsisText';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -358,17 +359,17 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
               {sign(weaponStats.attack_bonus.total[2])}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10}>
+          <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }} maw={300}>
             <Text fw={600} c='gray.5' span>
               Damage
             </Text>
-            <Text c='gray.5' span>
+            <EllipsisText c='gray.5' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
               {parseOtherDamage(weaponStats.damage.other)}
-              {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
-            </Text>
+              {weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}
+            </EllipsisText>
           </Group>
         </Group>
       </Paper>

@@ -204,8 +204,6 @@ export function InvItemDrawerContent(props: {
           {invItem.item.description}
         </RichText>
 
-        <ItemRunesDescription item={invItem.item} />
-
         {craftReq && (
           <>
             <Divider />
@@ -586,8 +584,8 @@ function InvItemSections(props: {
             });
           }}
         >
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1, overflow: 'hidden' }}>
-            <Text fw={600} c='gray.5' span>
+          <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }}>
+            <Text fw={600} c='gray.5' span style={{ overflow: 'hidden' }}>
               Attack
             </Text>
             <Text c='gray.5' span>
@@ -595,7 +593,7 @@ function InvItemSections(props: {
               {sign(weaponStats.attack_bonus.total[2])}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1, overflow: 'hidden' }}>
+          <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }} maw={300}>
             <Text fw={600} c='gray.5' span>
               Damage
             </Text>
@@ -604,7 +602,7 @@ function InvItemSections(props: {
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
               {parseOtherDamage(weaponStats.damage.other)}
-              {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
+              {weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}
             </EllipsisText>
           </Group>
         </Group>

@@ -55,6 +55,7 @@ import {
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { useRecoilState } from 'recoil';
+import { titleCase } from 'title-case';
 
 export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?: boolean } }) {
   const variable = getVariable<VariableProf>('CHARACTER', props.data.variableName);
@@ -65,7 +66,7 @@ export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
             <Box>
-              <Title order={3}>{variableToLabel(variable)}</Title>
+              <Title order={3}>{titleCase(variableToLabel(variable))}</Title>
             </Box>
           </Group>
           <Box>

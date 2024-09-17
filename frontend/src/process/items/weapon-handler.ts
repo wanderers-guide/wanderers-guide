@@ -5,10 +5,15 @@ import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-di
 import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, isItemRangedWeapon } from './inv-utils';
+import stripMd from 'remove-markdown';
 
-export function parseOtherDamage(damage: { dice: number; die: string; damageType: string; bonus: number }[]) {
-  return damage.map((d) => {
-    const damageString = ` + ${d.dice}${d.die} ${d.damageType}`;
+export function parseOtherDamage(
+  damage: { dice: number; die: string; damageType: string; bonus: number }[],
+  prefix?: string
+) {
+  prefix = prefix ?? ' + ';
+  return damage.map((d, index) => {
+    const damageString = `${index === 0 ? prefix : ' + '}${d.dice}${d.die} ${d.damageType}`;
     return d.bonus > 0 ? `${damageString} + ${d.bonus}` : damageString;
   });
 }
@@ -24,6 +29,7 @@ export function getWeaponStats(id: StoreID, item: Item) {
     die: string;
     damageType: string;
     bonus: number;
+    source?: string;
   }[] = [];
 
   const damageRunes = (item.meta_data?.runes?.property ?? []).filter((r) => !!r.rune?.meta_data?.damage?.die);
@@ -31,8 +37,9 @@ export function getWeaponStats(id: StoreID, item: Item) {
     other.push({
       dice: rune.rune!.meta_data!.damage!.dice,
       die: rune.rune!.meta_data!.damage!.die,
-      damageType: convertDamageType(rune.rune?.meta_data?.damage?.damageType ?? ""),
+      damageType: convertDamageType(rune.rune?.meta_data?.damage?.damageType ?? ''),
       bonus: 0,
+      source: rune.rune ? `<${rune.name}> ${stripMd(rune.rune.description)}` : rune.name,
     });
   }
 
