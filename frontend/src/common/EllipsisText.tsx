@@ -69,7 +69,7 @@ export function EllipsisText(props: EllipsisTextProps) {
         <Text
           style={{
             ...props.style,
-            //fontSize: getAdjustedFontSize(),
+            fontSize: getAdjustedFontSize(),
           }}
         >
           {props.children}
