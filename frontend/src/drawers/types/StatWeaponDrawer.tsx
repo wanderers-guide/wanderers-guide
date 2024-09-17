@@ -1,6 +1,3 @@
-import { getIconMap } from '@common/ItemIcon';
-import { ItemRunesDescription } from '@common/ItemRunesDescription';
-import { isItemWithPropertyRunes } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { Accordion, Box, Divider, Group, HoverCard, Kbd, Text, Title, useMantineTheme } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
@@ -28,11 +25,9 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
   const stats = getWeaponStats('CHARACTER', props.data.item);
   const theme = useMantineTheme();
 
-  const hasRunes = isItemWithPropertyRunes(props.data.item);
-
   return (
     <Box>
-      <Accordion variant='separated' defaultValue={hasRunes ? 'runes' : 'attack-breakdown'}>
+      <Accordion variant='separated' defaultValue={'attack-breakdown'}>
         <Accordion.Item value='attack-breakdown'>
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Attack Breakdown</Accordion.Control>
           <Accordion.Panel>
@@ -172,15 +167,6 @@ export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
             </Group>
           </Accordion.Panel>
         </Accordion.Item>
-
-        {hasRunes && (
-          <Accordion.Item value='runes'>
-            <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>Runes</Accordion.Control>
-            <Accordion.Panel>
-              <ItemRunesDescription item={props.data.item} />
-            </Accordion.Panel>
-          </Accordion.Item>
-        )}
       </Accordion>
     </Box>
   );

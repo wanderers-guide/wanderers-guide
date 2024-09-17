@@ -20,6 +20,7 @@ import {
 } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
+  Accordion,
   ActionIcon,
   Badge,
   Box,
@@ -37,6 +38,7 @@ import {
   TextInput,
   Title,
   rem,
+  useMantineTheme,
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { CreateItemModal } from '@modals/CreateItemModal';
@@ -62,6 +64,7 @@ import { drawerState } from '@atoms/navAtoms';
 import TokenSelect from '@common/TokenSelect';
 import { ItemRunesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
+import { getIconMap } from '@common/ItemIcon';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -96,6 +99,7 @@ export function InvItemDrawerContent(props: {
     setInvItem(invItem);
   };
 
+  const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [invItem, setInvItem] = useState(props.data.invItem);
   const [editingItem, setEditingItem] = useState(false);
@@ -203,6 +207,19 @@ export function InvItemDrawerContent(props: {
         <RichText ta='justify' store='CHARACTER' py={5}>
           {invItem.item.description}
         </RichText>
+
+        {isItemWithPropertyRunes(invItem.item) && (
+          <Accordion variant='separated' my={5}>
+            <Accordion.Item value='runes'>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>
+                Property Runes
+              </Accordion.Control>
+              <Accordion.Panel>
+                <ItemRunesDescription item={invItem.item} />
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        )}
 
         {craftReq && (
           <>
