@@ -61,6 +61,7 @@ import { getWeaponSpecialization } from '@specializations/weapon-specializations
 import { drawerState } from '@atoms/navAtoms';
 import TokenSelect from '@common/TokenSelect';
 import { ItemRunesDescription } from '@common/ItemRunesDescription';
+import { EllipsisText } from '@common/EllipsisText';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -566,6 +567,8 @@ function InvItemSections(props: {
   if (hasAttackAndDamage) {
     const weaponStats = getWeaponStats('CHARACTER', props.invItem.item);
 
+    console.log(weaponStats);
+
     const damageBonus = weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
 
     attackAndDamageSection = (
@@ -583,7 +586,7 @@ function InvItemSections(props: {
             });
           }}
         >
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1, overflow: 'hidden' }}>
             <Text fw={600} c='gray.5' span>
               Attack
             </Text>
@@ -592,17 +595,17 @@ function InvItemSections(props: {
               {sign(weaponStats.attack_bonus.total[2])}
             </Text>
           </Group>
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1, overflow: 'hidden' }}>
             <Text fw={600} c='gray.5' span>
               Damage
             </Text>
-            <Text c='gray.5' span>
+            <EllipsisText c='gray.5' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {damageBonus} {weaponStats.damage.damageType}
               {parseOtherDamage(weaponStats.damage.other)}
               {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
-            </Text>
+            </EllipsisText>
           </Group>
         </Group>
       </Paper>
