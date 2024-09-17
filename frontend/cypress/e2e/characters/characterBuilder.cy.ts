@@ -2,7 +2,6 @@ describe('Characters', () => {
   beforeEach(() => {
     cy.login(Cypress.env('TEST_EMAIL'), Cypress.env('TEST_PASSWORD'));
     cy.visit('/characters');
-
   });
 
   it('should show empty characters', () => {
@@ -18,6 +17,7 @@ describe('Characters', () => {
     afterEach(() => {
       cy.get('button').contains('User Name').click();
       cy.get('div.mantine-Menu-dropdown').contains('Characters').click();
+      cy.wait(500);
       cy.location('pathname').should('eq', '/characters');
 
       const removeCharacter = ($el: HTMLElement) => {
@@ -29,7 +29,6 @@ describe('Characters', () => {
 
       cy.get('button[aria-label="Options"]').each(removeCharacter);
       cy.contains('No characters found').should('exist');
-
     });
 
     it('should create a lvl 1 human fighter', () => {
@@ -66,7 +65,7 @@ describe('Characters', () => {
 
       // Lvl 1
       cy.get('[data-wg-name="level-1"]').click();
-      cy.get('div.mantine-Accordion-content').as("lvl1")
+      cy.get('div.mantine-Accordion-content').as('lvl1');
       // Heritage
       cy.get('@lvl1').find('div.mantine-Accordion-item').contains('Heritage').click();
       cy.selectHeritage('Versatile Human');
@@ -77,7 +76,11 @@ describe('Characters', () => {
       cy.selectClassFeat('Snagging Strike');
       cy.get('@lvl1').find('div.mantine-Accordion-item').contains('Human Feat').click(); // Close
       // Boosts
-      cy.get('@lvl1').find('[data-wg-name="Attribute Boosts"]').find('button.mantine-Accordion-control').first().click();
+      cy.get('@lvl1')
+        .find('[data-wg-name="Attribute Boosts"]')
+        .find('button.mantine-Accordion-control')
+        .first()
+        .click();
       cy.selectAttribute('Strength');
       cy.selectAttribute('Dexterity');
       cy.selectAttribute('Constitution');
