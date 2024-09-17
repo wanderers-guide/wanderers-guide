@@ -142,8 +142,8 @@ export default function SkillsActionsPanel(props: {
               {weaponStats.damage.die}
               {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
               {weaponStats.damage.damageType}
-              {parseOtherDamage(weaponStats.damage.other)}
-              {/* {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''} */}
+              {parseOtherDamage(weaponStats.damage.other)}{' '}
+              {weaponStats.damage.extra ? `+ ${weaponStats.damage.extra}` : ''}
             </Text>
           </Group>
         ),
