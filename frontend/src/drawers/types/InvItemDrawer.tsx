@@ -589,6 +589,7 @@ function InvItemSections(props: {
     attackAndDamageSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group
+          grow
           gap={0}
           style={{
             cursor: 'pointer',

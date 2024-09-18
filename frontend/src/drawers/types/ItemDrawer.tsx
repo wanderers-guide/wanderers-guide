@@ -349,8 +349,8 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
 
     attackAndDamageSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group wrap='nowrap' grow>
-          <Group wrap='nowrap' gap={10}>
+        <Group grow gap={0}>
+          <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }}>
             <Text fw={600} c='gray.5' span>
               Attack
             </Text>
