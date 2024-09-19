@@ -157,18 +157,18 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
         // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
         if (item.item.meta_data.strength && strMod >= item.item.meta_data.strength) {
           // Take speed penalty, reduced by 5, to all Speeds
-          const speedPeanlty = Math.abs(item.item.meta_data.speed_penalty ?? 0) - 5;
-          if (speedPeanlty > 0) {
+          const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0) - 5;
+          if (speedPenalty > 0) {
             for (const speed of getAllSpeedVariables(STORE_ID)) {
-              addVariableBonus(STORE_ID, speed.name, -1 * speedPeanlty, undefined, '', `${item.item.name}`);
+              addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
             }
           }
         } else {
           // If the strength requirement doesn't exist, always include it.
           //
           // Take check penalty to Strength- and Dexterity-based skill checks (except for those that have the attack trait)
-          const checkPeanlty = Math.abs(item.item.meta_data.check_penalty ?? 0);
-          if (checkPeanlty > 0) {
+          const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
+          if (checkPenalty > 0) {
             const attrs = ['ATTRIBUTE_STR', 'ATTRIBUTE_DEX'];
             const skills = getAllSkillVariables(STORE_ID).filter((skill) =>
               attrs.includes(skill.value.attribute ?? '')
@@ -177,7 +177,7 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
               addVariableBonus(
                 STORE_ID,
                 skill.name,
-                -1 * checkPeanlty,
+                -1 * checkPenalty,
                 undefined,
                 '', // Could include: (unless it has the attack trait)
                 `${item.item.name}`
@@ -186,10 +186,10 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
           }
 
           // Take full speed penalty to all Speeds
-          const speedPeanlty = Math.abs(item.item.meta_data.speed_penalty ?? 0);
-          if (speedPeanlty > 0) {
+          const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0);
+          if (speedPenalty > 0) {
             for (const speed of getAllSpeedVariables(STORE_ID)) {
-              addVariableBonus(STORE_ID, speed.name, -1 * speedPeanlty, undefined, '', `${item.item.name}`);
+              addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
             }
           }
         }
