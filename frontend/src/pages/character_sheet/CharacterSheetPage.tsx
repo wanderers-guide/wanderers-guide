@@ -6,7 +6,7 @@ import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 
-import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
+import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
   ActionIcon,
   Box,
@@ -218,6 +218,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       if (!character || executingOperations.current) return;
       executingOperations.current = true;
       executeCharacterOperations(character, props.content, 'CHARACTER-SHEET').then((results) => {
+        // Final execution pipeline:
+
         if (character.variants?.proficiency_without_level) {
           setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
         }
@@ -229,6 +231,9 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         if (character.options?.ignore_bulk_limit !== true) {
           checkBulkLimit(character, setCharacter);
         }
+
+        // Apply armor/shield penalties
+        applyEquipmentPenalties(character, setCharacter);
 
         // Apply conditions after everything else
         applyConditions('CHARACTER', character.details?.conditions ?? []);

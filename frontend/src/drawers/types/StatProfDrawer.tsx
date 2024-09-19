@@ -225,7 +225,9 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
                       </HoverCard.Target>
                       <HoverCard.Dropdown py={5} px={10}>
                         <Text c='gray.0' size='xs'>
-                          Your {key}. Use the greatest from the following:
+                          {key.startsWith('untyped ')
+                            ? `Additional untyped modifiers:`
+                            : `Your ${key}. Use the greatest from the following:`}
                           <Divider pb={5} />
                           <List size='xs'>
                             {bonus.composition.map((item, i) => (

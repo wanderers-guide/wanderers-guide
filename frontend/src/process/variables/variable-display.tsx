@@ -121,10 +121,9 @@ export function getFinalVariableValue(id: StoreID, variableName: string) {
       if (bMap.has(key)) {
         const bMapValue = bMap.get(key)!;
         bMap.set(key, {
-          value:
-            key === 'untyped'
-              ? bMapValue.value + (bonus.value ?? 0)
-              : (adj === 'bonus' ? Math.max : Math.min)(bMapValue.value, bonus.value ?? 0),
+          value: key.startsWith('untyped ')
+            ? bMapValue.value + (bonus.value ?? 0)
+            : (adj === 'bonus' ? Math.max : Math.min)(bMapValue.value, bonus.value ?? 0),
           composition: [...bMapValue.composition, { amount: bonus.value ?? 0, source: bonus.source }],
         });
       } else {

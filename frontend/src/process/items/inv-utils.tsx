@@ -7,7 +7,7 @@ import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typi
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
-import { getVariable } from '@variables/variable-manager';
+import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { SetterOrUpdater } from 'recoil';
@@ -47,7 +47,7 @@ export function getInvBulk(inv: Inventory) {
       const ignoredBulk = invItem.item.meta_data?.bulk.ignored ?? 0;
       const containerTotalBulk = invItem.container_contents.reduce(
         (acc, containerItem) => acc + getItemBulk(containerItem),
-        0,
+        0
       );
       totalBulk += Math.max(containerTotalBulk - ignoredBulk, 0);
     }
@@ -144,6 +144,66 @@ async function getDefaultContainerContents(item: Item, allItems?: Item[], count 
   return invItems;
 }
 
+export function applyEquipmentPenalties(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+  const STORE_ID = 'CHARACTER';
+
+  setTimeout(() => {
+    if (!character.inventory) return;
+
+    const applyPenalties = (item: InventoryItem) => {
+      if (item.item.meta_data) {
+        const strMod = getFinalVariableValue(STORE_ID, 'ATTRIBUTE_STR').total;
+
+        // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
+        if (item.item.meta_data.strength && strMod >= item.item.meta_data.strength) {
+          // Take speed penalty, reduced by 5, to all Speeds
+          const speedPeanlty = Math.abs(item.item.meta_data.speed_penalty ?? 0) - 5;
+          if (speedPeanlty > 0) {
+            for (const speed of getAllSpeedVariables(STORE_ID)) {
+              addVariableBonus(STORE_ID, speed.name, -1 * speedPeanlty, undefined, '', `${item.item.name}`);
+            }
+          }
+        } else {
+          // If the strength requirement doesn't exist, always include it.
+          //
+          // Take check penalty to Strength- and Dexterity-based skill checks (except for those that have the attack trait)
+          const checkPeanlty = Math.abs(item.item.meta_data.check_penalty ?? 0);
+          if (checkPeanlty > 0) {
+            const attrs = ['ATTRIBUTE_STR', 'ATTRIBUTE_DEX'];
+            const skills = getAllSkillVariables(STORE_ID).filter((skill) =>
+              attrs.includes(skill.value.attribute ?? '')
+            );
+            for (const skill of skills) {
+              addVariableBonus(
+                STORE_ID,
+                skill.name,
+                -1 * checkPeanlty,
+                undefined,
+                '', // Could include: (unless it has the attack trait)
+                `${item.item.name}`
+              );
+            }
+          }
+
+          // Take full speed penalty to all Speeds
+          const speedPeanlty = Math.abs(item.item.meta_data.speed_penalty ?? 0);
+          if (speedPeanlty > 0) {
+            for (const speed of getAllSpeedVariables(STORE_ID)) {
+              addVariableBonus(STORE_ID, speed.name, -1 * speedPeanlty, undefined, '', `${item.item.name}`);
+            }
+          }
+        }
+      }
+    };
+
+    // Use the "best" armor/shield because that's the one we're assumed to be wearing
+    const bestArmor = getBestArmor(STORE_ID, character.inventory);
+    const bestShield = getBestShield(STORE_ID, character.inventory);
+    if (bestArmor) applyPenalties(bestArmor);
+    if (bestShield) applyPenalties(bestShield);
+  }, 200);
+}
+
 export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
   setTimeout(() => {
     if (!character.inventory) return;
@@ -213,9 +273,9 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
             ...item,
             meta_data: item.meta_data
               ? {
-                ...item.meta_data,
-                base_item_content: baseItem,
-              }
+                  ...item.meta_data,
+                  base_item_content: baseItem,
+                }
               : undefined,
           },
           is_formula: false,
@@ -341,7 +401,7 @@ export const handleMoveItem = (
 };
 
 /**
- * Determines the "best" armor in an inventory, based on total resulting AC
+ * Determines the "best" equipped armor in an inventory, based on total resulting AC
  * @param id - Variable Store ID
  * @param inv - Inventory
  * @returns - The best armor inventory item
@@ -365,7 +425,7 @@ export function getBestArmor(id: StoreID, inv?: Inventory) {
 }
 
 /**
- * Determines the "best" shield in an inventory, based on AC bonus
+ * Determines the "best" equipped shield in an inventory, based on AC bonus
  * @param id - Variable Store ID
  * @param inv - Inventory
  * @returns - The best shield inventory item
