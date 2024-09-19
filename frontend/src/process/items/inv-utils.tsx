@@ -63,6 +63,8 @@ export function getInvBulk(inv: Inventory) {
 export function getItemBulk(invItem: InventoryItem) {
   if (isItemFormula(invItem)) return 0;
 
+  if (!invItem.item.bulk) return 0;
+
   let totalBulk = 0;
 
   if (invItem.item.bulk === 'L') {
