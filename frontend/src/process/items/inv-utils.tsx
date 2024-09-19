@@ -164,7 +164,7 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
             }
           }
         } else {
-          // If the strength requirement doesn't exist, always include it.
+          // If the strength requirement doesn't exist, always include penalty.
           //
           // Take check penalty to Strength- and Dexterity-based skill checks (except for those that have the attack trait)
           const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
