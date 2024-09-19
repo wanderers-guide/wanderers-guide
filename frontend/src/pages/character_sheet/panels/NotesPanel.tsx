@@ -1,4 +1,5 @@
 import { characterState } from '@atoms/characterAtoms';
+import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { GUIDE_BLUE } from '@constants/data';
@@ -72,7 +73,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
           placeholder='Your notes...'
           value={page.contents}
           onChange={(text, json) => {
-              setDebouncedJson({ index: index, json: json });
+            setDebouncedJson({ index: index, json: json });
           }}
           minHeight={props.panelHeight}
           hasColorOptions={true}
@@ -163,7 +164,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
               title: <Title order={3}>Update Page</Title>,
               innerProps: {
                 page: page,
-                onUpdate: (name, icon, color) => {
+                onUpdate: (name: string, icon: string, color: string) => {
                   if (!character) return;
                   const newPages = _.cloneDeep(pages);
                   newPages[index] = {
@@ -212,7 +213,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
   } else {
     return (
       <Tabs orientation='vertical' value={activeTab} onChange={setActiveTab}>
-        <Tabs.List w={180} h={props.panelHeight}>
+        <Tabs.List w={190} h={props.panelHeight}>
           {pages.map((page, index) => (
             <Tabs.Tab
               key={index}
@@ -224,7 +225,11 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
               }
               color={page.color}
             >
-              {_.truncate(page.name, { length: 16 })}
+              <Box maw={125}>
+                <EllipsisText fz='sm' openDelay={1000}>
+                  {page.name}
+                </EllipsisText>
+              </Box>
             </Tabs.Tab>
           ))}
           <Tabs.Tab

@@ -1,8 +1,10 @@
 import { generateNPC, generateSessionIdea } from '@ai/open-ai-handler';
+import { npcsState, sessionIdeasState } from '@atoms/campaignAtoms';
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import BlurBox from '@common/BlurBox';
+import { convertMarkdownToTiptap } from '@common/rich_text_input/utils';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
@@ -92,8 +94,8 @@ export default function InspirationPanel(props: {
     onGenerate: (usePlayers: boolean, usePages: number[], context: string) => void;
   } | null>(null);
 
-  const [sessionIdeas, setSessionIdeas] = useState<CampaignSessionIdea[]>([]);
-  const [npcs, setNPCs] = useState<CampaignNPC[]>([]);
+  const [sessionIdeas, setSessionIdeas] = useRecoilState(sessionIdeasState);
+  const [npcs, setNPCs] = useRecoilState(npcsState);
 
   const generateSessions = async (usePlayers: boolean, usePages: number[], context: string) => {
     const session = await generateSessionIdea(props.campaign, usePlayers ? props.players : [], usePages, context);
@@ -137,7 +139,7 @@ export default function InspirationPanel(props: {
 
   const getIdeasSection = () => (
     <Box>
-      <Stack gap={15}>
+      <Stack gap={10}>
         <Stack gap={10}>
           <Button
             variant='gradient'
@@ -158,7 +160,18 @@ export default function InspirationPanel(props: {
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           <Stack>
             {sessionIdeas.map((idea, index) => (
-              <SessionIdeaCard key={index} idea={idea} />
+              <SessionIdeaCard
+                key={index}
+                idea={idea}
+                campaign={props.campaign}
+                setCampaign={props.setCampaign}
+                onGenerateNPC={async (content) => {
+                  const npc = await generateNPC(props.campaign, [], [], content);
+                  if (npc) {
+                    setNPCs((prev) => [...prev, npc]);
+                  }
+                }}
+              />
             ))}
             {sessionIdeas.length === 0 && (
               <BlurBox px='sm' pb='sm' h={props.panelHeight - 50}>
@@ -180,7 +193,7 @@ export default function InspirationPanel(props: {
 
   const getNPCsSection = () => (
     <Box>
-      <Stack gap={5}>
+      <Stack gap={10}>
         <Stack gap={10}>
           <Button
             variant='gradient'
@@ -339,7 +352,12 @@ function GenModal(props: {
   );
 }
 
-function SessionIdeaCard(props: { idea: CampaignSessionIdea }) {
+function SessionIdeaCard(props: {
+  idea: CampaignSessionIdea;
+  campaign: Campaign;
+  setCampaign: (campaign: Campaign) => void;
+  onGenerateNPC: (content: string) => void;
+}) {
   return (
     <BlurBox px='sm' pb='sm'>
       <Stack>
@@ -371,8 +389,16 @@ function SessionIdeaCard(props: { idea: CampaignSessionIdea }) {
                       <IconSwords style={{ width: rem(14), height: rem(14) }} />
                     )
                   }
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
+
+                    if (action.type === 'NPC') {
+                      await props.onGenerateNPC(
+                        `Generate only the following NPC: ${action.name}, ${action.description}`
+                      );
+                    } else if (action.type === 'ENCOUNTER') {
+                      // TODO
+                    }
                   }}
                 >
                   {action.name}
@@ -380,7 +406,32 @@ function SessionIdeaCard(props: { idea: CampaignSessionIdea }) {
               ))}
             </Menu.Dropdown>
           </Menu>
-          <Button size='xs' rightSection={<IconPlus style={{ width: rem(20), height: rem(20) }} stroke={1.5} />}>
+          <Button
+            size='xs'
+            rightSection={<IconPlus style={{ width: rem(20), height: rem(20) }} stroke={1.5} />}
+            onClick={() => {
+              showNotification({
+                title: `Added to Notes`,
+                message: `Successfully added ${props.idea.name} to notes.`,
+                autoClose: 3000,
+              });
+
+              props.setCampaign({
+                ...props.campaign,
+                notes: {
+                  pages: [
+                    ...(props.campaign.notes?.pages ?? []),
+                    {
+                      name: props.idea.name,
+                      icon: 'magic',
+                      color: '#868e96',
+                      contents: convertMarkdownToTiptap(props.idea.outline),
+                    },
+                  ],
+                },
+              });
+            }}
+          >
             Add to Notes
           </Button>
         </Group>

@@ -22,7 +22,7 @@ import {
   Card,
   Image,
 } from '@mantine/core';
-import { useDebouncedValue, useElementSize, useHover, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBuildingStore,
@@ -53,22 +53,65 @@ import EncountersPanel from './panels/EncountersPanel';
 import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { useRecoilValue } from 'recoil';
+import D20Loader from '@assets/images/D20Loader';
 
 export function Component() {
   const theme = useMantineTheme();
-  const isTablet = useMediaQuery(tabletQuery());
-  const session = useRecoilValue(sessionState);
+  const [doneLoading, setDoneLoading] = useState(false);
 
   const { campaignId } = useLoaderData() as {
     campaignId: number;
   };
 
+  // Just load progress manually
+  const [percentage, setPercentage] = useState(0);
+  const interval = useInterval(() => setPercentage((p) => p + 2), 50);
+  useEffect(() => {
+    interval.start();
+    return interval.stop;
+  }, []);
+
+  const loader = (
+    <Box
+      style={{
+        width: '100%',
+        height: '300px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} status='Loading...' />
+    </Box>
+  );
+
+  return (
+    <>
+      <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
+      <div style={{ display: doneLoading ? undefined : 'none' }}>
+        <CampaignInner
+          campaignId={campaignId}
+          onFinishLoading={() => {
+            interval.stop();
+            setDoneLoading(true);
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
+export function CampaignInner(props: { campaignId: number; onFinishLoading: () => void }) {
+  const theme = useMantineTheme();
+  const isTablet = useMediaQuery(tabletQuery());
+  const session = useRecoilValue(sessionState);
+
   const { data, isFetching, refetch } = useQuery({
-    queryKey: [`find-campaign-${campaignId}`],
+    queryKey: [`find-campaign-${props.campaignId}`],
     queryFn: async () => {
       const campaigns = await makeRequest<Campaign[]>('find-campaign', {
         user_id: session?.user.id,
-        id: campaignId,
+        id: props.campaignId,
       });
       const camp = campaigns?.length ? campaigns[0] : null;
 
@@ -107,7 +150,7 @@ export function Component() {
     queryKey: [`find-campaign-characters`],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', {
-        campaign_id: campaignId,
+        campaign_id: props.campaignId,
       });
     },
     refetchInterval: 400,
@@ -115,13 +158,16 @@ export function Component() {
 
   const isLoaded = !isLoading && !isFetching;
 
+  if (isLoaded) {
+    // Running this multiple times should be fine
+    props.onFinishLoading();
+  }
+
   const { ref, width, height } = useElementSize();
 
   const panelWidth = width ? width - 60 : 2000;
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
-
-  //console.log(characters);
 
   const [revealedKey, setRevealedKey] = useState(false);
   const [loadingKey, setLoadingKey] = useState(false);

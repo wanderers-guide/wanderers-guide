@@ -787,7 +787,7 @@ export default function SettingsPanel(props: {
 
           <Menu shadow='md' width={260}>
             <Menu.Target>
-              <Button mt='md' variant='outline' color='red' px={5} size='compact-sm'>
+              <Button mt='md' variant='light' color='red' px={5} size='compact-sm'>
                 Kick Player
               </Button>
             </Menu.Target>
@@ -821,7 +821,7 @@ export default function SettingsPanel(props: {
 
           <Button
             size='compact-sm'
-            variant='outline'
+            variant='light'
             color='red'
             onClick={() => {
               modals.openConfirmModal({

@@ -4,6 +4,7 @@ import { useRef } from 'react';
 
 interface EllipsisTextProps extends TextProps {
   children?: any;
+  openDelay?: number;
 }
 
 export function EllipsisText(props: EllipsisTextProps) {
@@ -46,7 +47,7 @@ export function EllipsisText(props: EllipsisTextProps) {
       disabled={!isEllipsisActive(ref.current)}
       shadow='md'
       zIndex={2000}
-      openDelay={250}
+      openDelay={props.openDelay ?? 500}
       withinPortal
       withArrow
     >
