@@ -53,6 +53,7 @@ export function EllipsisText(props: EllipsisTextProps) {
     >
       <HoverCard.Target>
         <Text
+          {...props}
           ref={ref}
           style={{
             ...props.style,

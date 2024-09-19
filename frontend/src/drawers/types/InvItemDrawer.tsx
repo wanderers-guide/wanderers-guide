@@ -607,8 +607,10 @@ function InvItemSections(props: {
               Attack
             </Text>
             <Text c='gray.5' span>
-              {sign(weaponStats.attack_bonus.total[0])} / {sign(weaponStats.attack_bonus.total[1])} /{' '}
-              {sign(weaponStats.attack_bonus.total[2])}
+              {sign(weaponStats.attack_bonus.total[0])}{' '}
+              <Text c='gray.6' span>
+                / {sign(weaponStats.attack_bonus.total[1])} / {sign(weaponStats.attack_bonus.total[2])}
+              </Text>
             </Text>
           </Group>
           <Group wrap='nowrap' gap={10} style={{ overflow: 'hidden' }} maw={300}>

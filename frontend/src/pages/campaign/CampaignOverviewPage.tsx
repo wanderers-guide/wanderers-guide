@@ -65,7 +65,7 @@ export function Component() {
 
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 50);
+  const interval = useInterval(() => setPercentage((p) => p + 2), 15);
   useEffect(() => {
     interval.start();
     return interval.stop;
