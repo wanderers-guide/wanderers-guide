@@ -943,6 +943,48 @@ ALTER TABLE ONLY public.versatile_heritage
 
 
 --
+-- Name: ability_block_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ability_block_content_source_id_idx ON public.ability_block USING btree (content_source_id);
+
+
+--
+-- Name: ancestry_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ancestry_content_source_id_idx ON public.ancestry USING btree (content_source_id);
+
+
+--
+-- Name: ancestry_trait_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ancestry_trait_id_idx ON public.ancestry USING btree (trait_id);
+
+
+--
+-- Name: archetype_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX archetype_content_source_id_idx ON public.archetype USING btree (content_source_id);
+
+
+--
+-- Name: archetype_trait_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX archetype_trait_id_idx ON public.archetype USING btree (trait_id);
+
+
+--
+-- Name: background_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX background_content_source_id_idx ON public.background USING btree (content_source_id);
+
+
+--
 -- Name: campaign_join_key_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -950,10 +992,129 @@ CREATE INDEX campaign_join_key_idx ON public.campaign USING btree (join_key);
 
 
 --
+-- Name: campaign_user_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX campaign_user_id_idx ON public.campaign USING btree (user_id);
+
+
+--
 -- Name: character_campaign_id_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX character_campaign_id_idx ON public."character" USING btree (campaign_id);
+
+
+--
+-- Name: character_user_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX character_user_id_idx ON public."character" USING btree (user_id);
+
+
+--
+-- Name: class_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX class_content_source_id_idx ON public.class USING btree (content_source_id);
+
+
+--
+-- Name: class_trait_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX class_trait_id_idx ON public.class USING btree (trait_id);
+
+
+--
+-- Name: content_source_user_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX content_source_user_id_idx ON public.content_source USING btree (user_id);
+
+
+--
+-- Name: content_update_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX content_update_content_source_id_idx ON public.content_update USING btree (content_source_id);
+
+
+--
+-- Name: content_update_user_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX content_update_user_id_idx ON public.content_update USING btree (user_id);
+
+
+--
+-- Name: creature_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX creature_content_source_id_idx ON public.creature USING btree (content_source_id);
+
+
+--
+-- Name: encounter_campaign_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX encounter_campaign_id_idx ON public.encounter USING btree (campaign_id);
+
+
+--
+-- Name: encounter_user_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX encounter_user_id_idx ON public.encounter USING btree (user_id);
+
+
+--
+-- Name: item_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX item_content_source_id_idx ON public.item USING btree (content_source_id);
+
+
+--
+-- Name: language_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX language_content_source_id_idx ON public.language USING btree (content_source_id);
+
+
+--
+-- Name: public_user_user_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX public_user_user_id_idx ON public.public_user USING btree (user_id);
+
+
+--
+-- Name: spell_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX spell_content_source_id_idx ON public.spell USING btree (content_source_id);
+
+
+--
+-- Name: trait_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX trait_content_source_id_idx ON public.trait USING btree (content_source_id);
+
+
+--
+-- Name: versatile_heritage_content_source_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX versatile_heritage_content_source_id_idx ON public.versatile_heritage USING btree (content_source_id);
+
+
+--
+-- Name: versatile_heritage_trait_id_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX versatile_heritage_trait_id_idx ON public.versatile_heritage USING btree (trait_id);
 
 
 --
