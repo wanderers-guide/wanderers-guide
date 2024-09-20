@@ -49,6 +49,7 @@ import {
   IconFlagPlus,
   IconKey,
   IconArchive,
+  IconHexagonalPrism,
 } from '@tabler/icons-react';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
@@ -366,6 +367,28 @@ export default function SettingsPanel(props: {
                   onEnableAll={() => {
                     setBooksEnabled(
                       books.filter((book) => book.group === 'legacy').map((book) => book.id),
+                      true
+                    );
+                  }}
+                  onFeedback={(type, id, contentSourceId) => {
+                    setFeedbackData({ type, data: { id, contentSourceId } });
+                  }}
+                />
+                <LinksGroup
+                  icon={IconHexagonalPrism}
+                  label={'Playtest'}
+                  links={books
+                    .filter((book) => book.group === 'playtest')
+                    .map((book) => ({
+                      label: book.name,
+                      id: book.id,
+                      url: book.url,
+                      enabled: hasBookEnabled(book.id),
+                    }))}
+                  onLinkChange={(bookId, enabled) => setBooksEnabled([bookId], enabled)}
+                  onEnableAll={() => {
+                    setBooksEnabled(
+                      books.filter((book) => book.group === 'playtest').map((book) => book.id),
                       true
                     );
                   }}
