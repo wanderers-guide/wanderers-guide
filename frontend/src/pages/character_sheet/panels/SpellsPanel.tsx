@@ -625,14 +625,19 @@ function SpellList(props: {
 
   if (props.type === 'STAFF' && character) {
     return (
-      <StaffSpellsList
-        {...props}
-        castSpell={castSpell}
-        // Get first equipped staff, we know there's one already
-        staff={filterByTraitType(character?.inventory?.items ?? [], 'STAFF').find((invItem) => invItem.is_equipped)!}
-        character={character}
-        setCharacter={setCharacter}
-      />
+      <>
+        {filterByTraitType(character?.inventory?.items ?? [], 'STAFF')
+          .filter((invItem) => invItem.is_equipped)
+          .map((invItem) => (
+            <StaffSpellsList
+              {...props}
+              castSpell={castSpell}
+              staff={invItem}
+              character={character}
+              setCharacter={setCharacter}
+            />
+          ))}
+      </>
     );
   }
 

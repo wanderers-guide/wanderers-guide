@@ -8,6 +8,7 @@ import {
   CastingSource,
   SenseWithRange,
   LivingEntity,
+  SpellSlotRecord,
 } from '@typing/content';
 import { GiveSpellData, SpellMetadata } from '@typing/operations';
 import { StoreID, VariableListStr, VariableNum } from '@typing/variables';
@@ -148,18 +149,21 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   const spellSlots = getVariable<VariableListStr>(id, 'SPELL_SLOTS')?.value ?? [];
 
   // Prefill slots from computed results
-  let slots: SpellSlot[] = [];
+  let slots: SpellSlotRecord[] = [];
+  let count = 0;
   for (const strS of spellSlots) {
     const slot = JSON.parse(strS) as { lvl: number; rank: number; amt: number; source: string };
     for (let i = 0; i < slot.amt; i++) {
       if (slot.lvl !== entity.level) continue;
       slots.push({
+        id: `${id}-spell-slot-${count}`,
         rank: slot.rank,
         source: slot.source,
         spell_id: undefined,
         exhausted: undefined,
         color: undefined,
       });
+      count++;
     }
   }
 
@@ -238,7 +242,7 @@ export function getFocusPoints(id: StoreID, entity: LivingEntity, focusSpells: R
   };
 }
 
-function mergeSpellSlots(emptySlots: SpellSlot[], characterSlots: SpellSlot[]): SpellSlot[] {
+function mergeSpellSlots(emptySlots: SpellSlotRecord[], characterSlots: SpellSlot[]) {
   // Preprocess character slots into a Map for quick lookup
   const slotMap = new Map();
   for (const slot of characterSlots) {

@@ -29,6 +29,7 @@ export function SelectIconModalContents(props: {
     .sort()
     .map((name, index) => (
       <UnstyledButton
+        key={index}
         className={classes.item}
         onClick={() => {
           props.onSelect(name);

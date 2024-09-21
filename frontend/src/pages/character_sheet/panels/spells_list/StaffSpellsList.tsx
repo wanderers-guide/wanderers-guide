@@ -1,4 +1,4 @@
-import { Accordion, Badge, Box, Button, Divider, Group, Paper, Stack, Text } from '@mantine/core';
+import { Accordion, Badge, Box, Button, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
 import {
   CastingSource,
@@ -9,6 +9,7 @@ import {
   SpellInnateEntry,
   SpellListEntry,
   SpellSlot,
+  SpellSlotRecord,
 } from '@typing/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
@@ -20,6 +21,8 @@ import _ from 'lodash-es';
 import { use } from 'chai';
 import { useEffect } from 'react';
 import BlurButton from '@common/BlurButton';
+import { openContextModal } from '@mantine/modals';
+import { collectEntitySpellcasting } from '@content/collect-content';
 
 export default function StaffSpellsList(props: {
   index: string;
@@ -59,38 +62,43 @@ export default function StaffSpellsList(props: {
   const castingType = getSpellcastingType('CHARACTER', props.character);
   const canAddPreparedExtraCharges = castingType === 'PREPARED' && maxCharges <= greatestSlotRank;
 
+  const updateStaffCharges = (current?: number, max?: number) => {
+    setCharacter((char) => {
+      if (!char || !char.inventory) return null;
+
+      return {
+        ...char,
+        inventory: {
+          ...char.inventory,
+          items: char.inventory.items.map((i) => {
+            if (i.id !== props.staff.id) return i;
+
+            // If it's the staff item, update the charges
+            return {
+              ...i,
+              item: {
+                ...i.item,
+                meta_data: {
+                  ...i.item.meta_data!,
+                  charges: {
+                    ...i.item.meta_data?.charges,
+                    current: current ?? i.item.meta_data?.charges?.current,
+                    max: max ?? i.item.meta_data?.charges?.max,
+                  },
+                },
+              },
+            };
+          }),
+        },
+      };
+    });
+  };
+
   // On init,
   useEffect(() => {
     if (greatestSlotRank > maxCharges) {
       // Update item to have max charges equal to greatest slot rank
-      setCharacter((char) => {
-        if (!char || !char.inventory) return null;
-
-        return {
-          ...char,
-          inventory: {
-            ...char.inventory,
-            items: char.inventory.items.map((i) => {
-              if (i.id !== props.staff.id) return i;
-
-              // If it's the staff item, update the charges
-              return {
-                ...i,
-                item: {
-                  ...i.item,
-                  meta_data: {
-                    ...i.item.meta_data!,
-                    charges: {
-                      ...i.item.meta_data?.charges,
-                      max: greatestSlotRank,
-                    },
-                  },
-                },
-              };
-            }),
-          },
-        };
-      });
+      updateStaffCharges(undefined, greatestSlotRank);
     }
   }, []);
 
@@ -121,6 +129,52 @@ export default function StaffSpellsList(props: {
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
+                    openContextModal({
+                      modal: 'selectSpellSlot',
+                      title: <Title order={3}>Expend a Spell Slot</Title>,
+                      innerProps: {
+                        text: 'Select a spell slot to expend it and add a number of charges equal to its rank to your staff.',
+                        allSpells: props.allSpells,
+                        onSelect: (slot: SpellSlotRecord) => {
+                          // Expend the selected slot
+                          setCharacter((c) => {
+                            if (!c) return c;
+                            const slots = collectEntitySpellcasting('CHARACTER', c).slots;
+
+                            let newSlots = _.cloneDeep(slots ?? []);
+                            newSlots = newSlots.map((s) => {
+                              if (s.id === slot.id) {
+                                return {
+                                  ...s,
+                                  exhausted: true,
+                                };
+                              } else {
+                                return s;
+                              }
+                            });
+
+                            return {
+                              ...c,
+                              spells: {
+                                ...(c.spells ?? {
+                                  slots: [],
+                                  list: [],
+                                  focus_point_current: 0,
+                                  innate_casts: [],
+                                }),
+                                slots: newSlots,
+                              },
+                            };
+                          });
+
+                          // Update the staff charges, delay it prevent race condition with slot expending
+                          // TODO: Just combine into one update call
+                          setTimeout(() => {
+                            updateStaffCharges(undefined, props.staff.item.meta_data!.charges!.max! + slot.rank);
+                          }, 250);
+                        },
+                      },
+                    });
                   }}
                 >
                   Add Charges

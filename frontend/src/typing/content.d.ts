@@ -48,6 +48,10 @@ type ContentType =
   | 'language'
   | 'content-source';
 
+interface SpellSlotRecord extends SpellSlot {
+  id: string;
+}
+
 interface SpellSlot {
   rank: number;
   source: string;
@@ -175,7 +179,7 @@ interface Item {
       striking?: number;
       resilient?: number;
       potency?: number;
-      property?: { name: string; id: number, rune?: Item }[];
+      property?: { name: string; id: number; rune?: Item }[];
     };
     starfinder?: {
       capacity?: string;
