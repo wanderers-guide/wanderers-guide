@@ -9,7 +9,7 @@ export default function RitualSpellsList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF';
   extra: {
     charData: {
       slots: SpellSlot[];

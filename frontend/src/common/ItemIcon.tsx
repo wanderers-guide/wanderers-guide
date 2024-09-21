@@ -12,7 +12,8 @@ import {
   GiRollingBomb,
   GiRuneStone,
   GiShield,
-  GiShoulderArmor,
+  GiWizardStaff,
+  GiCrystalWand,
   GiSlashedShield,
   GiSwapBag,
 } from 'react-icons/gi';
@@ -27,6 +28,8 @@ type ItemIconType =
   | 'UNARMED'
   | 'BOMB'
   | 'CONTAINER'
+  | 'STAFF'
+  | 'WAND'
   | 'HIGH_TECH_GUN';
 
 export const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
@@ -39,6 +42,8 @@ export const getIconMap = (size: string, color: string): Record<ItemIconType, JS
   UNARMED: <GiFist color={color} size={size} />,
   BOMB: <GiRollingBomb color={color} size={size} />,
   CONTAINER: <GiLightBackpack color={color} size={size} />,
+  STAFF: <GiWizardStaff color={color} size={size} />,
+  WAND: <GiCrystalWand color={color} size={size} />,
   HIGH_TECH_GUN: <GiBolterGun color={color} size={size} />,
 });
 
@@ -50,6 +55,14 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
 
   if (hasTraitType('BOMB', props.item.traits)) {
     type = 'BOMB';
+  }
+
+  if (hasTraitType('STAFF', props.item.traits)) {
+    type = 'STAFF';
+  }
+
+  if (hasTraitType('WAND', props.item.traits)) {
+    type = 'WAND';
   }
 
   if (type === 'GENERAL' && props.item.meta_data?.bulk.capacity) {

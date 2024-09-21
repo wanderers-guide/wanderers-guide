@@ -32,6 +32,8 @@ import InnateSpellsList from './spells_list/InnateSpellsList';
 import PreparedSpellsList from './spells_list/PreparedSpellsList';
 import RitualSpellsList from './spells_list/RitualSpellsList';
 import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
+import StaffSpellsList from './spells_list/StaffSpellsList';
+import { filterByTraitType } from '@items/inv-utils';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -222,6 +224,16 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   hasFilters={hasFilters}
                 />
               )}
+              {filterByTraitType(character?.inventory?.items ?? [], 'STAFF').find((invItem) => invItem.is_equipped) && (
+                <SpellList
+                  index={'staff'}
+                  spellIds={[]}
+                  allSpells={allSpells}
+                  type='STAFF'
+                  hasFilters={hasFilters}
+                  extra={{ charData: charData }}
+                />
+              )}
               {/* Always display ritual section */}
               {true && (
                 <SpellList
@@ -365,7 +377,7 @@ function SpellList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF';
   extra: {
     charData: {
       slots: SpellSlot[];
@@ -608,6 +620,18 @@ function SpellList(props: {
   if (props.type === 'INNATE' && props.extra?.innates) {
     return (
       <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setCharacter={setCharacter} />
+    );
+  }
+
+  if (props.type === 'STAFF') {
+    return (
+      <StaffSpellsList
+        {...props}
+        castSpell={castSpell}
+        // Get first equipped staff, we know there's one already
+        staff={filterByTraitType(character?.inventory?.items ?? [], 'STAFF').find((invItem) => invItem.is_equipped)!}
+        setCharacter={setCharacter}
+      />
     );
   }
 

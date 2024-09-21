@@ -1,18 +1,18 @@
-import { Accordion, Badge, Divider, Group, Paper, Stack, Text } from "@mantine/core";
-import { getSpellStats } from "@spells/spell-handler";
-import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from "@typing/content";
-import { rankNumber, sign } from "@utils/numbers";
-import { Dictionary } from "node_modules/cypress/types/lodash";
-import { SetterOrUpdater } from "recoil";
-import { SpellSlotSelect } from "../SpellsPanel";
-import SpellListEntrySection from "./SpellListEntrySection";
+import { Accordion, Badge, Divider, Group, Paper, Stack, Text } from '@mantine/core';
+import { getSpellStats } from '@spells/spell-handler';
+import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import { rankNumber, sign } from '@utils/numbers';
+import { Dictionary } from 'node_modules/cypress/types/lodash';
+import { SetterOrUpdater } from 'recoil';
+import { SpellSlotSelect } from '../SpellsPanel';
+import SpellListEntrySection from './SpellListEntrySection';
 
 export default function InnateSpellsList(props: {
   index: string;
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF';
   extra: {
     charData: {
       slots: SpellSlot[];
@@ -32,14 +32,16 @@ export default function InnateSpellsList(props: {
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
   castSpell: (cast: boolean, spell: Spell) => void;
   setCharacter: SetterOrUpdater<Character | null>;
-  innateSpells: Dictionary<{
-    spell: Spell | undefined;
-    spell_id: number;
-    rank: number;
-    tradition: string;
-    casts_max: number;
-    casts_current: number;
-  }[]> | null;
+  innateSpells: Dictionary<
+    {
+      spell: Spell | undefined;
+      spell_id: number;
+      rank: number;
+      tradition: string;
+      casts_max: number;
+      casts_current: number;
+    }[]
+  > | null;
 }) {
   const { castSpell, setCharacter, innateSpells } = props;
 
@@ -51,7 +53,6 @@ export default function InnateSpellsList(props: {
   ) {
     return null;
   }
-
 
   return (
     <Accordion.Item value={props.index}>
@@ -111,8 +112,8 @@ export default function InnateSpellsList(props: {
                         </Text>
                       </Badge>
                     </Group>
-                    <Divider my="md" />
-                    <Stack gap={5} mb="md">
+                    <Divider my={5} />
+                    <Stack gap={5} mb='md'>
                       {innateSpells[rank].map((innate, index) => (
                         <SpellListEntrySection
                           key={index}

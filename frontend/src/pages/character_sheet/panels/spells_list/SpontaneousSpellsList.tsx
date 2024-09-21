@@ -17,7 +17,7 @@ export default function SpontaneousSpellsList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
+  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF';
   extra: {
     charData: {
       slots: SpellSlot[];
@@ -211,9 +211,8 @@ export default function SpontaneousSpellsList(props: {
                         </Text>
                       </Badge>
                     </Group>
-                    <Divider my='md' />
+                    <Divider my={5} />
                     <Stack gap={5} mb='md'>
-                      <Divider color='dark.6' />
                       {spells[rank]?.map((spell, index) => (
                         <SpellListEntrySection
                           key={index}

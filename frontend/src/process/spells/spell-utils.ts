@@ -1,4 +1,6 @@
-import { Spell } from '@typing/content';
+import { collectEntitySpellcasting } from '@content/collect-content';
+import { Item, LivingEntity, Spell } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 
 /**
@@ -35,4 +37,69 @@ export function isRitual(spell: Spell) {
  */
 export function isNormalSpell(spell: Spell) {
   return !isFocusSpell(spell) && !isRitual(spell);
+}
+
+/**
+ * Utility function to determine the type of spellcasting the entity has
+ * @param id - ID of the variable store
+ * @param entity - Living entity
+ * @returns - Type of spellcasting the entity has
+ */
+export function getSpellcastingType(id: StoreID, entity: LivingEntity): 'PREPARED' | 'SPONTANEOUS' | 'NONE' {
+  const spellData = collectEntitySpellcasting(id, entity);
+  for (const source of spellData.sources) {
+    if (source.type.startsWith('PREPARED')) {
+      return 'PREPARED';
+    } else if (source.type.startsWith('SPONTANEOUS')) {
+      return 'SPONTANEOUS';
+    }
+  }
+  return 'NONE';
+}
+
+/**
+ * Utility function to detect spells in text
+ * @param text - Text to parse
+ * @param allSpells - All spells
+ * @returns - Detected spells within the text
+ */
+export function detectSpells(text: string, allSpells: Spell[], simpleDetect = false): { spell: Spell; rank: number }[] {
+  const detectedSpells = [];
+
+  // Simple detection:
+  if (simpleDetect) {
+    const linkRegex = /\(link_spell_(\d+)\)/g;
+    for (const linkMatch of [...text.matchAll(linkRegex)]) {
+      const spellId = parseInt(linkMatch[1]);
+
+      const spell = allSpells.find((s) => s.id === spellId);
+      if (spell) {
+        detectedSpells.push({ spell, rank: spell.rank });
+      }
+    }
+
+    return detectedSpells;
+  }
+
+  // Advanced, spell list detection:
+  const matches = text.matchAll(/^\W*((\d|cantrip))(.+?)(\[(.+?)\]\((.+?)\))(.*)/gim);
+
+  for (const match of [...matches]) {
+    const line = match[0];
+    let rank = parseInt(match[1]);
+    if (isNaN(rank)) {
+      rank = 0;
+    }
+    const linkRegex = /\(link_spell_(\d+)\)/g;
+    for (const linkMatch of [...line.matchAll(linkRegex)]) {
+      const spellId = parseInt(linkMatch[1]);
+
+      const spell = allSpells.find((s) => s.id === spellId);
+      if (spell) {
+        detectedSpells.push({ spell: { ...spell, rank }, rank });
+      }
+    }
+  }
+
+  return detectedSpells;
 }

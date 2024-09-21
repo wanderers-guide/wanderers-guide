@@ -5,7 +5,7 @@ import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
 import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
-import { getTraitIdByType, hasTraitType } from '@utils/traits';
+import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
@@ -726,4 +726,8 @@ export function reachedInvestedLimit(id: StoreID, inv?: Inventory) {
 
 export function getInvestedLimit(id: StoreID) {
   return 10 + getFinalVariableValue(id, 'INVEST_LIMIT_BONUS').total;
+}
+
+export function filterByTraitType(invItems: InventoryItem[], traitType: TraitType) {
+  return invItems.filter((invItem) => hasTraitType(traitType, compileTraits(invItem.item)));
 }
