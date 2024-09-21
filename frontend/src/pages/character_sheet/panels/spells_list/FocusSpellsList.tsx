@@ -1,15 +1,17 @@
-import { getFocusPoints } from "@content/collect-content";
-import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from "@mantine/core";
-import { getSpellStats } from "@spells/spell-handler";
-import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from "@typing/content";
-import { rankNumber, sign } from "@utils/numbers";
-import { toLabel } from "@utils/strings";
-import { getTraitIdByType } from "@utils/traits";
+import { getFocusPoints } from '@content/collect-content';
+import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
+import { getSpellStats } from '@spells/spell-handler';
+import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import { rankNumber, sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
+import { getTraitIdByType } from '@utils/traits';
 import _ from 'lodash-es';
-import { Dictionary } from "node_modules/cypress/types/lodash";
-import { SetterOrUpdater } from "recoil";
-import { SpellSlotSelect } from "../SpellsPanel";
-import SpellListEntrySection from "./SpellListEntrySection";
+import { Dictionary } from 'node_modules/cypress/types/lodash';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { SpellSlotSelect } from '../SpellsPanel';
+import SpellListEntrySection from './SpellListEntrySection';
+import { StatButton } from '@pages/character_builder/CharBuilderCreation';
+import { drawerState } from '@atoms/navAtoms';
 
 export default function FocusSpellsList(props: {
   index: string;
@@ -40,6 +42,7 @@ export default function FocusSpellsList(props: {
   setCharacter: SetterOrUpdater<Character | null>;
 }) {
   const { castSpell, spells, character, setCharacter } = props;
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // If there are no spells to display, and there are filters, return null
   if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
@@ -114,8 +117,15 @@ export default function FocusSpellsList(props: {
               },
             }}
           >
-            <Group wrap='nowrap' mb="sm">
-              <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+            <Group wrap='nowrap' mb='sm'>
+              <StatButton
+                onClick={() => {
+                  openDrawer({
+                    type: 'stat-prof',
+                    data: { variableName: 'SPELL_ATTACK' },
+                  });
+                }}
+              >
                 <Group wrap='nowrap' gap={10}>
                   <Text fw={600} c='gray.5' fz='sm' span>
                     Spell Attack
@@ -125,8 +135,15 @@ export default function FocusSpellsList(props: {
                     {sign(spellStats.spell_attack.total[2])}
                   </Text>
                 </Group>
-              </Paper>
-              <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+              </StatButton>
+              <StatButton
+                onClick={() => {
+                  openDrawer({
+                    type: 'stat-prof',
+                    data: { variableName: 'SPELL_DC', isDC: true },
+                  });
+                }}
+              >
                 <Group wrap='nowrap' gap={10}>
                   <Text fw={600} c='gray.5' fz='sm' span>
                     Spell DC
@@ -135,7 +152,7 @@ export default function FocusSpellsList(props: {
                     {spellStats.spell_dc.total}
                   </Text>
                 </Group>
-              </Paper>
+              </StatButton>
             </Group>
             {spells &&
               Object.keys(spells)
@@ -152,8 +169,8 @@ export default function FocusSpellsList(props: {
                         </Text>
                       </Badge>
                     </Group>
-                    <Divider my="md" />
-                    <Stack gap={5} mb="md">
+                    <Divider my='md' />
+                    <Stack gap={5} mb='md'>
                       {spells[rank].map((spell, index) => (
                         <SpellListEntrySection
                           key={index}

@@ -1,11 +1,14 @@
-import BlurButton from "@common/BlurButton";
-import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from "@mantine/core";
-import { getSpellStats } from "@spells/spell-handler";
-import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from "@typing/content";
-import { rankNumber, sign } from "@utils/numbers";
-import { toLabel } from "@utils/strings";
-import { Dictionary } from "node_modules/cypress/types/lodash";
-import SpellListEntrySection from "./SpellListEntrySection";
+import BlurButton from '@common/BlurButton';
+import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
+import { getSpellStats } from '@spells/spell-handler';
+import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import { rankNumber, sign } from '@utils/numbers';
+import { toLabel } from '@utils/strings';
+import { Dictionary } from 'node_modules/cypress/types/lodash';
+import SpellListEntrySection from './SpellListEntrySection';
+import { StatButton } from '@pages/character_builder/CharBuilderCreation';
+import { drawerState } from '@atoms/navAtoms';
+import { useRecoilState } from 'recoil';
 
 export default function PreparedSpellsList(props: {
   index: string;
@@ -34,29 +37,26 @@ export default function PreparedSpellsList(props: {
     filter?: {
       traditions?: string[];
       ranks?: string[];
-    },
+    }
   ) => void;
-  slots: Dictionary<{
-    spell: Spell | undefined;
-    rank: number;
-    source: string;
-    spell_id?: number;
-    exhausted?: boolean;
-    color?: string;
-  }[]> | null;
+  slots: Dictionary<
+    {
+      spell: Spell | undefined;
+      rank: number;
+      source: string;
+      spell_id?: number;
+      exhausted?: boolean;
+      color?: string;
+    }[]
+  > | null;
   castSpell: (cast: boolean, spell: Spell) => void;
 }) {
   const { slots, castSpell } = props;
-  const highestRank = Object.keys(slots || {}).reduce(
-    (acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc),
-    0,
-  );
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  const highestRank = Object.keys(slots || {}).reduce((acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc), 0);
   // If there are no spells to display, and there are filters, return null
-  if (
-    props.hasFilters &&
-    slots &&
-    Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0
-  ) {
+  if (props.hasFilters && slots && Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0) {
     return null;
   }
 
@@ -83,7 +83,7 @@ export default function PreparedSpellsList(props: {
                   {
                     traditions: [props.source!.tradition.toLowerCase()],
                     ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
-                  },
+                  }
                 );
               }}
             >
@@ -122,8 +122,15 @@ export default function PreparedSpellsList(props: {
               },
             }}
           >
-            <Group wrap='nowrap' mb="sm">
-              <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+            <Group wrap='nowrap' mb='sm'>
+              <StatButton
+                onClick={() => {
+                  openDrawer({
+                    type: 'stat-prof',
+                    data: { variableName: 'SPELL_ATTACK' },
+                  });
+                }}
+              >
                 <Group wrap='nowrap' gap={10}>
                   <Text fw={600} c='gray.5' fz='sm' span>
                     Spell Attack
@@ -133,8 +140,15 @@ export default function PreparedSpellsList(props: {
                     {sign(spellStats.spell_attack.total[2])}
                   </Text>
                 </Group>
-              </Paper>
-              <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+              </StatButton>
+              <StatButton
+                onClick={() => {
+                  openDrawer({
+                    type: 'stat-prof',
+                    data: { variableName: 'SPELL_DC', isDC: true },
+                  });
+                }}
+              >
                 <Group wrap='nowrap' gap={10}>
                   <Text fw={600} c='gray.5' fz='sm' span>
                     Spell DC
@@ -143,7 +157,7 @@ export default function PreparedSpellsList(props: {
                     {spellStats.spell_dc.total}
                   </Text>
                 </Group>
-              </Paper>
+              </StatButton>
             </Group>
             {slots &&
               Object.keys(slots)
@@ -162,8 +176,8 @@ export default function PreparedSpellsList(props: {
                         </Text>
                       </Badge>
                     </Group>
-                    <Divider my="md" />
-                    <Stack gap={5} mb="md">
+                    <Divider my='md' />
+                    <Stack gap={5} mb='md'>
                       {slots[rank].map((slot, index) => (
                         <SpellListEntrySection
                           key={index}
@@ -181,7 +195,7 @@ export default function PreparedSpellsList(props: {
                               {
                                 traditions: [props.source!.tradition.toLowerCase()],
                                 ranks: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
-                              },
+                              }
                             );
                           }}
                           hasFilters={props.hasFilters}

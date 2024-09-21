@@ -616,7 +616,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SPELL_DC' },
+                          data: { variableName: 'SPELL_DC', isDC: true },
                         });
                       }}
                     >

@@ -868,7 +868,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SPELL_DC' },
+                        data: { variableName: 'SPELL_DC', isDC: true },
                       });
                     }}
                   >
