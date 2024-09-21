@@ -15,7 +15,7 @@ import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
-import { detectSpells } from '@spells/spell-utils';
+import { detectSpells, getSpellcastingType } from '@spells/spell-utils';
 import _ from 'lodash-es';
 import { use } from 'chai';
 import { useEffect } from 'react';
@@ -40,22 +40,27 @@ export default function StaffSpellsList(props: {
   };
   hasFilters: boolean;
   castSpell: (cast: boolean, spell: Spell) => void;
+  character: Character;
   setCharacter: SetterOrUpdater<Character | null>;
 }) {
   const { castSpell, setCharacter } = props;
 
   const detectedSpells = _.groupBy(detectSpells(props.staff.item.description, props.allSpells), 'rank');
 
-  useEffect(() => {
-    const maxCharges = props.staff.item.meta_data?.charges?.max ?? 0;
-    //const currentCharges = props.staff.item.meta_data?.charges?.current ?? 0;
-    let greatestSlotRank = 0;
-    for (const slot of props.extra.charData.slots) {
-      if (slot.rank > greatestSlotRank) {
-        greatestSlotRank = slot.rank;
-      }
+  // Calculated values (could put in useMemo)
+  const maxCharges = props.staff.item.meta_data?.charges?.max ?? 0;
+  const currentCharges = props.staff.item.meta_data?.charges?.current ?? 0;
+  let greatestSlotRank = 0;
+  for (const slot of props.extra.charData.slots) {
+    if (slot.rank > greatestSlotRank) {
+      greatestSlotRank = slot.rank;
     }
+  }
+  const castingType = getSpellcastingType('CHARACTER', props.character);
+  const canAddPreparedExtraCharges = castingType === 'PREPARED' && maxCharges <= greatestSlotRank;
 
+  // On init,
+  useEffect(() => {
     if (greatestSlotRank > maxCharges) {
       // Update item to have max charges equal to greatest slot rank
       setCharacter((char) => {
@@ -108,17 +113,19 @@ export default function StaffSpellsList(props: {
 
           <Box mr={10}>
             <Group wrap='nowrap' gap={10}>
-              <BlurButton
-                size='compact-xs'
-                fw={500}
-                fz={10}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                Add Charges
-              </BlurButton>
+              {canAddPreparedExtraCharges && (
+                <BlurButton
+                  size='compact-xs'
+                  fw={500}
+                  fz={10}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                >
+                  Add Charges
+                </BlurButton>
+              )}
               <SpellSlotSelect
                 text='Staff Charges'
                 current={props.staff.item.meta_data?.charges?.current ?? 0}
