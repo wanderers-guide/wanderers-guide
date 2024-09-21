@@ -23,6 +23,7 @@ import { useEffect } from 'react';
 import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
 import { collectEntitySpellcasting } from '@content/collect-content';
+import { handleUpdateItemCharges } from '@items/inv-utils';
 
 export default function StaffSpellsList(props: {
   index: string;
@@ -42,11 +43,10 @@ export default function StaffSpellsList(props: {
     };
   };
   hasFilters: boolean;
-  castSpell: (cast: boolean, spell: Spell) => void;
   character: Character;
   setCharacter: SetterOrUpdater<Character | null>;
 }) {
-  const { castSpell, setCharacter } = props;
+  const { setCharacter } = props;
 
   const detectedSpells = _.groupBy(detectSpells(props.staff.item.description, props.allSpells), 'rank');
 
@@ -62,43 +62,11 @@ export default function StaffSpellsList(props: {
   const castingType = getSpellcastingType('CHARACTER', props.character);
   const canAddPreparedExtraCharges = castingType === 'PREPARED' && maxCharges <= greatestSlotRank;
 
-  const updateStaffCharges = (current?: number, max?: number) => {
-    setCharacter((char) => {
-      if (!char || !char.inventory) return null;
-
-      return {
-        ...char,
-        inventory: {
-          ...char.inventory,
-          items: char.inventory.items.map((i) => {
-            if (i.id !== props.staff.id) return i;
-
-            // If it's the staff item, update the charges
-            return {
-              ...i,
-              item: {
-                ...i.item,
-                meta_data: {
-                  ...i.item.meta_data!,
-                  charges: {
-                    ...i.item.meta_data?.charges,
-                    current: current ?? i.item.meta_data?.charges?.current,
-                    max: max ?? i.item.meta_data?.charges?.max,
-                  },
-                },
-              },
-            };
-          }),
-        },
-      };
-    });
-  };
-
   // On init,
   useEffect(() => {
     if (greatestSlotRank > maxCharges) {
       // Update item to have max charges equal to greatest slot rank
-      updateStaffCharges(undefined, greatestSlotRank);
+      handleUpdateItemCharges(setCharacter, props.staff, { max: greatestSlotRank });
     }
   }, []);
 
@@ -170,7 +138,9 @@ export default function StaffSpellsList(props: {
                           // Update the staff charges, delay it prevent race condition with slot expending
                           // TODO: Just combine into one update call
                           setTimeout(() => {
-                            updateStaffCharges(undefined, props.staff.item.meta_data!.charges!.max! + slot.rank);
+                            handleUpdateItemCharges(setCharacter, props.staff, {
+                              max: props.staff.item.meta_data!.charges!.max! + slot.rank,
+                            });
                           }, 250);
                         },
                       },
@@ -184,7 +154,11 @@ export default function StaffSpellsList(props: {
                 text='Staff Charges'
                 current={props.staff.item.meta_data?.charges?.current ?? 0}
                 max={props.staff.item.meta_data?.charges?.max ?? 0}
-                onChange={(v) => {}}
+                onChange={(v) => {
+                  handleUpdateItemCharges(setCharacter, props.staff, {
+                    current: v,
+                  });
+                }}
               />
             </Group>
           </Box>
@@ -245,11 +219,85 @@ export default function StaffSpellsList(props: {
                         <SpellListEntrySection
                           key={index}
                           spell={record.spell}
-                          exhausted={false}
+                          exhausted={
+                            record.spell.rank > 0 &&
+                            (castingType === 'SPONTANEOUS'
+                              ? currentCharges + 1 > maxCharges
+                              : currentCharges + record.spell.rank > maxCharges)
+                          }
                           tradition={'NONE'}
                           attribute={'ATTRIBUTE_CHA'}
                           onCastSpell={(cast: boolean) => {
-                            if (record.spell) castSpell(cast, record.spell);
+                            const castWithCharges = () => {
+                              handleUpdateItemCharges(setCharacter, props.staff, {
+                                current: Math.max(
+                                  Math.min(
+                                    currentCharges + (cast ? record.spell.rank : -record.spell.rank),
+                                    maxCharges
+                                  ),
+                                  0
+                                ),
+                              });
+                            };
+
+                            if (record.spell) {
+                              // If is spontaneous casting, open choice modal
+                              if (cast === true && castingType === 'SPONTANEOUS') {
+                                if (record.spell.rank > 0) {
+                                  openContextModal({
+                                    modal: 'selectStaffCasting',
+                                    title: <Title order={3}>Cast Spell Choice</Title>,
+                                    innerProps: {
+                                      canCastNormally: currentCharges + record.spell.rank <= maxCharges,
+                                      spell: record.spell,
+                                      onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => {
+                                        if (option === 'NORMAL') {
+                                          castWithCharges();
+                                        } else if (option === 'SLOT-CONSUME') {
+                                          // Consume 1 charge
+                                          handleUpdateItemCharges(setCharacter, props.staff, {
+                                            current: Math.min(currentCharges + 1, maxCharges),
+                                          });
+                                          // Consume slot
+                                          setCharacter((c) => {
+                                            if (!c) return c;
+                                            let added = false;
+                                            const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map(
+                                              (slot) => {
+                                                if (!added && slot.rank === slotRank && slot.exhausted !== true) {
+                                                  added = true;
+                                                  return {
+                                                    ...slot,
+                                                    exhausted: true,
+                                                  };
+                                                }
+                                                return slot;
+                                              }
+                                            );
+
+                                            return {
+                                              ...c,
+                                              spells: {
+                                                ...(c.spells ?? {
+                                                  slots: [],
+                                                  list: [],
+                                                  focus_point_current: 0,
+                                                  innate_casts: [],
+                                                }),
+                                                slots: newUpdatedSlots,
+                                              },
+                                            };
+                                          });
+                                        }
+                                      },
+                                    },
+                                  });
+                                }
+                              } else {
+                                // Else just cast
+                                castWithCharges();
+                              }
+                            }
                           }}
                           hasFilters={props.hasFilters}
                         />

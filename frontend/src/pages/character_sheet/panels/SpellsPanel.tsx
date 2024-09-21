@@ -33,7 +33,7 @@ import PreparedSpellsList from './spells_list/PreparedSpellsList';
 import RitualSpellsList from './spells_list/RitualSpellsList';
 import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 import StaffSpellsList from './spells_list/StaffSpellsList';
-import { filterByTraitType } from '@items/inv-utils';
+import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -629,13 +629,7 @@ function SpellList(props: {
         {filterByTraitType(character?.inventory?.items ?? [], 'STAFF')
           .filter((invItem) => invItem.is_equipped)
           .map((invItem) => (
-            <StaffSpellsList
-              {...props}
-              castSpell={castSpell}
-              staff={invItem}
-              character={character}
-              setCharacter={setCharacter}
-            />
+            <StaffSpellsList {...props} staff={invItem} character={character} setCharacter={setCharacter} />
           ))}
       </>
     );

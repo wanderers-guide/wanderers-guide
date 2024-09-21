@@ -401,6 +401,48 @@ export const handleMoveItem = (
 };
 
 /**
+ * Utility function to update the charges for an item
+ * @param setInventory - Character state setter
+ * @param invItem - Inventory item to update
+ * @param charges - Charges to set
+ */
+export const handleUpdateItemCharges = (
+  setCharacter: React.Dispatch<React.SetStateAction<Character | null>>,
+  invItem: InventoryItem,
+  charges: { current?: number; max?: number }
+) => {
+  setCharacter((char) => {
+    if (!char || !char.inventory) return null;
+
+    return {
+      ...char,
+      inventory: {
+        ...char.inventory,
+        items: char.inventory.items.map((i) => {
+          if (i.id !== invItem.id) return i;
+
+          // If it's the item, update the charges
+          return {
+            ...i,
+            item: {
+              ...i.item,
+              meta_data: {
+                ...i.item.meta_data!,
+                charges: {
+                  ...i.item.meta_data?.charges,
+                  current: charges.current ?? i.item.meta_data?.charges?.current,
+                  max: charges.max ?? i.item.meta_data?.charges?.max,
+                },
+              },
+            },
+          };
+        }),
+      },
+    };
+  });
+};
+
+/**
  * Determines the "best" equipped armor in an inventory, based on total resulting AC
  * @param id - Variable Store ID
  * @param inv - Inventory
