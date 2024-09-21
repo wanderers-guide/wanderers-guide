@@ -97,6 +97,9 @@ export function toLabel(text?: string | null) {
     label = label.slice(0, -2) + 'DC';
   }
 
+  // Format rankings
+  label = label.replaceAll(/(\W|^)\d(st|nd|rd|th)(\W|$)/gim, (m) => m.toLowerCase());
+
   return label.trim();
 }
 

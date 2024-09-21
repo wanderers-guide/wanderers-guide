@@ -164,6 +164,42 @@ export default function EntityInfoSection(props: {
       };
     }
 
+    // Reset Wands
+    const wands = filterByTraitType(newEntity?.inventory?.items ?? [], 'WAND');
+    for (const wand of wands) {
+      newEntity.inventory = {
+        ...(newEntity.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items:
+          newEntity.inventory?.items.map((i) => {
+            if (i.id !== wand.id) return i;
+
+            // If it's the item, update the charges
+            return {
+              ...i,
+              item: {
+                ...i.item,
+                meta_data: {
+                  ...i.item.meta_data!,
+                  charges: {
+                    ...i.item.meta_data?.charges,
+                    current: 0,
+                    max: 1,
+                  },
+                },
+              },
+            };
+          }) ?? [],
+      };
+    }
+
     // Remove Fatigued Condition
     let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
 

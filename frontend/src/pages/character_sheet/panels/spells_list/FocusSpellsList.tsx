@@ -1,7 +1,15 @@
 import { getFocusPoints } from '@content/collect-content';
 import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
-import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import {
+  CastingSource,
+  Character,
+  Spell,
+  SpellInnateEntry,
+  SpellListEntry,
+  SpellSectionType,
+  SpellSlot,
+} from '@typing/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
@@ -18,7 +26,7 @@ export default function FocusSpellsList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF';
+  type: SpellSectionType;
   extra: {
     charData: {
       slots: SpellSlot[];

@@ -21,7 +21,15 @@ import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { isCantrip } from '@spells/spell-utils';
 import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { ActionCost, CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import {
+  ActionCost,
+  CastingSource,
+  Spell,
+  SpellInnateEntry,
+  SpellListEntry,
+  SpellSectionType,
+  SpellSlot,
+} from '@typing/content';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import _ from 'lodash-es';
@@ -34,6 +42,7 @@ import RitualSpellsList from './spells_list/RitualSpellsList';
 import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 import StaffSpellsList from './spells_list/StaffSpellsList';
 import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
+import WandSpellsList from './spells_list/WandSpellsList';
 
 export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -234,6 +243,16 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   extra={{ charData: charData }}
                 />
               )}
+              {filterByTraitType(character?.inventory?.items ?? [], 'WAND').length > 0 && (
+                <SpellList
+                  index={'wand'}
+                  spellIds={[]}
+                  allSpells={allSpells}
+                  type='WAND'
+                  hasFilters={hasFilters}
+                  extra={{ charData: charData }}
+                />
+              )}
               {/* Always display ritual section */}
               {true && (
                 <SpellList
@@ -377,7 +396,7 @@ function SpellList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF';
+  type: SpellSectionType;
   extra: {
     charData: {
       slots: SpellSlot[];
@@ -632,6 +651,17 @@ function SpellList(props: {
             <StaffSpellsList {...props} staff={invItem} character={character} setCharacter={setCharacter} />
           ))}
       </>
+    );
+  }
+
+  if (props.type === 'WAND' && character) {
+    return (
+      <WandSpellsList
+        {...props}
+        wands={filterByTraitType(character?.inventory?.items ?? [], 'WAND')}
+        character={character}
+        setCharacter={setCharacter}
+      />
     );
   }
 

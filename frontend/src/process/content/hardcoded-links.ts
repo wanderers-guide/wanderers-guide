@@ -16,6 +16,7 @@ const actionMap: Record<string, number> = {
   Hide: 19726,
   Craft: 19617,
   'Assisted Recovery': 21086,
+  'Cast a Spell': 19611,
 };
 
 export function convertToHardcodedLink(type: ContentType | AbilityBlockType, text: string, displayText?: string) {
