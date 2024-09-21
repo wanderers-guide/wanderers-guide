@@ -105,13 +105,13 @@ export default function WandSpellsList(props: {
           },
         }}
         px={0}
-        pb={5}
+        pb={10}
       >
         <Stack gap={0}>
           {/* <Divider color='dark.6' /> */}
           <Accordion
             px={10}
-            pb={5}
+            pb={0}
             variant='separated'
             multiple
             defaultValue={[]}
@@ -246,6 +246,12 @@ export default function WandSpellsList(props: {
             ))}
           </Accordion>
         </Stack>
+
+        {processedWands.length === 0 && (
+          <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
+            No spells detected in wands
+          </Text>
+        )}
       </Accordion.Panel>
     </Accordion.Item>
   );
