@@ -11,7 +11,7 @@ describe('Characters', () => {
   describe('Character builder', () => {
     beforeEach(() => {
       cy.get('.tabler-icon-user-plus').click();
-      cy.wait(500);
+      cy.wait(2000);
       cy.location('pathname').should('include', '/builder');
     });
 
