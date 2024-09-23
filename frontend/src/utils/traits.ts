@@ -23,7 +23,13 @@ export type TraitType =
   | 'WAND'
   | 'TECH'
   | 'TRACKING-1'
-  | 'TRACKING-2';
+  | 'TRACKING-2'
+  | 'TRACKING-3'
+  | 'TRACKING-4'
+  | 'RESILIENT-1'
+  | 'RESILIENT-2'
+  | 'RESILIENT-3'
+  | 'RESILIENT-4';
 const traitMap: Record<number, TraitType> = {
   // Hardcoded trait ids:
   1437: 'GENERAL',
@@ -49,8 +55,14 @@ const traitMap: Record<number, TraitType> = {
   1665: 'WAND',
   2503: 'ARCHAIC',
   2508: 'TECH',
-  2511: 'TRACKING-1',
-  2512: 'TRACKING-2',
+  3673: 'TRACKING-1',
+  3674: 'TRACKING-2',
+  3675: 'TRACKING-3',
+  4001: 'TRACKING-4',
+  4002: 'RESILIENT-1',
+  4003: 'RESILIENT-2',
+  4004: 'RESILIENT-3',
+  4005: 'RESILIENT-4',
 };
 
 export function getTraitTypeById(traitId: number): TraitType | null {

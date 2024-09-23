@@ -4,6 +4,7 @@ import { fetchContentAll, getCachedSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
 import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
+import { Operation } from '@typing/operations';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
@@ -497,31 +498,60 @@ export function getItemOperations(item: Item, content: ContentPackage) {
 
   if (isItemWithRunes(item)) {
     if (isItemArmor(item)) {
-      // Armor potency // Hardcoded names
-      const potency = item.meta_data?.runes?.potency;
-      if (potency) {
-        const potencyRune = content.items.find((i) => i.name === `Armor Potency (+${potency})`);
-        if (potencyRune) {
-          baseOps.push(...getItemOperations(potencyRune, content));
-        }
+      // Armor potency
+      const potency = item.meta_data?.runes?.potency ?? 0;
+      if (potency > 0) {
+        const ops: Operation[] = [
+          {
+            id: 'a914f920-3bb4-49f0-aae7-92f423a7f4a4',
+            type: 'addBonusToValue',
+            data: {
+              variable: 'AC_BONUS',
+              value: potency,
+              type: 'item',
+              text: '',
+            },
+          },
+        ];
+        baseOps.push(...ops);
       }
 
-      // Armor resilient // Hardcoded names
-      const resilient = item.meta_data?.runes?.resilient;
-      if (resilient) {
-        let resilientItemName = '';
-        if (resilient === 1) {
-          resilientItemName = 'Resilient';
-        } else if (resilient === 2) {
-          resilientItemName = 'Resilient (Greater)';
-        } else if (resilient === 3) {
-          resilientItemName = 'Resilient (Major)';
-        }
-
-        const resilientRune = content.items.find((i) => i.name === resilientItemName);
-        if (resilientRune) {
-          baseOps.push(...getItemOperations(resilientRune, content));
-        }
+      // Armor resilient
+      const resilient = item.meta_data?.runes?.resilient ?? 0;
+      if (resilient > 0) {
+        const ops: Operation[] = [
+          {
+            id: '4819a316-736a-4c7f-937a-6710003b431a',
+            type: 'addBonusToValue',
+            data: {
+              variable: 'SAVE_FORT',
+              value: resilient,
+              type: 'item',
+              text: '',
+            },
+          },
+          {
+            id: '3f008891-b39f-440b-92ff-722d5cbe3ac7',
+            type: 'addBonusToValue',
+            data: {
+              variable: 'SAVE_REFLEX',
+              value: resilient,
+              type: 'item',
+              text: '',
+            },
+          },
+          {
+            id: '52kbafaa-e7db-4fa0-a845-1b727b123f8e',
+            type: 'addBonusToValue',
+            data: {
+              variable: 'SAVE_WILL',
+              value: resilient,
+              type: 'item',
+              text: '',
+            },
+          },
+        ];
+        baseOps.push(...ops);
       }
     }
 
@@ -532,6 +562,85 @@ export function getItemOperations(item: Item, content: ContentPackage) {
           baseOps.push(...getItemOperations(propertyRune, content));
         }
       }
+    }
+  }
+
+  if (isItemWithGradeImprovement(item)) {
+    if (isItemArmor(item)) {
+      const improvements = getGradeImprovements(item);
+      if (improvements.ac_bonus > 0) {
+        const ops: Operation[] = [
+          {
+            id: 'a914f220-3bb4-49f0-aae7-92f423a7f4a4',
+            type: 'addBonusToValue',
+            data: {
+              variable: 'AC_BONUS',
+              value: improvements.ac_bonus,
+              type: 'item',
+              text: '',
+            },
+          },
+        ];
+        baseOps.push(...ops);
+      }
+    }
+
+    if (isItemWithUpgrades(item)) {
+      for (const slot of item.meta_data?.starfinder?.slots ?? []) {
+        const upgrade = content.items.find((i) => i.id === slot.id);
+        if (upgrade) {
+          baseOps.push(...getItemOperations(upgrade, content));
+        }
+      }
+    }
+  }
+
+  if (isItemArmor(item)) {
+    let value = 0;
+    if (hasTraitType('RESILIENT-4', item.traits)) {
+      value = 4;
+    } else if (hasTraitType('RESILIENT-3', item.traits)) {
+      value = 3;
+    } else if (hasTraitType('RESILIENT-2', item.traits)) {
+      value = 2;
+    } else if (hasTraitType('RESILIENT-1', item.traits)) {
+      value = 1;
+    }
+
+    if (value > 0) {
+      const ops: Operation[] = [
+        {
+          id: '4829a316-736a-4c7f-937a-6710003b431a',
+          type: 'addBonusToValue',
+          data: {
+            variable: 'SAVE_FORT',
+            value: value,
+            type: 'item',
+            text: '',
+          },
+        },
+        {
+          id: '3f708891-b39f-440b-92ff-722d5cbe3ac7',
+          type: 'addBonusToValue',
+          data: {
+            variable: 'SAVE_REFLEX',
+            value: value,
+            type: 'item',
+            text: '',
+          },
+        },
+        {
+          id: '522bafaa-e7db-4fa0-a845-1b727b123f8e',
+          type: 'addBonusToValue',
+          data: {
+            variable: 'SAVE_WILL',
+            value: value,
+            type: 'item',
+            text: '',
+          },
+        },
+      ];
+      baseOps.push(...ops);
     }
   }
 
@@ -723,6 +832,23 @@ export function compileTraits(item: Item) {
 
   if (isItemWithRunes(item)) {
     traits.push(getTraitIdByType('MAGICAL'));
+
+    // Add traits from the property runes
+    for (const rune of item.meta_data?.runes?.property ?? []) {
+      // TODO, Could run compileTraits() on the rune, but that -could- result in endless loops
+      traits.push(...(rune.rune?.traits ?? []));
+    }
+  }
+
+  if (isItemWithGradeImprovement(item)) {
+    const improvements = getGradeImprovements(item);
+    traits.push(...improvements.trait_ids);
+
+    // Add traits from the upgrades
+    for (const slot of item.meta_data?.starfinder?.slots ?? []) {
+      // TODO, Could run compileTraits() on the upgrade, but that -could- result in endless loops
+      traits.push(...(slot.upgrade?.traits ?? []));
+    }
   }
 
   return _.uniq(traits);
@@ -794,4 +920,166 @@ export function getInvestedLimit(id: StoreID) {
 
 export function filterByTraitType(invItems: InventoryItem[], traitType: TraitType) {
   return invItems.filter((invItem) => hasTraitType(traitType, compileTraits(invItem.item)));
+}
+
+/**
+ * Utility function to get all the Starfinder improvements for based on its grade
+ * @param item - Item to get grade improvements for
+ * @returns - Grade improvements
+ */
+export function getGradeImprovements(item: Item) {
+  const improvements = {
+    grade: 'COMMERCIAL',
+    level: 0,
+    upgrade_price: 0, // in credits
+    total_price: 0, // in credits
+    upgrade_slots: 0,
+    ac_bonus: 0,
+    damage_dice: 1,
+    hardness_bonus: 0,
+    hp_bonus: 0,
+    bt_bonus: 0,
+    trait_ids: [] as number[],
+  };
+
+  if (!isItemWithGradeImprovement(item)) {
+    return improvements;
+  }
+
+  improvements.grade = item.meta_data?.starfinder?.grade ?? 'COMMERCIAL';
+  if (isItemArmor(item)) {
+    if (item.meta_data?.starfinder?.grade === 'TACTICAL') {
+      improvements.level = 5;
+      improvements.upgrade_price = 1600;
+      improvements.total_price = 1600;
+      improvements.upgrade_slots = 0;
+      improvements.ac_bonus = 1;
+      improvements.trait_ids.push(getTraitIdByType('RESILIENT-1'));
+    } else if (item.meta_data?.starfinder?.grade === 'ADVANCED') {
+      improvements.level = 8;
+      improvements.upgrade_price = 3400;
+      improvements.total_price = 5000;
+      improvements.upgrade_slots = 1;
+      improvements.ac_bonus = 1;
+      improvements.trait_ids.push(getTraitIdByType('RESILIENT-1'));
+    } else if (item.meta_data?.starfinder?.grade === 'SUPERIOR') {
+      improvements.level = 11;
+      improvements.upgrade_price = 9000;
+      improvements.total_price = 14000;
+      improvements.upgrade_slots = 1;
+      improvements.ac_bonus = 2;
+      improvements.trait_ids.push(getTraitIdByType('RESILIENT-2'));
+    } else if (item.meta_data?.starfinder?.grade === 'ELITE') {
+      improvements.level = 14;
+      improvements.upgrade_price = 31000;
+      improvements.total_price = 45000;
+      improvements.upgrade_slots = 2;
+      improvements.ac_bonus = 2;
+      improvements.trait_ids.push(getTraitIdByType('RESILIENT-2'));
+    } else if (item.meta_data?.starfinder?.grade === 'ULTIMATE') {
+      improvements.level = 18;
+      improvements.upgrade_price = 195000;
+      improvements.total_price = 240000;
+      improvements.upgrade_slots = 3;
+      improvements.ac_bonus = 3;
+      improvements.trait_ids.push(getTraitIdByType('RESILIENT-3'));
+    } else if (item.meta_data?.starfinder?.grade === 'PARAGON') {
+      improvements.level = 20;
+      improvements.upgrade_price = 460000;
+      improvements.total_price = 700000;
+      improvements.upgrade_slots = 3;
+      improvements.ac_bonus = 3;
+      improvements.trait_ids.push(getTraitIdByType('RESILIENT-3'));
+    }
+  } else if (isItemShield(item)) {
+    if (item.meta_data?.starfinder?.grade === 'TACTICAL') {
+      improvements.level = 5;
+      improvements.upgrade_price = 750;
+      improvements.total_price = 750;
+      improvements.hardness_bonus = 3;
+      improvements.hp_bonus = 46;
+      improvements.bt_bonus = 23;
+    } else if (item.meta_data?.starfinder?.grade === 'ADVANCED') {
+      improvements.level = 8;
+      improvements.upgrade_price = 2250;
+      improvements.total_price = 3000;
+      improvements.hardness_bonus = 3;
+      improvements.hp_bonus = 56;
+      improvements.bt_bonus = 28;
+    } else if (item.meta_data?.starfinder?.grade === 'SUPERIOR') {
+      improvements.level = 11;
+      improvements.upgrade_price = 6000;
+      improvements.total_price = 9000;
+      improvements.hardness_bonus = 3;
+      improvements.hp_bonus = 68;
+      improvements.bt_bonus = 34;
+    } else if (item.meta_data?.starfinder?.grade === 'ELITE') {
+      improvements.level = 14;
+      improvements.upgrade_price = 16000;
+      improvements.total_price = 25000;
+      improvements.hardness_bonus = 5;
+      improvements.hp_bonus = 80;
+      improvements.bt_bonus = 40;
+    } else if (item.meta_data?.starfinder?.grade === 'ULTIMATE') {
+      improvements.level = 18;
+      improvements.upgrade_price = 55000;
+      improvements.total_price = 80000;
+      improvements.hardness_bonus = 6;
+      improvements.hp_bonus = 100;
+      improvements.bt_bonus = 50;
+    } else if (item.meta_data?.starfinder?.grade === 'PARAGON') {
+      improvements.level = 20;
+      improvements.upgrade_price = 240000;
+      improvements.total_price = 320000;
+      improvements.hardness_bonus = 7;
+      improvements.hp_bonus = 120;
+      improvements.bt_bonus = 60;
+    }
+  } else if (isItemWeapon(item)) {
+    if (item.meta_data?.starfinder?.grade === 'TACTICAL') {
+      improvements.level = 2;
+      improvements.upgrade_price = 350;
+      improvements.total_price = 350;
+      improvements.upgrade_slots = 0;
+      improvements.damage_dice = 1;
+      improvements.trait_ids.push(getTraitIdByType('TRACKING-1'));
+    } else if (item.meta_data?.starfinder?.grade === 'ADVANCED') {
+      improvements.level = 4;
+      improvements.upgrade_price = 650;
+      improvements.total_price = 1000;
+      improvements.upgrade_slots = 1;
+      improvements.damage_dice = 2;
+      improvements.trait_ids.push(getTraitIdByType('TRACKING-1'));
+    } else if (item.meta_data?.starfinder?.grade === 'SUPERIOR') {
+      improvements.level = 10;
+      improvements.upgrade_price = 9000;
+      improvements.total_price = 10000;
+      improvements.upgrade_slots = 1;
+      improvements.damage_dice = 2;
+      improvements.trait_ids.push(getTraitIdByType('TRACKING-2'));
+    } else if (item.meta_data?.starfinder?.grade === 'ELITE') {
+      improvements.level = 12;
+      improvements.upgrade_price = 10000;
+      improvements.total_price = 20000;
+      improvements.upgrade_slots = 2;
+      improvements.damage_dice = 3;
+      improvements.trait_ids.push(getTraitIdByType('TRACKING-2'));
+    } else if (item.meta_data?.starfinder?.grade === 'ULTIMATE') {
+      improvements.level = 16;
+      improvements.upgrade_price = 80000;
+      improvements.total_price = 100000;
+      improvements.upgrade_slots = 2;
+      improvements.damage_dice = 3;
+      improvements.trait_ids.push(getTraitIdByType('TRACKING-3'));
+    } else if (item.meta_data?.starfinder?.grade === 'PARAGON') {
+      improvements.level = 19;
+      improvements.upgrade_price = 300000;
+      improvements.total_price = 400000;
+      improvements.upgrade_slots = 3;
+      improvements.damage_dice = 4;
+      improvements.trait_ids.push(getTraitIdByType('TRACKING-3'));
+    }
+  }
+
+  return improvements;
 }

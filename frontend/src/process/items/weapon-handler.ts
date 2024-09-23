@@ -4,7 +4,7 @@ import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
-import { compileTraits, isItemRangedWeapon } from './inv-utils';
+import { compileTraits, getGradeImprovements, isItemRangedWeapon } from './inv-utils';
 import stripMd from 'remove-markdown';
 
 export function parseOtherDamage(
@@ -19,7 +19,11 @@ export function parseOtherDamage(
 }
 
 export function getWeaponStats(id: StoreID, item: Item) {
-  const dice = (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0);
+  // Get adjustments from Starfinder item grade
+  const gradeImprovements = getGradeImprovements(item);
+
+  const dice =
+    (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0) + (gradeImprovements.damage_dice - 1);
   const die = item.meta_data?.damage?.die ?? '';
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
   const extra = item.meta_data?.damage?.extra;
@@ -78,6 +82,8 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
 
   const hasTracking1 = hasTraitType('TRACKING-1', itemTraits);
   const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
+  const hasTracking3 = hasTraitType('TRACKING-3', itemTraits);
+  const hasTracking4 = hasTraitType('TRACKING-4', itemTraits);
 
   ///
   const profData = getProfTotal(id, item);
@@ -126,6 +132,12 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
   }
   if (hasTracking2) {
     parts.set("This is an item bonus you receive from the weapon's tracking trait.", 2);
+  }
+  if (hasTracking3) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 3);
+  }
+  if (hasTracking4) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 4);
   }
 
   return {
