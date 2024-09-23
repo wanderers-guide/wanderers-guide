@@ -12,6 +12,10 @@ export function pluralize(word: string): string {
   }
 }
 
+export function stripEmojis(text: string) {
+  return text.replace(/[^\p{L}\p{N}\p{P}\p{Z}^$\n]/gu, '');
+}
+
 export function toLabel(text?: string | null) {
   if (!text) return '';
   const OVERRIDE_CHANGES = {

@@ -9,6 +9,7 @@ export default async function exportToPDF(character: Character) {
       const { pdfV1 } = await import('./pdf/pdf-v1');
       return await pdfV1(character);
     } catch (err) {
+      console.error(err);
       showNotification({
         title: 'Error',
         message: 'Failed to export PDF, please try again later.',
@@ -20,6 +21,7 @@ export default async function exportToPDF(character: Character) {
       const { pdfV2 } = await import('./pdf/pdf-v2');
       return await pdfV2(character);
     } catch (err) {
+      console.error(err);
       showNotification({
         title: 'Error',
         message: 'Failed to export PDF, please try again later.',

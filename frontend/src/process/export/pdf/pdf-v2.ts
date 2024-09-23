@@ -37,14 +37,14 @@ import {
   getAllSkillVariables,
   getAllSpeedVariables,
 } from '@variables/variable-manager';
-import { compileProficiencyType, isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
+import { compileExpressions, compileProficiencyType, isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import stripMd from 'remove-markdown';
 
 import { PDFDocument, PDFForm } from 'pdf-lib';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { toLabel } from '@utils/strings';
+import { stripEmojis, toLabel } from '@utils/strings';
 
 export async function pdfV2(character: Character) {
   // Load your PDF
@@ -100,6 +100,10 @@ async function fillPDF(form: PDFForm, character: Character) {
   // Fetch the content package
   const content = await fetchContentPackage(undefined, { fetchSources: true });
   const STORE_ID = 'CHARACTER';
+
+  const compileText = (text: string) => {
+    return stripMd(stripEmojis(compileExpressions(STORE_ID, text.trim(), true) ?? ''));
+  };
 
   // Execute all operations (to update the variables)
   await executeCharacterOperations(character, content, 'CHARACTER-BUILDER');
@@ -596,7 +600,7 @@ async function fillPDF(form: PDFForm, character: Character) {
           console.warn(e);
         }
 
-        const triggerChunks = chunkString(stripMd(action.trigger ?? ''), CHUNK_SIZE);
+        const triggerChunks = chunkString(compileText(action.trigger ?? ''), CHUNK_SIZE);
         for (let i = 0; i < triggerChunks.length; i++) {
           try {
             form.getTextField(`REACTIONS TRIGGER ${index}-${i + 1}`).setText(triggerChunks[i]);
@@ -605,7 +609,7 @@ async function fillPDF(form: PDFForm, character: Character) {
           }
         }
 
-        form.getTextField(`REACTIONS EFFECTS ${index}-1`).setText(stripMd(action.description));
+        form.getTextField(`REACTIONS EFFECTS ${index}-1`).setText(compileText(action.description));
       } catch (e) {
         console.warn(e);
       }
@@ -618,7 +622,7 @@ async function fillPDF(form: PDFForm, character: Character) {
         });
         form.getTextField(`TRAIT(S)${index}`).setText(actionTraits.map((a) => a?.name ?? '').join(', '));
 
-        form.getTextField(`EFFECTS ${index}-1`).setText(stripMd(action.description));
+        form.getTextField(`EFFECTS ${index}-1`).setText(compileText(action.description));
       } catch (e) {
         console.warn(e);
       }
