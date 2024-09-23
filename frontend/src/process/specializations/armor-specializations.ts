@@ -1,6 +1,7 @@
+import { isPlayingStarfinder } from '@content/system-handler';
 import _ from 'lodash-es';
 
-const SPECIALIZATIONS = [
+const PATHFINDER_SPECIALIZATIONS = [
   {
     name: 'Chain',
     description: `The armor can bend with a critical hit and absorb some of the blow. Reduce the damage from critical hits by 4 + the value of the armor’s potency rune for medium armor, or 6 + the value of the armor’s potency rune for heavy armor. This can’t reduce the damage to less than the damage rolled for the hit before doubling for a critical hit.`,
@@ -19,10 +20,25 @@ const SPECIALIZATIONS = [
   },
 ];
 
+const STARFINDER_SPECIALIZATIONS = [
+  {
+    name: 'Ceramic',
+    description: `This tough, light-weight plating is common on spacesuits. It resists heat and other environmental hazards. You gain resistance to acid, cold, fire, and electricity damage equal to 1 + the armor’s resilience value for medium armor, or 2 + the armor’s resilience value for heavy armor.`,
+  },
+  {
+    name: 'Polymer',
+    description: `This flexible armor protects you from dispersed heat and force. You gain resistance to area damage equal to 1 + the armor’s resilience value for medium armor, or 2 + the armor’s resilience value for heavy armor.`,
+  },
+];
+
 export function getArmorSpecialization(group: string) {
-  return SPECIALIZATIONS.find((s) => s.name.trim().toLowerCase() === group.trim().toLowerCase());
+  return getArmorSpecializations().find((s) => s.name.trim().toLowerCase() === group.trim().toLowerCase());
 }
 
 export function getArmorSpecializations() {
-  return _.cloneDeep(SPECIALIZATIONS);
+  const SPECIALIZATIONS = _.cloneDeep(PATHFINDER_SPECIALIZATIONS);
+  if (isPlayingStarfinder()) {
+    SPECIALIZATIONS.push(..._.cloneDeep(STARFINDER_SPECIALIZATIONS));
+  }
+  return SPECIALIZATIONS.sort((a, b) => a.name.localeCompare(b.name));
 }

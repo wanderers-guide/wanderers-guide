@@ -14,9 +14,11 @@ import {
   isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
+  isItemWithGradeImprovement,
   isItemWithPropertyRunes,
   isItemWithQuantity,
   isItemWithRunes,
+  isItemWithUpgrades,
   labelizeBulk,
 } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
@@ -37,6 +39,8 @@ import {
   ScrollArea,
   TextInput,
   Badge,
+  Accordion,
+  useMantineTheme,
 } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
 import { IconHelpCircle } from '@tabler/icons-react';
@@ -52,6 +56,7 @@ import { drawerState } from '@atoms/navAtoms';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { ItemRunesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
+import { getIconMap } from '@common/ItemIcon';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -98,6 +103,7 @@ export function ItemDrawerContent(props: {
   const storeID = props.data.storeID ?? 'CHARACTER';
   const id = props.data.id;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const theme = useMantineTheme();
 
   const { data: _item } = useQuery({
     queryKey: [`find-item-with-base-${id}`, { id }],
@@ -229,7 +235,31 @@ export function ItemDrawerContent(props: {
           {item.description}
         </RichText>
 
-        <ItemRunesDescription item={item} />
+        {isItemWithPropertyRunes(item) && (
+          <Accordion variant='separated' my={5}>
+            <Accordion.Item value='runes'>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>
+                Property Runes
+              </Accordion.Control>
+              <Accordion.Panel>
+                <ItemRunesDescription item={item} />
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        )}
+
+        {isItemWithUpgrades(item) && (
+          <Accordion variant='separated' my={5}>
+            <Accordion.Item value='upgrades'>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['UPGRADE']}>
+                Upgrades
+              </Accordion.Control>
+              <Accordion.Panel>
+                <ItemRunesDescription item={item} />
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        )}
 
         {craftReq && (
           <>
@@ -440,6 +470,52 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                   }}
                 >
                   {toLabel(rune.name)}
+                </Badge>
+              ))}
+            </>
+          )}
+        </Group>
+      </Paper>
+    );
+  }
+
+  let upgradeSection = null;
+  if (isItemWithGradeImprovement(props.item)) {
+    upgradeSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group gap={10}>
+          <Group wrap='nowrap' mr={20}>
+            <Text fw={600} c='gray.5' span>
+              Grade
+            </Text>{' '}
+            <Text c='gray.5' span>
+              {toLabel(props.item.meta_data?.starfinder?.grade)}
+            </Text>
+          </Group>
+
+          {isItemWithUpgrades(props.item) && (
+            <>
+              {props.item.meta_data?.starfinder?.slots?.map((slot, index) => (
+                <Badge
+                  key={index}
+                  variant='light'
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                  onClick={() => {
+                    props.openDrawer({
+                      type: 'item',
+                      data: { id: slot.id },
+                      extra: { addToHistory: true },
+                    });
+                  }}
+                >
+                  {toLabel(slot.name)}
                 </Badge>
               ))}
             </>
@@ -710,6 +786,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
         <>{attackAndDamageSection}</>
         <>{armorSection}</>
         <>{runesSection}</>
+        <>{upgradeSection}</>
         <>{rangeAndReloadSection}</>
         <>{capacityAndUsageSection}</>
         <>{categoryAndGroupSection}</>

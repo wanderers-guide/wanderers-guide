@@ -253,6 +253,7 @@ export default function AddItemsModal({
                       { value: 'SHIELD', label: 'Shield' },
                       { value: 'WEAPON', label: 'Weapon' },
                       { value: 'RUNE', label: 'Rune' },
+                      { value: 'UPGRADE', label: 'Upgrade' },
                       { value: 'MATERIAL', label: 'Material' },
                     ] satisfies { value: ItemGroup; label: string }[]
                   }

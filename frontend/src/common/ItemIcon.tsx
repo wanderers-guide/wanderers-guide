@@ -23,6 +23,7 @@ type ItemIconType =
   | 'WEAPON'
   | 'SHIELD'
   | 'RUNE'
+  | 'UPGRADE'
   | 'MATERIAL'
   | 'UNARMED'
   | 'BOMB'
@@ -35,6 +36,7 @@ export const getIconMap = (size: string, color: string): Record<ItemIconType, JS
   WEAPON: <GiBroadsword color={color} size={size} />,
   SHIELD: <GiSlashedShield color={color} size={size} />,
   RUNE: <GiRuneStone color={color} size={size} />,
+  UPGRADE: <GiRuneStone color={color} size={size} />,
   MATERIAL: <GiCubes color={color} size={size} />,
   UNARMED: <GiFist color={color} size={size} />,
   BOMB: <GiRollingBomb color={color} size={size} />,

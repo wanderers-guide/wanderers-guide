@@ -13,9 +13,11 @@ import {
   isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
+  isItemWithGradeImprovement,
   isItemWithPropertyRunes,
   isItemWithQuantity,
   isItemWithRunes,
+  isItemWithUpgrades,
   labelizeBulk,
 } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
@@ -213,6 +215,19 @@ export function InvItemDrawerContent(props: {
             <Accordion.Item value='runes'>
               <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>
                 Property Runes
+              </Accordion.Control>
+              <Accordion.Panel>
+                <ItemRunesDescription item={invItem.item} />
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        )}
+
+        {isItemWithUpgrades(invItem.item) && (
+          <Accordion variant='separated' my={5}>
+            <Accordion.Item value='upgrades'>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['UPGRADE']}>
+                Upgrades
               </Accordion.Control>
               <Accordion.Panel>
                 <ItemRunesDescription item={invItem.item} />
@@ -701,6 +716,52 @@ function InvItemSections(props: {
     );
   }
 
+  let upgradeSection = null;
+  if (isItemWithGradeImprovement(props.invItem.item)) {
+    upgradeSection = (
+      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
+        <Group gap={10}>
+          <Group wrap='nowrap' mr={20}>
+            <Text fw={600} c='gray.5' span>
+              Grade
+            </Text>{' '}
+            <Text c='gray.5' span>
+              {toLabel(props.invItem.item.meta_data?.starfinder?.grade)}
+            </Text>
+          </Group>
+
+          {isItemWithUpgrades(props.invItem.item) && (
+            <>
+              {props.invItem.item.meta_data?.starfinder?.slots?.map((slot, index) => (
+                <Badge
+                  key={index}
+                  variant='light'
+                  style={{
+                    cursor: 'pointer',
+                  }}
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                    },
+                  }}
+                  onClick={() => {
+                    props.openDrawer({
+                      type: 'item',
+                      data: { id: slot.id },
+                      extra: { addToHistory: true },
+                    });
+                  }}
+                >
+                  {toLabel(slot.name)}
+                </Badge>
+              ))}
+            </>
+          )}
+        </Group>
+      </Paper>
+    );
+  }
+
   let rangeAndReloadSection = null;
   if (isItemRangedWeapon(props.invItem.item)) {
     rangeAndReloadSection = (
@@ -960,6 +1021,7 @@ function InvItemSections(props: {
     <>
       <Stack gap={0}>
         <>{runesSection}</>
+        <>{upgradeSection}</>
         <>{attackAndDamageSection}</>
         <>{rangeAndReloadSection}</>
         <>{armorSection}</>

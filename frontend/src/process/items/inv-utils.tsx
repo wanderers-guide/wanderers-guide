@@ -578,6 +578,26 @@ export function isItemWithPropertyRunes(item: Item) {
 }
 
 /**
+ * Utility function to determine if an item has improved its grade
+ * @param item - Item
+ * @returns - Whether the item has improved its grade
+ */
+export function isItemWithGradeImprovement(item: Item) {
+  return item.meta_data?.starfinder?.grade && item.meta_data.starfinder.grade !== 'COMMERCIAL';
+}
+
+/**
+ * Utility function to determine if an item has upgrades
+ * @param item - Item
+ * @returns - Whether the item has upgrades
+ */
+export function isItemWithUpgrades(item: Item) {
+  if (!isItemWithGradeImprovement(item) || !item.meta_data?.starfinder?.slots) return false;
+
+  return item.meta_data.starfinder.slots.length > 0;
+}
+
+/**
  * Utility function to determine if an item should indicate quantity
  * @param item - Item
  * @returns - Whether the item is consumable

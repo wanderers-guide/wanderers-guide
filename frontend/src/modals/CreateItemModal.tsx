@@ -28,7 +28,7 @@ import {
   Text,
   TextInput,
   Title,
-  useMantineTheme
+  useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
@@ -132,7 +132,9 @@ export function CreateItemModal(props: {
   const [strikingRune, setStrikingRune] = useState<number | undefined>(0);
   const [resilientRune, setResilientRune] = useState<number | undefined>(0);
   const [potencyRune, setPotencyRune] = useState<number | undefined>(0);
-  const [propertyRunes, setPropertyRunes] = useState<{ name: string; id: number, rune?: Item }[] | undefined>([]);
+  const [propertyRunes, setPropertyRunes] = useState<{ name: string; id: number; rune?: Item }[] | undefined>([]);
+
+  const [upgradeSlots, setUpgradeSlots] = useState<{ name: string; id: number; upgrade?: Item }[] | undefined>([]);
 
   const [baseItem, setBaseItem] = useState<string | undefined>();
   const [baseItemContent, setBaseItemContent] = useState<Item | undefined>();
@@ -203,7 +205,8 @@ export function CreateItemModal(props: {
         starfinder: {
           capacity: undefined,
           usage: undefined,
-          upgrades: undefined,
+          grade: 'COMMERCIAL',
+          slots: [],
         },
         charges: {
           current: undefined,
@@ -272,7 +275,7 @@ export function CreateItemModal(props: {
     (form.values.meta_data?.starfinder?.capacity && form.values.meta_data.starfinder.capacity.length > 0 ? 1 : 0) +
     (form.values.meta_data?.starfinder?.usage && form.values.meta_data.starfinder.usage > 0 ? 1 : 0) +
     (form.values.meta_data?.damage?.dice && form.values.meta_data.damage?.dice > 0 ? 1 : 0) +
-    (form.values.meta_data?.starfinder?.upgrades && form.values.meta_data.starfinder.upgrades > 0 ? 1 : 0) +
+    (form.values.meta_data?.starfinder?.slots?.length && form.values.meta_data.starfinder.slots.length > 0 ? 1 : 0) +
     (form.values.meta_data?.attack_bonus && form.values.meta_data.attack_bonus !== 0 ? 1 : 0) +
     (form.values.meta_data?.ac_bonus && form.values.meta_data.ac_bonus > 0 ? 1 : 0) +
     (form.values.meta_data?.check_penalty && form.values.meta_data.check_penalty < 0 ? 1 : 0) +
@@ -402,6 +405,7 @@ export function CreateItemModal(props: {
                     { value: 'SHIELD', label: 'Shield' },
                     { value: 'WEAPON', label: 'Weapon' },
                     { value: 'RUNE', label: 'Rune' },
+                    { value: 'UPGRADE', label: 'Upgrade' },
                     { value: 'MATERIAL', label: 'Material' },
                   ] satisfies { value: ItemGroup; label: string }[]
                 }
@@ -524,7 +528,6 @@ export function CreateItemModal(props: {
                                 { value: 'flail', label: 'Flail' },
                                 { value: 'hammer', label: 'Hammer' },
                                 { value: 'knife', label: 'Knife' },
-                                { value: 'laser', label: 'Laser' },
                                 { value: 'pick', label: 'Pick' },
                                 { value: 'polearm', label: 'Polearm' },
                                 { value: 'projectile', label: 'Projectile' },
@@ -532,6 +535,19 @@ export function CreateItemModal(props: {
                                 { value: 'sling', label: 'Sling' },
                                 { value: 'spear', label: 'Spear' },
                                 { value: 'sword', label: 'Sword' },
+                                // Starfinder weapon groups
+                                { value: 'corrosive', label: 'Corrosive' },
+                                { value: 'cryo', label: 'Cryo' },
+                                { value: 'flame', label: 'Flame' },
+                                { value: 'grenade', label: 'Grenade' },
+                                { value: 'laser', label: 'Laser' },
+                                { value: 'mental', label: 'Mental' },
+                                { value: 'missile', label: 'Missile' },
+                                { value: 'plasma', label: 'Plasma' },
+                                { value: 'poison', label: 'Poison' },
+                                { value: 'shock', label: 'Shock' },
+                                { value: 'sniper', label: 'Sniper' },
+                                { value: 'sonic', label: 'Sonic' },
                               ]}
                               value={weaponGroup}
                               onChange={(value) => {
@@ -637,6 +653,9 @@ export function CreateItemModal(props: {
                                 { value: 'composite', label: 'Composite' },
                                 { value: 'chain', label: 'Chain' },
                                 { value: 'plate', label: 'Plate' },
+                                // Starfinder armor groups
+                                { value: 'ceramic', label: 'Ceramic' },
+                                { value: 'polymer', label: 'Polymer' },
                               ]}
                               value={armorGroup}
                               onChange={(value) => {
@@ -680,72 +699,111 @@ export function CreateItemModal(props: {
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>
-                    <Accordion.Item value={'runes'}>
+                    <Accordion.Item value={'Runes / Upgrades'}>
                       <Accordion.Control>
-                        <Text fz='sm'>Runes</Text>
+                        <Text fz='sm'>Runes / Upgrades</Text>
                       </Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap={10}>
-                          <Group wrap='nowrap'>
-                            <Select
-                              label='Potency Rune'
-                              clearable
-                              data={[
-                                { value: '1', label: '+1 Potency' },
-                                { value: '2', label: '+2 Potency' },
-                                { value: '3', label: '+3 Potency' },
-                                { value: '4', label: '+4 Potency' },
-                              ]}
-                              value={potencyRune !== undefined ? `${potencyRune}` : undefined}
-                              onChange={(value) => {
-                                setPotencyRune(value ? +value : undefined);
+                          <Stack gap={10}>
+                            <Group wrap='nowrap'>
+                              <Select
+                                label='Potency Rune'
+                                clearable
+                                data={[
+                                  { value: '1', label: '+1 Potency' },
+                                  { value: '2', label: '+2 Potency' },
+                                  { value: '3', label: '+3 Potency' },
+                                  { value: '4', label: '+4 Potency' },
+                                ]}
+                                value={potencyRune !== undefined ? `${potencyRune}` : undefined}
+                                onChange={(value) => {
+                                  setPotencyRune(value ? +value : undefined);
+                                }}
+                              />
+                              <Select
+                                label='Striking Rune'
+                                clearable
+                                data={[
+                                  { value: '1', label: 'Striking' },
+                                  { value: '2', label: 'Greater S.' },
+                                  { value: '3', label: 'Major S.' },
+                                ]}
+                                value={strikingRune !== undefined ? `${strikingRune}` : undefined}
+                                onChange={(value) => {
+                                  setStrikingRune(value ? +value : undefined);
+                                }}
+                              />
+
+                              <Select
+                                label='Resilient Rune'
+                                clearable
+                                data={[
+                                  { value: '1', label: 'Resilient' },
+                                  { value: '2', label: 'Greater R.' },
+                                  { value: '3', label: 'Major R.' },
+                                ]}
+                                value={resilientRune !== undefined ? `${resilientRune}` : undefined}
+                                onChange={(value) => {
+                                  setResilientRune(value ? +value : undefined);
+                                }}
+                              />
+                            </Group>
+
+                            <ItemMultiSelect
+                              label='Property Runes'
+                              placeholder='(limited to potency rune #)'
+                              valueName={propertyRunes?.map((rune) => rune.name)}
+                              filter={(item) => {
+                                return item.group === 'RUNE';
+                              }}
+                              onChange={(items, names) => {
+                                console.log('items', items, names);
+
+                                if ((items ?? []).length > (potencyRune ?? 0)) {
+                                  return;
+                                }
+                                setPropertyRunes(
+                                  items?.map((item) => ({ name: item.name, id: item.id, rune: item })) ?? []
+                                );
                               }}
                             />
+                          </Stack>
+                          <Divider mt={10} mb={5} />
+                          <Stack gap={10}>
                             <Select
-                              label='Striking Rune'
+                              label='Grade'
                               clearable
                               data={[
-                                { value: '1', label: 'Striking' },
-                                { value: '2', label: 'Greater S.' },
-                                { value: '3', label: 'Major S.' },
+                                { value: 'COMMERCIAL', label: 'Commercial' },
+                                { value: 'TACTICAL', label: 'Tactical' },
+                                { value: 'ADVANCED', label: 'Advanced' },
+                                { value: 'SUPERIOR', label: 'Superior' },
+                                { value: 'ELITE', label: 'Elite' },
+                                { value: 'ULTIMATE', label: 'Ultimate' },
+                                { value: 'PARAGON', label: 'Paragon' },
                               ]}
-                              value={strikingRune !== undefined ? `${strikingRune}` : undefined}
-                              onChange={(value) => {
-                                setStrikingRune(value ? +value : undefined);
+                              {...form.getInputProps('meta_data.starfinder.grade')}
+                            />
+                            <ItemMultiSelect
+                              label='Upgrade Slots'
+                              placeholder='(limited by grade)'
+                              valueName={upgradeSlots?.map((slot) => slot.name)}
+                              filter={(item) => {
+                                return item.group === 'UPGRADE';
+                              }}
+                              onChange={(items, names) => {
+                                console.log('items', items, names);
+
+                                // if ((items ?? []).length > (grade ?? 0)) {
+                                //   return;
+                                // }
+                                setUpgradeSlots(
+                                  items?.map((item) => ({ name: item.name, id: item.id, upgrade: item })) ?? []
+                                );
                               }}
                             />
-
-                            <Select
-                              label='Resilient Rune'
-                              clearable
-                              data={[
-                                { value: '1', label: 'Resilient' },
-                                { value: '2', label: 'Greater R.' },
-                                { value: '3', label: 'Major R.' },
-                              ]}
-                              value={resilientRune !== undefined ? `${resilientRune}` : undefined}
-                              onChange={(value) => {
-                                setResilientRune(value ? +value : undefined);
-                              }}
-                            />
-                          </Group>
-
-                          <ItemMultiSelect
-                            label='Property Runes'
-                            placeholder='(limited to potency rune #)'
-                            valueName={propertyRunes?.map((rune) => rune.name)}
-                            filter={(item) => {
-                              return item.group === 'RUNE';
-                            }}
-                            onChange={(items, names) => {
-                              console.log('items', items, names);
-
-                              if ((items ?? []).length > (potencyRune ?? 0)) {
-                                return;
-                              }
-                              setPropertyRunes(items?.map((item) => ({ name: item.name, id: item.id, rune: item, })) ?? []);
-                            }}
-                          />
+                          </Stack>
                         </Stack>
                       </Accordion.Panel>
                     </Accordion.Item>

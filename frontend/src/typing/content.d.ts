@@ -107,7 +107,7 @@ interface Condition {
   starfinder_only?: boolean;
 }
 
-type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'MATERIAL';
+type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'UPGRADE' | 'MATERIAL';
 interface Item {
   id: number;
   created_at: string;
@@ -175,12 +175,13 @@ interface Item {
       striking?: number;
       resilient?: number;
       potency?: number;
-      property?: { name: string; id: number, rune?: Item }[];
+      property?: { name: string; id: number; rune?: Item }[];
     };
     starfinder?: {
       capacity?: string;
       usage?: number;
-      upgrades?: number;
+      grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON';
+      slots?: { name: string; id: number; upgrade?: Item }[];
     };
     foundry: {
       rules?: Record<string, any>;

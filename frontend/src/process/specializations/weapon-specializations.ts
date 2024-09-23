@@ -1,6 +1,7 @@
+import { isPlayingStarfinder } from '@content/system-handler';
 import _ from 'lodash-es';
 
-const SPECIALIZATIONS = [
+const PATHFINDER_SPECIALIZATIONS = [
   {
     name: 'Axe',
     description: `Choose one creature adjacent to the initial target and within reach. If its AC is lower than your attack roll result for the critical hit, you deal damage to that creature equal to the result of the weapon damage die you rolled (including extra dice for its striking rune, if any). This amount isn’t doubled, and no bonuses or other additional dice apply to this damage.`,
@@ -79,10 +80,65 @@ const SPECIALIZATIONS = [
   },
 ];
 
+const STARFINDER_SPECIALIZATIONS = [
+  {
+    name: 'Corrosive',
+    description: `The target takes 1d6 persistent acid damage. You gain an item bonus to this acid damage equal to the weapon’s item bonus to attack rolls.`,
+  },
+  {
+    name: 'Cryo',
+    description: `This weapon freezes part of the target, making it hard for them to move their body. The target is clumsy 1 until the start of your next turn.`,
+  },
+  {
+    name: 'Flame',
+    description: `The target takes 1d6 persistent fire damage. You gain an item bonus to this fire damage equal to the weapon’s item bonus to attack rolls`,
+  },
+  {
+    name: 'Grenade',
+    description: ` Varies depending on grenade (SF playtest, pg. 184).`,
+  },
+  {
+    name: 'Laser',
+    description: `The target must succeed at a Fortitude save against your class DC or be dazzled until the start of your next turn.`,
+  },
+  {
+    name: 'Mental',
+    description: ` The target must succeed at a Will save against your class DC or be stupefied 1 until the start of your next turn.`,
+  },
+  {
+    name: 'Missile',
+    description: `The target is knocked back 5 feet from the source of the missile’s explosion. This is forced movement (Player Core 422).`,
+  },
+  {
+    name: 'Plasma',
+    description: `The target takes 1d6 persistent electricity damage. You gain an item bonus to this electricity damage equal to the weapon’s item bonus to attack rolls.`,
+  },
+  {
+    name: 'Poison',
+    description: `The target must succeed at a Fortitude save against your class DC or be sickened 1 until the start of your next turn.`,
+  },
+  {
+    name: 'Shock',
+    description: `The target must succeed at a Fortitude save against your class DC or be stunned 1.`,
+  },
+  {
+    name: 'Sniper',
+    description: `The target takes 2 additional damage per weapon damage dice.`,
+  },
+  {
+    name: 'Sonic',
+    description: `The target must succeed at a Fortitude save against your class DC or be deafened for 1 minute.`,
+  },
+];
+
 export function getWeaponSpecialization(group: string) {
-  return SPECIALIZATIONS.find((s) => s.name.trim().toLowerCase() === group.trim().toLowerCase());
+  return getWeaponSpecializations().find((s) => s.name.trim().toLowerCase() === group.trim().toLowerCase());
 }
 
 export function getWeaponSpecializations() {
-  return _.cloneDeep(SPECIALIZATIONS);
+  const SPECIALIZATIONS = _.cloneDeep(PATHFINDER_SPECIALIZATIONS);
+  if (isPlayingStarfinder()) {
+    SPECIALIZATIONS.push(..._.cloneDeep(STARFINDER_SPECIALIZATIONS));
+  }
+  return SPECIALIZATIONS.sort((a, b) => a.name.localeCompare(b.name));
 }
