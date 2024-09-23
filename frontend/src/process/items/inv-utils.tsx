@@ -918,6 +918,27 @@ export function getInvestedLimit(id: StoreID) {
   return 10 + getFinalVariableValue(id, 'INVEST_LIMIT_BONUS').total;
 }
 
+/**
+ * Utility function to get the health values of an item
+ * @param item - Item
+ * @returns - Health values
+ */
+export function getItemHealth(item: Item) {
+  const bt = item.meta_data?.broken_threshold ?? 0;
+  const hardness = item.meta_data?.hardness ?? 0;
+  const hp_max = item.meta_data?.hp_max ?? 0;
+  const hp = item.meta_data?.hp ?? 0;
+
+  const improvements = getGradeImprovements(item);
+
+  return {
+    hardness: hardness + improvements.hardness_bonus,
+    hp_max: hp_max + improvements.hp_bonus,
+    bt: bt + improvements.bt_bonus,
+    hp_current: hp,
+  };
+}
+
 export function filterByTraitType(invItems: InventoryItem[], traitType: TraitType) {
   return invItems.filter((invItem) => hasTraitType(traitType, compileTraits(invItem.item)));
 }

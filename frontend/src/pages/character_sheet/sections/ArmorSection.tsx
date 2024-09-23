@@ -5,7 +5,14 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
-import { getBestArmor, getBestShield, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
+import {
+  getBestArmor,
+  getBestShield,
+  handleUpdateItem,
+  handleDeleteItem,
+  handleMoveItem,
+  getItemHealth,
+} from '@items/inv-utils';
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { Inventory, InventoryItem } from '@typing/content';
@@ -41,6 +48,7 @@ export default function ArmorSection(props: {
 
   const bestArmor = getBestArmor(props.id, props.inventory);
   const bestShield = getBestShield(props.id, props.inventory);
+  const bestShieldHealth = bestShield ? getItemHealth(bestShield.item) : null;
 
   return (
     <BlurBox blur={10}>
@@ -146,7 +154,7 @@ export default function ArmorSection(props: {
                       {sign(bestShield.item.meta_data?.ac_bonus ?? 0)}
                     </Text>
                     <Text ta='center' fz={8} style={{ whiteSpace: 'nowrap' }}>
-                      Hardness {bestShield.item.meta_data?.hardness ?? 0}
+                      Hardness {bestShieldHealth?.hardness ?? 0}
                     </Text>
                     <Center>
                       <RingProgress
@@ -155,7 +163,7 @@ export default function ArmorSection(props: {
                         sections={[
                           {
                             value: Math.ceil(
-                              ((bestShield.item.meta_data?.hp ?? 0) / (bestShield.item.meta_data?.hp_max ?? 1)) * 100
+                              ((bestShieldHealth?.hp_current ?? 0) / (bestShieldHealth?.hp_max ?? 1)) * 100
                             ),
                             color: 'guide',
                           },

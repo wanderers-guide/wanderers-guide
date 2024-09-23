@@ -5,6 +5,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { priceToString } from '@items/currency-handler';
 import {
   compileTraits,
+  getItemHealth,
   isItemArchaic,
   isItemArmor,
   isItemBroken,
@@ -436,9 +437,8 @@ function InvItemSections(props: {
   const checkPenalty = props.invItem.item.meta_data?.check_penalty;
   const speedPenalty = props.invItem.item.meta_data?.speed_penalty;
 
-  const bt = props.invItem.item.meta_data?.broken_threshold ?? 0;
-  const hardness = props.invItem.item.meta_data?.hardness ?? 0;
-  const maxHp = props.invItem.item.meta_data?.hp_max ?? 0;
+  const healthStats = getItemHealth(props.invItem.item);
+
   const healthRef = useRef<HTMLInputElement>(null);
   const [health, setHealth] = useState<string | undefined>();
   useEffect(() => {
@@ -448,7 +448,7 @@ function InvItemSections(props: {
   ///
 
   const hasQuantity = isItemWithQuantity(props.invItem.item);
-  const hasHealth = !!maxHp;
+  const hasHealth = !!healthStats.hp_max;
   const hasAttackAndDamage = isItemWeapon(props.invItem.item);
   const hasArmor = isItemArmor(props.invItem.item) || isItemShield(props.invItem.item);
 
@@ -498,7 +498,7 @@ function InvItemSections(props: {
       if (isNaN(result)) result = 0;
       result = Math.floor(result);
       if (result < 0) result = 0;
-      if (result > maxHp) result = maxHp;
+      if (result > healthStats.hp_max) result = healthStats.hp_max;
 
       props.onItemUpdate({
         ...props.invItem,
@@ -537,7 +537,7 @@ function InvItemSections(props: {
               rightSection={
                 <Group>
                   <Text>/</Text>
-                  <Text>{maxHp}</Text>
+                  <Text>{healthStats.hp_max}</Text>
                 </Group>
               }
               rightSectionWidth={60}
@@ -554,10 +554,10 @@ function InvItemSections(props: {
             </Stack>
             <Stack gap={0}>
               <Text ta='left' fw={500} c='gray.4' fz={10}>
-                {hardness}
+                {healthStats.hardness}
               </Text>
               <Text ta='left' fw={500} c='gray.4' fz={10}>
-                {bt}
+                {healthStats.bt}
               </Text>
             </Stack>
           </Group>

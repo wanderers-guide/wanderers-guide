@@ -9,6 +9,7 @@ import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
 import {
   compileTraits,
+  getItemHealth,
   isItemArchaic,
   isItemArmor,
   isItemRangedWeapon,
@@ -281,14 +282,12 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   const checkPenalty = props.item.meta_data?.check_penalty;
   const speedPenalty = props.item.meta_data?.speed_penalty;
 
-  const bt = props.item.meta_data?.broken_threshold ?? 0;
-  const hardness = props.item.meta_data?.hardness ?? 0;
-  const maxHp = props.item.meta_data?.hp_max ?? 0;
+  const health = getItemHealth(props.item);
 
   ///
 
   const hasQuantity = isItemWithQuantity(props.item);
-  const hasHealth = !!maxHp;
+  const hasHealth = !!health.hp_max;
   const hasAttackAndDamage = isItemWeapon(props.item);
   const hasArmor = isItemArmor(props.item) || isItemShield(props.item);
 
@@ -318,7 +317,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
               Hit Points
             </Text>{' '}
             <Group>
-              <Text>{maxHp}</Text>
+              <Text>{health.hp_max}</Text>
             </Group>
           </Group>
           <Group gap={5} pr={60}>
@@ -332,10 +331,10 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
             </Stack>
             <Stack gap={0}>
               <Text ta='left' fw={500} c='gray.4' fz={10}>
-                {hardness}
+                {health.hardness}
               </Text>
               <Text ta='left' fw={500} c='gray.4' fz={10}>
-                {bt}
+                {health.bt}
               </Text>
             </Stack>
           </Group>

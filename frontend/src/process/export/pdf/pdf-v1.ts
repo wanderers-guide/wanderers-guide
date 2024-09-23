@@ -13,6 +13,7 @@ import {
   isItemRangedWeapon,
   labelizeBulk,
   getInvBulk,
+  getItemHealth,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { executeCharacterOperations } from '@operations/operation-controller';
@@ -186,19 +187,16 @@ async function fillPDF(form: PDFForm, character: Character) {
   //
 
   if (character.inventory) {
-    form.getTextField('AC').setText(getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, character.inventory)?.item) + '');
-    form
-      .getTextField('SHIELD')
-      .setText(sign(getBestShield(STORE_ID, character.inventory)?.item.meta_data?.ac_bonus ?? 0));
+    const bestShield = getBestShield(STORE_ID, character.inventory);
+    const bestShieldHealth = bestShield ? getItemHealth(bestShield.item) : null;
 
-    form
-      .getTextField('Hardness Max HP')
-      .setText(`${getBestShield(STORE_ID, character.inventory)?.item.meta_data?.hardness ?? 0}`);
-    form.getTextField('MAX HP').setText(`${getBestShield(STORE_ID, character.inventory)?.item.meta_data?.hp_max ?? 0}`);
-    form
-      .getTextField('BT')
-      .setText(`${getBestShield(STORE_ID, character.inventory)?.item.meta_data?.broken_threshold ?? 0}`);
-    form.getTextField('HP').setText(`${getBestShield(STORE_ID, character.inventory)?.item.meta_data?.hp ?? 0}`);
+    form.getTextField('AC').setText(getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, character.inventory)?.item) + '');
+    form.getTextField('SHIELD').setText(sign(bestShield?.item.meta_data?.ac_bonus ?? 0));
+
+    form.getTextField('Hardness Max HP').setText(`${bestShieldHealth?.hardness ?? 0}`);
+    form.getTextField('MAX HP').setText(`${bestShieldHealth?.hp_max ?? 0}`);
+    form.getTextField('BT').setText(`${bestShieldHealth?.bt ?? 0}`);
+    form.getTextField('HP').setText(`${bestShieldHealth?.hp_current ?? 0}`);
   }
 
   const profFillIn = (variableName: string, sheetId: string, profSheetId?: string) => {
