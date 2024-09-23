@@ -648,7 +648,13 @@ function SpellList(props: {
         {filterByTraitType(character?.inventory?.items ?? [], 'STAFF')
           .filter((invItem) => invItem.is_equipped)
           .map((invItem) => (
-            <StaffSpellsList {...props} staff={invItem} character={character} setCharacter={setCharacter} />
+            <StaffSpellsList
+              {...props}
+              index={`${props.index}-${invItem.id}`}
+              staff={invItem}
+              character={character}
+              setCharacter={setCharacter}
+            />
           ))}
       </>
     );

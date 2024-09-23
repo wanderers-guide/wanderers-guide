@@ -47,6 +47,26 @@ export function isNormalSpell(spell: Spell) {
  */
 export function getSpellcastingType(id: StoreID, entity: LivingEntity): 'PREPARED' | 'SPONTANEOUS' | 'NONE' {
   const spellData = collectEntitySpellcasting(id, entity);
+
+  // If you have slots, get type with the greatest slot
+  let greatestSlot = { rank: 0, source: '' };
+  for (const slot of spellData.slots) {
+    if (slot.rank > greatestSlot.rank) {
+      greatestSlot = {
+        rank: slot.rank,
+        source: slot.source,
+      };
+    }
+  }
+  if (greatestSlot.source) {
+    if (greatestSlot.source.startsWith('PREPARED')) {
+      return 'PREPARED';
+    } else if (greatestSlot.source.startsWith('SPONTANEOUS')) {
+      return 'SPONTANEOUS';
+    }
+  }
+
+  // If no slots, just grab the first type
   for (const source of spellData.sources) {
     if (source.type.startsWith('PREPARED')) {
       return 'PREPARED';

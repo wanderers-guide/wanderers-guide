@@ -2996,6 +2996,7 @@ export function SpellSelectionOption(props: {
   hideRank?: boolean;
   exhausted?: boolean;
   px?: number;
+  prefix?: React.ReactNode;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const isPhone = useMediaQuery(phoneQuery());
@@ -3007,8 +3008,9 @@ export function SpellSelectionOption(props: {
     <BaseSelectionOption
       leftSection={
         <Group wrap='nowrap' gap={5}>
-          <Box pl={8}>
+          <Box>
             <Text fz='sm' td={props.exhausted ? 'line-through' : undefined}>
+              {props.prefix}
               {props.spell.name}
             </Text>
           </Box>
@@ -3051,6 +3053,7 @@ export function SpellSelectionOption(props: {
           : () => {}
       }
       buttonTitle='Select'
+      px={props.px}
       disableButton={props.selected}
       onButtonClick={props.onClick ? () => props.onClick?.(props.spell) : undefined}
       includeOptions={props.includeOptions}

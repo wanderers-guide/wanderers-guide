@@ -134,6 +134,7 @@ export default function WandSpellsList(props: {
               <SpellListEntrySection
                 key={index}
                 spell={wand.spell.spell}
+                prefix={`${wand.item.item.name} — `}
                 exhausted={isItemBroken(wand.item.item)}
                 tradition={'NONE'}
                 attribute={'ATTRIBUTE_CHA'}

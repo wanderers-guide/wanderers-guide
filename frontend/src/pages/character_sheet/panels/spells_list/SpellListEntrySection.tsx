@@ -1,10 +1,10 @@
-import { drawerState } from "@atoms/navAtoms";
-import { SpellSelectionOption } from "@common/select/SelectContent";
-import { Text } from "@mantine/core";
-import { StatButton } from "@pages/character_builder/CharBuilderCreation";
-import { isCantrip, isRitual } from "@spells/spell-utils";
-import { Spell } from "@typing/content";
-import { useRecoilState } from "recoil";
+import { drawerState } from '@atoms/navAtoms';
+import { SpellSelectionOption } from '@common/select/SelectContent';
+import { Text } from '@mantine/core';
+import { StatButton } from '@pages/character_builder/CharBuilderCreation';
+import { isCantrip, isRitual } from '@spells/spell-utils';
+import { Spell } from '@typing/content';
+import { useRecoilState } from 'recoil';
 
 export default function SpellListEntrySection(props: {
   spell?: Spell;
@@ -15,6 +15,7 @@ export default function SpellListEntrySection(props: {
   onOpenManageSpells?: () => void;
   hasFilters: boolean;
   leftSection?: React.ReactNode;
+  prefix?: React.ReactNode;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const exhausted = props.spell && isCantrip(props.spell) ? false : props.exhausted;
@@ -61,6 +62,7 @@ export default function SpellListEntrySection(props: {
           spell={props.spell}
           leftSection={props.leftSection}
           px={0}
+          prefix={props.prefix}
         />
       </StatButton>
     );
@@ -76,7 +78,7 @@ export default function SpellListEntrySection(props: {
         props.onOpenManageSpells?.();
       }}
     >
-      <Text fz='xs' fs='italic' c='dimmed' fw={500} pl={7}>
+      <Text fz='xs' fs='italic' c='dimmed' fw={500}>
         No Spell Prepared
       </Text>
     </StatButton>
