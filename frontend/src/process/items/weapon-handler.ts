@@ -164,6 +164,8 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
 
   const hasTracking1 = hasTraitType('TRACKING-1', itemTraits);
   const hasTracking2 = hasTraitType('TRACKING-2', itemTraits);
+  const hasTracking3 = hasTraitType('TRACKING-3', itemTraits);
+  const hasTracking4 = hasTraitType('TRACKING-4', itemTraits);
 
   ///
   const profData = getProfTotal(id, item);
@@ -214,6 +216,12 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   }
   if (hasTracking2) {
     parts.set("This is an item bonus you receive from the weapon's tracking trait.", 2);
+  }
+  if (hasTracking3) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 3);
+  }
+  if (hasTracking4) {
+    parts.set("This is an item bonus you receive from the weapon's tracking trait.", 4);
   }
 
   return {
