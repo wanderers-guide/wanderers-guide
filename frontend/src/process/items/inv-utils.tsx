@@ -597,13 +597,13 @@ export function getItemOperations(item: Item, content: ContentPackage) {
 
   if (isItemArmor(item)) {
     let value = 0;
-    if (hasTraitType('RESILIENT-4', item.traits)) {
+    if (hasTraitType('RESILIENT-4', compileTraits(item))) {
       value = 4;
-    } else if (hasTraitType('RESILIENT-3', item.traits)) {
+    } else if (hasTraitType('RESILIENT-3', compileTraits(item))) {
       value = 3;
-    } else if (hasTraitType('RESILIENT-2', item.traits)) {
+    } else if (hasTraitType('RESILIENT-2', compileTraits(item))) {
       value = 2;
-    } else if (hasTraitType('RESILIENT-1', item.traits)) {
+    } else if (hasTraitType('RESILIENT-1', compileTraits(item))) {
       value = 1;
     }
 
