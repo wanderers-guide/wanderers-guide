@@ -20,6 +20,7 @@ import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
 import { ICON_BG_COLOR } from '@constants/data';
 import { modals } from '@mantine/modals';
+import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
 
 export default function EntityInfoSection(props: {
   id: StoreID;
@@ -118,6 +119,86 @@ export default function EntityInfoSection(props: {
           };
         }) ?? [],
     };
+
+    // Reset Staff Charges
+    const staves = filterByTraitType(newEntity?.inventory?.items ?? [], 'STAFF').filter(
+      (invItem) => invItem.is_equipped
+    );
+    let greatestSlotRank = 0;
+    for (const slot of spellData.slots) {
+      if (slot.rank > greatestSlotRank) {
+        greatestSlotRank = slot.rank;
+      }
+    }
+    for (const staff of staves) {
+      newEntity.inventory = {
+        ...(newEntity.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items:
+          newEntity.inventory?.items.map((i) => {
+            if (i.id !== staff.id) return i;
+
+            // If it's the item, update the charges
+            return {
+              ...i,
+              item: {
+                ...i.item,
+                meta_data: {
+                  ...i.item.meta_data!,
+                  charges: {
+                    ...i.item.meta_data?.charges,
+                    current: 0,
+                    max: greatestSlotRank,
+                  },
+                },
+              },
+            };
+          }) ?? [],
+      };
+    }
+
+    // Reset Wands
+    const wands = filterByTraitType(newEntity?.inventory?.items ?? [], 'WAND');
+    for (const wand of wands) {
+      newEntity.inventory = {
+        ...(newEntity.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items:
+          newEntity.inventory?.items.map((i) => {
+            if (i.id !== wand.id) return i;
+
+            // If it's the item, update the charges
+            return {
+              ...i,
+              item: {
+                ...i.item,
+                meta_data: {
+                  ...i.item.meta_data!,
+                  charges: {
+                    ...i.item.meta_data?.charges,
+                    current: 0,
+                    max: 1,
+                  },
+                },
+              },
+            };
+          }) ?? [],
+      };
+    }
 
     // Remove Fatigued Condition
     let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');

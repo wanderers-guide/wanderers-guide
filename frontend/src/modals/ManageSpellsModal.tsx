@@ -23,7 +23,7 @@ import {
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Spell, SpellSlot } from '@typing/content';
+import { Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
@@ -154,22 +154,13 @@ export default function ManageSpellsModal(props: {
             </Grid.Col>
             <Grid.Col span={6}>
               <LoadingOverlay visible={isFetching} />
-              <SlotsSection
-                filter={props.filter}
-                slots={slots}
-                spells={spells ?? []}
-                source={props.source}
-              />
+              <SlotsSection filter={props.filter} slots={slots} spells={spells ?? []} source={props.source} />
             </Grid.Col>
           </Grid>
         ) : (
           <>
             <LoadingOverlay visible={isFetching} />
-            <SlotsSection
-              filter={props.filter}
-              slots={slots}
-              source={props.source}
-            />
+            <SlotsSection filter={props.filter} slots={slots} source={props.source} />
           </>
         )}
       </Stack>
@@ -178,7 +169,7 @@ export default function ManageSpellsModal(props: {
 }
 
 const SlotsSection = (props: {
-  slots: Record<string, SpellSlot[]>;
+  slots: Record<string, SpellSlotRecord[]>;
   spells?: Spell[];
   source: string;
   filter?: {
@@ -195,13 +186,16 @@ const SlotsSection = (props: {
 
   const { slots } = props;
   // Filter the slots to only show the slots for the source
-  const slotsForSource = Object.keys(slots).reduce((acc, key) => {
-    const slots = props.slots[key].filter((slot) => slot.source === props.source);
-    if (slots.length > 0) {
-      acc[key] = slots;
-    }
-    return acc;
-  }, {} as Record<string, SpellSlot[]>);
+  const slotsForSource = Object.keys(slots).reduce(
+    (acc, key) => {
+      const slots = props.slots[key].filter((slot) => slot.source === props.source);
+      if (slots.length > 0) {
+        acc[key] = slots;
+      }
+      return acc;
+    },
+    {} as Record<string, SpellSlotRecord[]>
+  );
 
   return (
     <ScrollArea pr={14} h={`calc(min(80dvh, ${EDIT_MODAL_HEIGHT}px))`} scrollbars='y'>
@@ -221,23 +215,17 @@ const SlotsSection = (props: {
                       onClick={(spell) => {
                         setCharacter((c) => {
                           if (!c) return c;
-                          // // Clear any existing slots for this spell
-                          // let slots = (c.spells?.slots ?? []).filter(
-                          //   (entry) =>
-                          //     !(entry.spell_id === slot.spell_id && entry.source === props.source)
-                          // );
-                          // Add the new spell
-                          let slots = c.spells?.slots ?? [];
-                          slots = [
-                            ...slots,
-                            {
-                              rank: parseInt(rank),
-                              source: props.source,
-                              spell_id: spell.id,
-                            },
-                          ];
-
-                          console.log('slots', slots);
+                          let slots = collectEntitySpellcasting('CHARACTER', c).slots;
+                          slots = slots.map((s) => {
+                            if (s.id === slot.id) {
+                              return {
+                                ...s,
+                                spell_id: spell.id,
+                              };
+                            } else {
+                              return s;
+                            }
+                          });
 
                           return {
                             ...c,
@@ -252,20 +240,22 @@ const SlotsSection = (props: {
                             },
                           };
                         });
-                        refreshSlots();
+                        //refreshSlots();
                       }}
                       onClear={() => {
                         setCharacter((c) => {
                           if (!c) return c;
-
-                          const slots = (c.spells?.slots ?? []).filter(
-                            (entry) =>
-                              !(
-                                entry.spell_id === slot.spell_id &&
-                                entry.source === props.source &&
-                                `${entry.rank}` === rank
-                              )
-                          );
+                          let slots = collectEntitySpellcasting('CHARACTER', c).slots;
+                          slots = slots.map((s) => {
+                            if (s.id === slot.id) {
+                              return {
+                                ...s,
+                                spell_id: undefined,
+                              };
+                            } else {
+                              return s;
+                            }
+                          });
 
                           return {
                             ...c,
@@ -280,7 +270,7 @@ const SlotsSection = (props: {
                             },
                           };
                         });
-                        refreshSlots();
+                        //refreshSlots();
                       }}
                       selectedId={slot.spell_id === -1 ? undefined : slot.spell_id}
                       options={{

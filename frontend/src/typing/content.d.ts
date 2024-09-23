@@ -48,6 +48,10 @@ type ContentType =
   | 'language'
   | 'content-source';
 
+interface SpellSlotRecord extends SpellSlot {
+  id: string;
+}
+
 interface SpellSlot {
   rank: number;
   source: string;
@@ -76,6 +80,8 @@ interface CastingSource {
   tradition: string;
   attribute: string;
 }
+
+type SpellSectionType = 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF' | 'WAND';
 
 interface Trait {
   id: number;

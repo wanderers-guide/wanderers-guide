@@ -154,7 +154,7 @@ export function ConditionSection(props: {
                   ),
                   innerProps: {
                     condition: condition,
-                    onValueChange: (condition, value) => {
+                    onValueChange: (condition: Condition, value: number) => {
                       props.setEntity((c) => {
                         if (!c) return c;
                         return {

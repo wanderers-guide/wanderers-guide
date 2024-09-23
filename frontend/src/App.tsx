@@ -33,6 +33,8 @@ import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
 import UpdateNotePageModal from '@modals/UpdateNotePageModal';
 import AddItemsModal from '@modals/AddItemsModal';
 import _ from 'lodash-es';
+import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
+import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -48,6 +50,8 @@ const modals = {
   selectContent: SelectContentModal,
   selectImage: SelectImageModal,
   selectIcon: SelectIconModal,
+  selectSpellSlot: SelectSpellSlotModal,
+  selectStaffCasting: SelectStaffCastingModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
   addNewLore: AddNewLoreModal,
   updateNotePage: UpdateNotePageModal,
@@ -55,11 +59,11 @@ const modals = {
   createDicePreset: CreateDicePresetModal,
   addItems: AddItemsModal,
 };
-declare module '@mantine/modals' {
-  export interface MantineModalsOverride {
-    modals: typeof modals;
-  }
-}
+// declare module '@mantine/modals' {
+//   export interface MantineModalsOverride {
+//     modals: typeof modals;
+//   }
+// }
 
 function getShadesFromColor(color: string) {
   let lightShades = [];

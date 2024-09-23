@@ -14,6 +14,7 @@ describe('Character builder', () => {
 
     // Finished!
     cy.get('button[aria-label="Next Page"]').click();
+    cy.wait(500);
     cy.location('pathname').should('include', '/sheet');
   });
 

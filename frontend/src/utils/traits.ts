@@ -1,4 +1,4 @@
-type TraitType =
+export type TraitType =
   | 'GENERAL'
   | 'SKILL'
   | 'INVESTED'
@@ -19,6 +19,8 @@ type TraitType =
   | 'DEDICATION'
   | 'ARCHAIC'
   | 'MAGICAL'
+  | 'STAFF'
+  | 'WAND'
   | 'TECH'
   | 'TRACKING-1'
   | 'TRACKING-2';
@@ -43,6 +45,8 @@ const traitMap: Record<number, TraitType> = {
   1446: 'MULTICLASS',
   1445: 'DEDICATION',
   1504: 'MAGICAL',
+  1546: 'STAFF',
+  1665: 'WAND',
   2503: 'ARCHAIC',
   2508: 'TECH',
   2511: 'TRACKING-1',

@@ -176,7 +176,7 @@ export default function PreparedSpellsList(props: {
                         </Text>
                       </Badge>
                     </Group>
-                    <Divider my='md' />
+                    <Divider my={5} />
                     <Stack gap={5} mb='md'>
                       {slots[rank].map((slot, index) => (
                         <SpellListEntrySection

@@ -80,6 +80,7 @@ import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
 import { set } from 'node_modules/cypress/types/lodash';
 import { updateSubscriptions } from '@content/homebrew';
+import { ImageOption } from '@typing/index';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -924,7 +925,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   title: <Title order={3}>Select Background</Title>,
                   innerProps: {
                     options: getAllBackgroundImages(),
-                    onSelect: (option) => {
+                    onSelect: (option: ImageOption) => {
                       if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
                         displayPatronOnly();
                         return;
@@ -1178,7 +1179,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     title: <Title order={3}>Select Portrait</Title>,
                     innerProps: {
                       options: getAllPortraitImages(),
-                      onSelect: (option) => {
+                      onSelect: (option: ImageOption) => {
                         setCharacter((prev) => {
                           if (!prev) return prev;
                           return {

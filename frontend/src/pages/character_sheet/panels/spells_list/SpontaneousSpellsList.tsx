@@ -2,7 +2,15 @@ import BlurButton from '@common/BlurButton';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
-import { CastingSource, Character, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import {
+  CastingSource,
+  Character,
+  Spell,
+  SpellInnateEntry,
+  SpellListEntry,
+  SpellSectionType,
+  SpellSlot,
+} from '@typing/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
@@ -17,7 +25,7 @@ export default function SpontaneousSpellsList(props: {
   source?: CastingSource;
   spellIds: number[];
   allSpells: Spell[];
-  type: 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL';
+  type: SpellSectionType;
   extra: {
     charData: {
       slots: SpellSlot[];
@@ -211,9 +219,8 @@ export default function SpontaneousSpellsList(props: {
                         </Text>
                       </Badge>
                     </Group>
-                    <Divider my='md' />
+                    <Divider my={5} />
                     <Stack gap={5} mb='md'>
-                      <Divider color='dark.6' />
                       {spells[rank]?.map((spell, index) => (
                         <SpellListEntrySection
                           key={index}

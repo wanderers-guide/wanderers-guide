@@ -15,6 +15,10 @@
   text-align: center;
   border-radius: var(--mantine-radius-md);
   height: rem(90px);
+  border: 2px solid var(--mantine-color-dark-7);
+}
+
+.item:not([disabled]) {
   background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
   transition: box-shadow 150ms ease, transform 100ms ease;
 
