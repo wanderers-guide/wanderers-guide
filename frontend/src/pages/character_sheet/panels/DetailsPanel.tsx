@@ -50,6 +50,7 @@ import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
 import _ from 'lodash-es';
 import { Money, getGpGained } from '@utils/money';
+import { pluralize } from '@utils/strings';
 
 const SECTION_WIDTH = 280;
 
@@ -657,7 +658,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                         >
                           <Box>
                             <Text c='gray.0' fz='sm'>
-                              {variableToLabel(weapon)}
+                              {pluralize(variableToLabel(weapon))}
                             </Text>
                           </Box>
                           <Group>

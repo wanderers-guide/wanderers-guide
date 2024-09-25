@@ -1,4 +1,4 @@
-import { isItemWeapon } from '@items/inv-utils';
+import { isItemArmor, isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
 import { Item, ItemGroup } from '@typing/content';
 import { hasTraitType } from '@utils/traits';
 import {
@@ -17,6 +17,9 @@ import {
   GiSlashedShield,
   GiSwapBag,
   GiUpgrade,
+  GiPocketBow,
+  GiAbdominalArmor,
+  GiNinjaArmor,
 } from 'react-icons/gi';
 
 type ItemIconType =
@@ -32,6 +35,10 @@ type ItemIconType =
   | 'CONTAINER'
   | 'STAFF'
   | 'WAND'
+  | 'BOW'
+  | 'LIGHT_ARMOR'
+  | 'MEDIUM_ARMOR'
+  | 'HEAVY_ARMOR'
   | 'HIGH_TECH_GUN';
 
 export const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
@@ -47,6 +54,10 @@ export const getIconMap = (size: string, color: string): Record<ItemIconType, JS
   CONTAINER: <GiLightBackpack color={color} size={size} />,
   STAFF: <GiWizardStaff color={color} size={size} />,
   WAND: <GiCrystalWand color={color} size={size} />,
+  BOW: <GiPocketBow color={color} size={size} />,
+  LIGHT_ARMOR: <GiNinjaArmor color={color} size={size} />,
+  MEDIUM_ARMOR: <GiChestArmor color={color} size={size} />,
+  HEAVY_ARMOR: <GiAbdominalArmor color={color} size={size} />,
   HIGH_TECH_GUN: <GiBolterGun color={color} size={size} />,
 });
 
@@ -68,8 +79,27 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
     type = 'WAND';
   }
 
+  // @ts-ignore, TODO, fix items with incorrect types
+  if (type === 'BACKPACK' || type === 'KIT') {
+    type = 'CONTAINER';
+  }
+
   if (type === 'GENERAL' && props.item.meta_data?.bulk.capacity) {
     type = 'CONTAINER';
+  }
+
+  if (isItemArmor(props.item)) {
+    if (props.item.meta_data?.category === 'light') {
+      type = 'LIGHT_ARMOR';
+    } else if (props.item.meta_data?.category === 'medium') {
+      type = 'MEDIUM_ARMOR';
+    } else if (props.item.meta_data?.category === 'heavy') {
+      type = 'HEAVY_ARMOR';
+    }
+  }
+
+  if (isItemRangedWeapon(props.item)) {
+    type = 'BOW';
   }
 
   if (

@@ -22,6 +22,7 @@ export type TraitType =
   | 'STAFF'
   | 'WAND'
   | 'TECH'
+  | 'ANALOG'
   | 'TRACKING-1'
   | 'TRACKING-2'
   | 'TRACKING-3'
@@ -53,8 +54,9 @@ const traitMap: Record<number, TraitType> = {
   1504: 'MAGICAL',
   1546: 'STAFF',
   1665: 'WAND',
-  2503: 'ARCHAIC',
-  2508: 'TECH',
+  3668: 'ARCHAIC',
+  3677: 'TECH',
+  3672: 'ANALOG',
   3673: 'TRACKING-1',
   3674: 'TRACKING-2',
   3675: 'TRACKING-3',

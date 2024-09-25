@@ -173,6 +173,7 @@ export default function AddItemsModal({
               placeholder={`Search all items`}
               onChange={(e) => {
                 const value = e.target.value;
+                setPage(1);
                 setSearchQuery(value);
               }}
               styles={{

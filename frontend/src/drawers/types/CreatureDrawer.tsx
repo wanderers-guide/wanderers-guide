@@ -90,6 +90,10 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
             </Box>
             <Box></Box>
           </Group>
+          <Box>
+            <Button size='compact-sm'>View</Button>
+            {/* Sheet, Stat Block */}
+          </Box>
         </Group>
       )}
     </>

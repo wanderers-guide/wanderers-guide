@@ -457,6 +457,9 @@ function getProfTotal(id: StoreID, item: Item) {
   const groupVariable = `WEAPON_GROUP_${group.trim().toUpperCase()}`;
   const groupProfTotal = parseInt(getFinalProfValue(id, groupVariable));
 
+  const divisionVariable = determineWeaponDivision(item);
+  const divisionProfTotal = divisionVariable ? parseInt(getFinalProfValue(id, divisionVariable)) : 0;
+
   const individualVariable = `WEAPON_${labelToVariable(item.name)}`;
   const individualProfTotal = parseInt(getFinalProfValue(id, individualVariable));
 
@@ -467,12 +470,18 @@ function getProfTotal(id: StoreID, item: Item) {
     maxProfTotal = groupProfTotal;
     maxVariable = groupVariable;
   }
+
+  if (divisionVariable && divisionProfTotal > maxProfTotal) {
+    maxProfTotal = divisionProfTotal;
+    maxVariable = divisionVariable;
+  }
+
   if (individualProfTotal > maxProfTotal) {
     maxProfTotal = individualProfTotal;
     maxVariable = individualVariable;
   }
 
-  // "When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus."
+  // Martial Experience = "When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus."
   const martialExperience = getVariable<VariableBool>(id, 'MARTIAL_EXPERIENCE')?.value ?? false;
   if (martialExperience && maxProfTotal <= 0) {
     const profWithoutLevel = !!getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value;
@@ -525,4 +534,21 @@ function convertDamageType(rawDamageType: string) {
   } else {
     return rawDamageType;
   }
+}
+
+/**
+ * Utility function to determine the weapon's division
+ * @param item - Item
+ * @returns - Variable of the weapon division or
+ */
+export function determineWeaponDivision(item: Item): string | null {
+  const traitsIds = compileTraits(item);
+
+  if (isItemRangedWeapon(item)) {
+    if (hasTraitType('ANALOG', traitsIds) || hasTraitType('TECH', traitsIds)) {
+      return 'WEAPON_DIVISION_GUN';
+    }
+  }
+
+  return null;
 }

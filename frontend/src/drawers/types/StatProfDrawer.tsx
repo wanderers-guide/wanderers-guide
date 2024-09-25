@@ -347,6 +347,10 @@ function getProfDescription(variableName: string) {
     return `Almost all characters start out trained in unarmed attacks. You can ${convertToHardcodedLink('action', 'Strike')} with your fist or another body part, calculating your attack and damage rolls in the same way you would with a weapon. Unarmed attacks can belong to a weapon group, and they might have weapon traits. However, unarmed attacks aren’t weapons, and effects and abilities that work with weapons never work with unarmed attacks unless they specifically say so.`;
   }
 
+  if (variableName === 'WEAPON_DIVISION_GUN') {
+    return `Any ranged weapon with the analog or tech trait.`;
+  }
+
   if (variableName === 'SAVE_FORT') {
     return `A Fortitude saving throw is used when your character’s health or vitality is under attack, such as from poison or disease.`;
   }
