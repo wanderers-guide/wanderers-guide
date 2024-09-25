@@ -2,6 +2,7 @@ import { collectEntitySpellcasting } from '@content/collect-content';
 import { Item, LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
+import _ from 'lodash-es';
 
 /**
  * Utility function to determine if a spell is a focus spell
@@ -94,7 +95,7 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
 
       const spell = allSpells.find((s) => s.id === spellId);
       if (spell) {
-        detectedSpells.push({ spell, rank: spell.rank });
+        detectedSpells.push({ spell: _.cloneDeep(spell), rank: spell.rank });
       }
     }
 
@@ -116,7 +117,7 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
 
       const spell = allSpells.find((s) => s.id === spellId);
       if (spell) {
-        detectedSpells.push({ spell: { ...spell, rank }, rank });
+        detectedSpells.push({ spell: { ..._.cloneDeep(spell), rank }, rank });
       }
     }
   }

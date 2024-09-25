@@ -54,6 +54,18 @@ export default function WandSpellsList(props: {
         continue;
       }
 
+      // Set rank to detected spell rank
+      const rankMatches = [...wand.item.name.matchAll(/(\d)..-rank/gi)];
+      if (rankMatches.length > 0) {
+        const rankStr = rankMatches[0][1];
+        if (rankStr) {
+          const rank = parseInt(rankStr);
+          for (const spell of detectedSpells) {
+            spell.spell.rank = rank;
+          }
+        }
+      }
+
       const maxCharges = wand.item.meta_data?.charges?.max ?? 0;
       const currentCharges = wand.item.meta_data?.charges?.current ?? 0;
 
