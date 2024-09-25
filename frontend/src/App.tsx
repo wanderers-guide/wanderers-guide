@@ -127,11 +127,11 @@ export default function App() {
     })();
   }, [activeCharacer]);
 
-  const generateTheme = () => {
+  const generateTheme = (theme?: { color?: string }) => {
     return createTheme({
       colors: {
         // @ts-ignore
-        guide: getShadesFromColor(getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
+        guide: getShadesFromColor(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
         dark: [
           '#C1C2C5',
           '#A6A7AB',
@@ -159,7 +159,7 @@ export default function App() {
   useEffect(() => {
     if (_.isEqual(prevCharacer?.details?.sheet_theme, activeCharacer?.details?.sheet_theme)) return;
     console.log('Updating site theme...');
-    setTheme(generateTheme());
+    setTheme(generateTheme({ color: activeCharacer?.details?.sheet_theme?.color }));
   }, [activeCharacer]);
 
   // Handle query params
