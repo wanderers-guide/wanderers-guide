@@ -3008,7 +3008,7 @@ export function SpellSelectionOption(props: {
     <BaseSelectionOption
       leftSection={
         <Group wrap='nowrap' gap={5}>
-          <Box>
+          <Box pl={8}>
             <Text fz='sm' td={props.exhausted ? 'line-through' : undefined}>
               {props.prefix}
               {props.spell.name}
