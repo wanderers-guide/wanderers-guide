@@ -1,4 +1,3 @@
-/*
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import {
@@ -27,8 +26,8 @@ import {
 } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
-import { ContentPackage, LivingEntity, PublicUser } from '@typing/content';
-import { VariableListStr, VariableProf } from '@typing/variables';
+import { ContentPackage, Creature, LivingEntity, PublicUser } from '@typing/content';
+import { StoreID, VariableListStr, VariableProf } from '@typing/variables';
 import { displayFinalProfValue } from '@variables/variable-display';
 import {
   getVariable,
@@ -38,8 +37,8 @@ import {
   getAllArmorVariables,
   getAllAncestryTraitVariables,
 } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import classes from '@css/FaqSimple.module.css';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { useDebouncedState, useDebouncedValue, useDidUpdate } from '@mantine/hooks';
@@ -51,12 +50,15 @@ import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
 import _ from 'lodash-es';
 import { Money, getGpGained } from '@utils/money';
+import { pluralize } from '@utils/strings';
+import RichText from '@common/RichText';
 
 const SECTION_WIDTH = 280;
 
 export default function CreatureDetailsPanel(props: {
+  id: StoreID;
+  creature: Creature | null;
   content: ContentPackage;
-  entity: LivingEntity;
   panelHeight: number;
   panelWidth: number;
 }) {
@@ -64,35 +66,25 @@ export default function CreatureDetailsPanel(props: {
   const isPhone = isPhoneSized(props.panelWidth);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const languages = (getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
+  const languages = (getVariable<VariableListStr>(props.id, 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
     const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
     return lang;
   });
 
-  const traits = getAllAncestryTraitVariables('CHARACTER').map((v) => {
+  const traits = getAllAncestryTraitVariables(props.id).map((v) => {
     const trait = props.content.traits.find((trait) => trait.id === v.value);
     return trait;
   });
 
-  const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
-  const weaponProfs = getAllWeaponVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
+  const weaponGroupProfs = getAllWeaponGroupVariables(props.id).filter(
+    (prof) => compileProficiencyType(prof.value) !== 'U'
+  );
+  const weaponProfs = getAllWeaponVariables(props.id).filter((prof) => compileProficiencyType(prof.value) !== 'U');
 
-  const armorGroupProfs = getAllArmorGroupVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
-  const armorProfs = getAllArmorVariables('CHARACTER').filter((prof) => prof.value.value !== 'U');
-
-  const characterInfo = character?.details?.info;
-  const [debouncedInfo, setDebouncedInfo] = useDebouncedState<typeof characterInfo | null>(null, 200);
-  useDidUpdate(() => {
-    // Saving details
-    if (!character || !debouncedInfo) return;
-    setCharacter({
-      ...character,
-      details: {
-        ...character.details,
-        info: debouncedInfo,
-      },
-    });
-  }, [debouncedInfo]);
+  const armorGroupProfs = getAllArmorGroupVariables(props.id).filter(
+    (prof) => compileProficiencyType(prof.value) !== 'U'
+  );
+  const armorProfs = getAllArmorVariables(props.id).filter((prof) => compileProficiencyType(prof.value) !== 'U');
 
   const getInfoSection = () => (
     <Paper
@@ -105,196 +97,12 @@ export default function CreatureDetailsPanel(props: {
       }}
     >
       <Stack gap={10}>
-        <Group justify='center'>
-          <Box w={SECTION_WIDTH}>
-            <Title order={4}>Information</Title>
-          </Box>
-        </Group>
         <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
           <Group justify='center'>
             <Box w={SECTION_WIDTH}>
-              <Tabs variant='outline' defaultValue='general'>
-                <Tabs.List>
-                  <Tabs.Tab value='general'>General</Tabs.Tab>
-                  <Tabs.Tab value='org-play'>Organized Play</Tabs.Tab>
-                </Tabs.List>
-
-                <Tabs.Panel value='general'>
-                  <Stack gap={5}>
-                    <Textarea
-                      label='Appearance'
-                      placeholder='Appearance'
-                      autosize
-                      defaultValue={character?.details?.info?.appearance}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          appearance: e.target.value,
-                        });
-                      }}
-                    />
-                    <Textarea
-                      label='Personality'
-                      placeholder='Personality'
-                      autosize
-                      defaultValue={character?.details?.info?.personality}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          personality: e.target.value,
-                        });
-                      }}
-                    />
-                    <Textarea
-                      label='Alignment'
-                      placeholder='Alignment'
-                      autosize
-                      defaultValue={character?.details?.info?.alignment}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          alignment: e.target.value,
-                        });
-                      }}
-                    />
-                    <Textarea
-                      label='Beliefs'
-                      placeholder='Beliefs'
-                      autosize
-                      defaultValue={character?.details?.info?.beliefs}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          beliefs: e.target.value,
-                        });
-                      }}
-                    />
-                    <Divider mt='sm' />
-                    <TextInput
-                      label='Age'
-                      placeholder='Age'
-                      defaultValue={character?.details?.info?.age}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          age: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Height'
-                      placeholder='Height'
-                      defaultValue={character?.details?.info?.height}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          height: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Weight'
-                      placeholder='Weight'
-                      defaultValue={character?.details?.info?.weight}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          weight: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Gender'
-                      placeholder='Gender'
-                      defaultValue={character?.details?.info?.gender}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          gender: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Pronouns'
-                      placeholder='Pronouns'
-                      defaultValue={character?.details?.info?.pronouns}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          pronouns: e.target.value,
-                        });
-                      }}
-                    />
-                    <Divider mt='sm' />
-                    <TextInput
-                      label='Faction'
-                      placeholder='Faction'
-                      defaultValue={character?.details?.info?.faction}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          faction: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Ethnicity'
-                      placeholder='Ethnicity'
-                      defaultValue={character?.details?.info?.ethnicity}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          ethnicity: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Nationality'
-                      placeholder='Nationality'
-                      defaultValue={character?.details?.info?.nationality}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          nationality: e.target.value,
-                        });
-                      }}
-                    />
-                    <TextInput
-                      label='Birthplace'
-                      placeholder='Birthplace'
-                      defaultValue={character?.details?.info?.birthplace}
-                      onChange={(e) => {
-                        if (!character) return;
-                        setDebouncedInfo({
-                          ...character.details?.info,
-                          birthplace: e.target.value,
-                        });
-                      }}
-                    />
-                  </Stack>
-                </Tabs.Panel>
-
-                <Tabs.Panel value='org-play'>
-                  <OrgPlaySection
-                    setDebouncedInfo={(info) => {
-                      if (!character) return;
-                      setDebouncedInfo(info);
-                    }}
-                  />
-                </Tabs.Panel>
-              </Tabs>
+              <RichText ta='justify' fz='sm'>
+                {props.creature?.details.description || 'No description given.'}
+              </RichText>
             </Box>
           </Group>
         </ScrollArea>
@@ -334,6 +142,7 @@ export default function CreatureDetailsPanel(props: {
                       openDrawer({
                         type: 'language',
                         data: { id: language?.id },
+                        extra: { addToHistory: true },
                       });
                     }}
                   >
@@ -366,6 +175,7 @@ export default function CreatureDetailsPanel(props: {
                       openDrawer({
                         type: 'trait',
                         data: { id: trait?.id },
+                        extra: { addToHistory: true },
                       });
                     }}
                   >
@@ -423,6 +233,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'SIMPLE_WEAPONS' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -433,7 +244,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'SIMPLE_WEAPONS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'SIMPLE_WEAPONS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -442,6 +253,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'MARTIAL_WEAPONS' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -452,7 +264,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'MARTIAL_WEAPONS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'MARTIAL_WEAPONS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -461,6 +273,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'ADVANCED_WEAPONS' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -471,7 +284,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'ADVANCED_WEAPONS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'ADVANCED_WEAPONS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -480,6 +293,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'UNARMED_ATTACKS' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -490,7 +304,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'UNARMED_ATTACKS')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'UNARMED_ATTACKS')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -510,6 +324,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'LIGHT_ARMOR' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -520,7 +335,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'LIGHT_ARMOR')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'LIGHT_ARMOR')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -529,6 +344,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'MEDIUM_ARMOR' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -539,7 +355,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'MEDIUM_ARMOR')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'MEDIUM_ARMOR')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -548,6 +364,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'HEAVY_ARMOR' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -558,7 +375,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'HEAVY_ARMOR')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'HEAVY_ARMOR')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -567,6 +384,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'UNARMORED_DEFENSE' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -577,7 +395,7 @@ export default function CreatureDetailsPanel(props: {
                       </Box>
                       <Group>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'UNARMORED_DEFENSE')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'UNARMORED_DEFENSE')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -597,6 +415,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'SPELL_ATTACK' },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -606,9 +425,9 @@ export default function CreatureDetailsPanel(props: {
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_ATTACK')}</Text>
+                        <Text c='gray.0'>{displayFinalProfValue(props.id, 'SPELL_ATTACK')}</Text>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'SPELL_ATTACK')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -617,6 +436,7 @@ export default function CreatureDetailsPanel(props: {
                         openDrawer({
                           type: 'stat-prof',
                           data: { variableName: 'SPELL_DC', isDC: true },
+                          extra: { addToHistory: true },
                         });
                       }}
                     >
@@ -626,9 +446,9 @@ export default function CreatureDetailsPanel(props: {
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
+                        <Text c='gray.0'>{displayFinalProfValue(props.id, 'SPELL_DC')}</Text>
                         <Badge variant='default'>
-                          {getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value.value}
+                          {compileProficiencyType(getVariable<VariableProf>(props.id, 'SPELL_DC')?.value)}
                         </Badge>
                       </Group>
                     </StatButton>
@@ -652,16 +472,17 @@ export default function CreatureDetailsPanel(props: {
                             openDrawer({
                               type: 'stat-prof',
                               data: { variableName: weapon.name },
+                              extra: { addToHistory: true },
                             });
                           }}
                         >
                           <Box>
                             <Text c='gray.0' fz='sm'>
-                              {variableToLabel(weapon)}
+                              {pluralize(variableToLabel(weapon))}
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{weapon.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(weapon.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -685,6 +506,7 @@ export default function CreatureDetailsPanel(props: {
                             openDrawer({
                               type: 'stat-prof',
                               data: { variableName: weapon.name },
+                              extra: { addToHistory: true },
                             });
                           }}
                         >
@@ -694,7 +516,7 @@ export default function CreatureDetailsPanel(props: {
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{weapon.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(weapon.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -719,6 +541,7 @@ export default function CreatureDetailsPanel(props: {
                             openDrawer({
                               type: 'stat-prof',
                               data: { variableName: armor.name },
+                              extra: { addToHistory: true },
                             });
                           }}
                         >
@@ -728,7 +551,7 @@ export default function CreatureDetailsPanel(props: {
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{armor.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(armor.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -752,6 +575,7 @@ export default function CreatureDetailsPanel(props: {
                             openDrawer({
                               type: 'stat-prof',
                               data: { variableName: armor.name },
+                              extra: { addToHistory: true },
                             });
                           }}
                         >
@@ -761,7 +585,7 @@ export default function CreatureDetailsPanel(props: {
                             </Text>
                           </Box>
                           <Group>
-                            <Badge variant='default'>{armor.value.value}</Badge>
+                            <Badge variant='default'>{compileProficiencyType(armor.value)}</Badge>
                           </Group>
                         </StatButton>
                       ))}
@@ -775,6 +599,7 @@ export default function CreatureDetailsPanel(props: {
                   openDrawer({
                     type: 'stat-prof',
                     data: { variableName: 'CLASS_DC', isDC: true },
+                    extra: { addToHistory: true },
                   });
                 }}
               >
@@ -784,8 +609,10 @@ export default function CreatureDetailsPanel(props: {
                   </Text>
                 </Box>
                 <Group>
-                  <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'CLASS_DC', true)}</Text>
-                  <Badge variant='default'>{compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'CLASS_DC')?.value)}</Badge>
+                  <Text c='gray.0'>{displayFinalProfValue(props.id, 'CLASS_DC', true)}</Text>
+                  <Badge variant='default'>
+                    {compileProficiencyType(getVariable<VariableProf>(props.id, 'CLASS_DC')?.value)}
+                  </Badge>
                 </Group>
               </StatButton>
             </Accordion>
@@ -799,7 +626,7 @@ export default function CreatureDetailsPanel(props: {
     return (
       <Tabs defaultValue='information'>
         <Tabs.List style={{ flexWrap: 'nowrap' }}>
-          <Tabs.Tab value='information'>Information</Tabs.Tab>
+          <Tabs.Tab value='information'>Description</Tabs.Tab>
           <Tabs.Tab value='languages'>Languages</Tabs.Tab>
           <Tabs.Tab value='proficiencies'>Proficiencies</Tabs.Tab>
         </Tabs.List>
@@ -1133,5 +960,3 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
     </Stack>
   );
 }
-
-*/

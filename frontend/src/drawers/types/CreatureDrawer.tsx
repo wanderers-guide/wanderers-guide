@@ -19,6 +19,7 @@ import {
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
 import DetailsPanel from '@pages/character_sheet/panels/DetailsPanel';
 import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
 import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
@@ -237,7 +238,13 @@ export function CreatureDrawerContent(props: {
         )}
 
         {activeTab === 'details' && (
-          <DetailsPanel content={content} panelHeight={panelHeight} panelWidth={panelWidth} />
+          <CreatureDetailsPanel
+            id={STORE_ID}
+            creature={creature}
+            content={content}
+            panelHeight={panelHeight}
+            panelWidth={panelWidth}
+          />
         )}
 
         <Box
