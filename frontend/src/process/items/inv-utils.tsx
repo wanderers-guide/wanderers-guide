@@ -156,9 +156,8 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
     const applyPenalties = (item: InventoryItem) => {
       if (item.item.meta_data) {
         const strMod = getFinalVariableValue(STORE_ID, 'ATTRIBUTE_STR').total;
-
         // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
-        if (item.item.meta_data.strength && strMod >= item.item.meta_data.strength) {
+        if (item.item.meta_data.strength !== undefined && strMod >= item.item.meta_data.strength) {
           // Take speed penalty, reduced by 5, to all Speeds
           const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0) - 5;
           if (speedPenalty > 0) {
