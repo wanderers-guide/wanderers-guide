@@ -226,6 +226,37 @@ export async function executeCharacterOperations(
     }
   }
 
+  // Add Free Lore
+  if (character.variants?.free_lore) {
+  }
+  classFeatures.push({
+    id: hashData({ name: 'free-lore', level: 1 }),
+    created_at: '',
+    operations: [
+      {id: `720d2fe6-f042-4353-8313-1293375b1301-223`,
+      type: 'select',
+      data: {
+        title: 'Select a Lore to be Trained',
+        modeType: 'FILTERED',
+        optionType: 'ADJ_VALUE',
+        optionsPredefined: [],
+        optionsFilters: {
+          id: `f8703468-ab35-4f84-8dc7-7c48556258e3-223`,
+          type: 'ADJ_VALUE',
+          group: 'ADD-LORE',
+          value: { value: 'T' },
+        },
+      },}
+    ],
+    name: 'Free Lore',
+    actions: null,
+    level: 1,
+    rarity: 'COMMON',
+    description: `You gain a class feat that you can only use for archetypes.`,
+    type: 'class-feature',
+    content_source_id: -1,
+  })
+
   // Gradual Attribute Boosts
   if (character.variants?.gradual_attribute_boosts) {
     const newClassFeatures: AbilityBlock[] = [];
@@ -267,7 +298,6 @@ export async function executeCharacterOperations(
       }
       newClassFeatures.push(...newBoostClassFeatures);
     }
-    classFeatures = newClassFeatures;
   }
 
   const operationsPassthrough = async (options?: OperationOptions) => {
@@ -750,6 +780,8 @@ export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number):
         },
       },
     });
+
+
   }
 
   return operations;
@@ -865,6 +897,7 @@ export function addedAncestryLanguages(varId: StoreID, ancestry: Ancestry): Oper
     });
   }
 
+  
   return operations;
 }
 

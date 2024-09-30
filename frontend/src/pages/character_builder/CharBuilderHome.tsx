@@ -499,6 +499,24 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                 />
                 <LinkSwitch
+                  label='Free Lore'
+                  info={`Most characters have some elements that connect them to their ancestry but identify more strongly with their class or unique personality. Sometimes, though, a character is the embodiment of their ancestry to the point that it’s of equal importance to their class. For a game where an ancestral background is a major theme and such characters are the norm, your group might consider using the ancestry paragon variant.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=1336'
+                  enabled={character?.variants?.free_lore}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          free_lore: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
                   label='Dual Class'
                   info={`Sometimes, especially when you have a particularly small play group or want to play incredibly versatile characters, you might want to allow dual-class characters that have the full benefits of two different classes.`}
                   url='https://2e.aonprd.com/Rules.aspx?ID=1328'

@@ -481,6 +481,7 @@ interface Character extends LivingEntity {
     free_archetype?: boolean;
     dual_class?: boolean;
     gradual_attribute_boosts?: boolean;
+    free_lore?:boolean;
   };
   content_sources?: {
     enabled?: number[];
