@@ -252,7 +252,7 @@ export async function executeCharacterOperations(
     actions: null,
     level: 1,
     rarity: 'COMMON',
-    description: `You gain a class feat that you can only use for archetypes.`,
+    description: `You are trained in a free Lore skill.`,
     type: 'class-feature',
     content_source_id: -1,
   })
