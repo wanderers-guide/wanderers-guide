@@ -298,6 +298,7 @@ export async function executeCharacterOperations(
       }
       newClassFeatures.push(...newBoostClassFeatures);
     }
+    classFeatures = newClassFeatures;
   }
 
   const operationsPassthrough = async (options?: OperationOptions) => {
