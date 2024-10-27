@@ -321,7 +321,11 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // Divisions are categories of weapons without a specific group.
   // Example: Gun. Which is any ranged weapon with the analog or tech trait.
   WEAPON_DIVISION_GUN: newVariable('prof', 'WEAPON_DIVISION_GUN'),
+  WEAPON_DIVISION_GUN_SIMPLE: newVariable('prof', 'WEAPON_DIVISION_GUN_SIMPLE'),
+  WEAPON_DIVISION_GUN_MARTIAL: newVariable('prof', 'WEAPON_DIVISION_GUN_MARTIAL'),
+  WEAPON_DIVISION_GUN_ADVANCED: newVariable('prof', 'WEAPON_DIVISION_GUN_ADVANCED'),
 
+  ARMOR_GROUP_CLOTH: newVariable('prof', 'ARMOR_GROUP_CLOTH'),
   ARMOR_GROUP_CHAIN: newVariable('prof', 'ARMOR_GROUP_CHAIN'),
   ARMOR_GROUP_COMPOSITE: newVariable('prof', 'ARMOR_GROUP_COMPOSITE'),
   ARMOR_GROUP_LEATHER: newVariable('prof', 'ARMOR_GROUP_LEATHER'),

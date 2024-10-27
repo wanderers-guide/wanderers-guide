@@ -25,6 +25,8 @@ function getProfTotal(id: StoreID, item: Item) {
     groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_COMPOSITE`));
   } else if (group === 'chain') {
     groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CHAIN`));
+  } else if (group === 'cloth') {
+    groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_CLOTH`));
   } else if (group === 'plate') {
     groupProfTotal = parseInt(getFinalProfValue(id, `ARMOR_GROUP_PLATE`));
   }

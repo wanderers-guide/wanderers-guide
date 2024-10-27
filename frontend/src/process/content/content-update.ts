@@ -18,7 +18,11 @@ export async function submitContentUpdate(
 }
 
 export async function findContentUpdates() {
-  return await makeRequest<ContentUpdate[]>('find-content-update', {});
+  const pendingUpdates = (await makeRequest<ContentUpdate[]>('find-content-update', { state: 'PENDING' })) ?? [];
+  const approvedUpdates = (await makeRequest<ContentUpdate[]>('find-content-update', { state: 'APPROVED' })) ?? [];
+  const rejectedUpdates = (await makeRequest<ContentUpdate[]>('find-content-update', { state: 'REJECTED' })) ?? [];
+
+  return [...pendingUpdates, ...approvedUpdates, ...rejectedUpdates];
 }
 
 export async function findContentUpdate(updateId: number) {

@@ -317,7 +317,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Suppressed',
-    description: `You have been affected by a high volume of incoming fire or a particularly dangerous attack that forces you to act less efficiently for your own safety. You take a –1 circumstance penalty on attack rolls and a –5-foot status penalty to your Speed.`,
+    description: `You have been affected by a high volume of incoming fire or a particularly dangerous attack that forces you to act less efficiently for your own safety. You take a –1 circumstance penalty on attack rolls and a –10-foot status penalty to your Speed.`,
     for_creature: true,
     for_object: false,
     starfinder_only: true,
@@ -691,7 +691,7 @@ function applyCondition(id: StoreID, condition: Condition) {
   }
   if (condition.name === 'Suppressed') {
     addVariableBonus(id, 'ATTACK_ROLLS_BONUS', -1, 'circumstance', '', `Suppressed`);
-    addVariableBonus(id, 'SPEED', -5, 'status', '', `Suppressed`);
+    addVariableBonus(id, 'SPEED', -10, 'status', '', `Suppressed`);
     return;
   }
 }

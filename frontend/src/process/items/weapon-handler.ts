@@ -457,8 +457,16 @@ function getProfTotal(id: StoreID, item: Item) {
   const groupVariable = `WEAPON_GROUP_${group.trim().toUpperCase()}`;
   const groupProfTotal = parseInt(getFinalProfValue(id, groupVariable));
 
-  const divisionVariable = determineWeaponDivision(item);
-  const divisionProfTotal = divisionVariable ? parseInt(getFinalProfValue(id, divisionVariable)) : 0;
+  const divisionVariables = determineWeaponDivisions(item);
+  let divisionVariable = null;
+  let divisionProfTotal = 0;
+  for (const v of divisionVariables) {
+    const newTotal = parseInt(getFinalProfValue(id, v));
+    if (newTotal > divisionProfTotal) {
+      divisionProfTotal = newTotal;
+      divisionVariable = v;
+    }
+  }
 
   const individualVariable = `WEAPON_${labelToVariable(item.name)}`;
   const individualProfTotal = parseInt(getFinalProfValue(id, individualVariable));
@@ -539,16 +547,25 @@ function convertDamageType(rawDamageType: string) {
 /**
  * Utility function to determine the weapon's division
  * @param item - Item
- * @returns - Variable of the weapon division or
+ * @returns - Variables of the weapon division
  */
-export function determineWeaponDivision(item: Item): string | null {
+export function determineWeaponDivisions(item: Item): string[] {
   const traitsIds = compileTraits(item);
 
   if (isItemRangedWeapon(item)) {
     if (hasTraitType('ANALOG', traitsIds) || hasTraitType('TECH', traitsIds)) {
-      return 'WEAPON_DIVISION_GUN';
+      const category = item.meta_data?.category ?? 'simple';
+      if (category === 'simple') {
+        return ['WEAPON_DIVISION_GUN', 'WEAPON_DIVISION_GUN_SIMPLE'];
+      } else if (category === 'martial') {
+        return ['WEAPON_DIVISION_GUN', 'WEAPON_DIVISION_GUN_MARTIAL'];
+      } else if (category === 'advanced') {
+        return ['WEAPON_DIVISION_GUN', 'WEAPON_DIVISION_GUN_ADVANCED'];
+      } else {
+        return ['WEAPON_DIVISION_GUN'];
+      }
     }
   }
 
-  return null;
+  return [];
 }
