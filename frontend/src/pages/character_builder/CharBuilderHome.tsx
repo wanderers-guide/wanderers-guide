@@ -499,6 +499,23 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                 />
                 <LinkSwitch
+                  label='Free Lore'
+                  info={`This variant is used to grant all characters a free lore skill. Use this for Pathfinder Society characters to allow all characters to be trained in Pathfinder Society Lore.`}
+                  enabled={character?.variants?.free_lore}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          free_lore: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
                   label='Dual Class'
                   info={`Sometimes, especially when you have a particularly small play group or want to play incredibly versatile characters, you might want to allow dual-class characters that have the full benefits of two different classes.`}
                   url='https://2e.aonprd.com/Rules.aspx?ID=1328'
