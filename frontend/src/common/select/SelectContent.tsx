@@ -273,6 +273,7 @@ export function selectContent<T = Record<string, any>>(
     filterFn?: (option: Record<string, any>) => boolean;
     showButton?: boolean;
     includeOptions?: boolean;
+    zIndex?: number;
   }
 ) {
   let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
@@ -281,6 +282,7 @@ export function selectContent<T = Record<string, any>>(
   openContextModal({
     modal: 'selectContent',
     title: <Title order={3}>{label}</Title>,
+    zIndex: options?.zIndex ?? 499,
     innerProps: {
       type,
       onClick: onClick ? (option: any) => onClick(option as T) : undefined,
@@ -3276,6 +3278,7 @@ export function CreatureSelectionOption(props: {
           type: 'creature',
           data: {
             id: props.creature.id,
+            zIndex: 495,
             onSelect:
               props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,
           },

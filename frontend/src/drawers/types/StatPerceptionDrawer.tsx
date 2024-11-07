@@ -42,7 +42,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { VariableBool, VariableListStr, VariableProf } from '@typing/variables';
+import { StoreID, VariableBool, VariableListStr, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displaySense } from '@utils/senses';
 import { toLabel } from '@utils/strings';
@@ -60,8 +60,8 @@ import * as _ from 'lodash-es';
 import { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
 
-export function StatPerceptionDrawerTitle(props: { data: {} }) {
-  const variable = getVariable<VariableProf>('CHARACTER', 'PERCEPTION');
+export function StatPerceptionDrawerTitle(props: { data: { id: StoreID } }) {
+  const variable = getVariable<VariableProf>(props.data.id, 'PERCEPTION');
 
   return (
     <>
@@ -81,7 +81,7 @@ export function StatPerceptionDrawerTitle(props: { data: {} }) {
   );
 }
 
-export function StatPerceptionDrawerContent(props: { data: {} }) {
+export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // Collect senses info
@@ -91,17 +91,17 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
       return await fetchContentAll<AbilityBlock>('ability-block');
     },
   });
-  const senses = useMemo(() => collectCharacterSenses('CHARACTER', abilityBlocks ?? []), [abilityBlocks]);
+  const senses = useMemo(() => collectCharacterSenses(props.data.id, abilityBlocks ?? []), [abilityBlocks]);
 
-  const variable = getVariable<VariableProf>('CHARACTER', 'PERCEPTION');
+  const variable = getVariable<VariableProf>(props.data.id, 'PERCEPTION');
   if (!variable) return null;
 
   // Breakdown
-  const parts = getProfValueParts('CHARACTER', variable.name)!;
+  const parts = getProfValueParts(props.data.id, variable.name)!;
 
   // Timeline
-  const history = getVariableHistory('CHARACTER', variable.name);
-  const bonuses = getVariableBonuses('CHARACTER', variable.name);
+  const history = getVariableHistory(props.data.id, variable.name);
+  const bonuses = getVariableBonuses(props.data.id, variable.name);
 
   let timeline: {
     type: 'BONUS' | 'ADJUSTMENT';
@@ -130,7 +130,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
   }
   timeline = timeline.sort((a, b) => a.timestamp - b.timestamp);
 
-  const profWithoutLevel = !!getVariable<VariableBool>('CHARACTER', 'PROF_WITHOUT_LEVEL')?.value;
+  const profWithoutLevel = !!getVariable<VariableBool>(props.data.id, 'PROF_WITHOUT_LEVEL')?.value;
 
   return (
     <Box>
@@ -168,7 +168,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <RichText ta='justify' store='CHARACTER'>
+                      <RichText ta='justify' store={props.data.id}>
                         A precise sense is one that can be used to perceive the world in nuanced detail. The only way to
                         target a creature without having drawbacks is to use a precise sense. You can usually detect a
                         creature automatically with a precise sense unless that creature is hiding or obscured by the
@@ -254,7 +254,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <RichText ta='justify' store='CHARACTER'>
+                      <RichText ta='justify' store={props.data.id}>
                         An imprecise sense can't detect the full range of detail that a precise sense can. You can
                         usually sense a creature automatically with an imprecise sense, but it has the hidden condition
                         instead of the observed condition. It might be undetected by you if it's using Stealth or is in
@@ -342,7 +342,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
                       </Group>
                     </Accordion.Control>
                     <Accordion.Panel>
-                      <RichText ta='justify' store='CHARACTER'>
+                      <RichText ta='justify' store={props.data.id}>
                         A vague sense is one that can alert you that something is there but isn't useful for zeroing in
                         on it to determine exactly what it is. At best, a vague sense can be used to detect the presence
                         of an unnoticed creature, making it undetected. Even then, the vague sense isn't sufficient to
@@ -405,7 +405,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' store='CHARACTER'>
+            <RichText ta='justify' store={props.data.id}>
               An individual's Perception measures their ability to notice things, search for what's hidden, and tell
               whether something about a situation is suspicious.
             </RichText>
@@ -417,7 +417,7 @@ export function StatPerceptionDrawerContent(props: { data: {} }) {
             <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
             <Accordion.Panel>
               <Group gap={8} align='center'>
-                {displayFinalProfValue('CHARACTER', variable.name)} ={' '}
+                {displayFinalProfValue(props.data.id, variable.name)} ={' '}
                 <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                   <HoverCard.Target>
                     <Kbd style={{ cursor: 'pointer' }}>{parts.profValue}</Kbd>

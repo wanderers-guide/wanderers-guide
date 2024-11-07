@@ -232,7 +232,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SIMPLE_WEAPONS' },
+                          data: { id: props.id, variableName: 'SIMPLE_WEAPONS' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -252,7 +252,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'MARTIAL_WEAPONS' },
+                          data: { id: props.id, variableName: 'MARTIAL_WEAPONS' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -272,7 +272,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'ADVANCED_WEAPONS' },
+                          data: { id: props.id, variableName: 'ADVANCED_WEAPONS' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -292,7 +292,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'UNARMED_ATTACKS' },
+                          data: { id: props.id, variableName: 'UNARMED_ATTACKS' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -323,7 +323,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'LIGHT_ARMOR' },
+                          data: { id: props.id, variableName: 'LIGHT_ARMOR' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -343,7 +343,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'MEDIUM_ARMOR' },
+                          data: { id: props.id, variableName: 'MEDIUM_ARMOR' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -363,7 +363,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'HEAVY_ARMOR' },
+                          data: { id: props.id, variableName: 'HEAVY_ARMOR' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -383,7 +383,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'UNARMORED_DEFENSE' },
+                          data: { id: props.id, variableName: 'UNARMORED_DEFENSE' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -414,7 +414,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SPELL_ATTACK' },
+                          data: { id: props.id, variableName: 'SPELL_ATTACK' },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -435,7 +435,7 @@ export default function CreatureDetailsPanel(props: {
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SPELL_DC', isDC: true },
+                          data: { id: props.id, variableName: 'SPELL_DC', isDC: true },
                           extra: { addToHistory: true },
                         });
                       }}
@@ -471,7 +471,7 @@ export default function CreatureDetailsPanel(props: {
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: weapon.name },
+                              data: { id: props.id, variableName: weapon.name },
                               extra: { addToHistory: true },
                             });
                           }}
@@ -505,7 +505,7 @@ export default function CreatureDetailsPanel(props: {
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: weapon.name },
+                              data: { id: props.id, variableName: weapon.name },
                               extra: { addToHistory: true },
                             });
                           }}
@@ -540,7 +540,7 @@ export default function CreatureDetailsPanel(props: {
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: armor.name },
+                              data: { id: props.id, variableName: armor.name },
                               extra: { addToHistory: true },
                             });
                           }}
@@ -574,7 +574,7 @@ export default function CreatureDetailsPanel(props: {
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: armor.name },
+                              data: { id: props.id, variableName: armor.name },
                               extra: { addToHistory: true },
                             });
                           }}
@@ -598,7 +598,7 @@ export default function CreatureDetailsPanel(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { variableName: 'CLASS_DC', isDC: true },
+                    data: { id: props.id, variableName: 'CLASS_DC', isDC: true },
                     extra: { addToHistory: true },
                   });
                 }}

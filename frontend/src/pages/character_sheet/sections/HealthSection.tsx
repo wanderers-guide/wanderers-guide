@@ -78,7 +78,7 @@ export default function HealthSection(props: {
                     onClick={() => {
                       openDrawer({
                         type: 'stat-hp',
-                        data: {},
+                        data: { id: props.id },
                         extra: { addToHistory: true },
                       });
                     }}
@@ -131,7 +131,7 @@ export default function HealthSection(props: {
             onClick={() => {
               openDrawer({
                 type: 'stat-resist-weak',
-                data: {},
+                data: { id: props.id },
                 extra: { addToHistory: true },
               });
             }}

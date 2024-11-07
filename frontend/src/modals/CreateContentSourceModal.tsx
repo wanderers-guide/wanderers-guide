@@ -132,6 +132,7 @@ export function CreateContentSourceOnlyModal(props: {
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
+      zIndex={490}
     >
       <ContentSourceEditor
         opened={props.opened}
@@ -1168,7 +1169,10 @@ function ContentList<
                   onButtonClick={() => {
                     openDrawer({
                       type: props.abilityBlockType ?? props.type,
-                      data: { id: record.id },
+                      data: {
+                        id: record.id,
+                        zIndex: props.type === 'creature' ? 495 : undefined,
+                      },
                       extra: { addToHistory: true },
                     });
                   }}

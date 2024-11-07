@@ -473,7 +473,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               size='lg'
               fullWidth
               onClick={() => {
-                openDrawer({ type: 'stat-attr', data: {} });
+                openDrawer({ type: 'stat-attr', data: { id: 'CHARACTER' } });
               }}
             >
               <Group wrap='nowrap'>
@@ -488,7 +488,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
           </Box>
           <StatButton
             onClick={() => {
-              openDrawer({ type: 'stat-hp', data: {} });
+              openDrawer({ type: 'stat-hp', data: { id: 'CHARACTER' } });
             }}
           >
             <Box>
@@ -504,7 +504,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             onClick={() => {
               openDrawer({
                 type: 'stat-prof',
-                data: { variableName: 'CLASS_DC', isDC: true },
+                data: { id: 'CHARACTER', variableName: 'CLASS_DC', isDC: true },
               });
             }}
           >
@@ -524,7 +524,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             onClick={() => {
               openDrawer({
                 type: 'stat-perception',
-                data: {},
+                data: { id: 'CHARACTER' },
               });
             }}
           >
@@ -573,7 +573,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                         onClick={() => {
                           openDrawer({
                             type: 'stat-prof',
-                            data: { variableName: skill.name },
+                            data: { id: 'CHARACTER', variableName: skill.name },
                           });
                         }}
                       >
@@ -603,7 +603,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SAVE_FORT' },
+                        data: { id: 'CHARACTER', variableName: 'SAVE_FORT' },
                       });
                     }}
                   >
@@ -623,7 +623,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SAVE_REFLEX' },
+                        data: { id: 'CHARACTER', variableName: 'SAVE_REFLEX' },
                       });
                     }}
                   >
@@ -643,7 +643,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SAVE_WILL' },
+                        data: { id: 'CHARACTER', variableName: 'SAVE_WILL' },
                       });
                     }}
                   >
@@ -674,7 +674,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SIMPLE_WEAPONS' },
+                        data: { id: 'CHARACTER', variableName: 'SIMPLE_WEAPONS' },
                       });
                     }}
                   >
@@ -693,7 +693,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'MARTIAL_WEAPONS' },
+                        data: { id: 'CHARACTER', variableName: 'MARTIAL_WEAPONS' },
                       });
                     }}
                   >
@@ -712,7 +712,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'ADVANCED_WEAPONS' },
+                        data: { id: 'CHARACTER', variableName: 'ADVANCED_WEAPONS' },
                       });
                     }}
                   >
@@ -731,7 +731,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'UNARMED_ATTACKS' },
+                        data: { id: 'CHARACTER', variableName: 'UNARMED_ATTACKS' },
                       });
                     }}
                   >
@@ -761,7 +761,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'LIGHT_ARMOR' },
+                        data: { id: 'CHARACTER', variableName: 'LIGHT_ARMOR' },
                       });
                     }}
                   >
@@ -780,7 +780,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'MEDIUM_ARMOR' },
+                        data: { id: 'CHARACTER', variableName: 'MEDIUM_ARMOR' },
                       });
                     }}
                   >
@@ -799,7 +799,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'HEAVY_ARMOR' },
+                        data: { id: 'CHARACTER', variableName: 'HEAVY_ARMOR' },
                       });
                     }}
                   >
@@ -818,7 +818,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'UNARMORED_DEFENSE' },
+                        data: { id: 'CHARACTER', variableName: 'UNARMORED_DEFENSE' },
                       });
                     }}
                   >
@@ -848,7 +848,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SPELL_ATTACK' },
+                        data: { id: 'CHARACTER', variableName: 'SPELL_ATTACK' },
                       });
                     }}
                   >
@@ -868,7 +868,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     onClick={() => {
                       openDrawer({
                         type: 'stat-prof',
-                        data: { variableName: 'SPELL_DC', isDC: true },
+                        data: { id: 'CHARACTER', variableName: 'SPELL_DC', isDC: true },
                       });
                     }}
                   >
@@ -928,7 +928,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <StatButton
                       key={index}
                       onClick={() => {
-                        openDrawer({ type: 'stat-resist-weak', data: {} });
+                        openDrawer({ type: 'stat-resist-weak', data: { id: 'CHARACTER' } });
                       }}
                     >
                       <Box>
@@ -954,7 +954,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <StatButton
                       key={index}
                       onClick={() => {
-                        openDrawer({ type: 'stat-resist-weak', data: {} });
+                        openDrawer({ type: 'stat-resist-weak', data: { id: 'CHARACTER' } });
                       }}
                     >
                       <Box>
@@ -980,7 +980,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     <StatButton
                       key={index}
                       onClick={() => {
-                        openDrawer({ type: 'stat-resist-weak', data: {} });
+                        openDrawer({ type: 'stat-resist-weak', data: { id: 'CHARACTER' } });
                       }}
                     >
                       <Box>

@@ -1,10 +1,11 @@
 import { Title, Text, Group, Divider, Box, Accordion, Kbd, HoverCard, List } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
+import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalHealthValue, getHealthValueParts } from '@variables/variable-display';
 import * as _ from 'lodash-es';
 
-export function StatHealthDrawerTitle(props: { data: {} }) {
+export function StatHealthDrawerTitle(props: { data: { id: StoreID } }) {
   return (
     <>
       <Group justify='space-between' wrap='nowrap'>
@@ -19,8 +20,8 @@ export function StatHealthDrawerTitle(props: { data: {} }) {
   );
 }
 
-export function StatHealthDrawerContent(props: { data: {} }) {
-  const parts = getHealthValueParts('CHARACTER');
+export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
+  const parts = getHealthValueParts(props.data.id);
 
   return (
     <Box>
@@ -29,7 +30,7 @@ export function StatHealthDrawerContent(props: { data: {} }) {
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
           <Accordion.Panel>
             <Group gap={8} wrap='nowrap' align='center'>
-              {displayFinalHealthValue('CHARACTER')} ={' ('}
+              {displayFinalHealthValue(props.data.id)} ={' ('}
               <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                 <HoverCard.Target>
                   <Kbd style={{ cursor: 'pointer' }}>{parts.classHp}</Kbd>

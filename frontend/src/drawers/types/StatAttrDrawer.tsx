@@ -36,7 +36,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { AttributeValue, VariableAttr, VariableProf, VariableValue } from '@typing/variables';
+import { AttributeValue, StoreID, VariableAttr, VariableProf, VariableValue } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
@@ -55,7 +55,7 @@ import {
 } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 
-export function StatAttrDrawerTitle(props: { data: { attributeName?: string } }) {
+export function StatAttrDrawerTitle(props: { data: { id: StoreID; attributeName?: string } }) {
   return (
     <>
       <Group justify='space-between' wrap='nowrap'>
@@ -72,8 +72,8 @@ export function StatAttrDrawerTitle(props: { data: { attributeName?: string } })
   );
 }
 
-export function StatAttrDrawerContent(props: { data: { attributeName?: string } }) {
-  const attributes = getAllAttributeVariables('CHARACTER');
+export function StatAttrDrawerContent(props: { data: { id: StoreID; attributeName?: string } }) {
+  const attributes = getAllAttributeVariables(props.data.id);
   const theme = useMantineTheme();
 
   // Change structure to be an array by source
@@ -90,7 +90,7 @@ export function StatAttrDrawerContent(props: { data: { attributeName?: string } 
   const sourceRecords: Record<string, (number | null | undefined)[]> = {};
 
   for (const attribute of attributes) {
-    const history = getVariableHistory('CHARACTER', attribute.name);
+    const history = getVariableHistory(props.data.id, attribute.name);
 
     for (const [index, record] of history.entries()) {
       if (!sourceRecords[record.source]) {
@@ -175,7 +175,7 @@ export function StatAttrDrawerContent(props: { data: { attributeName?: string } 
       </Table>
 
       {props.data.attributeName && (
-        <RichText ta='justify' store='CHARACTER' pt={10}>
+        <RichText ta='justify' store={props.data.id} pt={10}>
           {getAttributeDescription(props.data.attributeName)}
         </RichText>
       )}

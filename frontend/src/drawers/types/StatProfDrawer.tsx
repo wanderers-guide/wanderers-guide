@@ -39,7 +39,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { VariableBool, VariableProf } from '@typing/variables';
+import { StoreID, VariableBool, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
@@ -57,8 +57,8 @@ import * as _ from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { titleCase } from 'title-case';
 
-export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?: boolean } }) {
-  const variable = getVariable<VariableProf>('CHARACTER', props.data.variableName);
+export function StatProfDrawerTitle(props: { data: { id: StoreID; variableName: string; isDC?: boolean } }) {
+  const variable = getVariable<VariableProf>(props.data.id, props.data.variableName);
 
   return (
     <>
@@ -78,16 +78,16 @@ export function StatProfDrawerTitle(props: { data: { variableName: string; isDC?
   );
 }
 
-export function StatProfDrawerContent(props: { data: { variableName: string; isDC?: boolean } }) {
-  const variable = getVariable<VariableProf>('CHARACTER', props.data.variableName);
+export function StatProfDrawerContent(props: { data: { id: StoreID; variableName: string; isDC?: boolean } }) {
+  const variable = getVariable<VariableProf>(props.data.id, props.data.variableName);
   if (!variable) return null;
 
   // Breakdown
-  const parts = getProfValueParts('CHARACTER', variable.name)!;
+  const parts = getProfValueParts(props.data.id, variable.name)!;
 
   // Timeline
-  const history = getVariableHistory('CHARACTER', variable.name);
-  const bonuses = getVariableBonuses('CHARACTER', variable.name);
+  const history = getVariableHistory(props.data.id, variable.name);
+  const bonuses = getVariableBonuses(props.data.id, variable.name);
 
   let timeline: {
     type: 'BONUS' | 'ADJUSTMENT';
@@ -124,7 +124,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' store='CHARACTER'>
+            <RichText ta='justify' store={props.data.id}>
               {getProfDescription(props.data.variableName)}
             </RichText>
           </Accordion.Panel>
@@ -144,7 +144,7 @@ export function StatProfDrawerContent(props: { data: { variableName: string; isD
             <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
             <Accordion.Panel>
               <Group gap={8} align='center'>
-                {displayFinalProfValue('CHARACTER', variable.name, props.data.isDC)} = {props.data.isDC && <>10 + </>}
+                {displayFinalProfValue(props.data.id, variable.name, props.data.isDC)} = {props.data.isDC && <>10 + </>}
                 <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                   <HoverCard.Target>
                     <Kbd style={{ cursor: 'pointer' }}>{parts.profValue}</Kbd>

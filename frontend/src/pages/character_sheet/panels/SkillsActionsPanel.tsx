@@ -329,7 +329,7 @@ export default function SkillsActionsPanel(props: {
                   onClick={() => {
                     openDrawer({
                       type: 'stat-prof',
-                      data: { variableName: skill.name },
+                      data: { id: 'CHARACTER', variableName: skill.name },
                     });
                   }}
                 >

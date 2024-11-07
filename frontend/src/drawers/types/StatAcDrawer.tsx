@@ -4,15 +4,20 @@ import { getAcParts } from '@items/armor-handler';
 import { getBestArmor } from '@items/inv-utils';
 import { Title, Text, Group, Divider, Box, Accordion, Kbd, HoverCard, List, Button } from '@mantine/core';
 import { IconBlockquote, IconMathSymbols } from '@tabler/icons-react';
-import { InventoryItem } from '@typing/content';
+import { Inventory, InventoryItem, LivingEntity } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { getFinalAcValue, getVariableBreakdown } from '@variables/variable-display';
 import * as _ from 'lodash-es';
 import { useRecoilValue } from 'recoil';
 
-export function StatAcDrawerTitle(props: { data: { onViewItem?: (invItem: InventoryItem) => void } }) {
-  const character = useRecoilValue(characterState);
-  const bestArmor = getBestArmor('CHARACTER', character?.inventory);
+export function StatAcDrawerTitle(props: {
+  data: { id: StoreID; inventory?: Inventory; onViewItem?: (invItem: InventoryItem) => void };
+}) {
+  const _character = useRecoilValue(characterState);
+  const inventory = props.data.inventory ?? _character?.inventory;
+
+  const bestArmor = getBestArmor(props.data.id, inventory);
 
   const itemName = bestArmor?.item.name ?? 'Unarmored';
 
@@ -45,14 +50,16 @@ export function StatAcDrawerTitle(props: { data: { onViewItem?: (invItem: Invent
   );
 }
 
-export function StatAcDrawerContent(props: { data: {} }) {
-  const character = useRecoilValue(characterState);
-  const bestArmor = getBestArmor('CHARACTER', character?.inventory);
+export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: Inventory } }) {
+  const _character = useRecoilValue(characterState);
+  const inventory = props.data.inventory ?? _character?.inventory;
 
-  const parts = getAcParts('CHARACTER', bestArmor?.item);
+  const bestArmor = getBestArmor(props.data.id, inventory);
+
+  const parts = getAcParts(props.data.id, bestArmor?.item);
   const armorName = bestArmor?.item.name ?? 'nothing';
 
-  const acBonusParts = getVariableBreakdown('CHARACTER', 'AC_BONUS')!;
+  const acBonusParts = getVariableBreakdown(props.data.id, 'AC_BONUS')!;
 
   return (
     <Box>
@@ -60,7 +67,7 @@ export function StatAcDrawerContent(props: { data: {} }) {
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>
-            <RichText ta='justify' store='CHARACTER'>
+            <RichText ta='justify' store={props.data.id}>
               Armor Class represents how difficult this individual is to hit and damage in combat. This metric is the
               combination of their ability to dodge, their natural toughness, and the protection provided by their
               armor.
@@ -72,7 +79,7 @@ export function StatAcDrawerContent(props: { data: {} }) {
           <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
           <Accordion.Panel>
             <Group gap={8} align='center'>
-              {getFinalAcValue('CHARACTER', bestArmor?.item)} ={' '}
+              {getFinalAcValue(props.data.id, bestArmor?.item)} ={' '}
               <>
                 <>10 + </>
                 <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>

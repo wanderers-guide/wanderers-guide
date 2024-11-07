@@ -40,7 +40,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { VariableNum, VariableProf } from '@typing/variables';
+import { StoreID, VariableNum, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import {
@@ -63,8 +63,8 @@ import * as _ from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 
-export function StatSpeedDrawerTitle(props: { data: {} }) {
-  const speedVars = getAllSpeedVariables('CHARACTER');
+export function StatSpeedDrawerTitle(props: { data: { id: StoreID } }) {
+  const speedVars = getAllSpeedVariables(props.data.id);
 
   return (
     <>
@@ -81,14 +81,14 @@ export function StatSpeedDrawerTitle(props: { data: {} }) {
   );
 }
 
-export function StatSpeedDrawerContent(props: { data: {} }) {
-  const speedVars = getAllSpeedVariables('CHARACTER');
+export function StatSpeedDrawerContent(props: { data: { id: StoreID } }) {
+  const speedVars = getAllSpeedVariables(props.data.id);
 
   const [speedSectionValue, setSpeedSectionValue] = useState<string | null>(null);
 
   return (
     <>
-      <RichText ta='justify' store='CHARACTER' pb={10}>
+      <RichText ta='justify' store={props.data.id} pb={10}>
         Speed is the distance an individual can move using a single action, measured in feet. There are various kinds of
         speeds, allowing one to easily fly, swim, or dig, but the most common speed is for walking normally. Penalties
         to a speed can decrease it to a minimum of 5 feet.
@@ -114,7 +114,12 @@ export function StatSpeedDrawerContent(props: { data: {} }) {
           }}
         >
           {speedVars.map((variable, index) => (
-            <StatSpeedSection variable={variable} key={index} opened={speedSectionValue === variable.name} />
+            <StatSpeedSection
+              id={props.data.id}
+              variable={variable}
+              key={index}
+              opened={speedSectionValue === variable.name}
+            />
           ))}
         </Accordion>
       )}
@@ -122,12 +127,12 @@ export function StatSpeedDrawerContent(props: { data: {} }) {
   );
 }
 
-function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
+function StatSpeedSection(props: { id: StoreID; variable: VariableNum; opened?: boolean }) {
   const variable = props.variable;
 
   // Breakdown
-  const finalData = getFinalVariableValue('CHARACTER', variable.name);
-  const breakdown = getVariableBreakdown('CHARACTER', variable.name);
+  const finalData = getFinalVariableValue(props.id, variable.name);
+  const breakdown = getVariableBreakdown(props.id, variable.name);
 
   // Minimum speed is 5
   const finalTotal = finalData.total > 5 ? finalData.total : 5;
@@ -137,8 +142,8 @@ function StatSpeedSection(props: { variable: VariableNum; opened?: boolean }) {
   }
 
   // Timeline
-  const history = getVariableHistory('CHARACTER', variable.name);
-  const bonuses = getVariableBonuses('CHARACTER', variable.name);
+  const history = getVariableHistory(props.id, variable.name);
+  const bonuses = getVariableBonuses(props.id, variable.name);
 
   let timeline: {
     type: 'BONUS' | 'ADJUSTMENT';

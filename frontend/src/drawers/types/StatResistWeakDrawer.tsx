@@ -1,11 +1,11 @@
 import RichText from '@common/RichText';
 import { Title, Text, Group, Stack, Box, Badge, Accordion, List } from '@mantine/core';
-import { VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr } from '@typing/variables';
 import { displayResistWeak, getResistWeaks } from '@utils/resist-weaks';
 import { getVariable } from '@variables/variable-manager';
 import * as _ from 'lodash-es';
 
-export function StatResistWeakDrawerTitle(props: { data: {} }) {
+export function StatResistWeakDrawerTitle(props: { data: { id: StoreID } }) {
   return (
     <>
       {
@@ -21,10 +21,10 @@ export function StatResistWeakDrawerTitle(props: { data: {} }) {
   );
 }
 
-export function StatResistWeakDrawerContent(props: { data: {} }) {
-  const resists = getResistWeaks('CHARACTER', 'RESISTANCES');
-  const weaks = getResistWeaks('CHARACTER', 'WEAKNESSES');
-  const immuneVar = getVariable<VariableListStr>('CHARACTER', 'IMMUNITIES');
+export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
+  const resists = getResistWeaks(props.data.id, 'RESISTANCES');
+  const weaks = getResistWeaks(props.data.id, 'WEAKNESSES');
+  const immuneVar = getVariable<VariableListStr>(props.data.id, 'IMMUNITIES');
 
   return (
     <>
@@ -58,7 +58,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <RichText ta='justify' store='CHARACTER'>
+                <RichText ta='justify' store={props.data.id}>
                   {`If you have resistance to a type of damage, each time you take that type of damage, reduce the amount
                   of damage you take by the listed number (to a minimum of 0 damage). \n\n If you have more than one type of
                   resistance that would apply to the same instance of damage, use only the highest applicable resistance
@@ -127,7 +127,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <RichText ta='justify' store='CHARACTER'>
+                <RichText ta='justify' store={props.data.id}>
                   {`If you have a weakness to a certain type of damage or damage from a certain source, that type of
                   damage is extra effective against you. Whenever you would take that type of damage, increase the
                   damage you take by the value of the weakness. For instance, if you are dealt 2d6 fire damage and have
@@ -198,7 +198,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                 </Group>
               </Accordion.Control>
               <Accordion.Panel>
-                <RichText ta='justify' store='CHARACTER'>
+                <RichText ta='justify' store={props.data.id}>
                   {`When you have immunity to a specific type of damage, you ignore all damage of that type. If you have
                   immunity to a specific condition or type of effect, you can't be affected by that condition or any
                   effect of that type. You can still be targeted by an ability that includes an effect or condition you
@@ -230,7 +230,7 @@ export function StatResistWeakDrawerContent(props: { data: {} }) {
                   {immuneVar?.value.map((opt, index) => (
                     <List.Item key={index}>
                       <Text c='gray.5' size='md' span>
-                        {displayResistWeak('CHARACTER', opt)}
+                        {displayResistWeak(props.data.id, opt)}
                       </Text>
                     </List.Item>
                   ))}

@@ -612,7 +612,7 @@ function InvItemSections(props: {
           onClick={() => {
             openDrawer({
               type: 'stat-weapon',
-              data: { item: props.invItem.item },
+              data: { id: 'CHARACTER', item: props.invItem.item },
               extra: { addToHistory: true },
             });
           }}

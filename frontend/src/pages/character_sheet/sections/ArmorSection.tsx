@@ -41,7 +41,7 @@ export default function ArmorSection(props: {
   const handleSaveOpen = (save: VariableProf) => {
     openDrawer({
       type: 'stat-prof',
-      data: { variableName: save.name },
+      data: { id: props.id, variableName: save.name },
       extra: { addToHistory: true },
     });
   };
@@ -72,6 +72,8 @@ export default function ArmorSection(props: {
                 openDrawer({
                   type: 'stat-ac',
                   data: {
+                    id: props.id,
+                    inventory: props.inventory,
                     onViewItem: (invItem: InventoryItem) => {
                       openDrawer({
                         type: 'inv-item',

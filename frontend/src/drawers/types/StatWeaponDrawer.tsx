@@ -2,9 +2,10 @@ import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { Accordion, Box, Divider, Group, HoverCard, Kbd, Text, Title, useMantineTheme } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
 import { Item } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 
-export function StatWeaponDrawerTitle(props: { data: { item: Item } }) {
+export function StatWeaponDrawerTitle(props: { data: { id: StoreID; item: Item } }) {
   return (
     <>
       {
@@ -21,8 +22,8 @@ export function StatWeaponDrawerTitle(props: { data: { item: Item } }) {
   );
 }
 
-export function StatWeaponDrawerContent(props: { data: { item: Item } }) {
-  const stats = getWeaponStats('CHARACTER', props.data.item);
+export function StatWeaponDrawerContent(props: { data: { id: StoreID; item: Item } }) {
+  const stats = getWeaponStats(props.data.id, props.data.item);
   const theme = useMantineTheme();
 
   return (

@@ -26,7 +26,7 @@ function PerceptionSection(props: { id: StoreID }) {
       onClick={() => {
         openDrawer({
           type: 'stat-perception',
-          data: {},
+          data: { id: props.id },
           extra: { addToHistory: true },
         });
       }}
@@ -67,7 +67,7 @@ function SpeedSection(props: { id: StoreID }) {
       onClick={() => {
         openDrawer({
           type: 'stat-speed',
-          data: {},
+          data: { id: props.id },
           extra: { addToHistory: true },
         });
       }}
@@ -112,7 +112,7 @@ function ClassDcSection(props: { id: StoreID }) {
       onClick={() => {
         openDrawer({
           type: 'stat-prof',
-          data: { variableName: 'CLASS_DC', isDC: true },
+          data: { id: props.id, variableName: 'CLASS_DC', isDC: true },
           extra: { addToHistory: true },
         });
       }}

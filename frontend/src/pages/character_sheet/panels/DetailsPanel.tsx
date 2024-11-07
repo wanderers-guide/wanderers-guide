@@ -423,7 +423,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SIMPLE_WEAPONS' },
+                          data: { id: 'CHARACTER', variableName: 'SIMPLE_WEAPONS' },
                         });
                       }}
                     >
@@ -442,7 +442,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'MARTIAL_WEAPONS' },
+                          data: { id: 'CHARACTER', variableName: 'MARTIAL_WEAPONS' },
                         });
                       }}
                     >
@@ -461,7 +461,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'ADVANCED_WEAPONS' },
+                          data: { id: 'CHARACTER', variableName: 'ADVANCED_WEAPONS' },
                         });
                       }}
                     >
@@ -480,7 +480,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'UNARMED_ATTACKS' },
+                          data: { id: 'CHARACTER', variableName: 'UNARMED_ATTACKS' },
                         });
                       }}
                     >
@@ -510,7 +510,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'LIGHT_ARMOR' },
+                          data: { id: 'CHARACTER', variableName: 'LIGHT_ARMOR' },
                         });
                       }}
                     >
@@ -529,7 +529,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'MEDIUM_ARMOR' },
+                          data: { id: 'CHARACTER', variableName: 'MEDIUM_ARMOR' },
                         });
                       }}
                     >
@@ -548,7 +548,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'HEAVY_ARMOR' },
+                          data: { id: 'CHARACTER', variableName: 'HEAVY_ARMOR' },
                         });
                       }}
                     >
@@ -567,7 +567,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'UNARMORED_DEFENSE' },
+                          data: { id: 'CHARACTER', variableName: 'UNARMORED_DEFENSE' },
                         });
                       }}
                     >
@@ -597,7 +597,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SPELL_ATTACK' },
+                          data: { id: 'CHARACTER', variableName: 'SPELL_ATTACK' },
                         });
                       }}
                     >
@@ -617,7 +617,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                       onClick={() => {
                         openDrawer({
                           type: 'stat-prof',
-                          data: { variableName: 'SPELL_DC', isDC: true },
+                          data: { id: 'CHARACTER', variableName: 'SPELL_DC', isDC: true },
                         });
                       }}
                     >
@@ -652,7 +652,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: weapon.name },
+                              data: { id: 'CHARACTER', variableName: weapon.name },
                             });
                           }}
                         >
@@ -685,7 +685,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: weapon.name },
+                              data: { id: 'CHARACTER', variableName: weapon.name },
                             });
                           }}
                         >
@@ -719,7 +719,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: armor.name },
+                              data: { id: 'CHARACTER', variableName: armor.name },
                             });
                           }}
                         >
@@ -752,7 +752,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                           onClick={() => {
                             openDrawer({
                               type: 'stat-prof',
-                              data: { variableName: armor.name },
+                              data: { id: 'CHARACTER', variableName: armor.name },
                             });
                           }}
                         >
@@ -775,7 +775,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { variableName: 'CLASS_DC', isDC: true },
+                    data: { id: 'CHARACTER', variableName: 'CLASS_DC', isDC: true },
                   });
                 }}
               >

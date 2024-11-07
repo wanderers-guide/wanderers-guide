@@ -130,7 +130,7 @@ export default function FocusSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { variableName: 'SPELL_ATTACK' },
+                    data: { id: 'CHARACTER', variableName: 'SPELL_ATTACK' },
                   });
                 }}
               >
@@ -148,7 +148,7 @@ export default function FocusSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { variableName: 'SPELL_DC', isDC: true },
+                    data: { id: 'CHARACTER', variableName: 'SPELL_DC', isDC: true },
                   });
                 }}
               >

@@ -31,7 +31,7 @@ export default function AttributeSection(props: {
   ];
 
   const handleAttributeOpen = (attribute: string) => {
-    openDrawer({ type: 'stat-attr', data: { attributeName: attribute }, extra: { addToHistory: true } });
+    openDrawer({ type: 'stat-attr', data: { id: props.id, attributeName: attribute }, extra: { addToHistory: true } });
   };
 
   return (
