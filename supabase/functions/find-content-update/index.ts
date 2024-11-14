@@ -14,11 +14,8 @@ serve(async (req: Request) => {
     let results: ContentUpdate[] = await fetchData<ContentUpdate>(client, 'content_update', [
       { column: 'id', value: id },
       { column: 'user_id', value: user_id },
+      { column: 'status->>state', value: state },
     ]);
-
-    if (state) {
-      results = results.filter((update) => update.status.state === state);
-    }
 
     const data =
       id === undefined || Array.isArray(id) ? results : results.length > 0 ? results[0] : null;
