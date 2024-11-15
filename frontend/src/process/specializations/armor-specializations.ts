@@ -21,6 +21,10 @@ const PATHFINDER_SPECIALIZATIONS = [
 ];
 
 const STARFINDER_SPECIALIZATIONS = [
+  // {
+  //   name: 'Cloth',
+  //   description: ``,
+  // },
   {
     name: 'Ceramic',
     description: `This tough, light-weight plating is common on spacesuits. It resists heat and other environmental hazards. You gain resistance to acid, cold, fire, and electricity damage equal to 1 + the armor’s resilience value for medium armor, or 2 + the armor’s resilience value for heavy armor.`,

@@ -654,6 +654,7 @@ export function CreateItemModal(props: {
                                 { value: 'chain', label: 'Chain' },
                                 { value: 'plate', label: 'Plate' },
                                 // Starfinder armor groups
+                                { value: 'cloth', label: 'Cloth' },
                                 { value: 'ceramic', label: 'Ceramic' },
                                 { value: 'polymer', label: 'Polymer' },
                               ]}
