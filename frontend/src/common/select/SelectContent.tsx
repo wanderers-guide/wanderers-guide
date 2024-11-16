@@ -308,6 +308,7 @@ export default function SelectContentModal({
     filterFn?: (option: Record<string, any>) => boolean;
     showButton?: boolean;
     includeOptions?: boolean;
+    zIndex?: number;
   };
 }>) {
   const [openedDrawer, setOpenedDrawer] = useState(false);
@@ -473,11 +474,13 @@ export default function SelectContentModal({
           {innerProps.options?.filterOptions && (
             <Popover
               width={200}
+              withinPortal
               position='bottom'
               withArrow
               shadow='md'
               opened={openedFilters}
               closeOnClickOutside={false}
+              zIndex={(innerProps.options?.zIndex ?? 499) + 1}
             >
               <Popover.Target>
                 <Indicator
@@ -524,6 +527,9 @@ export default function SelectContentModal({
                             updateFilterSelection(option.key, { filter: option, value });
                           }}
                           value={filterSelections[option.key]?.value ?? []}
+                          comboboxProps={{
+                            zIndex: (innerProps.options?.zIndex ?? 499) + 1,
+                          }}
                         />
                       )}
                       {option.type === 'CHECKBOX' && (
