@@ -211,6 +211,7 @@ interface InventoryItem {
   is_formula: boolean;
   is_equipped: boolean;
   is_invested: boolean;
+  is_implanted: boolean;
   container_contents: InventoryItem[];
 }
 interface Inventory {

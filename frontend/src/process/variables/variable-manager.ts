@@ -242,6 +242,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   BULK_LIMIT_BONUS: newVariable('num', 'BULK_LIMIT_BONUS'),
   INVEST_LIMIT_BONUS: newVariable('num', 'INVEST_LIMIT_BONUS'),
+  IMPLANT_LIMIT_BONUS: newVariable('num', 'IMPLANT_LIMIT_BONUS'),
 
   // Injected Selection Options
   INJECT_SELECT_OPTIONS: newVariable('list-str', 'INJECT_SELECT_OPTIONS'), // Hidden

@@ -21,10 +21,12 @@ import {
   handleUpdateItem,
   isItemContainer,
   isItemEquippable,
+  isItemImplantable,
   isItemInvestable,
   isItemWeapon,
   isItemWithQuantity,
   labelizeBulk,
+  reachedImplantLimit,
   reachedInvestedLimit,
 } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
@@ -272,7 +274,14 @@ export default function InventoryPanel(props: {
                             }}
                             onInvest={(invItem) => {
                               const newInvItem = _.cloneDeep(invItem);
-                              newInvItem.is_invested = !newInvItem.is_invested;
+
+                              if (isItemInvestable(newInvItem.item)) {
+                                newInvItem.is_invested = !newInvItem.is_invested;
+                              }
+                              if (isItemImplantable(newInvItem.item)) {
+                                newInvItem.is_implanted = !newInvItem.is_implanted;
+                              }
+
                               handleUpdateItem(props.setInventory, newInvItem);
                             }}
                             onViewItem={() => {
@@ -333,7 +342,14 @@ export default function InventoryPanel(props: {
                                 }}
                                 onInvest={(invItem) => {
                                   const newInvItem = _.cloneDeep(invItem);
-                                  newInvItem.is_invested = !newInvItem.is_invested;
+
+                                  if (isItemInvestable(newInvItem.item)) {
+                                    newInvItem.is_invested = !newInvItem.is_invested;
+                                  }
+                                  if (isItemImplantable(newInvItem.item)) {
+                                    newInvItem.is_implanted = !newInvItem.is_implanted;
+                                  }
+
                                   handleUpdateItem(props.setInventory, newInvItem);
                                 }}
                               />
@@ -381,7 +397,14 @@ export default function InventoryPanel(props: {
                           }}
                           onInvest={(invItem) => {
                             const newInvItem = _.cloneDeep(invItem);
-                            newInvItem.is_invested = !newInvItem.is_invested;
+
+                            if (isItemInvestable(newInvItem.item)) {
+                              newInvItem.is_invested = !newInvItem.is_invested;
+                            }
+                            if (isItemImplantable(newInvItem.item)) {
+                              newInvItem.is_implanted = !newInvItem.is_implanted;
+                            }
+
                             handleUpdateItem(props.setInventory, newInvItem);
                           }}
                         />
@@ -608,6 +631,22 @@ function InvItemOption(props: {
               w={80}
             >
               {props.invItem.is_invested ? 'Divest' : 'Invest'}
+            </Button>
+          )}
+          {isItemImplantable(props.invItem.item) && (
+            <Button
+              size='compact-xs'
+              variant={props.invItem.is_implanted ? 'subtle' : 'outline'}
+              color={props.invItem.is_implanted ? 'gray.7' : undefined}
+              disabled={!props.invItem.is_implanted && reachedImplantLimit('CHARACTER', character?.inventory)}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                props.onInvest?.(props.invItem);
+              }}
+              w={80}
+            >
+              {props.invItem.is_implanted ? 'Extract' : 'Implant'}
             </Button>
           )}
           {isItemEquippable(props.invItem.item) && (

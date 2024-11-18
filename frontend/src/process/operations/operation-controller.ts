@@ -29,7 +29,13 @@ import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
 import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
-import { getFlatInvItems, getItemOperations, isItemEquippable, isItemInvestable } from '@items/inv-utils';
+import {
+  getFlatInvItems,
+  getItemOperations,
+  isItemEquippable,
+  isItemImplantable,
+  isItemInvestable,
+} from '@items/inv-utils';
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 
@@ -430,6 +436,10 @@ export async function executeCharacterOperations(
       if (isItemInvestable(invItem.item) && !invItem.is_invested) {
         continue;
       }
+      // If item can be implanted, only run operations if it is
+      if (isItemImplantable(invItem.item) && !invItem.is_implanted) {
+        continue;
+      }
       // If item can be equipped, only run operations if it is
       if (isItemEquippable(invItem.item) && !invItem.is_equipped) {
         continue;
@@ -564,6 +574,10 @@ export async function executeCreatureOperations(
     for (const invItem of creature.inventory ? getFlatInvItems(creature.inventory) : []) {
       // If item can be invested, only run operations if it is
       if (isItemInvestable(invItem.item) && !invItem.is_invested) {
+        continue;
+      }
+      // If item can be implanted, only run operations if it is
+      if (isItemImplantable(invItem.item) && !invItem.is_implanted) {
         continue;
       }
       // If item can be equipped, only run operations if it is

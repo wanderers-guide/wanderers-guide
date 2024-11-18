@@ -106,6 +106,7 @@ export const handleAddItem = async (
         is_formula: is_formula,
         is_equipped: false,
         is_invested: false,
+        is_implanted: false,
         container_contents,
       },
     ].sort((a, b) => a.item.name.localeCompare(b.item.name));
@@ -140,6 +141,7 @@ async function getDefaultContainerContents(item: Item, allItems?: Item[], count 
       is_formula: false,
       is_equipped: false,
       is_invested: false,
+      is_implanted: false,
       container_contents: await getDefaultContainerContents(containerItem, items, count++),
     });
   }
@@ -283,6 +285,7 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
           is_formula: false,
           is_equipped: isItemEquippable(item),
           is_invested: isItemInvestable(item),
+          is_implanted: isItemImplantable(item),
           container_contents: await getDefaultContainerContents(item, items),
         });
       }
@@ -697,6 +700,15 @@ export function isItemInvestable(item: Item) {
 }
 
 /**
+ * Utility function to determine if an item is implantable
+ * @param item - Item
+ * @returns - Whether the item is implantable
+ */
+export function isItemImplantable(item: Item) {
+  return hasTraitType('AUGMENTATION', item.traits);
+}
+
+/**
  * Utility function to determine if an item is equippable
  * @param item - Item
  * @returns - Whether the item is equippable
@@ -915,6 +927,20 @@ export function reachedInvestedLimit(id: StoreID, inv?: Inventory) {
 
 export function getInvestedLimit(id: StoreID) {
   return 10 + getFinalVariableValue(id, 'INVEST_LIMIT_BONUS').total;
+}
+
+export function reachedImplantLimit(id: StoreID, inv?: Inventory) {
+  if (!inv) {
+    return false;
+  }
+  const invItems = getFlatInvItems(inv);
+  const implantedItems = invItems.filter((item) => item.is_implanted);
+  return implantedItems.length >= getImplantLimit(id);
+}
+
+export function getImplantLimit(id: StoreID) {
+  const conMod = getFinalVariableValue(id, 'ATTRIBUTE_CON').total;
+  return 1 + conMod + getFinalVariableValue(id, 'IMPLANT_LIMIT_BONUS').total;
 }
 
 /**

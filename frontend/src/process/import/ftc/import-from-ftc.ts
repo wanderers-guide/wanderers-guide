@@ -2,7 +2,7 @@ import { generateNames } from '@ai/fantasygen-dev/name-controller';
 import { randomCharacterInfo } from '@ai/open-ai-handler';
 import { getConditionByName } from '@conditions/condition-handler';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
-import { isItemEquippable, isItemInvestable } from '@items/inv-utils';
+import { isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
@@ -285,6 +285,7 @@ export async function importFromFTC(d: FTC) {
           is_formula: false,
           is_equipped: isItemEquippable(found) ? true : false,
           is_invested: isItemInvestable(found) ? true : false,
+          is_implanted: isItemImplantable(found) ? true : false,
           container_contents: [],
         });
       }

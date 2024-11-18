@@ -528,7 +528,7 @@ export default function SelectContentModal({
                           }}
                           value={filterSelections[option.key]?.value ?? []}
                           comboboxProps={{
-                            zIndex: (innerProps.options?.zIndex ?? 499) + 1,
+                            zIndex: (innerProps.options?.zIndex ?? 499) + 2,
                           }}
                         />
                       )}
