@@ -20,6 +20,7 @@ import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
+import { useMemo } from 'react';
 
 export default function FocusSpellsList(props: {
   index: string;
@@ -52,12 +53,20 @@ export default function FocusSpellsList(props: {
   const { castSpell, spells, character, setCharacter } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Finds all the character's focus spells, regardless of source
+  const allFocusSpells = useMemo(() => {
+    return props.extra.charData.focus
+      .filter((f) => props.extra.charData.sources.map((s) => s.name).includes(f.source))
+      .map((f) => props.allSpells.find((s) => s.id === f.spell_id))
+      .filter((f) => f) as Spell[];
+  }, [props.extra.charData, props.allSpells]);
+
   // If there are no spells to display, and there are filters, return null
   if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
     return null;
   }
 
-  const focusPoints = getFocusPoints('CHARACTER', character, _.flatMap(spells));
+  const focusPoints = getFocusPoints('CHARACTER', character, allFocusSpells);
 
   const spellStats = getSpellStats('CHARACTER', null, props.source!.tradition, props.source!.attribute);
 
