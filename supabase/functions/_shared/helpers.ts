@@ -328,49 +328,66 @@ export async function fetchData<T = Record<string, any>>(
   tableName: TableName,
   filters: SelectFilter[]
 ) {
-  let query = client.from(tableName).select();
-  for (const filter of filters) {
-    // TODO, why did this exist? It breaks viewing homebrew content
-    // if (
-    //   filter.column === 'content_source_id' &&
-    //   ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
-    // ) {
-    //   // Limit it to only official published books
-    //   const sources = await fetchData<ContentSource>(client, 'content_source', [
-    //     { column: 'user_id', value: null },
-    //     { column: 'is_published', value: true },
-    //   ]);
-    //   query = query.in(
-    //     'content_source_id',
-    //     sources.map((s) => s.id)
-    //   );
-    //   continue;
-    // }
-    if (filter.value === undefined) continue;
+  // Paginate through fetching rows, as there's a limit of rows per query
+  const CHUNK_SIZE = 5000;
+  let offset = 0;
+  let allRows: T[] = [];
+  let hasMore = true;
 
-    if (Array.isArray(filter.value)) {
-      if (filter.value.length === 0) continue;
-      if (filter.options?.arrayContains) {
-        query = query.contains(filter.column, filter.value);
-      } else {
-        query = query.in(filter.column, filter.value);
-      }
-    } else {
-      if (filter.options?.ignoreCase) {
-        query = query.ilike(filter.column, `${filter.value}`);
-      } else {
-        if (filter.value === null) {
-          query = query.is(filter.column, filter.value);
+  while (hasMore) {
+    let query = client.from(tableName).select();
+    for (const filter of filters) {
+      // TODO, why did this exist? It breaks viewing homebrew content
+      // if (
+      //   filter.column === 'content_source_id' &&
+      //   ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
+      // ) {
+      //   // Limit it to only official published books
+      //   const sources = await fetchData<ContentSource>(client, 'content_source', [
+      //     { column: 'user_id', value: null },
+      //     { column: 'is_published', value: true },
+      //   ]);
+      //   query = query.in(
+      //     'content_source_id',
+      //     sources.map((s) => s.id)
+      //   );
+      //   continue;
+      // }
+      if (filter.value === undefined) continue;
+
+      if (Array.isArray(filter.value)) {
+        if (filter.value.length === 0) continue;
+        if (filter.options?.arrayContains) {
+          query = query.contains(filter.column, filter.value);
         } else {
-          query = query.eq(filter.column, filter.value);
+          query = query.in(filter.column, filter.value);
+        }
+      } else {
+        if (filter.options?.ignoreCase) {
+          query = query.ilike(filter.column, `${filter.value}`);
+        } else {
+          if (filter.value === null) {
+            query = query.is(filter.column, filter.value);
+          } else {
+            query = query.eq(filter.column, filter.value);
+          }
         }
       }
     }
-  }
-  const { data, error } = await query;
-  if (error) throw error;
 
-  return data as T[];
+    const { data, error } = await query.range(offset, offset + CHUNK_SIZE - 1);
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      allRows = allRows.concat(data);
+      offset += CHUNK_SIZE;
+    }
+
+    // Check if we've fetched all rows
+    hasMore = data.length === CHUNK_SIZE;
+  }
+
+  return allRows;
 }
 
 export async function upsertData<T = Record<string, any>>(
