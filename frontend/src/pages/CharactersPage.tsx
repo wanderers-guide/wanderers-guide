@@ -298,9 +298,11 @@ export function Component() {
               }}
             />
           )}
-          {(characters ?? []).map((character, index) => (
-            <CharacterCard key={index} character={character} reachedCharacterLimit={reachedCharacterLimit} />
-          ))}
+          {(characters ?? [])
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((character, index) => (
+              <CharacterCard key={index} character={character} reachedCharacterLimit={reachedCharacterLimit} />
+            ))}
           {!isLoading && (characters ?? []).length === 0 && (
             <BlurBox w={'100%'} h={200}>
               <Stack mt={50} gap={10}>
