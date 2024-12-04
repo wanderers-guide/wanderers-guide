@@ -255,56 +255,58 @@ export function InvItemDrawerContent(props: {
           <Group wrap='nowrap' gap={15} ml={0}>
             {invItem.item.meta_data?.charges?.max && (
               <Box mb={-10}>
-                <TokenSelect
-                  count={invItem.item.meta_data.charges.max}
-                  value={invItem.item.meta_data.charges.current ?? 0}
-                  onChange={(val) =>
-                    onItemUpdate({
-                      ...invItem,
-                      item: {
-                        ...invItem.item,
-                        meta_data: {
-                          ...invItem.item.meta_data!,
-                          charges: {
-                            ...invItem.item.meta_data?.charges,
-                            current: val,
+                <ScrollArea scrollbars='x' w={180}>
+                  <TokenSelect
+                    count={invItem.item.meta_data.charges.max}
+                    value={invItem.item.meta_data.charges.current ?? 0}
+                    onChange={(val) =>
+                      onItemUpdate({
+                        ...invItem,
+                        item: {
+                          ...invItem.item,
+                          meta_data: {
+                            ...invItem.item.meta_data!,
+                            charges: {
+                              ...invItem.item.meta_data?.charges,
+                              current: val,
+                            },
                           },
                         },
-                      },
-                    })
-                  }
-                  size='xs'
-                  emptySymbol={
-                    <ActionIcon
-                      variant='transparent'
-                      color='gray.1'
-                      aria-label='Item Charge, Unused'
-                      size='xs'
-                      style={{
-                        opacity: 0.7,
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                      }}
-                    >
-                      <IconSquareRounded size='1rem' />
-                    </ActionIcon>
-                  }
-                  fullSymbol={
-                    <ActionIcon
-                      variant='transparent'
-                      color='gray.1'
-                      aria-label='Item Charge, Exhuasted'
-                      size='xs'
-                      style={{
-                        opacity: 0.7,
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                      }}
-                    >
-                      <IconSquareRoundedFilled size='1rem' />
-                    </ActionIcon>
-                  }
-                />
+                      })
+                    }
+                    size='xs'
+                    emptySymbol={
+                      <ActionIcon
+                        variant='transparent'
+                        color='gray.1'
+                        aria-label='Item Charge, Unused'
+                        size='xs'
+                        style={{
+                          opacity: 0.7,
+                          backdropFilter: 'blur(12px)',
+                          WebkitBackdropFilter: 'blur(12px)',
+                        }}
+                      >
+                        <IconSquareRounded size='1rem' />
+                      </ActionIcon>
+                    }
+                    fullSymbol={
+                      <ActionIcon
+                        variant='transparent'
+                        color='gray.1'
+                        aria-label='Item Charge, Exhuasted'
+                        size='xs'
+                        style={{
+                          opacity: 0.7,
+                          backdropFilter: 'blur(12px)',
+                          WebkitBackdropFilter: 'blur(12px)',
+                        }}
+                      >
+                        <IconSquareRoundedFilled size='1rem' />
+                      </ActionIcon>
+                    }
+                  />
+                </ScrollArea>
               </Box>
             )}
           </Group>
