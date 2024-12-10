@@ -636,6 +636,33 @@ export async function executeCreatureOperations(
 
 function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {
   const merged = _.cloneDeep(normal);
+
+  // New search n fix, fixes `results` array with all nulls when the other doesn't
+  const recursiveUpdate = (obj: Record<string, any>, otherObj: Record<string, any>) => {
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const value = obj[key];
+        const otherValue = otherObj && typeof otherObj === 'object' ? otherObj[key] : null;
+        if (key === 'results' && Array.isArray(value) && Array.isArray(otherValue)) {
+          //console.log(`Key: ${key}`, value, otherValue);
+
+          const hasAllNull = value.every((v) => v === null);
+          const otherHasAllNull = otherValue.every((v) => v === null);
+
+          if (hasAllNull && !otherHasAllNull) {
+            obj[key] = otherValue;
+          }
+        }
+
+        if (typeof value === 'object' && value !== null) {
+          // If the value is an object or array, recurse
+          recursiveUpdate(value, otherValue);
+        }
+      }
+    }
+  };
+  recursiveUpdate(merged, conditional);
+
   // Merge simple arrays
   for (const [key, value] of Object.entries(_.cloneDeep(conditional))) {
     if (merged[key]) {
@@ -659,7 +686,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
         const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
         if (duplicate) {
           v.baseResults = _.mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
-            // Update is value is "null" or "undefined"
+            // Update if value is "null" or "undefined"
             if (objValue === null || objValue === undefined) {
               return srcValue;
             }
