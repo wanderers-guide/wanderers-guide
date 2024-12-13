@@ -1628,21 +1628,6 @@ CREATE POLICY "Enable read access for all users" ON public.versatile_heritage FO
 
 
 --
--- Name: character Enable select if admin, owned by self, or in campaign; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Enable select if admin, owned by self, or in campaign" ON public."character" FOR UPDATE TO authenticated USING (((EXISTS ( SELECT 1
-   FROM public.public_user
-  WHERE ((public_user.user_id = auth.uid()) AND public_user.is_admin))) OR (auth.uid() = user_id) OR (EXISTS ( SELECT 1
-   FROM public.campaign
-  WHERE ((campaign.id = "character".campaign_id) AND (campaign.user_id = auth.uid())))))) WITH CHECK (((EXISTS ( SELECT 1
-   FROM public.public_user
-  WHERE ((public_user.user_id = auth.uid()) AND public_user.is_admin))) OR (auth.uid() = user_id) OR (EXISTS ( SELECT 1
-   FROM public.campaign
-  WHERE ((campaign.id = "character".campaign_id) AND (campaign.user_id = auth.uid()))))));
-
-
---
 -- Name: character Enable select if admin, public, owned by self, or in campaign; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -1658,6 +1643,21 @@ CREATE POLICY "Enable select if admin, public, owned by self, or in campaign" ON
 --
 
 CREATE POLICY "Enable select, insert, update, and delete for owners only" ON public.encounter TO authenticated USING ((user_id = auth.uid()));
+
+
+--
+-- Name: character Enable update if admin, owned by self, or in campaign; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Enable update if admin, owned by self, or in campaign" ON public."character" FOR UPDATE TO authenticated USING (((EXISTS ( SELECT 1
+   FROM public.public_user
+  WHERE ((public_user.user_id = auth.uid()) AND public_user.is_admin))) OR (auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM public.campaign
+  WHERE ((campaign.id = "character".campaign_id) AND (campaign.user_id = auth.uid())))))) WITH CHECK (((EXISTS ( SELECT 1
+   FROM public.public_user
+  WHERE ((public_user.user_id = auth.uid()) AND public_user.is_admin))) OR (auth.uid() = user_id) OR (EXISTS ( SELECT 1
+   FROM public.campaign
+  WHERE ((campaign.id = "character".campaign_id) AND (campaign.user_id = auth.uid()))))));
 
 
 --
