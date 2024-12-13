@@ -827,9 +827,9 @@ export default function SettingsPanel(props: {
                       labels: { confirm: 'Yep, bye 👋', cancel: 'Cancel' },
                       onCancel: () => {},
                       onConfirm: async () => {
-                        await makeRequest('update-character', {
-                          id: player.id,
-                          campaign_id: null,
+                        await makeRequest('remove-from-campaign', {
+                          character_id: player.id,
+                          campaign_id: props.campaign.id,
                         });
                         window.location.reload();
                       },

@@ -44,6 +44,7 @@ export type RequestType =
   | 'find-campaign'
   | 'create-campaign'
   | 'reset-campaign-key'
+  | 'remove-from-campaign'
   | 'vector-db-populate-collection'
   | 'vector-db-query-collection';
 
