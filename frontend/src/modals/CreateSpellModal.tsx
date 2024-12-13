@@ -244,8 +244,18 @@ export function CreateSpellModal(props: {
                     { value: '10 minutes', label: '10 minutes' },
                     { value: '30 minutes', label: '30 minutes' },
                     { value: '1 hour', label: '1 hour' },
+                    { value: '2 hours', label: '2 hours' },
+                    { value: '4 hours', label: '4 hours' },
                     { value: '8 hours', label: '8 hours' },
                     { value: '24 hours', label: '24 hours' },
+                    { value: '2 days', label: '2 days' },
+                    { value: '3 days', label: '3 days' },
+                    { value: '4 days', label: '4 days' },
+                    { value: '5 days', label: '5 days' },
+                    { value: '6 days', label: '6 days' },
+                    { value: '7 days', label: '7 days' },
+                    { value: '8 days', label: '8 days' },
+                    { value: '9 days', label: '9 days' },
                   ]}
                   {...form.getInputProps('cast')}
                 />
