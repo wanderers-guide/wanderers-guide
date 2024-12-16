@@ -47,7 +47,7 @@ export default function RichText(props: RichTextProps) {
   const conditions = getAllConditions()
     .map((c) => c.name.toLowerCase())
     .filter((c) => !props.conditionBlacklist?.includes(c) && c !== 'persistent damage');
-  const conditionRegex = new RegExp(`\\b[^\[](${conditions.join('|')})[^\]]\\b`, 'g');
+  const conditionRegex = new RegExp(`(?<!\\[)\\b(${conditions.join('|')})\\b(?!\\])`, 'g');
   convertedChildren = convertedChildren?.replace(conditionRegex, (match) => {
     return `[${match}](link_condition_${match.replace(' ', '~')})`;
   });
