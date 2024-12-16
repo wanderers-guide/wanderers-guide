@@ -12,7 +12,7 @@ export async function updateSubscriptions(user: PublicUser | undefined | null, s
         { source_id: source.id, source_name: source.name, added_at: `${new Date().getTime()}` },
       ]
     : user.subscribed_content_sources?.filter((src) => src.source_id !== source?.id);
-  subscriptions = _.uniq(subscriptions);
+  subscriptions = _.uniqWith(subscriptions, _.isEqual);
 
   const sources = await fetchContentSources({ ids: subscriptions.map((s) => s.source_id) });
   subscriptions = subscriptions.filter((s) => sources.find((src) => src.id === s.source_id));

@@ -51,6 +51,13 @@ export default function DiceRoller(props: {
   diceType?: string;
   diceBonus?: number;
   diceLabel?: string;
+  injectedRolls?: {
+    type: string;
+    label: string;
+    result: number;
+    bonus: number;
+    timestamp: number;
+  }[];
 }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
@@ -98,7 +105,9 @@ export default function DiceRoller(props: {
   // Roll History //
 
   const rollHistoryViewport = useRef<HTMLDivElement>(null);
-  const [rollHistory, setRollHistory] = useState(_.cloneDeep(character?.roll_history?.rolls ?? []));
+  const [rollHistory, setRollHistory] = useState(
+    _.cloneDeep((character?.roll_history?.rolls ?? []).concat(props.injectedRolls ?? []))
+  );
   const groupedRolls = _.groupBy(
     rollHistory.map((r) => ({ ...r, group: `${r.label}~${r.timestamp}~${r.type}` })),
     (r) => r.group
@@ -120,6 +129,11 @@ export default function DiceRoller(props: {
   useEffect(() => {
     rollHistoryViewport.current?.scrollTo({ top: 0 });
   }, [rollHistory]);
+
+  // Update roll history when injected rolls change
+  useEffect(() => {
+    setRollHistory((prev) => _.uniqWith(prev.concat(props.injectedRolls ?? []), _.isEqual));
+  }, [props.injectedRolls]);
 
   const getRollHistory = () => {
     const getRollEntry = (

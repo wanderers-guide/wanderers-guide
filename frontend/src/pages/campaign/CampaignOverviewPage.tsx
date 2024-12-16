@@ -54,6 +54,7 @@ import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { useRecoilValue } from 'recoil';
 import D20Loader from '@assets/images/D20Loader';
+import _ from 'lodash';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -351,6 +352,14 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
             onClose={() => {
               setOpenedDiceRoller(false);
             }}
+            injectedRolls={(
+              characters?.map((c) => {
+                return _.cloneDeep(c.roll_history?.rolls ?? []).map((r) => ({
+                  ...r,
+                  label: `${c.name}${r.label ? `: ${r.label}` : ''}`,
+                }));
+              }) ?? []
+            ).flat()}
           />
         </Suspense>
       )}
