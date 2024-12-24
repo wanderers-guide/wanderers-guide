@@ -3,6 +3,7 @@ import { Accordion, Badge, Box, Group, Stack, Text } from '@mantine/core';
 import {
   CastingSource,
   Character,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -11,8 +12,14 @@ import {
 } from '@typing/content';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
+import { StoreID } from '@typing/variables';
+import { SetterOrUpdater } from 'recoil';
 
 export default function RitualSpellsList(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   source?: CastingSource;
   spellIds: number[];

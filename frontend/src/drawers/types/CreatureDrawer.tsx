@@ -1,6 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage } from '@content/content-store';
+import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
 import {
   Title,
@@ -13,15 +14,21 @@ import {
   Popover,
   SimpleGrid,
   Pill,
+  Text,
   useMantineTheme,
   Avatar,
+  HoverCard,
 } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
 import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
 import DetailsPanel from '@pages/character_sheet/panels/DetailsPanel';
 import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
+import NotesPanel from '@pages/character_sheet/panels/NotesPanel';
+import SkillsActionsPanel from '@pages/character_sheet/panels/SkillsActionsPanel';
+import SpellsPanel from '@pages/character_sheet/panels/SpellsPanel';
 import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
 import AttributeSection from '@pages/character_sheet/sections/AttributeSection';
 import EntityInfoSection from '@pages/character_sheet/sections/EntityInfoSection';
@@ -40,22 +47,30 @@ import {
   IconPaw,
   IconNotes,
   IconBlockquote,
+  IconAddressBook,
+  IconDualScreen,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Creature } from '@typing/content';
 import { OperationCharacterResultPackage, OperationCreatureResultPackage } from '@typing/operations';
-import { VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr } from '@typing/variables';
 import { convertToSetEntity } from '@utils/type-fixing';
-import { saveCalculatedStats } from '@variables/calculated-stats';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getAllAncestryTraitVariables, getVariable, setVariable } from '@variables/variable-manager';
 import _ from 'lodash';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const theme = useMantineTheme();
   const id = props.data.id;
+
+  const [drawerData, setDrawerData] = useLocalStorage<{ view: 'BLOCK' | 'SHEET' }>({
+    key: 'creature-drawer-view',
+    defaultValue: {
+      view: 'SHEET',
+    },
+  });
 
   const { data: _creature } = useQuery({
     queryKey: [`find-creature-${id}`, { id }],
@@ -92,8 +107,42 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
             <Box></Box>
           </Group>
           <Box>
-            <Button size='compact-sm'>View</Button>
-            {/* Sheet, Stat Block */}
+            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+              <HoverCard.Target>
+                {drawerData.view === 'BLOCK' ? (
+                  <ActionIcon
+                    variant='subtle'
+                    aria-label='Switch to Sheet View'
+                    size='xl'
+                    radius={'xl'}
+                    color='guide.6'
+                    onClick={() => {
+                      setDrawerData({ view: 'SHEET' });
+                    }}
+                  >
+                    <IconDualScreen style={{ width: '60%', height: '60%' }} stroke={1.5} />
+                  </ActionIcon>
+                ) : (
+                  <ActionIcon
+                    variant='subtle'
+                    aria-label='Switch to Stat Block View'
+                    size='xl'
+                    radius={'xl'}
+                    color='guide.6'
+                    onClick={() => {
+                      setDrawerData({ view: 'BLOCK' });
+                    }}
+                  >
+                    <IconListDetails style={{ width: '60%', height: '60%' }} stroke={1.5} />
+                  </ActionIcon>
+                )}
+              </HoverCard.Target>
+              <HoverCard.Dropdown py={5} px={10}>
+                <Text c='gray.0' size='sm'>
+                  {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
+                </Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
           </Box>
         </Group>
       )}
@@ -103,8 +152,16 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
 
 export function CreatureDrawerContent(props: {
   data: { id?: number; creature?: Creature; uuid?: string; showOperations?: boolean };
+  onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
+
+  const [drawerData, setDrawerData] = useLocalStorage<{ view: 'BLOCK' | 'SHEET' }>({
+    key: 'creature-drawer-view',
+    defaultValue: {
+      view: 'SHEET',
+    },
+  });
 
   const { data: content } = useQuery({
     queryKey: [`find-creature-details-${id}`, { id }],
@@ -128,11 +185,18 @@ export function CreatureDrawerContent(props: {
   const [creature, setCreature] = useState<Creature | null>(props.data.creature ?? null);
 
   const [openedSelectionPanel, setOpenedSelectionPanel] = useState(false);
-  const [activeTab, setActiveTab] = useState('main');
+  const [activeTab, setActiveTab] = useState(getMetadataOpenedDict().active_tab || 'main');
+
+  // Track active tab
+  useEffect(() => {
+    props.onMetadataChange?.({
+      active_tab: activeTab ?? '',
+    });
+  }, [activeTab]);
 
   // Panel dimensions
   const panelWidth = 400;
-  const panelHeight = 500;
+  const panelHeight = 650;
 
   // Variable store ID
   const STORE_ID = `CREATURE_${creature?.id}_${props.data.uuid}`;
@@ -204,160 +268,205 @@ export function CreatureDrawerContent(props: {
     );
   }
 
-  const languages = (getVariable<VariableListStr>(STORE_ID, 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
-    const lang = content.languages.find((lang) => `${lang.id}` === langId);
-    return lang;
-  });
-
-  const traits = getAllAncestryTraitVariables(STORE_ID).map((v) => {
-    const trait = content.traits.find((trait) => trait.id === v.value);
-    return trait;
-  });
-
-  return (
-    <Stack>
+  if (drawerData.view === 'BLOCK') {
+    return <CreatureStatBlockView id={STORE_ID} creature={creature} setCreature={setCreature} />;
+  } else {
+    return (
       <Stack>
-        {activeTab === 'main' && (
-          <Stack>
-            {/* <EntityInfoSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} /> */}
-            <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-            <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-            <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
-            <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-          </Stack>
-        )}
+        <Stack>
+          {activeTab === 'main' && (
+            <Stack>
+              {/* <EntityInfoSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} /> */}
+              <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+              <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+              <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
+              <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+            </Stack>
+          )}
 
-        {activeTab === 'inventory' && (
-          <InventoryPanel
-            content={content}
-            panelHeight={panelHeight}
-            panelWidth={panelWidth}
-            inventory={getInventory(creature)}
-            setInventory={setInventory}
-          />
-        )}
+          {activeTab === 'abilities' && (
+            <CreatureAbilitiesPanel
+              content={content}
+              panelHeight={panelHeight}
+              panelWidth={panelWidth}
+              creature={creature}
+              setCreature={setCreature}
+            />
+          )}
 
-        {activeTab === 'details' && (
-          <CreatureDetailsPanel
-            id={STORE_ID}
-            creature={creature}
-            content={content}
-            panelHeight={panelHeight}
-            panelWidth={panelWidth}
-          />
-        )}
+          {activeTab === 'skills-actions' && (
+            <SkillsActionsPanel
+              content={content}
+              panelHeight={panelHeight - 55}
+              panelWidth={panelWidth}
+              inventory={getInventory(creature)}
+              setInventory={setInventory}
+            />
+          )}
 
-        <Box
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-          }}
-        >
-          <Popover
-            position='top'
-            shadow='md'
-            withArrow
-            opened={openedSelectionPanel}
-            onChange={setOpenedSelectionPanel}
-            zIndex={1000}
+          {activeTab === 'inventory' && (
+            <InventoryPanel
+              content={content}
+              panelHeight={panelHeight}
+              panelWidth={panelWidth}
+              inventory={getInventory(creature)}
+              setInventory={setInventory}
+            />
+          )}
+
+          {activeTab === 'spells' && (
+            <SpellsPanel
+              panelHeight={panelHeight}
+              panelWidth={panelWidth}
+              id={STORE_ID}
+              entity={creature}
+              setEntity={convertToSetEntity(setCreature)}
+            />
+          )}
+
+          {activeTab === 'notes' && (
+            <NotesPanel
+              panelHeight={panelHeight}
+              panelWidth={panelWidth}
+              entity={creature}
+              setEntity={convertToSetEntity(setCreature)}
+            />
+          )}
+
+          {activeTab === 'details' && (
+            <CreatureDetailsPanel
+              id={STORE_ID}
+              creature={creature}
+              content={content}
+              panelHeight={panelHeight}
+              panelWidth={panelWidth}
+            />
+          )}
+
+          <Box
+            style={{
+              position: 'fixed',
+              bottom: 20,
+              right: 20,
+            }}
           >
-            <Popover.Target>
-              <ActionIcon
-                size={55}
-                variant='filled'
-                radius={100}
-                aria-label='Panel Grid'
-                onClick={() => setOpenedSelectionPanel((o) => !o)}
-              >
-                {openedSelectionPanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
-              </ActionIcon>
-            </Popover.Target>
-            <Popover.Dropdown w={'calc(min(100dvh, 430px))'}>
-              <Box>
-                <Stack>
-                  <Button
-                    leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
-                    variant={activeTab === 'main' ? 'filled' : 'outline'}
-                    onClick={() => {
-                      setActiveTab('main');
-                      setOpenedSelectionPanel(false);
-                    }}
-                  >
-                    Health, Conditions, Saves
-                  </Button>
-                  <SimpleGrid cols={2}>
+            <Popover
+              position='top'
+              shadow='md'
+              withArrow
+              opened={openedSelectionPanel}
+              onChange={setOpenedSelectionPanel}
+              zIndex={1000}
+            >
+              <Popover.Target>
+                <ActionIcon
+                  size={55}
+                  variant='filled'
+                  radius={100}
+                  aria-label='Panel Grid'
+                  onClick={() => setOpenedSelectionPanel((o) => !o)}
+                >
+                  {openedSelectionPanel ? (
+                    <IconX size='2rem' stroke={2} />
+                  ) : (
+                    <IconLayoutGrid size='2rem' stroke={1.5} />
+                  )}
+                </ActionIcon>
+              </Popover.Target>
+              <Popover.Dropdown w={'calc(min(95dvw, 430px))'}>
+                <Box>
+                  <Stack>
                     <Button
-                      leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'abilities' ? 'filled' : 'outline'}
+                      leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
+                      variant={activeTab === 'main' ? 'filled' : 'outline'}
                       onClick={() => {
-                        setActiveTab('abilities');
+                        setActiveTab('main');
                         setOpenedSelectionPanel(false);
                       }}
                     >
-                      Abilities
+                      Health, Conditions, Saves
                     </Button>
-                    <Button
-                      leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'skills-actions' ? 'filled' : 'outline'}
-                      onClick={() => {
-                        setActiveTab('skills-actions');
-                        setOpenedSelectionPanel(false);
-                      }}
-                    >
-                      Skills
-                    </Button>
-                  </SimpleGrid>
-                  <SimpleGrid cols={2}>
-                    <Button
-                      leftSection={<IconBackpack size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'inventory' ? 'filled' : 'outline'}
-                      onClick={() => {
-                        setActiveTab('inventory');
-                        setOpenedSelectionPanel(false);
-                      }}
-                    >
-                      Inventory
-                    </Button>
-                    <Button
-                      leftSection={<IconFlare size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'spells' ? 'filled' : 'outline'}
-                      onClick={() => {
-                        setActiveTab('spells');
-                        setOpenedSelectionPanel(false);
-                      }}
-                    >
-                      Spells
-                    </Button>
-                  </SimpleGrid>
-                  <SimpleGrid cols={2}>
-                    <Button
-                      leftSection={<IconNotebook size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'notes' ? 'filled' : 'outline'}
-                      onClick={() => {
-                        setActiveTab('notes');
-                        setOpenedSelectionPanel(false);
-                      }}
-                    >
-                      Notes
-                    </Button>
-                    <Button
-                      leftSection={<IconListDetails size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'details' ? 'filled' : 'outline'}
-                      onClick={() => {
-                        setActiveTab('details');
-                        setOpenedSelectionPanel(false);
-                      }}
-                    >
-                      Details
-                    </Button>
-                  </SimpleGrid>
-                </Stack>
-              </Box>
-            </Popover.Dropdown>
-          </Popover>
-        </Box>
+                    <SimpleGrid cols={2}>
+                      <Button
+                        leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
+                        variant={activeTab === 'abilities' ? 'filled' : 'outline'}
+                        onClick={() => {
+                          setActiveTab('abilities');
+                          setOpenedSelectionPanel(false);
+                        }}
+                      >
+                        Abilities
+                      </Button>
+                      <Button
+                        leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
+                        variant={activeTab === 'skills-actions' ? 'filled' : 'outline'}
+                        onClick={() => {
+                          setActiveTab('skills-actions');
+                          setOpenedSelectionPanel(false);
+                        }}
+                      >
+                        Skills
+                      </Button>
+                    </SimpleGrid>
+                    <SimpleGrid cols={2}>
+                      <Button
+                        leftSection={<IconBackpack size='1.2rem' stroke={2} />}
+                        variant={activeTab === 'inventory' ? 'filled' : 'outline'}
+                        onClick={() => {
+                          setActiveTab('inventory');
+                          setOpenedSelectionPanel(false);
+                        }}
+                      >
+                        Inventory
+                      </Button>
+                      <Button
+                        leftSection={<IconFlare size='1.2rem' stroke={2} />}
+                        variant={activeTab === 'spells' ? 'filled' : 'outline'}
+                        onClick={() => {
+                          setActiveTab('spells');
+                          setOpenedSelectionPanel(false);
+                        }}
+                      >
+                        Spells
+                      </Button>
+                    </SimpleGrid>
+                    <SimpleGrid cols={2}>
+                      <Button
+                        leftSection={<IconNotebook size='1.2rem' stroke={2} />}
+                        variant={activeTab === 'notes' ? 'filled' : 'outline'}
+                        onClick={() => {
+                          setActiveTab('notes');
+                          setOpenedSelectionPanel(false);
+                        }}
+                      >
+                        Notes
+                      </Button>
+                      <Button
+                        leftSection={<IconListDetails size='1.2rem' stroke={2} />}
+                        variant={activeTab === 'details' ? 'filled' : 'outline'}
+                        onClick={() => {
+                          setActiveTab('details');
+                          setOpenedSelectionPanel(false);
+                        }}
+                      >
+                        Details
+                      </Button>
+                    </SimpleGrid>
+                  </Stack>
+                </Box>
+              </Popover.Dropdown>
+            </Popover>
+          </Box>
+        </Stack>
       </Stack>
-    </Stack>
-  );
+    );
+  }
+}
+
+function CreatureStatBlockView(props: {
+  id: StoreID;
+  creature: Creature;
+  setCreature: SetterOrUpdater<Creature | null>;
+}) {
+  return <Box></Box>;
 }

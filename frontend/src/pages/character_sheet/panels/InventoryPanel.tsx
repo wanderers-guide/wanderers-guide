@@ -66,6 +66,7 @@ export default function InventoryPanel(props: {
   panelWidth: number;
   inventory: Inventory;
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+  zIndex?: number;
 }) {
   const theme = useMantineTheme();
   const [character, setCharacter] = useRecoilState(characterState);
@@ -115,6 +116,7 @@ export default function InventoryPanel(props: {
           }
         },
       },
+      zIndex: props.zIndex ?? 499,
     });
   };
 
@@ -130,6 +132,7 @@ export default function InventoryPanel(props: {
           }));
         },
       },
+      extra: { addToHistory: true },
     });
   };
 
@@ -150,7 +153,7 @@ export default function InventoryPanel(props: {
             }}
           />
           {isPhone ? (
-            <Menu shadow='md' width={140}>
+            <Menu shadow='md' width={140} zIndex={props.zIndex ?? 499}>
               <Menu.Target>
                 <ActionIcon variant='light' color='gray' size='lg' aria-label='Inventory Options'>
                   <IconMenu2 style={{ width: '70%', height: '70%' }} stroke={1.5} />
@@ -301,6 +304,7 @@ export default function InventoryPanel(props: {
                                     handleMoveItem(props.setInventory, invItem, containerItem);
                                   },
                                 },
+                                extra: { addToHistory: true },
                               });
                             }}
                           />
@@ -328,6 +332,7 @@ export default function InventoryPanel(props: {
                                       handleMoveItem(props.setInventory, invItem, containerItem);
                                     },
                                   },
+                                  extra: { addToHistory: true },
                                 });
                               }}
                             >
@@ -384,6 +389,7 @@ export default function InventoryPanel(props: {
                                 handleMoveItem(props.setInventory, invItem, containerItem);
                               },
                             },
+                            extra: { addToHistory: true },
                           });
                         }}
                       >

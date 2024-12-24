@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ActionCost,
   CastingSource,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -34,7 +35,7 @@ import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import FocusSpellsList from './spells_list/FocusSpellsList';
 import InnateSpellsList from './spells_list/InnateSpellsList';
 import PreparedSpellsList from './spells_list/PreparedSpellsList';
@@ -43,13 +44,19 @@ import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 import StaffSpellsList from './spells_list/StaffSpellsList';
 import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
 import WandSpellsList from './spells_list/WandSpellsList';
+import { StoreID } from '@typing/variables';
 
-export default function SpellsPanel(props: { panelHeight: number; panelWidth: number }) {
+export default function SpellsPanel(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  panelHeight: number;
+  panelWidth: number;
+  zIndex?: number;
+}) {
   const theme = useMantineTheme();
-  const character = useRecoilValue(characterState);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [section, setSection] = useState<string>();
   const [manageSpells, setManageSpells] = useState<
     | {
         source: string;
@@ -65,16 +72,16 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
   const { data: spells } = useQuery({
     queryKey: [`find-spells-and-data`],
     queryFn: async () => {
-      if (!character) return null;
+      if (!props.entity) return null;
 
       return await fetchContentAll<Spell>('spell');
     },
   });
 
   const charData = useMemo(() => {
-    if (!character) return null;
-    return collectEntitySpellcasting('CHARACTER', character);
-  }, [character]);
+    if (!props.entity) return null;
+    return collectEntitySpellcasting(props.id, props.entity);
+  }, [props.entity]);
 
   // Filter options based on search query
   const search = useRef(new JsSearch.Search('id'));
@@ -182,6 +189,10 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                     <>
                       {
                         <SpellList
+                          id={props.id}
+                          entity={props.entity}
+                          setEntity={props.setEntity}
+                          //
                           index={`spontaneous-${source.name}`}
                           source={source}
                           spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
@@ -197,6 +208,10 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                     <>
                       {
                         <SpellList
+                          id={props.id}
+                          entity={props.entity}
+                          setEntity={props.setEntity}
+                          //
                           index={`prepared-${source.name}`}
                           source={source}
                           spellIds={charData.list.filter((d) => d.source === source.name).map((d) => d.spell_id)}
@@ -211,6 +226,10 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   ) : null}
                   {charData.focus.filter((d) => d.source === source.name).length > 0 && (
                     <SpellList
+                      id={props.id}
+                      entity={props.entity}
+                      setEntity={props.setEntity}
+                      //
                       index={`focus-${source.name}`}
                       source={source}
                       spellIds={charData.focus.filter((d) => d.source === source.name).map((d) => d.spell_id)}
@@ -225,6 +244,10 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
 
               {charData.innate.length > 0 && (
                 <SpellList
+                  id={props.id}
+                  entity={props.entity}
+                  setEntity={props.setEntity}
+                  //
                   index={'innate'}
                   spellIds={charData.innate.map((d) => d.spell_id)}
                   allSpells={allSpells}
@@ -233,8 +256,14 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   hasFilters={hasFilters}
                 />
               )}
-              {filterByTraitType(character?.inventory?.items ?? [], 'STAFF').find((invItem) => invItem.is_equipped) && (
+              {filterByTraitType(props.entity?.inventory?.items ?? [], 'STAFF').find(
+                (invItem) => invItem.is_equipped
+              ) && (
                 <SpellList
+                  id={props.id}
+                  entity={props.entity}
+                  setEntity={props.setEntity}
+                  //
                   index={'staff'}
                   spellIds={[]}
                   allSpells={allSpells}
@@ -243,8 +272,12 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
                   extra={{ charData: charData }}
                 />
               )}
-              {filterByTraitType(character?.inventory?.items ?? [], 'WAND').length > 0 && (
+              {filterByTraitType(props.entity?.inventory?.items ?? [], 'WAND').length > 0 && (
                 <SpellList
+                  id={props.id}
+                  entity={props.entity}
+                  setEntity={props.setEntity}
+                  //
                   index={'wand'}
                   spellIds={[]}
                   allSpells={allSpells}
@@ -256,6 +289,10 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
               {/* Always display ritual section */}
               {true && (
                 <SpellList
+                  id={props.id}
+                  entity={props.entity}
+                  setEntity={props.setEntity}
+                  //
                   index={'ritual'}
                   spellIds={charData.list.filter((d) => d.source === 'RITUALS').map((d) => d.spell_id)}
                   allSpells={allSpells}
@@ -276,6 +313,7 @@ export default function SpellsPanel(props: { panelHeight: number; panelWidth: nu
           source={manageSpells.source}
           type={manageSpells.type}
           filter={manageSpells.filter}
+          zIndex={(props.zIndex ?? 497) + 1}
         />
       )}
     </Box>
@@ -392,6 +430,10 @@ function ActionFilter(props: {
 }
 
 function SpellList(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   source?: CastingSource;
   spellIds: number[];
@@ -422,10 +464,8 @@ function SpellList(props: {
     }
   ) => void;
 }) {
-  const [character, setCharacter] = useRecoilState(characterState);
-
   const castSpell = (cast: boolean, spell: Spell) => {
-    if (!character) return;
+    if (!props.entity) return;
 
     if (isCantrip(spell)) {
       // Casting a cantrip doesn't change any spells state
@@ -433,9 +473,9 @@ function SpellList(props: {
     }
 
     if (props.type === 'PREPARED' && props.source) {
-      setCharacter((c) => {
+      props.setEntity((c) => {
         if (!c) return c;
-        const slots = collectEntitySpellcasting('CHARACTER', c).slots;
+        const slots = collectEntitySpellcasting(props.id, c).slots;
         const slotIndex = slots.findIndex(
           (slot) =>
             slot.spell_id === spell.id &&
@@ -462,10 +502,10 @@ function SpellList(props: {
     }
 
     if (props.type === 'SPONTANEOUS' && props.source) {
-      setCharacter((c) => {
+      props.setEntity((c) => {
         if (!c) return c;
         let added = false;
-        const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map((slot) => {
+        const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map((slot) => {
           if (!added && slot.rank === spell.rank && slot.source === props.source!.name && !slot.exhausted === cast) {
             added = true;
             return {
@@ -492,7 +532,7 @@ function SpellList(props: {
     }
 
     if (props.type === 'FOCUS') {
-      setCharacter((c) => {
+      props.setEntity((c) => {
         if (!c) return c;
         return {
           ...c,
@@ -510,10 +550,10 @@ function SpellList(props: {
     }
 
     if (props.type === 'INNATE') {
-      setCharacter((c) => {
+      props.setEntity((c) => {
         if (!c) return c;
 
-        const innates = collectEntitySpellcasting('CHARACTER', c).innate.map((innate) => {
+        const innates = collectEntitySpellcasting(props.id, c).innate.map((innate) => {
           if (innate.spell_id === spell.id && innate.rank === spell.rank) {
             return {
               ...innate,
@@ -619,54 +659,54 @@ function SpellList(props: {
         slots={slots}
         castSpell={castSpell}
         spells={spells}
-        setCharacter={setCharacter}
+        setEntity={props.setEntity}
       />
     );
   }
 
-  if (props.type === 'FOCUS' && props.source && character) {
+  if (props.type === 'FOCUS' && props.source && props.entity) {
     return (
       <FocusSpellsList
         {...props}
         castSpell={castSpell}
         spells={spells}
-        character={character}
-        setCharacter={setCharacter}
+        entity={props.entity}
+        setEntity={props.setEntity}
       />
     );
   }
 
   if (props.type === 'INNATE' && props.extra?.innates) {
     return (
-      <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setCharacter={setCharacter} />
+      <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setEntity={props.setEntity} />
     );
   }
 
-  if (props.type === 'STAFF' && character) {
+  if (props.type === 'STAFF' && props.entity) {
     return (
       <>
-        {filterByTraitType(character?.inventory?.items ?? [], 'STAFF')
+        {filterByTraitType(props.entity?.inventory?.items ?? [], 'STAFF')
           .filter((invItem) => invItem.is_equipped)
           .map((invItem) => (
             <StaffSpellsList
               {...props}
               index={`${props.index}-${invItem.id}`}
               staff={invItem}
-              character={character}
-              setCharacter={setCharacter}
+              entity={props.entity!}
+              setEntity={props.setEntity}
             />
           ))}
       </>
     );
   }
 
-  if (props.type === 'WAND' && character) {
+  if (props.type === 'WAND' && props.entity) {
     return (
       <WandSpellsList
         {...props}
-        wands={filterByTraitType(character?.inventory?.items ?? [], 'WAND')}
-        character={character}
-        setCharacter={setCharacter}
+        wands={filterByTraitType(props.entity?.inventory?.items ?? [], 'WAND')}
+        entity={props.entity}
+        setEntity={props.setEntity}
       />
     );
   }

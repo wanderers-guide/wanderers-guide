@@ -72,6 +72,8 @@ export default function DrawerBase() {
 
   const handleDrawerClose = () => {
     openDrawer(null);
+    // Clear metadata
+    saveMetadata({});
   };
 
   const handleDrawerGoBack = () => {

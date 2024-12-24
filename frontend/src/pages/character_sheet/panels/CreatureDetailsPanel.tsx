@@ -149,6 +149,11 @@ export default function CreatureDetailsPanel(props: {
                     {language?.name ?? 'Unknown'}
                   </Pill>
                 ))}
+                {languages.length === 0 && (
+                  <Text ta='center' c='gray.5' fs='italic'>
+                    No languages found
+                  </Text>
+                )}
               </Pill.Group>
             </Box>
           </ScrollArea>
@@ -182,6 +187,11 @@ export default function CreatureDetailsPanel(props: {
                     {trait?.name ?? 'Unknown'}
                   </Pill>
                 ))}
+                {traits.length === 0 && (
+                  <Text ta='center' c='gray.5' fs='italic'>
+                    No traits found
+                  </Text>
+                )}
               </Pill.Group>
             </Box>
           </ScrollArea>

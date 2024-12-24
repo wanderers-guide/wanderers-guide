@@ -5,6 +5,7 @@ import { getSpellStats } from '@spells/spell-handler';
 import {
   CastingSource,
   Character,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -19,8 +20,13 @@ import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
+import { StoreID } from '@typing/variables';
 
 export default function SpontaneousSpellsList(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   source?: CastingSource;
   spellIds: number[];
@@ -62,9 +68,8 @@ export default function SpontaneousSpellsList(props: {
   > | null;
   castSpell: (cast: boolean, spell: Spell) => void;
   spells: Dictionary<Spell[]>;
-  setCharacter: SetterOrUpdater<Character | null>;
 }) {
-  const { slots, castSpell, spells, setCharacter } = props;
+  const { slots, castSpell, spells, setEntity } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const highestRank = Object.keys(slots || {}).reduce((acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc), 0);
@@ -73,7 +78,7 @@ export default function SpontaneousSpellsList(props: {
     return null;
   }
 
-  const spellStats = getSpellStats('CHARACTER', null, props.source!.tradition, props.source!.attribute);
+  const spellStats = getSpellStats(props.id, null, props.source!.tradition, props.source!.attribute);
 
   return (
     <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
@@ -136,7 +141,8 @@ export default function SpontaneousSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { id: 'CHARACTER', variableName: 'SPELL_ATTACK' },
+                    data: { id: props.id, variableName: 'SPELL_ATTACK' },
+                    extra: { addToHistory: true },
                   });
                 }}
               >
@@ -154,7 +160,8 @@ export default function SpontaneousSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { id: 'CHARACTER', variableName: 'SPELL_DC', isDC: true },
+                    data: { id: props.id, variableName: 'SPELL_DC', isDC: true },
+                    extra: { addToHistory: true },
                   });
                 }}
               >
@@ -184,11 +191,11 @@ export default function SpontaneousSpellsList(props: {
                             current={slots[rank].filter((slot) => `${slot.rank}` === rank && slot.exhausted).length}
                             max={slots[rank].filter((slot) => `${slot.rank}` === rank).length}
                             onChange={(v) => {
-                              setCharacter((c) => {
+                              props.setEntity((c) => {
                                 if (!c) return c;
 
                                 let count = 0;
-                                const slots = collectEntitySpellcasting('CHARACTER', c).slots;
+                                const slots = collectEntitySpellcasting(props.id, c).slots;
                                 for (const slot of slots) {
                                   if (slot.rank === parseInt(rank) && slot.source === props.source?.name) {
                                     slot.exhausted = count < v;

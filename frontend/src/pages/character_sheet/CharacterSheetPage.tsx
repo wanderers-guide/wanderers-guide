@@ -473,6 +473,7 @@ function SectionPanels(props: {
   const theme = useMantineTheme();
   const isPhone = isPhoneSized(props.panelWidth);
 
+  const [character, setCharacter] = useRecoilState(characterState);
   const [openedPhonePanel, setOpenedPhonePanel] = useState(false);
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -547,7 +548,15 @@ function SectionPanels(props: {
               />
             )}
 
-            {activeTab === 'spells' && <SpellsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />}
+            {activeTab === 'spells' && (
+              <SpellsPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                id={'CHARACTER'}
+                entity={character}
+                setEntity={convertToSetEntity(setCharacter)}
+              />
+            )}
 
             {activeTab === 'feats-features' && (
               <FeatsFeaturesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
@@ -561,7 +570,14 @@ function SectionPanels(props: {
               <DetailsPanel content={props.content} panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
             )}
 
-            {activeTab === 'notes' && <NotesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />}
+            {activeTab === 'notes' && (
+              <NotesPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                entity={character}
+                setEntity={convertToSetEntity(setCharacter)}
+              />
+            )}
 
             {activeTab === 'extras' && <ExtrasPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />}
           </BlurBox>
@@ -856,7 +872,13 @@ function SectionPanels(props: {
             </Tabs.Panel>
 
             <Tabs.Panel value='spells'>
-              <SpellsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+              <SpellsPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                id={'CHARACTER'}
+                entity={character}
+                setEntity={convertToSetEntity(setCharacter)}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='feats-features'>
@@ -872,7 +894,12 @@ function SectionPanels(props: {
             </Tabs.Panel>
 
             <Tabs.Panel value='notes'>
-              <NotesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+              <NotesPanel
+                panelHeight={props.panelHeight}
+                panelWidth={props.panelWidth}
+                entity={character}
+                setEntity={convertToSetEntity(setCharacter)}
+              />
             </Tabs.Panel>
 
             <Tabs.Panel value='extras'>

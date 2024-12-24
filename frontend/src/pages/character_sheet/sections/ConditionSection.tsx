@@ -52,6 +52,7 @@ export function ConditionSection(props: {
   entity: LivingEntity | null;
   setEntity: SetterOrUpdater<LivingEntity | null>;
   w: number;
+  zIndex?: number;
 }) {
   return (
     <Box w={props.w}>
@@ -181,6 +182,7 @@ export function ConditionSection(props: {
                       width: '100%',
                     },
                   },
+                  zIndex: props.zIndex ?? 499,
                 });
               }}
             />

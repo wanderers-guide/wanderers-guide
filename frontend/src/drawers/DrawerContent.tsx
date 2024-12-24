@@ -46,7 +46,9 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
       {_drawer?.type === 'generic' && <GenericDrawerContent data={drawerData} />}
       {_drawer?.type === 'condition' && <ConditionDrawerContent data={drawerData} />}
-      {_drawer?.type === 'creature' && <CreatureDrawerContent data={drawerData} />}
+      {_drawer?.type === 'creature' && (
+        <CreatureDrawerContent data={drawerData} onMetadataChange={props.onMetadataChange} />
+      )}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={drawerData} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={drawerData} />}

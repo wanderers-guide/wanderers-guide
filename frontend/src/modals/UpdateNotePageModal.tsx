@@ -42,6 +42,7 @@ export default function UpdateNotePageModal({
         innerProps.onDelete();
         context.closeModal(id);
       },
+      zIndex: 1001,
     });
 
   return (

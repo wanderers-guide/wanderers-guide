@@ -10,6 +10,7 @@ interface TraitsInputProps extends TagsInputProps {
   traits?: number[];
   onTraitChange?: (traits: Trait[]) => void;
   includeCreatureTraits?: boolean;
+  zIndex?: number;
 }
 
 export default function TraitsInput(props: TraitsInputProps) {
@@ -38,9 +39,22 @@ export default function TraitsInput(props: TraitsInputProps) {
   return (
     <>
       {isFetching || !data ? (
-        <TagsInput {...passedProps} readOnly />
+        <TagsInput
+          styles={(t) => ({
+            dropdown: {
+              zIndex: props.zIndex ?? 1500,
+            },
+          })}
+          {...passedProps}
+          readOnly
+        />
       ) : (
         <TagsInput
+          styles={(t) => ({
+            dropdown: {
+              zIndex: props.zIndex ?? 1500,
+            },
+          })}
           {...passedProps}
           defaultValue={traits.filter((trait) => props.defaultTraits?.includes(trait.id)).map((trait) => trait.name)}
           value={

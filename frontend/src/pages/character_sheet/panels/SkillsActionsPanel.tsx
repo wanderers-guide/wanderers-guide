@@ -330,6 +330,7 @@ export default function SkillsActionsPanel(props: {
                     openDrawer({
                       type: 'stat-prof',
                       data: { id: 'CHARACTER', variableName: skill.name },
+                      extra: { addToHistory: true },
                     });
                   }}
                 >
@@ -760,7 +761,11 @@ function ActionSelectionOption(props: {
     <StatButton
       darkVersion
       onClick={() => {
-        openDrawer({ type: props.action.drawerType, data: props.action.drawerData });
+        openDrawer({
+          type: props.action.drawerType,
+          data: props.action.drawerData,
+          extra: { addToHistory: true },
+        });
       }}
     >
       <Group

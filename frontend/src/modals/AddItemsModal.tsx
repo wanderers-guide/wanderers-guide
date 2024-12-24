@@ -48,6 +48,7 @@ export default function AddItemsModal({
   innerProps,
 }: ContextModalProps<{
   onAddItem: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
+  options?: { zIndex?: number };
 }>) {
   const [searchQuery, setSearchQuery] = useState('');
   const NUM_PER_PAGE = 20;
@@ -190,6 +191,7 @@ export default function AddItemsModal({
             shadow='md'
             opened={openedFilters}
             closeOnClickOutside={false}
+            zIndex={(innerProps.options?.zIndex ?? 499) + 1}
           >
             <Popover.Target>
               <Indicator
@@ -197,7 +199,7 @@ export default function AddItemsModal({
                 label={`${filtersApplied}`}
                 offset={3}
                 size={16}
-                zIndex={1000}
+                zIndex={1001}
                 position='bottom-start'
                 disabled={filtersApplied === 0}
               >
@@ -262,6 +264,11 @@ export default function AddItemsModal({
                   onChange={(value) => {
                     setFilterSelections((prev) => ({ ...prev, group: value as ItemGroup | undefined }));
                   }}
+                  styles={(t) => ({
+                    dropdown: {
+                      zIndex: (innerProps.options?.zIndex ?? 499) + 2,
+                    },
+                  })}
                 />
                 <Select
                   label='Level'
@@ -270,6 +277,11 @@ export default function AddItemsModal({
                   onChange={(value) => {
                     setFilterSelections((prev) => ({ ...prev, level: value ? parseInt(value) : undefined }));
                   }}
+                  styles={(t) => ({
+                    dropdown: {
+                      zIndex: (innerProps.options?.zIndex ?? 499) + 2,
+                    },
+                  })}
                 />
                 {displayTraitFilter && (
                   <TraitsInput
@@ -282,6 +294,11 @@ export default function AddItemsModal({
                       }));
                     }}
                     style={{ flex: 1 }}
+                    styles={(t) => ({
+                      dropdown: {
+                        zIndex: (innerProps.options?.zIndex ?? 499) + 2,
+                      },
+                    })}
                   />
                 )}
               </Stack>

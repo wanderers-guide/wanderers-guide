@@ -41,6 +41,7 @@ export default function ManageSpellsModal(props: {
     traditions?: string[];
     ranks?: string[];
   };
+  zIndex?: number;
 }) {
   const isRituals = props.source === 'RITUALS';
 
@@ -126,6 +127,7 @@ export default function ManageSpellsModal(props: {
       }}
       size={props.type === 'SLOTS-AND-LIST' ? 'xl' : 'md'}
       keepMounted={false}
+      zIndex={props.zIndex}
     >
       <Stack style={{ position: 'relative' }} mx={10}>
         {props.type === 'LIST-ONLY' ? (

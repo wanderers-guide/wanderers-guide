@@ -8,15 +8,22 @@ import { useDebouncedState, useDidUpdate, useElementSize, useMediaQuery } from '
 import { openContextModal } from '@mantine/modals';
 import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
+import { Character, Creature, LivingEntity } from '@typing/content';
 import { isPhoneSized, phoneQuery, usePhoneSized } from '@utils/mobile-responsive';
+import { isCharacter } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import _ from 'lodash-es';
 import { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater } from 'recoil';
 
-export default function NotesPanel(props: { panelHeight: number; panelWidth: number }) {
+export default function NotesPanel(props: {
+  panelHeight: number;
+  panelWidth: number;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  zIndex?: number;
+}) {
   const [activeTab, setActiveTab] = useState<string | null>('0');
-  const [character, setCharacter] = useRecoilState(characterState);
   const isPhone = isPhoneSized(props.panelWidth);
   const [displayNotes, refreshNotes] = useRefresh();
 
@@ -27,13 +34,13 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
 
   useDidUpdate(() => {
     // Saving notes
-    if (!character || !debouncedJson) return;
+    if (!props.entity || !debouncedJson) return;
     const newPages = _.cloneDeep(pages);
     newPages[debouncedJson.index].contents = debouncedJson.json;
-    setCharacter({
-      ...character,
+    props.setEntity({
+      ...props.entity,
       notes: {
-        ...character.notes,
+        ...props.entity.notes,
         pages: newPages,
       },
     });
@@ -46,20 +53,20 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
   const defaultPage = {
     name: 'Notes',
     icon: 'notebook',
-    color: character?.details?.sheet_theme?.color || GUIDE_BLUE,
+    color: isCharacter(props.entity) ? props.entity?.details?.sheet_theme?.color || GUIDE_BLUE : GUIDE_BLUE,
     contents: null,
   };
 
-  const pages = character?.notes?.pages ?? [_.cloneDeep(defaultPage)];
+  const pages = props.entity?.notes?.pages ?? [_.cloneDeep(defaultPage)];
 
   const addPage = () => {
-    if (!character) return;
+    if (!props.entity) return;
     const newPages = _.cloneDeep(pages);
     newPages.push(_.cloneDeep(defaultPage));
-    setCharacter({
-      ...character,
+    props.setEntity({
+      ...props.entity,
       notes: {
-        ...character.notes,
+        ...props.entity.notes,
         pages: newPages,
       },
     });
@@ -79,7 +86,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
           hasColorOptions={true}
         />
         {isPhone && (
-          <Menu shadow='md' width={160}>
+          <Menu shadow='md' width={160} zIndex={props.zIndex ?? 499}>
             <Menu.Target>
               <Button
                 variant='light'
@@ -165,7 +172,7 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
               innerProps: {
                 page: page,
                 onUpdate: (name: string, icon: string, color: string) => {
-                  if (!character) return;
+                  if (!props.entity) return;
                   const newPages = _.cloneDeep(pages);
                   newPages[index] = {
                     ...newPages[index],
@@ -173,28 +180,29 @@ export default function NotesPanel(props: { panelHeight: number; panelWidth: num
                     icon: icon,
                     color: color,
                   };
-                  setCharacter({
-                    ...character,
+                  props.setEntity({
+                    ...props.entity,
                     notes: {
-                      ...character.notes,
+                      ...props.entity.notes,
                       pages: newPages,
                     },
                   });
                 },
                 onDelete: () => {
-                  if (!character) return;
+                  if (!props.entity) return;
                   const newPages = _.cloneDeep(pages);
                   newPages.splice(index, 1);
-                  setCharacter({
-                    ...character,
+                  props.setEntity({
+                    ...props.entity,
                     notes: {
-                      ...character.notes,
+                      ...props.entity.notes,
                       pages: newPages,
                     },
                   });
                   setActiveTab(`0`);
                 },
               },
+              zIndex: props.zIndex ?? 499,
             });
           }}
         >

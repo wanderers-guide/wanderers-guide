@@ -5,6 +5,7 @@ import {
   Character,
   InventoryItem,
   Item,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -24,8 +25,13 @@ import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { handleUpdateItemCharges } from '@items/inv-utils';
+import { StoreID } from '@typing/variables';
 
 export default function StaffSpellsList(props: {
+  id: StoreID;
+  entity: LivingEntity;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   staff: InventoryItem;
   allSpells: Spell[];
@@ -43,11 +49,7 @@ export default function StaffSpellsList(props: {
     };
   };
   hasFilters: boolean;
-  character: Character;
-  setCharacter: SetterOrUpdater<Character | null>;
 }) {
-  const { setCharacter } = props;
-
   const detectedSpells = _.groupBy(detectSpells(props.staff.item.description, props.allSpells), 'rank');
 
   // Calculated values (could put in useMemo)
@@ -59,14 +61,14 @@ export default function StaffSpellsList(props: {
       greatestSlotRank = slot.rank;
     }
   }
-  const castingType = getSpellcastingType('CHARACTER', props.character);
+  const castingType = getSpellcastingType(props.id, props.entity);
   const canAddPreparedExtraCharges = castingType === 'PREPARED' && maxCharges <= greatestSlotRank;
 
   // On init,
   useEffect(() => {
     if (greatestSlotRank > maxCharges) {
       // Update item to have max charges equal to greatest slot rank
-      handleUpdateItemCharges(setCharacter, props.staff, { max: greatestSlotRank });
+      handleUpdateItemCharges(props.setEntity, props.staff, { max: greatestSlotRank });
     }
   }, []);
 
@@ -105,9 +107,9 @@ export default function StaffSpellsList(props: {
                         allSpells: props.allSpells,
                         onSelect: (slot: SpellSlotRecord) => {
                           // Expend the selected slot
-                          setCharacter((c) => {
+                          props.setEntity((c) => {
                             if (!c) return c;
-                            const slots = collectEntitySpellcasting('CHARACTER', c).slots;
+                            const slots = collectEntitySpellcasting(props.id, c).slots;
 
                             let newSlots = _.cloneDeep(slots ?? []);
                             newSlots = newSlots.map((s) => {
@@ -138,7 +140,7 @@ export default function StaffSpellsList(props: {
                           // Update the staff charges, delay it prevent race condition with slot expending
                           // TODO: Just combine into one update call
                           setTimeout(() => {
-                            handleUpdateItemCharges(setCharacter, props.staff, {
+                            handleUpdateItemCharges(props.setEntity, props.staff, {
                               max: props.staff.item.meta_data!.charges!.max! + slot.rank,
                             });
                           }, 250);
@@ -155,7 +157,7 @@ export default function StaffSpellsList(props: {
                 current={props.staff.item.meta_data?.charges?.current ?? 0}
                 max={props.staff.item.meta_data?.charges?.max ?? 0}
                 onChange={(v) => {
-                  handleUpdateItemCharges(setCharacter, props.staff, {
+                  handleUpdateItemCharges(props.setEntity, props.staff, {
                     current: v,
                   });
                 }}
@@ -229,7 +231,7 @@ export default function StaffSpellsList(props: {
                           attribute={'ATTRIBUTE_CHA'}
                           onCastSpell={(cast: boolean) => {
                             const castWithCharges = () => {
-                              handleUpdateItemCharges(setCharacter, props.staff, {
+                              handleUpdateItemCharges(props.setEntity, props.staff, {
                                 current: Math.max(
                                   Math.min(
                                     currentCharges + (cast ? record.spell.rank : -record.spell.rank),
@@ -255,14 +257,14 @@ export default function StaffSpellsList(props: {
                                           castWithCharges();
                                         } else if (option === 'SLOT-CONSUME') {
                                           // Consume 1 charge
-                                          handleUpdateItemCharges(setCharacter, props.staff, {
+                                          handleUpdateItemCharges(props.setEntity, props.staff, {
                                             current: Math.min(currentCharges + 1, maxCharges),
                                           });
                                           // Consume slot
-                                          setCharacter((c) => {
+                                          props.setEntity((c) => {
                                             if (!c) return c;
                                             let added = false;
-                                            const newUpdatedSlots = collectEntitySpellcasting('CHARACTER', c).slots.map(
+                                            const newUpdatedSlots = collectEntitySpellcasting(props.id, c).slots.map(
                                               (slot) => {
                                                 if (!added && slot.rank === slotRank && slot.exhausted !== true) {
                                                   added = true;

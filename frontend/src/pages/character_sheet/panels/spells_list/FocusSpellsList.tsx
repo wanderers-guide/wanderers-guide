@@ -4,6 +4,7 @@ import { getSpellStats } from '@spells/spell-handler';
 import {
   CastingSource,
   Character,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -21,8 +22,13 @@ import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { useMemo } from 'react';
+import { StoreID } from '@typing/variables';
 
 export default function FocusSpellsList(props: {
+  id: StoreID;
+  entity: LivingEntity;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   source?: CastingSource;
   spellIds: number[];
@@ -47,10 +53,8 @@ export default function FocusSpellsList(props: {
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
   castSpell: (cast: boolean, spell: Spell) => void;
   spells: Dictionary<Spell[]>;
-  character: Character;
-  setCharacter: SetterOrUpdater<Character | null>;
 }) {
-  const { castSpell, spells, character, setCharacter } = props;
+  const { castSpell, spells, entity, setEntity } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   // Finds all the character's focus spells, regardless of source
@@ -66,9 +70,9 @@ export default function FocusSpellsList(props: {
     return null;
   }
 
-  const focusPoints = getFocusPoints('CHARACTER', character, allFocusSpells);
+  const focusPoints = getFocusPoints(props.id, entity, allFocusSpells);
 
-  const spellStats = getSpellStats('CHARACTER', null, props.source!.tradition, props.source!.attribute);
+  const spellStats = getSpellStats(props.id, null, props.source!.tradition, props.source!.attribute);
 
   return (
     <Accordion.Item value={props.index}>
@@ -84,7 +88,7 @@ export default function FocusSpellsList(props: {
               current={focusPoints.max - focusPoints.current}
               max={focusPoints.max}
               onChange={(v) => {
-                setCharacter((c) => {
+                setEntity((c) => {
                   if (!c) return c;
                   return {
                     ...c,
@@ -139,7 +143,8 @@ export default function FocusSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { id: 'CHARACTER', variableName: 'SPELL_ATTACK' },
+                    data: { id: props.id, variableName: 'SPELL_ATTACK' },
+                    extra: { addToHistory: true },
                   });
                 }}
               >
@@ -157,7 +162,8 @@ export default function FocusSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { id: 'CHARACTER', variableName: 'SPELL_DC', isDC: true },
+                    data: { id: props.id, variableName: 'SPELL_DC', isDC: true },
+                    extra: { addToHistory: true },
                   });
                 }}
               >
@@ -197,9 +203,9 @@ export default function FocusSpellsList(props: {
                             traits: _.uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
                           }}
                           exhausted={
-                            character?.spells?.focus_point_current === undefined
+                            entity?.spells?.focus_point_current === undefined
                               ? false
-                              : character.spells.focus_point_current <= 0
+                              : entity.spells.focus_point_current <= 0
                           }
                           tradition={props.source!.tradition}
                           attribute={props.source!.attribute}

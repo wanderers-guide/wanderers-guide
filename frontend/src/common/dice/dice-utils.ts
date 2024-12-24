@@ -59,8 +59,8 @@ export function findDefaultPresets(id: StoreID, character: Character | null) {
 
   // Spells
   // if (
-  //   compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value) !== undefined &&
-  //   compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_ATTACK')?.value) !== 'U'
+  //   compileProficiencyType(getVariable<VariableProf>(id, 'SPELL_ATTACK')?.value) !== undefined &&
+  //   compileProficiencyType(getVariable<VariableProf>(id, 'SPELL_ATTACK')?.value) !== 'U'
   // ) {
   //   presets.push({
   //     id: crypto.randomUUID(),

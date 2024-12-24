@@ -141,18 +141,14 @@ export default function RichTextInput(props: RichTextInputProps) {
               <RichTextEditor.H4 />
             </RichTextEditor.ControlsGroup>
           )}
-          
+
           {!isPrettySmall && props.hasColorOptions && (
             <RichTextEditor.ControlsGroup>
-             <HighlightColorControl
-                colors={defaultColors}
-              />
-              <RichTextEditor.ColorPicker
-                colors={defaultColors}
-              />
+              <HighlightColorControl colors={defaultColors} />
+              <RichTextEditor.ColorPicker colors={defaultColors} />
             </RichTextEditor.ControlsGroup>
           )}
-          
+
           {!isVerySmall && (
             <RichTextEditor.ControlsGroup>
               <AutoContentLinkControl />

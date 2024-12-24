@@ -3,7 +3,7 @@ import { getConditionByName } from '@conditions/condition-handler';
 import { fetchContentAll, getCachedSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
-import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
+import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
@@ -407,16 +407,16 @@ export const handleMoveItem = (
 
 /**
  * Utility function to update the charges for an item
- * @param setInventory - Character state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to update
  * @param charges - Charges to set
  */
 export const handleUpdateItemCharges = (
-  setCharacter: React.Dispatch<React.SetStateAction<Character | null>>,
+  setEntity: React.Dispatch<React.SetStateAction<LivingEntity | null>>,
   invItem: InventoryItem,
   charges: { current?: number; max?: number }
 ) => {
-  setCharacter((char) => {
+  setEntity((char) => {
     if (!char || !char.inventory) return null;
 
     return {

@@ -78,7 +78,16 @@ export default function ContentLinkControl() {
   const selectedContentName = content?.name ?? '';
 
   return (
-    <Menu shadow='md' position='top' width={160} withinPortal withArrow opened={opened} onClose={handleClose}>
+    <Menu
+      shadow='md'
+      position='top'
+      width={160}
+      zIndex={1500}
+      withinPortal
+      withArrow
+      opened={opened}
+      onClose={handleClose}
+    >
       <Menu.Target>
         <RichTextEditor.Control onClick={handleOpen} active={editor?.isActive('link')} aria-label='Link Content'>
           <IconLink size='1.0rem' stroke={1.5} />

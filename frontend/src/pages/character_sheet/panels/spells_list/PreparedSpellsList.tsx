@@ -1,16 +1,21 @@
 import BlurButton from '@common/BlurButton';
 import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
-import { CastingSource, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import { CastingSource, LivingEntity, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { StoreID } from '@typing/variables';
 
 export default function PreparedSpellsList(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   source?: CastingSource;
   spellIds: number[];
@@ -60,7 +65,7 @@ export default function PreparedSpellsList(props: {
     return null;
   }
 
-  const spellStats = getSpellStats('CHARACTER', null, props.source!.tradition, props.source!.attribute);
+  const spellStats = getSpellStats(props.id, null, props.source!.tradition, props.source!.attribute);
 
   return (
     <Accordion.Item value={props.index} data-wg-name={props.index.toLowerCase()}>
@@ -127,7 +132,8 @@ export default function PreparedSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { id: 'CHARACTER', variableName: 'SPELL_ATTACK' },
+                    data: { id: props.id, variableName: 'SPELL_ATTACK' },
+                    extra: { addToHistory: true },
                   });
                 }}
               >
@@ -145,7 +151,8 @@ export default function PreparedSpellsList(props: {
                 onClick={() => {
                   openDrawer({
                     type: 'stat-prof',
-                    data: { id: 'CHARACTER', variableName: 'SPELL_DC', isDC: true },
+                    data: { id: props.id, variableName: 'SPELL_DC', isDC: true },
+                    extra: { addToHistory: true },
                   });
                 }}
               >

@@ -353,6 +353,14 @@ interface LivingEntity {
     background_image_url?: string;
     conditions?: Condition[];
   };
+  notes?: {
+    pages: {
+      name: string;
+      icon: string;
+      color: string;
+      contents: JSONContent;
+    }[];
+  };
   roll_history?: {
     rolls: {
       type: string;
@@ -390,9 +398,6 @@ interface Creature extends LivingEntity {
   id: number;
   created_at: string;
   rarity: Rarity;
-  notes?: {
-    contents: JSONContent;
-  };
   details: {
     image_url?: string;
     background_image_url?: string;
@@ -413,14 +418,6 @@ interface Character extends LivingEntity {
   campaign_id?: number | null;
   user_id: string;
   hero_points: number;
-  notes?: {
-    pages: {
-      name: string;
-      icon: string;
-      color: string;
-      contents: JSONContent;
-    }[];
-  };
   details?: {
     image_url?: string;
     background_image_url?: string;

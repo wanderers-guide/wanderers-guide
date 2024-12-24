@@ -4,6 +4,7 @@ import {
   CastingSource,
   Character,
   InventoryItem,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -20,10 +21,15 @@ import { handleUpdateItemCharges, isItemBroken } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import RichText from '@common/RichText';
+import { StoreID } from '@typing/variables';
 
 const DEFAULT_WAND_HP = 2;
 
 export default function WandSpellsList(props: {
+  id: StoreID;
+  entity: LivingEntity;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   wands: InventoryItem[];
   allSpells: Spell[];
@@ -41,11 +47,7 @@ export default function WandSpellsList(props: {
     };
   };
   hasFilters: boolean;
-  character: Character;
-  setCharacter: SetterOrUpdater<Character | null>;
 }) {
-  const { setCharacter } = props;
-
   const processedWands = useMemo(() => {
     const processed = [];
     for (const wand of props.wands) {
@@ -84,10 +86,10 @@ export default function WandSpellsList(props: {
   useEffect(() => {
     for (const wand of processedWands) {
       if (wand.charges.max === 0) {
-        handleUpdateItemCharges(setCharacter, wand.item, { max: 1 });
+        handleUpdateItemCharges(props.setEntity, wand.item, { max: 1 });
       }
     }
-  }, [processedWands, setCharacter]);
+  }, [processedWands, props.setEntity]);
 
   // If there are no wands to display, and there are filters, return null
   if (props.hasFilters && props.wands.length === 0) {
@@ -167,7 +169,7 @@ export default function WandSpellsList(props: {
                         labels: { confirm: 'Break Wand', cancel: 'Cancel' },
                         onCancel: () => {},
                         onConfirm: async () => {
-                          setCharacter((char) => {
+                          props.setEntity((char) => {
                             if (!char || !char.inventory) return null;
 
                             return {
@@ -204,11 +206,11 @@ export default function WandSpellsList(props: {
                         },
                       });
                     } else {
-                      handleUpdateItemCharges(setCharacter, wand.item, { current: wand.charges.current + 1 });
+                      handleUpdateItemCharges(props.setEntity, wand.item, { current: wand.charges.current + 1 });
                     }
                   } else {
                     // Reset wand
-                    setCharacter((char) => {
+                    props.setEntity((char) => {
                       if (!char || !char.inventory) return null;
 
                       return {
@@ -251,7 +253,7 @@ export default function WandSpellsList(props: {
                     current={wand.charges.current}
                     max={wand.charges.max}
                     onChange={(v) => {
-                      handleUpdateItemCharges(setCharacter, wand.item, { current: v });
+                      handleUpdateItemCharges(props.setEntity, wand.item, { current: v });
                     }}
                   />
                 }

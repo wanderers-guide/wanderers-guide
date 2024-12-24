@@ -3,6 +3,7 @@ import { getSpellStats } from '@spells/spell-handler';
 import {
   CastingSource,
   Character,
+  LivingEntity,
   Spell,
   SpellInnateEntry,
   SpellListEntry,
@@ -14,8 +15,12 @@ import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
+import { StoreID } from '@typing/variables';
 
 export default function InnateSpellsList(props: {
+  id: StoreID;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   index: string;
   source?: CastingSource;
   spellIds: number[];
@@ -39,7 +44,6 @@ export default function InnateSpellsList(props: {
   hasFilters: boolean;
   openManageSpells?: (source: string, type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY') => void;
   castSpell: (cast: boolean, spell: Spell) => void;
-  setCharacter: SetterOrUpdater<Character | null>;
   innateSpells: Dictionary<
     {
       spell: Spell | undefined;
@@ -51,7 +55,7 @@ export default function InnateSpellsList(props: {
     }[]
   > | null;
 }) {
-  const { castSpell, setCharacter, innateSpells } = props;
+  const { castSpell, innateSpells } = props;
 
   // If there are no spells to display, and there are filters, return null
   if (
@@ -139,7 +143,7 @@ export default function InnateSpellsList(props: {
                               current={innate.casts_current}
                               max={innate.casts_max}
                               onChange={(v) => {
-                                setCharacter((c) => {
+                                props.setEntity((c) => {
                                   if (!c) return c;
 
                                   const innates = (props.extra?.innates ?? []).map((inn) => {
