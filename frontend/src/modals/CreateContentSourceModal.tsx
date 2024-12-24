@@ -279,6 +279,7 @@ export function ContentSourceEditor(props: {
             onClose={() => setOpenedOperations(false)}
             operations={form.values.operations ?? []}
             onChange={(operations) => form.setValues({ ...form.values, operations })}
+            zIndex={491}
           />
 
           <Group wrap='nowrap' justify='space-between' h={40}>

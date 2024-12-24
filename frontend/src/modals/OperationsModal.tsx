@@ -24,6 +24,7 @@ export default function OperationsModal(props: {
   onClose: () => void;
   operations: Operation[];
   onChange: (operations: Operation[]) => void;
+  zIndex?: number;
 }) {
   return (
     <Modal
@@ -38,6 +39,7 @@ export default function OperationsModal(props: {
         },
       }}
       size={'xl'}
+      zIndex={props.zIndex}
     >
       <Box m='sm'>
         <OperationSection

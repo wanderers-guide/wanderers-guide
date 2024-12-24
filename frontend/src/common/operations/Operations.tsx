@@ -223,6 +223,11 @@ export function OperationSection(props: {
                 }
               }
             }}
+            styles={(t) => ({
+              dropdown: {
+                zIndex: 1500,
+              },
+            })}
           />
         )}
       </Group>
