@@ -162,22 +162,23 @@ function BrowseSection(props: {}) {
     refetchOnWindowFocus: false,
   });
 
+  const bundles = data?.filter((source) => source.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
-    <Stack w='100%' gap={5}>
-      {/* <TextInput
+    <Stack w='100%' gap={15}>
+      <TextInput
         style={{ flex: 1 }}
         leftSection={<IconSearch size='0.9rem' />}
         placeholder={`Search bundles`}
-        onChange={(event) => setSearchQuery(event.target.value)}
+        onChange={(e) => setSearchQuery(e.target.value)}
         styles={{
           input: {
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(6px)',
-            color: theme.colors.gray[0],
-            borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+            backgroundColor: `rgba(20, 21, 23, 0.827)`,
+            backdropFilter: `blur(10px)`,
+            borderColor: 'transparent',
           },
         }}
-      /> */}
+      />
 
       <Group>
         {isFetching && (
@@ -192,10 +193,10 @@ function BrowseSection(props: {}) {
             }}
           />
         )}
-        {(data ?? []).map((source, index) => (
+        {(bundles ?? []).map((source, index) => (
           <ContentSourceCard key={index} source={source} />
         ))}
-        {!isFetching && (data ?? []).length === 0 && (
+        {!isFetching && (bundles ?? []).length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
