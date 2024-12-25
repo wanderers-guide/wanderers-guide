@@ -481,7 +481,7 @@ function EncounterView(props: {
             </Box>
           </Group>
         </Box>
-        <Box
+        <ScrollArea
           p={8}
           style={{
             backgroundColor: `rgb(37, 38, 43)`,
@@ -540,7 +540,7 @@ function EncounterView(props: {
                 />
               ))}
           </Stack>
-        </Box>
+        </ScrollArea>
       </Stack>
     </Box>
   );
