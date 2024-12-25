@@ -23,6 +23,8 @@ import {
   Text,
   NumberInput,
   TextInput,
+  Badge,
+  MantineColor,
 } from '@mantine/core';
 import {
   getHotkeyHandler,
@@ -44,6 +46,7 @@ import {
   IconPlus,
   IconSettings,
   IconUser,
+  IconX,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
@@ -324,6 +327,8 @@ function EncounterView(props: {
   players?: Character[];
   panelHeight: number;
 }) {
+  const [initiative, setInitiative] = useState<Map<number, number>>(new Map());
+
   const combatants = props.encounter.combatants.list
     .map((combatant) => {
       if (_.isNumber(combatant)) {
@@ -353,6 +358,8 @@ function EncounterView(props: {
       });
     }) ?? [];
 
+  const difficulty = calculateDifficulty(props.encounter, combatants);
+
   return (
     <Box style={{}}>
       <Stack gap={0}>
@@ -365,77 +372,113 @@ function EncounterView(props: {
             border: '1px solid #373A40',
           }}
         >
-          <Group>
-            <Button
-              variant='light'
-              size='compact-sm'
-              rightSection={<GiDiceTwentyFacesTwenty size={16} />}
-              style={{
-                fontStyle: 'italic',
-              }}
-              color={props.encounter.color}
-            >
-              Roll Initiative
-            </Button>
+          <Group justify='space-between' mr={40} wrap='nowrap' align='flex-start'>
+            <Group>
+              <Button
+                variant='light'
+                size='compact-sm'
+                rightSection={<GiDiceTwentyFacesTwenty size={16} />}
+                style={{
+                  fontStyle: 'italic',
+                }}
+                color={props.encounter.color}
+              >
+                Roll Initiative
+              </Button>
 
-            {props.players && (
-              <Menu shadow='md' width={160}>
-                <Menu.Target>
-                  <Button
-                    disabled={playersToAdd.length === 0}
-                    variant='subtle'
-                    size='xs'
-                    rightSection={<IconUser size={14} />}
-                    color={props.encounter.color}
-                  >
-                    Add Player
-                  </Button>
-                </Menu.Target>
-
-                <Menu.Dropdown>
-                  {playersToAdd.map((player, index) => (
-                    <Menu.Item
-                      key={index}
-                      value={`${player.id}`}
-                      onClick={() => {
-                        const newEncounter = _.cloneDeep(props.encounter);
-                        newEncounter.combatants.list.push(player.id);
-                        props.setEncounter(newEncounter);
-                      }}
+              {props.players && (
+                <Menu shadow='md' width={160}>
+                  <Menu.Target>
+                    <Button
+                      disabled={playersToAdd.length === 0}
+                      variant='subtle'
+                      size='xs'
+                      rightSection={<IconUser size={14} />}
+                      color={props.encounter.color}
                     >
-                      {_.truncate(player.name, { length: 18 })}
-                    </Menu.Item>
-                  ))}
-                </Menu.Dropdown>
-              </Menu>
-            )}
+                      Add Player
+                    </Button>
+                  </Menu.Target>
 
-            <Button
-              variant='subtle'
-              size='xs'
-              rightSection={<IconBat size={14} />}
-              color={props.encounter.color}
-              onClick={() => {
-                selectContent<Creature>(
-                  'creature',
-                  (option) => {
-                    const newEncounter = _.cloneDeep(props.encounter);
-                    newEncounter.combatants.list.push(option);
-                    props.setEncounter(newEncounter);
-                  },
-                  {
-                    showButton: true,
-                    groupBySource: true,
-                    zIndex: 400,
-                  }
-                );
-              }}
-            >
-              Add Creature
-            </Button>
-            <Button variant='subtle' size='xs' rightSection={<IconCylinder size={14} />} color={props.encounter.color}>
-              Add Custom
-            </Button>
+                  <Menu.Dropdown>
+                    {playersToAdd.map((player, index) => (
+                      <Menu.Item
+                        key={index}
+                        value={`${player.id}`}
+                        onClick={() => {
+                          const newEncounter = _.cloneDeep(props.encounter);
+                          newEncounter.combatants.list.push(player.id);
+
+                          // Update party size and level
+                          let playersInEncounter = combatants.filter((c) => isCharacter(c));
+                          playersInEncounter.push(player);
+                          const level = _.mean(playersInEncounter.map((p) => p.level));
+                          const size = playersInEncounter.length;
+                          newEncounter.meta_data = {
+                            ...newEncounter.meta_data,
+                            party_level: level,
+                            party_size: size,
+                          };
+
+                          props.setEncounter(newEncounter);
+                        }}
+                      >
+                        {_.truncate(player.name, { length: 18 })}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Dropdown>
+                </Menu>
+              )}
+
+              <Button
+                variant='subtle'
+                size='xs'
+                rightSection={<IconBat size={14} />}
+                color={props.encounter.color}
+                onClick={() => {
+                  selectContent<Creature>(
+                    'creature',
+                    (option) => {
+                      const newEncounter = _.cloneDeep(props.encounter);
+                      newEncounter.combatants.list.push(option);
+                      props.setEncounter(newEncounter);
+                    },
+                    {
+                      showButton: true,
+                      groupBySource: true,
+                      zIndex: 400,
+                    }
+                  );
+                }}
+              >
+                Add Creature
+              </Button>
+              <Button
+                variant='subtle'
+                size='xs'
+                rightSection={<IconCylinder size={14} />}
+                color={props.encounter.color}
+              >
+                Add Custom
+              </Button>
+            </Group>
+            <Box>
+              {combatants.length > 0 && (
+                <Badge
+                  variant='dot'
+                  color={difficulty.color}
+                  size='lg'
+                  styles={{
+                    root: {
+                      textTransform: 'initial',
+                      fontSize: '0.6rem',
+                    },
+                  }}
+                >
+                  {difficulty.status} ({difficulty.xp} XP)
+                </Badge>
+              )}
+            </Box>
           </Group>
         </Box>
         <Box
@@ -450,22 +493,52 @@ function EncounterView(props: {
           }}
         >
           <Stack gap={15}>
-            {combatants.map((combatant, index) => (
-              <CombatantCard
-                key={index}
-                combatant={combatant}
-                computed={computedData?.find((d) => {
-                  if (isCharacter(combatant)) {
-                    return d.id === combatant.id && d.type === 'character';
-                  } else if (isCreature(combatant)) {
-                    return d.id === combatant.id && d.type === 'creature';
+            {combatants
+              .sort((a, b) => {
+                let aI = initiative.get(a.id!);
+                let bI = initiative.get(b.id!);
+                if (aI === undefined || isNaN(aI)) aI = undefined;
+                if (bI === undefined || isNaN(bI)) bI = undefined;
+
+                if (aI === undefined) return -1;
+                if (bI === undefined) return 1;
+
+                if (aI === bI) {
+                  // Creatures win ties
+                  if (isCharacter(a) && isCreature(b)) {
+                    return 1;
+                  } else if (isCreature(a) && isCharacter(b)) {
+                    return -1;
                   } else {
-                    return false;
+                    return a.name.localeCompare(b.name);
                   }
-                })}
-                updateHealth={(hp) => {}}
-              />
-            ))}
+                } else {
+                  return bI - aI;
+                }
+              })
+              .map((combatant, index) => (
+                <CombatantCard
+                  key={`${combatant.id}-${index}`}
+                  combatant={combatant}
+                  computed={computedData?.find((d) => {
+                    if (isCharacter(combatant)) {
+                      return d.id === combatant.id && d.type === 'character';
+                    } else if (isCreature(combatant)) {
+                      return d.id === combatant.id && d.type === 'creature';
+                    } else {
+                      return false;
+                    }
+                  })}
+                  updateHealth={(hp) => {}}
+                  initiative={initiative.get(combatant.id!) ?? null}
+                  updateInitiative={(init) => {
+                    setInitiative((i) => {
+                      i.set(combatant.id!, init);
+                      return new Map(i);
+                    });
+                  }}
+                />
+              ))}
           </Stack>
         </Box>
       </Stack>
@@ -484,15 +557,37 @@ function CombatantCard(props: {
     will: number;
     maxHp: number;
   };
+  initiative: number | null;
   updateHealth: (hp: number) => void;
+  updateInitiative: (init: number) => void;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Initiative
+
+  const [initiative, setInitiative] = useState<number | null>(props.initiative);
+  const initiativeRef = useRef<HTMLInputElement>(null);
+
+  const handleInitiativeSubmit = () => {
+    if (initiative !== null) {
+      initiativeRef.current?.blur();
+      props.updateInitiative(initiative);
+    }
+  };
+
+  // Health
+
   const [health, setHealth] = useState<string | undefined>();
   const healthRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (props.combatant) {
+      setHealth(`${props.combatant.hp_current ?? 0}`);
+    }
+  }, [props.combatant]);
 
   const handleHealthSubmit = () => {
     const inputHealth = health ?? '0';
@@ -514,8 +609,29 @@ function CombatantCard(props: {
   };
 
   return (
-    <Group wrap='nowrap' gap={10}>
-      <NumberInput variant='filled' w={70} size='md' />
+    <Group
+      wrap='nowrap'
+      gap={10}
+      style={{
+        position: 'relative',
+      }}
+    >
+      <NumberInput
+        ref={initiativeRef}
+        variant='filled'
+        w={70}
+        size='md'
+        placeholder='Init.'
+        value={initiative ?? undefined}
+        onChange={(val) => {
+          setInitiative(parseInt(`${val}`));
+        }}
+        onBlur={handleInitiativeSubmit}
+        onKeyDown={getHotkeyHandler([
+          ['mod+Enter', handleInitiativeSubmit],
+          ['Enter', handleInitiativeSubmit],
+        ])}
+      />
       <Group
         ref={ref}
         wrap='nowrap'
@@ -525,6 +641,7 @@ function CombatantCard(props: {
           backgroundColor: hovered ? t.colors.dark[5] : 'transparent',
           borderRadius: t.radius.md,
           cursor: 'pointer',
+          position: 'relative',
         })}
         onClick={() => {
           if (isCharacter(props.combatant)) {
@@ -537,6 +654,20 @@ function CombatantCard(props: {
           }
         }}
       >
+        <Text
+          size={'10px'}
+          fw={400}
+          c='dimmed'
+          fs='italic'
+          style={{
+            position: 'absolute',
+            top: 15,
+            right: 15,
+          }}
+        >
+          Lvl. {props.combatant.level}
+        </Text>
+
         <Avatar
           src={props.combatant.details?.image_url}
           radius='xl'
@@ -547,7 +678,7 @@ function CombatantCard(props: {
           }}
         />
         <Box pr={5} style={{ flex: 1 }}>
-          <Text size='sm' fw={600}>
+          <Text size='sm' fw={600} span>
             {props.combatant.name}
           </Text>
 
@@ -598,6 +729,23 @@ function CombatantCard(props: {
           </Group>
         </ScrollArea>
       )}
+
+      <ActionIcon
+        size='sm'
+        variant='light'
+        radius={100}
+        color='gray'
+        aria-label='Remove Combatant'
+        onClick={() => {}}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          right: 0,
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <IconX size='1.5rem' stroke={2} />
+      </ActionIcon>
     </Group>
   );
 }
@@ -663,4 +811,96 @@ async function computeCombatants(combatants: LivingEntity[]) {
   }
 
   return await Promise.all(combatants.map(computeCombatant));
+}
+
+function calculateDifficulty(encounter: Encounter, combatants: LivingEntity[]) {
+  let partySize = encounter.meta_data.party_size ?? 0;
+  let partyLevel = encounter.meta_data.party_level ?? 0;
+
+  if (encounter.campaign_id) {
+    const playersInEncounter = combatants.filter((c) => isCharacter(c));
+    partyLevel = _.mean(playersInEncounter.map((p) => p.level));
+    partySize = playersInEncounter.length;
+  }
+
+  let xpBudget = 0;
+  for (const entity of combatants) {
+    if (isCharacter(entity)) {
+      continue;
+    }
+    switch (entity.level - partyLevel) {
+      case -4:
+        xpBudget += 10;
+        break;
+      case -3:
+        xpBudget += 15;
+        break;
+      case -2:
+        xpBudget += 20;
+        break;
+      case -1:
+        xpBudget += 30;
+        break;
+      case 0:
+        xpBudget += 40;
+        break;
+      case 1:
+        xpBudget += 60;
+        break;
+      case 2:
+        xpBudget += 80;
+        break;
+      case 3:
+        xpBudget += 120;
+        break;
+      case 4:
+        xpBudget += 160;
+        break;
+      default:
+        if (entity.level > partyLevel) {
+          // greater than +4
+          xpBudget += (entity.level - partyLevel) * 40;
+        } else if (entity.level < partyLevel) {
+          // less than -4
+          xpBudget += 0;
+        }
+        break;
+    }
+  }
+
+  let partySizeDiff = partySize - 4;
+
+  let difficulty;
+  let color: MantineColor = 'gray';
+  if (xpBudget >= 200 + partySizeDiff * 40) {
+    // 200+ is impossible
+    difficulty = 'IMPOSSIBLE';
+    color = 'dark';
+  } else if (xpBudget >= 140 + partySizeDiff * 40) {
+    // 140-199 is extreme
+    difficulty = 'Extreme';
+    color = 'red';
+  } else if (xpBudget >= 100 + partySizeDiff * 30) {
+    // 100-139 is severe
+    difficulty = 'Severe';
+    color = 'orange';
+  } else if (xpBudget >= 70 + partySizeDiff * 20) {
+    // 70-99 is moderate
+    difficulty = 'Moderate';
+    color = 'yellow';
+  } else if (xpBudget >= 50 + partySizeDiff * 15) {
+    // 50-69 is low
+    difficulty = 'Low';
+    color = 'green';
+  } else {
+    // 0-50 is trivial
+    difficulty = 'Trivial';
+    color = 'blue';
+  }
+
+  return {
+    status: difficulty,
+    color: color,
+    xp: xpBudget,
+  };
 }

@@ -340,6 +340,7 @@ interface AbilityBlock {
 }
 
 interface LivingEntity {
+  id?: number;
   name: string;
   level: number;
   experience: number;

@@ -348,7 +348,7 @@ export default function EntityInfoSection(props: {
                   variant='filled'
                   size='xs'
                   radius='lg'
-                  placeholder='Exp.'
+                  placeholder='XP'
                   value={exp}
                   onChange={(e) => {
                     setExp(e.currentTarget.value);
