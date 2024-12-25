@@ -386,9 +386,10 @@ interface LivingEntity {
     given_item_ids?: number[];
     reset_hp?: boolean;
     calculated_stats?: {
-      hp_max: number;
-      stamina_max: number;
-      resolve_max: number;
+      hp_max?: number;
+      stamina_max?: number;
+      resolve_max?: number;
+      ac?: number;
       profs: Record<string, { total: number; type: ProficiencyType }>;
     };
   };
@@ -576,9 +577,11 @@ interface Encounter {
   created_at: string;
   user_id: string;
   name: string;
+  icon: string;
+  color: string;
   campaign_id?: number;
   combatants: {
-    list: (Creature | Character)[];
+    list: (Creature | number)[];
   };
   meta_data: {
     description?: string;

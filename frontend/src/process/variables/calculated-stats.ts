@@ -1,29 +1,49 @@
-import { getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
-import { Item, Character, InventoryItem } from '@typing/content';
-import { VariableListStr } from '@typing/variables';
+import { getBestArmor, getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
+import { Item, Character, InventoryItem, LivingEntity } from '@typing/content';
+import { ProficiencyType, StoreID, VariableListStr } from '@typing/variables';
 import { SetterOrUpdater } from 'recoil';
-import { getVariable } from './variable-manager';
-import { getFinalHealthValue } from './variable-display';
+import { getVariable, getVariables } from './variable-manager';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-display';
 
-export function saveCalculatedStats(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+export function saveCalculatedStats(
+  id: StoreID,
+  entity: LivingEntity,
+  setEntity: SetterOrUpdater<LivingEntity | null>
+) {
   setTimeout(() => {
-    const maxHealth = getFinalHealthValue('CHARACTER');
+    const maxHealth = getFinalHealthValue(id);
     const maxStamina = 0;
     const maxResolve = 0;
-    const finalProfs = {}; // TODO
+    const ac = getFinalAcValue(id, getBestArmor(id, entity.inventory)?.item);
+    const finalProfs: Record<string, { total: number; type: ProficiencyType }> = {};
+
+    // Get calculated proficiencies
+    for (const name of Object.keys(getVariables(id))) {
+      const variable = getVariable(id, name);
+      if (variable?.type !== 'prof') continue;
+
+      const value = getFinalProfValue(id, name);
+      const type = variable.value.value;
+
+      finalProfs[name] = {
+        total: parseInt(value),
+        type: type,
+      };
+    }
 
     const calcStats = {
       hp_max: maxHealth,
       stamina_max: maxStamina,
       resolve_max: maxResolve,
+      ac: ac,
       profs: finalProfs,
     };
 
-    if (JSON.stringify(calcStats) === JSON.stringify(character.meta_data?.calculated_stats ?? {})) return;
+    if (JSON.stringify(calcStats) === JSON.stringify(entity.meta_data?.calculated_stats ?? {})) return;
 
     // Save the calculated stats
     console.log('Saving calculated stats', calcStats);
-    setCharacter((c) => {
+    setEntity((c) => {
       if (!c) return c;
       return {
         ...c,

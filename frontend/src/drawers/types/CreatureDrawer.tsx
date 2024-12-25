@@ -93,8 +93,8 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
               <Avatar
                 src={creature?.details?.image_url}
                 alt='Creature Artwork'
-                size={75}
-                radius={75}
+                size={50}
+                radius={50}
                 variant='transparent'
                 color='dark.3'
                 bg={theme.colors.dark[6]}

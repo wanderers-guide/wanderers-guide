@@ -251,7 +251,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         }
 
         // Save calculated stats
-        saveCalculatedStats(character, setCharacter);
+        saveCalculatedStats('CHARACTER', character, convertToSetEntity(setCharacter));
 
         setOperationResults(results);
         executingOperations.current = false;

@@ -36,7 +36,7 @@ import {
   IconCopy,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Campaign, Character } from '@typing/content';
+import { Campaign, Character, Encounter } from '@typing/content';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';
@@ -384,7 +384,8 @@ function SectionPanels(props: {
   const [openedPhonePanel, setOpenedPhonePanel] = useState(false);
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
-  const { hovered: hoveredTabOptions, ref: tabOptionsRef } = useHover<HTMLButtonElement>();
+
+  const [encounters, setEncounters] = useState<Encounter[]>([]);
 
   const iconStyle = { width: rem(12), height: rem(12) };
   const allCampaignTabs = ['notes', 'encounters', 'shops', 'inspiration', 'settings'];
@@ -418,7 +419,7 @@ function SectionPanels(props: {
   if (isPhone) {
     return (
       <Box>
-        {props.hideSections && (
+        {props.hideSections ? (
           <BlurBox blur={10} p='sm' mih={props.panelHeight}>
             {activeTab === 'notes' && (
               <NotesPanel
@@ -431,8 +432,12 @@ function SectionPanels(props: {
 
             {activeTab === 'encounters' && (
               <EncountersPanel
-                campaign={props.campaign}
-                setCampaign={props.setCampaign}
+                campaign={{
+                  data: props.campaign,
+                  players: props.players,
+                }}
+                encounters={encounters}
+                setEncounters={setEncounters}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
               />
@@ -467,6 +472,15 @@ function SectionPanels(props: {
               />
             )}
           </BlurBox>
+        ) : (
+          <Box pb={35}>
+            <NotesPanel
+              campaign={props.campaign}
+              setCampaign={props.setCampaign}
+              panelHeight={props.panelHeight}
+              panelWidth={props.panelWidth}
+            />
+          </Box>
         )}
 
         <Box
@@ -640,8 +654,12 @@ function SectionPanels(props: {
               <EncountersPanel
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                campaign={props.campaign}
-                setCampaign={props.setCampaign}
+                campaign={{
+                  data: props.campaign,
+                  players: props.players,
+                }}
+                encounters={encounters}
+                setEncounters={setEncounters}
               />
             </Tabs.Panel>
 

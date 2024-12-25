@@ -111,6 +111,11 @@ export default function UpdateNotePageModal({
           onChange={(color) => {
             setColor(color);
           }}
+          styles={(t) => ({
+            dropdown: {
+              zIndex: 1500,
+            },
+          })}
         />
       </Group>
 

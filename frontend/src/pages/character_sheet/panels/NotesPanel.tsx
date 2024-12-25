@@ -93,15 +93,23 @@ export default function NotesPanel(props: {
                 aria-label={`Page Settings`}
                 size='xs'
                 radius='xl'
-                color='gray.5'
+                color={isPhone ? page.color || 'gray.5' : 'gray.5'}
                 style={{
                   position: 'absolute',
                   bottom: 10,
                   left: 10,
+                  //
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
                 }}
-                w={110}
+                w={130}
+                leftSection={
+                  <ActionIcon variant='transparent' size='xs' color={page.color}>
+                    <Icon name={page.icon} size='1rem' />
+                  </ActionIcon>
+                }
               >
-                Open Pages
+                {page.name}
               </Button>
             </Menu.Target>
 
@@ -157,13 +165,16 @@ export default function NotesPanel(props: {
           aria-label={`Page Settings`}
           size='md'
           radius='xl'
-          color='gray.5'
+          color={isPhone ? page.color || 'gray.5' : 'gray.5'}
           style={{
             position: 'absolute',
             top: isPhone ? undefined : 10,
             bottom: isPhone ? 10 : undefined,
-            left: isPhone ? 130 : undefined,
+            left: isPhone ? 150 : undefined,
             right: isPhone ? undefined : 10,
+            //
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
           }}
           onClick={() => {
             openContextModal({
@@ -202,7 +213,7 @@ export default function NotesPanel(props: {
                   setActiveTab(`0`);
                 },
               },
-              zIndex: props.zIndex ?? 499,
+              zIndex: props.zIndex,
             });
           }}
         >
