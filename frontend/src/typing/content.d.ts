@@ -582,13 +582,22 @@ interface Encounter {
   color: string;
   campaign_id?: number;
   combatants: {
-    list: (Creature | number)[];
+    list: Combatant[];
   };
   meta_data: {
     description?: string;
     party_level?: number;
     party_size?: number;
   };
+}
+
+interface Combatant {
+  _id: string;
+  type: 'CREATURE' | 'CHARACTER';
+  ally: boolean;
+  creature?: Creature;
+  character?: number;
+  data?: LivingEntity;
 }
 
 interface PublicUser {
