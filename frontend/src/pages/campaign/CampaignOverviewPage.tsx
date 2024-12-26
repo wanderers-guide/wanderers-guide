@@ -284,9 +284,6 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           <BlurBox blur={10} maw={280} py={5} px='sm'>
                             <CharacterDetailedInfo
                               character={character}
-                              onClick={() => {
-                                window.open(`/sheet/${character.id}`, '_blank');
-                              }}
                             />
                           </BlurBox>
                         ))}
