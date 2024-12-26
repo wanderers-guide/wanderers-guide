@@ -33,6 +33,7 @@ import {
   useMediaQuery,
 } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
+import { CreateCombatantModal } from '@modals/CreateCombatantModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
 import { ConditionPills } from '@pages/character_sheet/sections/ConditionSection';
@@ -337,6 +338,8 @@ function EncounterView(props: {
   players?: Character[];
   panelHeight: number;
 }) {
+  const [openedAddCombatant, setOpenedAddCombatant] = useState(false);
+
   /**
    * Update the encounter with a new combatant
    * @param change - The change to make
@@ -566,6 +569,9 @@ function EncounterView(props: {
                 size='xs'
                 rightSection={<IconCylinder size={14} />}
                 color={props.encounter.color}
+                onClick={() => {
+                  setOpenedAddCombatant(true);
+                }}
               >
                 Add Custom
               </Button>
@@ -684,9 +690,33 @@ function EncounterView(props: {
                   }
                 />
               ))}
+            {combatants.length === 0 && (
+              <Stack mt={40} gap={10}>
+                <Text ta='center' c='gray.6' fz='sm' fs='italic'>
+                  No combatants found. Go add some!
+                </Text>
+              </Stack>
+            )}
           </Stack>
         </ScrollArea>
       </Stack>
+      {openedAddCombatant && (
+        <CreateCombatantModal
+          opened={true}
+          onComplete={async (combatant) => {
+            console.log(combatant);
+            changeCombatants({
+              type: 'ADD',
+              data: combatant.creature!,
+              ally: combatant.ally,
+            });
+            setOpenedAddCombatant(false);
+          }}
+          onCancel={() => {
+            setOpenedAddCombatant(false);
+          }}
+        />
+      )}
     </Box>
   );
 }

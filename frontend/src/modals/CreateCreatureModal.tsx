@@ -157,6 +157,7 @@ export function CreateCreatureModal(props: {
     props.onComplete({
       ...values,
       name: values.name.trim(),
+      level: parseInt(`${values.level}`),
       // traits: traits.map((trait) => trait.id),
       operations: [...(values.operations ?? []), ...totaledOperations],
     });

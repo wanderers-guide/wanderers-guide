@@ -14,7 +14,7 @@ export function isCharacter(entity?: LivingEntity | null): entity is Character {
 
 export function isCreature(entity?: LivingEntity | null): entity is Creature {
   if (!entity) return false;
-  return entity.hasOwnProperty('abilities');
+  return entity.hasOwnProperty('rarity');
 }
 
 export function convertToSetEntity(setValue: SetterOrUpdater<Character | null> | SetterOrUpdater<Creature | null>) {
