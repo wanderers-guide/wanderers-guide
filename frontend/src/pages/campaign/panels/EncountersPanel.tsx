@@ -38,6 +38,7 @@ import { openContextModal } from '@mantine/modals';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
 import {
+  IconAtom2Filled,
   IconBat,
   IconBrandFunimation,
   IconCheck,
@@ -45,6 +46,7 @@ import {
   IconDownload,
   IconPlus,
   IconSettings,
+  IconSword,
   IconUser,
   IconX,
 } from '@tabler/icons-react';
@@ -57,7 +59,7 @@ import { convertToSetEntity, isCharacter, isCreature, setterOrUpdaterToValue } f
 import useRefresh from '@utils/use-refresh';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
 import _ from 'lodash-es';
-import { evaluate } from 'mathjs';
+import { evaluate, i } from 'mathjs';
 import { useEffect, useRef, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
@@ -321,6 +323,10 @@ export default function EncountersPanel(props: {
   }
 }
 
+interface Combatant extends LivingEntity {
+  _id: string;
+}
+
 function EncounterView(props: {
   encounter: Encounter;
   setEncounter: (encounter: Encounter) => void;
@@ -329,22 +335,105 @@ function EncounterView(props: {
 }) {
   const [initiative, setInitiative] = useState<Map<number, number>>(new Map());
 
-  const combatants = props.encounter.combatants.list
-    .map((combatant) => {
-      if (_.isNumber(combatant)) {
-        return props.players?.find((p) => p.id === combatant);
-      } else {
-        return combatant;
+  /**
+   * Get the combatants from the encounter list
+   * @param list - The list of combatants as player IDs or Creatures
+   * @returns - The list of combatants as Combatant objects
+   */
+  const getCombatants = (list: (number | Creature)[]): Combatant[] => {
+    return (
+      list
+        .map((combatant) => {
+          if (_.isNumber(combatant)) {
+            return props.players?.find((p) => p.id === combatant);
+          } else {
+            return combatant;
+          }
+        })
+        .filter((c) => c !== undefined) as LivingEntity[]
+    ).map((e) => {
+      return {
+        ...e,
+        _id: crypto.randomUUID(),
+      };
+    });
+  };
+
+  /**
+   * Update the encounter with a new combatant
+   * @param combatant - The combatant to add or remove
+   * @param change - 'ADD' or 'REMOVE'
+   * @returns - The updated encounter
+   */
+  const updateCombatants = (entity: LivingEntity | Combatant, change: 'ADD' | 'REMOVE') => {
+    const newEncounter = _.cloneDeep(props.encounter);
+
+    if (change === 'ADD') {
+      if (isCharacter(entity)) {
+        newEncounter.combatants.list.push(entity.id);
+      } else if (isCreature(entity)) {
+        newEncounter.combatants.list.push(entity);
       }
-    })
-    .filter((c) => c !== undefined) as LivingEntity[];
+    } else if (change === 'REMOVE') {
+      // @ts-ignore
+      const id = entity._id ?? entity.id;
+
+      newEncounter.combatants.list = newEncounter.combatants.list.filter((c) => {
+        if (_.isNumber(c)) {
+          return c !== id;
+        } else {
+          return c.id !== id;
+        }
+      });
+    }
+
+    // Update party size and level
+    const alliesInEncounter = getCombatants(newEncounter.combatants.list).filter((c) => isAllyCombatant(c));
+    const partyLevel = _.mean(alliesInEncounter.map((p) => p.level));
+    const partySize = alliesInEncounter.length;
+
+    newEncounter.meta_data = {
+      ...newEncounter.meta_data,
+      party_level: partyLevel,
+      party_size: partySize,
+    };
+
+    props.setEncounter(newEncounter);
+
+    return newEncounter;
+  };
+
+  /**
+   * Display the difficulty badge if there are both allies and enemies
+   * @param combatants - The list of combatants
+   * @returns - Whether to display the difficulty badge
+   */
+  const displayDifficulty = (combatants: Combatant[]): boolean => {
+    if (combatants.length === 0) return false;
+    // Display difficulty if there are both allies and enemies
+    return combatants.some((c) => isAllyCombatant(c)) && combatants.some((c) => !isAllyCombatant(c));
+  };
+
+  const combatants = getCombatants(props.encounter.combatants.list);
 
   const { data: computedData } = useQuery({
-    queryKey: [`computed-combatants`, { combatants: combatants }],
+    queryKey: [
+      `computed-combatants`,
+      {
+        combatants: combatants.map((c) => {
+          // Delete _id to prevent infinite loop
+          // @ts-ignore
+          delete c._id;
+          return c;
+        }),
+      },
+    ],
     queryFn: async () => {
       if (combatants.length === 0) return [];
+      console.log('Computing combatants');
       return await computeCombatants(combatants);
     },
+    enabled: combatants.length > 0,
   });
 
   const playersToAdd =
@@ -402,27 +491,7 @@ function EncounterView(props: {
 
                   <Menu.Dropdown>
                     {playersToAdd.map((player, index) => (
-                      <Menu.Item
-                        key={index}
-                        value={`${player.id}`}
-                        onClick={() => {
-                          const newEncounter = _.cloneDeep(props.encounter);
-                          newEncounter.combatants.list.push(player.id);
-
-                          // Update party size and level
-                          let playersInEncounter = combatants.filter((c) => isCharacter(c));
-                          playersInEncounter.push(player);
-                          const level = _.mean(playersInEncounter.map((p) => p.level));
-                          const size = playersInEncounter.length;
-                          newEncounter.meta_data = {
-                            ...newEncounter.meta_data,
-                            party_level: level,
-                            party_size: size,
-                          };
-
-                          props.setEncounter(newEncounter);
-                        }}
-                      >
+                      <Menu.Item key={index} value={`${player.id}`} onClick={() => updateCombatants(player, 'ADD')}>
                         {_.truncate(player.name, { length: 18 })}
                       </Menu.Item>
                     ))}
@@ -439,9 +508,7 @@ function EncounterView(props: {
                   selectContent<Creature>(
                     'creature',
                     (option) => {
-                      const newEncounter = _.cloneDeep(props.encounter);
-                      newEncounter.combatants.list.push(option);
-                      props.setEncounter(newEncounter);
+                      updateCombatants(option, 'ADD');
                     },
                     {
                       showButton: true,
@@ -463,7 +530,7 @@ function EncounterView(props: {
               </Button>
             </Group>
             <Box>
-              {combatants.length > 0 && (
+              {displayDifficulty(combatants) && (
                 <Badge
                   variant='dot'
                   color={difficulty.color}
@@ -537,6 +604,7 @@ function EncounterView(props: {
                       return new Map(i);
                     });
                   }}
+                  onRemove={() => updateCombatants(combatant, 'REMOVE')}
                 />
               ))}
           </Stack>
@@ -547,7 +615,7 @@ function EncounterView(props: {
 }
 
 function CombatantCard(props: {
-  combatant: LivingEntity;
+  combatant: Combatant;
   computed?: {
     id: number;
     type: 'character' | 'creature';
@@ -560,6 +628,7 @@ function CombatantCard(props: {
   initiative: number | null;
   updateHealth: (hp: number) => void;
   updateInitiative: (init: number) => void;
+  onRemove: () => void;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
@@ -585,9 +654,11 @@ function CombatantCard(props: {
 
   useEffect(() => {
     if (props.combatant) {
-      setHealth(`${props.combatant.hp_current ?? 0}`);
+      const currentHealth =
+        props.combatant.hp_current === undefined ? props.computed?.maxHp ?? 0 : props.combatant.hp_current;
+      setHealth(`${currentHealth}`);
     }
-  }, [props.combatant]);
+  }, [props.combatant, props.computed]);
 
   const handleHealthSubmit = () => {
     const inputHealth = health ?? '0';
@@ -654,19 +725,25 @@ function CombatantCard(props: {
           }
         }}
       >
-        <Text
-          size={'10px'}
-          fw={400}
-          c='dimmed'
-          fs='italic'
+        <Group
+          gap={2}
           style={{
             position: 'absolute',
-            top: 15,
-            right: 15,
+            top: 10,
+            right: 10,
           }}
         >
-          Lvl. {props.combatant.level}
-        </Text>
+          <Text size={'10px'} fw={400} c='dimmed' fs='italic'>
+            Lvl. {props.combatant.level}
+          </Text>
+          <ActionIcon size='sm' variant='transparent' radius={100} color='dark.3' onClick={() => {}}>
+            {isAllyCombatant(props.combatant) ? (
+              <IconAtom2Filled size='0.9rem' stroke={1} />
+            ) : (
+              <IconSword size='1.0rem' stroke={2} />
+            )}
+          </ActionIcon>
+        </Group>
 
         <Avatar
           src={props.combatant.details?.image_url}
@@ -736,7 +813,7 @@ function CombatantCard(props: {
         radius={100}
         color='gray'
         aria-label='Remove Combatant'
-        onClick={() => {}}
+        onClick={props.onRemove}
         style={{
           position: 'absolute',
           top: '50%',
@@ -750,10 +827,10 @@ function CombatantCard(props: {
   );
 }
 
-async function computeCombatants(combatants: LivingEntity[]) {
+async function computeCombatants(combatants: Combatant[]) {
   const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
 
-  async function computeCombatant(combatant: LivingEntity): Promise<{
+  async function computeCombatant(combatant: Combatant): Promise<{
     id: number;
     type: 'character' | 'creature';
     ac: number;
@@ -813,19 +890,14 @@ async function computeCombatants(combatants: LivingEntity[]) {
   return await Promise.all(combatants.map(computeCombatant));
 }
 
-function calculateDifficulty(encounter: Encounter, combatants: LivingEntity[]) {
-  let partySize = encounter.meta_data.party_size ?? 0;
-  let partyLevel = encounter.meta_data.party_level ?? 0;
-
-  if (encounter.campaign_id) {
-    const playersInEncounter = combatants.filter((c) => isCharacter(c));
-    partyLevel = _.mean(playersInEncounter.map((p) => p.level));
-    partySize = playersInEncounter.length;
-  }
+function calculateDifficulty(encounter: Encounter, combatants: Combatant[]) {
+  const alliesInEncounter = combatants.filter((c) => isAllyCombatant(c));
+  const partyLevel = encounter.meta_data.party_level ?? _.mean(alliesInEncounter.map((p) => p.level));
+  const partySize = encounter.meta_data.party_size ?? alliesInEncounter.length;
 
   let xpBudget = 0;
   for (const entity of combatants) {
-    if (isCharacter(entity)) {
+    if (isAllyCombatant(entity)) {
       continue;
     }
     switch (entity.level - partyLevel) {
@@ -903,4 +975,9 @@ function calculateDifficulty(encounter: Encounter, combatants: LivingEntity[]) {
     color: color,
     xp: xpBudget,
   };
+}
+
+function isAllyCombatant(combatant: Combatant) {
+  // @ts-ignore
+  return isCharacter(combatant) || combatant._isAlly === true;
 }
