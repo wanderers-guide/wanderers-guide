@@ -1,9 +1,7 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import ConditionPill from '@common/ConditionPill';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { selectContent } from '@common/select/SelectContent';
 import { applyConditions, compiledConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE } from '@constants/data';
@@ -59,10 +57,10 @@ import { convertToSetEntity, isCharacter, isCreature, setterOrUpdaterToValue } f
 import useRefresh from '@utils/use-refresh';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
 import _ from 'lodash-es';
-import { evaluate, i } from 'mathjs';
+import { evaluate } from 'mathjs';
 import { useEffect, useRef, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 export default function EncountersPanel(props: {
   panelHeight: number;
@@ -333,7 +331,7 @@ function EncounterView(props: {
   players?: Character[];
   panelHeight: number;
 }) {
-  const [initiative, setInitiative] = useState<Map<number, number>>(new Map());
+  const [initiative, setInitiative] = useState<Map<string, number>>(new Map());
 
   /**
    * Get the combatants from the encounter list
@@ -343,11 +341,11 @@ function EncounterView(props: {
   const getCombatants = (list: (number | Creature)[]): Combatant[] => {
     return (
       list
-        .map((combatant) => {
-          if (_.isNumber(combatant)) {
-            return props.players?.find((p) => p.id === combatant);
+        .map((c) => {
+          if (_.isNumber(c)) {
+            return props.players?.find((p) => p.id === c);
           } else {
-            return combatant;
+            return c;
           }
         })
         .filter((c) => c !== undefined) as LivingEntity[]
@@ -442,7 +440,8 @@ function EncounterView(props: {
         if (_.isNumber(c)) {
           return c === p.id;
         } else {
-          return c.id === p.id;
+          // Only players will have numbers, no need to check on creatures
+          return false;
         }
       });
     }) ?? [];
@@ -562,8 +561,8 @@ function EncounterView(props: {
           <Stack gap={15}>
             {combatants
               .sort((a, b) => {
-                let aI = initiative.get(a.id!);
-                let bI = initiative.get(b.id!);
+                let aI = initiative.get(a._id);
+                let bI = initiative.get(b._id);
                 if (aI === undefined || isNaN(aI)) aI = undefined;
                 if (bI === undefined || isNaN(bI)) bI = undefined;
 
@@ -583,24 +582,24 @@ function EncounterView(props: {
                   return bI - aI;
                 }
               })
-              .map((combatant, index) => (
+              .map((combatant) => (
                 <CombatantCard
-                  key={`${combatant.id}-${index}`}
+                  key={combatant._id}
                   combatant={combatant}
                   computed={computedData?.find((d) => {
                     if (isCharacter(combatant)) {
-                      return d.id === combatant.id && d.type === 'character';
+                      return d._id === combatant._id && d.type === 'character';
                     } else if (isCreature(combatant)) {
-                      return d.id === combatant.id && d.type === 'creature';
+                      return d._id === combatant._id && d.type === 'creature';
                     } else {
                       return false;
                     }
                   })}
                   updateHealth={(hp) => {}}
-                  initiative={initiative.get(combatant.id!) ?? null}
+                  initiative={initiative.get(combatant._id) ?? null}
                   updateInitiative={(init) => {
                     setInitiative((i) => {
-                      i.set(combatant.id!, init);
+                      i.set(combatant._id, init);
                       return new Map(i);
                     });
                   }}
@@ -831,6 +830,7 @@ async function computeCombatants(combatants: Combatant[]) {
   const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
 
   async function computeCombatant(combatant: Combatant): Promise<{
+    _id: string;
     id: number;
     type: 'character' | 'creature';
     ac: number;
@@ -841,6 +841,7 @@ async function computeCombatants(combatants: Combatant[]) {
   }> {
     if (isCharacter(combatant)) {
       return {
+        _id: combatant._id,
         id: combatant.id,
         type: 'character',
         ac: combatant.meta_data?.calculated_stats?.ac ?? 10,
@@ -853,7 +854,7 @@ async function computeCombatants(combatants: Combatant[]) {
       let creature = _.cloneDeep(combatant);
 
       // Variable store ID
-      const STORE_ID = `CREATURE_${creature.id}`;
+      const STORE_ID = `CREATURE_${creature._id}`;
 
       await executeCreatureOperations(STORE_ID, creature, content);
       // Apply conditions after everything else
@@ -866,6 +867,7 @@ async function computeCombatants(combatants: Combatant[]) {
       const will = getFinalProfValue(STORE_ID, 'SAVE_WILL');
 
       return {
+        _id: creature._id,
         id: creature.id,
         type: 'creature',
         ac: ac,
@@ -876,6 +878,7 @@ async function computeCombatants(combatants: Combatant[]) {
       };
     } else {
       return {
+        _id: '',
         id: -1,
         type: 'character',
         ac: 10,
