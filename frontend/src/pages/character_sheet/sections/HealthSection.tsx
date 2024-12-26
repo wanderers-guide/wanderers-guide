@@ -62,7 +62,7 @@ export default function HealthSection(props: {
                   placeholder='HP'
                   onChange={(value) => {
                     if (!props.entity) return;
-                    confirmHealth(value, props.id, props.entity, props.setEntity);
+                    confirmHealth(value, getFinalHealthValue(props.id), props.entity, props.setEntity);
                   }}
                 />
                 <Box>

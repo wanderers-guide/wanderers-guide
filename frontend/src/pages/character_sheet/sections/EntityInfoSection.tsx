@@ -40,8 +40,8 @@ export default function EntityInfoSection(props: {
 
   const handleExperienceSubmit = () => {
     if (!props.entity) return;
-    const finalExp = confirmExperience(exp ?? '0', props.entity, props.setEntity);
-    setExp(`${finalExp}`);
+    const finalExpResult = confirmExperience(exp ?? '0', props.entity, props.setEntity);
+    setExp(`${finalExpResult.value}`);
     expRef.current?.blur();
   };
 

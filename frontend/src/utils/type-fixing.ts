@@ -21,7 +21,9 @@ export function convertToSetEntity(setValue: SetterOrUpdater<Character | null> |
   return setValue as SetterOrUpdater<LivingEntity | null>;
 }
 
-export function setterOrUpdaterToValue<T>(val: T | ((currVal: T | null) => T | null), old?: T): T | null {
+export function setterOrUpdaterToValue<T>(val: T | ((currVal: T | null) => T | null) | null, old: T): T | null {
+  if (val === null) return null;
+
   if (typeof val === 'function') {
     // Safely call val since it is now narrowed to the callable type
     return (val as (currVal: T | null) => T | null)(old ?? null);

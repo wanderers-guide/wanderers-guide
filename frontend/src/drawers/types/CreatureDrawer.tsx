@@ -151,7 +151,13 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
 }
 
 export function CreatureDrawerContent(props: {
-  data: { id?: number; creature?: Creature; uuid?: string; showOperations?: boolean };
+  data: {
+    id?: number;
+    creature?: Creature;
+    STORE_ID?: string;
+    showOperations?: boolean;
+    updateCreature?: (creature: Creature) => void;
+  };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -184,6 +190,13 @@ export function CreatureDrawerContent(props: {
   const [loading, setLoading] = useState(true);
   const [creature, setCreature] = useState<Creature | null>(props.data.creature ?? null);
 
+  // Update creature when state changed
+  const [debouncedCreature] = useDebouncedValue(creature, 250);
+  useDidUpdate(() => {
+    if (!debouncedCreature) return;
+    props.data.updateCreature?.(debouncedCreature);
+  }, [debouncedCreature]);
+
   const [openedSelectionPanel, setOpenedSelectionPanel] = useState(false);
   const [activeTab, setActiveTab] = useState(getMetadataOpenedDict().active_tab || 'main');
 
@@ -199,7 +212,7 @@ export function CreatureDrawerContent(props: {
   const panelHeight = 650;
 
   // Variable store ID
-  const STORE_ID = `CREATURE_${creature?.id}_${props.data.uuid}`;
+  const STORE_ID = props.data.STORE_ID ?? `CREATURE_${creature?.id ?? 'UNKNOWN'}`;
 
   const [operationResults, setOperationResults] = useState<OperationCreatureResultPackage>();
   const executingOperations = useRef(false);
@@ -213,10 +226,12 @@ export function CreatureDrawerContent(props: {
         applyConditions(STORE_ID, creature.details?.conditions ?? []);
         if (creature.meta_data?.reset_hp !== false) {
           // To reset hp, we need to confirm health
-          confirmHealth(`${getFinalHealthValue(STORE_ID)}`, STORE_ID, creature, convertToSetEntity(setCreature));
+          const maxHealth = getFinalHealthValue(STORE_ID);
+          confirmHealth(`${maxHealth}`, maxHealth, creature, convertToSetEntity(setCreature));
         } else {
           // Because of the drained condition, let's confirm health
-          confirmHealth(`${creature.hp_current}`, STORE_ID, creature, convertToSetEntity(setCreature));
+          const maxHealth = getFinalHealthValue(STORE_ID);
+          confirmHealth(`${creature.hp_current}`, maxHealth, creature, convertToSetEntity(setCreature));
         }
 
         setOperationResults(results);

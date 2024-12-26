@@ -35,6 +35,8 @@ import {
 import { openContextModal } from '@mantine/modals';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import { ConditionPills } from '@pages/character_sheet/sections/ConditionSection';
+import { makeRequest } from '@requests/request-manager';
 import { en } from '@supabase/auth-ui-shared';
 import {
   IconAtom2Filled,
@@ -51,7 +53,7 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Campaign, Character, Combatant, Creature, Encounter, LivingEntity } from '@typing/content';
+import { Campaign, Character, Combatant, Condition, Creature, Encounter, LivingEntity } from '@typing/content';
 import { isPhoneSized, phoneQuery, usePhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { convertToSetEntity, isCharacter, isCreature, setterOrUpdaterToValue } from '@utils/type-fixing';
@@ -335,14 +337,12 @@ function EncounterView(props: {
   players?: Character[];
   panelHeight: number;
 }) {
-  const [initiative, setInitiative] = useState<Map<string, number>>(new Map());
-
   /**
    * Update the encounter with a new combatant
    * @param change - The change to make
    * @returns - The updated encounter
    */
-  const updateCombatants = (
+  const changeCombatants = (
     change: { type: 'ADD'; data: LivingEntity; ally: boolean } | { type: 'REMOVE'; data: Combatant }
   ) => {
     const newEncounter = _.cloneDeep(props.encounter);
@@ -352,6 +352,7 @@ function EncounterView(props: {
         _id: crypto.randomUUID(),
         type: isCharacter(change.data) ? 'CHARACTER' : 'CREATURE',
         ally: change.ally,
+        initiative: undefined,
         creature: isCreature(change.data) ? change.data : undefined,
         character: isCharacter(change.data) ? change.data.id : undefined,
         data: undefined,
@@ -372,6 +373,23 @@ function EncounterView(props: {
       party_level: partyLevel,
       party_size: partySize,
     };
+
+    props.setEncounter(newEncounter);
+
+    return newEncounter;
+  };
+
+  /**
+   * Update the combatant in the encounter
+   * @param combatant - The updated combatant
+   * @returns - The updated encounter
+   */
+  const updateCombatant = (combatant: Combatant) => {
+    const newEncounter = _.cloneDeep(props.encounter);
+    const index = newEncounter.combatants.list.findIndex((c) => c._id === combatant._id);
+    if (index === -1) return;
+
+    newEncounter.combatants.list[index] = combatant;
 
     props.setEncounter(newEncounter);
 
@@ -444,6 +462,18 @@ function EncounterView(props: {
     enabled: combatants.length > 0,
   });
 
+  const getComputedData = (combatant: Combatant) => {
+    return computedData?.find((d) => {
+      if (combatant.type === 'CHARACTER') {
+        return d._id === combatant._id && d.type === 'character';
+      } else if (combatant.type === 'CREATURE') {
+        return d._id === combatant._id && d.type === 'creature';
+      } else {
+        return false;
+      }
+    });
+  };
+
   const difficulty = calculateDifficulty(props.encounter, combatants);
 
   return (
@@ -492,7 +522,7 @@ function EncounterView(props: {
                         key={index}
                         value={`${player.id}`}
                         onClick={() =>
-                          updateCombatants({
+                          changeCombatants({
                             type: 'ADD',
                             data: player,
                             ally: true,
@@ -515,7 +545,7 @@ function EncounterView(props: {
                   selectContent<Creature>(
                     'creature',
                     (option) => {
-                      updateCombatants({
+                      changeCombatants({
                         type: 'ADD',
                         data: option,
                         ally: false,
@@ -573,8 +603,8 @@ function EncounterView(props: {
           <Stack gap={15}>
             {combatants
               .sort((a, b) => {
-                let aI = initiative.get(a._id);
-                let bI = initiative.get(b._id);
+                let aI = a.initiative;
+                let bI = b.initiative;
                 if (aI === undefined || isNaN(aI)) aI = undefined;
                 if (bI === undefined || isNaN(bI)) bI = undefined;
 
@@ -598,25 +628,56 @@ function EncounterView(props: {
                 <CombatantCard
                   key={combatant._id}
                   combatant={combatant}
-                  computed={computedData?.find((d) => {
-                    if (combatant.type === 'CHARACTER') {
-                      return d._id === combatant._id && d.type === 'character';
-                    } else if (combatant.type === 'CREATURE') {
-                      return d._id === combatant._id && d.type === 'creature';
-                    } else {
-                      return false;
+                  computed={getComputedData(combatant)}
+                  // Returning updated populated entity data, will trigger update of the combatant
+                  updateEntity={(input) => {
+                    let entity = _.cloneDeep(input);
+
+                    // If health changes, confirm and update entity with new changes
+                    if (entity.hp_current !== combatant.data.hp_current) {
+                      const computed = getComputedData(combatant);
+                      if (computed) {
+                        const result = confirmHealth(`${entity.hp_current}`, computed.maxHp, combatant.data);
+
+                        if (result) {
+                          entity.hp_current = result.entity.hp_current;
+                          entity.details = {
+                            ...entity.details,
+                            conditions: result.entity.details?.conditions ?? [],
+                          };
+                          entity.meta_data = {
+                            ...entity.meta_data,
+                            reset_hp: false,
+                          };
+                        }
+                      }
                     }
-                  })}
-                  updateHealth={(hp) => {}}
-                  initiative={initiative.get(combatant._id) ?? null}
+
+                    if (combatant.type === 'CHARACTER') {
+                      // Send remote update to change character
+                      makeRequest('update-character', {
+                        ...(entity as Character),
+                        id: combatant.character!,
+                      });
+                    } else if (combatant.type === 'CREATURE') {
+                      updateCombatant({
+                        ...combatant,
+                        creature: {
+                          ...(entity as Creature),
+                        },
+                      });
+                    }
+                  }}
+                  // Update the initiative
                   updateInitiative={(init) => {
-                    setInitiative((i) => {
-                      i.set(combatant._id, init);
-                      return new Map(i);
+                    updateCombatant({
+                      ...combatant,
+                      initiative: init,
                     });
                   }}
+                  // Remove the combatant
                   onRemove={() =>
-                    updateCombatants({
+                    changeCombatants({
                       type: 'REMOVE',
                       data: combatant,
                     })
@@ -641,9 +702,8 @@ function CombatantCard(props: {
     will: number;
     maxHp: number;
   };
-  initiative: number | null;
-  updateHealth: (hp: number) => void;
   updateInitiative: (init: number) => void;
+  updateEntity: (entity: LivingEntity) => void;
   onRemove: () => void;
 }) {
   const isPhone = useMediaQuery(phoneQuery());
@@ -653,7 +713,7 @@ function CombatantCard(props: {
 
   // Initiative
 
-  const [initiative, setInitiative] = useState<number | null>(props.initiative);
+  const [initiative, setInitiative] = useState<number | null>(props.combatant.initiative ?? null);
   const initiativeRef = useRef<HTMLInputElement>(null);
 
   const handleInitiativeSubmit = () => {
@@ -689,7 +749,10 @@ function CombatantCard(props: {
     if (result < 0) result = 0;
     if (props.computed && result > props.computed.maxHp) result = props.computed.maxHp;
 
-    props.updateHealth(result);
+    props.updateEntity({
+      ...props.combatant.data,
+      hp_current: result,
+    });
 
     setHealth(`${result}`);
     healthRef.current?.blur();
@@ -736,7 +799,14 @@ function CombatantCard(props: {
           } else if (props.combatant.type === 'CREATURE') {
             openDrawer({
               type: 'creature',
-              data: { id: props.combatant.creature?.id, zIndex: 495 },
+              data: {
+                STORE_ID: getCombatantStoreID(props.combatant),
+                creature: props.combatant.creature!,
+                zIndex: 495,
+                updateCreature: (creature: Creature) => {
+                  props.updateEntity(creature);
+                },
+              },
             });
           }
         }}
@@ -815,11 +885,24 @@ function CombatantCard(props: {
       )}
       {!isPhone && (
         <ScrollArea h={40} scrollbars='y'>
-          <Group gap={5} justify='center'>
-            {compiledConditions(props.combatant.data.details?.conditions ?? []).map((condition, index) => (
-              <ConditionPill key={index} text={condition.name} amount={condition.value} onClick={() => {}} />
-            ))}
-          </Group>
+          <ConditionPills
+            id={getCombatantStoreID(props.combatant)}
+            entity={props.combatant.data}
+            setEntity={(call) => {
+              const result = setterOrUpdaterToValue(call, props.combatant.data);
+
+              props.updateEntity({
+                ...props.combatant.data,
+                details: {
+                  ...props.combatant.data.details,
+                  conditions: result?.details?.conditions ?? [],
+                },
+              });
+            }}
+            groupProps={{
+              w: 225,
+            }}
+          />
         </ScrollArea>
       )}
 
@@ -868,10 +951,10 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
         maxHp: combatant.data.meta_data?.calculated_stats?.hp_max ?? 0,
       };
     } else if (combatant.type === 'CREATURE') {
-      let creature = _.cloneDeep(combatant.data) as Creature;
+      const creature = _.cloneDeep(combatant.data) as Creature;
 
       // Variable store ID
-      const STORE_ID = `CREATURE_${combatant._id}`;
+      const STORE_ID = getCombatantStoreID(combatant);
 
       await executeCreatureOperations(STORE_ID, creature, content);
       // Apply conditions after everything else
@@ -995,4 +1078,14 @@ function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatan
     color: color,
     xp: xpBudget,
   };
+}
+
+function getCombatantStoreID(combatant: Combatant) {
+  if (combatant.type === 'CHARACTER') {
+    return `CHARACTER_${combatant._id}`;
+  } else if (combatant.type === 'CREATURE') {
+    return `CREATURE_${combatant._id}`;
+  } else {
+    return '';
+  }
 }

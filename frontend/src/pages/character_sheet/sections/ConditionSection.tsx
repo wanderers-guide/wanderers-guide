@@ -8,7 +8,7 @@ import { selectContent } from '@common/select/SelectContent';
 import { getConditionByName, getAllConditions, compiledConditions } from '@conditions/condition-handler';
 import { ICON_BG_COLOR } from '@constants/data';
 import { getInvBulk, getBulkLimit } from '@items/inv-utils';
-import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Text } from '@mantine/core';
+import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Text, GroupProps } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { openContextModal, modals } from '@mantine/modals';
 import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-react';
@@ -83,118 +83,137 @@ export function ConditionSection(props: {
         </ActionIcon>
       </Group>
       <ScrollArea h={70} scrollbars='y'>
-        <Group gap={5} justify='center'>
-          {compiledConditions(props.entity?.details?.conditions ?? []).map((condition, index) => (
-            <ConditionPill
-              key={index}
-              text={condition.name}
-              amount={condition.value}
-              onClick={() => {
-                let source = condition.source;
-
-                // Check if the condition is from being over bulk limit
-                const isEncumberedFromBulk =
-                  condition.name === 'Encumbered' &&
-                  props.entity?.inventory &&
-                  Math.floor(getInvBulk(props.entity.inventory)) > getBulkLimit(props.id);
-                if (
-                  isCharacter(props.entity) &&
-                  props.entity?.options?.ignore_bulk_limit !== true &&
-                  isEncumberedFromBulk
-                ) {
-                  source = 'Over Bulk Limit';
-                }
-
-                openContextModal({
-                  modal: 'condition',
-                  title: (
-                    <Group justify='space-between'>
-                      <Title order={3}>{condition.name}</Title>
-                      {source ? (
-                        <Text fs='italic' fz='sm' mr={15}>
-                          From: <Text span>{source}</Text>
-                        </Text>
-                      ) : (
-                        <Button
-                          variant='light'
-                          color='gray'
-                          size='compact-xs'
-                          mr={15}
-                          onClick={() => {
-                            modals.closeAll();
-
-                            let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []);
-                            // Remove condition
-                            newConditions = newConditions.filter((c) => c.name !== condition.name);
-                            // Add wounded condition if we're removing dying
-                            if (condition.name === 'Dying') {
-                              const wounded = newConditions.find((c) => c.name === 'Wounded');
-                              if (wounded) {
-                                wounded.value = 1 + wounded.value!;
-                              } else {
-                                newConditions.push(getConditionByName('Wounded')!);
-                              }
-                            }
-
-                            props.setEntity((c) => {
-                              if (!c) return c;
-                              return {
-                                ...c,
-                                details: {
-                                  ...c.details,
-                                  conditions: newConditions,
-                                },
-                              };
-                            });
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </Group>
-                  ),
-                  innerProps: {
-                    condition: condition,
-                    onValueChange: (condition: Condition, value: number) => {
-                      props.setEntity((c) => {
-                        if (!c) return c;
-                        return {
-                          ...c,
-                          details: {
-                            ...c.details,
-                            conditions: c.details?.conditions?.map((c) => {
-                              if (c.name === condition.name) {
-                                return {
-                                  ...c,
-                                  value: value,
-                                };
-                              } else {
-                                return c;
-                              }
-                            }),
-                          },
-                        };
-                      });
-                    },
-                  },
-                  styles: {
-                    title: {
-                      width: '100%',
-                    },
-                  },
-                  zIndex: props.zIndex ?? 499,
-                });
-              }}
-            />
-          ))}
-          {(props.entity?.details?.conditions ?? []).length === 0 && (
-            <Text c='gray.6' fz='xs' fs='italic'>
-              None active
-            </Text>
-          )}
-        </Group>
+        <ConditionPills
+          displayNoneActive
+          id={props.id}
+          entity={props.entity}
+          setEntity={props.setEntity}
+          zIndex={props.zIndex}
+        />
       </ScrollArea>
     </Box>
+  );
+}
+
+export function ConditionPills(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  groupProps?: GroupProps;
+  displayNoneActive?: boolean;
+  zIndex?: number;
+}) {
+  return (
+    <Group {...props.groupProps} gap={5} justify='center'>
+      {compiledConditions(props.entity?.details?.conditions ?? []).map((condition, index) => (
+        <ConditionPill
+          key={index}
+          text={condition.name}
+          amount={condition.value}
+          onClick={() => {
+            let source = condition.source;
+
+            // Check if the condition is from being over bulk limit
+            const isEncumberedFromBulk =
+              condition.name === 'Encumbered' &&
+              props.entity?.inventory &&
+              Math.floor(getInvBulk(props.entity.inventory)) > getBulkLimit(props.id);
+            if (
+              isCharacter(props.entity) &&
+              props.entity?.options?.ignore_bulk_limit !== true &&
+              isEncumberedFromBulk
+            ) {
+              source = 'Over Bulk Limit';
+            }
+
+            openContextModal({
+              modal: 'condition',
+              title: (
+                <Group justify='space-between'>
+                  <Title order={3}>{condition.name}</Title>
+                  {source ? (
+                    <Text fs='italic' fz='sm' mr={15}>
+                      From: <Text span>{source}</Text>
+                    </Text>
+                  ) : (
+                    <Button
+                      variant='light'
+                      color='gray'
+                      size='compact-xs'
+                      mr={15}
+                      onClick={() => {
+                        modals.closeAll();
+
+                        let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []);
+                        // Remove condition
+                        newConditions = newConditions.filter((c) => c.name !== condition.name);
+                        // Add wounded condition if we're removing dying
+                        if (condition.name === 'Dying') {
+                          const wounded = newConditions.find((c) => c.name === 'Wounded');
+                          if (wounded) {
+                            wounded.value = 1 + wounded.value!;
+                          } else {
+                            newConditions.push(getConditionByName('Wounded')!);
+                          }
+                        }
+
+                        props.setEntity((c) => {
+                          if (!c) return c;
+                          return {
+                            ...c,
+                            details: {
+                              ...c.details,
+                              conditions: newConditions,
+                            },
+                          };
+                        });
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Group>
+              ),
+              innerProps: {
+                condition: condition,
+                onValueChange: (condition: Condition, value: number) => {
+                  props.setEntity((c) => {
+                    if (!c) return c;
+                    return {
+                      ...c,
+                      details: {
+                        ...c.details,
+                        conditions: c.details?.conditions?.map((c) => {
+                          if (c.name === condition.name) {
+                            return {
+                              ...c,
+                              value: value,
+                            };
+                          } else {
+                            return c;
+                          }
+                        }),
+                      },
+                    };
+                  });
+                },
+              },
+              styles: {
+                title: {
+                  width: '100%',
+                },
+              },
+              zIndex: props.zIndex ?? 499,
+            });
+          }}
+        />
+      ))}
+      {(props.entity?.details?.conditions ?? []).length === 0 && props.displayNoneActive && (
+        <Text c='gray.6' fz='xs' fs='italic'>
+          None active
+        </Text>
+      )}
+    </Group>
   );
 }
 

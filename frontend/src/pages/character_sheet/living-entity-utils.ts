@@ -8,12 +8,10 @@ import { SetterOrUpdater } from 'recoil';
 
 export function confirmHealth(
   hp: string,
-  id: StoreID,
+  maxHealth: number,
   entity: LivingEntity,
-  setEntity: SetterOrUpdater<LivingEntity | null>
+  setEntity?: SetterOrUpdater<LivingEntity | null>
 ) {
-  const maxHealth = getFinalHealthValue(id);
-
   let result = -1;
   try {
     result = evaluate(hp);
@@ -50,25 +48,30 @@ export function confirmHealth(
     }
   }
 
-  setEntity((c) => {
-    if (!c) return c;
-    return {
-      ...c,
-      hp_current: result,
-      details: {
-        ...c.details,
-        conditions: newConditions,
-      },
-      meta_data: {
-        ...c.meta_data,
-        reset_hp: false,
-      },
-    };
+  const getResultingEntity = (c: LivingEntity): LivingEntity => ({
+    ...c,
+    hp_current: result,
+    details: {
+      ...c.details,
+      conditions: newConditions,
+    },
+    meta_data: {
+      ...c.meta_data,
+      reset_hp: false,
+    },
   });
-  return result;
+  setEntity?.((c) => {
+    if (!c) return c;
+    return getResultingEntity(c);
+  });
+
+  return {
+    value: result,
+    entity: getResultingEntity(entity),
+  };
 }
 
-export function confirmExperience(exp: string, entity: LivingEntity, setEntity: SetterOrUpdater<LivingEntity | null>) {
+export function confirmExperience(exp: string, entity: LivingEntity, setEntity?: SetterOrUpdater<LivingEntity | null>) {
   let result = -1;
   try {
     result = evaluate(exp);
@@ -79,12 +82,17 @@ export function confirmExperience(exp: string, entity: LivingEntity, setEntity: 
   result = Math.floor(result);
   if (result < 0) result = 0;
 
-  setEntity((c) => {
-    if (!c) return c;
-    return {
-      ...c,
-      experience: result,
-    };
+  const getResultingEntity = (c: LivingEntity): LivingEntity => ({
+    ...c,
+    experience: result,
   });
-  return result;
+  setEntity?.((c) => {
+    if (!c) return c;
+    return getResultingEntity(c);
+  });
+
+  return {
+    value: result,
+    entity: getResultingEntity(entity),
+  };
 }

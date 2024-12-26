@@ -239,15 +239,12 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         applyConditions('CHARACTER', character.details?.conditions ?? []);
         if (character.meta_data?.reset_hp !== false) {
           // To reset hp, we need to confirm health
-          confirmHealth(
-            `${getFinalHealthValue('CHARACTER')}`,
-            'CHARACTER',
-            character,
-            convertToSetEntity(setCharacter)
-          );
+          const maxHealth = getFinalHealthValue('CHARACTER');
+          confirmHealth(`${maxHealth}`, maxHealth, character, convertToSetEntity(setCharacter));
         } else {
           // Because of the drained condition, let's confirm health
-          confirmHealth(`${character.hp_current}`, 'CHARACTER', character, convertToSetEntity(setCharacter));
+          const maxHealth = getFinalHealthValue('CHARACTER');
+          confirmHealth(`${character.hp_current}`, maxHealth, character, convertToSetEntity(setCharacter));
         }
 
         // Save calculated stats

@@ -595,6 +595,7 @@ interface Combatant {
   _id: string;
   type: 'CREATURE' | 'CHARACTER';
   ally: boolean;
+  initiative: number | undefined;
   creature?: Creature;
   character?: number;
   data?: LivingEntity;
