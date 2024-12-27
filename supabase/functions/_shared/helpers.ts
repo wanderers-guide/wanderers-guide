@@ -337,22 +337,26 @@ export async function fetchData<T = Record<string, any>>(
   while (hasMore) {
     let query = client.from(tableName).select();
     for (const filter of filters) {
-      // TODO, why did this exist? It breaks viewing homebrew content
-      // if (
-      //   filter.column === 'content_source_id' &&
-      //   ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
-      // ) {
-      //   // Limit it to only official published books
-      //   const sources = await fetchData<ContentSource>(client, 'content_source', [
-      //     { column: 'user_id', value: null },
-      //     { column: 'is_published', value: true },
-      //   ]);
-      //   query = query.in(
-      //     'content_source_id',
-      //     sources.map((s) => s.id)
-      //   );
-      //   continue;
-      // }
+      /* If content_source_id is empty, only limit to official published content
+       * This is to prevent users from randomly seeing homebrew content.
+       * Unless the user specifically requests by ID for a piece of content.
+       */
+      if (
+        !filters.find((f) => f.column === 'id') &&
+        filter.column === 'content_source_id' &&
+        ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
+      ) {
+        // Limit it to only official published books
+        const sources = await fetchData<ContentSource>(client, 'content_source', [
+          { column: 'user_id', value: null },
+          { column: 'is_published', value: true },
+        ]);
+        query = query.in(
+          'content_source_id',
+          sources.map((s) => s.id)
+        );
+        continue;
+      }
       if (filter.value === undefined) continue;
 
       if (Array.isArray(filter.value)) {

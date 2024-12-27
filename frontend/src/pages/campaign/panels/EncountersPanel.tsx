@@ -6,6 +6,7 @@ import { selectContent } from '@common/select/SelectContent';
 import { applyConditions, compiledConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage } from '@content/content-store';
+import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { getBestArmor } from '@items/inv-utils';
 import {
   Tabs,
@@ -89,7 +90,9 @@ export default function EncountersPanel(props: {
 
   useEffect(() => {
     // Prefetch content package for creature calculations
-    fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+    defineDefaultSourcesForUser().then(() => {
+      fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+    });
   }, []);
 
   const defaultEncounter: Encounter = {

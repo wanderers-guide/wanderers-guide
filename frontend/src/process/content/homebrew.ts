@@ -23,10 +23,19 @@ export async function defineDefaultSourcesForSource(source: ContentSource) {
   const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
   const user = await getPublicUser();
   // TODO: change to only the bundle's required sources
-  defineDefaultSources([
+  return defineDefaultSources([
     ...allSources.map((source) => source.id), // shouldn't be needed
     ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []), // shouldn't be needed
     ...(source.required_content_sources ?? []),
     source.id,
+  ]);
+}
+
+export async function defineDefaultSourcesForUser() {
+  const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
+  const user = await getPublicUser();
+  return defineDefaultSources([
+    ...allSources.map((source) => source.id),
+    ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []),
   ]);
 }

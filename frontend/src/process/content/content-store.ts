@@ -111,6 +111,7 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 let defaultSources: number[] | undefined = undefined; // undefined means all sources
 export function defineDefaultSources(sources?: number[]) {
   defaultSources = sources ? _.uniq(sources) : undefined;
+  return _.cloneDeep(defaultSources);
 }
 
 export function getDefaultSources() {

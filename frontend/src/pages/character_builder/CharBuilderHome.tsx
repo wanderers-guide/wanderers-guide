@@ -467,7 +467,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     onLinkChange={(id, enabled) => setBooksEnabled([id], enabled)}
                   />
                 ))}
-                {user?.subscribed_content_sources?.length === 0 && (
+                {(!user?.subscribed_content_sources || user?.subscribed_content_sources?.length === 0) && (
                   <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
                     No subscribed bundles found.{' '}
                     <Anchor fz='sm' href='/homebrew'>

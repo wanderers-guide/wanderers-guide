@@ -6,6 +6,7 @@ import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { fetchContentSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
+import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
@@ -317,19 +318,13 @@ async function queryResults(
     if (!user) {
       user = await getPublicUser();
     }
-    const validSources = (await fetchContentSources({ ids: 'all', homebrew: true })).filter((c) => {
-      if (c.user_id) {
-        return user?.subscribed_content_sources?.find((src) => src.source_id === c.id);
-      } else {
-        return true;
-      }
-    });
+    const validSources = await defineDefaultSourcesForUser();
 
     // Fetch search results
     const searchData =
       (await makeRequest('search-data', {
         text: query,
-        content_sources: validSources.map((c) => c.id),
+        content_sources: validSources,
       })) ?? {};
 
     // Format results to single array

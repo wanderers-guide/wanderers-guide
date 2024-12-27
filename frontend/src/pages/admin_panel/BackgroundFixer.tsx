@@ -3,6 +3,7 @@ import { queryByName } from '@ai/vector-db/vector-manager';
 import BlurBox from '@common/BlurBox';
 import { upsertBackground } from '@content/content-creation';
 import { fetchContentSources, defineDefaultSources, fetchContent } from '@content/content-store';
+import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { Center, Group, Title, Select } from '@mantine/core';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
