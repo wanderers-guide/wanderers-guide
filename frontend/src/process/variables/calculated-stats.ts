@@ -21,6 +21,7 @@ export function saveCalculatedStats(
     for (const name of Object.keys(getVariables(id))) {
       const variable = getVariable(id, name);
       if (variable?.type !== 'prof') continue;
+      if (variable.name.includes('___')) continue;
 
       const value = getFinalProfValue(id, name);
       const type = variable.value.value;

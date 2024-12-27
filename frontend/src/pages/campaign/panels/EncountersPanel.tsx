@@ -55,8 +55,10 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Campaign, Character, Combatant, Condition, Creature, Encounter, LivingEntity } from '@typing/content';
+import { sleep } from '@utils/async';
 import { isPhoneSized, phoneQuery, usePhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
+import { rollDie } from '@utils/random';
 import { convertToSetEntity, isCharacter, isCreature, setterOrUpdaterToValue } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
@@ -330,7 +332,7 @@ export default function EncountersPanel(props: {
   }
 }
 
-type PopulatedCombatant = Omit<Combatant, 'data'> & Required<Pick<Combatant, 'data'>>;
+export type PopulatedCombatant = Omit<Combatant, 'data'> & Required<Pick<Combatant, 'data'>>;
 
 function EncounterView(props: {
   encounter: Encounter;
@@ -501,6 +503,36 @@ function EncounterView(props: {
                   fontStyle: 'italic',
                 }}
                 color={props.encounter.color}
+                disabled={combatants.length === 0}
+                onClick={() => {
+                  openContextModal({
+                    modal: 'initiativeRoll',
+                    title: <Title order={3}>Assign Initiative Skills</Title>,
+                    innerProps: {
+                      combatants: combatants,
+                      onConfirm: (rollBonuses: Map<string, number | null>) => {
+                        const newEncounter = _.cloneDeep(props.encounter);
+
+                        // Roll initiative for each combatant
+                        for (const [_id, bonus] of rollBonuses) {
+                          if (bonus === null) continue;
+                          newEncounter.combatants.list = newEncounter.combatants.list.map((c) => {
+                            if (c._id === _id) {
+                              return {
+                                ...c,
+                                initiative: rollDie('D20') + bonus,
+                              };
+                            } else {
+                              return c;
+                            }
+                          });
+                        }
+
+                        props.setEncounter(newEncounter);
+                      },
+                    },
+                  });
+                }}
               >
                 Roll Initiative
               </Button>
@@ -753,6 +785,13 @@ function CombatantCard(props: {
     }
   };
 
+  // Update initiative when it changes in the combatant
+  useEffect(() => {
+    if (props.combatant.initiative !== undefined && props.combatant.initiative !== initiative) {
+      setInitiative(props.combatant.initiative);
+    }
+  }, [props.combatant.initiative]);
+
   // Health
 
   const [health, setHealth] = useState<string | undefined>();
@@ -877,13 +916,21 @@ function CombatantCard(props: {
 
           {props.computed && (
             <Group gap={5}>
-              <Text fz='xs'>{props.computed.ac} AC</Text>
-              <Text fz='xs' c='dimmed'>
+              <Text fz='xs' c='gray.6'>
+                {props.computed.ac} AC
+              </Text>
+              <Text fz='xs' c='gray.7'>
                 |
               </Text>
-              <Text fz='xs'>Fort. {sign(props.computed.fort)},</Text>
-              <Text fz='xs'>Ref. {sign(props.computed.reflex)},</Text>
-              <Text fz='xs'>Will {sign(props.computed.will)}</Text>
+              <Text fz='xs' c='gray.6'>
+                Fort. {sign(props.computed.fort)},
+              </Text>
+              <Text fz='xs' c='gray.6'>
+                Ref. {sign(props.computed.reflex)},
+              </Text>
+              <Text fz='xs' c='gray.6'>
+                Will {sign(props.computed.will)}
+              </Text>
             </Group>
           )}
         </Box>
@@ -1110,7 +1157,7 @@ function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatan
   };
 }
 
-function getCombatantStoreID(combatant: Combatant) {
+export function getCombatantStoreID(combatant: Combatant) {
   if (combatant.type === 'CHARACTER') {
     return `CHARACTER_${combatant._id}`;
   } else if (combatant.type === 'CREATURE') {

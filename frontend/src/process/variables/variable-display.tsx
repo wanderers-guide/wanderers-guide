@@ -22,12 +22,6 @@ export function getFinalProfValue(
   overrideAttribute?: string,
   overrideProfType?: ProficiencyType
 ) {
-  // If we have a total, short-circuit to that
-  const total = getVariable<VariableNum>(id, `${variableName}_TOTAL`);
-  if (total && total.value) {
-    return isDC ? `${total.value}` : sign(total.value);
-  }
-  // Else, calculate the parts
   const parts = getProfValueParts(id, variableName, overrideAttribute, overrideProfType);
   if (!parts) {
     if (isDC) {
@@ -267,12 +261,6 @@ export function getHealthValueParts(id: StoreID) {
 }
 
 export function getFinalHealthValue(id: StoreID) {
-  // If we have a total, short-circuit to that
-  const total = getVariable<VariableNum>(id, `HEALTH_MAX_TOTAL`);
-  if (total && total.value) {
-    return total.value;
-  }
-  // Else, calculate the parts
   const { level, ancestryHp, classHp, bonusHp, conMod } = getHealthValueParts(id);
   return ancestryHp + bonusHp + (classHp + conMod) * level;
 }
@@ -298,12 +286,6 @@ export function displayAttributeValue(id: StoreID, attributeName: string, textPr
 }
 
 export function getFinalAcValue(id: StoreID, item?: Item) {
-  // If we have a total, short-circuit to that
-  const total = getVariable<VariableNum>(id, `AC_TOTAL`);
-  if (total && total.value) {
-    return total.value;
-  }
-  // Else, calculate the parts
   const { profBonus, bonusAc, dexBonus, armorBonus } = getAcParts(id, item);
   return 10 + profBonus + bonusAc + dexBonus + armorBonus;
 }

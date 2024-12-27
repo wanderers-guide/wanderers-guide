@@ -35,6 +35,7 @@ import AddItemsModal from '@modals/AddItemsModal';
 import _ from 'lodash-es';
 import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
 import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
+import InitiativeRollModal from '@modals/InitiativeRollModal';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -54,6 +55,7 @@ const modals = {
   selectStaffCasting: SelectStaffCastingModal,
   updateCharacterPortrait: UpdateCharacterPortraitModal,
   addNewLore: AddNewLoreModal,
+  initiativeRoll: InitiativeRollModal,
   updateNotePage: UpdateNotePageModal,
   condition: ConditionModal,
   createDicePreset: CreateDicePresetModal,
