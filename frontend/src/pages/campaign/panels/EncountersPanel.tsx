@@ -884,15 +884,6 @@ function CombatantCard(props: {
           </ActionIcon>
         </Group>
 
-        {/* <Avatar
-          src={props.combatant.data.details?.image_url}
-          radius='xl'
-          styles={{
-            image: {
-              objectFit: 'contain',
-            },
-          }}
-        /> */}
         <DisplayIcon
           strValue={props.combatant.data.details?.image_url}
           width={40}

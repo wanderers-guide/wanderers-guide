@@ -125,7 +125,7 @@ export function CreateCombatantModal(props: {
       type: 'adjValue',
       data: {
         variable: 'AC_BONUS',
-        value: totalAC ?? 0,
+        value: (totalAC ?? 0) - 10,
       },
     },
     {
@@ -183,6 +183,7 @@ export function CreateCombatantModal(props: {
         ...values.creature!,
         name: values.creature!.name.trim(),
         level: parseInt(`${values.creature!.level}`),
+        hp_current: totalMaxHP ?? 0,
         operations: _.uniqWith([...(values.creature!.operations ?? []), ...STAT_OPS], _.isEqual),
       },
     });
