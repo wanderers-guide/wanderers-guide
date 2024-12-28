@@ -348,44 +348,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
     'details',
     'notes',
   ]),
-
-  ///// ~~~~~ TOTALED VARIABLES ~~~~~ /////
-  /*
-    These variables are represent the final computed value of something,
-    they override the computed value if they're greater than the computed value.
-    They're used for things like creatures who are just given a total value.
-  */
-  AC_TOTAL: newVariable('num', 'AC_TOTAL'),
-
-  SAVE_FORT_TOTAL: newVariable('num', 'SAVE_FORT_TOTAL'),
-  SAVE_REFLEX_TOTAL: newVariable('num', 'SAVE_REFLEX_TOTAL'),
-  SAVE_WILL_TOTAL: newVariable('num', 'SAVE_WILL_TOTAL'),
-
-  PERCEPTION_TOTAL: newVariable('num', 'PERCEPTION_TOTAL'),
-
-  SKILL_ACROBATICS_TOTAL: newVariable('num', 'SKILL_ACROBATICS_TOTAL'),
-  SKILL_ARCANA_TOTAL: newVariable('num', 'SKILL_ARCANA_TOTAL'),
-  SKILL_ATHLETICS_TOTAL: newVariable('num', 'SKILL_ATHLETICS_TOTAL'),
-  SKILL_CRAFTING_TOTAL: newVariable('num', 'SKILL_CRAFTING_TOTAL'),
-  SKILL_DECEPTION_TOTAL: newVariable('num', 'SKILL_DECEPTION_TOTAL'),
-  SKILL_DIPLOMACY_TOTAL: newVariable('num', 'SKILL_DIPLOMACY_TOTAL'),
-  SKILL_INTIMIDATION_TOTAL: newVariable('num', 'SKILL_INTIMIDATION_TOTAL'),
-  SKILL_MEDICINE_TOTAL: newVariable('num', 'SKILL_MEDICINE_TOTAL'),
-  SKILL_NATURE_TOTAL: newVariable('num', 'SKILL_NATURE_TOTAL'),
-  SKILL_OCCULTISM_TOTAL: newVariable('num', 'SKILL_OCCULTISM_TOTAL'),
-  SKILL_PERFORMANCE_TOTAL: newVariable('num', 'SKILL_PERFORMANCE_TOTAL'),
-  SKILL_RELIGION_TOTAL: newVariable('num', 'SKILL_RELIGION_TOTAL'),
-  SKILL_SOCIETY_TOTAL: newVariable('num', 'SKILL_SOCIETY_TOTAL'),
-  SKILL_STEALTH_TOTAL: newVariable('num', 'SKILL_STEALTH_TOTAL'),
-  SKILL_SURVIVAL_TOTAL: newVariable('num', 'SKILL_SURVIVAL_TOTAL'),
-  SKILL_THIEVERY_TOTAL: newVariable('num', 'SKILL_THIEVERY_TOTAL'),
-  //SKILL_LORE_<>_TOTAL: newVariable('num', 'SKILL_LORE_<>_TOTAL'),
-
-  HEALTH_MAX_TOTAL: newVariable('num', 'HEALTH_MAX_TOTAL'),
-  HEALTH_TEMP_TOTAL: newVariable('num', 'HEALTH_TEMP_TOTAL'),
-
-  SPELL_ATTACK_TOTAL: newVariable('num', 'SPELL_ATTACK_TOTAL'),
-  SPELL_DC_TOTAL: newVariable('num', 'SPELL_DC_TOTAL'),
 };
 
 const variableMap = new Map<string, VariableStore>();

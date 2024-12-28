@@ -6,7 +6,7 @@ import {
   fetchTraitByName,
 } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
-import { ActionCost, ContentSource, Language, Rarity, Size, Trait } from '@typing/content';
+import { ActionCost, ContentSource, Item, Language, Rarity, Size, Trait } from '@typing/content';
 import { toLabel } from '@utils/strings';
 import { labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -201,22 +201,22 @@ export async function getSpellIds(spellNames: string[]) {
   return spellIds;
 }
 
-export async function getItemIds(itemNames: string[]) {
+export async function getItemsByName(itemNames: string[]) {
   const sources = await fetchContentSources();
 
-  const itemIds: number[] = [];
+  const resultItems: Item[] = [];
   for (const itemName of itemNames) {
     const items = await fetchItemByName(
       itemName,
       sources.map((s) => s.id)
     );
     if (items && items.length > 0) {
-      itemIds.push(items[0].id);
+      resultItems.push(items[0]);
     } else {
       console.warn(`Item not found: ${itemName}`);
     }
   }
-  return itemIds;
+  return resultItems;
 }
 
 async function createTrait(

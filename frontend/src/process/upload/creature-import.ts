@@ -1,11 +1,11 @@
-import { AbilityBlock, ContentSource, Creature, Rarity, Size } from '@typing/content';
+import { AbilityBlock, ContentSource, Creature, InventoryItem, Rarity, Size } from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
   convertToRarity,
   convertToSize,
   extractFromDescription,
-  getItemIds,
+  getItemsByName,
   getLanguageIds,
   getSpellIds,
   getTraitIds,
@@ -28,6 +28,13 @@ import {
 import { createDefaultOperation } from '@operations/operation-utils';
 import { labelToVariable } from '@variables/variable-utils';
 import { toLabel } from '@utils/strings';
+import _ from 'lodash-es';
+import { resetVariables } from '@variables/variable-manager';
+import { executeCreatureOperations } from '@operations/operation-controller';
+import { fetchContentPackage } from '@content/content-store';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
+import { getBestArmor } from '@items/inv-utils';
+import { sign } from '@utils/numbers';
 
 export async function newImportHandler(source: ContentSource, json: Record<string, any>): Promise<Creature> {
   const creature = {
@@ -41,7 +48,15 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     stamina_current: 0,
     resolve_current: 0,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    inventory: undefined,
+    inventory: {
+      coins: {
+        cp: 0,
+        sp: 0,
+        gp: 0,
+        pp: 0,
+      },
+      items: [],
+    },
     notes: undefined,
     details: {
       image_url: undefined,
@@ -68,14 +83,17 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
 
   console.log(json);
 
+  // Used for tracking what the totals should be for variables
+  const varTotals = new Map<string, number>();
+
   // Attributes
   operations = addAttributes(operations, json);
   // AC
-  operations = addAC(operations, json);
+  operations = addAC(operations, json, varTotals);
   // Saves
-  operations = addSaves(operations, json);
+  operations = addSaves(operations, json, varTotals);
   // HP
-  operations = addHP(operations, json);
+  operations = addHP(operations, json, varTotals);
   // Resists, Weaknesses, Immunities
   operations = addResistsWeaks(operations, json);
   // Speeds
@@ -83,21 +101,70 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   // Languages
   operations = await addLanguages(operations, json, source);
   // Perception & Senses
-  operations = addPerceptionSenses(operations, json);
+  operations = addPerceptionSenses(operations, json, varTotals);
   // Skills
-  operations = addSkills(operations, json);
+  operations = addSkills(operations, json, varTotals);
   // Misc Ops
   const traitIds = await getTraitIds(json.system?.traits?.value ?? [], source);
   operations = addMiscOps(operations, json, traitIds);
   // Spells
-  operations = await addSpells(operations, json);
+  operations = await addSpells(operations, json, varTotals);
   // Items
-  operations = await addEquipment(operations, json);
+  const { operations: resultOps, items } = await addEquipment(operations, json);
+  operations = resultOps;
+  creature.inventory!.items = items;
 
   creature.operations = operations;
 
   // Abilities
   creature.abilities_base = await getAbilities(json, source);
+
+  //////////////////////////
+
+  // Compute creature in sandbox
+  // - and add diff of totals to even out stats to og values
+  const STORE_ID = `CREATURE_${crypto.randomUUID()}`;
+
+  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+  await executeCreatureOperations(STORE_ID, _.cloneDeep(creature), content);
+
+  // Run thru totals
+  for (const [key, finalTotal] of varTotals) {
+    if (key === 'HEALTH_TEMP') {
+      creature.hp_temp = finalTotal;
+    } else if (key === 'MAX_HEALTH') {
+      const curTotal = getFinalHealthValue(STORE_ID);
+      operations.push({
+        ...createDefaultOperation<OperationAdjValue>('adjValue'),
+        data: {
+          variable: 'MAX_HEALTH_BONUS',
+          value: finalTotal - curTotal,
+        },
+      } satisfies OperationAdjValue);
+    } else if (key === 'AC') {
+      const curTotal = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, creature.inventory)?.item);
+      operations.push({
+        ...createDefaultOperation<OperationAdjValue>('adjValue'),
+        data: {
+          variable: 'AC_BONUS',
+          value: finalTotal - curTotal,
+        },
+      } satisfies OperationAdjValue);
+    } else {
+      const curTotal = parseInt(getFinalProfValue(STORE_ID, key, key.endsWith('_DC')));
+      operations.push({
+        ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
+        data: {
+          variable: key,
+          text: '',
+          value: `${sign(finalTotal - curTotal)}`,
+        },
+      } satisfies OperationAddBonusToValue);
+    }
+  }
+
+  // Clean up
+  resetVariables(STORE_ID);
 
   return creature;
 }
@@ -148,19 +215,14 @@ function addAttributes(operations: Operation[], json: Record<string, any>) {
   return operations;
 }
 
-function addAC(operations: Operation[], json: Record<string, any>) {
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'AC_TOTAL',
-      value: json.system.attributes.ac.value,
-    },
-  } satisfies OperationSetValue);
+function addAC(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
+  varTotals.set('AC', json.system.attributes.ac.value);
+
   if (json.system.attributes.ac.details) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'AC_TOTAL',
+        variable: 'AC_BONUS',
         value: undefined,
         type: undefined,
         text: json.system.attributes.ac.details,
@@ -170,55 +232,42 @@ function addAC(operations: Operation[], json: Record<string, any>) {
   return operations;
 }
 
-function addSaves(operations: Operation[], json: Record<string, any>) {
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'SAVE_FORT_TOTAL',
-      value: json.system.saves.fortitude.value,
-    },
-  } satisfies OperationSetValue);
+function addSaves(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
+  varTotals.set('SAVE_FORT', json.system.saves.fortitude.value);
+
   if (json.system.saves.fortitude.saveDetail) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'SAVE_FORT_TOTAL',
+        variable: 'SAVE_FORT',
         value: undefined,
         type: undefined,
         text: json.system.saves.fortitude.saveDetail,
       },
     } satisfies OperationAddBonusToValue);
   }
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'SAVE_REFLEX_TOTAL',
-      value: json.system.saves.reflex.value,
-    },
-  } satisfies OperationSetValue);
+
+  varTotals.set('SAVE_REFLEX', json.system.saves.reflex.value);
+
   if (json.system.saves.reflex.saveDetail) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'SAVE_REFLEX_TOTAL',
+        variable: 'SAVE_REFLEX',
         value: undefined,
         type: undefined,
         text: json.system.saves.reflex.saveDetail,
       },
     } satisfies OperationAddBonusToValue);
   }
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'SAVE_WILL_TOTAL',
-      value: json.system.saves.will.value,
-    },
-  } satisfies OperationSetValue);
+
+  varTotals.set('SAVE_WILL', json.system.saves.will.value);
+
   if (json.system.saves.will.saveDetail) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'SAVE_WILL_TOTAL',
+        variable: 'SAVE_WILL',
         value: undefined,
         type: undefined,
         text: json.system.saves.will.saveDetail,
@@ -231,7 +280,7 @@ function addSaves(operations: Operation[], json: Record<string, any>) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'SAVE_FORT_TOTAL',
+        variable: 'SAVE_FORT',
         value: undefined,
         type: undefined,
         text: json.system.attributes.allSaves.value,
@@ -240,7 +289,7 @@ function addSaves(operations: Operation[], json: Record<string, any>) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'SAVE_REFLEX_TOTAL',
+        variable: 'SAVE_REFLEX',
         value: undefined,
         type: undefined,
         text: json.system.attributes.allSaves.value,
@@ -249,7 +298,7 @@ function addSaves(operations: Operation[], json: Record<string, any>) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'SAVE_WILL_TOTAL',
+        variable: 'SAVE_WILL',
         value: undefined,
         type: undefined,
         text: json.system.attributes.allSaves.value,
@@ -260,19 +309,14 @@ function addSaves(operations: Operation[], json: Record<string, any>) {
   return operations;
 }
 
-function addHP(operations: Operation[], json: Record<string, any>) {
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'HEALTH_MAX_TOTAL',
-      value: json.system.attributes.hp.max,
-    },
-  } satisfies OperationSetValue);
+function addHP(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
+  varTotals.set('MAX_HEALTH', json.system.attributes.hp.max);
+
   if (json.system.attributes.hp.details) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'HEALTH_MAX_TOTAL',
+        variable: 'MAX_HEALTH_BONUS',
         value: undefined,
         type: undefined,
         text: json.system.attributes.hp.details,
@@ -280,13 +324,7 @@ function addHP(operations: Operation[], json: Record<string, any>) {
     } satisfies OperationAddBonusToValue);
   }
 
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'HEALTH_TEMP_TOTAL',
-      value: json.system.attributes.hp.temp,
-    },
-  } satisfies OperationSetValue);
+  varTotals.set('HEALTH_TEMP', json.system.attributes.hp.temp);
 
   return operations;
 }
@@ -368,19 +406,14 @@ async function addLanguages(operations: Operation[], json: Record<string, any>, 
   return operations;
 }
 
-function addPerceptionSenses(operations: Operation[], json: Record<string, any>) {
-  operations.push({
-    ...createDefaultOperation<OperationSetValue>('setValue'),
-    data: {
-      variable: 'PERCEPTION_TOTAL',
-      value: json.system.perception.mod,
-    },
-  } satisfies OperationSetValue);
+function addPerceptionSenses(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
+  varTotals.set('PERCEPTION', json.system.perception.mod);
+
   if (json.system.perception.details) {
     operations.push({
       ...createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
       data: {
-        variable: 'PERCEPTION_TOTAL',
+        variable: 'PERCEPTION',
         value: undefined,
         type: undefined,
         text: json.system.perception.details,
@@ -417,30 +450,28 @@ function addPerceptionSenses(operations: Operation[], json: Record<string, any>)
   return operations;
 }
 
-function addSkills(operations: Operation[], json: Record<string, any>) {
+function addSkills(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
   for (const skill of findJsonItems(json, 'lore')) {
     const isLore = skill.name.endsWith(' Lore');
     const variable = isLore
-      ? `SKILL_LORE_${labelToVariable(skill.name.replace(' Lore', ''))}_TOTAL`
-      : `SKILL_${labelToVariable(skill.name)}_TOTAL`;
+      ? `SKILL_LORE_${labelToVariable(skill.name.replace(' Lore', ''))}`
+      : `SKILL_${labelToVariable(skill.name)}`;
     if (isLore) {
       operations.push({
         ...createDefaultOperation<OperationCreateValue>('createValue'),
         data: {
           variable: variable,
-          type: 'num',
-          value: skill.system.mod.value,
+          type: 'prof',
+          value: {
+            value: 'U',
+            increases: 0,
+            attribute: 'ATTRIBUTE_INT',
+          },
         },
       } satisfies OperationCreateValue);
-    } else {
-      operations.push({
-        ...createDefaultOperation<OperationSetValue>('setValue'),
-        data: {
-          variable: variable,
-          value: skill.system.mod.value,
-        },
-      } satisfies OperationSetValue);
     }
+
+    varTotals.set(variable, skill.system.mod.value);
   }
 
   return operations;
@@ -467,7 +498,7 @@ function addMiscOps(operations: Operation[], json: Record<string, any>, traitIds
   return operations;
 }
 
-async function addSpells(operations: Operation[], json: Record<string, any>) {
+async function addSpells(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
   const convertCastingType = (type: string) => {
     if (type === 'innate') return null;
     if (type === 'focus') return '-';
@@ -498,22 +529,10 @@ async function addSpells(operations: Operation[], json: Record<string, any>) {
     }
 
     if (casting.system.spelldc?.value) {
-      operations.push({
-        ...createDefaultOperation<OperationSetValue>('setValue'),
-        data: {
-          variable: 'SPELL_ATTACK_TOTAL',
-          value: casting.system.spelldc.value,
-        },
-      } satisfies OperationSetValue);
+      varTotals.set('SPELL_ATTACK', casting.system.spelldc.value);
     }
     if (casting.system.spelldc?.dc) {
-      operations.push({
-        ...createDefaultOperation<OperationSetValue>('setValue'),
-        data: {
-          variable: 'SPELL_DC_TOTAL',
-          value: casting.system.spelldc.dc,
-        },
-      } satisfies OperationSetValue);
+      varTotals.set('SPELL_DC', casting.system.spelldc.dc);
     }
 
     if (casting.system.slots) {
@@ -560,18 +579,29 @@ async function addSpells(operations: Operation[], json: Record<string, any>) {
 }
 
 async function addEquipment(operations: Operation[], json: Record<string, any>) {
-  const itemIds = await getItemIds(findJsonItems(json, 'equipment').map((item) => item.name as string));
+  const items = await getItemsByName(findJsonItems(json, 'equipment').map((item) => item.name as string));
 
-  for (const itemId of itemIds) {
+  const invItems: InventoryItem[] = [];
+  for (const item of items) {
     operations.push({
       ...createDefaultOperation<OperationGiveItem>('giveItem'),
       data: {
-        itemId: itemId,
+        itemId: item.id,
       },
     } satisfies OperationGiveItem);
+
+    invItems.push({
+      id: crypto.randomUUID(),
+      item: _.cloneDeep(item),
+      is_formula: false,
+      is_equipped: false,
+      is_invested: false,
+      is_implanted: false,
+      container_contents: [],
+    });
   }
 
-  return operations;
+  return { operations: operations, items: invItems };
 }
 
 async function getAbilities(json: Record<string, any>, source: ContentSource): Promise<AbilityBlock[]> {

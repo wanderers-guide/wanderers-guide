@@ -619,6 +619,9 @@ async function runGiveTrait(
   ) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
   } else {
+    console.warn(
+      `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
+    );
     displayError(
       `Trait is not a class, archetype, ancestry, or creature trait so it can't be given to a character: ${trait.name} (${trait.id})`
     );
