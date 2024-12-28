@@ -1,4 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
+import BlurBox from '@common/BlurBox';
+import { DisplayIcon } from '@common/IconDisplay';
+import TraitsDisplay from '@common/TraitsDisplay';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
@@ -53,8 +56,10 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Creature } from '@typing/content';
 import { OperationCharacterResultPackage, OperationCreatureResultPackage } from '@typing/operations';
-import { StoreID, VariableListStr } from '@typing/variables';
-import { convertToSetEntity } from '@utils/type-fixing';
+import { StoreID, VariableListStr, VariableStr } from '@typing/variables';
+import { convertToSize } from '@upload/foundry-utils';
+import { toLabel } from '@utils/strings';
+import { convertToSetEntity, isTruthy } from '@utils/type-fixing';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getAllAncestryTraitVariables, getVariable, setVariable } from '@variables/variable-manager';
 import _ from 'lodash';
@@ -64,13 +69,6 @@ import { SetterOrUpdater, useRecoilState } from 'recoil';
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const theme = useMantineTheme();
   const id = props.data.id;
-
-  const [drawerData, setDrawerData] = useLocalStorage<{ view: 'BLOCK' | 'SHEET' }>({
-    key: 'creature-drawer-view',
-    defaultValue: {
-      view: 'SHEET',
-    },
-  });
 
   const { data: _creature } = useQuery({
     queryKey: [`find-creature-${id}`, { id }],
@@ -89,25 +87,27 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
       {creature && (
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={10}>
-            {creature?.details?.image_url && (
-              <Avatar
-                src={creature?.details?.image_url}
-                alt='Creature Artwork'
-                size={50}
-                radius={50}
-                variant='transparent'
-                color='dark.3'
-                bg={theme.colors.dark[6]}
-              />
-            )}
-
             <Box>
-              <Title order={3}>{creature.name}</Title>
+              <Title order={3}>{toLabel(creature.name)}</Title>
             </Box>
-            <Box></Box>
           </Group>
-          <Box>
-            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+          <Text style={{ textWrap: 'nowrap' }}>Creature {creature.level}</Text>
+        </Group>
+      )}
+    </>
+  );
+
+  /*
+  Switch mode:
+
+  const [drawerData, setDrawerData] = useLocalStorage<{ view: 'BLOCK' | 'SHEET' }>({
+    key: 'creature-drawer-view',
+    defaultValue: {
+      view: 'SHEET',
+    },
+  });
+
+  <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
               <HoverCard.Target>
                 {drawerData.view === 'BLOCK' ? (
                   <ActionIcon
@@ -143,11 +143,8 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
                 </Text>
               </HoverCard.Dropdown>
             </HoverCard>
-          </Box>
-        </Group>
-      )}
-    </>
-  );
+  
+  */
 }
 
 export function CreatureDrawerContent(props: {
@@ -290,9 +287,23 @@ export function CreatureDrawerContent(props: {
       <Stack>
         <Stack>
           {activeTab === 'main' && (
-            <Stack>
-              {/* <EntityInfoSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} /> */}
-              <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+            <Stack gap={15}>
+              <Group gap={15}>
+                <Box style={{ flex: 1 }}>
+                  <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+                </Box>
+                {creature.details.image_url && (
+                  <BlurBox blur={10} h={111} pr='sm' pt='sm'>
+                    <DisplayIcon
+                      strValue={creature.details.image_url}
+                      width={90}
+                      iconStyles={{
+                        height: 90,
+                      }}
+                    />
+                  </BlurBox>
+                )}
+              </Group>
               <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
               <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
               <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />

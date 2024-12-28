@@ -68,7 +68,7 @@ import SkillsActionsPanel from './panels/SkillsActionsPanel';
 import SpellsPanel from './panels/SpellsPanel';
 import ArmorSection from './sections/ArmorSection';
 import AttributeSection from './sections/AttributeSection';
-import CharacterInfoSection from './sections/EntityInfoSection';
+import EntityInfoSection from './sections/EntityInfoSection';
 import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
@@ -349,7 +349,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         <Box ref={ref}>
           <Stack gap='xs' style={{ position: 'relative' }}>
             <SimpleGrid cols={isPhone ? 1 : isTablet ? 2 : 3} spacing='xs' verticalSpacing='xs'>
-              <CharacterInfoSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+              <EntityInfoSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
               {!hideSections && (
                 <>
                   <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />

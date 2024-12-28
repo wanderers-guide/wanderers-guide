@@ -10,6 +10,7 @@ import {
   Title,
   ColorInput,
   Image,
+  MantineStyleProp,
 } from '@mantine/core';
 import { isValidImage } from '@utils/images';
 import { useEffect, useState } from 'react';
@@ -167,8 +168,9 @@ export function SelectIcon(props: {
   );
 }
 
-export function DisplayIcon(props: { strValue: string | undefined }) {
+export function DisplayIcon(props: { strValue: string | undefined; iconStyles?: MantineStyleProp; width?: number }) {
   const iconValue = parseIconValue(props.strValue ?? '');
+  const width = props.width ?? 90;
 
   if (iconValue.value === '') {
     return null;
@@ -180,15 +182,16 @@ export function DisplayIcon(props: { strValue: string | undefined }) {
         variant='transparent'
         style={{
           float: 'right',
-          width: 90,
+          width: width,
           height: 'auto',
           cursor: 'default',
+          ...props.iconStyles,
         }}
         ml='sm'
         radius='lg'
         color={iconValue.color}
       >
-        <Icon name={iconValue.value} style={{ width: 90, height: 90 }} stroke={1.5} />
+        <Icon name={iconValue.value} style={{ width: width, height: width }} stroke={1.5} />
       </ActionIcon>
     );
   } else {
@@ -196,8 +199,10 @@ export function DisplayIcon(props: { strValue: string | undefined }) {
       <Image
         style={{
           float: 'right',
-          width: 90,
+          width: width,
           height: 'auto',
+          cursor: 'default',
+          ...props.iconStyles,
         }}
         ml='sm'
         radius='md'

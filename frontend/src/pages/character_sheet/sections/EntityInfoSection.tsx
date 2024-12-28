@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { confirmExperience } from '../living-entity-utils';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
-import { Character, LivingEntity } from '@typing/content';
+import { Character, LivingEntity, Size } from '@typing/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
 import { ICON_BG_COLOR } from '@constants/data';
@@ -283,7 +283,7 @@ export default function EntityInfoSection(props: {
               }}
             />
           )}
-          {isCreature(props.entity) && <CreatureDetailedInfo creature={props.entity} nameCutOff={20} />}
+          {isCreature(props.entity) && <CreatureDetailedInfo id={props.id} creature={props.entity} />}
 
           <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
             <Stack gap={5}>

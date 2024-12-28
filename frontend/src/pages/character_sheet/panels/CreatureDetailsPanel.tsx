@@ -54,6 +54,7 @@ import { pluralize } from '@utils/strings';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { convertToSize } from '@upload/foundry-utils';
+import { DisplayIcon } from '@common/IconDisplay';
 
 const SECTION_WIDTH = 280;
 
@@ -104,6 +105,7 @@ export default function CreatureDetailsPanel(props: {
         <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
           <Group justify='center'>
             <Box w={SECTION_WIDTH}>
+              <DisplayIcon strValue={props.creature?.details.image_url} width={160} />
               <RichText ta='justify' fz='sm'>
                 {props.creature?.details.description || 'No description given.'}
               </RichText>

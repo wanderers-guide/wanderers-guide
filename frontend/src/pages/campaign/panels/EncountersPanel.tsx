@@ -893,7 +893,13 @@ function CombatantCard(props: {
             },
           }}
         /> */}
-        <DisplayIcon strValue={props.combatant.data.details?.image_url} />
+        <DisplayIcon
+          strValue={props.combatant.data.details?.image_url}
+          width={40}
+          iconStyles={{
+            objectFit: 'contain',
+          }}
+        />
 
         <Box pr={5} style={{ flex: 1 }}>
           <Text size='sm' fw={600} span>

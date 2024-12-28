@@ -338,7 +338,7 @@ function addHP(operations: Operation[], json: Record<string, any>, varTotals: Ma
 function addResistsWeaks(operations: Operation[], json: Record<string, any>) {
   const constructValue = (data: Record<string, any>) => {
     const exceptions = data.exceptions && data.exceptions.length > 0 ? ` (except ${data.exceptions.join(', ')})` : '';
-    return `${data.type}${exceptions}, ${data.value}`;
+    return `${data.type}${exceptions}, ${data.value ?? ''}`;
   };
 
   for (const immunity of json.system.attributes.immunities ?? []) {
