@@ -69,7 +69,7 @@ export function CreatureDetailedInfo(props: { creature: Creature | null; nameCut
           )}
           <Avatar
             src={props.creature?.details?.image_url}
-            alt='Character Portrait'
+            alt='Creature Portrait'
             size={75}
             radius={75}
             variant='transparent'

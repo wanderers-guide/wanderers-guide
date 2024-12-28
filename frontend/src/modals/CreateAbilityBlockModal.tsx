@@ -1,4 +1,5 @@
 import ActionsInput from '@common/ActionsInput';
+import { SelectIcon } from '@common/IconDisplay';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
@@ -104,7 +105,6 @@ export function CreateAbilityBlockModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
   const [metaData, setMetaData] = useState<Record<string, any>>({});
-  const [isValidImageURL, setIsValidImageURL] = useState(true);
 
   const form = useForm<AbilityBlock>({
     initialValues: {
@@ -308,17 +308,14 @@ export function CreateAbilityBlockModal(props: {
 
                 <Divider mx='lg' label='Advanced' labelPosition='center' />
 
-                <TextInput
-                  defaultValue={metaData.image_url ?? ''}
-                  label='Image URL'
-                  onBlur={async (e) => {
-                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
+                <SelectIcon
+                  strValue={metaData.image_url ?? ''}
+                  setValue={(strValue) => {
                     setMetaData({
                       ...metaData,
-                      image_url: e.target?.value,
+                      image_url: strValue,
                     });
                   }}
-                  error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
                 {props.type === 'action' && (

@@ -9,6 +9,7 @@ import {
   Modal,
   Title,
   ColorInput,
+  Image,
 } from '@mantine/core';
 import { isValidImage } from '@utils/images';
 import { useEffect, useState } from 'react';
@@ -17,6 +18,8 @@ import { SelectIconModalContents } from '@modals/SelectIconModal';
 import DOMPurify from 'dompurify';
 import { GUIDE_BLUE } from '@constants/data';
 import _ from 'lodash-es';
+import { usePrevious } from '@mantine/hooks';
+import useRefresh from '@utils/use-refresh';
 
 export function SelectIcon(props: {
   strValue: string;
@@ -32,70 +35,91 @@ export function SelectIcon(props: {
   iconOnly?: boolean;
 }) {
   const iconValue = parseIconValue(props.strValue);
-
-  const [type, setType] = useState(props.iconOnly ? 'icon' : iconValue.type);
-  const [value, setValue] = useState(iconValue.value);
-  const [color, setColor] = useState(iconValue.color);
-
-  useEffect(() => {
-    props.setValue(stringifyIconValue({ type, value, color }), _.cloneDeep({ type, value, color }));
-  }, [type, value, color]);
+  const updateIconValue = (iconValue: { type: 'icon' | 'image'; value: string; color?: string }) => {
+    props.setValue(stringifyIconValue(iconValue), iconValue);
+  };
 
   const [isValidImageURL, setIsValidImageURL] = useState(true);
   const [openedModal, setOpenedModal] = useState(false);
 
+  // Fix bug with semented control not updating properly
+  const prevStrValue = usePrevious(props.strValue);
+  const [displaySegmented, refreshSegmented] = useRefresh();
+  useEffect(() => {
+    if (!prevStrValue && props.strValue) {
+      refreshSegmented();
+    }
+  }, [props.strValue]);
+
   return (
-    <Group>
-      {!props.iconOnly && (
+    <Group h={65} align='flex-start'>
+      {displaySegmented && !props.iconOnly && (
         <SegmentedControl
-          value={type}
+          defaultValue={iconValue.type}
+          value={iconValue.type}
           onChange={(t) => {
-            setType(t as 'icon' | 'image');
+            if (t === 'icon') {
+              updateIconValue({ type: 'icon', value: 'secretbook', color: GUIDE_BLUE });
+            } else {
+              updateIconValue({ type: 'image', value: '' });
+            }
           }}
           data={[
             { label: 'Image', value: 'image' },
             { label: 'Icon', value: 'icon' },
           ]}
+          mt='lg'
         />
       )}
-      {type === 'image' && (
-        <TextInput
-          defaultValue={value}
-          label='Image URL'
-          onBlur={async (e) => {
-            const valid = !e.target?.value ? true : await isValidImage(e.target?.value);
-            setIsValidImageURL(valid);
-            if (valid) {
-              setValue(e.target.value);
+      {iconValue.type === 'image' && (
+        <Box>
+          <TextInput
+            defaultValue={iconValue.value}
+            label={
+              <Text fz='xs' c='gray.4'>
+                Image URL
+              </Text>
             }
-          }}
-          error={isValidImageURL ? false : 'Invalid URL'}
-        />
+            placeholder='Valid URL'
+            onBlur={async (e) => {
+              const valid = !e.target?.value ? true : await isValidImage(e.target?.value);
+              setIsValidImageURL(valid);
+              if (valid) {
+                updateIconValue({ type: 'image', value: e.target.value });
+              }
+            }}
+            error={isValidImageURL ? false : 'Invalid Image'}
+          />
+        </Box>
       )}
-      {type === 'icon' && (
-        <Group wrap='nowrap' align='flex-start'>
-          <Box pt={2}>
-            <Text fz='xs' c='gray.4'>
+      {iconValue.type === 'icon' && (
+        <Group wrap='nowrap' align='flex-start' pt={2}>
+          <Box pt={4}>
+            <Text fz='xs' c='gray.5'>
               Icon
             </Text>
             <UnstyledButton
-              w={'50%'}
               onClick={() => {
                 setOpenedModal(true);
               }}
             >
-              <ActionIcon variant='light' aria-label='Icon' size='lg' radius='xl' color={color}>
-                <Icon name={value} style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              <ActionIcon variant='light' aria-label='Icon' size='lg' radius='xl' color={iconValue.color}>
+                <Icon name={iconValue.value} style={{ width: '70%', height: '70%' }} stroke={1.5} />
               </ActionIcon>
             </UnstyledButton>
           </Box>
 
           <ColorInput
+            w={140}
             radius='xl'
             size='xs'
-            label='Color'
+            label={
+              <Text fz='xs' c='gray.5'>
+                Color
+              </Text>
+            }
             placeholder='Color'
-            defaultValue={color}
+            defaultValue={iconValue.color}
             swatches={[
               '#25262b',
               '#868e96',
@@ -114,7 +138,7 @@ export function SelectIcon(props: {
             ]}
             swatchesPerRow={7}
             onChange={(color) => {
-              setColor(color);
+              updateIconValue({ type: 'icon', value: iconValue.value, color });
             }}
             styles={(t) => ({
               dropdown: {
@@ -125,15 +149,15 @@ export function SelectIcon(props: {
         </Group>
       )}
       <Modal
-        opened={type === 'icon' && openedModal}
+        opened={iconValue.type === 'icon' && openedModal}
         onClose={() => setOpenedModal(false)}
         title={<Title order={3}>Select Icon</Title>}
         zIndex={props.zIndex ?? 1000}
       >
         <SelectIconModalContents
-          color={color}
+          color={iconValue.color}
           onSelect={(option) => {
-            setValue(option);
+            updateIconValue({ type: 'icon', value: option, color: iconValue.color });
             setOpenedModal(false);
           }}
           onClose={() => setOpenedModal(false)}
@@ -143,11 +167,54 @@ export function SelectIcon(props: {
   );
 }
 
-function parseIconValue(value: string): { type: 'icon' | 'image'; value: string; color?: string } {
+export function DisplayIcon(props: { strValue: string | undefined }) {
+  const iconValue = parseIconValue(props.strValue ?? '');
+
+  if (iconValue.value === '') {
+    return null;
+  }
+
+  if (iconValue.type === 'icon') {
+    return (
+      <ActionIcon
+        variant='transparent'
+        style={{
+          float: 'right',
+          width: 90,
+          height: 'auto',
+          cursor: 'default',
+        }}
+        ml='sm'
+        radius='lg'
+        color={iconValue.color}
+      >
+        <Icon name={iconValue.value} style={{ width: 90, height: 90 }} stroke={1.5} />
+      </ActionIcon>
+    );
+  } else {
+    return (
+      <Image
+        style={{
+          float: 'right',
+          width: 90,
+          height: 'auto',
+        }}
+        ml='sm'
+        radius='md'
+        fit='contain'
+        src={iconValue.value}
+      />
+    );
+  }
+}
+
+export function parseIconValue(value: string): { type: 'icon' | 'image'; value: string; color?: string } {
   const parts = value.split('|||');
 
   if (parts.length === 1) {
     return { type: 'image', value: DOMPurify.sanitize(parts[0]) };
+  } else if (parts.length === 2) {
+    return { type: 'image', value: DOMPurify.sanitize(parts[1]) };
   } else if (parts.length === 3) {
     let type: 'icon' | 'image' = 'image';
     let color: string | undefined;
@@ -161,9 +228,9 @@ function parseIconValue(value: string): { type: 'icon' | 'image'; value: string;
   }
 }
 
-function stringifyIconValue(icon: { type: 'icon' | 'image'; value: string; color?: string }) {
+export function stringifyIconValue(icon: { type: 'icon' | 'image'; value: string; color?: string }) {
   if (icon.type === 'icon') {
-    return DOMPurify.sanitize(`icon|||${icon.value}|||${icon.color}`);
+    return DOMPurify.sanitize(`icon|||${icon.value}|||${icon.color ?? ''}`);
   } else {
     return DOMPurify.sanitize(`image|||${icon.value}`);
   }

@@ -1,3 +1,4 @@
+import { SelectIcon } from '@common/IconDisplay';
 import TraitsInput from '@common/TraitsInput';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
@@ -96,7 +97,6 @@ export function CreateSpellModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
   const [metaData, setMetaData] = useState<Record<string, any>>({});
-  const [isValidImageURL, setIsValidImageURL] = useState(true);
 
   const form = useForm<Spell>({
     initialValues: {
@@ -384,17 +384,14 @@ export function CreateSpellModal(props: {
                   {...form.getInputProps('availability')}
                 />
 
-                <TextInput
-                  defaultValue={metaData.image_url ?? ''}
-                  label='Image URL'
-                  onBlur={async (e) => {
-                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
+                <SelectIcon
+                  strValue={metaData.image_url ?? ''}
+                  setValue={(strValue) => {
                     setMetaData({
                       ...metaData,
-                      image_url: e.target?.value,
+                      image_url: strValue,
                     });
                   }}
-                  error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
                 <Divider />

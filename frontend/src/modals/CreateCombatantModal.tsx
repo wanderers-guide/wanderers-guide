@@ -45,6 +45,8 @@ import { useState } from 'react';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
 import { toLabel } from '@utils/strings';
+import { SelectIcon } from '@common/IconDisplay';
+import { sign } from '@utils/numbers';
 
 /**
  * Modal for creating or editing a creature
@@ -67,7 +69,6 @@ export function CreateCombatantModal(props: {
   const theme = useMantineTheme();
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
-  const [isValidImageURL, setIsValidImageURL] = useState(true);
 
   // Initialize form
   const form = useForm<Combatant>({
@@ -121,50 +122,54 @@ export function CreateCombatantModal(props: {
   const STAT_OPS: Operation[] = [
     {
       id: 'ba155ae7-a343-4ae0-b3fb-e68020e4b055',
-      type: 'setValue',
+      type: 'adjValue',
       data: {
-        variable: 'AC_TOTAL',
+        variable: 'AC_BONUS',
         value: totalAC ?? 0,
       },
     },
     {
       id: 'd66fa178-9993-46da-ad6a-e2263f4e8897',
-      type: 'setValue',
+      type: 'addBonusToValue',
       data: {
-        variable: 'SAVE_FORT_TOTAL',
-        value: totalFort ?? 0,
+        variable: 'SAVE_FORT',
+        text: '',
+        value: `${sign(totalFort ?? 0)}`,
       },
     },
     {
       id: '43ec2706-8c3b-4bbe-af6c-a99c7ceaa381',
-      type: 'setValue',
+      type: 'addBonusToValue',
       data: {
-        variable: 'SAVE_REFLEX_TOTAL',
-        value: totalRef ?? 0,
+        variable: 'SAVE_REFLEX',
+        text: '',
+        value: `${sign(totalRef ?? 0)}`,
       },
     },
     {
       id: 'd7025dfd-b90f-4e76-988b-c946312d2939',
-      type: 'setValue',
+      type: 'addBonusToValue',
       data: {
-        variable: 'SAVE_WILL_TOTAL',
-        value: totalWill ?? 0,
+        variable: 'SAVE_WILL',
+        text: '',
+        value: `${sign(totalWill ?? 0)}`,
       },
     },
     {
       id: 'f2d3d23a-9397-4127-91cc-96c6af99feed',
-      type: 'setValue',
+      type: 'adjValue',
       data: {
-        variable: 'HEALTH_MAX_TOTAL',
+        variable: 'MAX_HEALTH_BONUS',
         value: totalMaxHP ?? 0,
       },
     },
     {
       id: '1ff885b6-75d8-4694-9c71-d4e02b873859',
-      type: 'setValue',
+      type: 'addBonusToValue',
       data: {
-        variable: 'PERCEPTION_TOTAL',
-        value: totalPerc ?? 0,
+        variable: 'PERCEPTION',
+        text: '',
+        value: `${sign(totalPerc ?? 0)}`,
       },
     },
   ];
@@ -326,14 +331,11 @@ export function CreateCombatantModal(props: {
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
-                <TextInput
-                  defaultValue={form.values.creature?.details.image_url ?? ''}
-                  label='Image URL'
-                  onBlur={async (e) => {
-                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
-                    form.setFieldValue('creature.details.image_url', e.target?.value);
+                <SelectIcon
+                  strValue={form.values.creature?.details.image_url ?? ''}
+                  setValue={(strValue) => {
+                    form.setFieldValue('creature.details.image_url', strValue);
                   }}
-                  error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
                 <Divider />

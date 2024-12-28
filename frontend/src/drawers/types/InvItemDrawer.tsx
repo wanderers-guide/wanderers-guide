@@ -68,6 +68,7 @@ import TokenSelect from '@common/TokenSelect';
 import { ItemRunesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -170,19 +171,7 @@ export function InvItemDrawerContent(props: {
 
   return (
     <Box>
-      {invItem.item.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={invItem.item.meta_data?.image_url}
-        />
-      )}
+      <DisplayIcon strValue={invItem.item.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>

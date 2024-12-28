@@ -20,7 +20,6 @@ export function SetValOperation(props: {
   onSelect: (variable: string) => void;
   onValueChange: (value: VariableValue) => void;
   onRemove: () => void;
-  showTotalVars?: boolean;
   overrideTitle?: string;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
@@ -45,7 +44,6 @@ export function SetValOperation(props: {
           props.onSelect(value);
           setValue('');
         }}
-        showTotalVars={props.showTotalVars}
       />
       {variableData && (
         <SetValueInput

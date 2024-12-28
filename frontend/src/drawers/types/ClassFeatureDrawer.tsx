@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export function ClassFeatureDrawerTitle(props: { data: { id?: number; classFeature?: AbilityBlock } }) {
   const id = props.data.id;
@@ -86,19 +87,7 @@ export function ClassFeatureDrawerContent(props: {
 
   return (
     <Box>
-      {classFeature.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={classFeature.meta_data?.image_url}
-        />
-      )}
+      <DisplayIcon strValue={classFeature.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>

@@ -16,6 +16,7 @@ import {
 import { ContextModalProps, modals } from '@mantine/modals';
 import { useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
+import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
 
 export default function UpdateNotePageModal({
   context,
@@ -47,21 +48,6 @@ export default function UpdateNotePageModal({
 
   return (
     <Stack style={{ position: 'relative' }}>
-      <Modal
-        opened={openedModal}
-        onClose={() => setOpenedModal(false)}
-        title={<Title order={3}>Select Icon</Title>}
-        zIndex={1000}
-      >
-        <SelectIconModalContents
-          color={color}
-          onSelect={(option) => {
-            setIcon(option);
-          }}
-          onClose={() => setOpenedModal(false)}
-        />
-      </Modal>
-
       <TextInput
         label='Title'
         defaultValue={title}
@@ -72,56 +58,14 @@ export default function UpdateNotePageModal({
         w={150}
       />
 
-      <Group wrap='nowrap' align='flex-start'>
-        <Box pt={2}>
-          <Text fz='xs' c='gray.4'>
-            Icon
-          </Text>
-          <UnstyledButton
-            w={'50%'}
-            onClick={() => {
-              setOpenedModal(true);
-            }}
-          >
-            <ActionIcon variant='light' aria-label='Icon' size='lg' radius='xl' color={color}>
-              <Icon name={icon} style={{ width: '70%', height: '70%' }} stroke={1.5} />
-            </ActionIcon>
-          </UnstyledButton>
-        </Box>
-
-        <ColorInput
-          radius='xl'
-          size='xs'
-          label='Color'
-          placeholder='Color'
-          defaultValue={color}
-          swatches={[
-            '#25262b',
-            '#868e96',
-            '#fa5252',
-            '#e64980',
-            '#be4bdb',
-            '#8d69f5',
-            '#577deb',
-            GUIDE_BLUE,
-            '#15aabf',
-            '#12b886',
-            '#40c057',
-            '#82c91e',
-            '#fab005',
-            '#fd7e14',
-          ]}
-          swatchesPerRow={7}
-          onChange={(color) => {
-            setColor(color);
-          }}
-          styles={(t) => ({
-            dropdown: {
-              zIndex: 1500,
-            },
-          })}
-        />
-      </Group>
+      <SelectIcon
+        iconOnly
+        strValue={stringifyIconValue({ type: 'icon', value: icon, color })}
+        setValue={(strValue, iconValue) => {
+          setIcon(iconValue.value);
+          setColor(iconValue.color ?? GUIDE_BLUE);
+        }}
+      />
 
       <Group justify='space-between'>
         <Button variant='light' size='compact-xs' color='red' onClick={() => openConfirmModal()}>

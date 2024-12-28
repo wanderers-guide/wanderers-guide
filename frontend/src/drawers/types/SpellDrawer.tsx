@@ -1,5 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import { ActionSymbol } from '@common/Actions';
+import { DisplayIcon } from '@common/IconDisplay';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
@@ -205,19 +206,7 @@ export function SpellDrawerContent(props: { data: { id?: number; spell?: Spell }
 
   return (
     <Box>
-      {spell.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={spell.meta_data?.image_url}
-        />
-      )}
+      <DisplayIcon strValue={spell.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>

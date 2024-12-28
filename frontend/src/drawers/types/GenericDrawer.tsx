@@ -13,6 +13,7 @@ import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { toLabel } from '@utils/strings';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export type GenericData = {
   title: string;
@@ -55,19 +56,7 @@ export function GenericDrawerTitle(props: { data: GenericData }) {
 export function GenericDrawerContent(props: { data: GenericData }) {
   return (
     <Box>
-      {/* {action.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={action.meta_data?.image_url}
-        />
-      )} */}
+      {/* <DisplayIcon strValue={props.data?.meta_data?.image_url} /> */}
       <RichText ta='justify'>{props.data.description}</RichText>
       <DisplayOperationSelectionOptions operations={props.data.operations} />
       {props.data.showOperations && <ShowOperationsButton name={props.data.title} operations={props.data.operations} />}

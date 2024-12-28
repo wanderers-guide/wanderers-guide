@@ -122,8 +122,6 @@ export function CreateItemModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
 
-  const [isValidImageURL, setIsValidImageURL] = useState(true);
-
   const [armorCategory, setArmorCategory] = useState('');
   const [armorGroup, setArmorGroup] = useState('');
 
@@ -1035,21 +1033,10 @@ export function CreateItemModal(props: {
                             {...form.getInputProps('meta_data.bulk.held_or_stowed')}
                           />
 
-                          {/* <TextInput
-                            defaultValue={form.values.meta_data?.image_url ?? ''}
-                            label='Image URL'
-                            onBlur={async (e) => {
-                              setIsValidImageURL(e.target.value.trim() ? await isValidImage(e.target.value) : true);
-                              form.setFieldValue('meta_data.image_url', e.target.value);
-                            }}
-                            error={isValidImageURL ? false : 'Invalid URL'}
-                          /> */}
-
                           <SelectIcon
                             strValue={form.values.meta_data?.image_url ?? ''}
                             setValue={(strValue) => {
                               form.setFieldValue('meta_data.image_url', strValue);
-                              console.log(strValue);
                             }}
                           />
                         </Stack>

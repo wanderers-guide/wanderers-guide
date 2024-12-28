@@ -42,6 +42,7 @@ import { useState } from 'react';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
 import { toLabel } from '@utils/strings';
+import { SelectIcon } from '@common/IconDisplay';
 
 /**
  * Modal for creating or editing a creature
@@ -88,19 +89,11 @@ export function CreateCreatureModal(props: {
       if (!creature) return null;
 
       // Set the initial values, track totaled operations separately
-      const totaledOperations: Operation[] = [];
-      const nonTotaledOperations: Operation[] = [];
-      for (const op of creature.operations ?? []) {
-        if (JSON.stringify(op.data).includes('_TOTAL')) {
-          totaledOperations.push(op);
-        } else {
-          nonTotaledOperations.push(op);
-        }
-      }
+      const operations: Operation[] = creature.operations ?? [];
 
       form.setInitialValues({
         ...creature,
-        operations: nonTotaledOperations,
+        operations: operations,
         // @ts-ignore
         level: creature.level.toString(),
       });
@@ -118,7 +111,6 @@ export function CreateCreatureModal(props: {
 
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
-  const [isValidImageURL, setIsValidImageURL] = useState(true);
   const [totaledOperations, setTotaledOperations] = useState<Operation[]>([]);
 
   // Initialize form
@@ -369,7 +361,6 @@ export function CreateCreatureModal(props: {
                   <Box key={i}>
                     {op.type === 'setValue' ? (
                       <SetValOperation
-                        showTotalVars
                         overrideTitle='Set Stat'
                         variable={op.data.variable}
                         value={op.data.value}
@@ -385,7 +376,6 @@ export function CreateCreatureModal(props: {
                       />
                     ) : op.type === 'addBonusToValue' ? (
                       <AddBonusToValOperation
-                        showTotalVars
                         overrideTitle='Add Stat Bonus'
                         variable={op.data.variable}
                         bonusValue={op.data.value}
@@ -478,14 +468,11 @@ export function CreateCreatureModal(props: {
             />
             <Collapse in={openedAdditional}>
               <Stack gap={10}>
-                <TextInput
-                  defaultValue={form.values.details.image_url ?? ''}
-                  label='Image URL'
-                  onBlur={async (e) => {
-                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
-                    form.setFieldValue('details.image_url', e.target?.value);
+                <SelectIcon
+                  strValue={form.values.details.image_url ?? ''}
+                  setValue={(strValue) => {
+                    form.setFieldValue('details.image_url', strValue);
                   }}
-                  error={isValidImageURL ? false : 'Invalid URL'}
                 />
 
                 <Divider />

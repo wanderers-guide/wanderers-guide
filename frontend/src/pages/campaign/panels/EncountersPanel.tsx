@@ -2,6 +2,7 @@ import { drawerState } from '@atoms/navAtoms';
 import ConditionPill from '@common/ConditionPill';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
+import { DisplayIcon } from '@common/IconDisplay';
 import { selectContent } from '@common/select/SelectContent';
 import { applyConditions, compiledConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE } from '@constants/data';
@@ -883,7 +884,7 @@ function CombatantCard(props: {
           </ActionIcon>
         </Group>
 
-        <Avatar
+        {/* <Avatar
           src={props.combatant.data.details?.image_url}
           radius='xl'
           styles={{
@@ -891,7 +892,9 @@ function CombatantCard(props: {
               objectFit: 'contain',
             },
           }}
-        />
+        /> */}
+        <DisplayIcon strValue={props.combatant.data.details?.image_url} />
+
         <Box pr={5} style={{ flex: 1 }}>
           <Text size='sm' fw={600} span>
             {props.combatant.data.name}

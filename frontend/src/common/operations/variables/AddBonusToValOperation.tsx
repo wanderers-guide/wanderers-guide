@@ -15,7 +15,6 @@ export function AddBonusToValOperation(props: {
   onValueChange: (data: { bonusValue?: number | string; bonusType?: string; text: string }) => void;
   onSelect: (variable: string) => void;
   onRemove: () => void;
-  showTotalVars?: boolean;
   overrideTitle?: string;
 }) {
   const [variableName, setVariableName] = useState(props.variable);
@@ -50,7 +49,6 @@ export function AddBonusToValOperation(props: {
             setType(undefined);
             setText('');
           }}
-          showTotalVars={props.showTotalVars}
         />
         {variableData && (
           <AddBonusInput

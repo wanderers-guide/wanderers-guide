@@ -6,7 +6,6 @@ export default function VariableSelect(props: {
   value: string;
   variableType?: VariableType;
   onChange: (value: string, variable?: Variable) => void;
-  showTotalVars?: boolean;
 }) {
   return (
     <Autocomplete
@@ -20,14 +19,12 @@ export default function VariableSelect(props: {
         props.onChange(variable, getVariables('CHARACTER')[variable]);
       }}
       data={Object.keys(getVariables('CHARACTER'))
-        .filter((variable) =>
-          props.showTotalVars
-            ? variable.endsWith('_TOTAL')
-            : !variable.endsWith('____') &&
-              !variable.endsWith('_IDS') &&
-              // !variable.endsWith('_NAMES') &&
-              !variable.endsWith('_TOTAL') &&
-              !HIDDEN_VARIABLES.includes(variable)
+        .filter(
+          (variable) =>
+            !variable.endsWith('____') &&
+            !variable.endsWith('_IDS') &&
+            // !variable.endsWith('_NAMES') &&
+            !HIDDEN_VARIABLES.includes(variable)
         )
         .filter((variable) => {
           if (props.variableType) {

@@ -58,6 +58,7 @@ import ShowInjectedText from '@drawers/ShowInjectedText';
 import { ItemRunesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -198,19 +199,7 @@ export function ItemDrawerContent(props: {
 
   return (
     <Box>
-      {item.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={item.meta_data?.image_url}
-        />
-      )}
+      <DisplayIcon strValue={item.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>

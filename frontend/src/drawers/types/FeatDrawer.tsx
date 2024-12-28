@@ -31,6 +31,7 @@ import { ReactNode } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
@@ -203,19 +204,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
 
   return (
     <Box>
-      {feat.meta_data?.image_url && (
-        <Image
-          style={{
-            float: 'right',
-            maxWidth: 150,
-            height: 'auto',
-          }}
-          ml='sm'
-          radius='md'
-          fit='contain'
-          src={feat.meta_data?.image_url}
-        />
-      )}
+      <DisplayIcon strValue={feat.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
         <Box pb={2}>
