@@ -64,7 +64,7 @@ async function fixBackgrounds(sourceId: number) {
   }
 
   const backgrounds =
-    (await fetchContent<Background[]>('background', {
+    (await fetchContent<Background>('background', {
       content_sources: [sourceId],
     })) ?? [];
 

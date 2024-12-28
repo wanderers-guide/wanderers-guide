@@ -117,7 +117,7 @@ export function ItemDrawerContent(props: {
       // Inject base item content
       if (item?.meta_data?.base_item) {
         const baseItem = await fetchItemByName(item.meta_data.base_item);
-        item.meta_data.base_item_content = baseItem && baseItem.length > 0 ? baseItem[0] : undefined;
+        item.meta_data.base_item_content = baseItem ?? undefined;
       }
       return item;
     },

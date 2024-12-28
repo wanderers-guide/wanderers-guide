@@ -6,7 +6,7 @@ import {
   fetchTraitByName,
 } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
-import { ActionCost, ContentSource, Item, Language, Rarity, Size, Trait } from '@typing/content';
+import { ActionCost, ContentSource, Item, Language, Rarity, Size, Spell, Trait } from '@typing/content';
 import { toLabel } from '@utils/strings';
 import { labelToVariable } from '@variables/variable-utils';
 import * as _ from 'lodash-es';
@@ -124,37 +124,37 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
   FATAL_D8: 1653,
   FATAL_D6: 2760,
   FATAL_D4: 2761,
+  PLANT: 1654,
 };
 
 export async function getTraitIds(traitNames: string[], source: ContentSource) {
   const sources = await fetchContentSources({ ids: 'all', homebrew: false });
 
   const traitIds: number[] = [];
-  for (const traitName of traitNames) {
-    let trait = await fetchTraitByName(
-      traitName,
-      sources.map((s) => s.id)
-    );
-    if (!trait) {
-      const traitId = FOUNDRY_TRAIT_MAP[traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')];
-      if (traitId) {
-        traitIds.push(traitId);
-        continue;
-      }
-    }
-
-    if (!trait) {
-      console.error(
-        `Trait not found: ${traitName}, ${traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')}`
-      );
-      await createTrait(toLabel(traitName), '', source.id);
-      trait = await fetchTraitByName(
+  for (let traitName of traitNames) {
+    const traitId = FOUNDRY_TRAIT_MAP[traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')];
+    if (traitId) {
+      traitIds.push(traitId);
+    } else {
+      traitName = traitName.replace(/-/g, ' ');
+      let trait = await fetchTraitByName(
         traitName,
         sources.map((s) => s.id)
       );
-    }
-    if (trait) {
-      traitIds.push(trait.id);
+
+      if (!trait) {
+        console.error(
+          `Trait not found: ${traitName}, ${traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')}`
+        );
+        await createTrait(toLabel(traitName), '', source.id);
+        trait = await fetchTraitByName(
+          toLabel(traitName),
+          sources.map((s) => s.id)
+        );
+      }
+      if (trait) {
+        traitIds.push(trait.id);
+      }
     }
   }
   return traitIds;
@@ -164,54 +164,57 @@ export async function getLanguageIds(languageNames: string[], source: ContentSou
   const sources = await fetchContentSources();
 
   const languageIds: number[] = [];
-  for (const languageName of languageNames) {
-    let languages = await fetchLanguageByName(
+  for (let languageName of languageNames) {
+    languageName = languageName.replace(/-/g, ' ');
+    let language = await fetchLanguageByName(
       languageName,
       sources.map((s) => s.id)
     );
-    if (!languages || languages.length === 0) {
+    if (!language) {
       await createLanguage(toLabel(languageName), '', 'COMMON', source.id);
-      languages = await fetchLanguageByName(
-        languageName,
+      language = await fetchLanguageByName(
+        toLabel(languageName),
         sources.map((s) => s.id)
       );
     }
-    if (languages && languages.length > 0) {
-      languageIds.push(languages[0].id);
+    if (language) {
+      languageIds.push(language.id);
     }
   }
   return languageIds;
 }
 
-export async function getSpellIds(spellNames: string[]) {
+export async function getSpellByName(spellNames: string[]) {
   const sources = await fetchContentSources();
 
-  const spellIds: number[] = [];
-  for (const spellName of spellNames) {
-    const spells = await fetchSpellByName(
+  const resultSpells: Spell[] = [];
+  for (let spellName of spellNames) {
+    spellName = spellName.replace(/-/g, ' ');
+    const spell = await fetchSpellByName(
       spellName,
       sources.map((s) => s.id)
     );
-    if (spells && spells.length > 0) {
-      spellIds.push(spells[0].id);
+    if (spell) {
+      resultSpells.push(spell);
     } else {
       console.warn(`Spell not found: ${spellName}`);
     }
   }
-  return spellIds;
+  return resultSpells;
 }
 
 export async function getItemsByName(itemNames: string[]) {
   const sources = await fetchContentSources();
 
   const resultItems: Item[] = [];
-  for (const itemName of itemNames) {
-    const items = await fetchItemByName(
+  for (let itemName of itemNames) {
+    itemName = itemName.replace(/-/g, ' ');
+    const item = await fetchItemByName(
       itemName,
       sources.map((s) => s.id)
     );
-    if (items && items.length > 0) {
-      resultItems.push(items[0]);
+    if (item) {
+      resultItems.push(item);
     } else {
       console.warn(`Item not found: ${itemName}`);
     }

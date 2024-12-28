@@ -124,16 +124,12 @@ export function getCachedSources(): ContentSource[] {
 
 export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {
   if (!id || id === -1) return null;
-  return await fetchContent<T>(type, { id, content_sources: sources });
+  const results = await fetchContent<T>(type, { id, content_sources: sources });
+  return results.length > 0 ? results[0] : null;
 }
 
 export async function fetchContentAll<T = Record<string, any>>(type: ContentType, sources?: number[]) {
-  const result = await fetchContent<T>(type, { content_sources: sources });
-  if (result) {
-    return result as T[];
-  } else {
-    return [];
-  }
+  return await fetchContent<T>(type, { content_sources: sources });
 }
 
 export async function fetchContent<T = Record<string, any>>(
@@ -159,12 +155,30 @@ export async function fetchContent<T = Record<string, any>>(
   const storedIds = getStoredIds(type, data);
   const storedFetch = getStoredFetch(type, data);
   const storedNames = getStoredNames(type, data);
+
+  console.log('fetching', type, data);
+  console.log('storedIds', storedIds);
+  console.log('storedFetch', storedFetch);
+  console.log('storedNames', storedNames);
+
   if (storedFetch) {
-    return storedFetch as T;
+    if (storedFetch && Array.isArray(storedFetch)) {
+      return storedFetch as T[];
+    } else {
+      return storedFetch ? [storedFetch as T] : [];
+    }
   } else if (storedIds) {
-    return storedIds as T;
+    if (storedIds && Array.isArray(storedIds)) {
+      return storedIds as T[];
+    } else {
+      return storedIds ? [storedIds as T] : [];
+    }
   } else if (storedNames) {
-    return storedNames as T;
+    if (storedNames && Array.isArray(storedNames)) {
+      return storedNames as T[];
+    } else {
+      return storedNames ? [storedNames as T] : [];
+    }
   } else {
     // Make sure we're always filtering by content source
     const newData = { ...data };
@@ -180,7 +194,12 @@ export async function fetchContent<T = Record<string, any>>(
       const added = setStoredIds(type, data, result);
       if (added !== true) console.error('Failed to add to id store', added, data, result);
     }
-    return result;
+
+    if (result && Array.isArray(result)) {
+      return result as T[];
+    } else {
+      return result ? [result] : [];
+    }
   }
 }
 
@@ -203,15 +222,12 @@ export async function fetchContentSources(options?: {
   published?: boolean;
   ids?: number[] | 'all';
 }) {
-  const sources = await fetchContent<ContentSource[]>('content-source', {
+  const sources = await fetchContent<ContentSource>('content-source', {
     group: options?.group,
     homebrew: options?.homebrew,
     published: options?.published,
     id: options?.ids === 'all' ? undefined : options?.ids ?? defaultSources,
   });
-  if (!sources) {
-    return [];
-  }
   return sources.sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -291,69 +307,73 @@ export async function findRequiredContentSources(sourceIds?: number[]) {
 }
 
 export async function fetchArchetypeByDedicationFeat(feat_id: number) {
-  const archetypes = await fetchContent<Archetype[]>('archetype', {
+  const archetypes = await fetchContent<Archetype>('archetype', {
     dedication_feat_id: feat_id,
   });
-  return archetypes && archetypes.length > 0 ? archetypes[0] : null;
+  return archetypes.length > 0 ? archetypes[0] : null;
 }
 export async function fetchVersHeritageByHeritage(heritage_id: number) {
-  const versatileHeritages = await fetchContent<VersatileHeritage[]>('versatile-heritage', {
+  const versatileHeritages = await fetchContent<VersatileHeritage>('versatile-heritage', {
     heritage_id: heritage_id,
   });
-  return versatileHeritages && versatileHeritages.length > 0 ? versatileHeritages[0] : null;
+  return versatileHeritages.length > 0 ? versatileHeritages[0] : null;
 }
 export async function fetchAllPrereqs(name: string) {
-  return await fetchContent<AbilityBlock[]>('ability-block', {
+  return await fetchContent<AbilityBlock>('ability-block', {
     prerequisites: [name],
-  });
-}
-export async function fetchTraitByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<Trait>('trait', {
-    id,
-    name,
-    content_sources: sources ?? defaultSources,
   });
 }
 export async function fetchTraits(ids?: number[]) {
   if (!ids || ids.length === 0) return [];
-  return (
-    (await fetchContent<Trait[]>('trait', {
-      id: ids,
-    })) ?? []
-  );
+  return await fetchContent<Trait>('trait', {
+    id: ids,
+  });
+}
+export async function fetchTraitByName(name?: string, sources?: number[], id?: number) {
+  const results = await fetchContent<Trait>('trait', {
+    id,
+    name,
+    content_sources: sources ?? defaultSources,
+  });
+  return results.length > 0 ? results[0] : null;
 }
 export async function fetchAbilityBlockByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<AbilityBlock[]>('ability-block', {
+  const results = await fetchContent<AbilityBlock>('ability-block', {
     id,
     name,
     content_sources: sources ?? defaultSources,
   });
+  return results.length > 0 ? results[0] : null;
 }
 export async function fetchItemByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<Item[]>('item', {
+  const results = await fetchContent<Item>('item', {
     id,
     name,
     content_sources: sources ?? defaultSources,
   });
+  return results.length > 0 ? results[0] : null;
 }
 export async function fetchLanguageByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<Language[]>('language', {
+  const results = await fetchContent<Language>('language', {
     id,
     name,
     content_sources: sources ?? defaultSources,
   });
+  return results.length > 0 ? results[0] : null;
 }
 export async function fetchSpellByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<Spell[]>('spell', {
+  const results = await fetchContent<Spell>('spell', {
     id,
     name,
     content_sources: sources ?? defaultSources,
   });
+  return results.length > 0 ? results[0] : null;
 }
 export async function fetchCreatureByName(name?: string, sources?: number[], id?: number) {
-  return await fetchContent<Creature[]>('creature', {
+  const results = await fetchContent<Creature>('creature', {
     id,
     name,
     content_sources: sources ?? defaultSources,
   });
+  return results.length > 0 ? results[0] : null;
 }

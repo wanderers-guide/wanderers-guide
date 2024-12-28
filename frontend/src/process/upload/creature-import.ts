@@ -7,7 +7,7 @@ import {
   extractFromDescription,
   getItemsByName,
   getLanguageIds,
-  getSpellIds,
+  getSpellByName,
   getTraitIds,
   stripFoundryLinking,
 } from './foundry-utils';
@@ -559,13 +559,13 @@ async function addSpells(operations: Operation[], json: Record<string, any>, var
     const data = castingDataMap.get(spell.system.location.value);
     if (!data) continue;
 
-    const spellIds = await getSpellIds([toLabel(spell.system.slug)]);
-    if (spellIds.length === 0) continue;
+    const spells = await getSpellByName([toLabel(spell.system.slug)]);
+    if (spells.length === 0) continue;
 
     operations.push({
       ...createDefaultOperation<OperationGiveSpell>('giveSpell'),
       data: {
-        spellId: spellIds[0],
+        spellId: spells[0].id,
         type: data.type === '-' ? 'FOCUS' : data.type === '' ? 'INNATE' : 'NORMAL',
         castingSource: data.source,
         rank: spell.system.location.heightenedLevel,

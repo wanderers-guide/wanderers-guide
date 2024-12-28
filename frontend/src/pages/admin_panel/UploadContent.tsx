@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import { fetchContentSources, defineDefaultSources } from '@content/content-store';
+import { getSpellByName } from '@upload/foundry-utils';
 
 export default function UploadContent() {
   const [contentType, setContentType] = useState<ContentType | AbilityBlockType | null>(null);
@@ -21,6 +22,10 @@ export default function UploadContent() {
     queryFn: async () => {
       const sources = await fetchContentSources({ homebrew: false, ids: 'all' });
       defineDefaultSources(sources.map((source) => source.id));
+
+      const result = await getSpellByName(['Fireball']);
+      console.log(result);
+
       return sources;
     },
     refetchInterval: 1000,

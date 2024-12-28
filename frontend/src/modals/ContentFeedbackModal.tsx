@@ -32,14 +32,6 @@ import {
   getDefaultSources,
 } from '@content/content-store';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
-import {
-  upsertClass,
-  upsertAncestry,
-  upsertBackground,
-  upsertTrait,
-  upsertLanguage,
-  upsertItem,
-} from '@content/content-creation';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { CreateAncestryModal } from './CreateAncestryModal';
 import { CreateBackgroundModal } from './CreateBackgroundModal';
@@ -173,8 +165,8 @@ export default function ContentFeedbackModal(props: {
               onCancel={() => handleReset()}
               onNameBlur={async (name) => {
                 if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
-                const abs = await fetchAbilityBlockByName(name, [props.data.contentSourceId]);
-                if ((abs ?? []).length > 0) {
+                const ab = await fetchAbilityBlockByName(name, [props.data.contentSourceId]);
+                if (ab) {
                   showNotification({
                     id: 'record-exists',
                     title: 'Already Exists',
@@ -196,8 +188,8 @@ export default function ContentFeedbackModal(props: {
               onCancel={() => handleReset()}
               onNameBlur={async (name) => {
                 if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
-                const spells = await fetchSpellByName(name, [props.data.contentSourceId]);
-                if ((spells ?? []).length > 0) {
+                const spell = await fetchSpellByName(name, [props.data.contentSourceId]);
+                if (spell) {
                   showNotification({
                     id: 'record-exists',
                     title: 'Already Exists',
@@ -308,8 +300,8 @@ export default function ContentFeedbackModal(props: {
               onCancel={() => handleReset()}
               onNameBlur={async (name) => {
                 if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
-                const items = await fetchItemByName(name, [props.data.contentSourceId]);
-                if ((items ?? []).length > 0) {
+                const item = await fetchItemByName(name, [props.data.contentSourceId]);
+                if (item) {
                   showNotification({
                     id: 'record-exists',
                     title: 'Already Exists',
@@ -331,8 +323,8 @@ export default function ContentFeedbackModal(props: {
               onCancel={() => handleReset()}
               onNameBlur={async (name) => {
                 if (!props.data.contentSourceId || props.data.contentSourceId === -1) return;
-                const creatures = await fetchCreatureByName(name, [props.data.contentSourceId]);
-                if ((creatures ?? []).length > 0) {
+                const creature = await fetchCreatureByName(name, [props.data.contentSourceId]);
+                if (creature) {
                   showNotification({
                     id: 'record-exists',
                     title: 'Already Exists',
