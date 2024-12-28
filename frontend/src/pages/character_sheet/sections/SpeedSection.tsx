@@ -9,9 +9,10 @@ import { useHover } from '@mantine/hooks';
 import { LivingEntity } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { compactSenses, displayPrimaryVisionSense } from '@utils/senses';
-import { displayFinalProfValue, displayFinalVariableValue } from '@variables/variable-display';
+import { displayFinalProfValue, displayFinalVariableValue, getFinalVariableValue } from '@variables/variable-display';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { ConditionSection } from './ConditionSection';
+import { getAllSpeedVariables } from '@variables/variable-manager';
 
 function PerceptionSection(props: { id: StoreID }) {
   const { hovered: perceptionHovered, ref: perceptionRef } = useHover();
@@ -58,6 +59,20 @@ function SpeedSection(props: { id: StoreID }) {
   const { hovered: speedHovered, ref: speedRef } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  const allSpeeds = getAllSpeedVariables(props.id).map((speed) => {
+    return {
+      name: speed.name,
+      value: getFinalVariableValue(props.id, speed.name).total,
+    };
+  });
+  const baseSpeed = allSpeeds.find((speed) => speed.name === 'SPEED');
+
+  // Use base speed if it's greater than 0, otherwise use the first speed that's greater than 0
+  const displaySpeed = baseSpeed && baseSpeed.value > 0 ? baseSpeed : allSpeeds.find((speed) => speed.value > 0);
+
+  // Check if there are other speeds
+  const hasOthers = allSpeeds.filter((speed) => speed.value > 0);
+
   return (
     <Box
       ref={speedRef}
@@ -85,15 +100,19 @@ function SpeedSection(props: { id: StoreID }) {
           Speed
         </Text>
         <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
-          {displayFinalVariableValue(props.id, 'SPEED')}
+          {displayFinalVariableValue(props.id, displaySpeed?.name || 'SPEED')}
           <Text fz='xs' c='gray.3' span>
             {' '}
             ft.
           </Text>
         </Text>
-        <Text fz={10} c='gray.5' ta='center'>
-          And Others
-        </Text>
+        {hasOthers.length > 1 ? (
+          <Text fz={10} c='gray.5' ta='center'>
+            And Others
+          </Text>
+        ) : (
+          <Box mb='md'></Box>
+        )}
       </Stack>
     </Box>
   );
