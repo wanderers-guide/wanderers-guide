@@ -1,10 +1,9 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { EllipsisText } from '@common/EllipsisText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { collectCharacterAbilityBlocks } from '@content/collect-content';
+import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
@@ -24,8 +23,17 @@ import {
 import { useHover, useMediaQuery } from '@mantine/hooks';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconSearch } from '@tabler/icons-react';
-import { ActionCost, Rarity, ContentPackage, Inventory, AbilityBlock, InventoryItem } from '@typing/content';
+import {
+  ActionCost,
+  Rarity,
+  ContentPackage,
+  Inventory,
+  AbilityBlock,
+  InventoryItem,
+  LivingEntity,
+} from '@typing/content';
 import { DrawerType } from '@typing/index';
+import { StoreID } from '@typing/variables';
 import { findActions } from '@utils/actions';
 import { isPhoneSized, mobileQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
@@ -51,6 +59,8 @@ interface ActionItem {
   leftSection?: React.ReactNode;
 }
 export default function SkillsActionsPanel(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
   content: ContentPackage;
   panelHeight: number;
   panelWidth: number;
@@ -60,7 +70,6 @@ export default function SkillsActionsPanel(props: {
   const isPhone = isPhoneSized(props.panelWidth);
 
   const theme = useMantineTheme();
-  const character = useRecoilValue(characterState);
   const [skillsSearch, setSkillsSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -80,7 +89,7 @@ export default function SkillsActionsPanel(props: {
   const actions = useMemo(() => {
     const allActions = props.content.abilityBlocks
       .filter((ab) => ab.type === 'action')
-      .filter((ab) => isAbilityBlockVisible('CHARACTER', ab))
+      .filter((ab) => isAbilityBlockVisible(props.id, ab))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Filter actions
@@ -101,7 +110,7 @@ export default function SkillsActionsPanel(props: {
           return false;
         })
       : allActions;
-  }, [props.content.abilityBlocks, actionTypeFilter, searchQuery]);
+  }, [props.content.abilityBlocks, actionTypeFilter, searchQuery, props.id]);
 
   const weapons = useMemo(() => {
     const weapons = props.inventory.items
@@ -130,7 +139,7 @@ export default function SkillsActionsPanel(props: {
   const [updateWeaponAttacks, setUpdateWeaponAttacks] = useState(0);
   const weaponAttacks = useMemo(() => {
     return weapons.map((invItem) => {
-      const weaponStats = getWeaponStats('CHARACTER', invItem.item);
+      const weaponStats = getWeaponStats(props.id, invItem.item);
       return {
         invItem: invItem,
         leftSection: (
@@ -150,14 +159,14 @@ export default function SkillsActionsPanel(props: {
         ),
       };
     });
-  }, [weapons, updateWeaponAttacks]);
+  }, [weapons, updateWeaponAttacks, props.id]);
 
-  // Update the weapon attacks after character is updated (delay so operations are -roughly- executed first)
+  // Update the weapon attacks after entity is updated (delay so operations are -roughly- executed first)
   useEffect(() => {
     setTimeout(() => {
       setUpdateWeaponAttacks((x) => x + 1);
     }, 500);
-  }, [character]);
+  }, [props.entity]);
 
   const basicActions = useMemo(() => {
     return actions.filter(
@@ -212,25 +221,25 @@ export default function SkillsActionsPanel(props: {
 
   const explorationActions = useMemo(() => {
     let explorationFeats: AbilityBlock[] = [];
-    if (character) {
-      const results = collectCharacterAbilityBlocks(character, props.content.abilityBlocks);
+    if (props.entity) {
+      const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
       explorationFeats = _.flattenDeep(Object.values(results)).filter((ab) => hasTraitType('EXPLORATION', ab.traits));
     }
     return [...actions.filter((a) => hasTraitType('EXPLORATION', a.traits)), ...explorationFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
-  }, [actions, props.content.abilityBlocks, character]);
+  }, [actions, props.content.abilityBlocks, props.entity, props.id]);
 
   const downtimeActions = useMemo(() => {
     let downtimeFeats: AbilityBlock[] = [];
-    if (character) {
-      const results = collectCharacterAbilityBlocks(character, props.content.abilityBlocks);
+    if (props.entity) {
+      const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
       downtimeFeats = _.flattenDeep(Object.values(results)).filter((ab) => hasTraitType('DOWNTIME', ab.traits));
     }
     return [...actions.filter((a) => hasTraitType('DOWNTIME', a.traits)), ...downtimeFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
-  }, [actions, props.content.abilityBlocks, character]);
+  }, [actions, props.content.abilityBlocks, props.entity, props.id]);
 
   const itemsWithActions = useMemo(() => {
     const actionItems = props.inventory.items.filter((invItem) => {
@@ -263,8 +272,8 @@ export default function SkillsActionsPanel(props: {
   }, [props.inventory.items, actionTypeFilter, searchQuery]);
 
   const featsWithActions = useMemo(() => {
-    if (!character) return [];
-    const results = collectCharacterAbilityBlocks(character, props.content.abilityBlocks);
+    if (!props.entity) return [];
+    const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
     const feats = _.flattenDeep(Object.values(results)).filter((ab) => ab.actions !== null);
 
     // Filter feats
@@ -284,7 +293,7 @@ export default function SkillsActionsPanel(props: {
           return false;
         })
       : feats;
-  }, [character, props.content.abilityBlocks, actionTypeFilter, searchQuery]);
+  }, [props.entity, props.content.abilityBlocks, actionTypeFilter, searchQuery, props.id]);
 
   const getSkillsSection = () => (
     <Box>
@@ -311,7 +320,7 @@ export default function SkillsActionsPanel(props: {
         />
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           <Stack gap={5}>
-            {getAllSkillVariables('CHARACTER')
+            {getAllSkillVariables(props.id)
               .filter((skill) => skill.name !== 'SKILL_LORE____')
               .filter(
                 (skill) =>
@@ -329,7 +338,7 @@ export default function SkillsActionsPanel(props: {
                   onClick={() => {
                     openDrawer({
                       type: 'stat-prof',
-                      data: { id: 'CHARACTER', variableName: skill.name },
+                      data: { id: props.id, variableName: skill.name },
                       extra: { addToHistory: true },
                     });
                   }}
@@ -340,7 +349,7 @@ export default function SkillsActionsPanel(props: {
                     </Text>
                   </Box>
                   <Group wrap='nowrap'>
-                    <Text c='gray.0'>{displayFinalProfValue('CHARACTER', skill.name)}</Text>
+                    <Text c='gray.0'>{displayFinalProfValue(props.id, skill.name)}</Text>
                     <Badge variant='default'>{compileProficiencyType(skill?.value)}</Badge>
                   </Group>
                 </StatButton>

@@ -8,7 +8,6 @@ import { convertMarkdownToTiptap } from '@common/rich_text_input/utils';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { collectCharacterAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';

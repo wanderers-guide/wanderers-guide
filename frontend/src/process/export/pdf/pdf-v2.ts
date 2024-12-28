@@ -1,6 +1,6 @@
 import {
-  collectCharacterAbilityBlocks,
-  collectCharacterSenses,
+  collectEntityAbilityBlocks,
+  collectEntitySenses,
   collectEntitySpellcasting,
   getFocusPoints,
 } from '@content/collect-content';
@@ -108,7 +108,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   // Execute all operations (to update the variables)
   await executeCharacterOperations(character, content, 'CHARACTER-BUILDER');
 
-  const featData = collectCharacterAbilityBlocks(character, content.abilityBlocks, {
+  const featData = collectEntityAbilityBlocks(STORE_ID, character, content.abilityBlocks, {
     filterBasicClassFeatures: true,
   });
 
@@ -132,7 +132,7 @@ async function fillPDF(form: PDFForm, character: Character) {
 
   const languages = getVariable<VariableListStr>(STORE_ID, 'LANGUAGE_NAMES')?.value ?? [];
 
-  const senseData = collectCharacterSenses(STORE_ID, content.abilityBlocks);
+  const senseData = collectEntitySenses(STORE_ID, content.abilityBlocks);
 
   const weapons = character.inventory?.items
     .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))

@@ -1,8 +1,4 @@
-import {
-  collectCharacterAbilityBlocks,
-  collectCharacterSenses,
-  collectEntitySpellcasting,
-} from '@content/collect-content';
+import { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
 import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import { isItemWeapon, getFlatInvItems, getBestArmor, getBestShield, getInvBulk, labelizeBulk } from '@items/inv-utils';
@@ -56,7 +52,7 @@ async function getContent(character: Character) {
 
   // Get all the data
 
-  const featData = collectCharacterAbilityBlocks(character, content.abilityBlocks, {
+  const featData = collectEntityAbilityBlocks(STORE_ID, character, content.abilityBlocks, {
     filterBasicClassFeatures: true,
   });
 
@@ -71,7 +67,7 @@ async function getContent(character: Character) {
 
   const languages = getVariable<VariableListStr>(STORE_ID, 'LANGUAGE_NAMES')?.value ?? [];
 
-  const senseData = collectCharacterSenses(STORE_ID, content.abilityBlocks);
+  const senseData = collectEntitySenses(STORE_ID, content.abilityBlocks);
 
   const weapons = character.inventory?.items
     .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))

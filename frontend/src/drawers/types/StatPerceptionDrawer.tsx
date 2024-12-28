@@ -5,7 +5,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { ActionSelectionOption, FeatSelectionOption } from '@common/select/SelectContent';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { collectCharacterSenses } from '@content/collect-content';
+import { collectEntitySenses } from '@content/collect-content';
 import { fetchAbilityBlockByName, fetchContentAll, fetchContentById } from '@content/content-store';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
@@ -91,7 +91,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
       return await fetchContentAll<AbilityBlock>('ability-block');
     },
   });
-  const senses = useMemo(() => collectCharacterSenses(props.data.id, abilityBlocks ?? []), [abilityBlocks]);
+  const senses = useMemo(() => collectEntitySenses(props.data.id, abilityBlocks ?? []), [abilityBlocks]);
 
   const variable = getVariable<VariableProf>(props.data.id, 'PERCEPTION');
   if (!variable) return null;

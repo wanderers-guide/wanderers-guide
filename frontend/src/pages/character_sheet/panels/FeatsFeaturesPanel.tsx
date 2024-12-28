@@ -6,7 +6,6 @@ import {
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
 } from '@common/select/SelectContent';
-import { collectCharacterAbilityBlocks } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   useMantineTheme,
@@ -26,6 +25,7 @@ import { AbilityBlock } from '@typing/content';
 import { useState, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
+import { collectEntityAbilityBlocks } from '@content/collect-content';
 
 export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -40,7 +40,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
       if (!character) return null;
 
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
-      return collectCharacterAbilityBlocks(character, abilityBlocks, {
+      return collectEntityAbilityBlocks('CHARACTER', character, abilityBlocks, {
         filterBasicClassFeatures: true,
       });
     },

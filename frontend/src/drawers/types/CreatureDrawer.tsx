@@ -311,6 +311,8 @@ export function CreatureDrawerContent(props: {
 
           {activeTab === 'skills-actions' && (
             <SkillsActionsPanel
+              id={STORE_ID}
+              entity={creature}
               content={content}
               panelHeight={panelHeight - 55}
               panelWidth={panelWidth}

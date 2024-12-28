@@ -19,13 +19,14 @@ import { getVariable } from '@variables/variable-manager';
 import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { fetchContent, fetchContentById } from './content-store';
+import { isCharacter } from '@utils/type-fixing';
 
-export function collectCharacterAbilityBlocks(
-  character: Character,
+export function collectEntityAbilityBlocks(
+  id: StoreID,
+  entity: LivingEntity,
   blocks: AbilityBlock[],
   options?: { filterBasicClassFeatures?: boolean }
 ) {
-  const id = 'CHARACTER';
   // Feats ///////////////////////////////
 
   const featIds = getVariable<VariableListStr>(id, 'FEAT_IDS')?.value ?? [];
@@ -45,11 +46,19 @@ export function collectCharacterAbilityBlocks(
   });
 
   const classFeats = feats.filter((feat) => {
-    return feat.traits?.includes(character?.details?.class?.trait_id ?? -1);
+    if (isCharacter(entity)) {
+      return feat.traits?.includes(entity?.details?.class?.trait_id ?? -1);
+    } else {
+      return false;
+    }
   });
 
   const ancestryFeats = feats.filter((feat) => {
-    return feat.traits?.includes(character?.details?.ancestry?.trait_id ?? -1);
+    if (isCharacter(entity)) {
+      return feat.traits?.includes(entity?.details?.ancestry?.trait_id ?? -1);
+    } else {
+      return false;
+    }
   });
 
   const otherFeats = feats.filter((feat) => {
@@ -63,14 +72,12 @@ export function collectCharacterAbilityBlocks(
     (block) => block.type === 'class-feature' && classFeatureIds.includes(`${block.id}`)
   );
   if (options?.filterBasicClassFeatures) {
-    const BASIC_NAMES = [
-      'Attribute Boosts',
-      'Skill Feat',
-      'Skill Increase',
-      'General Feat',
-      `${character.details?.class?.name} Feat`,
-      `${character.details?.class_2?.name} Feat`,
-    ];
+    const BASIC_NAMES = ['Attribute Boosts', 'Skill Feat', 'Skill Increase', 'General Feat'];
+    if (isCharacter(entity)) {
+      BASIC_NAMES.push(`${entity.details?.class?.name} Feat`);
+      BASIC_NAMES.push(`${entity.details?.class_2?.name} Feat`);
+    }
+
     classFeatures = classFeatures.filter((feature) => !BASIC_NAMES.includes(feature.name));
   }
 
@@ -101,7 +108,7 @@ export function collectCharacterAbilityBlocks(
   };
 }
 
-export function collectCharacterSenses(id: StoreID, blocks: AbilityBlock[]) {
+export function collectEntitySenses(id: StoreID, blocks: AbilityBlock[]) {
   const allSenses = blocks.filter((block) => block.type === 'sense');
 
   const precise = getVariable<VariableListStr>(id, 'SENSES_PRECISE')?.value ?? [];

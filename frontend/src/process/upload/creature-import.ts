@@ -451,7 +451,19 @@ function addPerceptionSenses(operations: Operation[], json: Record<string, any>,
 }
 
 function addSkills(operations: Operation[], json: Record<string, any>, varTotals: Map<string, number>) {
-  for (const skill of findJsonItems(json, 'lore')) {
+  let skills: { name: string; value: number }[] = findJsonItems(json, 'lore').map((skill) => ({
+    name: skill.name as string,
+    value: skill.system.mod.value as number,
+  }));
+  skills = [
+    ...skills,
+    ...Object.keys(json.system?.skills ?? {}).map((key) => ({
+      name: key,
+      value: json.system.skills[key].base,
+    })),
+  ];
+
+  for (const skill of skills) {
     const isLore = skill.name.endsWith(' Lore');
     const variable = isLore
       ? `SKILL_LORE_${labelToVariable(skill.name.replace(' Lore', ''))}`
@@ -463,15 +475,25 @@ function addSkills(operations: Operation[], json: Record<string, any>, varTotals
           variable: variable,
           type: 'prof',
           value: {
-            value: 'U',
+            value: 'T',
             increases: 0,
             attribute: 'ATTRIBUTE_INT',
           },
         },
       } satisfies OperationCreateValue);
+    } else {
+      operations.push({
+        ...createDefaultOperation<OperationAdjValue>('adjValue'),
+        data: {
+          variable: variable,
+          value: {
+            value: 'T',
+          },
+        },
+      } satisfies OperationAdjValue);
     }
 
-    varTotals.set(variable, skill.system.mod.value);
+    varTotals.set(variable, skill.value);
   }
 
   return operations;

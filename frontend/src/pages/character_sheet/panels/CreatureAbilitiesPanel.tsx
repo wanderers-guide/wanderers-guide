@@ -6,7 +6,6 @@ import {
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
 } from '@common/select/SelectContent';
-import { collectCharacterAbilityBlocks } from '@content/collect-content';
 import { fetchContentAll } from '@content/content-store';
 import {
   useMantineTheme,

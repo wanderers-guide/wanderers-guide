@@ -527,6 +527,8 @@ function SectionPanels(props: {
           <BlurBox blur={10} p='sm' mih={props.panelHeight}>
             {activeTab === 'skills-actions' && (
               <SkillsActionsPanel
+                id='CHARACTER'
+                entity={character}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
@@ -850,6 +852,8 @@ function SectionPanels(props: {
 
             <Tabs.Panel value='skills-actions'>
               <SkillsActionsPanel
+                id='CHARACTER'
+                entity={character}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}

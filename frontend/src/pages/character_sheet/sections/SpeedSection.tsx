@@ -1,11 +1,9 @@
 import BoxIcon from '@assets/images/BoxIcon';
 import PerceptionIcon from '@assets/images/PerceptionIcon';
 import SpeedIcon from '@assets/images/SpeedIcon';
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
-import { collectCharacterSenses } from '@content/collect-content';
 import { useMantineTheme, Group, Stack, Box, Text } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { LivingEntity } from '@typing/content';
