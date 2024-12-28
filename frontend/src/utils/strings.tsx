@@ -150,6 +150,7 @@ export function parseDiceRoll(dice: string): { dice: number; die: string; bonus:
 
   // Regular expression to match each dice roll part
   const regex = /(\d+)d(\d+)(?: *([\+\-] *\d+))? *([a-zA-Z]*)/g;
+  // Alt simple only: /(^|\s)(\d+)d(\d+)\s*([+-]\s*\d+)($|\s)/g;
 
   let match;
   while ((match = regex.exec(normalizedDice)) !== null) {

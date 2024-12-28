@@ -127,7 +127,7 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
   PLANT: 1654,
 };
 
-export async function getTraitIds(traitNames: string[], source: ContentSource) {
+export async function getTraitIds(traitNames: string[], source: ContentSource, createIfNotFound = true) {
   const sources = await fetchContentSources({ ids: 'all', homebrew: false });
 
   const traitIds: number[] = [];
@@ -146,11 +146,13 @@ export async function getTraitIds(traitNames: string[], source: ContentSource) {
         console.error(
           `Trait not found: ${traitName}, ${traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')}`
         );
-        await createTrait(toLabel(traitName), '', source.id);
-        trait = await fetchTraitByName(
-          toLabel(traitName),
-          sources.map((s) => s.id)
-        );
+        if (createIfNotFound) {
+          await createTrait(toLabel(traitName), '', source.id);
+          trait = await fetchTraitByName(
+            toLabel(traitName),
+            sources.map((s) => s.id)
+          );
+        }
       }
       if (trait) {
         traitIds.push(trait.id);

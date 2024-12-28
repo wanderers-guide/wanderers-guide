@@ -1,4 +1,4 @@
-import { AbilityBlock, ContentSource, Creature, InventoryItem, Rarity, Size } from '@typing/content';
+import { AbilityBlock, ContentSource, Creature, InventoryItem, Rarity, Size, Trait } from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -27,14 +27,15 @@ import {
 } from '@typing/operations';
 import { createDefaultOperation } from '@operations/operation-utils';
 import { labelToVariable } from '@variables/variable-utils';
-import { toLabel } from '@utils/strings';
+import { parseDiceRoll, toLabel } from '@utils/strings';
 import _ from 'lodash-es';
 import { resetVariables } from '@variables/variable-manager';
 import { executeCreatureOperations } from '@operations/operation-controller';
-import { fetchContentPackage } from '@content/content-store';
+import { fetchContentPackage, fetchTraitByName } from '@content/content-store';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
-import { getBestArmor } from '@items/inv-utils';
-import { sign } from '@utils/numbers';
+import { getBestArmor, isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
+import { hashData, sign } from '@utils/numbers';
+import { findCreatureImage } from '@utils/images';
 
 export async function newImportHandler(source: ContentSource, json: Record<string, any>): Promise<Creature> {
   const creature = {
@@ -59,7 +60,7 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     },
     notes: undefined,
     details: {
-      image_url: undefined,
+      image_url: await findCreatureImage(toText(json.name) ?? ''),
       background_image_url: undefined,
       conditions: undefined,
       description: toMarkdown(json.system?.details?.publicNotes) ?? '',
@@ -112,7 +113,12 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   // Items
   const { operations: resultOps, items } = await addEquipment(operations, json);
   operations = resultOps;
-  creature.inventory!.items = items;
+  creature.inventory!.items = [...creature.inventory!.items, ...items];
+  // Unarmed Attacks
+  const { operations: resultOps2, items: unarmedItems } = await addUnarmedAttacks(operations, json, source);
+  operations = resultOps2;
+  creature.inventory!.items = [...creature.inventory!.items, ...unarmedItems];
+  //
 
   creature.operations = operations;
 
@@ -464,7 +470,8 @@ function addSkills(operations: Operation[], json: Record<string, any>, varTotals
   ];
 
   for (const skill of skills) {
-    const isLore = skill.name.endsWith(' Lore');
+    // Do includes because sometimes the words are in parentheses
+    const isLore = skill.name.includes('Lore');
     const variable = isLore
       ? `SKILL_LORE_${labelToVariable(skill.name.replace(' Lore', ''))}`
       : `SKILL_${labelToVariable(skill.name)}`;
@@ -600,6 +607,64 @@ async function addSpells(operations: Operation[], json: Record<string, any>, var
   return operations;
 }
 
+async function addUnarmedAttacks(operations: Operation[], json: Record<string, any>, source: ContentSource) {
+  const invItems: InventoryItem[] = [];
+  for (const attack of findJsonItems(json, 'melee')) {
+    const traitNames = (attack.system?.traits?.value ?? []) as string[];
+
+    const range = (() => {
+      const rangeTrait = traitNames.find((trait) => trait.startsWith('range-'));
+      return rangeTrait ? parseInt(rangeTrait.replace('range-increment-', '').replace('range-', '')) : null;
+    })();
+
+    const allDamageData = [...Object.values(attack.system?.damageRolls ?? {})] as Record<string, string>[];
+    if (allDamageData.length === 0) continue;
+    const damageData = allDamageData[0];
+    const parsedDamage = parseDiceRoll(damageData?.damage ?? '');
+
+    invItems.push({
+      id: crypto.randomUUID(),
+      item: {
+        id: hashData({ value: crypto.randomUUID() }),
+        created_at: '',
+        name: attack.name,
+        level: 0,
+        rarity: convertToRarity(attack.system?.traits?.rarity),
+        traits: await getTraitIds(attack.system?.traits?.value ?? [], source, false),
+        description: attack.system?.description?.value ?? '',
+        group: 'WEAPON',
+        size: 'MEDIUM',
+        meta_data: {
+          category: 'unarmed_attack',
+          damage: {
+            damageType: damageData?.damageType ?? '',
+            dice: parsedDamage.length > 0 ? parsedDamage[0].dice : 1,
+            die: parsedDamage.length > 0 ? parsedDamage[0].die : '',
+            extra: parsedDamage.length > 0 ? `${parsedDamage[0].bonus}` : undefined,
+          },
+          attack_bonus: attack.system?.bonus?.value ?? undefined,
+          bulk: {},
+          //unselectable?: boolean;
+          quantity: 1,
+          range: range ?? undefined,
+          //reload?: string;
+          foundry: {},
+        },
+        operations: [],
+        content_source_id: 1,
+        version: '',
+      },
+      is_formula: false,
+      is_equipped: true,
+      is_invested: false,
+      is_implanted: false,
+      container_contents: [],
+    });
+  }
+
+  return { operations: operations, items: invItems };
+}
+
 async function addEquipment(operations: Operation[], json: Record<string, any>) {
   const items = await getItemsByName(findJsonItems(json, 'equipment').map((item) => item.name as string));
 
@@ -616,9 +681,9 @@ async function addEquipment(operations: Operation[], json: Record<string, any>) 
       id: crypto.randomUUID(),
       item: _.cloneDeep(item),
       is_formula: false,
-      is_equipped: false,
-      is_invested: false,
-      is_implanted: false,
+      is_equipped: isItemEquippable(item),
+      is_invested: isItemInvestable(item),
+      is_implanted: isItemImplantable(item),
       container_contents: [],
     });
   }
@@ -656,7 +721,7 @@ async function getAbilities(json: Record<string, any>, source: ContentSource): P
           category: ability.system?.category,
         },
       },
-      traits: await getTraitIds(ability.system?.traits?.value ?? [], source),
+      traits: await getTraitIds(ability.system?.traits?.value ?? [], source, false),
       content_source_id: source.id,
       version: '1.0',
     } satisfies AbilityBlock);

@@ -52,7 +52,6 @@ export default function RichTextInput(props: RichTextInputProps) {
     content: props.value ?? '',
     onUpdate({ editor }) {
       if (props.onChange) {
-        console.log(editor.getHTML(), toMarkdown(editor.getHTML()) ?? '');
         props.onChange(toMarkdown(editor.getHTML()) ?? '', editor.getJSON());
       }
     },

@@ -540,7 +540,6 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
   }
   const oldValue = _.cloneDeep(variable.value);
 
-  if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableNum(variable) && _.isNumber(+value)) {
     // Some variables have a special rule where we take the higher value instead of overwriting
     // This is a hack for sure and hopefully won't be too confusing for homebrewers
@@ -591,7 +590,6 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue | E
   }
   const oldValue = _.cloneDeep(variable.value);
 
-  if (!variable) throwError(`Invalid variable name: ${name}`);
   if (isVariableProf(variable)) {
     if (isProficiencyValue(amount) || isExtendedProficiencyValue(amount)) {
       const { value, attribute } = amount;
