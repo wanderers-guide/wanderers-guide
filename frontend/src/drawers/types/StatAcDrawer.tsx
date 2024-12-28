@@ -120,6 +120,21 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                   </HoverCard.Dropdown>
                 </HoverCard>
               </>
+              {acBonusParts.baseValue !== 0 && (
+                <>
+                  +
+                  <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
+                    <HoverCard.Target>
+                      <Kbd style={{ cursor: 'pointer' }}>{acBonusParts.baseValue}</Kbd>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown py={5} px={10}>
+                      <Text c='gray.0' size='xs'>
+                        An additional base modifier adjusting your Armor Class.
+                      </Text>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </>
+              )}
               {[...acBonusParts.bonuses.entries()].map(([key, bonus], index) => (
                 <>
                   +

@@ -156,11 +156,6 @@ export async function fetchContent<T = Record<string, any>>(
   const storedFetch = getStoredFetch(type, data);
   const storedNames = getStoredNames(type, data);
 
-  console.log('fetching', type, data);
-  console.log('storedIds', storedIds);
-  console.log('storedFetch', storedFetch);
-  console.log('storedNames', storedNames);
-
   if (storedFetch) {
     if (storedFetch && Array.isArray(storedFetch)) {
       return storedFetch as T[];

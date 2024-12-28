@@ -215,7 +215,7 @@ export function getVariableBreakdown(id: StoreID, variableName: string) {
 
   const final = getFinalVariableValue(id, variableName);
 
-  return { bonuses: final.bmap, bonusValue: final.bonus, conditionals };
+  return { bonuses: final.bmap, bonusValue: final.bonus, baseValue: final.value, conditionals };
 }
 
 export function getBonusText(bonus: {

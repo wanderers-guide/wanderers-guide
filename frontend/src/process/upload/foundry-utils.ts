@@ -332,7 +332,11 @@ function stripDamageLinks(text: string) {
     try {
       result = evaluate(formula);
     } catch (e) {
-      console.warn(e, formula);
+      if (formula.includes('d')) {
+        // This is a dice roll, so we don't need to worry about it
+      } else {
+        console.warn(e, formula);
+      }
     }
 
     newText = newText.replace(match[0], `${result}d${diceType} ${damageType}`);
@@ -348,7 +352,11 @@ function stripDamageLinks(text: string) {
     try {
       result = evaluate(formula);
     } catch (e) {
-      console.warn(e, formula);
+      if (formula.includes('d')) {
+        // This is a dice roll, so we don't need to worry about it
+      } else {
+        console.warn(e, formula);
+      }
     }
 
     newText = newText.replace(match[0], `${result} ${damageType}`);
@@ -372,7 +380,11 @@ function stripMathLinks(text: string) {
     try {
       result = evaluate(formula);
     } catch (e) {
-      console.warn(e, formula);
+      if (formula.includes('d')) {
+        // This is a dice roll, so we don't need to worry about it
+      } else {
+        console.warn(e, formula);
+      }
     }
 
     newText = newText.replace(match[0], `${result} ${words}`);
