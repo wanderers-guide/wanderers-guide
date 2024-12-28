@@ -27,7 +27,7 @@ import {
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
 import { ContentPackage, PublicUser } from '@typing/content';
-import { VariableListStr, VariableProf } from '@typing/variables';
+import { VariableListStr, VariableProf, VariableStr } from '@typing/variables';
 import { displayFinalProfValue } from '@variables/variable-display';
 import {
   getVariable,
@@ -50,7 +50,8 @@ import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
 import _ from 'lodash-es';
 import { Money, getGpGained } from '@utils/money';
-import { pluralize } from '@utils/strings';
+import { pluralize, toLabel } from '@utils/strings';
+import TraitsDisplay from '@common/TraitsDisplay';
 
 const SECTION_WIDTH = 280;
 
@@ -70,6 +71,8 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
     const trait = props.content.traits.find((trait) => trait.id === v.value);
     return trait;
   });
+
+  const size = getVariable<VariableStr>('CHARACTER', 'SIZE')?.value;
 
   const weaponGroupProfs = getAllWeaponGroupVariables('CHARACTER').filter(
     (prof) => compileProficiencyType(prof.value) !== 'U'
@@ -374,6 +377,21 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                   </Pill>
                 ))}
               </Pill.Group>
+            </Box>
+          </ScrollArea>
+        </Stack>
+        <Stack gap={10}>
+          <Title order={4}>Size</Title>
+          <ScrollArea h={100} scrollbars='y'>
+            <Box w={SECTION_WIDTH}>
+              <TraitsDisplay
+                size='md'
+                traitIds={[]}
+                // @ts-ignore
+                pfSize={size?.toUpperCase() || 'MEDIUM'}
+                displayAll
+                interactable
+              />
             </Box>
           </ScrollArea>
         </Stack>

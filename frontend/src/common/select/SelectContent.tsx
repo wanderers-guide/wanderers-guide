@@ -2943,6 +2943,7 @@ export function ItemSelectionOption(props: {
           traitIds={props.item.traits ?? []}
           rarity={props.item.rarity}
           availability={props.item.availability}
+          pfSize={props.item.size}
           archaic={isItemArchaic(props.item)}
         />
       }

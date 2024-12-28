@@ -27,7 +27,7 @@ import {
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
 import { ContentPackage, Creature, LivingEntity, PublicUser } from '@typing/content';
-import { StoreID, VariableListStr, VariableProf } from '@typing/variables';
+import { StoreID, VariableListStr, VariableProf, VariableStr } from '@typing/variables';
 import { displayFinalProfValue } from '@variables/variable-display';
 import {
   getVariable,
@@ -52,6 +52,7 @@ import _ from 'lodash-es';
 import { Money, getGpGained } from '@utils/money';
 import { pluralize } from '@utils/strings';
 import RichText from '@common/RichText';
+import TraitsDisplay from '@common/TraitsDisplay';
 
 const SECTION_WIDTH = 280;
 
@@ -75,6 +76,8 @@ export default function CreatureDetailsPanel(props: {
     const trait = props.content.traits.find((trait) => trait.id === v.value);
     return trait;
   });
+
+  const size = getVariable<VariableStr>(props.id, 'SIZE')?.value;
 
   const weaponGroupProfs = getAllWeaponGroupVariables(props.id).filter(
     (prof) => compileProficiencyType(prof.value) !== 'U'
@@ -193,6 +196,21 @@ export default function CreatureDetailsPanel(props: {
                   </Text>
                 )}
               </Pill.Group>
+            </Box>
+          </ScrollArea>
+        </Stack>
+        <Stack gap={10}>
+          <Title order={4}>Size</Title>
+          <ScrollArea h={100} scrollbars='y'>
+            <Box w={SECTION_WIDTH}>
+              <TraitsDisplay
+                size='md'
+                traitIds={[]}
+                // @ts-ignore
+                pfSize={size?.toUpperCase() || 'MEDIUM'}
+                displayAll
+                interactable
+              />
             </Box>
           </ScrollArea>
         </Stack>

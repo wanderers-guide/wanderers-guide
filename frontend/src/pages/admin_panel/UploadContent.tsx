@@ -85,8 +85,10 @@ export default function UploadContent() {
               value: source.id + '',
               label: source.name,
             }))}
+            searchable
             onChange={async (value) => {
-              setSourceId(value ? parseInt(value) : undefined);
+              if (!value) return;
+              setSourceId(parseInt(value));
             }}
           />
           <Select

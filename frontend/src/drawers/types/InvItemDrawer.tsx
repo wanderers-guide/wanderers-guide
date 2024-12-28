@@ -189,6 +189,7 @@ export function InvItemDrawerContent(props: {
           <TraitsDisplay
             traitIds={compileTraits(invItem.item)}
             rarity={invItem.item.rarity}
+            pfSize={invItem.item.size}
             broken={isItemBroken(invItem.item)}
             shoddy={invItem.item.meta_data?.is_shoddy}
             archaic={isItemArchaic(invItem.item)}

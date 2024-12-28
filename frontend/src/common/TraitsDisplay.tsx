@@ -8,12 +8,13 @@ import {
   Loader,
   MantineColor,
   MantineSize,
+  Pill,
   ScrollArea,
   Stack,
   useMantineTheme,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { Availability, Rarity } from '@typing/content';
+import { Availability, Rarity, Size } from '@typing/content';
 import { startCase } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import RichText from './RichText';
@@ -28,12 +29,14 @@ export default function TraitsDisplay(props: {
   interactable?: boolean;
   size?: MantineSize;
   rarity?: Rarity;
+  pfSize?: Size;
   availability?: Availability;
   skill?: string | string[];
   archaic?: boolean;
   broken?: boolean;
   shoddy?: boolean;
   formula?: boolean;
+  displayAll?: boolean;
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
@@ -61,11 +64,26 @@ export default function TraitsDisplay(props: {
   return (
     <Group gap={3} justify={props.justify}>
       {props.formula && <FormulaDisplay interactable={props.interactable} size={props.size} />}
-      {props.rarity && <RarityDisplay interactable={props.interactable} size={props.size} rarity={props.rarity} />}
+      {props.rarity && (
+        <RarityDisplay
+          interactable={props.interactable}
+          size={props.size}
+          rarity={props.rarity}
+          displayAll={props.displayAll}
+        />
+      )}
       {props.skill && <SkillDisplay interactable={props.interactable} size={props.size} skill={props.skill} />}
       {props.broken && <BrokenDisplay interactable={props.interactable} size={props.size} />}
       {props.availability && (
         <AvailabilityDisplay interactable={props.interactable} size={props.size} availability={props.availability} />
+      )}
+      {props.pfSize && (
+        <SizeDisplay
+          interactable={props.interactable}
+          size={props.size}
+          pfSize={props.pfSize}
+          displayAll={props.displayAll}
+        />
       )}
       {traits.map((trait, index) => (
         <HoverCard
@@ -114,8 +132,13 @@ export default function TraitsDisplay(props: {
   );
 }
 
-export function RarityDisplay(props: { rarity: Rarity; interactable?: boolean; size?: MantineSize }) {
-  if (props.rarity === 'COMMON') return null;
+export function RarityDisplay(props: {
+  rarity: Rarity;
+  interactable?: boolean;
+  size?: MantineSize;
+  displayAll?: boolean;
+}) {
+  if (props.rarity === 'COMMON' && !props.displayAll) return null;
 
   let color: MantineColor = 'gray';
   if (props.rarity === 'UNCOMMON') color = 'teal';
@@ -337,6 +360,73 @@ export function AvailabilityDisplay(props: { availability: Availability; interac
           >
             {name}
           </Badge>
+        </HoverCard.Target>
+        <HoverCard.Dropdown>
+          <TraitOverview name={name} description={description} important={false} />
+        </HoverCard.Dropdown>
+      </HoverCard>
+    </>
+  );
+}
+
+export function SizeDisplay(props: { pfSize: Size; interactable?: boolean; size?: MantineSize; displayAll?: boolean }) {
+  const theme = useMantineTheme();
+  if (props.pfSize === 'MEDIUM' && !props.displayAll) return null;
+
+  let name = ``;
+  let description = ``;
+
+  if (props.pfSize === 'TINY') {
+    name = 'Tiny';
+    description = `A Tiny object is about half the size of a normal Medium-sized version. Tiny creatures come with their own set of rules about space and reach. They can enter another creature's space, which is important because their melee Strikes typically have no reach, meaning they must enter someone else’s space to attack them. They don't automatically receive lesser cover from being in a larger creature's space, but circumstances might allow them to Take Cover. They treat 10 items of negligible Bulk as 1 Bulk and their Bulk limit is half that of normal.`;
+  } else if (props.pfSize === 'SMALL') {
+    name = 'Small';
+    description = `A Small object is slightly smaller than a normal Medium-sized version but the difference usually doesn’t come with any noteworthy rules adjustments. Small creatures typically stand between 2 to 4 feet tall.`;
+  } else if (props.pfSize === 'MEDIUM') {
+    name = 'Medium';
+    description = `A Medium object is the standard size for most creatures and objects. Medium creatures typically stand between 4 to 7 feet tall.`;
+  } else if (props.pfSize === 'LARGE') {
+    name = 'Large';
+    description = `A Large object is about twice the size of a normal Medium-sized version. Large creatures take up twice the space of a Medium-sized creature. They treat 10 items of 1 Bulk as 1 Bulk and their Bulk limit is twice that of normal.`;
+  } else if (props.pfSize === 'HUGE') {
+    name = 'Huge';
+    description = `A Huge object is about four times the size of a normal Medium-sized version. Huge creatures take up four times the space of a Medium-sized creature. They treat 10 items of 2 Bulk as 1 Bulk and their Bulk limit is four times that of normal.`;
+  } else if (props.pfSize === 'GARGANTUAN') {
+    name = 'Gargantuan';
+    description = `A Gargantuan object is about eight times the size of a normal Medium-sized version. Gargantuan creatures take up eight times the space of a Medium-sized creature. They treat 10 items of 4 Bulk as 1 Bulk and their Bulk limit is eight times that of normal.`;
+  } else {
+    return null;
+  }
+
+  return (
+    <>
+      <HoverCard
+        disabled={!props.interactable}
+        width={265}
+        shadow='md'
+        zIndex={2000}
+        openDelay={500}
+        withinPortal
+        withArrow
+      >
+        <HoverCard.Target>
+          <Pill.Group>
+            <Pill
+              size={props.size ?? 'sm'}
+              styles={{
+                label: {
+                  cursor: 'pointer',
+                },
+                root: {
+                  border: `1px solid ${theme.colors.dark[4]}`,
+                  backgroundColor: theme.colors.dark[6],
+                  cursor: props.interactable ? 'pointer' : undefined,
+                },
+              }}
+            >
+              {name}
+            </Pill>
+          </Pill.Group>
         </HoverCard.Target>
         <HoverCard.Dropdown>
           <TraitOverview name={name} description={description} important={false} />

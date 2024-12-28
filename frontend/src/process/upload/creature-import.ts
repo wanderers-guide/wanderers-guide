@@ -40,7 +40,7 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     stamina_current: 0,
     resolve_current: 0,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    //traits: await getTraitIds(json.system?.traits?.value ?? [], source),
+    // traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     //size: convertToSize(json.system?.traits?.size?.value),
     inventory: undefined,
     notes: undefined,
@@ -67,6 +67,8 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
 
   let operations: Operation[] = [];
 
+  console.log(json);
+
   // Attributes
   operations = addAttributes(operations, json);
   // AC
@@ -85,6 +87,8 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   operations = addPerceptionSenses(operations, json);
   // Skills
   operations = addSkills(operations, json);
+  // Misc Ops
+  operations = addMiscOps(operations, json);
   // Spells
   operations = await addSpells(operations, json);
   // Items
@@ -437,6 +441,28 @@ function addSkills(operations: Operation[], json: Record<string, any>) {
         },
       } satisfies OperationSetValue);
     }
+  }
+
+  return operations;
+}
+
+function addMiscOps(operations: Operation[], json: Record<string, any>) {
+  operations.push({
+    ...createDefaultOperation<OperationSetValue>('setValue'),
+    data: {
+      variable: 'SIZE',
+      value: json.system.attributes.speed.value,
+    },
+  } satisfies OperationSetValue);
+
+  for (const speed of json.system.attributes.speed.otherSpeeds ?? []) {
+    operations.push({
+      ...createDefaultOperation<OperationSetValue>('setValue'),
+      data: {
+        variable: `SPEED_${labelToVariable(speed.type)}`,
+        value: speed.value,
+      },
+    } satisfies OperationSetValue);
   }
 
   return operations;
