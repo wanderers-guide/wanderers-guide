@@ -443,9 +443,13 @@ function InvItemSections(props: {
   const healthStats = getItemHealth(props.invItem.item);
 
   const healthRef = useRef<HTMLInputElement>(null);
-  const [health, setHealth] = useState<string | undefined>();
+  const [health, setHealth] = useState<string>(
+    props.invItem.item.meta_data?.hp ? `${props.invItem.item.meta_data.hp}` : `${healthStats.hp_max}`
+  );
   useEffect(() => {
-    setHealth(props.invItem.item.meta_data?.hp ? `${props.invItem.item.meta_data.hp}` : undefined);
+    if (props.invItem.item.meta_data?.hp && props.invItem.item.meta_data.hp !== parseInt(health)) {
+      setHealth(`${props.invItem.item.meta_data.hp}`);
+    }
   }, [props.invItem]);
 
   ///
@@ -599,8 +603,6 @@ function InvItemSections(props: {
   let attackAndDamageSection = null;
   if (hasAttackAndDamage) {
     const weaponStats = getWeaponStats('CHARACTER', props.invItem.item);
-
-    console.log(weaponStats);
 
     const damageBonus = weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
 

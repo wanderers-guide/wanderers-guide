@@ -1,3 +1,4 @@
+import { SelectIcon } from '@common/IconDisplay';
 import { ItemMultiSelect, ItemSelect } from '@common/ItemSelect';
 import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
@@ -1034,7 +1035,7 @@ export function CreateItemModal(props: {
                             {...form.getInputProps('meta_data.bulk.held_or_stowed')}
                           />
 
-                          <TextInput
+                          {/* <TextInput
                             defaultValue={form.values.meta_data?.image_url ?? ''}
                             label='Image URL'
                             onBlur={async (e) => {
@@ -1042,6 +1043,14 @@ export function CreateItemModal(props: {
                               form.setFieldValue('meta_data.image_url', e.target.value);
                             }}
                             error={isValidImageURL ? false : 'Invalid URL'}
+                          /> */}
+
+                          <SelectIcon
+                            strValue={form.values.meta_data?.image_url ?? ''}
+                            setValue={(strValue) => {
+                              form.setFieldValue('meta_data.image_url', strValue);
+                              console.log(strValue);
+                            }}
                           />
                         </Stack>
                       </Accordion.Panel>

@@ -665,7 +665,8 @@ export function getItemQuantity(item: Item) {
  */
 export function isItemBroken(item: Item) {
   const bt = item.meta_data?.broken_threshold ?? 0;
-  const hp = item.meta_data?.hp ?? 0;
+  const hp = item.meta_data?.hp;
+  if (hp === undefined) return false;
   if (bt > 0 && hp <= bt) {
     return true;
   }
