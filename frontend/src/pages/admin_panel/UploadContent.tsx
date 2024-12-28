@@ -22,10 +22,6 @@ export default function UploadContent() {
     queryFn: async () => {
       const sources = await fetchContentSources({ homebrew: false, ids: 'all' });
       defineDefaultSources(sources.map((source) => source.id));
-
-      const result = await getSpellByName(['Fireball']);
-      console.log(result);
-
       return sources;
     },
     refetchInterval: 1000,
