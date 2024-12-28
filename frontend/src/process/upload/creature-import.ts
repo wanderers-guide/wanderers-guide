@@ -22,6 +22,7 @@ import {
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
+  OperationGiveTrait,
   OperationSetValue,
 } from '@typing/operations';
 import { createDefaultOperation } from '@operations/operation-utils';
@@ -40,8 +41,6 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
     stamina_current: 0,
     resolve_current: 0,
     rarity: convertToRarity(json.system?.traits?.rarity),
-    // traits: await getTraitIds(json.system?.traits?.value ?? [], source),
-    //size: convertToSize(json.system?.traits?.size?.value),
     inventory: undefined,
     notes: undefined,
     details: {
@@ -88,7 +87,8 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   // Skills
   operations = addSkills(operations, json);
   // Misc Ops
-  operations = addMiscOps(operations, json);
+  const traitIds = await getTraitIds(json.system?.traits?.value ?? [], source);
+  operations = addMiscOps(operations, json, traitIds);
   // Spells
   operations = await addSpells(operations, json);
   // Items
@@ -446,23 +446,22 @@ function addSkills(operations: Operation[], json: Record<string, any>) {
   return operations;
 }
 
-function addMiscOps(operations: Operation[], json: Record<string, any>) {
+function addMiscOps(operations: Operation[], json: Record<string, any>, traitIds: number[]) {
   operations.push({
     ...createDefaultOperation<OperationSetValue>('setValue'),
     data: {
       variable: 'SIZE',
-      value: json.system.attributes.speed.value,
+      value: convertToSize(json.system.traits.size?.value),
     },
   } satisfies OperationSetValue);
 
-  for (const speed of json.system.attributes.speed.otherSpeeds ?? []) {
+  for (const traitId of traitIds) {
     operations.push({
-      ...createDefaultOperation<OperationSetValue>('setValue'),
+      ...createDefaultOperation<OperationGiveTrait>('giveTrait'),
       data: {
-        variable: `SPEED_${labelToVariable(speed.type)}`,
-        value: speed.value,
+        traitId: traitId,
       },
-    } satisfies OperationSetValue);
+    } satisfies OperationGiveTrait);
   }
 
   return operations;

@@ -53,6 +53,7 @@ import { Money, getGpGained } from '@utils/money';
 import { pluralize } from '@utils/strings';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
+import { convertToSize } from '@upload/foundry-utils';
 
 const SECTION_WIDTH = 280;
 
@@ -203,14 +204,7 @@ export default function CreatureDetailsPanel(props: {
           <Title order={4}>Size</Title>
           <ScrollArea h={100} scrollbars='y'>
             <Box w={SECTION_WIDTH}>
-              <TraitsDisplay
-                size='md'
-                traitIds={[]}
-                // @ts-ignore
-                pfSize={size?.toUpperCase() || 'MEDIUM'}
-                displayAll
-                interactable
-              />
+              <TraitsDisplay size='md' traitIds={[]} pfSize={convertToSize(size)} displayAll interactable />
             </Box>
           </ScrollArea>
         </Stack>
