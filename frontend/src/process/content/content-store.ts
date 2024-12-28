@@ -17,6 +17,7 @@ import {
 } from '@typing/content';
 import { RequestType } from '@typing/requests';
 import { hashData } from '@utils/numbers';
+import { isTruthy } from '@utils/type-fixing';
 import _ from 'lodash-es';
 
 ///////////////////////////////////////////////////////
@@ -70,7 +71,7 @@ function getStoredNames(type: ContentType, data: Record<string, any>) {
 function getStoredIds(type: ContentType, data: Record<string, any>) {
   if (!data.id) return null;
   if (Array.isArray(data.id)) {
-    const results = data.id.map((id) => idStore.get(type)?.get(parseInt(id))).filter((result) => result);
+    const results = data.id.map((id) => idStore.get(type)?.get(parseInt(id))).filter(isTruthy);
     if (results.length !== data.id.length) return null;
     return results;
   } else {
@@ -119,7 +120,7 @@ export function getDefaultSources() {
 }
 
 export function getCachedSources(): ContentSource[] {
-  return [...(idStore.get('content-source')?.values() ?? [])].filter((source) => source) as ContentSource[];
+  return [...(idStore.get('content-source')?.values() ?? [])].filter(isTruthy) as ContentSource[];
 }
 
 export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {

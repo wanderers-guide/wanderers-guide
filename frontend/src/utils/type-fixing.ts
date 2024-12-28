@@ -36,3 +36,8 @@ export function instanceOfOperationSelectOptionCustom(object: any): object is Op
   if (!object) return false;
   return 'type' in object && 'title' in object && 'description' in object && 'operations' in object;
 }
+
+export function isTruthy<T>(value: T): value is NonNullable<T> {
+  // Don't include 0 as a falsy value or empty strings, since they are valid values
+  return value !== null && value !== undefined && value !== false;
+}

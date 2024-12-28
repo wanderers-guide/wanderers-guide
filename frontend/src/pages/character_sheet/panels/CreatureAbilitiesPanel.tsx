@@ -25,6 +25,7 @@ import { AbilityBlock, ContentPackage, Creature } from '@typing/content';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRecoilValue, useRecoilState, SetterOrUpdater } from 'recoil';
 import * as JsSearch from 'js-search';
+import { isTruthy } from '@utils/type-fixing';
 
 export default function CreatureAbilitiesPanel(props: {
   content: ContentPackage;
@@ -44,7 +45,7 @@ export default function CreatureAbilitiesPanel(props: {
         const ability = props.content.abilityBlocks.find((block) => block.id === id);
         return ability;
       })
-      .filter((ability) => ability !== undefined) as AbilityBlock[];
+      .filter(isTruthy);
 
     return {
       baseAbilities: base,

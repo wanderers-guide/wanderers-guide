@@ -36,6 +36,8 @@ import _ from 'lodash-es';
 import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
 import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
 import InitiativeRollModal from '@modals/InitiativeRollModal';
+import { update } from 'node_modules/cypress/types/lodash';
+import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -57,6 +59,7 @@ const modals = {
   addNewLore: AddNewLoreModal,
   initiativeRoll: InitiativeRollModal,
   updateNotePage: UpdateNotePageModal,
+  updateEncounter: UpdateEncounterModal,
   condition: ConditionModal,
   createDicePreset: CreateDicePresetModal,
   addItems: AddItemsModal,

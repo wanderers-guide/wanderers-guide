@@ -65,6 +65,7 @@ import { OperationResult } from './operation-runner';
 import { throwError } from '@utils/notifications';
 import { InjectedSelectOption } from '@common/operations/selection/InjectSelectOptionOperation';
 import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/content-hidden';
+import { isTruthy } from '@utils/type-fixing';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -408,7 +409,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
         _.isNumber(t) ? t : fetchTraitByName(t)
       )
     );
-    const traitIds = tDatas.map((t) => (_.isNumber(t) ? t : t?.id)).filter((t) => t) as number[];
+    const traitIds = tDatas.map((t) => (_.isNumber(t) ? t : t?.id)).filter(isTruthy);
 
     // Filter out ability blocks that don't have all the traits
     abilityBlocks = abilityBlocks.filter((ab) => {
@@ -445,7 +446,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
   }
   if (filters.traits !== undefined) {
     const traits = await Promise.all(filters.traits.map((trait) => fetchTraitByName(trait)));
-    const traitIds = traits.filter((trait) => trait).map((trait) => trait!.id);
+    const traitIds = traits.filter(isTruthy).map((trait) => trait!.id);
 
     // Filter out spells that don't have all the traits
     spells = spells.filter((spell) => {

@@ -10,6 +10,7 @@ import { Character, Spell } from '@typing/content';
 import { VariableListStr, VariableStr } from '@typing/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { toLabel } from '@utils/strings';
+import { isTruthy } from '@utils/type-fixing';
 import {
   getFinalAcValue,
   getFinalHealthValue,
@@ -89,37 +90,35 @@ async function getContent(character: Character) {
     };
   });
 
-  const spells = (
-    spellData.list
-      .map((s) => {
-        const spell = content.spells.find((spell) => spell.id === s.spell_id);
-        if (spell) {
-          return {
-            ...spell,
-            rank: s.rank,
-            casting_source: s.source,
-          };
-        }
-        return null;
-      })
-      .filter((s) => s) as Spell[]
-  ).sort((a, b) => a.rank - b.rank);
+  const spells = spellData.list
+    .map((s) => {
+      const spell = content.spells.find((spell) => spell.id === s.spell_id);
+      if (spell) {
+        return {
+          ...spell,
+          rank: s.rank,
+          casting_source: s.source,
+        };
+      }
+      return null;
+    })
+    .filter(isTruthy)
+    .sort((a, b) => a.rank - b.rank);
 
-  const focusSpells = (
-    spellData.focus
-      .map((s) => {
-        const spell = content.spells.find((spell) => spell.id === s.spell_id);
-        if (spell) {
-          return {
-            ...spell,
-            rank: s.rank,
-            casting_source: s.source,
-          };
-        }
-        return null;
-      })
-      .filter((s) => s) as Spell[]
-  ).sort((a, b) => a.rank - b.rank);
+  const focusSpells = spellData.focus
+    .map((s) => {
+      const spell = content.spells.find((spell) => spell.id === s.spell_id);
+      if (spell) {
+        return {
+          ...spell,
+          rank: s.rank ?? 0,
+          casting_source: s.source,
+        };
+      }
+      return null;
+    })
+    .filter(isTruthy)
+    .sort((a, b) => a.rank - b.rank);
 
   const innateSpells = spellData.innate
     .map((s) => {
@@ -132,8 +131,8 @@ async function getContent(character: Character) {
       }
       return null;
     })
-    .filter((s) => s)
-    .sort((a, b) => a!.rank - b!.rank);
+    .filter(isTruthy)
+    .sort((a, b) => a.rank - b.rank);
 
   const cantrips = spells.filter((s) => isCantrip(s) && !isRitual(s));
   const nonCantrips = spells.filter((s) => !isCantrip(s) && !isRitual(s));

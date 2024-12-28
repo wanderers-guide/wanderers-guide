@@ -45,6 +45,7 @@ import StaffSpellsList from './spells_list/StaffSpellsList';
 import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
 import WandSpellsList from './spells_list/WandSpellsList';
 import { StoreID } from '@typing/variables';
+import { isTruthy } from '@utils/type-fixing';
 
 export default function SpellsPanel(props: {
   id: StoreID;
@@ -592,7 +593,7 @@ function SpellList(props: {
         if (entry && entry.source !== 'RITUALS') return null;
         return foundSpell;
       })
-      .filter((spell) => spell) as Spell[];
+      .filter(isTruthy);
 
     // Add spells from entries (for overridded ranks)
     if (props.type === 'PREPARED' || props.type === 'SPONTANEOUS') {

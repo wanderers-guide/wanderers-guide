@@ -1,5 +1,4 @@
 import { characterState } from '@atoms/characterAtoms';
-import { Icon, iconComponents } from '@common/Icon';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import classes from '@css/ActionsGrid.module.css';
 import { Text, Card, ScrollArea, SimpleGrid, Stack, UnstyledButton, Divider, Box } from '@mantine/core';

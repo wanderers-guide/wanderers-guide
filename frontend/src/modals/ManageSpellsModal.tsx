@@ -26,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
+import { isTruthy } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import _ from 'lodash-es';
@@ -95,7 +96,7 @@ export default function ManageSpellsModal(props: {
           rank: entry.rank,
         } as Spell;
       })
-      .filter((spell) => spell)
+      .filter(isTruthy)
       .filter((spell) => (isRituals ? isRitual(spell!) : isNormalSpell(spell!)))
       .sort((a, b) => {
         if (a!.rank === 0 && b!.rank === 0) {
@@ -107,7 +108,7 @@ export default function ManageSpellsModal(props: {
         } else {
           return a!.rank - b!.rank;
         }
-      }) as Spell[] | undefined;
+      });
     return filteredSpells;
   }, [charData, allFilteredSpells]);
 

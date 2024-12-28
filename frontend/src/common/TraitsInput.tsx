@@ -3,6 +3,7 @@ import { fetchContentAll } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@typing/content';
+import { isTruthy } from '@utils/type-fixing';
 import * as _ from 'lodash-es';
 
 interface TraitsInputProps extends TagsInputProps {
@@ -24,7 +25,7 @@ export default function TraitsInput(props: TraitsInputProps) {
   const traits =
     (data &&
       data
-        .filter((trait) => trait)
+        .filter(isTruthy)
         .sort((a, b) => a.name.localeCompare(b.name))
         .filter((trait) => isTraitVisible('CHARACTER', trait))) ??
     [];
@@ -68,9 +69,9 @@ export default function TraitsInput(props: TraitsInputProps) {
             if (props.onTraitChange) {
               props.onTraitChange(
                 value
-                  .filter((trait) => trait)
+                  .filter(isTruthy)
                   .map((trait) => traits.find((t) => t.name === trait)!)
-                  .filter((trait) => trait)
+                  .filter(isTruthy)
               );
             }
           }}

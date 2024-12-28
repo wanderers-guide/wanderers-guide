@@ -19,7 +19,7 @@ import { getVariable } from '@variables/variable-manager';
 import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { fetchContent, fetchContentById } from './content-store';
-import { isCharacter } from '@utils/type-fixing';
+import { isCharacter, isTruthy } from '@utils/type-fixing';
 
 export function collectEntityAbilityBlocks(
   id: StoreID,
@@ -131,17 +131,17 @@ export function collectEntitySenses(id: StoreID, blocks: AbilityBlock[]) {
   const compactSenses = compactSensesWithRange([
     ...precise
       .map(findSense)
-      .filter((s) => s !== null)
-      .map((s) => ({ ...s, type: 'precise' })),
+      .filter(isTruthy)
+      .map((s) => ({ ...s, type: 'precise' }) satisfies SenseWithRange),
     ...imprecise
       .map(findSense)
-      .filter((s) => s !== null)
-      .map((s) => ({ ...s, type: 'imprecise' })),
+      .filter(isTruthy)
+      .map((s) => ({ ...s, type: 'imprecise' }) satisfies SenseWithRange),
     ...vague
       .map(findSense)
-      .filter((s) => s !== null)
-      .map((s) => ({ ...s, type: 'vague' })),
-  ] as SenseWithRange[]);
+      .filter(isTruthy)
+      .map((s) => ({ ...s, type: 'vague' }) satisfies SenseWithRange),
+  ]);
 
   return {
     precise: compactSenses.filter((s) => s.type === 'precise'),

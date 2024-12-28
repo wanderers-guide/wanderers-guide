@@ -11,6 +11,7 @@ import { Session } from '@supabase/supabase-js';
 import { Character } from '@typing/content';
 import { OperationCharacterResultPackage } from '@typing/operations';
 import { selectRandom } from '@utils/random';
+import { isTruthy } from '@utils/type-fixing';
 import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 
@@ -182,12 +183,12 @@ export async function importFromFTC(d: FTC) {
   character.content_sources!.enabled =
     data.content_sources === 'ALL'
       ? sources.map((source) => source.id)
-      : (data.content_sources
+      : data.content_sources
           .map((sourceName) => {
             const found = sources.find((s) => labelToVariable(s.name) === labelToVariable(sourceName));
             return found ? found.id : null;
           })
-          .filter((id) => id !== null) as number[]);
+          .filter(isTruthy);
 
   // Set all content that the character uses
   defineDefaultSources(character.content_sources?.enabled ?? []);

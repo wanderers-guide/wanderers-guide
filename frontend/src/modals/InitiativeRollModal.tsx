@@ -4,7 +4,7 @@ import { ContextModalProps } from '@mantine/modals';
 import { getCombatantStoreID, PopulatedCombatant } from '@pages/campaign/panels/EncountersPanel';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { isCharacter, isCreature } from '@utils/type-fixing';
+import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
@@ -58,7 +58,7 @@ export default function InitiativeRollModal({
             num: value.total,
           };
         })
-        .filter((opt) => opt !== null)
+        .filter(isTruthy)
         .sort((a, b) => {
           if (a.value === 'PERCEPTION') return -1;
           if (b.value === 'PERCEPTION') return 1;

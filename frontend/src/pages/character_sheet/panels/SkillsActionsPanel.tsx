@@ -39,6 +39,7 @@ import { isPhoneSized, mobileQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
+import { isTruthy } from '@utils/type-fixing';
 import { displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
@@ -549,42 +550,40 @@ export default function SkillsActionsPanel(props: {
               title='Items (with Actions)'
               isPhone={isPhone}
               opened={actionSectionValue === 'items'}
-              actions={
-                itemsWithActions
-                  .map((invItem) => {
-                    const actions = findActions(invItem.item.description);
-                    const action = actions.length > 0 ? actions[0] : 'ONE-ACTION';
+              actions={itemsWithActions
+                .map((invItem) => {
+                  const actions = findActions(invItem.item.description);
+                  const action = actions.length > 0 ? actions[0] : 'ONE-ACTION';
 
-                    // if (action === 'ONE-ACTION' && isItemWeapon(invItem.item) && invItem.is_equipped) {
-                    //   // It's a weapon with one action, we already have a section for weapons
-                    //   return null;
-                    // }
+                  // if (action === 'ONE-ACTION' && isItemWeapon(invItem.item) && invItem.is_equipped) {
+                  //   // It's a weapon with one action, we already have a section for weapons
+                  //   return null;
+                  // }
 
-                    return {
-                      id: parseInt(invItem.id),
-                      name: invItem.item.name,
-                      drawerType: 'inv-item',
-                      drawerData: {
-                        zIndex: 100,
-                        invItem: _.cloneDeep(invItem),
-                        onItemUpdate: (newInvItem: InventoryItem) => {
-                          handleUpdateItem(props.setInventory, newInvItem);
-                        },
-                        onItemDelete: (newInvItem: InventoryItem) => {
-                          handleDeleteItem(props.setInventory, newInvItem);
-                          openDrawer(null);
-                        },
-                        onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                          handleMoveItem(props.setInventory, invItem, containerItem);
-                        },
+                  return {
+                    id: parseInt(invItem.id),
+                    name: invItem.item.name,
+                    drawerType: 'inv-item',
+                    drawerData: {
+                      zIndex: 100,
+                      invItem: _.cloneDeep(invItem),
+                      onItemUpdate: (newInvItem: InventoryItem) => {
+                        handleUpdateItem(props.setInventory, newInvItem);
                       },
-                      cost: action,
-                      traits: invItem.item.traits,
-                      rarity: invItem.item.rarity,
-                    };
-                  })
-                  .filter((a) => a) as ActionItem[]
-              }
+                      onItemDelete: (newInvItem: InventoryItem) => {
+                        handleDeleteItem(props.setInventory, newInvItem);
+                        openDrawer(null);
+                      },
+                      onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
+                        handleMoveItem(props.setInventory, invItem, containerItem);
+                      },
+                    },
+                    cost: action,
+                    traits: invItem.item.traits,
+                    rarity: invItem.item.rarity,
+                  } satisfies ActionItem;
+                })
+                .filter(isTruthy)}
             />
             <ActionAccordionItem
               id='basic-actions'

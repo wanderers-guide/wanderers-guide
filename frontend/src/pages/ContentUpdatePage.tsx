@@ -58,13 +58,13 @@ export function Component(props: {}) {
         ? await fetchContent(contentUpdate.type, {
             id: contentUpdate.ref_id,
           })
-        : null;
+        : [];
 
       return {
         contentUpdate,
         user,
         source: sources[0],
-        originalContent,
+        originalContent: originalContent.length > 0 ? originalContent[0] : null,
       };
     },
     refetchInterval: 1000,

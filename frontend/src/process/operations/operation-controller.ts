@@ -38,6 +38,7 @@ import {
 } from '@items/inv-utils';
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
 import { isAbilityBlockVisible } from '@content/content-hidden';
+import { isTruthy } from '@utils/type-fixing';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -537,11 +538,11 @@ export async function executeCreatureOperations(
 
   const abilities = [
     ...(creature.abilities_base ?? []),
-    ...((creature.abilities_added
+    ...(creature.abilities_added
       ?.map((id) => {
         return content.abilityBlocks.find((ab) => ab.id === id);
       })
-      .filter((ab) => ab) ?? []) as AbilityBlock[]),
+      .filter(isTruthy) ?? []),
   ];
 
   const operationsPassthrough = async (options?: OperationOptions) => {
@@ -670,10 +671,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
     } else {
       merged[key] = value;
     }
-    merged[key] = _.uniqWith(
-      merged[key].filter((v: any) => v),
-      _.isEqual
-    );
+    merged[key] = _.uniqWith(merged[key].filter(isTruthy), _.isEqual);
   }
 
   // Merge arrays of results (like class features)

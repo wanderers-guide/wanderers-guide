@@ -23,6 +23,7 @@ import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { useMemo } from 'react';
 import { StoreID } from '@typing/variables';
+import { isTruthy } from '@utils/type-fixing';
 
 export default function FocusSpellsList(props: {
   id: StoreID;
@@ -62,7 +63,7 @@ export default function FocusSpellsList(props: {
     return props.extra.charData.focus
       .filter((f) => props.extra.charData.sources.map((s) => s.name).includes(f.source))
       .map((f) => props.allSpells.find((s) => s.id === f.spell_id))
-      .filter((f) => f) as Spell[];
+      .filter(isTruthy);
   }, [props.extra.charData, props.allSpells]);
 
   // If there are no spells to display, and there are filters, return null

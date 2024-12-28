@@ -128,8 +128,15 @@ import {
   IconShieldLockFilled,
   IconTimeline,
 } from '@tabler/icons-react';
+import * as GiIcons from 'react-icons/gi';
+import { IconType } from 'react-icons/lib';
+const allGameIcons = Object.entries(GiIcons).map(([name, Component]) => ({
+  name,
+  Component,
+}));
 
-export const iconComponents = {
+// Tabler Icons
+const tablerIcons: Record<string, (props: TablerIconsProps) => JSX.Element> = {
   sphere: IconSphere,
   three: IconBrandThreejs,
   safari: IconBrandSafari,
@@ -258,17 +265,31 @@ export const iconComponents = {
   treemap: IconChartTreemap,
 };
 
-interface IconProps extends TablerIconsProps {
+// Game Icons
+const gameIcons: Record<string, IconType> = {};
+allGameIcons.forEach(({ name, Component }) => {
+  // remove first two letters 'Gi' from name
+  name = name.slice(2);
+  name = name.toLowerCase();
+  gameIcons[name] = Component;
+});
+
+interface IconProps extends Partial<IconType>, Partial<TablerIconsProps> {
   name: string;
 }
 export const Icon = ({ name, ...restProps }: IconProps) => {
-  // @ts-ignore
-  const IconComponent = iconComponents[name] || null;
+  const IconComponent = tablerIcons[name] || gameIcons[name] || null;
 
   if (!IconComponent) {
     console.warn(`Icon "${name}" not found`);
     return null;
   }
 
+  restProps.style;
+
   return <IconComponent {...restProps} />;
 };
+
+export function getAllIcons() {
+  return Object.keys(tablerIcons).concat(Object.keys(gameIcons)).sort();
+}

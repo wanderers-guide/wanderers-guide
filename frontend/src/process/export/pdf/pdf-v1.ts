@@ -45,6 +45,7 @@ import { PDFDocument, PDFForm } from 'pdf-lib';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { toLabel } from '@utils/strings';
+import { isTruthy } from '@utils/type-fixing';
 
 export async function pdfV1(character: Character) {
   // Load your PDF
@@ -641,37 +642,35 @@ async function fillPDF(form: PDFForm, character: Character) {
     form.getTextField(`SPELL SAVE DC`).setText(`${spellStats.spell_dc.total}`);
   }
 
-  const spells = (
-    spellData.list
-      .map((s) => {
-        const spell = content.spells.find((spell) => spell.id === s.spell_id);
-        if (spell) {
-          return {
-            ...spell,
-            rank: s.rank,
-            casting_source: s.source,
-          };
-        }
-        return null;
-      })
-      .filter((s) => s) as Spell[]
-  ).sort((a, b) => a.rank - b.rank);
+  const spells = spellData.list
+    .map((s) => {
+      const spell = content.spells.find((spell) => spell.id === s.spell_id);
+      if (spell) {
+        return {
+          ...spell,
+          rank: s.rank,
+          casting_source: s.source,
+        };
+      }
+      return null;
+    })
+    .filter(isTruthy)
+    .sort((a, b) => a.rank - b.rank);
 
-  const focusSpells = (
-    spellData.focus
-      .map((s) => {
-        const spell = content.spells.find((spell) => spell.id === s.spell_id);
-        if (spell) {
-          return {
-            ...spell,
-            rank: s.rank,
-            casting_source: s.source,
-          };
-        }
-        return null;
-      })
-      .filter((s) => s) as Spell[]
-  ).sort((a, b) => a.rank - b.rank);
+  const focusSpells = spellData.focus
+    .map((s) => {
+      const spell = content.spells.find((spell) => spell.id === s.spell_id);
+      if (spell) {
+        return {
+          ...spell,
+          rank: s.rank ?? 0,
+          casting_source: s.source,
+        };
+      }
+      return null;
+    })
+    .filter(isTruthy)
+    .sort((a, b) => a.rank - b.rank);
 
   const innateSpells = spellData.innate
     .map((s) => {
@@ -684,8 +683,8 @@ async function fillPDF(form: PDFForm, character: Character) {
       }
       return null;
     })
-    .filter((s) => s)
-    .sort((a, b) => a!.rank - b!.rank);
+    .filter(isTruthy)
+    .sort((a, b) => a.rank - b.rank);
 
   const cantripRank = Math.ceil(character.level / 2);
   form.getTextField('CANTRIPS RANK').setText(cantripRank + '');

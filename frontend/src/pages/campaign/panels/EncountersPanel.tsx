@@ -101,7 +101,7 @@ export default function EncountersPanel(props: {
     user_id: '',
     //
     name: 'Combat',
-    icon: 'notebook',
+    icon: 'combat',
     color: GUIDE_BLUE,
     campaign_id: props.campaign?.data.id,
     combatants: {
@@ -141,7 +141,7 @@ export default function EncountersPanel(props: {
             <Menu.Target>
               <Button
                 variant='light'
-                aria-label={`Encounter Settings`}
+                aria-label={`Encounters List`}
                 size='xs'
                 radius='xl'
                 color={isPhone ? encounter.color || 'gray.5' : 'gray.5'}
@@ -233,44 +233,24 @@ export default function EncountersPanel(props: {
             WebkitBackdropFilter: 'blur(12px)',
           }}
           onClick={() => {
-            // openContextModal({
-            //   modal: 'updateEncounter',
-            //   title: <Title order={3}>Update Encounter</Title>,
-            //   innerProps: {
-            //     encounter: encounter,
-            //     onUpdate: (name: string, icon: string, color: string) => {
-            //       if (!props.entity) return;
-            //       const newPages = _.cloneDeep(pages);
-            //       newPages[index] = {
-            //         ...newPages[index],
-            //         name: name,
-            //         icon: icon,
-            //         color: color,
-            //       };
-            //       props.setEntity({
-            //         ...props.entity,
-            //         notes: {
-            //           ...props.entity.notes,
-            //           pages: newPages,
-            //         },
-            //       });
-            //     },
-            //     onDelete: () => {
-            //       if (!props.entity) return;
-            //       const newPages = _.cloneDeep(pages);
-            //       newPages.splice(index, 1);
-            //       props.setEntity({
-            //         ...props.entity,
-            //         notes: {
-            //           ...props.entity.notes,
-            //           pages: newPages,
-            //         },
-            //       });
-            //       setActiveTab(`0`);
-            //     },
-            //   },
-            //   zIndex: props.zIndex,
-            // });
+            openContextModal({
+              modal: 'updateEncounter',
+              title: <Title order={3}>Update Encounter</Title>,
+              innerProps: {
+                encounter: encounter,
+                onUpdate: (encounter: Encounter) => {
+                  const newEncounters = _.cloneDeep(encounters);
+                  newEncounters[index] = encounter;
+                  props.setEncounters(newEncounters);
+                },
+                onDelete: () => {
+                  const newEncounters = _.cloneDeep(encounters);
+                  newEncounters.splice(index, 1);
+                  props.setEncounters(newEncounters);
+                  setActiveTab(`0`);
+                },
+              },
+            });
           }}
         >
           <IconSettings size='1.2rem' />
