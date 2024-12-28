@@ -54,7 +54,12 @@ export default function UpdateEncounterModal({
 
   return (
     <Stack style={{ position: 'relative' }}>
-      <Modal opened={openedModal} onClose={() => setOpenedModal(false)} title='Select Icon' zIndex={1000}>
+      <Modal
+        opened={openedModal}
+        onClose={() => setOpenedModal(false)}
+        title={<Title order={3}>Select Icon</Title>}
+        zIndex={1000}
+      >
         <SelectIconModalContents
           color={color}
           onSelect={(option) => {
