@@ -3,10 +3,14 @@ import { SpellSelectionOption } from '@common/select/SelectContent';
 import { Text } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { Spell } from '@typing/content';
-import { useRecoilState } from 'recoil';
+import { en } from '@supabase/auth-ui-shared';
+import { LivingEntity, Spell } from '@typing/content';
+import { SetterOrUpdater, StoreID, useRecoilState } from 'recoil';
 
 export default function SpellListEntrySection(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  //
   spell?: Spell;
   exhausted: boolean;
   tradition: string;
@@ -32,6 +36,7 @@ export default function SpellListEntrySection(props: {
               data: {
                 id: props.spell.id,
                 spell: props.spell,
+                entity: props.entity,
               },
               extra: { addToHistory: true },
             });
@@ -49,6 +54,8 @@ export default function SpellListEntrySection(props: {
               onCastSpell: (cast: boolean) => {
                 props.onCastSpell(cast);
               },
+              storeId: props.id,
+              entity: props.entity,
             },
             extra: { addToHistory: true },
           });

@@ -1,4 +1,3 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { DisplayIcon } from '@common/IconDisplay';
@@ -13,7 +12,8 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, P
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Spell } from '@typing/content';
+import { AbilityBlock, LivingEntity, Spell } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { convertCastToActionCost } from '@utils/actions';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -27,11 +27,12 @@ export function CastSpellDrawerTitle(props: {
     tradition: string;
     attribute: string;
     onCastSpell: (cast: boolean) => void;
+    storeId: StoreID;
+    entity: LivingEntity | null;
   };
 }) {
   const spell = props.data.spell;
 
-  const character = useRecoilValue(characterState);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const cast = spell?.cast ?? '';
@@ -42,8 +43,8 @@ export function CastSpellDrawerTitle(props: {
   let rank = spell?.rank;
   if (spell && isCantrip(spell)) {
     rankTitle = 'Cantrip';
-    if (character) {
-      rank = Math.ceil(character.level / 2);
+    if (props.data.entity) {
+      rank = Math.ceil(props.data.entity.level / 2);
     } else {
       rank = 1;
     }
@@ -52,15 +53,15 @@ export function CastSpellDrawerTitle(props: {
     rankTitle = 'Ritual';
   }
 
-  if (spell && character && isFocusSpell(spell)) {
+  if (spell && props.data.entity && isFocusSpell(spell)) {
     // rankTitle = 'Focus';
-    rank = Math.max(Math.ceil(character.level / 2), spell.rank);
+    rank = Math.max(Math.ceil(props.data.entity.level / 2), spell.rank);
 
     /*
     "You can’t cast a focus spell if its minimum rank is greater than
     half your level rounded up, even if you somehow gain access to it." (pg. 298)
     */
-    if (spell.rank > Math.ceil(character.level / 2)) {
+    if (spell.rank > Math.ceil(props.data.entity.level / 2)) {
       disableCasting = true;
     }
   }
@@ -114,7 +115,15 @@ export function CastSpellDrawerTitle(props: {
 }
 
 export function CastSpellDrawerContent(props: {
-  data: { id: number; spell: Spell; exhausted: boolean; tradition: string; attribute: string };
+  data: {
+    id: number;
+    spell: Spell;
+    exhausted: boolean;
+    tradition: string;
+    attribute: string;
+    storeId: StoreID;
+    entity: LivingEntity | null;
+  };
 }) {
   const spell = props.data.spell;
 
@@ -234,7 +243,7 @@ export function CastSpellDrawerContent(props: {
   }
 
   // Spell Attack and DC
-  const spellStats = getSpellStats('CHARACTER', spell, props.data.tradition, props.data.attribute);
+  const spellStats = getSpellStats(props.data.storeId, spell, props.data.tradition, props.data.attribute);
 
   const attackAndDcSection = (
     <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
@@ -298,7 +307,7 @@ export function CastSpellDrawerContent(props: {
           </IndentedText>
         )}
         {true && <Divider />}
-        <RichText ta='justify' store='CHARACTER' py={5}>
+        <RichText ta='justify' store={props.data.storeId} py={5}>
           {spell.description}
         </RichText>
 
@@ -316,7 +325,7 @@ export function CastSpellDrawerContent(props: {
           </Box>
         )}
 
-        <ShowInjectedText varId='CHARACTER' type='spell' id={spell.id} />
+        <ShowInjectedText varId={props.data.storeId} type='spell' id={spell.id} />
       </Box>
     </Box>
   );

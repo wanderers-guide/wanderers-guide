@@ -11,15 +11,16 @@ import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Spell } from '@typing/content';
+import { AbilityBlock, LivingEntity, Spell } from '@typing/content';
 import { convertCastToActionCost } from '@utils/actions';
 import { toLabel } from '@utils/strings';
 import { useRecoilValue } from 'recoil';
 
-export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }) {
+export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; entity?: LivingEntity } }) {
   const id = props.data.id;
 
-  const character = useRecoilValue(characterState);
+  const _character = useRecoilValue(characterState);
+  const entity = props.data.entity ?? _character;
 
   const { data: _spell } = useQuery({
     queryKey: [`find-spell-${id}`, { id }],
@@ -39,8 +40,8 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell } }
   let rank = spell?.rank;
   if (spell && isCantrip(spell)) {
     rankTitle = 'Cantrip';
-    if (character) {
-      rank = Math.ceil(character.level / 2);
+    if (entity) {
+      rank = Math.ceil(entity.level / 2);
     } else {
       rank = 1;
     }

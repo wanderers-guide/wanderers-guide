@@ -1,4 +1,3 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { SelectContentButton, SpellSelectionOption, selectContent } from '@common/select/SelectContent';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
@@ -23,7 +22,8 @@ import {
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
+import { LivingEntity, Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { rankNumber } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { isTruthy } from '@utils/type-fixing';
@@ -31,9 +31,13 @@ import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export default function ManageSpellsModal(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   opened: boolean;
   onClose: () => void;
   source: string;
@@ -49,12 +53,11 @@ export default function ManageSpellsModal(props: {
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
   const { data: allRawSpells, isFetching } = useQuery({
     queryKey: [`find-spells`],
     queryFn: async () => {
-      return (await fetchContentAll<Spell>('spell')).filter((spell) => isSpellVisible('CHARACTER', spell));
+      return (await fetchContentAll<Spell>('spell')).filter((spell) => isSpellVisible(props.id, spell));
     },
   });
 
@@ -76,9 +79,9 @@ export default function ManageSpellsModal(props: {
   }, [allRawSpells]);
 
   const charData = useMemo(() => {
-    if (!character) return null;
-    return collectEntitySpellcasting('CHARACTER', character);
-  }, [character]);
+    if (!props.entity) return null;
+    return collectEntitySpellcasting(props.id, props.entity);
+  }, [props.entity]);
 
   const allFilteredSpells =
     (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined) : allRawSpells ?? []) ??
@@ -133,6 +136,9 @@ export default function ManageSpellsModal(props: {
       <Stack style={{ position: 'relative' }} mx={10}>
         {props.type === 'LIST-ONLY' ? (
           <ListSection
+            id={props.id}
+            entity={props.entity}
+            setEntity={props.setEntity}
             selectRank
             spells={spells ?? []}
             source={props.source}
@@ -146,6 +152,9 @@ export default function ManageSpellsModal(props: {
           <Grid>
             <Grid.Col span={6}>
               <ListSection
+                id={props.id}
+                entity={props.entity}
+                setEntity={props.setEntity}
                 spells={spells ?? []}
                 source={props.source}
                 searchQuery={searchQuery}
@@ -157,13 +166,28 @@ export default function ManageSpellsModal(props: {
             </Grid.Col>
             <Grid.Col span={6}>
               <LoadingOverlay visible={isFetching} />
-              <SlotsSection filter={props.filter} slots={slots} spells={spells ?? []} source={props.source} />
+              <SlotsSection
+                id={props.id}
+                entity={props.entity}
+                setEntity={props.setEntity}
+                filter={props.filter}
+                slots={slots}
+                spells={spells ?? []}
+                source={props.source}
+              />
             </Grid.Col>
           </Grid>
         ) : (
           <>
             <LoadingOverlay visible={isFetching} />
-            <SlotsSection filter={props.filter} slots={slots} source={props.source} />
+            <SlotsSection
+              id={props.id}
+              entity={props.entity}
+              setEntity={props.setEntity}
+              filter={props.filter}
+              slots={slots}
+              source={props.source}
+            />
           </>
         )}
       </Stack>
@@ -172,6 +196,10 @@ export default function ManageSpellsModal(props: {
 }
 
 const SlotsSection = (props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   slots: Record<string, SpellSlotRecord[]>;
   spells?: Spell[];
   source: string;
@@ -182,7 +210,6 @@ const SlotsSection = (props: {
 }) => {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
   const [displaySlots, refreshSlots] = useRefresh();
 
   props.slots;
@@ -216,9 +243,9 @@ const SlotsSection = (props: {
                     <SelectContentButton
                       type='spell'
                       onClick={(spell) => {
-                        setCharacter((c) => {
+                        props.setEntity((c) => {
                           if (!c) return c;
-                          let slots = collectEntitySpellcasting('CHARACTER', c).slots;
+                          let slots = collectEntitySpellcasting(props.id, c).slots;
                           slots = slots.map((s) => {
                             if (s.id === slot.id) {
                               return {
@@ -246,9 +273,9 @@ const SlotsSection = (props: {
                         //refreshSlots();
                       }}
                       onClear={() => {
-                        setCharacter((c) => {
+                        props.setEntity((c) => {
                           if (!c) return c;
-                          let slots = collectEntitySpellcasting('CHARACTER', c).slots;
+                          let slots = collectEntitySpellcasting(props.id, c).slots;
                           slots = slots.map((s) => {
                             if (s.id === slot.id) {
                               return {
@@ -341,6 +368,10 @@ const SlotsSection = (props: {
 };
 
 const ListSection = (props: {
+  id: StoreID;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
+  //
   selectRank?: boolean;
   spells: Spell[];
   source: string;
@@ -355,12 +386,11 @@ const ListSection = (props: {
 
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
 
   const [rankSelectSpell, setRankSelectSpell] = useState<Spell | null>(null);
 
   const addSpell = (option: Spell, rank: number) => {
-    setCharacter((c) => {
+    props.setEntity((c) => {
       if (!c) return c;
 
       const list = [
@@ -495,10 +525,10 @@ const ListSection = (props: {
               key={index}
               spell={spell}
               onClick={(spell) => {
-                openDrawer({ type: 'spell', data: { spell: spell } });
+                openDrawer({ type: 'spell', data: { spell: spell, entity: props.entity } });
               }}
               onDelete={(spellId) => {
-                setCharacter((c) => {
+                props.setEntity((c) => {
                   if (!c) return c;
 
                   const list = (c.spells?.list ?? []).filter((entry) => {

@@ -309,6 +309,9 @@ export default function SpellsPanel(props: {
       </Stack>
       {manageSpells && (
         <ManageSpellsModal
+          id={props.id}
+          entity={props.entity}
+          setEntity={props.setEntity}
           opened={!!manageSpells}
           onClose={() => setManageSpells(undefined)}
           source={manageSpells.source}
