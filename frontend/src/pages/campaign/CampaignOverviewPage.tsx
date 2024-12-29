@@ -385,8 +385,6 @@ function SectionPanels(props: {
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
 
-  const [encounters, setEncounters] = useState<Encounter[]>([]);
-
   const iconStyle = { width: rem(12), height: rem(12) };
   const allCampaignTabs = ['notes', 'encounters', 'shops', 'inspiration', 'settings'];
   const openedTabOption = allCampaignTabs.find((tab) => tab === activeTab);
@@ -436,8 +434,6 @@ function SectionPanels(props: {
                   data: props.campaign,
                   players: props.players,
                 }}
-                encounters={encounters}
-                setEncounters={setEncounters}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
               />
@@ -658,8 +654,6 @@ function SectionPanels(props: {
                   data: props.campaign,
                   players: props.players,
                 }}
-                encounters={encounters}
-                setEncounters={setEncounters}
               />
             </Tabs.Panel>
 

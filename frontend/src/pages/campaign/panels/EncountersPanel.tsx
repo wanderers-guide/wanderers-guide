@@ -1,4 +1,5 @@
 import { drawerState } from '@atoms/navAtoms';
+import { sessionState } from '@atoms/supabaseAtoms';
 import ConditionPill from '@common/ConditionPill';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
@@ -26,10 +27,12 @@ import {
   TextInput,
   Badge,
   MantineColor,
+  LoadingOverlay,
 } from '@mantine/core';
 import {
   getHotkeyHandler,
   useDebouncedState,
+  useDebouncedValue,
   useDidUpdate,
   useElementSize,
   useHover,
@@ -69,21 +72,87 @@ import useRefresh from '@utils/use-refresh';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
 import _ from 'lodash-es';
 import { evaluate } from 'mathjs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export default function EncountersPanel(props: {
   panelHeight: number;
   panelWidth: number;
-  encounters: Encounter[];
-  setEncounters: (encounters: Encounter[]) => void;
   campaign?: {
     data: Campaign;
     players: Character[];
   };
   zIndex?: number;
 }) {
+  const session = useRecoilValue(sessionState);
+
+  const {
+    data: _data,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: [`find-encounters`],
+    queryFn: async () => {
+      const result = await makeRequest<Encounter[]>('find-encounter', {
+        user_id: session?.user.id,
+      });
+
+      // Prefetch content package for creature calculations
+      defineDefaultSourcesForUser().then((e) => {
+        fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+      });
+
+      return result ?? [];
+    },
+    refetchOnWindowFocus: false,
+  });
+
+  const [_encounters, _setEncounters] = useState<Encounter[] | null>(null);
+  const _encountersData =
+    _encounters ?? _data?.filter((d) => (props.campaign ? d.campaign_id === props.campaign.data.id : true)) ?? null;
+
+  const debouncedUpdateRequest = useCallback(
+    _.debounce((e: Encounter) => {
+      makeRequest('create-encounter', { ...e });
+    }, 200),
+    []
+  );
+
+  const updateEncounters = async (es: Encounter[] | null) => {
+    if (!es) return;
+
+    for (const e of es) {
+      const existing = encounters.find((exist) => exist.id === e.id);
+      if (!existing || existing.id === -1) {
+        // If it's a new encounter, create it immediately
+        const result = await makeRequest<Encounter>('create-encounter', { ...e });
+        if (result) {
+          e.id = result.id;
+        }
+      } else if (!_.isEqual(e, existing)) {
+        // If it's an existing encounter, update it after a debounce
+        debouncedUpdateRequest(e);
+      }
+    }
+
+    // If there's less enocunters, remove the extra ones
+    if (encounters.length > es.length) {
+      for (const e of encounters) {
+        if (!es.find((exist) => exist.id === e.id)) {
+          makeRequest('delete-content', {
+            id: e.id,
+            type: 'encounter',
+          });
+        }
+      }
+    }
+
+    _setEncounters(es);
+  };
+
+  //
+
   const [activeTab, setActiveTab] = useState<string | null>('0');
   const isPhone = isPhoneSized(props.panelWidth);
   const [displayEncounters, refreshEncounters] = useRefresh();
@@ -91,13 +160,6 @@ export default function EncountersPanel(props: {
   useEffect(() => {
     refreshEncounters();
   }, [activeTab]);
-
-  useEffect(() => {
-    // Prefetch content package for creature calculations
-    defineDefaultSourcesForUser().then(() => {
-      fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
-    });
-  }, []);
 
   const defaultEncounter: Encounter = {
     id: -1,
@@ -118,7 +180,7 @@ export default function EncountersPanel(props: {
     },
   };
 
-  const encounters = props.encounters.length > 0 ? props.encounters : [_.cloneDeep(defaultEncounter)];
+  const encounters = _encountersData && _encountersData.length > 0 ? _encountersData : [_.cloneDeep(defaultEncounter)];
 
   const addEncounter = (encounter: Encounter) => {
     const newEncounters = _.cloneDeep(encounters);
@@ -126,7 +188,7 @@ export default function EncountersPanel(props: {
       encounter.campaign_id = props.campaign.data.id;
     }
     newEncounters.push(encounter);
-    props.setEncounters(newEncounters);
+    updateEncounters(newEncounters);
     setActiveTab(`${newEncounters.length - 1}`);
   };
 
@@ -138,7 +200,7 @@ export default function EncountersPanel(props: {
           setEncounter={(e) => {
             const newEncounters = _.cloneDeep(encounters);
             newEncounters[index] = e;
-            props.setEncounters(newEncounters);
+            updateEncounters(newEncounters);
           }}
           players={props.campaign?.players ?? []}
           panelHeight={props.panelHeight}
@@ -279,12 +341,12 @@ export default function EncountersPanel(props: {
                 onUpdate: (encounter: Encounter) => {
                   const newEncounters = _.cloneDeep(encounters);
                   newEncounters[index] = encounter;
-                  props.setEncounters(newEncounters);
+                  updateEncounters(newEncounters);
                 },
                 onDelete: () => {
                   const newEncounters = _.cloneDeep(encounters);
                   newEncounters.splice(index, 1);
-                  props.setEncounters(newEncounters);
+                  updateEncounters(newEncounters);
                   setActiveTab(`0`);
                 },
               },
@@ -297,6 +359,14 @@ export default function EncountersPanel(props: {
     );
   };
 
+  if (isFetching) {
+    return (
+      <Box h={props.panelHeight}>
+        <LoadingOverlay visible={true} />
+      </Box>
+    );
+  }
+
   if (isPhone) {
     if (displayEncounters) {
       return <Box>{getEncounter(encounters[parseInt(activeTab ?? '')], parseInt(activeTab ?? ''))}</Box>;
@@ -306,25 +376,28 @@ export default function EncountersPanel(props: {
   } else {
     return (
       <Tabs orientation='vertical' value={activeTab} onChange={setActiveTab}>
-        <Tabs.List w={210} h={props.panelHeight}>
-          {encounters.map((encounter, index) => (
-            <Tabs.Tab
-              key={index}
-              value={`${index}`}
-              leftSection={
-                <ActionIcon variant='transparent' aria-label={`${encounter.name}`} color={encounter.color} size='xs'>
-                  <Icon name={encounter.icon} size='1rem' />
-                </ActionIcon>
-              }
-              color={encounter.color}
-            >
-              <Box maw={125}>
-                <EllipsisText fz='sm' openDelay={1000}>
-                  {encounter.name}
-                </EllipsisText>
-              </Box>
-            </Tabs.Tab>
-          ))}
+        <Tabs.List>
+          <ScrollArea h={props.panelHeight - 80} w={210} scrollbars='y'>
+            {encounters.map((encounter, index) => (
+              <Tabs.Tab
+                key={index}
+                value={`${index}`}
+                w={210}
+                leftSection={
+                  <ActionIcon variant='transparent' aria-label={`${encounter.name}`} color={encounter.color} size='xs'>
+                    <Icon name={encounter.icon} size='1rem' />
+                  </ActionIcon>
+                }
+                color={encounter.color}
+              >
+                <Box maw={125}>
+                  <EllipsisText fz='sm' openDelay={1000}>
+                    {encounter.name}
+                  </EllipsisText>
+                </Box>
+              </Tabs.Tab>
+            ))}
+          </ScrollArea>
           <Tabs.Tab
             value='add_encounter'
             mt='auto'
@@ -689,7 +762,7 @@ function EncounterView(props: {
             height: props.panelHeight - 50,
           }}
         >
-          <Stack gap={15}>
+          <Stack gap={12}>
             {combatants
               .sort((a, b) => {
                 let aI = a.initiative;
@@ -946,13 +1019,16 @@ function CombatantCard(props: {
           </ActionIcon>
         </Group>
 
-        <DisplayIcon
-          strValue={props.combatant.data.details?.image_url ?? 'icon|||avatar|||#373A40'}
-          width={40}
-          iconStyles={{
-            objectFit: 'contain',
-          }}
-        />
+        <Box w={40}>
+          <DisplayIcon
+            strValue={props.combatant.data.details?.image_url ?? 'icon|||avatar|||#373A40'}
+            width={40}
+            iconStyles={{
+              objectFit: 'contain',
+              height: 40,
+            }}
+          />
+        </Box>
 
         <Box pr={5} style={{ flex: 1 }}>
           <Group gap={1}>

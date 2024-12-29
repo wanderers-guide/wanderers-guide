@@ -41,6 +41,8 @@ export type RequestType =
   | 'create-content-update'
   | 'find-content-update'
   | 'get-content-source-stats'
+  | 'find-encounter'
+  | 'create-encounter'
   | 'find-campaign'
   | 'create-campaign'
   | 'reset-campaign-key'
