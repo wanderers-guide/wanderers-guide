@@ -461,7 +461,7 @@ async function selectEncounterCreaturesSample(
   Use markdown to format your output. Only return the JSON object with the IDs for the 30 most likely creatures. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
   # Output:
   `.trim();
-  const result = await generateCompletion(prompt, 'gpt-4o-mini');
+  const result = await generateCompletion(prompt, 'gpt-4o');
   try {
     return yaml.load(result ?? '') as any;
   } catch (e) {

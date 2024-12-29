@@ -1027,7 +1027,7 @@ function CombatantCard(props: {
               });
             }}
             groupProps={{
-              w: 225,
+              w: 200,
             }}
           />
         </ScrollArea>

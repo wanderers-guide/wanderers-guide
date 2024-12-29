@@ -1,10 +1,10 @@
 // @ts-ignore
-import { serve } from "std/server";
-import { connect } from "../_shared/helpers.ts";
+import { serve } from 'std/server';
+import { connect } from '../_shared/helpers.ts';
 
 // TODO: This function URL is relatively safe to expose to the public, it's rate limited.
 //       However, we should move & change it if any abuse happens.
-const AI_FUNCTION_URL = `https://msgback.azurewebsites.net/api/OpenAICompletion?code=JHWQG9lejiCvD2ekya4rSXShGu1mv7DrncxoKF2FLFPbAzFu_ZAxBQ==`;
+const AI_FUNCTION_URL = `https://msgback.azurewebsites.net/api/OpenAICompletion?code=URUj647XlDjbH1PMiOXrVZQi7OEoBGezlfnb5VOfOMeqAzFuD92TcQ==`;
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
@@ -17,11 +17,11 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         content: content,
-        model: model ?? 'gpt-4',
+        model: model ?? 'gpt-4o',
       }),
     });
 
-    if(res.ok) {
+    if (res.ok) {
       return {
         status: 'success',
         data: await res.text(),
