@@ -52,6 +52,7 @@ import {
   IconExternalLink,
   IconPlus,
   IconSettings,
+  IconSparkles,
   IconSword,
   IconUser,
   IconX,
@@ -119,9 +120,9 @@ export default function EncountersPanel(props: {
 
   const encounters = props.encounters.length > 0 ? props.encounters : [_.cloneDeep(defaultEncounter)];
 
-  const addEncounter = () => {
+  const addEncounter = (encounter: Encounter) => {
     const newEncounters = _.cloneDeep(encounters);
-    newEncounters.push(_.cloneDeep(defaultEncounter));
+    newEncounters.push(encounter);
     props.setEncounters(newEncounters);
     setActiveTab(`${newEncounters.length - 1}`);
   };
@@ -211,10 +212,41 @@ export default function EncountersPanel(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  addEncounter();
+                  addEncounter(_.cloneDeep(defaultEncounter));
                 }}
               >
                 New Encounter
+              </Menu.Item>
+              <Menu.Item
+                value='generate_encounter'
+                mt='auto'
+                leftSection={
+                  <ActionIcon variant='transparent' size='xs' color='gray.5'>
+                    <IconSparkles size='1rem' />
+                  </ActionIcon>
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  // Fix bug where active tab is changing
+                  const currentActiveTab = activeTab;
+                  setTimeout(() => {
+                    setActiveTab(currentActiveTab);
+                  }, 100);
+                  openContextModal({
+                    modal: 'generateEncounter',
+                    title: <Title order={3}>Generate Encounter</Title>,
+                    innerProps: {
+                      partyLevel: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
+                      partySize: props.campaign ? props.campaign.players.length : undefined,
+                      onComplete: (encounter: Encounter) => {
+                        addEncounter(encounter);
+                      },
+                    },
+                  });
+                }}
+              >
+                Generate Encounter
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -271,7 +303,7 @@ export default function EncountersPanel(props: {
   } else {
     return (
       <Tabs orientation='vertical' value={activeTab} onChange={setActiveTab}>
-        <Tabs.List w={190} h={props.panelHeight}>
+        <Tabs.List w={210} h={props.panelHeight}>
           {encounters.map((encounter, index) => (
             <Tabs.Tab
               key={index}
@@ -301,10 +333,40 @@ export default function EncountersPanel(props: {
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              addEncounter();
+              addEncounter(_.cloneDeep(defaultEncounter));
             }}
           >
             New Encounter
+          </Tabs.Tab>
+          <Tabs.Tab
+            value='generate_encounter'
+            leftSection={
+              <ActionIcon variant='transparent' size='xs' color='gray.5'>
+                <IconSparkles size='1rem' />
+              </ActionIcon>
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              // Fix bug where active tab is changing
+              const currentActiveTab = activeTab;
+              setTimeout(() => {
+                setActiveTab(currentActiveTab);
+              }, 100);
+              openContextModal({
+                modal: 'generateEncounter',
+                title: <Title order={3}>Generate Encounter</Title>,
+                innerProps: {
+                  partyLevel: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
+                  partySize: props.campaign ? props.campaign.players.length : undefined,
+                  onComplete: (encounter: Encounter) => {
+                    addEncounter(encounter);
+                  },
+                },
+              });
+            }}
+          >
+            Generate Encounter
           </Tabs.Tab>
         </Tabs.List>
 

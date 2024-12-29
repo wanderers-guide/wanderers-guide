@@ -1,6 +1,9 @@
 import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
+import { fetchContentPackage } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
-import { Campaign, CampaignNPC, CampaignSessionIdea, Character } from '@typing/content';
+import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Trait } from '@typing/content';
+import { findCreatureTraits } from '@upload/creature-import';
+import { isTruthy } from '@utils/type-fixing';
 import yaml from 'js-yaml';
 
 export async function generateCompletion(prompt?: string, model = 'gpt-4o-mini') {
@@ -412,4 +415,57 @@ ${description}
   }
 
   return obj;
+}
+
+export async function generateEncounters(partyLevel: number, partySize: number, description: string) {
+  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: true });
+
+  const creatureIds = await selectEncounterCreaturesSample(partyLevel, content.creatures, content.traits, description);
+
+  console.log(content);
+  console.log(creatureIds);
+}
+
+async function selectEncounterCreaturesSample(
+  partyLevel: number,
+  creatures: Creature[],
+  traits: Trait[],
+  description: string
+): Promise<{ creatures: number[] } | null> {
+  const fightableCreatures = creatures.filter(
+    (creature) => creature.level >= partyLevel - 4 && creature.level <= partyLevel + 4
+  );
+
+  const prompt = `
+  You are a GM planning a session for a Pathfinder / Starfinder / D&D campaign and you need to select fitting creatures for an encounter.
+  I’m going to give you a list of creatures and a description of what the setting should be like and I need you to select from the list of creatures the 30 most fitting creatures that could be used in an encounter for the setting.
+
+  # Description:
+  ${description}
+
+  # Creatures (ID - Name - Traits):
+  ${fightableCreatures.map((creature) => {
+    return `${creature.id} - ${creature.name} - ${findCreatureTraits(creature)
+      .map((traitId) => traits.find((t) => t.id === traitId)?.name)
+      .filter(isTruthy)
+      .join(', ')}`;
+  })}
+
+
+  # Output Format:
+  {
+    creatures: number[];
+  }
+
+
+  Use markdown to format your output. Only return the JSON object with the IDs for the 30 most likely creatures. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  # Output:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-4o-mini');
+  try {
+    return yaml.load(result ?? '') as any;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return null;
+  }
 }
