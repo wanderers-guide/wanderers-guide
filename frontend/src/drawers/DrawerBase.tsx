@@ -66,8 +66,9 @@ export default function DrawerBase() {
   });
 
   const saveMetadata = (openedDict?: Record<string, string>) => {
+    if (viewport.current === null) return;
     const newMetadata = {
-      scrollTop: viewport.current!.scrollTop ?? 0,
+      scrollTop: viewport.current.scrollTop ?? 0,
       openedDict: openedDict ?? value.openedDict,
     };
     setValue(newMetadata);
@@ -95,7 +96,8 @@ export default function DrawerBase() {
     setDrawerZIndex(null);
 
     setTimeout(() => {
-      viewport.current!.scrollTo({ top: value.scrollTop });
+      if (!viewport.current) return;
+      viewport.current.scrollTo({ top: value.scrollTop });
     }, 1);
   };
 
