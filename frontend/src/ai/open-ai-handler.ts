@@ -1,10 +1,14 @@
 import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
+import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage } from '@content/content-store';
+import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
 import { makeRequest } from '@requests/request-manager';
-import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Trait } from '@typing/content';
+import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Encounter, Trait } from '@typing/content';
 import { findCreatureTraits } from '@upload/creature-import';
 import { isTruthy } from '@utils/type-fixing';
 import yaml from 'js-yaml';
+import _ from 'lodash-es';
+import { constSelector } from 'recoil';
 
 export async function generateCompletion(prompt?: string, model = 'gpt-4o-mini') {
   if (!prompt) return null;
@@ -421,9 +425,102 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
   const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: true });
 
   const creatureIds = await selectEncounterCreaturesSample(partyLevel, content.creatures, content.traits, description);
+  if (!creatureIds) return null;
+  const selectedCreatures = content.creatures.filter((creature) => creatureIds?.creatures.includes(creature.id));
 
-  console.log(content);
-  console.log(creatureIds);
+  const encountersData = await buildEncounters(partyLevel, partySize, selectedCreatures, content.traits, description);
+  if (!encountersData) return null;
+
+  const encounters: Encounter[] = Object.values(encountersData).map((data) => {
+    const creatures: Creature[] = [];
+    for (const c of data.creatures) {
+      const creatureData = selectedCreatures.find((cr) => cr.id === c.id);
+      if (creatureData) {
+        for (let i = 0; i < c.amount; i++) {
+          creatures.push(creatureData);
+        }
+      }
+    }
+
+    // Ensure the hex color is valid
+    const hexColor =
+      data.hexColor.length === 7 ? data.hexColor : data.hexColor.length === 6 ? '#' + data.hexColor : GUIDE_BLUE;
+
+    return {
+      id: -1,
+      created_at: '',
+      user_id: '',
+      //
+      name: data.name,
+      icon: 'combat',
+      color: hexColor,
+      campaign_id: undefined,
+      combatants: {
+        list: creatures.map((creature) => ({
+          _id: crypto.randomUUID(),
+          type: 'CREATURE',
+          ally: false,
+          initiative: undefined,
+          creature: creature,
+          character: undefined,
+          data: undefined,
+        })),
+      },
+      meta_data: {
+        description: data.description,
+        party_level: partyLevel,
+        party_size: partySize,
+      },
+    } satisfies Encounter;
+  });
+
+  // Auto scale the encounters
+  console.log('Balancing encounters...');
+  return encounters.map((encounter) => {
+    let difficulty = calculateDifficulty(
+      encounter,
+      encounter.combatants.list.map((c) => ({
+        ...c,
+        data: c.creature!,
+      }))
+    );
+
+    console.log('Initial Difficulty:', difficulty);
+    while (
+      (difficulty.status === 'IMPOSSIBLE' || difficulty.status === 'Trivial') &&
+      encounter.combatants.list.length > 0
+    ) {
+      if (difficulty.status === 'IMPOSSIBLE') {
+        // Remove lowest level creature
+        const lowestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
+          prev.creature!.level < current.creature!.level ? prev : current
+        );
+        encounter.combatants.list = encounter.combatants.list.filter((c) => c !== lowestLevelCreature);
+        console.log('- Removed:', lowestLevelCreature.creature?.name);
+      } else if (difficulty.status === 'Trivial') {
+        // Add another of the highest level creature
+        const highestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
+          prev.creature!.level > current.creature!.level ? prev : current
+        );
+        encounter.combatants.list.push({
+          ..._.cloneDeep(highestLevelCreature),
+          _id: crypto.randomUUID(),
+        });
+        console.log('- Added:', highestLevelCreature.creature?.name);
+      }
+
+      difficulty = calculateDifficulty(
+        encounter,
+        encounter.combatants.list.map((c) => ({
+          ...c,
+          data: c.creature!,
+        }))
+      );
+      console.log('- New Difficulty:', difficulty);
+    }
+
+    return encounter;
+  });
 }
 
 async function selectEncounterCreaturesSample(
@@ -459,6 +556,74 @@ async function selectEncounterCreaturesSample(
 
 
   Use markdown to format your output. Only return the JSON object with the IDs for the 30 most likely creatures. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  # Output:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-4o');
+  try {
+    return yaml.load(result ?? '') as any;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return null;
+  }
+}
+
+async function buildEncounters(
+  partyLevel: number,
+  partySize: number,
+  selectedCreatures: Creature[],
+  traits: Trait[],
+  description: string
+): Promise<{
+  encounter1: { creatures: { amount: number; id: number }[]; description: string; name: string; hexColor: string };
+  encounter2: { creatures: { amount: number; id: number }[]; description: string; name: string; hexColor: string };
+  encounter3: { creatures: { amount: number; id: number }[]; description: string; name: string; hexColor: string };
+} | null> {
+  const prompt = `
+  You are a GM for a Pathfinder / Starfinder / D&D campaign and you need to build an encounter for the party.
+  I’m going to give you a list of fitting creatures and a description of what the setting should be like and I need you to build an exciting encounter for it.
+  Please build 3 example encounters, each with a different set of creatures and some variety - get creative with it!
+
+  For each encounter, include 1 to 4 different types of creatures, how much of each of those creatures, and a short description on why you picked what you did.
+
+  # Description:
+  ${description}
+
+  # Party Level: ${partyLevel}
+  # Party Size: ${partySize}
+
+  # Creatures (ID - Name, Level - Traits):
+  ${selectedCreatures.map((creature) => {
+    return `${creature.id} - ${creature.name}, Lvl. ${creature.level} - ${findCreatureTraits(creature)
+      .map((traitId) => traits.find((t) => t.id === traitId)?.name)
+      .filter(isTruthy)
+      .join(', ')}`;
+  })}
+
+
+  # Output Format:
+  {
+    encounter1: {
+      creatures: { amount: number, id: number }[];
+      description: string;
+      name: string;
+      hexColor: string;
+    },
+    encounter2: {
+      creatures: { amount: number, id: number }[];
+      description: string;
+      name: string;
+      hexColor: string;
+    },
+    encounter3: {
+      creatures: { amount: number, id: number }[];
+      description: string;
+      name: string;
+      hexColor: string;
+    },
+  }
+
+
+  Use markdown to format your output. Only return the JSON object with the information provided. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
   # Output:
   `.trim();
   const result = await generateCompletion(prompt, 'gpt-4o');

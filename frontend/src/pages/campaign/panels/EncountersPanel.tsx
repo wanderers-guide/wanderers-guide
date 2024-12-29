@@ -122,6 +122,9 @@ export default function EncountersPanel(props: {
 
   const addEncounter = (encounter: Encounter) => {
     const newEncounters = _.cloneDeep(encounters);
+    if (props.campaign) {
+      encounter.campaign_id = props.campaign.data.id;
+    }
     newEncounters.push(encounter);
     props.setEncounters(newEncounters);
     setActiveTab(`${newEncounters.length - 1}`);
@@ -235,7 +238,7 @@ export default function EncountersPanel(props: {
                   }, 100);
                   openContextModal({
                     modal: 'generateEncounter',
-                    title: <Title order={3}>Generate Encounter</Title>,
+                    title: <Title order={3}>Encounter Generator</Title>,
                     innerProps: {
                       partyLevel: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
                       partySize: props.campaign ? props.campaign.players.length : undefined,
@@ -355,7 +358,7 @@ export default function EncountersPanel(props: {
               }, 100);
               openContextModal({
                 modal: 'generateEncounter',
-                title: <Title order={3}>Generate Encounter</Title>,
+                title: <Title order={3}>Encounter Generator</Title>,
                 innerProps: {
                   partyLevel: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
                   partySize: props.campaign ? props.campaign.players.length : undefined,
@@ -784,7 +787,6 @@ function EncounterView(props: {
         <CreateCombatantModal
           opened={true}
           onComplete={async (combatant) => {
-            console.log(combatant);
             changeCombatants({
               type: 'ADD',
               data: combatant.creature!,
@@ -1120,7 +1122,7 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
   return await Promise.all(combatants.map(computeCombatant));
 }
 
-function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatant[]) {
+export function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatant[]) {
   const alliesInEncounter = combatants.filter((c) => c.ally);
   const partyLevel = encounter.meta_data.party_level ?? _.mean(alliesInEncounter.map((p) => p.data.level));
   const partySize = encounter.meta_data.party_size ?? alliesInEncounter.length;
