@@ -5,9 +5,16 @@ export type TraitType =
   | 'EXPLORATION'
   | 'DOWNTIME'
   | 'CONSUMABLE'
+  | 'BRUTAL'
   | 'THROWN'
+  | 'THROWN-5'
   | 'THROWN-10'
+  | 'THROWN-15'
   | 'THROWN-20'
+  | 'THROWN-25'
+  | 'THROWN-30'
+  | 'THROWN-40'
+  | 'THROWN-100'
   | 'SPLASH'
   | 'PROPULSIVE'
   | 'FOCUS'
@@ -40,9 +47,16 @@ const traitMap: Record<number, TraitType> = {
   1531: 'CONSUMABLE',
   1457: 'EXPLORATION',
   1466: 'DOWNTIME',
+  4182: 'BRUTAL',
   1575: 'THROWN',
+  2756: 'THROWN-5',
   1626: 'THROWN-10',
+  2755: 'THROWN-15',
   1843: 'THROWN-20',
+  2757: 'THROWN-25',
+  2758: 'THROWN-30',
+  3803: 'THROWN-40',
+  4178: 'THROWN-100',
   1532: 'SPLASH',
   1579: 'PROPULSIVE',
   1856: 'FOCUS',

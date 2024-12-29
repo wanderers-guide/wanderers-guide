@@ -76,7 +76,7 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
   const rangedAttackBonus = getFinalVariableValue(id, 'RANGED_ATTACK_ROLLS_BONUS').total;
   const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
 
-  const hasBrutal = false; //TODO: hasTraitType('BRUTAL', itemTraits);
+  const hasBrutal = hasTraitType('BRUTAL', itemTraits);
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
   const dexMod = getFinalVariableValue(id, 'ATTRIBUTE_DEX').total;
 
@@ -251,8 +251,14 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
 
   const hasThrown =
     hasTraitType('THROWN', itemTraits) ||
+    hasTraitType('THROWN-5', itemTraits) ||
     hasTraitType('THROWN-10', itemTraits) ||
-    hasTraitType('THROWN-20', itemTraits);
+    hasTraitType('THROWN-15', itemTraits) ||
+    hasTraitType('THROWN-20', itemTraits) ||
+    hasTraitType('THROWN-25', itemTraits) ||
+    hasTraitType('THROWN-30', itemTraits) ||
+    hasTraitType('THROWN-40', itemTraits) ||
+    hasTraitType('THROWN-100', itemTraits);
   const hasSplash = hasTraitType('SPLASH', itemTraits);
   const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
 

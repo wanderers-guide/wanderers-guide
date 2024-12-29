@@ -1,4 +1,4 @@
-import { AbilityBlock, ContentSource, Creature, InventoryItem, Rarity, Size, Trait } from '@typing/content';
+import { AbilityBlock, ContentSource, Creature, InventoryItem, Item, Rarity, Size, Trait } from '@typing/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -36,6 +36,8 @@ import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variab
 import { getBestArmor, isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { hashData, sign } from '@utils/numbers';
 import { findCreatureImage } from '@utils/images';
+import { getWeaponStats } from '@items/weapon-handler';
+import { StoreID } from '@typing/variables';
 
 export async function newImportHandler(source: ContentSource, json: Record<string, any>): Promise<Creature> {
   const creature = {
@@ -114,10 +116,6 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   const { operations: resultOps, items } = await addEquipment(operations, json);
   operations = resultOps;
   creature.inventory!.items = [...creature.inventory!.items, ...items];
-  // Unarmed Attacks
-  const { operations: resultOps2, items: unarmedItems } = await addUnarmedAttacks(operations, json, source);
-  operations = resultOps2;
-  creature.inventory!.items = [...creature.inventory!.items, ...unarmedItems];
   //
 
   creature.operations = operations;
@@ -168,6 +166,11 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
       } satisfies OperationAddBonusToValue);
     }
   }
+
+  // Add Unarmed Attacks (here because we need to adjust based on totals)
+  const attackItems = await addAttacks(STORE_ID, json, source);
+  creature.inventory!.items = [...creature.inventory!.items, ...attackItems];
+  //
 
   // Clean up
   resetVariables(STORE_ID);
@@ -607,22 +610,73 @@ async function addSpells(operations: Operation[], json: Record<string, any>, var
   return operations;
 }
 
-async function addUnarmedAttacks(operations: Operation[], json: Record<string, any>, source: ContentSource) {
+async function addAttacks(id: StoreID, json: Record<string, any>, source: ContentSource) {
   const invItems: InventoryItem[] = [];
   for (const attack of findJsonItems(json, 'melee')) {
-    const traitNames = (attack.system?.traits?.value ?? []) as string[];
+    let traitNames = (attack.system?.traits?.value ?? []) as string[];
 
     const range = (() => {
       const rangeTrait = traitNames.find((trait) => trait.startsWith('range-'));
       return rangeTrait ? parseInt(rangeTrait.replace('range-increment-', '').replace('range-', '')) : null;
     })();
+    if (range !== null) {
+      traitNames = traitNames.filter((trait) => !trait.startsWith('range-'));
+    }
+
+    const reload = (() => {
+      const reloadTrait = traitNames.find((trait) => trait.startsWith('reload-'));
+      return reloadTrait ? parseInt(reloadTrait.replace('reload-', '')) : null;
+    })();
+    if (reload !== null) {
+      traitNames = traitNames.filter((trait) => !trait.startsWith('reload-'));
+    }
 
     const allDamageData = [...Object.values(attack.system?.damageRolls ?? {})] as Record<string, string>[];
     if (allDamageData.length === 0) continue;
     const damageData = allDamageData[0];
     const parsedDamage = parseDiceRoll(damageData?.damage ?? '');
 
-    // Create extra field for damage
+    const item: Item = {
+      id: hashData({ value: crypto.randomUUID() }),
+      created_at: '',
+      name: attack.name,
+      level: 0,
+      rarity: convertToRarity(attack.system?.traits?.rarity),
+      traits: await getTraitIds(traitNames, source, false),
+      description: attack.system?.description?.value ?? '',
+      group: 'WEAPON',
+      size: 'MEDIUM',
+      meta_data: {
+        category: 'unarmed_attack',
+        group: 'brawling',
+        damage: {
+          damageType: damageData?.damageType ?? '',
+          dice: parsedDamage.length > 0 ? parsedDamage[0].dice : 1,
+          die: parsedDamage.length > 0 ? parsedDamage[0].die : '',
+          extra: undefined,
+        },
+        attack_bonus: undefined,
+        bulk: {},
+        //unselectable?: boolean;
+        quantity: 1,
+        range: range ?? undefined,
+        reload: `${reload}` ?? undefined,
+        foundry: {},
+      },
+      operations: [],
+      content_source_id: 1,
+      version: '',
+    };
+
+    // Add adjustments to the attack and damage to properly calculate
+    const weaponStats = getWeaponStats(id, item);
+
+    const attackDiff = attack.system?.bonus?.value
+      ? attack.system.bonus.value - weaponStats.attack_bonus.total[0]
+      : undefined;
+    const damageDiff = parsedDamage.length > 0 ? parsedDamage[0].bonus - weaponStats.damage.bonus.total : undefined;
+
+    // Include attack effects in damage extra
     const processAttackEffect = (effect: string) => {
       effect = effect.toLowerCase().trim().replace(/-/g, ' ');
 
@@ -638,44 +692,18 @@ async function addUnarmedAttacks(operations: Operation[], json: Record<string, a
     };
     const attackEffects = (attack.system?.attackEffects?.value ?? []).map(processAttackEffect);
 
-    let extra = parsedDamage.length > 0 ? `${parsedDamage[0].bonus}` : '';
+    let extra = damageDiff ? `${damageDiff}` : '';
     if (attackEffects.length > 0) {
       extra = `${extra ? `${extra} + ` : ''}${attackEffects.join(', ')}`;
     }
 
+    // Add adjustments
+    item.meta_data!.damage!.extra = extra.trim() ? extra : undefined;
+    item.meta_data!.attack_bonus = attackDiff;
+
     invItems.push({
       id: crypto.randomUUID(),
-      item: {
-        id: hashData({ value: crypto.randomUUID() }),
-        created_at: '',
-        name: attack.name,
-        level: 0,
-        rarity: convertToRarity(attack.system?.traits?.rarity),
-        traits: await getTraitIds(attack.system?.traits?.value ?? [], source, false),
-        description: attack.system?.description?.value ?? '',
-        group: 'WEAPON',
-        size: 'MEDIUM',
-        meta_data: {
-          category: 'unarmed_attack',
-          group: 'brawling',
-          damage: {
-            damageType: damageData?.damageType ?? '',
-            dice: parsedDamage.length > 0 ? parsedDamage[0].dice : 1,
-            die: parsedDamage.length > 0 ? parsedDamage[0].die : '',
-            extra: extra.trim() ? extra : undefined,
-          },
-          attack_bonus: attack.system?.bonus?.value ?? undefined,
-          bulk: {},
-          //unselectable?: boolean;
-          quantity: 1,
-          range: range ?? undefined,
-          //reload?: string;
-          foundry: {},
-        },
-        operations: [],
-        content_source_id: 1,
-        version: '',
-      },
+      item: item,
       is_formula: false,
       is_equipped: true,
       is_invested: false,
@@ -684,7 +712,7 @@ async function addUnarmedAttacks(operations: Operation[], json: Record<string, a
     });
   }
 
-  return { operations: operations, items: invItems };
+  return invItems;
 }
 
 async function addEquipment(operations: Operation[], json: Record<string, any>) {
@@ -703,7 +731,7 @@ async function addEquipment(operations: Operation[], json: Record<string, any>) 
       id: crypto.randomUUID(),
       item: _.cloneDeep(item),
       is_formula: false,
-      is_equipped: isItemEquippable(item),
+      is_equipped: false, // isItemEquippable(item), TODO: Fix armor adjusting AC more than supposed to
       is_invested: isItemInvestable(item),
       is_implanted: isItemImplantable(item),
       container_contents: [],
