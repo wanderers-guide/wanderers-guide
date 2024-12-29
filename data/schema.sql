@@ -426,7 +426,9 @@ CREATE TABLE public.encounter (
     user_id uuid NOT NULL,
     campaign_id bigint,
     combatants json NOT NULL,
-    meta_data json NOT NULL
+    meta_data json NOT NULL,
+    color character varying NOT NULL,
+    icon character varying NOT NULL
 );
 
 
