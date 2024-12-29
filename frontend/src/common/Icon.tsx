@@ -127,6 +127,7 @@ import {
   IconPassword,
   IconShieldLockFilled,
   IconTimeline,
+  IconUserCircle,
 } from '@tabler/icons-react';
 import * as GiIcons from 'react-icons/gi';
 import { IconType } from 'react-icons/lib';
@@ -137,6 +138,7 @@ const allGameIcons = Object.entries(GiIcons).map(([name, Component]) => ({
 
 // Tabler Icons
 const tablerIcons: Record<string, (props: TablerIconsProps) => JSX.Element> = {
+  avatar: IconUserCircle,
   sphere: IconSphere,
   three: IconBrandThreejs,
   safari: IconBrandSafari,

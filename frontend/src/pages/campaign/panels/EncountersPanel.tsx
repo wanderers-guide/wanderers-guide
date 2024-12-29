@@ -48,6 +48,7 @@ import {
   IconCheck,
   IconCylinder,
   IconDownload,
+  IconExternalLink,
   IconPlus,
   IconSettings,
   IconSword,
@@ -868,7 +869,7 @@ function CombatantCard(props: {
           gap={2}
           style={{
             position: 'absolute',
-            top: 10,
+            top: 6,
             right: 10,
           }}
         >
@@ -876,16 +877,12 @@ function CombatantCard(props: {
             Lvl. {props.combatant.data.level}
           </Text>
           <ActionIcon size='sm' variant='transparent' radius={100} color='dark.3' onClick={() => {}}>
-            {props.combatant.ally ? (
-              <IconAtom2Filled size='0.9rem' stroke={1} />
-            ) : (
-              <IconSword size='1.0rem' stroke={2} />
-            )}
+            {props.combatant.ally ? <></> : <IconSword size='1.0rem' stroke={2} />}
           </ActionIcon>
         </Group>
 
         <DisplayIcon
-          strValue={props.combatant.data.details?.image_url}
+          strValue={props.combatant.data.details?.image_url ?? 'icon|||avatar|||#373A40'}
           width={40}
           iconStyles={{
             objectFit: 'contain',
@@ -893,9 +890,16 @@ function CombatantCard(props: {
         />
 
         <Box pr={5} style={{ flex: 1 }}>
-          <Text size='sm' fw={600} span>
-            {props.combatant.data.name}
-          </Text>
+          <Group gap={1}>
+            <Text size='sm' fw={600} span>
+              {props.combatant.data.name}
+            </Text>
+            {props.combatant.type === 'CHARACTER' && (
+              <ActionIcon variant='transparent' size='xs' radius='xl' color='gray.6' aria-label='Open Character Sheet'>
+                <IconExternalLink style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon>
+            )}
+          </Group>
 
           {props.computed && (
             <Group gap={5}>

@@ -1,5 +1,4 @@
-import { Button, Divider, Group, ScrollArea, Select, Stack, Text, TextInput } from '@mantine/core';
-import { getHotkeyHandler } from '@mantine/hooks';
+import { Button, Divider, Group, ScrollArea, Select, Stack, Text } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
 import { getCombatantStoreID, PopulatedCombatant } from '@pages/campaign/panels/EncountersPanel';
 import { sign } from '@utils/numbers';
@@ -7,7 +6,6 @@ import { toLabel } from '@utils/strings';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
-import { labelToVariable } from '@variables/variable-utils';
 import { useEffect, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
 
@@ -76,7 +74,7 @@ export default function InitiativeRollModal({
 
       return options
         .map((skill) => {
-          const value = getFinalProfValue(id, skill);
+          const value = getFinalProfValue(STORE_ID, skill);
           return {
             value: skill,
             label: `${toLabel(skill)}, ${value}`,
