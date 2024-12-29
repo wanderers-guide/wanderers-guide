@@ -757,5 +757,9 @@ function findJsonItems(json: Record<string, any>, type: string): Record<string, 
 }
 
 export function findCreatureTraits(creature: Creature) {
-  return creature.operations?.filter((op) => op.type === 'giveTrait').map((op) => op.data.traitId) ?? [];
+  return (
+    (creature.operations?.filter((op) => op.type === 'giveTrait') as OperationGiveTrait[]).map(
+      (op) => op.data.traitId
+    ) ?? []
+  );
 }

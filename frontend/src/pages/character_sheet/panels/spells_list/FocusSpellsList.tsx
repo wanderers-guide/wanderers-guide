@@ -198,6 +198,8 @@ export default function FocusSpellsList(props: {
                       {spells[rank].map((spell, index) => (
                         <SpellListEntrySection
                           key={index}
+                          id={props.id}
+                          entity={props.entity}
                           spell={{
                             ...spell,
                             // Add focus trait in case it doesn't have it

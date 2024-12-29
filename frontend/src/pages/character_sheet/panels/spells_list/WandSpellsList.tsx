@@ -147,6 +147,8 @@ export default function WandSpellsList(props: {
             {processedWands.map((wand, index) => (
               <SpellListEntrySection
                 key={index}
+                id={props.id}
+                entity={props.entity}
                 spell={wand.spell.spell}
                 prefix={`${wand.item.item.name} — `}
                 exhausted={isItemBroken(wand.item.item)}

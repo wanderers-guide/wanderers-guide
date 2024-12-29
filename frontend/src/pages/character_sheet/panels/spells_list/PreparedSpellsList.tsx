@@ -188,6 +188,8 @@ export default function PreparedSpellsList(props: {
                       {slots[rank].map((slot, index) => (
                         <SpellListEntrySection
                           key={index}
+                          id={props.id}
+                          entity={props.entity}
                           spell={slot.spell}
                           exhausted={!!slot.exhausted}
                           tradition={props.source!.tradition}

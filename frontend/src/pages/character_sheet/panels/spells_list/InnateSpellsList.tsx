@@ -19,6 +19,7 @@ import { StoreID } from '@typing/variables';
 
 export default function InnateSpellsList(props: {
   id: StoreID;
+  entity: LivingEntity | null;
   setEntity: SetterOrUpdater<LivingEntity | null>;
   //
   index: string;
@@ -129,6 +130,8 @@ export default function InnateSpellsList(props: {
                       {innateSpells[rank].map((innate, index) => (
                         <SpellListEntrySection
                           key={index}
+                          id={props.id}
+                          entity={props.entity}
                           spell={innate.spell}
                           exhausted={innate.casts_current >= innate.casts_max && innate.casts_max !== 0}
                           tradition={innate.tradition}

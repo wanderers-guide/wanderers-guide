@@ -100,6 +100,8 @@ export default function RitualSpellsList(props: {
               .map((spell, index) => (
                 <SpellListEntrySection
                   key={index}
+                  id={props.id}
+                  entity={props.entity}
                   spell={spell}
                   exhausted={false}
                   tradition={'NONE'}

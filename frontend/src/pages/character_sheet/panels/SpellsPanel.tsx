@@ -682,7 +682,13 @@ function SpellList(props: {
 
   if (props.type === 'INNATE' && props.extra?.innates) {
     return (
-      <InnateSpellsList {...props} castSpell={castSpell} innateSpells={innateSpells} setEntity={props.setEntity} />
+      <InnateSpellsList
+        {...props}
+        castSpell={castSpell}
+        innateSpells={innateSpells}
+        entity={props.entity}
+        setEntity={props.setEntity}
+      />
     );
   }
 

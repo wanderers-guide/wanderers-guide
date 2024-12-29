@@ -5,7 +5,8 @@ import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { en } from '@supabase/auth-ui-shared';
 import { LivingEntity, Spell } from '@typing/content';
-import { SetterOrUpdater, StoreID, useRecoilState } from 'recoil';
+import { StoreID } from '@typing/variables';
+import { useRecoilState } from 'recoil';
 
 export default function SpellListEntrySection(props: {
   id: StoreID;

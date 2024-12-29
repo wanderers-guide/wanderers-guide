@@ -220,6 +220,8 @@ export default function StaffSpellsList(props: {
                       {detectedSpells[rank].map((record, index) => (
                         <SpellListEntrySection
                           key={index}
+                          id={props.id}
+                          entity={props.entity}
                           spell={record.spell}
                           exhausted={
                             record.spell.rank > 0 &&

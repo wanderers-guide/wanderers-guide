@@ -231,6 +231,8 @@ export default function SpontaneousSpellsList(props: {
                       {spells[rank]?.map((spell, index) => (
                         <SpellListEntrySection
                           key={index}
+                          id={props.id}
+                          entity={props.entity}
                           spell={spell}
                           exhausted={!slots[rank].find((s) => !s.exhausted)}
                           tradition={props.source!.tradition}
