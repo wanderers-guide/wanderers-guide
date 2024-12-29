@@ -622,6 +622,27 @@ async function addUnarmedAttacks(operations: Operation[], json: Record<string, a
     const damageData = allDamageData[0];
     const parsedDamage = parseDiceRoll(damageData?.damage ?? '');
 
+    // Create extra field for damage
+    const processAttackEffect = (effect: string) => {
+      effect = effect.toLowerCase().trim().replace(/-/g, ' ');
+
+      if (effect === 'grab') {
+        effect = 'improved grab';
+      } else if (effect === 'push') {
+        effect = 'improved push';
+      } else if (effect === 'knockdown') {
+        effect = 'improved knockdown';
+      }
+
+      return toLabel(effect);
+    };
+    const attackEffects = (attack.system?.attackEffects?.value ?? []).map(processAttackEffect);
+
+    let extra = parsedDamage.length > 0 ? `${parsedDamage[0].bonus}` : '';
+    if (attackEffects.length > 0) {
+      extra = `${extra ? `${extra} + ` : ''}${attackEffects.join(', ')}`;
+    }
+
     invItems.push({
       id: crypto.randomUUID(),
       item: {
@@ -636,11 +657,12 @@ async function addUnarmedAttacks(operations: Operation[], json: Record<string, a
         size: 'MEDIUM',
         meta_data: {
           category: 'unarmed_attack',
+          group: 'brawling',
           damage: {
             damageType: damageData?.damageType ?? '',
             dice: parsedDamage.length > 0 ? parsedDamage[0].dice : 1,
             die: parsedDamage.length > 0 ? parsedDamage[0].die : '',
-            extra: parsedDamage.length > 0 ? `${parsedDamage[0].bonus}` : undefined,
+            extra: extra.trim() ? extra : undefined,
           },
           attack_bonus: attack.system?.bonus?.value ?? undefined,
           bulk: {},

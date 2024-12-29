@@ -125,6 +125,11 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
   FATAL_D6: 2760,
   FATAL_D4: 2761,
   PLANT: 1654,
+  REACH_5: 1573,
+  REACH_10: 4173,
+  REACH_15: 4174,
+  REACH_20: 4175,
+  REACH_25: 4176,
 };
 
 export async function getTraitIds(traitNames: string[], source: ContentSource, createIfNotFound = true) {

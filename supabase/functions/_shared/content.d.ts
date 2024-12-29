@@ -179,40 +179,6 @@ interface Spell {
   version: string;
 }
 
-interface Creature {
-  id: number;
-  created_at: string;
-  name: string;
-  level: number;
-  rarity: Rarity;
-  size: Size;
-  traits: number[];
-  inventory?: Inventory;
-  notes?: {
-    contents: JSONContent;
-  };
-  details: {
-    image_url?: string;
-    background_image_url?: string;
-    conditions?: Condition[];
-    description: string;
-  };
-  roll_history?: Record<string, any>; // TODO
-  operations: Operation[] | undefined;
-  abilities?: AbilityBlock[];
-  spells?: {
-    slots: SpellSlot[];
-    list: SpellListEntry[];
-    // The number of focus points
-    focus_point_current: number;
-    // Used for tracking how many times an innate spell has been cast
-    innate_casts: SpellInnateEntry[];
-  };
-  meta_data?: Record<string, any>; // TODO
-  content_source_id: number;
-  version: string;
-}
-
 interface Class {
   id: number;
   created_at: string;
@@ -277,31 +243,153 @@ interface AbilityBlock {
   version?: string;
 }
 
-interface Character {
-  id: number;
-  created_at: string;
-  user_id: string;
+interface LivingEntity {
+  id?: number;
   name: string;
   level: number;
   experience: number;
+  inventory?: Inventory;
   hp_current: number;
   hp_temp: number;
-  hero_points: number;
   stamina_current: number;
   resolve_current: number;
-  inventory: Record<string, any>; // TODO
-  notes: Record<string, any>; // TODO
-  details: Record<string, any>; // TODO
+  details?: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+  };
+  notes?: {
+    pages: {
+      name: string;
+      icon: string;
+      color: string;
+      contents: JSONContent;
+    }[];
+  };
+  roll_history?: {
+    rolls: {
+      type: string;
+      label: string;
+      result: number;
+      bonus: number;
+      timestamp: number;
+    }[];
+  };
+  spells?: {
+    slots: SpellSlot[];
+    list: SpellListEntry[];
+    // The number of focus points
+    focus_point_current: number;
+    // Used for tracking how many times an innate spell has been cast
+    innate_casts: SpellInnateEntry[];
+  };
+  operation_data?: {
+    selections?: Record<string, string>; // background_<selector op UUID>.. -> <select option op UUID>
+    notes?: Record<string, string>; // TODO <op UUID> -> string
+  };
+  meta_data?: {
+    given_item_ids?: number[];
+    reset_hp?: boolean;
+    calculated_stats?: {
+      hp_max?: number;
+      stamina_max?: number;
+      resolve_max?: number;
+      ac?: number;
+      profs: Record<string, { total: number; type: ProficiencyType }>;
+    };
+  };
+}
+
+interface Creature extends LivingEntity {
+  id: number;
+  created_at: string;
+  rarity: Rarity;
+  details: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+    description: string;
+  };
+  operations: Operation[] | undefined;
+  abilities_base?: AbilityBlock[];
+  abilities_added?: number[];
+  content_source_id: number;
+  deprecated?: boolean;
+  version: string;
+}
+
+interface Character extends LivingEntity {
+  id: number;
+  created_at: string;
+  campaign_id?: number | null;
+  user_id: string;
+  hero_points: number;
+  details?: {
+    image_url?: string;
+    background_image_url?: string;
+    conditions?: Condition[];
+    dice?: {
+      default_theme?: string;
+      opened_default_presets?: boolean;
+      presets?: {
+        id: string;
+        name: string;
+        dice: Dice[];
+      }[];
+    };
+    sheet_theme?: {
+      color: string;
+    };
+    ancestry?: Ancestry;
+    background?: Background;
+    class?: Class;
+    class_2?: Class;
+    info?: {
+      appearance?: string;
+      personality?: string;
+      alignment?: string;
+      beliefs?: string;
+      age?: string;
+      height?: string;
+      weight?: string;
+      gender?: string;
+      pronouns?: string;
+      faction?: string;
+      reputation?: number;
+      ethnicity?: string;
+      nationality?: string;
+      birthplace?: string;
+      organized_play_id?: string;
+      organized_play_adventures?: SocietyAdventureEntry[];
+    };
+  };
   campaign_id?: number;
-  roll_history: Record<string, any>; // TODO
-  custom_operations: Operation[];
-  meta_data: Record<string, any>; // TODO
-  options: Record<string, any>; // TODO
-  variants: Record<string, any>; // TODO
-  content_sources: Record<string, any>; // TODO
-  operation_data: Record<string, any>; // TODO
-  spells: Record<string, any>; // TODO
-  companions: Record<string, any>; // TODO
+  custom_operations?: Operation[];
+  options?: {
+    is_public?: boolean;
+    auto_detect_prerequisites?: boolean;
+    auto_heighten_spells?: boolean;
+    class_archetypes?: boolean;
+    custom_operations?: boolean;
+    dice_roller?: boolean;
+    ignore_bulk_limit?: boolean;
+    alternate_ancestry_boosts?: boolean;
+    voluntary_flaws?: boolean;
+    organized_play?: boolean;
+  };
+  variants?: {
+    ancestry_paragon?: boolean;
+    proficiency_without_level?: boolean;
+    proficiency_half_level?: boolean;
+    stamina?: boolean;
+    free_archetype?: boolean;
+    dual_class?: boolean;
+    gradual_attribute_boosts?: boolean;
+  };
+  content_sources?: {
+    enabled?: number[];
+  };
+  companions?: Record<string, any>; // TODO
 }
 
 interface Campaign {
