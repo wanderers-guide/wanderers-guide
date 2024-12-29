@@ -175,8 +175,6 @@ export function CreateCombatantModal(props: {
   ];
 
   const onSubmit = async (values: typeof form.values) => {
-    console.log(values);
-
     props.onComplete({
       ...values,
       creature: {

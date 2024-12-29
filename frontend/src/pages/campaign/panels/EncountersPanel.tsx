@@ -1288,7 +1288,7 @@ export function calculateDifficulty(encounter: Encounter, combatants: PopulatedC
   return {
     status: difficulty,
     color: color,
-    xp: xpBudget,
+    xp: Math.floor(xpBudget),
   };
 }
 
