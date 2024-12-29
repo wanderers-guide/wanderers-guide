@@ -29,10 +29,14 @@ export default function InitiativeRollModal({
     }
   };
 
+  const isEmptyInitiative = (combatant: PopulatedCombatant) => {
+    return combatant.initiative === undefined || isNaN(combatant.initiative) || combatant.initiative === null;
+  };
+
   // Prefill rollBonuses as needed for default perceptions
   useEffect(() => {
     for (const combatant of innerProps.combatants) {
-      if (combatant.initiative === undefined) {
+      if (isEmptyInitiative(combatant)) {
         onChangeOption(combatant, 'PERCEPTION');
       }
     }
@@ -107,7 +111,7 @@ export default function InitiativeRollModal({
               label={combatant.data.name}
               placeholder='Skip'
               data={getOptions(combatant)}
-              defaultValue={combatant.initiative === undefined ? 'PERCEPTION' : null}
+              defaultValue={isEmptyInitiative(combatant) ? 'PERCEPTION' : null}
               allowDeselect
               clearable
               onChange={(value) => onChangeOption(combatant, value)}
