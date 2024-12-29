@@ -32,6 +32,15 @@ export function setterOrUpdaterToValue<T>(val: T | ((currVal: T | null) => T | n
   return val;
 }
 
+export function setStateActionToValue<T>(val: React.SetStateAction<T>, old: T): T {
+  if (typeof val === 'function') {
+    // Narrowing to a function and calling with the old value
+    return (val as (prevState: T) => T)(old);
+  }
+  // If not a function, return the plain value
+  return val;
+}
+
 export function instanceOfOperationSelectOptionCustom(object: any): object is OperationSelectOptionCustom {
   if (!object) return false;
   return 'type' in object && 'title' in object && 'description' in object && 'operations' in object;

@@ -539,6 +539,8 @@ function SectionPanels(props: {
 
             {activeTab === 'inventory' && (
               <InventoryPanel
+                id='CHARACTER'
+                entity={character}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
@@ -864,6 +866,8 @@ function SectionPanels(props: {
 
             <Tabs.Panel value='inventory'>
               <InventoryPanel
+                id='CHARACTER'
+                entity={character}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}

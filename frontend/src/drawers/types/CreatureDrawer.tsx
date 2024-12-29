@@ -54,12 +54,12 @@ import {
   IconDualScreen,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature } from '@typing/content';
+import { Creature, Inventory } from '@typing/content';
 import { OperationCharacterResultPackage, OperationCreatureResultPackage } from '@typing/operations';
 import { StoreID, VariableListStr, VariableStr } from '@typing/variables';
 import { convertToSize } from '@upload/foundry-utils';
 import { toLabel } from '@utils/strings';
-import { convertToSetEntity, isTruthy } from '@utils/type-fixing';
+import { convertToSetEntity, isTruthy, setStateActionToValue, setterOrUpdaterToValue } from '@utils/type-fixing';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getAllAncestryTraitVariables, getVariable, setVariable } from '@variables/variable-manager';
 import _ from 'lodash';
@@ -255,13 +255,20 @@ export function CreatureDrawerContent(props: {
       }
     );
   };
-  const setInventory = (updateInventory: any) => {
+  const setInventory = (call: React.SetStateAction<Inventory>) => {
+    // Update source immediately, needed for some item changes which close the drawer
+    if (creature) {
+      props.data.updateCreature?.({
+        ...creature,
+        inventory: setStateActionToValue(call, getInventory(creature)),
+      });
+    }
+    // Update normal local state, will update source again after delay
     setCreature((prev) => {
       if (!prev) return null;
       return {
         ...prev,
-        inventory:
-          typeof updateInventory === 'function' && prev.inventory ? updateInventory(prev.inventory) : undefined,
+        inventory: setStateActionToValue(call, getInventory(creature)),
       };
     });
   };
@@ -334,6 +341,8 @@ export function CreatureDrawerContent(props: {
 
           {activeTab === 'inventory' && (
             <InventoryPanel
+              id={STORE_ID}
+              entity={creature}
               content={content}
               panelHeight={panelHeight}
               panelWidth={panelWidth}

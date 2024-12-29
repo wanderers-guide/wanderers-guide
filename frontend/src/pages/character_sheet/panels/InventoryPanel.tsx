@@ -2,7 +2,6 @@ import CopperCoin from '@assets/images/currency/copper.png';
 import GoldCoin from '@assets/images/currency/gold.png';
 import PlatinumCoin from '@assets/images/currency/platinum.png';
 import SilverCoin from '@assets/images/currency/silver.png';
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { ItemIcon } from '@common/ItemIcon';
@@ -53,14 +52,17 @@ import { openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
-import { Character, ContentPackage, Inventory, InventoryItem, Item } from '@typing/content';
+import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import _ from 'lodash-es';
 import { useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 export default function InventoryPanel(props: {
+  id: StoreID;
+  entity: LivingEntity | null;
   content: ContentPackage;
   panelHeight: number;
   panelWidth: number;
@@ -69,7 +71,6 @@ export default function InventoryPanel(props: {
   zIndex?: number;
 }) {
   const theme = useMantineTheme();
-  const [character, setCharacter] = useRecoilState(characterState);
   const isPhone = isPhoneSized(props.panelWidth);
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -77,7 +78,7 @@ export default function InventoryPanel(props: {
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
 
   const visibleInvItems = props.inventory.items.filter(
-    (invItem) => !(!isItemVisible('CHARACTER', invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
+    (invItem) => !(!isItemVisible(props.id, invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
   );
   const invItems = searchQuery.trim()
     ? visibleInvItems.filter((invItem) => {
@@ -108,7 +109,7 @@ export default function InventoryPanel(props: {
       ),
       innerProps: {
         onAddItem: async (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
-          if (!character) return;
+          if (!props.entity) return;
           if (type === 'BUY') {
             setConfirmBuyItem({ item });
           } else {
@@ -124,7 +125,7 @@ export default function InventoryPanel(props: {
     openDrawer({
       type: 'manage-coins',
       data: {
-        coins: character?.inventory?.coins,
+        coins: props.entity?.inventory?.coins,
         onUpdate: (coins: { cp: number; sp: number; gp: number; pp: number }) => {
           props.setInventory((prev) => ({
             ...prev,
@@ -162,19 +163,19 @@ export default function InventoryPanel(props: {
 
               <Menu.Dropdown>
                 <Menu.Label>
-                  Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}{' '}
+                  Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit(props.id)}{' '}
                 </Menu.Label>
-                <Menu.Item
-                  leftSection={<IconCoins style={{ width: rem(14), height: rem(14) }} />}
-                  onClick={() => openManageCoinsDrawer()}
-                >
-                  Manage Currency
-                </Menu.Item>
                 <Menu.Item
                   leftSection={<IconPlus style={{ width: rem(14), height: rem(14) }} />}
                   onClick={() => openAddItemDrawer()}
                 >
                   Add Item
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<IconCoins style={{ width: rem(14), height: rem(14) }} />}
+                  onClick={() => openManageCoinsDrawer()}
+                >
+                  Manage Currency
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
@@ -190,9 +191,9 @@ export default function InventoryPanel(props: {
                   },
                 }}
               >
-                Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit('CHARACTER')}
+                Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit(props.id)}
               </Badge>
-              <CurrencySection character={character} onClick={() => openManageCoinsDrawer()} />
+              <CurrencySection entity={props.entity} onClick={() => openManageCoinsDrawer()} />
               <Button
                 color='dark.5'
                 style={{ borderColor: theme.colors.dark[4] }}
@@ -267,6 +268,8 @@ export default function InventoryPanel(props: {
                       <Accordion.Control>
                         <Box pr={5}>
                           <InvItemOption
+                            id={props.id}
+                            entity={props.entity}
                             isPhone={isPhone}
                             hideSections
                             invItem={invItem}
@@ -337,6 +340,8 @@ export default function InventoryPanel(props: {
                               }}
                             >
                               <InvItemOption
+                                id={props.id}
+                                entity={props.entity}
                                 isPhone={isPhone}
                                 invItem={containedItem}
                                 preventEquip
@@ -394,6 +399,8 @@ export default function InventoryPanel(props: {
                         }}
                       >
                         <InvItemOption
+                          id={props.id}
+                          entity={props.entity}
                           isPhone={isPhone}
                           invItem={invItem}
                           onEquip={(invItem) => {
@@ -437,7 +444,7 @@ export default function InventoryPanel(props: {
           inventory={props.inventory}
           item={confirmBuyItem.item}
           onConfirm={async (coins) => {
-            if (!character) return;
+            if (!props.entity) return;
             await handleAddItem(props.setInventory, confirmBuyItem.item, false);
 
             // Update coins
@@ -455,11 +462,11 @@ export default function InventoryPanel(props: {
   );
 }
 
-function CurrencySection(props: { character: Character | null; onClick?: () => void }) {
-  const pp = props.character?.inventory?.coins.pp ?? 0;
-  const gp = props.character?.inventory?.coins.gp ?? 0;
-  const sp = props.character?.inventory?.coins.sp ?? 0;
-  const cp = props.character?.inventory?.coins.cp ?? 0;
+function CurrencySection(props: { entity: LivingEntity | null; onClick?: () => void }) {
+  const pp = props.entity?.inventory?.coins.pp ?? 0;
+  const gp = props.entity?.inventory?.coins.gp ?? 0;
+  const sp = props.entity?.inventory?.coins.sp ?? 0;
+  const cp = props.entity?.inventory?.coins.cp ?? 0;
 
   const displayAll = isPlayingStarfinder() ? false : true;
 
@@ -531,6 +538,8 @@ export function CoinSection(props: {
 
 function InvItemOption(props: {
   invItem: InventoryItem;
+  id: StoreID;
+  entity: LivingEntity | null;
   onEquip?: (invItem: InventoryItem) => void;
   onInvest?: (invItem: InventoryItem) => void;
   onViewItem?: (invItem: InventoryItem) => void;
@@ -539,9 +548,8 @@ function InvItemOption(props: {
   isPhone?: boolean;
 }) {
   const theme = useMantineTheme();
-  const character = useRecoilValue(characterState);
 
-  const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats('CHARACTER', props.invItem.item) : null;
+  const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats(props.id, props.invItem.item) : null;
 
   return (
     <Grid w={'100%'}>
@@ -628,7 +636,7 @@ function InvItemOption(props: {
               size='compact-xs'
               variant={props.invItem.is_invested ? 'subtle' : 'outline'}
               color={props.invItem.is_invested ? 'gray.7' : undefined}
-              disabled={!props.invItem.is_invested && reachedInvestedLimit('CHARACTER', character?.inventory)}
+              disabled={!props.invItem.is_invested && reachedInvestedLimit(props.id, props.entity?.inventory)}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -644,7 +652,7 @@ function InvItemOption(props: {
               size='compact-xs'
               variant={props.invItem.is_implanted ? 'subtle' : 'outline'}
               color={props.invItem.is_implanted ? 'gray.7' : undefined}
-              disabled={!props.invItem.is_implanted && reachedImplantLimit('CHARACTER', character?.inventory)}
+              disabled={!props.invItem.is_implanted && reachedImplantLimit(props.id, props.entity?.inventory)}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();

@@ -147,8 +147,10 @@ export default function CreatureAbilitiesPanel(props: {
                           showButton={false}
                           onClick={() => {
                             openDrawer({
-                              type: 'generic',
-                              data: ability,
+                              type: 'action',
+                              data: {
+                                action: ability,
+                              },
                               extra: { addToHistory: true },
                             });
                           }}
