@@ -63,4 +63,9 @@ const drawerState = selector({
   },
 });
 
-export { userIconState, drawerState };
+const drawerZIndexState = atom({
+  key: 'drawer-z-index',
+  default: null as number | null,
+});
+
+export { userIconState, drawerState, drawerZIndexState };

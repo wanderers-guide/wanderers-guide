@@ -49,6 +49,7 @@ import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
+import { CREATURE_DRAWER_ZINDEX } from './CreatureDrawer';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
   const id = props.data.id;
@@ -458,7 +459,7 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'creature',
-                        data: { id: a.id, zIndex: 495 },
+                        data: { id: a.id, zIndex: CREATURE_DRAWER_ZINDEX },
                         extra: { addToHistory: true },
                       });
                     }}

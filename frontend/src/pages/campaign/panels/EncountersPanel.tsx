@@ -8,6 +8,7 @@ import { applyConditions, compiledConditions } from '@conditions/condition-handl
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage } from '@content/content-store';
 import { defineDefaultSourcesForUser } from '@content/homebrew';
+import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { getBestArmor } from '@items/inv-utils';
 import {
   Tabs,
@@ -856,7 +857,7 @@ function CombatantCard(props: {
               data: {
                 STORE_ID: getCombatantStoreID(props.combatant),
                 creature: props.combatant.creature!,
-                zIndex: 495,
+                zIndex: CREATURE_DRAWER_ZINDEX,
                 updateCreature: (creature: Creature) => {
                   props.updateEntity(creature);
                 },

@@ -4,7 +4,7 @@ import { AddBonusToValOperation } from '@common/operations/variables/AddBonusToV
 import { SetValOperation } from '@common/operations/variables/SetValOperation';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { DISCORD_URL } from '@constants/data';
-import { fetchContentById, fetchTraits } from '@content/content-store';
+import { fetchContentAll, fetchContentById, fetchTraits } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
   Anchor,
@@ -43,6 +43,10 @@ import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
 import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';
+import { isTruthy } from '@utils/type-fixing';
+import { drawerState } from '@atoms/navAtoms';
+import { useRecoilState } from 'recoil';
+import { selectContent } from '@common/select/SelectContent';
 
 /**
  * Modal for creating or editing a creature
@@ -68,10 +72,12 @@ export function CreateCreatureModal(props: {
   const theme = useMantineTheme();
   const editing = (props.editId !== undefined && props.editId !== -1) || props.editCreature !== undefined;
 
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
-  const [openedTotals, { toggle: toggleTotals }] = useDisclosure(false);
-  const [openedAbilities, { toggle: toggleAbilities }] = useDisclosure(false);
+  const [openedBaseAbilities, { toggle: toggleBaseAbilities }] = useDisclosure(false);
+  const [openedAddedAbilities, { toggle: toggleAddedAbilities }] = useDisclosure(false);
+
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
 
@@ -106,6 +112,15 @@ export function CreateCreatureModal(props: {
       return creature;
     },
     enabled: editing,
+    refetchOnWindowFocus: false,
+  });
+
+  // Get all ability blocks
+  const { data: abilityBlocks } = useQuery({
+    queryKey: [`get-all-ability-blocks`],
+    queryFn: async () => {
+      return await fetchContentAll<AbilityBlock>('ability-block');
+    },
     refetchOnWindowFocus: false,
   });
 
@@ -163,6 +178,10 @@ export function CreateCreatureModal(props: {
     setDescription(undefined);
   };
 
+  const addedAbilities = (form.values.abilities_added ?? [])
+    .map((id) => abilityBlocks?.find((ab) => ab.id === id))
+    .filter(isTruthy);
+
   return (
     <Modal
       opened={props.opened}
@@ -176,7 +195,7 @@ export function CreateCreatureModal(props: {
           paddingRight: 2,
         },
       }}
-      size={openedOperations || openedTotals ? 'xl' : 'md'}
+      size={openedOperations ? 'xl' : 'md'}
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
@@ -207,51 +226,27 @@ export function CreateCreatureModal(props: {
                   w={70}
                   {...form.getInputProps('level')}
                 />
+                <Select
+                  label='Rarity'
+                  required
+                  data={[
+                    { value: 'COMMON', label: 'Common' },
+                    { value: 'UNCOMMON', label: 'Uncommon' },
+                    { value: 'RARE', label: 'Rare' },
+                    { value: 'UNIQUE', label: 'Unique' },
+                  ]}
+                  w={140}
+                  {...form.getInputProps('rarity')}
+                />
               </Group>
-            </Group>
-            <Group wrap='nowrap' align='flex-start'>
-              <Select
-                label='Rarity'
-                required
-                data={[
-                  { value: 'COMMON', label: 'Common' },
-                  { value: 'UNCOMMON', label: 'Uncommon' },
-                  { value: 'RARE', label: 'Rare' },
-                  { value: 'UNIQUE', label: 'Unique' },
-                ]}
-                w={140}
-                {...form.getInputProps('rarity')}
-              />
-              <TraitsInput
-                label='Traits'
-                value={traits.map((trait) => trait.name)}
-                onTraitChange={(traits) => setTraits(traits)}
-                style={{ flex: 1 }}
-              />
-            </Group>
-
-            <Group wrap='nowrap'>
-              <Select
-                label='Size'
-                required
-                data={[
-                  { value: 'TINY', label: 'Tiny' },
-                  { value: 'SMALL', label: 'Small' },
-                  { value: 'MEDIUM', label: 'Medium' },
-                  { value: 'LARGE', label: 'Large' },
-                  { value: 'HUGE', label: 'Huge' },
-                  { value: 'GARGANTUAN', label: 'Gargantuan' },
-                ]}
-                {...form.getInputProps('size')}
-              />
             </Group>
 
             <Divider
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button variant={openedAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Abilities
+                  <Button variant={openedBaseAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                    Base Abilities
                   </Button>
                   {form.values.abilities_base && form.values.abilities_base.length > 0 && (
                     <Badge variant='light' color={theme.primaryColor} size='xs'>
@@ -261,29 +256,25 @@ export function CreateCreatureModal(props: {
                 </Group>
               }
               labelPosition='left'
-              onClick={toggleAbilities}
+              onClick={toggleBaseAbilities}
             />
-            <Collapse in={openedAbilities}>
+            <Collapse in={openedBaseAbilities}>
               <Stack gap={10}>
-                <Group justify='flex-end' wrap='nowrap'>
-                  <Group wrap='nowrap' w={130}>
-                    <Button
-                      size='compact-sm'
-                      variant='light'
-                      fullWidth
-                      onClick={() => {
-                        setOpenedModal(-1);
-                      }}
-                    >
-                      Create Ability
-                    </Button>
-                  </Group>
-                </Group>
+                <Button
+                  size='sm'
+                  variant='light'
+                  fullWidth
+                  onClick={() => {
+                    setOpenedModal(-1);
+                  }}
+                >
+                  Create Custom Ability
+                </Button>
 
                 {form.values.abilities_base?.map((ability, i) => (
                   <Box key={i}>
                     <Button
-                      variant='outline'
+                      variant='subtle'
                       size='compact-sm'
                       fullWidth
                       onClick={() => {
@@ -311,89 +302,68 @@ export function CreateCreatureModal(props: {
               my='xs'
               label={
                 <Group gap={3} wrap='nowrap'>
-                  <Button variant={openedTotals ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Stat. Totals
+                  <Button variant={openedAddedAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                    Added Abilities
                   </Button>
-                  {totaledOperations.length > 0 && (
+                  {form.values.abilities_added && form.values.abilities_added.length > 0 && (
                     <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {totaledOperations.length}
+                      {form.values.abilities_added.length}
                     </Badge>
                   )}
                 </Group>
               }
               labelPosition='left'
-              onClick={toggleTotals}
+              onClick={toggleAddedAbilities}
             />
-            <Collapse in={openedTotals}>
+            <Collapse in={openedAddedAbilities}>
               <Stack gap={10}>
-                <Group justify='flex-end' wrap='nowrap'>
-                  <Group wrap='nowrap' w={280}>
-                    <Button
-                      size='compact-sm'
-                      variant='light'
-                      fullWidth
-                      onClick={() => {
-                        setTotaledOperations((prev) => [
-                          ...prev,
-                          createDefaultOperation<OperationSetValue>('setValue'),
-                        ]);
-                      }}
-                    >
-                      Set Stat
-                    </Button>
-                    <Button
-                      size='compact-sm'
-                      variant='light'
-                      fullWidth
-                      onClick={() => {
-                        setTotaledOperations((prev) => [
-                          ...prev,
-                          createDefaultOperation<OperationAddBonusToValue>('addBonusToValue'),
-                        ]);
-                      }}
-                    >
-                      Add Stat Bonus
-                    </Button>
-                  </Group>
-                </Group>
+                <Button
+                  size='sm'
+                  variant='light'
+                  fullWidth
+                  onClick={() => {
+                    selectContent<AbilityBlock>(
+                      'ability-block',
+                      (option) => {
+                        form.setValues({
+                          ...form.values,
+                          abilities_added: _.uniq([...(form.values.abilities_added ?? []), option.id]),
+                        });
+                      },
+                      {
+                        overrideLabel: 'Select an Ability',
+                        abilityBlockType: 'feat',
+                      }
+                    );
+                  }}
+                >
+                  Add an Ability
+                </Button>
 
-                {totaledOperations.map((op, i) => (
+                {addedAbilities.map((ability, i) => (
                   <Box key={i}>
-                    {op.type === 'setValue' ? (
-                      <SetValOperation
-                        overrideTitle='Set Stat'
-                        variable={op.data.variable}
-                        value={op.data.value}
-                        onSelect={(variable) => {
-                          op.data.variable = variable;
-                        }}
-                        onValueChange={(value) => {
-                          op.data.value = value;
-                        }}
-                        onRemove={() => {
-                          setTotaledOperations((prev) => prev.filter((_, index) => index !== i));
-                        }}
+                    <Button
+                      variant='subtle'
+                      size='compact-sm'
+                      fullWidth
+                      onClick={() => {
+                        openDrawer({
+                          type: 'action',
+                          data: { id: ability.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    >
+                      {ability.name}{' '}
+                      <ActionSymbol
+                        pl={5}
+                        gap={5}
+                        textProps={{ size: 'xs', c: 'guide' }}
+                        c='guide'
+                        cost={ability.actions}
+                        size={'1.2rem'}
                       />
-                    ) : op.type === 'addBonusToValue' ? (
-                      <AddBonusToValOperation
-                        overrideTitle='Add Stat Bonus'
-                        variable={op.data.variable}
-                        bonusValue={op.data.value}
-                        bonusType={op.data.type}
-                        text={op.data.text}
-                        onSelect={(variable) => {
-                          op.data.variable = variable;
-                        }}
-                        onValueChange={(data) => {
-                          op.data.value = data.bonusValue;
-                          op.data.type = data.bonusType;
-                          op.data.text = data.text;
-                        }}
-                        onRemove={() => {
-                          setTotaledOperations((prev) => prev.filter((_, index) => index !== i));
-                        }}
-                      />
-                    ) : null}
+                    </Button>
                   </Box>
                 ))}
 
@@ -406,7 +376,7 @@ export function CreateCreatureModal(props: {
               label={
                 <Group gap={3} wrap='nowrap'>
                   <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Misc. Operations
+                    Operations
                   </Button>
                   {form.values.operations && form.values.operations.length > 0 && (
                     <Badge variant='light' color={theme.primaryColor} size='xs'>

@@ -103,6 +103,7 @@ import {
   VersatileHeritage,
 } from '../../typing/content';
 import { FilterOptions, SelectedFilter } from './filters';
+import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -3285,7 +3286,7 @@ export function CreatureSelectionOption(props: {
           type: 'creature',
           data: {
             id: props.creature.id,
-            zIndex: 495,
+            zIndex: CREATURE_DRAWER_ZINDEX,
             onSelect:
               props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,
           },

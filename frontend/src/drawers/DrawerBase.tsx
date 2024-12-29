@@ -1,11 +1,11 @@
-import { drawerState } from '@atoms/navAtoms';
+import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { AbilityBlockType, ContentType } from '@typing/content';
 import { Suspense, lazy, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
@@ -46,6 +46,9 @@ export default function DrawerBase() {
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
+  // Overrides the zIndex of the drawer
+  const [drawerZIndex, setDrawerZIndex] = useRecoilState(drawerZIndexState);
+
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
   const [feedbackData, setFeedbackData] = useState<{
@@ -72,6 +75,7 @@ export default function DrawerBase() {
 
   const handleDrawerClose = () => {
     openDrawer(null);
+    setDrawerZIndex(null);
     // Clear metadata
     saveMetadata({});
   };
@@ -88,6 +92,7 @@ export default function DrawerBase() {
         history,
       },
     });
+    setDrawerZIndex(null);
 
     setTimeout(() => {
       viewport.current!.scrollTo({ top: value.scrollTop });
@@ -154,7 +159,7 @@ export default function DrawerBase() {
         }
         withCloseButton={false}
         position='right'
-        zIndex={_drawer?.data.zIndex ?? 1000}
+        zIndex={drawerZIndex ?? _drawer?.data.zIndex ?? 1000}
         styles={{
           title: {
             width: '100%',
