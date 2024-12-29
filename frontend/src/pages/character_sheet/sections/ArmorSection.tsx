@@ -78,6 +78,7 @@ export default function ArmorSection(props: {
                       openDrawer({
                         type: 'inv-item',
                         data: {
+                          storeId: props.id,
                           zIndex: 100,
                           invItem: _.cloneDeep(invItem),
                           onItemUpdate: (newInvItem: InventoryItem) => {
@@ -125,6 +126,7 @@ export default function ArmorSection(props: {
                     openDrawer({
                       type: 'inv-item',
                       data: {
+                        storeId: props.id,
                         zIndex: 100,
                         invItem: _.cloneDeep(bestShield),
                         onItemUpdate: (newInvItem: InventoryItem) => {

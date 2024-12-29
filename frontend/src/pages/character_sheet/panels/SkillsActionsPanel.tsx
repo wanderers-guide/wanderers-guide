@@ -507,6 +507,7 @@ export default function SkillsActionsPanel(props: {
                   name: weapon.invItem.item.name,
                   drawerType: 'inv-item',
                   drawerData: {
+                    storeId: props.id,
                     zIndex: 100,
                     invItem: _.cloneDeep(weapon.invItem),
                     onItemUpdate: (newInvItem: InventoryItem) => {
@@ -565,6 +566,7 @@ export default function SkillsActionsPanel(props: {
                     name: invItem.item.name,
                     drawerType: 'inv-item',
                     drawerData: {
+                      storeId: props.id,
                       zIndex: 100,
                       invItem: _.cloneDeep(invItem),
                       onItemUpdate: (newInvItem: InventoryItem) => {

@@ -10,10 +10,6 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 
 export function Component() {
   setPageTitle(`Encounters`);
-  const session = useRecoilValue(sessionState);
-  const navigate = useNavigate();
-
-  console.log('howdy');
 
   const { ref, width, height } = useElementSize();
   const panelWidth = width ? width - 60 : 2000;

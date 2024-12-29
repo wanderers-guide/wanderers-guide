@@ -69,6 +69,7 @@ import { ItemRunesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
+import { StoreID } from '@typing/variables';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -92,6 +93,7 @@ export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) 
 
 export function InvItemDrawerContent(props: {
   data: {
+    storeId: StoreID;
     invItem: InventoryItem;
     onItemUpdate: (invItem: InventoryItem) => void;
     onItemDelete: (invItem: InventoryItem) => void;
@@ -187,7 +189,12 @@ export function InvItemDrawerContent(props: {
           />
         </Box>
 
-        <InvItemSections invItem={invItem} onItemUpdate={(invItem) => onItemUpdate(invItem)} openDrawer={openDrawer} />
+        <InvItemSections
+          storeId={props.data.storeId}
+          invItem={invItem}
+          onItemUpdate={(invItem) => onItemUpdate(invItem)}
+          openDrawer={openDrawer}
+        />
 
         {price && <IndentedText ta='justify'>{price}</IndentedText>}
         {UBH.length > 0 && (
@@ -197,7 +204,7 @@ export function InvItemDrawerContent(props: {
         )}
 
         <Divider />
-        <RichText ta='justify' store='CHARACTER' py={5}>
+        <RichText ta='justify' store={props.data.storeId} py={5}>
           {invItem.item.description}
         </RichText>
 
@@ -418,6 +425,7 @@ export function InvItemDrawerContent(props: {
 }
 
 function InvItemSections(props: {
+  storeId: StoreID;
   invItem: InventoryItem;
   onItemUpdate: (invItem: InventoryItem) => void;
   openDrawer: SetterOrUpdater<any>;
@@ -591,7 +599,7 @@ function InvItemSections(props: {
 
   let attackAndDamageSection = null;
   if (hasAttackAndDamage) {
-    const weaponStats = getWeaponStats('CHARACTER', props.invItem.item);
+    const weaponStats = getWeaponStats(props.storeId, props.invItem.item);
 
     const damageBonus = weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``;
 
@@ -606,7 +614,7 @@ function InvItemSections(props: {
           onClick={() => {
             openDrawer({
               type: 'stat-weapon',
-              data: { id: 'CHARACTER', item: props.invItem.item },
+              data: { id: props.storeId, item: props.invItem.item },
               extra: { addToHistory: true },
             });
           }}
@@ -857,7 +865,7 @@ function InvItemSections(props: {
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' store='CHARACTER'>
+                <RichText ta='justify' fz='xs' store={props.storeId}>
                   {groupDesc?.description}
                 </RichText>
               </HoverCard.Dropdown>

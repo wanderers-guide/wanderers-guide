@@ -1,3 +1,4 @@
+import { Rarity } from '@typing/content';
 import * as _ from 'lodash-es';
 
 export function sign(num: number | string): string {
@@ -7,6 +8,56 @@ export function sign(num: number | string): string {
 
 export function rankNumber(num: number, zeroName = '0'): string {
   return num === 0 ? zeroName : num === 1 ? '1st' : num === 2 ? '2nd' : num === 3 ? '3rd' : `${num}th`;
+}
+
+export function getDcForLevel(level: number, rarity?: Rarity): number {
+  const dcLevelMap: Record<number, number> = {
+    0: 14,
+    1: 15,
+    2: 16,
+    3: 18,
+    4: 19,
+    5: 20,
+    6: 22,
+    7: 23,
+    8: 24,
+    9: 26,
+    10: 27,
+    11: 28,
+    12: 30,
+    13: 31,
+    14: 32,
+    15: 34,
+    16: 35,
+    17: 36,
+    18: 38,
+    19: 39,
+    20: 40,
+    21: 42,
+    22: 44,
+    23: 46,
+    24: 48,
+    25: 50,
+  };
+
+  let dc = dcLevelMap[level];
+  if (level > 25) {
+    dc = dcLevelMap[25] + (level - 25) * 2;
+  } else if (level < 0) {
+    dc = dcLevelMap[0];
+  }
+
+  if (rarity) {
+    if (rarity === 'UNCOMMON') {
+      dc += 2;
+    } else if (rarity === 'RARE') {
+      dc += 5;
+    } else if (rarity === 'UNIQUE') {
+      dc += 10;
+    }
+  }
+
+  return dc;
 }
 
 export function hashData(data: Record<string, any>): number {

@@ -57,10 +57,12 @@ import {
   IconZzz,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Inventory } from '@typing/content';
+import { Creature, Inventory, LivingEntity, Trait } from '@typing/content';
 import { OperationCharacterResultPackage, OperationCreatureResultPackage } from '@typing/operations';
 import { StoreID, VariableListStr, VariableStr } from '@typing/variables';
+import { findCreatureTraits } from '@upload/creature-import';
 import { convertToSize } from '@upload/foundry-utils';
+import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue, setterOrUpdaterToValue } from '@utils/type-fixing';
 import { getFinalHealthValue } from '@variables/variable-display';
@@ -290,6 +292,18 @@ export function CreatureDrawerContent(props: {
     });
   };
 
+  const setCreatureInstant = (call: React.SetStateAction<Creature | null>) => {
+    // Update source immediately
+    if (creature) {
+      const newCreature = setStateActionToValue(call, creature);
+      if (newCreature) {
+        props.data.updateCreature?.(newCreature);
+      }
+    }
+    // Update normal local state, will update source again after delay
+    setCreature(call);
+  };
+
   if (loading || !creature || !content) {
     return (
       <Loader
@@ -329,6 +343,7 @@ export function CreatureDrawerContent(props: {
                     </BlurBox>
                   )}
                 </Group>
+                <RecallKnowledgeSection entity={creature} traits={content.traits} />
                 <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
                 <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
                 <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
@@ -375,7 +390,7 @@ export function CreatureDrawerContent(props: {
                 panelWidth={panelWidth}
                 id={STORE_ID}
                 entity={creature}
-                setEntity={convertToSetEntity(setCreature)}
+                setEntity={convertToSetEntity(setCreatureInstant)}
               />
             )}
 
@@ -582,4 +597,69 @@ function CreatureStatBlockView(props: {
   setCreature: SetterOrUpdater<Creature | null>;
 }) {
   return <Box></Box>;
+}
+
+function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
+  const theme = useMantineTheme();
+
+  const traits = findCreatureTraits(props.entity)
+    .map((id) => props.traits.find((t) => t.id === id))
+    .filter(isTruthy);
+  const knowledgeSkillMap: Record<string, string> = {
+    aberration: 'Occultism',
+    animal: 'Nature',
+    astral: 'Occultism',
+    beast: 'Arcana or Nature',
+    celestial: 'Religion',
+    construct: 'Arcana or Crafting',
+    dragon: 'Arcana',
+    dream: 'Occultism',
+    elemental: 'Arcana or Nature',
+    ethereal: 'Occultism',
+    fey: 'Nature',
+    fiend: 'Religion',
+    fungus: 'Nature',
+    humanoid: 'Society',
+    monitor: 'Religion',
+    ooze: 'Occultism',
+    plant: 'Nature',
+    shade: 'Religion',
+    spirit: 'Occultism',
+    time: 'Occultism',
+    undead: 'Religion',
+  };
+  const knowledgeTrait = traits.find((t) => {
+    return !!knowledgeSkillMap[t.name.toLowerCase()];
+  });
+  const knowledgeSkill = knowledgeTrait ? knowledgeSkillMap[knowledgeTrait.name.toLowerCase()] : null;
+  if (!knowledgeSkill) return null;
+
+  return (
+    <BlurBox blur={10}>
+      <Box
+        px='xs'
+        py={10}
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
+          <Text fz='xs' span>
+            <Text fz='xs' fw={500} c='gray.0' span>
+              Recall Knowledge
+            </Text>{' '}
+            (
+            <Text fz='xs' fs='italic' span>
+              {knowledgeTrait?.name.toLowerCase()}
+              {props.entity.rarity !== 'COMMON' ? `, ${props.entity.rarity.toLowerCase()}` : ''}{' '}
+            </Text>
+            ) {knowledgeSkill} DC {getDcForLevel(props.entity.level, props.entity.rarity)}
+          </Text>
+        </Group>
+      </Box>
+    </BlurBox>
+  );
 }

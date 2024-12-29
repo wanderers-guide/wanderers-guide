@@ -676,6 +676,8 @@ async function addAttacks(id: StoreID, json: Record<string, any>, source: Conten
       : undefined;
     const damageDiff = parsedDamage.length > 0 ? parsedDamage[0].bonus - weaponStats.damage.bonus.total : undefined;
 
+    console.log(attack.system.bonus.value, attackDiff, parsedDamage[0].bonus, damageDiff);
+
     // Include attack effects in damage extra
     const processAttackEffect = (effect: string) => {
       effect = effect.toLowerCase().trim().replace(/-/g, ' ');

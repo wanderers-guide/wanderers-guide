@@ -294,6 +294,7 @@ export default function InventoryPanel(props: {
                               openDrawer({
                                 type: 'inv-item',
                                 data: {
+                                  storeId: props.id,
                                   zIndex: 100,
                                   invItem: _.cloneDeep(invItem),
                                   onItemUpdate: (newInvItem: InventoryItem) => {
@@ -322,6 +323,7 @@ export default function InventoryPanel(props: {
                                 openDrawer({
                                   type: 'inv-item',
                                   data: {
+                                    storeId: props.id,
                                     zIndex: 100,
                                     invItem: _.cloneDeep(containedItem),
                                     onItemUpdate: (newInvItem: InventoryItem) => {
@@ -381,6 +383,7 @@ export default function InventoryPanel(props: {
                           openDrawer({
                             type: 'inv-item',
                             data: {
+                              storeId: props.id,
                               zIndex: 100,
                               invItem: _.cloneDeep(invItem),
                               onItemUpdate: (newInvItem: InventoryItem) => {
@@ -580,12 +583,10 @@ function InvItemOption(props: {
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>
               <EllipsisText c='gray.6' fz='xs' fs='italic' span>
-                {weaponStats.damage.dice}
-                {weaponStats.damage.die}
-                {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}
-                {weaponStats.damage.damageType}
-                {parseOtherDamage(weaponStats.damage.other)}
-                {weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}
+                {_.truncate(
+                  `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
+                  { length: props.isPhone ? 15 : 45 }
+                )}
               </EllipsisText>
             </Group>
           )}

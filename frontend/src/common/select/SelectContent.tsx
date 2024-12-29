@@ -40,7 +40,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useDidUpdate, useHover, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDidUpdate, useElementSize, useHover, useMediaQuery, useMergedRef } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
@@ -62,7 +62,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DrawerType } from '@typing/index';
 import { OperationSelectOptionCustom } from '@typing/operations';
 import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@typing/variables';
-import { phoneQuery } from '@utils/mobile-responsive';
+import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
 import { pluralize, toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
@@ -1820,8 +1820,11 @@ export function BaseSelectionOption(props: {
   px?: number;
 }) {
   const theme = useMantineTheme();
-  const { hovered, ref } = useHover();
-  const isPhone = useMediaQuery(phoneQuery());
+  const { hovered, ref: hoverRef } = useHover();
+  const { ref: sizeRef, width } = useElementSize();
+  const mergedRef = useMergedRef(hoverRef, sizeRef);
+
+  const isPhone = isPhoneSized(width);
 
   useDidUpdate(() => {
     props.onHover?.(hovered);
@@ -1832,7 +1835,7 @@ export function BaseSelectionOption(props: {
 
   return (
     <Group
-      ref={ref}
+      ref={mergedRef}
       py='sm'
       px={props.px ?? 'sm'}
       style={{
@@ -3009,7 +3012,6 @@ export function SpellSelectionOption(props: {
   prefix?: React.ReactNode;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const isPhone = useMediaQuery(phoneQuery());
 
   // Hide deprecated options
   if (props.spell.meta_data?.deprecated && !props.selected) return null;

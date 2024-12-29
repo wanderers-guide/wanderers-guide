@@ -169,6 +169,7 @@ export default function CreatureDetailsPanel(props: {
           <ScrollArea h={100} scrollbars='y'>
             <Box w={SECTION_WIDTH}>
               <Pill.Group>
+                <TraitsDisplay size='lg' traitIds={[]} rarity={props.creature?.rarity} />
                 {traits.map((trait, index) => (
                   <Pill
                     key={index}
@@ -651,7 +652,7 @@ export default function CreatureDetailsPanel(props: {
       <Tabs defaultValue='information'>
         <Tabs.List style={{ flexWrap: 'nowrap' }}>
           <Tabs.Tab value='information'>Description</Tabs.Tab>
-          <Tabs.Tab value='languages'>Languages</Tabs.Tab>
+          <Tabs.Tab value='languages'>Miscellaneous</Tabs.Tab>
           <Tabs.Tab value='proficiencies'>Proficiencies</Tabs.Tab>
         </Tabs.List>
 

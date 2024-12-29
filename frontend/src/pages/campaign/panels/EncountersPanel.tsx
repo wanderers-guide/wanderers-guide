@@ -115,7 +115,7 @@ export default function EncountersPanel(props: {
   const [_encounters, _setEncounters] = useState<Encounter[] | null>(null);
   const _encountersData =
     _encounters ??
-    _data?.filter((e) => (props.campaign ? e.campaign_id === props.campaign.data.id : e.campaign_id === undefined)) ??
+    _data?.filter((e) => (props.campaign ? e.campaign_id === props.campaign.data.id : !e.campaign_id)) ??
     null;
 
   const debouncedUpdateRequest = useCallback(
