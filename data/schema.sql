@@ -392,9 +392,10 @@ CREATE TABLE public.creature (
     details json NOT NULL,
     roll_history json,
     operations json[],
-    abilities json[],
+    abilities_base json[],
     spells json,
-    deprecated boolean
+    deprecated boolean,
+    abilities_added bigint[]
 );
 
 
