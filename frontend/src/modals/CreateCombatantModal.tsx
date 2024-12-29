@@ -75,7 +75,7 @@ export function CreateCombatantModal(props: {
     initialValues: {
       _id: '',
       type: 'CREATURE',
-      ally: false,
+      ally: true,
       initiative: undefined,
       creature: {
         id: -1,
@@ -215,8 +215,8 @@ export function CreateCombatantModal(props: {
             value={form.values.ally ? 'ally' : 'enemy'}
             onChange={(value) => form.setFieldValue('ally', value === 'ally')}
             data={[
-              { label: 'Enemy', value: 'enemy' },
               { label: 'Ally', value: 'ally' },
+              { label: 'Enemy', value: 'enemy' },
             ]}
           />
         </Group>
