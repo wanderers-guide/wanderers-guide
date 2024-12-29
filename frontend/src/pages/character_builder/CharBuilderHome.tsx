@@ -66,7 +66,7 @@ import {
   findRequiredContentSources,
   resetContentStore,
 } from '@content/content-store';
-import { displayComingSoon, displayPatronOnly } from '@utils/notifications';
+import { displayPatronOnly } from '@utils/notifications';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';

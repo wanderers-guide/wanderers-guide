@@ -586,6 +586,7 @@ async function buildEncounters(
   Please build 3 example encounters, each with a different set of creatures and some variety - get creative with it!
 
   For each encounter, include 1 to 4 different types of creatures, how much of each of those creatures, and a short description on why you picked what you did.
+  If you select a high level creature (3 or more levels above the party level), it's probably a boss creature and should be the only creature in the encounter or have a couple low level minions.
 
   # Description:
   ${description}

@@ -114,7 +114,9 @@ export default function EncountersPanel(props: {
 
   const [_encounters, _setEncounters] = useState<Encounter[] | null>(null);
   const _encountersData =
-    _encounters ?? _data?.filter((d) => (props.campaign ? d.campaign_id === props.campaign.data.id : true)) ?? null;
+    _encounters ??
+    _data?.filter((e) => (props.campaign ? e.campaign_id === props.campaign.data.id : e.campaign_id === undefined)) ??
+    null;
 
   const debouncedUpdateRequest = useCallback(
     _.debounce((e: Encounter) => {
@@ -208,7 +210,7 @@ export default function EncountersPanel(props: {
             newEncounters[index] = e;
             updateEncounters(newEncounters);
           }}
-          players={props.campaign?.players ?? []}
+          players={props.campaign?.players}
           panelHeight={props.panelHeight}
         />
         {isPhone && (
@@ -1048,7 +1050,7 @@ function CombatantCard(props: {
           </Group>
 
           {props.computed && (
-            <Group gap={5}>
+            <Group gap={5} wrap='nowrap'>
               <Text fz='xs' c='gray.6'>
                 {props.computed.ac} AC
               </Text>

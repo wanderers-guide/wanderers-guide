@@ -196,7 +196,7 @@ function CampaignCard(props: { campaign: Campaign }) {
             />
           </Card.Section>
 
-          <Card.Section className={classes.section} mt='xs' px='md'>
+          <Card.Section className={classes.section} mt='xs' mb={0} px='md'>
             <Group justify='apart'>
               <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
                 <HoverCard.Target>

@@ -30,7 +30,6 @@ import { ContextModalProps } from '@mantine/modals';
 import { IconSearch, IconAdjustments, IconFilter } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Item, ItemGroup, Spell } from '@typing/content';
-import { displayComingSoon } from '@utils/notifications';
 import { labelToVariable } from '@variables/variable-utils';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';

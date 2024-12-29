@@ -62,6 +62,10 @@ const router = createBrowserRouter([
             lazy: () => import('@pages/CampaignsPage.tsx'),
           },
           {
+            path: 'encounters',
+            lazy: () => import('@pages/EncountersPage.tsx'),
+          },
+          {
             path: 'account',
             lazy: () => import('@pages/AccountPage.tsx'),
           },

@@ -37,7 +37,6 @@ import { supabase } from '../main';
 import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
-import { displayComingSoon } from '@utils/notifications';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
@@ -262,7 +261,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         href='/encounters'
                         onClick={(e) => {
                           e.preventDefault();
-                          displayComingSoon();
+                          navigate('/encounters');
                         }}
                       >
                         Encounters
@@ -374,7 +373,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               href='/encounters'
               onClick={(e) => {
                 e.preventDefault();
-                displayComingSoon();
+                navigate('/encounters');
                 close();
               }}
             >

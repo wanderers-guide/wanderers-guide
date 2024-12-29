@@ -73,7 +73,6 @@ import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
 import { GiRollingDices } from 'react-icons/gi';
-import { displayComingSoon } from '@utils/notifications';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { convertToSetEntity } from '@utils/type-fixing';
 import ModeDrawer from '@common/modes/ModesDrawer';
