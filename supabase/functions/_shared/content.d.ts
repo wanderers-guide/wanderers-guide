@@ -451,9 +451,11 @@ interface Encounter {
   created_at: string;
   user_id: string;
   name: string;
+  icon: string;
+  color: string;
   campaign_id?: number;
   combatants: {
-    list: (Creature | Character)[];
+    list: Combatant[];
   };
   meta_data: {
     description?: string;

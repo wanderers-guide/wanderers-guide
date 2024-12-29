@@ -86,6 +86,7 @@ export default function EncountersPanel(props: {
   zIndex?: number;
 }) {
   const session = useRecoilValue(sessionState);
+  const [_loading, setLoading] = useState(false);
 
   const {
     data: _data,
@@ -99,6 +100,7 @@ export default function EncountersPanel(props: {
       });
 
       // Prefetch content package for creature calculations
+      // We could await these for a more seemless experience but it takes a bit too long imo - Quzzar
       defineDefaultSourcesForUser().then((e) => {
         fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
       });
@@ -107,6 +109,8 @@ export default function EncountersPanel(props: {
     },
     refetchOnWindowFocus: false,
   });
+
+  const loading = _loading || isFetching;
 
   const [_encounters, _setEncounters] = useState<Encounter[] | null>(null);
   const _encountersData =
@@ -126,10 +130,12 @@ export default function EncountersPanel(props: {
       const existing = encounters.find((exist) => exist.id === e.id);
       if (!existing || existing.id === -1) {
         // If it's a new encounter, create it immediately
+        setLoading(true);
         const result = await makeRequest<Encounter>('create-encounter', { ...e });
         if (result) {
           e.id = result.id;
         }
+        setLoading(false);
       } else if (!_.isEqual(e, existing)) {
         // If it's an existing encounter, update it after a debounce
         debouncedUpdateRequest(e);
@@ -260,7 +266,7 @@ export default function EncountersPanel(props: {
                     setActiveTab(`${index}`);
                   }}
                 >
-                  {_.truncate(encounter.name, { length: 16 })}
+                  {_.truncate(encounter.name, { length: 14 })}
                 </Menu.Item>
               ))}
 
@@ -359,7 +365,7 @@ export default function EncountersPanel(props: {
     );
   };
 
-  if (isFetching) {
+  if (loading) {
     return (
       <Box h={props.panelHeight}>
         <LoadingOverlay visible={true} />
@@ -377,7 +383,7 @@ export default function EncountersPanel(props: {
     return (
       <Tabs orientation='vertical' value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
-          <ScrollArea h={props.panelHeight - 80} w={210} scrollbars='y'>
+          <ScrollArea h={props.panelHeight - 100} w={210} scrollbars='y'>
             {encounters.map((encounter, index) => (
               <Tabs.Tab
                 key={index}
@@ -390,7 +396,7 @@ export default function EncountersPanel(props: {
                 }
                 color={encounter.color}
               >
-                <Box maw={125}>
+                <Box maw={150}>
                   <EllipsisText fz='sm' openDelay={1000}>
                     {encounter.name}
                   </EllipsisText>
@@ -585,7 +591,6 @@ function EncounterView(props: {
     ],
     queryFn: async () => {
       if (combatants.length === 0) return [];
-      console.log('Computing combatants');
       return await computeCombatants(combatants);
     },
     enabled: combatants.length > 0,
@@ -618,7 +623,7 @@ function EncounterView(props: {
           }}
         >
           <Group justify='space-between' mr={40} wrap='nowrap' align='flex-start'>
-            <Group>
+            <Group gap={10}>
               <Button
                 variant='light'
                 size='compact-sm'
