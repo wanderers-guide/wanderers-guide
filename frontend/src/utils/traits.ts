@@ -15,6 +15,7 @@ export type TraitType =
   | 'THROWN-30'
   | 'THROWN-40'
   | 'THROWN-100'
+  | 'THROWN-200'
   | 'SPLASH'
   | 'PROPULSIVE'
   | 'FOCUS'
@@ -57,6 +58,7 @@ const traitMap: Record<number, TraitType> = {
   2758: 'THROWN-30',
   3803: 'THROWN-40',
   4178: 'THROWN-100',
+  4205: 'THROWN-200',
   1532: 'SPLASH',
   1579: 'PROPULSIVE',
   1856: 'FOCUS',

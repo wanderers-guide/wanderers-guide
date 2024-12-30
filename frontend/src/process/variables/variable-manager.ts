@@ -195,7 +195,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   SPEED_CLIMB: newVariable('num', 'SPEED_CLIMB'),
   SPEED_BURROW: newVariable('num', 'SPEED_BURROW'),
   SPEED_SWIM: newVariable('num', 'SPEED_SWIM'),
-  SPEED_ICE_BURROW: newVariable('num', 'SPEED_ICE_BURROW'),
 
   // Senses // use `<NAME>, 30` to indicate a range. Can include variable math
   SENSES_PRECISE: newVariable('list-str', 'SENSES_PRECISE', ['NORMAL_VISION']),

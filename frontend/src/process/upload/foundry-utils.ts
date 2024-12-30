@@ -126,6 +126,7 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
   THROWN_30: 2758,
   THROWN_40: 3803,
   THROWN_100: 4178,
+  THROWN_200: 4205,
   FATAL_D_12: 1670,
   FATAL_D_10: 1686,
   FATAL_D_8: 1653,
@@ -145,6 +146,7 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
   REACH_25: 4176,
   REACH_30: 4179,
   REACH_40: 4180,
+  REACH_50: 4204,
   REACH_60: 4181,
   REACH_100: 4183,
 };

@@ -387,6 +387,11 @@ function addSpeeds(operations: Operation[], json: Record<string, any>) {
   } satisfies OperationSetValue);
 
   for (const speed of json.system.attributes.speed.otherSpeeds ?? []) {
+    const speedVar = labelToVariable(speed.type);
+    if (speedVar !== 'FLY' && speedVar !== 'CLIMB' && speedVar !== 'BURROW' && speedVar !== 'SWIM') {
+      continue;
+    }
+
     operations.push({
       ...createDefaultOperation<OperationSetValue>('setValue'),
       data: {
@@ -675,8 +680,6 @@ async function addAttacks(id: StoreID, json: Record<string, any>, source: Conten
       ? attack.system.bonus.value - weaponStats.attack_bonus.total[0]
       : undefined;
     const damageDiff = parsedDamage.length > 0 ? parsedDamage[0].bonus - weaponStats.damage.bonus.total : undefined;
-
-    console.log(attack.system.bonus.value, attackDiff, parsedDamage[0].bonus, damageDiff);
 
     // Include attack effects in damage extra
     const processAttackEffect = (effect: string) => {

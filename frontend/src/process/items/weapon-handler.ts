@@ -258,7 +258,8 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
     hasTraitType('THROWN-25', itemTraits) ||
     hasTraitType('THROWN-30', itemTraits) ||
     hasTraitType('THROWN-40', itemTraits) ||
-    hasTraitType('THROWN-100', itemTraits);
+    hasTraitType('THROWN-100', itemTraits) ||
+    hasTraitType('THROWN-200', itemTraits);
   const hasSplash = hasTraitType('SPLASH', itemTraits);
   const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
 
