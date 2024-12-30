@@ -328,6 +328,14 @@ export async function fetchData<T = Record<string, any>>(
   tableName: TableName,
   filters: SelectFilter[]
 ) {
+  // Check if we're fetching all rows
+  const hasNoId = ((fil: SelectFilter[]) => {
+    const idColumn = fil.find((f) => f.column === 'id');
+    if (!idColumn) return true;
+    if (idColumn.value === undefined || idColumn.value === null) return true;
+    return false;
+  })(filters);
+
   // Paginate through fetching rows, as there's a limit of rows per query
   const CHUNK_SIZE = 5000;
   let offset = 0;
@@ -342,7 +350,7 @@ export async function fetchData<T = Record<string, any>>(
        * Unless the user specifically requests by ID for a piece of content.
        */
       if (
-        !filters.find((f) => f.column === 'id') &&
+        hasNoId &&
         filter.column === 'content_source_id' &&
         ((Array.isArray(filter.value) && filter.value.length === 0) || filter.value === undefined)
       ) {

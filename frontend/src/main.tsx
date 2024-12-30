@@ -145,6 +145,13 @@ const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path: 'stat-block/:type/:id',
+    lazy: () => import('@pages/StatBlockPage.tsx'),
+    loader: async ({ params }: { params: any }) => {
+      return { type: params.type, id: params.id };
+    },
+  },
 ]);
 
 // Remove dumb warning (errors) caused by Mantine in dev

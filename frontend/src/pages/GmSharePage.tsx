@@ -10,7 +10,7 @@ export function Component() {
   setPageTitle(`Redirecting...`);
 
   const { gmUserId } = useLoaderData() as {
-    gmUserId: number;
+    gmUserId: string;
   };
   const location = useLocation();
   const [searchParams] = useSearchParams();

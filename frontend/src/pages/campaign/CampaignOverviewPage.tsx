@@ -61,7 +61,7 @@ export function Component() {
   const [doneLoading, setDoneLoading] = useState(false);
 
   const { campaignId } = useLoaderData() as {
-    campaignId: number;
+    campaignId: string;
   };
 
   // Just load progress manually
@@ -91,7 +91,7 @@ export function Component() {
       <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
       <div style={{ display: doneLoading ? undefined : 'none' }}>
         <CampaignInner
-          campaignId={campaignId}
+          campaignId={parseInt(campaignId)}
           onFinishLoading={() => {
             interval.stop();
             setDoneLoading(true);

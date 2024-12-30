@@ -475,6 +475,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
               onClick={() => {
                 openDrawer({ type: 'stat-attr', data: { id: 'CHARACTER' } });
               }}
+              maw={257} // Max width to prevent overflow
             >
               <Group wrap='nowrap'>
                 <AttributeModPart attribute='Str' variableName='ATTRIBUTE_STR' />

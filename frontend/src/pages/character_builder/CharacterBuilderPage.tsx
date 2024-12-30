@@ -40,7 +40,7 @@ export function Component() {
   const navigate = useNavigate();
 
   const { characterId } = useLoaderData() as {
-    characterId: number;
+    characterId: string;
   };
 
   const handleStepChange = (nextStep: number) => {

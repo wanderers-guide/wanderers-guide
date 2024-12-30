@@ -13,11 +13,9 @@ import { Notifications } from '@mantine/notifications';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
 import { getBackgroundImageFromURL, getHomeBackgroundImage } from '@utils/background-images';
-import { removeQueryParam } from '@utils/document-change';
 import { lazy, useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import tinycolor from 'tinycolor2';
 import { supabase } from './main';
 import Layout from './nav/Layout';
 import { ImageOption } from './typing';
@@ -39,6 +37,7 @@ import InitiativeRollModal from '@modals/InitiativeRollModal';
 import { update } from 'node_modules/cypress/types/lodash';
 import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 import GenerateEncounterModal from '@modals/GenerateEncounterModal';
+import { getShadesFromColor } from '@utils/colors';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -71,26 +70,6 @@ const modals = {
 //     modals: typeof modals;
 //   }
 // }
-
-function getShadesFromColor(color: string) {
-  let lightShades = [];
-  let darkShades = [];
-
-  for (let i = 0; i < 3; i++) {
-    let shade = tinycolor(color)
-      .lighten(i * 3)
-      .toString();
-    lightShades.push(shade);
-  }
-  for (let i = 0; i < 7; i++) {
-    let shade = tinycolor(color)
-      .darken(i * 3)
-      .toString();
-    darkShades.push(shade);
-  }
-
-  return [...lightShades, color, ...darkShades];
-}
 
 export default function App() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);

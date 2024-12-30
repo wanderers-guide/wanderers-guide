@@ -33,7 +33,7 @@ import { useRecoilState } from 'recoil';
 
 export function Component(props: {}) {
   const { updateId } = useLoaderData() as {
-    updateId: number;
+    updateId: string;
   };
   setPageTitle(`Content Update #${updateId}`);
 
@@ -42,7 +42,7 @@ export function Component(props: {}) {
   const { data } = useQuery({
     queryKey: [`find-content-update-${updateId}`],
     queryFn: async () => {
-      const contentUpdate = await findContentUpdate(updateId);
+      const contentUpdate = await findContentUpdate(parseInt(updateId));
       if (!contentUpdate) {
         return null;
       }

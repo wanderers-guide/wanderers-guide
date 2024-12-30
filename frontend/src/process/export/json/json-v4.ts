@@ -3,14 +3,14 @@ import { defineDefaultSources, fetchContentPackage } from '@content/content-stor
 import { downloadObjectAsJson } from '@export/export-to-json';
 import { isItemWeapon, getFlatInvItems, getBestArmor, getBestShield, getInvBulk, labelizeBulk } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
-import { executeCharacterOperations } from '@operations/operation-controller';
+import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { Character, Spell } from '@typing/content';
+import { Character, LivingEntity, Spell } from '@typing/content';
 import { VariableListStr, VariableStr } from '@typing/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { toLabel } from '@utils/strings';
-import { isTruthy } from '@utils/type-fixing';
+import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import {
   getFinalAcValue,
   getFinalHealthValue,
@@ -28,39 +28,49 @@ import {
 } from '@variables/variable-manager';
 import _ from 'lodash-es';
 
-export default async function jsonV4(character: Character) {
+export default async function jsonV4(entity: LivingEntity) {
   const exportObject = {
     version: 4,
-    character,
-    content: await getContent(character),
+    character: entity,
+    content: await getJsonV4Content(entity),
   };
 
-  const fileName = character.name
+  const fileName = entity.name
     .trim()
     .toLowerCase()
     .replace(/([^a-z0-9]+)/gi, '-');
   downloadObjectAsJson(exportObject, fileName);
 }
 
-async function getContent(character: Character) {
+export async function getJsonV4Content(entity: LivingEntity) {
   // Get all content that the character uses
-  defineDefaultSources(character.content_sources?.enabled ?? []);
+  if (isCharacter(entity)) {
+    defineDefaultSources(entity.content_sources?.enabled ?? []);
+  } else if (isCreature(entity)) {
+    defineDefaultSources(undefined);
+  }
   const content = await fetchContentPackage(undefined, { fetchSources: true });
-  const STORE_ID = 'CHARACTER';
+  const STORE_ID = isCharacter(entity) ? 'CHARACTER' : `CREATURE_${entity.id}`;
 
   // Execute all operations (to update the variables)
-  await executeCharacterOperations(character, content, 'CHARACTER-BUILDER');
+  if (isCharacter(entity)) {
+    await executeCharacterOperations(entity, content, 'CHARACTER-BUILDER');
+  } else if (isCreature(entity)) {
+    await executeCreatureOperations(STORE_ID, entity, content);
+  }
 
   // Get all the data
 
-  const featData = collectEntityAbilityBlocks(STORE_ID, character, content.abilityBlocks, {
+  const featData = collectEntityAbilityBlocks(STORE_ID, entity, content.abilityBlocks, {
     filterBasicClassFeatures: true,
   });
 
-  const characterTraits = getAllAncestryTraitVariables(STORE_ID).map((v) => {
-    const trait = content.traits.find((trait) => trait.id === v.value);
-    return trait;
-  });
+  const characterTraits = getAllAncestryTraitVariables(STORE_ID)
+    .map((v) => {
+      const trait = content.traits.find((trait) => trait.id === v.value);
+      return trait;
+    })
+    .filter(isTruthy);
 
   const resistVar = getVariable<VariableListStr>(STORE_ID, 'RESISTANCES');
   const weakVar = getVariable<VariableListStr>(STORE_ID, 'WEAKNESSES');
@@ -70,7 +80,7 @@ async function getContent(character: Character) {
 
   const senseData = collectEntitySenses(STORE_ID, content.abilityBlocks);
 
-  const weapons = character.inventory?.items
+  const weapons = entity.inventory?.items
     .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
     .sort((a, b) => a.item.name.localeCompare(b.item.name))
     .map((invItem) => ({
@@ -78,10 +88,10 @@ async function getContent(character: Character) {
       stats: getWeaponStats(STORE_ID, invItem.item),
     }));
 
-  const flatItems = character.inventory ? getFlatInvItems(character.inventory) : [];
-  const totalBulk = character.inventory ? labelizeBulk(getInvBulk(character.inventory), true) : null;
+  const flatItems = entity.inventory ? getFlatInvItems(entity.inventory) : [];
+  const totalBulk = entity.inventory ? labelizeBulk(getInvBulk(entity.inventory), true) : null;
 
-  const spellData = collectEntitySpellcasting(STORE_ID, character);
+  const spellData = collectEntitySpellcasting(STORE_ID, entity);
 
   const spellSourceStats = spellData.sources.map((source) => {
     return {
@@ -150,9 +160,9 @@ async function getContent(character: Character) {
 
   const size = toLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value);
   const maxHP = getFinalHealthValue(STORE_ID);
-  const ac = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, character.inventory)?.item);
-  const shield = getBestShield(STORE_ID, character.inventory);
-  const armor = getBestArmor(STORE_ID, character.inventory);
+  const ac = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, entity.inventory)?.item);
+  const shield = getBestShield(STORE_ID, entity.inventory);
+  const armor = getBestArmor(STORE_ID, entity.inventory);
 
   const speeds = getAllSpeedVariables(STORE_ID).map((v) => {
     return {

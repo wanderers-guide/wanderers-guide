@@ -86,7 +86,7 @@ export function Component(props: {}) {
   setPageTitle(`Sheet`);
 
   const { characterId } = useLoaderData() as {
-    characterId: number;
+    characterId: string;
   };
 
   const theme = useMantineTheme();
@@ -143,7 +143,7 @@ export function Component(props: {}) {
         <div style={{ display: doneLoading ? undefined : 'none' }}>
           <CharacterSheetInner
             content={content}
-            characterId={characterId}
+            characterId={parseInt(characterId)}
             onFinishLoading={() => {
               interval.stop();
               setDoneLoading(true);

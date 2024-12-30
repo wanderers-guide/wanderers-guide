@@ -20,3 +20,7 @@ strong {
   font-weight: 600;
   color: var(--mantine-color-gray-5);
 }
+
+.inverted {
+  filter: invert(100%);
+}
