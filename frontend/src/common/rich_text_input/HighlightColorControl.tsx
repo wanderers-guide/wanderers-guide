@@ -12,12 +12,12 @@ import {
   rem,
   SimpleGrid,
   Tooltip,
-  useProps
+  useProps,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconCheck, IconCircleOff, IconColorPicker, IconPalette, IconX } from '@tabler/icons-react';
 import { useRichTextEditorContext, RichTextEditorControl } from '@mantine/tiptap';
-import { BiHighlight } from "react-icons/bi";
+import { BiHighlight } from 'react-icons/bi';
 
 export interface HighlightColorControlProps extends BoxProps, ElementProps<'button'> {
   /** Props added to Popover component */
@@ -32,10 +32,7 @@ export interface HighlightColorControlProps extends BoxProps, ElementProps<'butt
 
 const defaultProps: Partial<HighlightColorControlProps> = {};
 
-export const HighlightColorControl = forwardRef<
-  HTMLButtonElement,
-  HighlightColorControlProps
->((props, ref) => {
+export const HighlightColorControl = forwardRef<HTMLButtonElement, HighlightColorControlProps>((props, ref) => {
   const { popoverProps, colors, colorPickerProps, ...others } = useProps(
     'RichTextEditorColorPickerControl',
     defaultProps,
@@ -45,7 +42,6 @@ export const HighlightColorControl = forwardRef<
   const { editor, labels, getStyles } = useRichTextEditorContext();
   const [opened, { toggle, close }] = useDisclosure(false);
   const [state, setState] = useState<'palette' | 'colorPicker'>('palette');
-  console.log(editor?.getAttributes('highlight'));
   const currentColor = editor?.getAttributes('highlight').color || 'var(--mantine-color-text)';
 
   const handleChange = (value: string, shouldClose = true) => {
@@ -61,11 +57,11 @@ export const HighlightColorControl = forwardRef<
   const controls = colors.map((color, index) => (
     <ColorSwatch
       key={index}
-      component="button"
+      component='button'
       color={color}
       onClick={() => handleChange(color)}
       size={26}
-      radius="xs"
+      radius='xs'
       style={{ cursor: 'pointer' }}
       title={labels.colorPickerColorLabel(color)}
       aria-label={labels.colorPickerColorLabel(color)}
@@ -102,10 +98,10 @@ export const HighlightColorControl = forwardRef<
         )}
 
         <Tooltip.Group closeDelay={200}>
-          <Group justify="flex-end" gap="xs" mt="sm">
+          <Group justify='flex-end' gap='xs' mt='sm'>
             {state === 'palette' && (
               <ActionIcon
-                variant="default"
+                variant='default'
                 onClick={close}
                 title={labels.colorPickerCancel}
                 aria-label={labels.colorPickerCancel}
@@ -115,7 +111,7 @@ export const HighlightColorControl = forwardRef<
             )}
 
             <ActionIcon
-              variant="default"
+              variant='default'
               onClick={handleClear}
               title={labels.colorPickerClear}
               aria-label={labels.colorPickerClear}
@@ -125,7 +121,7 @@ export const HighlightColorControl = forwardRef<
 
             {state === 'palette' ? (
               <ActionIcon
-                variant="default"
+                variant='default'
                 onClick={() => setState('colorPicker')}
                 title={labels.colorPickerColorPicker}
                 aria-label={labels.colorPickerColorPicker}
@@ -134,7 +130,7 @@ export const HighlightColorControl = forwardRef<
               </ActionIcon>
             ) : (
               <ActionIcon
-                variant="default"
+                variant='default'
                 onClick={() => setState('palette')}
                 aria-label={labels.colorPickerPalette}
                 title={labels.colorPickerPalette}
@@ -145,7 +141,7 @@ export const HighlightColorControl = forwardRef<
 
             {state === 'colorPicker' && (
               <ActionIcon
-                variant="default"
+                variant='default'
                 onClick={close}
                 title={labels.colorPickerSave}
                 aria-label={labels.colorPickerSave}

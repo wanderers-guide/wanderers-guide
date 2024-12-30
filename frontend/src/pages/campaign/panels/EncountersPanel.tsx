@@ -100,8 +100,8 @@ export default function EncountersPanel(props: {
       });
 
       // Prefetch content package for creature calculations
-      // We could await these for a more seemless experience but it takes a bit too long imo - Quzzar
-      defineDefaultSourcesForUser().then((e) => {
+      await defineDefaultSourcesForUser().then(() => {
+        // We could await fetch content for a more seemless experience but it takes a bit too long imo - Quzzar
         fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
       });
 
