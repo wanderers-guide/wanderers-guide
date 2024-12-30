@@ -971,6 +971,7 @@ function CombatantCard(props: {
         w={70}
         size='md'
         placeholder='Init.'
+        autoComplete='nope'
         value={initiative ?? undefined}
         onChange={(val) => {
           setInitiative(parseInt(`${val}`));
@@ -1077,6 +1078,7 @@ function CombatantCard(props: {
           size='md'
           w={120}
           placeholder='HP'
+          autoComplete='nope'
           value={health}
           onChange={(e) => {
             setHealth(e.target.value);
