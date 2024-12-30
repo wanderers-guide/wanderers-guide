@@ -207,7 +207,7 @@ export function CreatureDrawerContent(props: {
   };
 
   // Update creature when state changed
-  const [debouncedCreature] = useDebouncedValue(creature, 250);
+  const [debouncedCreature] = useDebouncedValue(creature, 100);
   useDidUpdate(() => {
     if (!debouncedCreature) return;
     props.data.updateCreature?.(debouncedCreature);
