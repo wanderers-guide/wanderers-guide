@@ -576,6 +576,7 @@ const SelectSpellRankModal = (props: {
       opened={!!props.spell}
       onClose={() => props.onConfirm(null, null)}
       title={<Title order={3}>Select {props.spell?.name}'s Rank</Title>}
+      zIndex={1000}
     >
       <Stack gap={10}>
         {props.spell &&
