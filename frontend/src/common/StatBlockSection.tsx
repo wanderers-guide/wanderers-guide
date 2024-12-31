@@ -9,6 +9,7 @@ import {
   Item,
   LivingEntity,
   SenseWithRange,
+  Spell,
 } from '@typing/content';
 import { toLabel } from '@utils/strings';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
@@ -16,7 +17,7 @@ import TraitsDisplay from './TraitsDisplay';
 import { convertToSize } from '@upload/foundry-utils';
 import RichText from './RichText';
 import { compactLabels } from '@variables/variable-utils';
-import { sign } from '@utils/numbers';
+import { rankNumber, sign } from '@utils/numbers';
 import IndentedText from './IndentedText';
 import _ from 'lodash-es';
 import { actionCostToRichTextInsert } from '@utils/actions';
@@ -93,7 +94,7 @@ export default function StatBlockSection(props: {
     </Text>
   ));
 
-  console.log(entity);
+  console.log(data);
 
   const getArmorShieldDisplay = (armor: InventoryItem | null, shield: InventoryItem | null) => {
     if (!armor && !shield) {
@@ -195,6 +196,180 @@ export default function StatBlockSection(props: {
         {damageBonus} {weapon.stats.damage.damageType}
         {parseOtherDamage(weapon.stats.damage.other)}
         {weapon.stats.damage.extra ? ` + ${weapon.stats.damage.extra}` : ''}
+      </RichText>
+    );
+  };
+
+  const getInnateSpellsDisplay = () => {
+    const spellAttack = data.proficiencies['SPELL_ATTACK'].total;
+    const spellDc = parseInt(data.proficiencies['SPELL_DC'].total) + 10;
+
+    const spellsDict = _.groupBy(data.innate_spells, (s) => s.tradition);
+    return Object.entries(spellsDict).map(([tradition, spells]) => {
+      const spellsRankDict = _.groupBy(spells, (s) => s.rank);
+
+      return (
+        <RichText ta='justify' fz='xs' span>
+          **{toLabel(tradition)} Innate Spells** DC {spellDc}, attack {sign(spellAttack)};{' '}
+          {Object.entries(spellsRankDict)
+            .sort(([ar, as], [br, bs]) => {
+              return parseInt(br) - parseInt(ar);
+            })
+            .map(
+              ([rank, spells]) =>
+                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}** ${spells
+                  .map((s) => {
+                    const spellLink = linkContent(s.spell.name.toLowerCase(), 'spell', s.spell);
+                    if (s.casts_max > 1) {
+                      return `${spellLink} (${s.casts_current}/${s.casts_max})`;
+                    } else {
+                      return spellLink;
+                    }
+                  })
+                  .join(', ')}`
+            )
+            .join('; ')}
+        </RichText>
+      );
+    });
+  };
+
+  const getSpontaneousSpellsDisplay = () => {
+    const spontSources = data.spell_sources.filter((s) => s.source.type.startsWith('SPONTANEOUS-'));
+
+    const spellsDict = _.groupBy(spontSources, (s) => s.source.tradition);
+    return Object.entries(spellsDict).map(([tradition, d]) => {
+      const spellAttack = d[0].stats.spell_attack.total[0];
+      const spellDc = d[0].stats.spell_dc.total;
+
+      const sources = d.map((s) => s.source.name);
+      const spells = data.spell_raw_data.list.filter((s) => sources.includes(s.source));
+
+      const spellsRankDict = _.groupBy(spells, (s) => s.rank);
+
+      return (
+        <RichText ta='justify' fz='xs' span>
+          **{toLabel(tradition)} Spontaneous Spells** DC {spellDc}, attack {sign(spellAttack)};{' '}
+          {Object.entries(spellsRankDict)
+            .sort(([ar, as], [br, bs]) => {
+              return parseInt(br) - parseInt(ar);
+            })
+            .map(([rank, spells]) => {
+              const slots = data.spell_slots.filter(
+                (slot) => sources.includes(slot.source) && slot.rank === parseInt(rank)
+              );
+              const remainingSlots = slots.filter((s) => s.exhausted !== true);
+
+              const slotsStr =
+                parseInt(rank) > 0
+                  ? ` (${slots.length === remainingSlots.length ? `${slots.length}` : `${remainingSlots.length}/${slots.length}`} ${slots.length > 1 ? 'slots' : 'slot'})`
+                  : '';
+
+              return `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}**${slotsStr} ${spells
+                .map((s) => {
+                  const spellData = data.spells.all.find((_s) => _s.id === s.spell_id);
+                  if (!spellData) {
+                    return '';
+                  }
+                  return linkContent(spellData.name.toLowerCase(), 'spell', spellData);
+                })
+                .join(', ')}`;
+            })
+            .join('; ')}
+        </RichText>
+      );
+    });
+  };
+
+  const getPreparedSpellsDisplay = () => {
+    const spontSources = data.spell_sources.filter((s) => s.source.type.startsWith('PREPARED-'));
+
+    const spellsDict = _.groupBy(spontSources, (s) => s.source.tradition);
+    return Object.entries(spellsDict).map(([tradition, d]) => {
+      const spellAttack = d[0].stats.spell_attack.total[0];
+      const spellDc = d[0].stats.spell_dc.total;
+
+      const sources = d.map((s) => s.source.name);
+      const slots = data.spell_slots.filter((s) => sources.includes(s.source));
+
+      const spellsRankDict = _.groupBy(slots, (s) => s.rank);
+
+      return (
+        <RichText ta='justify' fz='xs' span>
+          **{toLabel(tradition)} Prepared Spells** DC {spellDc}, attack {sign(spellAttack)};{' '}
+          {Object.entries(spellsRankDict)
+            .sort(([ar, as], [br, bs]) => {
+              return parseInt(br) - parseInt(ar);
+            })
+            .map(([rank, spellsData]) => {
+              return `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}** ${spellsData
+                .map((s) => {
+                  if (!s.spell) {
+                    return '';
+                  }
+                  const linkStr = linkContent(s.spell.name.toLowerCase(), 'spell', s.spell);
+                  return s.exhausted ? `~~${linkStr}~~` : linkStr;
+                })
+                .join(', ')}`;
+            })
+            .join('; ')}
+        </RichText>
+      );
+    });
+  };
+
+  const getFocusSpellsDisplay = () => {
+    const spellsDict = _.groupBy(data.focus_spells, (s) => s.casting_source);
+    return Object.entries(spellsDict).map(([source, spells]) => {
+      const sourceData = data.spell_sources.find((s) => s.source.name === source);
+      const spellAttack = sourceData?.stats.spell_attack.total[0] ?? 0;
+      const spellDc = sourceData?.stats.spell_dc.total ?? 0;
+
+      const spellsRankDict = _.groupBy(spells, (s) => s.rank);
+
+      const maxPoints = spells.filter((s) => s.rank > 0).length;
+      const currentPoints = entity.spells?.focus_point_current ?? maxPoints;
+      return (
+        <RichText ta='justify' fz='xs' span>
+          **{toLabel(source)} Focus Spells** DC {spellDc}, attack {sign(spellAttack)},{' '}
+          {`${maxPoints === currentPoints ? `${maxPoints}` : `${currentPoints}/${maxPoints}`} ${maxPoints > 1 ? 'focus points' : 'focus point'}`}
+          ;{' '}
+          {Object.entries(spellsRankDict)
+            .sort(([ar, as], [br, bs]) => {
+              return parseInt(br) - parseInt(ar);
+            })
+            .map(
+              ([rank, spells]) =>
+                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}** ${spells
+                  .map((s) => {
+                    return linkContent(s.name.toLowerCase(), 'spell', s);
+                  })
+                  .join(', ')}`
+            )
+            .join('; ')}
+        </RichText>
+      );
+    });
+  };
+
+  const getRitualSpellsDisplay = () => {
+    const spellsRankDict = _.groupBy(data.spells.rituals, (s) => s.rank);
+    return (
+      <RichText ta='justify' fz='xs' span>
+        **Rituals**{' — '}
+        {Object.entries(spellsRankDict)
+          .sort(([ar, as], [br, bs]) => {
+            return parseInt(br) - parseInt(ar);
+          })
+          .map(
+            ([rank, spells]) =>
+              `**${rankNumber(parseInt(rank))}** ${spells
+                .map((s) => {
+                  return linkContent(s.name.toLowerCase(), 'spell', s);
+                })
+                .join(', ')}`
+          )
+          .join('; ')}
       </RichText>
     );
   };
@@ -324,7 +499,7 @@ export default function StatBlockSection(props: {
           </Text>{' '}
           <RichText ta='justify' fz='xs' span>
             {data.speeds
-              .filter((s) => s.value.total !== 0)
+              .filter((s) => s.value.value !== 0)
               .map((s) => {
                 if (s.name === 'SPEED') {
                   return `${s.value.total} ft`;
@@ -337,7 +512,11 @@ export default function StatBlockSection(props: {
         </IndentedText>
       )}
       {(data.weapons ?? []).map((w) => getWeaponDisplay(w))}
-      {/* {(data.spell_slots ?? []).map((w) => getWeaponDisplay(w))} */}
+      {getInnateSpellsDisplay()}
+      {getPreparedSpellsDisplay()}
+      {getSpontaneousSpellsDisplay()}
+      {getFocusSpellsDisplay()}
+      {getRitualSpellsDisplay()}
       {abilities
         .filter((ab) => ab.actions && ab.actions !== 'FREE-ACTION' && ab.actions !== 'REACTION')
         .map((ab) => getAbilityDisplay(ab))}

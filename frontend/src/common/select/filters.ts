@@ -7,7 +7,7 @@ export interface FilterOption {
   key: string;
   options?: string[] | { label: string; value: string }[];
   default?: string[];
-  isActionOption?: boolean
+  isActionOption?: boolean;
   filterFn?: (option: Record<string, any>) => boolean;
 }
 
@@ -22,9 +22,9 @@ export interface SelectedFilter {
 
 export const defaultFeatOptions: FilterOption[] = [
   {
-    title: "Action",
-    type: "MULTI-SELECT",
-    key: "actions",
+    title: 'Action',
+    type: 'MULTI-SELECT',
+    key: 'actions',
     isActionOption: true,
     options: [
       { label: 'One Action', value: 'ONE-ACTION' },
@@ -38,9 +38,9 @@ export const defaultFeatOptions: FilterOption[] = [
     ],
   },
   {
-    title: "Level",
-    type: "MULTI-SELECT",
-    key: "level",
+    title: 'Level',
+    type: 'MULTI-SELECT',
+    key: 'level',
     options: [
       { label: '1st', value: '1' },
       { label: '2nd', value: '2' },
@@ -62,12 +62,12 @@ export const defaultFeatOptions: FilterOption[] = [
       { label: '18th', value: '18' },
       { label: '19th', value: '19' },
       { label: '20th', value: '20' },
-    ]
+    ],
   },
-]
+];
 
 export const prereqFilterOption: FilterOption = {
-  title: 'Only prerequisites met',
+  title: 'Only prereqs met',
   type: 'CHECKBOX',
   key: 'prereq',
   filterFn: (option: Record<string, any>) => {

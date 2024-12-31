@@ -46,12 +46,13 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
       rank = 1;
     }
   }
-  if (spell && isRitual(spell)) {
-    rankTitle = 'Ritual';
-  }
 
   if (spell && isFocusSpell(spell)) {
     rankTitle = 'Focus';
+  }
+
+  if (spell && isRitual(spell)) {
+    rankTitle = 'Ritual';
   }
 
   return (

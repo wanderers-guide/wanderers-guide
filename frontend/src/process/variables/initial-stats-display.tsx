@@ -160,7 +160,7 @@ export function getStatDisplay(
   };
 
   let uuid = variableName;
-  for (const operation of operations.sort((a, b) => {
+  for (const operation of _.cloneDeep(operations).sort((a, b) => {
     // Selects should be at the end to make sure we get the proper best value
     if (a.type === 'select' && b.type !== 'select') return 1;
     if (a.type !== 'select' && b.type === 'select') return -1;

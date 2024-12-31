@@ -67,18 +67,20 @@ function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const allSpeeds = getAllSpeedVariables(props.id).map((speed) => {
+    const speedData = getSpeedValue(props.id, speed, props.entity);
     return {
       name: speed.name,
-      value: getSpeedValue(props.id, speed, props.entity).total,
+      base: speedData.value,
+      total: speedData.total,
     };
   });
   const baseSpeed = allSpeeds.find((speed) => speed.name === 'SPEED');
 
   // Use base speed if it's greater than 0, otherwise use the first speed that's greater than 0
-  const displaySpeed = baseSpeed && baseSpeed.value > 0 ? baseSpeed : allSpeeds.find((speed) => speed.value > 0);
+  const displaySpeed = baseSpeed && baseSpeed.base > 0 ? baseSpeed : allSpeeds.find((speed) => speed.base > 0);
 
   // Check if there are other speeds
-  const hasOthers = allSpeeds.filter((speed) => speed.value > 0);
+  const hasOthers = allSpeeds.filter((speed) => speed.base > 0);
 
   return (
     <Box

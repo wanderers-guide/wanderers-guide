@@ -57,6 +57,9 @@ export default function RichText(props: RichTextProps) {
     return `[${match}](link_condition_persistent~damage)`;
   });
 
+  // Replace arrow up emoji with the actual arrow up unicode character
+  convertedChildren = convertedChildren?.replace(/⬆️/g, '⇧');
+
   return (
     <Markdown
       children={convertedChildren}

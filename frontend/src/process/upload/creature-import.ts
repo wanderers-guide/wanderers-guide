@@ -732,6 +732,10 @@ async function addEquipment(operations: Operation[], json: Record<string, any>) 
       },
     } satisfies OperationGiveItem);
 
+    const itemData = _.cloneDeep(item);
+    if (itemData.meta_data) {
+      itemData.meta_data.hp = itemData.meta_data.hp_max;
+    }
     invItems.push({
       id: crypto.randomUUID(),
       item: _.cloneDeep(item),

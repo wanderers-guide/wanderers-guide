@@ -57,6 +57,7 @@ import {
   IconTrash,
   IconX,
   IconZoomCheck,
+  IconZoomQuestion,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { DrawerType } from '@typing/index';
@@ -2005,7 +2006,7 @@ export function FeatSelectionOption(props: {
               )}
               {prereqMet.result === 'UNKNOWN' && (
                 <ThemeIcon variant='light' size='xs' radius='xl' color='yellow'>
-                  <IconQuestionMark style={{ width: '70%', height: '70%' }} />
+                  <IconZoomQuestion style={{ width: '70%', height: '70%' }} />
                 </ThemeIcon>
               )}
               {prereqMet.result === 'NOT' && (

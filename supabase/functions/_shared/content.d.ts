@@ -309,6 +309,7 @@ interface Creature extends LivingEntity {
     background_image_url?: string;
     conditions?: Condition[];
     description: string;
+    adjustment?: 'ELITE' | 'WEAK';
   };
   operations: Operation[] | undefined;
   abilities_base?: AbilityBlock[];

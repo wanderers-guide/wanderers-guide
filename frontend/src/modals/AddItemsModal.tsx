@@ -55,14 +55,9 @@ export default function AddItemsModal({
   const theme = useMantineTheme();
 
   const { data: rawItems, isFetching } = useQuery({
-    queryKey: [`find-items`],
+    queryKey: [`find-items-add-items`],
     queryFn: async () => {
-      return (await fetchContentAll<Item>('item'))
-        .sort((a, b) => {
-          if (a.level === b.level) return a.name.localeCompare(b.name);
-          return a.level - b.level;
-        })
-        .filter((item) => isItemVisible('CHARACTER', item));
+      return (await fetchContentAll<Item>('item')).filter((item) => isItemVisible('CHARACTER', item));
     },
   });
 
@@ -98,7 +93,7 @@ export default function AddItemsModal({
     search.current.addDocuments(rawItems);
   }, [rawItems]);
 
-  const allFilteredItems =
+  const allFilteredItems = (
     (searchQuery.trim()
       ? (search.current?.search(searchQuery.trim()) as Item[] | undefined)
       : (rawItems ?? []).filter((item) => {
@@ -151,7 +146,11 @@ export default function AddItemsModal({
             }
           }
           return !hideItem;
-        })) ?? [];
+        })) ?? []
+  ).sort((a, b) => {
+    if (a.level === b.level) return a.name.localeCompare(b.name);
+    return a.level - b.level;
+  });
 
   useEffect(() => {
     setPage(1);

@@ -98,11 +98,15 @@ export const handleAddItem = async (
 ) => {
   const container_contents = await getDefaultContainerContents(item);
   setInventory((prev) => {
+    const itemData = _.cloneDeep(item);
+    if (itemData.meta_data) {
+      itemData.meta_data.hp = itemData.meta_data.hp_max;
+    }
     const newItems = [
       ..._.cloneDeep(prev.items),
       {
         id: crypto.randomUUID(),
-        item: _.cloneDeep(item),
+        item: itemData,
         is_formula: is_formula,
         is_equipped: false,
         is_invested: false,
@@ -666,7 +670,8 @@ export function getItemQuantity(item: Item) {
 export function isItemBroken(item: Item) {
   const bt = item.meta_data?.broken_threshold ?? 0;
   const hp = item.meta_data?.hp;
-  if (hp === undefined) return false;
+
+  if (hp === undefined || hp === null) return false;
   if (bt > 0 && hp <= bt) {
     return true;
   }

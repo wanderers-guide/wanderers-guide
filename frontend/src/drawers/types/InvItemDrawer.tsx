@@ -441,7 +441,7 @@ function InvItemSections(props: {
 
   const healthRef = useRef<HTMLInputElement>(null);
   const [health, setHealth] = useState<string>(
-    props.invItem.item.meta_data?.hp ? `${props.invItem.item.meta_data.hp}` : `${healthStats.hp_max}`
+    props.invItem.item.meta_data?.hp !== undefined ? `${props.invItem.item.meta_data.hp}` : `${healthStats.hp_max}`
   );
   useEffect(() => {
     if (props.invItem.item.meta_data?.hp && props.invItem.item.meta_data.hp !== parseInt(health)) {
