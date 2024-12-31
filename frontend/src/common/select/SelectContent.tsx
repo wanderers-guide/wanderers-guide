@@ -1907,7 +1907,7 @@ export function BaseSelectionOption(props: {
       )}
 
       {props.includeOptions && (
-        <Menu shadow='md' width={200}>
+        <Menu shadow='md' width={200} zIndex={1000}>
           <Menu.Target>
             <ActionIcon
               size='sm'
