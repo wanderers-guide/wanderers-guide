@@ -31,6 +31,7 @@ import {
   proficiencyTypeToLabel,
   variableToLabel,
 } from './variable-utils';
+import { nodeToString } from '@utils/components';
 
 type CharacterState = [Character | null, SetterOrUpdater<Character | null>];
 
@@ -159,7 +160,12 @@ export function getStatDisplay(
   };
 
   let uuid = variableName;
-  for (const operation of operations) {
+  for (const operation of operations.sort((a, b) => {
+    // Selects should be at the end to make sure we get the proper best value
+    if (a.type === 'select' && b.type !== 'select') return 1;
+    if (a.type !== 'select' && b.type === 'select') return -1;
+    return 0;
+  })) {
     if (operation.type === 'adjValue' || operation.type === 'setValue') {
       if (operation.data.variable === variableName) {
         setBestValue(operation.data.value as VariableValue);
@@ -243,8 +249,21 @@ export function getStatDisplay(
     }
   }
 
+  let display = getDisplay(id, bestValue, bestOperation, variable, mode, writeDetails, options);
+
+  // If it's a free attr boost, display how many frees there are
+  if (nodeToString(display).includes('Free')) {
+    const frees = operations
+      .map((op) => {
+        return op.type === 'select' ? getVarList(id, op, 'attr') : [];
+      })
+      .flat()
+      .filter((attr) => attr === 'Free');
+    display = <>{frees.join(', ')}</>;
+  }
+
   return {
-    ui: getDisplay(id, bestValue, bestOperation, variable, mode, writeDetails, options),
+    ui: display,
     operation: bestOperation,
     variable,
     bestValue,
