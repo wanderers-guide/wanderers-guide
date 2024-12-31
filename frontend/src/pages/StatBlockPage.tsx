@@ -101,7 +101,7 @@ export function Component() {
           radius='xl'
           aria-label='Toggle Light/Dark Mode'
           style={{
-            position: 'absolute',
+            position: 'fixed',
             bottom: 15,
             right: 15,
           }}
@@ -110,9 +110,9 @@ export function Component() {
           }}
         >
           {isLightMode ? (
-            <IconSun style={{ width: '70%', height: '70%' }} stroke={1.5} />
-          ) : (
             <IconMoon style={{ width: '70%', height: '70%' }} stroke={1.5} />
+          ) : (
+            <IconSun style={{ width: '70%', height: '70%' }} stroke={1.5} />
           )}
         </ActionIcon>
         <StatBlockSection entity={entity} />

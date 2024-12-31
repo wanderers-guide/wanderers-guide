@@ -85,3 +85,49 @@ export function findActions(text: string): ActionCost[] {
   const regex = /cost="([^"]*)"/g;
   return Array.from(text.matchAll(regex), (m) => m[1]) as ActionCost[];
 }
+
+export function actionCostToRichTextInsert(cost: ActionCost | string): string {
+  let result = '';
+  switch (cost) {
+    case 'ONE-ACTION':
+      result = '`action_symbol_1`';
+      break;
+    case 'TWO-ACTIONS':
+      result = '`action_symbol_2`';
+      break;
+    case 'THREE-ACTIONS':
+      result = '`action_symbol_3`';
+      break;
+    case 'REACTION':
+      result = '`action_symbol_5`';
+      break;
+    case 'FREE-ACTION':
+      result = '`action_symbol_4`';
+      break;
+    case 'ONE-TO-TWO-ACTIONS':
+      result = '`action_symbol_1` - `action_symbol_2`';
+      break;
+    case 'TWO-TO-THREE-ACTIONS':
+      result = '`action_symbol_2` - `action_symbol_3`';
+      break;
+    case 'ONE-TO-THREE-ACTIONS':
+      result = '`action_symbol_1` - `action_symbol_3`';
+      break;
+    case 'TWO-TO-TWO-ROUNDS':
+      result = '`action_symbol_2` - 2 rounds';
+      break;
+    case 'TWO-TO-THREE-ROUNDS':
+      result = '`action_symbol_2` - 3 rounds';
+      break;
+    case 'THREE-TO-TWO-ROUNDS':
+      result = '`action_symbol_3` - 2 rounds';
+      break;
+    case 'THREE-TO-THREE-ROUNDS':
+      result = '`action_symbol_3` - 3 rounds';
+      break;
+    default:
+      result = cost ?? '';
+      break;
+  }
+  return result;
+}

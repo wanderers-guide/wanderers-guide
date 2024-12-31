@@ -19,7 +19,7 @@ import { getVariable } from '@variables/variable-manager';
 import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { fetchContent, fetchContentById } from './content-store';
-import { isCharacter, isTruthy } from '@utils/type-fixing';
+import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 
 export function collectEntityAbilityBlocks(
   id: StoreID,
@@ -105,6 +105,11 @@ export function collectEntityAbilityBlocks(
     }),
     physicalFeatures: physicalFeatures.sort((a, b) => a.name.localeCompare(b.name)),
     heritages: heritages.sort((a, b) => a.name.localeCompare(b.name)),
+    // For creature:
+    baseAbilities: isCreature(entity) ? entity.abilities_base ?? [] : [],
+    addedAbilities: isCreature(entity)
+      ? entity.abilities_added?.map((id) => blocks.find((b) => id === b.id)).filter(isTruthy) ?? []
+      : [],
   };
 }
 

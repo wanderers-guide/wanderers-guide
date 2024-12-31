@@ -37,6 +37,7 @@ import { modals } from '@mantine/modals';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { makeRequest } from '@requests/request-manager';
 import {
+  IconAlignBoxLeftMiddle,
   IconArchive,
   IconArrowsShuffle,
   IconBrandTidal,
@@ -44,6 +45,7 @@ import {
   IconCopy,
   IconDots,
   IconFileTypePdf,
+  IconPrinter,
   IconTrash,
   IconUpload,
   IconUserPlus,
@@ -454,6 +456,14 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
               }}
             >
               Create Copy
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<IconAlignBoxLeftMiddle style={{ width: rem(14), height: rem(14) }} />}
+              onClick={async () => {
+                window.open(`/stat-block/character/${props.character.id}`, '_blank');
+              }}
+            >
+              Open Stat Block
             </Menu.Item>
             <Menu.Item
               leftSection={<IconCodeDots style={{ width: rem(14), height: rem(14) }} />}
