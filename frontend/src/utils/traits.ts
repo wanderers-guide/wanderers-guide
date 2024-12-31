@@ -39,7 +39,8 @@ export type TraitType =
   | 'RESILIENT-2'
   | 'RESILIENT-3'
   | 'RESILIENT-4'
-  | 'AUGMENTATION';
+  | 'AUGMENTATION'
+  | 'HINDERING';
 const traitMap: Record<number, TraitType> = {
   // Hardcoded trait ids:
   1437: 'GENERAL',
@@ -83,6 +84,7 @@ const traitMap: Record<number, TraitType> = {
   4004: 'RESILIENT-3',
   4005: 'RESILIENT-4',
   4097: 'AUGMENTATION',
+  2865: 'HINDERING',
 };
 
 export function getTraitTypeById(traitId: number): TraitType | null {

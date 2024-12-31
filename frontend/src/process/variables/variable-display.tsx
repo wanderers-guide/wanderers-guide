@@ -12,8 +12,10 @@ import { getVariable, getVariableBonuses } from './variable-manager';
 import { sign } from '@utils/numbers';
 import { Box, Text, TextProps } from '@mantine/core';
 import { compileExpressions, compileProficiencyType, getProficiencyTypeValue } from './variable-utils';
-import { CastingSource, Item } from '@typing/content';
+import { CastingSource, Item, LivingEntity } from '@typing/content';
 import { getAcParts } from '@items/armor-handler';
+import { getBestArmor } from '@items/inv-utils';
+import { hasTraitType } from '@utils/traits';
 
 export function getFinalProfValue(
   id: StoreID,
@@ -298,6 +300,71 @@ export function displayFinalAcValue(id: StoreID, item?: Item) {
     <span style={{ position: 'relative' }}>
       {<>{value}</>}
       {parts.hasConditionals ? (
+        <Text
+          c='guide.5'
+          style={{
+            position: 'absolute',
+            top: -6,
+            right: -7,
+          }}
+        >
+          *
+        </Text>
+      ) : null}
+    </span>
+  );
+}
+
+export function getSpeedValue(id: StoreID, variable: VariableNum, entity: LivingEntity | null) {
+  const finalData = getFinalVariableValue(id, variable.name);
+
+  const armorItem = getBestArmor(id, entity?.inventory);
+  const hasHindering = hasTraitType('HINDERING', armorItem?.item.traits);
+  const unburdenedIron = getVariable<VariableBool>(id, 'UNBURDENED_IRON')?.value ?? false;
+
+  for (const [key, value] of finalData.bmap) {
+    if (unburdenedIron && key.endsWith(' penalty')) {
+      let totalCompAdj = 0;
+      for (const comp of value.composition) {
+        if (comp.source === armorItem?.item.name && !hasHindering) {
+          // Remove all penalties from the armor
+          totalCompAdj += Math.abs(comp.amount);
+          comp.amount = 0;
+        } else {
+          // Reduce all other penalties by 5
+          if (Math.abs(comp.amount) > 5) {
+            totalCompAdj += 5;
+            comp.amount += 5;
+          }
+        }
+      }
+
+      finalData.bmap.set(key, {
+        value: value.value + totalCompAdj,
+        composition: value.composition,
+      });
+    }
+  }
+
+  const totalBonusValue = Array.from(finalData.bmap.values()).reduce((acc, bonus) => acc + bonus.value, 0);
+
+  return {
+    // Minimum speed is 5
+    total: Math.max(5, finalData.value + totalBonusValue),
+    value: finalData.value,
+    bonus: totalBonusValue,
+    bmap: finalData.bmap,
+  };
+}
+
+export function displayFinalSpeedValue(id: StoreID, variableName: string, entity: LivingEntity | null) {
+  const finalData = getSpeedValue(id, getVariable<VariableNum>(id, variableName)!, entity);
+  const breakdown = getVariableBreakdown(id, variableName);
+
+  return (
+    <span style={{ position: 'relative' }}>
+      {<>{finalData.total}</>}
+      {breakdown.conditionals.length > 0 ? (
         <Text
           c='guide.5'
           style={{

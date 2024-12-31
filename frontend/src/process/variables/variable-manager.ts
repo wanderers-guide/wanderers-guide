@@ -274,6 +274,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // When wielding a weapon you aren't proficient with, treat your level as your proficiency bonus.
   MARTIAL_EXPERIENCE: newVariable('bool', 'MARTIAL_EXPERIENCE'),
 
+  // Ignore the reduction to your Speed from any armor you wear & reduce any speed penalties by 5 feet.
+  UNBURDENED_IRON: newVariable('bool', 'UNBURDENED_IRON'),
+
   // Your proficiency bonus to untrained skills is equal to <>. ex. {{level/2}}
   UNTRAINED_IMPROVISATION: newVariable('str', 'UNTRAINED_IMPROVISATION'),
 

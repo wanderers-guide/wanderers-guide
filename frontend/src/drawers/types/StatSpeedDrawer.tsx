@@ -39,7 +39,7 @@ import {
   IconTimeline,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock, LivingEntity } from '@typing/content';
 import { StoreID, VariableNum, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -48,6 +48,7 @@ import {
   getBonusText,
   getFinalVariableValue,
   getProfValueParts,
+  getSpeedValue,
   getVariableBreakdown,
 } from '@variables/variable-display';
 import { getAllSpeedVariables, getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
@@ -81,7 +82,7 @@ export function StatSpeedDrawerTitle(props: { data: { id: StoreID } }) {
   );
 }
 
-export function StatSpeedDrawerContent(props: { data: { id: StoreID } }) {
+export function StatSpeedDrawerContent(props: { data: { id: StoreID; entity: LivingEntity | null } }) {
   const speedVars = getAllSpeedVariables(props.data.id);
 
   const [speedSectionValue, setSpeedSectionValue] = useState<string | null>(null);
@@ -117,6 +118,7 @@ export function StatSpeedDrawerContent(props: { data: { id: StoreID } }) {
             <StatSpeedSection
               id={props.data.id}
               variable={variable}
+              entity={props.data.entity}
               key={index}
               opened={speedSectionValue === variable.name}
             />
@@ -127,16 +129,17 @@ export function StatSpeedDrawerContent(props: { data: { id: StoreID } }) {
   );
 }
 
-function StatSpeedSection(props: { id: StoreID; variable: VariableNum; opened?: boolean }) {
+function StatSpeedSection(props: {
+  id: StoreID;
+  variable: VariableNum;
+  entity: LivingEntity | null;
+  opened?: boolean;
+}) {
   const variable = props.variable;
 
   // Breakdown
-  const finalData = getFinalVariableValue(props.id, variable.name);
   const breakdown = getVariableBreakdown(props.id, variable.name);
-
-  // Minimum speed is 5
-  const finalTotal = finalData.total > 5 ? finalData.total : 5;
-
+  const finalData = getSpeedValue(props.id, variable, props.entity);
   if (finalData.value === 0) {
     return null;
   }
@@ -181,7 +184,7 @@ function StatSpeedSection(props: { id: StoreID; variable: VariableNum; opened?: 
           </Text>
           <Box mr='sm'>
             <Text fz='md' c='gray.4' fw={600} span>
-              {finalTotal} feet
+              {finalData.total} feet
             </Text>
           </Box>
         </Group>
@@ -194,7 +197,7 @@ function StatSpeedSection(props: { id: StoreID; variable: VariableNum; opened?: 
                 <Accordion.Control icon={<IconMathSymbols size='1rem' />}>Breakdown</Accordion.Control>
                 <Accordion.Panel>
                   <Group gap={8} align='center'>
-                    {finalTotal} ={' '}
+                    {finalData.total} ={' '}
                     <>
                       <HoverCard shadow='md' openDelay={250} width={230} position='bottom' zIndex={10000} withArrow>
                         <HoverCard.Target>

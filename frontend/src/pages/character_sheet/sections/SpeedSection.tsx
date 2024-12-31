@@ -9,10 +9,17 @@ import { useHover } from '@mantine/hooks';
 import { LivingEntity } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { compactSenses, displayPrimaryVisionSense } from '@utils/senses';
-import { displayFinalProfValue, displayFinalVariableValue, getFinalVariableValue } from '@variables/variable-display';
+import {
+  displayFinalProfValue,
+  displayFinalSpeedValue,
+  displayFinalVariableValue,
+  getFinalVariableValue,
+  getSpeedValue,
+} from '@variables/variable-display';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { ConditionSection } from './ConditionSection';
 import { getAllSpeedVariables } from '@variables/variable-manager';
+import { en } from '@supabase/auth-ui-shared';
 
 function PerceptionSection(props: { id: StoreID }) {
   const { hovered: perceptionHovered, ref: perceptionRef } = useHover();
@@ -55,14 +62,14 @@ function PerceptionSection(props: { id: StoreID }) {
   );
 }
 
-function SpeedSection(props: { id: StoreID }) {
+function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
   const { hovered: speedHovered, ref: speedRef } = useHover();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const allSpeeds = getAllSpeedVariables(props.id).map((speed) => {
     return {
       name: speed.name,
-      value: getFinalVariableValue(props.id, speed.name).total,
+      value: getSpeedValue(props.id, speed, props.entity).total,
     };
   });
   const baseSpeed = allSpeeds.find((speed) => speed.name === 'SPEED');
@@ -80,7 +87,7 @@ function SpeedSection(props: { id: StoreID }) {
       onClick={() => {
         openDrawer({
           type: 'stat-speed',
-          data: { id: props.id },
+          data: { id: props.id, entity: props.entity },
           extra: { addToHistory: true },
         });
       }}
@@ -100,7 +107,7 @@ function SpeedSection(props: { id: StoreID }) {
           Speed
         </Text>
         <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
-          {displayFinalVariableValue(props.id, displaySpeed?.name || 'SPEED')}
+          {displayFinalSpeedValue(props.id, displaySpeed?.name || 'SPEED', props.entity)}
           <Text fz='xs' c='gray.3' span>
             {' '}
             ft.
@@ -178,7 +185,7 @@ export default function MainSpeedSection(props: {
       >
         <Group wrap='nowrap' gap={5} align='flex-start' grow>
           <PerceptionSection id={props.id} />
-          <SpeedSection id={props.id} />
+          <SpeedSection id={props.id} entity={props.entity} />
           <ClassDcSection id={props.id} />
         </Group>
       </Box>
@@ -208,7 +215,7 @@ export function AltSpeedSection(props: {
       >
         <Group wrap='nowrap' gap={5} align='flex-start' grow>
           <PerceptionSection id={props.id} />
-          <SpeedSection id={props.id} />
+          <SpeedSection id={props.id} entity={props.entity} />
           <ConditionSection w={125} id={props.id} entity={props.entity} setEntity={props.setEntity} />
         </Group>
       </Box>

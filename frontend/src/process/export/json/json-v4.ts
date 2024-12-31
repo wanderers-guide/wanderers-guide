@@ -17,6 +17,7 @@ import {
   getFinalProfValue,
   getFinalVariableValue,
   getProfValueParts,
+  getSpeedValue,
 } from '@variables/variable-display';
 import {
   getAllAncestryTraitVariables,
@@ -167,7 +168,7 @@ export async function getJsonV4Content(entity: LivingEntity) {
   const speeds = getAllSpeedVariables(STORE_ID).map((v) => {
     return {
       name: v.name,
-      value: getFinalVariableValue(STORE_ID, v.name),
+      value: getSpeedValue(STORE_ID, v, entity),
     };
   });
 

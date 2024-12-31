@@ -23,6 +23,7 @@ import { actionCostToRichTextInsert } from '@utils/actions';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
 import { RecallKnowledgeText } from '@drawers/types/CreatureDrawer';
+import { getVariable } from '@variables/variable-manager';
 
 export default function StatBlockSection(props: {
   entity: LivingEntity;
