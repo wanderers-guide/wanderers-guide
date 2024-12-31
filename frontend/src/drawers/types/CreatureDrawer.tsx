@@ -1,6 +1,7 @@
 import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
+import StatBlockSection from '@common/StatBlockSection';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage } from '@content/content-store';
@@ -55,6 +56,7 @@ import {
   IconDualScreen,
   IconEdit,
   IconZzz,
+  IconAlignBoxLeftMiddle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Creature, Inventory, LivingEntity, Trait } from '@typing/content';
@@ -115,42 +117,7 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
     },
   });
 
-  <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
-              <HoverCard.Target>
-                {drawerData.view === 'BLOCK' ? (
-                  <ActionIcon
-                    variant='subtle'
-                    aria-label='Switch to Sheet View'
-                    size='xl'
-                    radius={'xl'}
-                    color='guide.6'
-                    onClick={() => {
-                      setDrawerData({ view: 'SHEET' });
-                    }}
-                  >
-                    <IconDualScreen style={{ width: '60%', height: '60%' }} stroke={1.5} />
-                  </ActionIcon>
-                ) : (
-                  <ActionIcon
-                    variant='subtle'
-                    aria-label='Switch to Stat Block View'
-                    size='xl'
-                    radius={'xl'}
-                    color='guide.6'
-                    onClick={() => {
-                      setDrawerData({ view: 'BLOCK' });
-                    }}
-                  >
-                    <IconListDetails style={{ width: '60%', height: '60%' }} stroke={1.5} />
-                  </ActionIcon>
-                )}
-              </HoverCard.Target>
-              <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
-                </Text>
-              </HoverCard.Dropdown>
-            </HoverCard>
+  
   
   */
 }
@@ -321,7 +288,32 @@ export function CreatureDrawerContent(props: {
   return (
     <Stack>
       {drawerData.view === 'BLOCK' ? (
-        <CreatureStatBlockView id={STORE_ID} creature={creature} setCreature={setCreature} />
+        <Stack gap={10}>
+          <Group gap={15}>
+            <Box style={{ flex: 1 }}>
+              <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+            </Box>
+            {creature.details.image_url && (
+              <BlurBox blur={10} h={111} pr='sm' pt='sm'>
+                <DisplayIcon
+                  strValue={creature.details.image_url}
+                  width={90}
+                  iconStyles={{
+                    height: 90,
+                  }}
+                />
+              </BlurBox>
+            )}
+          </Group>
+          <StatBlockSection
+            entity={creature}
+            options={{
+              hideName: true,
+              hideHealth: true,
+              hideImage: true,
+            }}
+          />
+        </Stack>
       ) : (
         <Stack>
           <Stack>
@@ -554,21 +546,72 @@ export function CreatureDrawerContent(props: {
             >
               <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
             </ActionIcon>
-            <ActionIcon
-              variant='light'
-              color='blue'
-              radius='xl'
-              aria-label='Rest Creature'
-              style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}
-              onClick={() => {
-                handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
-              }}
-            >
-              <IconZzz style={{ width: '70%', height: '70%' }} stroke={1.5} />
-            </ActionIcon>
+            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+              <HoverCard.Target>
+                <ActionIcon
+                  variant='light'
+                  color='blue'
+                  radius='xl'
+                  aria-label='Rest Creature'
+                  style={{
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                  }}
+                  onClick={() => {
+                    handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
+                  }}
+                >
+                  <IconZzz style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown py={5} px={10}>
+                <Text c='gray.0' size='sm'>
+                  Rest
+                </Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
+            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+              <HoverCard.Target>
+                {drawerData.view === 'BLOCK' ? (
+                  <ActionIcon
+                    variant='light'
+                    color='yellow'
+                    radius='xl'
+                    aria-label='Switch View Mode'
+                    style={{
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                    }}
+                    onClick={() => {
+                      setDrawerData({ view: 'SHEET' });
+                    }}
+                  >
+                    <IconDualScreen style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon>
+                ) : (
+                  <ActionIcon
+                    variant='light'
+                    color='yellow'
+                    radius='xl'
+                    aria-label='Switch View Mode'
+                    style={{
+                      backdropFilter: 'blur(8px)',
+                      WebkitBackdropFilter: 'blur(8px)',
+                    }}
+                    onClick={() => {
+                      setDrawerData({ view: 'BLOCK' });
+                    }}
+                  >
+                    <IconAlignBoxLeftMiddle style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon>
+                )}
+              </HoverCard.Target>
+              <HoverCard.Dropdown py={5} px={10}>
+                <Text c='gray.0' size='sm'>
+                  {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
+                </Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
           </Group>
         </Group>
         {editingCreature && (
@@ -602,6 +645,27 @@ function CreatureStatBlockView(props: {
 function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
   const theme = useMantineTheme();
 
+  return (
+    <BlurBox blur={10}>
+      <Box
+        px='xs'
+        py={10}
+        style={{
+          borderTopLeftRadius: theme.radius.md,
+          borderTopRightRadius: theme.radius.md,
+          position: 'relative',
+        }}
+        h='100%'
+      >
+        <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
+          <RecallKnowledgeText entity={props.entity} traits={props.traits} />
+        </Group>
+      </Box>
+    </BlurBox>
+  );
+}
+
+export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }) {
   const traits = findCreatureTraits(props.entity)
     .map((id) => props.traits.find((t) => t.id === id))
     .filter(isTruthy);
@@ -635,31 +699,16 @@ function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
   if (!knowledgeSkill) return null;
 
   return (
-    <BlurBox blur={10}>
-      <Box
-        px='xs'
-        py={10}
-        style={{
-          borderTopLeftRadius: theme.radius.md,
-          borderTopRightRadius: theme.radius.md,
-          position: 'relative',
-        }}
-        h='100%'
-      >
-        <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
-          <Text fz='xs' span>
-            <Text fz='xs' fw={500} c='gray.0' span>
-              Recall Knowledge
-            </Text>{' '}
-            (
-            <Text fz='xs' fs='italic' span>
-              {knowledgeTrait?.name.toLowerCase()}
-              {props.entity.rarity !== 'COMMON' ? `, ${props.entity.rarity.toLowerCase()}` : ''}{' '}
-            </Text>
-            ) {knowledgeSkill} DC {getDcForLevel(props.entity.level, props.entity.rarity)}
-          </Text>
-        </Group>
-      </Box>
-    </BlurBox>
+    <Text fz='xs' span>
+      <Text fz='xs' fw={600} c='gray.4' span>
+        Recall Knowledge
+      </Text>{' '}
+      (
+      <Text fz='xs' fs='italic' span>
+        {knowledgeTrait?.name.toLowerCase()}
+        {props.entity.rarity !== 'COMMON' ? `, ${props.entity.rarity.toLowerCase()}` : ''}{' '}
+      </Text>
+      ) {knowledgeSkill} DC {getDcForLevel(props.entity.level, props.entity.rarity)}
+    </Text>
   );
 }

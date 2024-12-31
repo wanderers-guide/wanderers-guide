@@ -22,6 +22,7 @@ import _ from 'lodash-es';
 import { actionCostToRichTextInsert } from '@utils/actions';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
+import { RecallKnowledgeText } from '@drawers/types/CreatureDrawer';
 
 export default function StatBlockSection(props: {
   entity: LivingEntity;
@@ -222,6 +223,7 @@ export default function StatBlockSection(props: {
           interactable
         />
       )}
+      {isCreature(entity) && <RecallKnowledgeText entity={entity} traits={data.all_traits} />}
       <IndentedText ta='justify' fz='xs' span>
         <Text fz='xs' fw={600} c='gray.4' span>
           Perception
@@ -230,14 +232,16 @@ export default function StatBlockSection(props: {
           {data.proficiencies['PERCEPTION'].total}; {stringifySenses(data.senses)}
         </RichText>
       </IndentedText>
-      <IndentedText ta='justify' fz='xs' span>
-        <Text fz='xs' fw={600} c='gray.4' span>
-          Languages
-        </Text>{' '}
-        <RichText ta='justify' fz='xs' span>
-          {data.languages.map((l) => toLabel(l)).join(', ')}
-        </RichText>
-      </IndentedText>
+      {data.languages.length > 0 && (
+        <IndentedText ta='justify' fz='xs' span>
+          <Text fz='xs' fw={600} c='gray.4' span>
+            Languages
+          </Text>{' '}
+          <RichText ta='justify' fz='xs' span>
+            {data.languages.map((l) => toLabel(l)).join(', ')}
+          </RichText>
+        </IndentedText>
+      )}
       <IndentedText ta='justify' fz='xs' span>
         <Text fz='xs' fw={600} c='gray.4' span>
           Skills
@@ -253,24 +257,26 @@ export default function StatBlockSection(props: {
       <IndentedText ta='justify' fz='xs' span>
         {ATTR.flatMap((node, index) => (index < ATTR.length - 1 ? [node, ', '] : [node]))}
       </IndentedText>
-      <IndentedText ta='justify' fz='xs' span>
-        <Text fz='xs' fw={600} c='gray.4' span>
-          Items
-        </Text>{' '}
-        <RichText ta='justify' fz='xs' span>
-          {data.inventory_flat
-            .filter((i) => i.item.meta_data?.unselectable !== true)
-            .map((i) => {
-              const nameStr = linkContent(i.item.name.toLowerCase(), 'item', i.item);
-              if (i.item.meta_data?.quantity && i.item.meta_data?.quantity > 1) {
-                return `${nameStr} (${i.item.meta_data?.quantity})`;
-              } else {
-                return nameStr;
-              }
-            })
-            .join(', ')}
-        </RichText>
-      </IndentedText>
+      {data.inventory_flat.filter((i) => i.item.meta_data?.unselectable !== true).length > 0 && (
+        <IndentedText ta='justify' fz='xs' span>
+          <Text fz='xs' fw={600} c='gray.4' span>
+            Items
+          </Text>{' '}
+          <RichText ta='justify' fz='xs' span>
+            {data.inventory_flat
+              .filter((i) => i.item.meta_data?.unselectable !== true)
+              .map((i) => {
+                const nameStr = linkContent(i.item.name.toLowerCase(), 'item', i.item);
+                if (i.item.meta_data?.quantity && i.item.meta_data?.quantity > 1) {
+                  return `${nameStr} (${i.item.meta_data?.quantity})`;
+                } else {
+                  return nameStr;
+                }
+              })
+              .join(', ')}
+          </RichText>
+        </IndentedText>
+      )}
       <Divider />
       <IndentedText ta='justify' fz='xs' span>
         <Text fz='xs' fw={600} c='gray.4' span>
@@ -310,23 +316,25 @@ export default function StatBlockSection(props: {
         .filter((ab) => ab.actions === 'FREE-ACTION' || ab.actions === 'REACTION')
         .map((ab) => getAbilityDisplay(ab))}
       <Divider />
-      <IndentedText ta='justify' fz='xs' span>
-        <Text fz='xs' fw={600} c='gray.4' span>
-          Speed
-        </Text>{' '}
-        <RichText ta='justify' fz='xs' span>
-          {data.speeds
-            .filter((s) => s.value.total !== 0)
-            .map((s) => {
-              if (s.name === 'SPEED') {
-                return `${s.value.total} ft`;
-              } else {
-                return `${s.name.replace('SPEED_', '').toLowerCase()} ${s.value.total} ft`;
-              }
-            })
-            .join(', ')}
-        </RichText>
-      </IndentedText>
+      {data.speeds.filter((s) => s.value.total !== 0).length > 0 && (
+        <IndentedText ta='justify' fz='xs' span>
+          <Text fz='xs' fw={600} c='gray.4' span>
+            Speed
+          </Text>{' '}
+          <RichText ta='justify' fz='xs' span>
+            {data.speeds
+              .filter((s) => s.value.total !== 0)
+              .map((s) => {
+                if (s.name === 'SPEED') {
+                  return `${s.value.total} ft`;
+                } else {
+                  return `${s.name.replace('SPEED_', '').toLowerCase()} ${s.value.total} ft`;
+                }
+              })
+              .join(', ')}
+          </RichText>
+        </IndentedText>
+      )}
       {(data.weapons ?? []).map((w) => getWeaponDisplay(w))}
       {/* {(data.spell_slots ?? []).map((w) => getWeaponDisplay(w))} */}
       {abilities
@@ -335,10 +343,13 @@ export default function StatBlockSection(props: {
       <Divider />
       {abilities.filter((ab) => !ab.actions).map((ab) => getAbilityDisplay(ab))}
       <Divider />
-      {!props.options?.hideDescription && isCreature(entity) && (
-        <RichText ta='justify' fz='xs' fs='italic' span>
-          {entity.details.description.includes('\n') ? entity.details.description : `> ${entity.details.description}`}
-        </RichText>
+
+      {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && (
+        <Box p='lg'>
+          <RichText ta='justify' fz='xs' fs='italic' c='dimmed' span>
+            {entity.details.description}
+          </RichText>
+        </Box>
       )}
     </Stack>
   );
