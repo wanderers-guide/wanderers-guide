@@ -25,6 +25,11 @@ import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
 import { RecallKnowledgeText } from '@drawers/types/CreatureDrawer';
 import { getVariable } from '@variables/variable-manager';
+import { DisplayIcon } from './IconDisplay';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
+
+const IMAGE_SIZE = 120;
 
 export default function StatBlockSection(props: {
   entity: LivingEntity;
@@ -36,6 +41,8 @@ export default function StatBlockSection(props: {
     hideDescription?: boolean;
   };
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
+
   const { entity } = props;
   const { data, isLoading } = useQuery({
     queryKey: [`fetch-stat-block-data-content`, { entity }],
@@ -273,6 +280,7 @@ export default function StatBlockSection(props: {
                   }
                   return linkContent(spellData.name.toLowerCase(), 'spell', spellData);
                 })
+                .filter((s) => s !== '')
                 .join(', ')}`;
             })
             .join('; ')}
@@ -310,6 +318,7 @@ export default function StatBlockSection(props: {
                   const linkStr = linkContent(s.spell.name.toLowerCase(), 'spell', s.spell);
                   return s.exhausted ? `~~${linkStr}~~` : linkStr;
                 })
+                .filter((s) => s !== '')
                 .join(', ')}`;
             })
             .join('; ')}
@@ -353,6 +362,9 @@ export default function StatBlockSection(props: {
   };
 
   const getRitualSpellsDisplay = () => {
+    if (data.spells.rituals.length === 0) {
+      return null;
+    }
     const spellsRankDict = _.groupBy(data.spells.rituals, (s) => s.rank);
     return (
       <RichText ta='justify' fz='xs' span>
@@ -390,17 +402,30 @@ export default function StatBlockSection(props: {
         </Stack>
       )}
       {!props.options?.hideTraits && (
-        <TraitsDisplay
-          justify='flex-start'
-          size='sm'
-          traitIds={data.character_traits.map((trait) => trait.id)}
-          rarity={isCreature(entity) ? entity.rarity : undefined}
-          pfSize={convertToSize(data.size)}
-          interactable
-        />
+        <Box pr={IMAGE_SIZE}>
+          <TraitsDisplay
+            justify='flex-start'
+            size='sm'
+            traitIds={data.character_traits.map((trait) => trait.id)}
+            rarity={isCreature(entity) ? entity.rarity : undefined}
+            pfSize={convertToSize(data.size)}
+            interactable
+          />
+        </Box>
+      )}
+      {props.options?.hideImage ? null : (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 15 + (!props.options?.hideName ? 55 : 0),
+            right: 15,
+          }}
+        >
+          <DisplayIcon strValue={entity.details?.image_url} width={IMAGE_SIZE} />
+        </Box>
       )}
       {isCreature(entity) && <RecallKnowledgeText entity={entity} traits={data.all_traits} />}
-      <IndentedText ta='justify' fz='xs' span>
+      <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
         <Text fz='xs' fw={600} c='gray.4' span>
           Perception
         </Text>{' '}
@@ -409,7 +434,7 @@ export default function StatBlockSection(props: {
         </RichText>
       </IndentedText>
       {data.languages.length > 0 && (
-        <IndentedText ta='justify' fz='xs' span>
+        <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
           <Text fz='xs' fw={600} c='gray.4' span>
             Languages
           </Text>{' '}
@@ -418,7 +443,7 @@ export default function StatBlockSection(props: {
           </RichText>
         </IndentedText>
       )}
-      <IndentedText ta='justify' fz='xs' span>
+      <IndentedText ta='justify' fz='xs' pr={isPhone ? 0 : IMAGE_SIZE} span>
         <Text fz='xs' fw={600} c='gray.4' span>
           Skills
         </Text>{' '}
