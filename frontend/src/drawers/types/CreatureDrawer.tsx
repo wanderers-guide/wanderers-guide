@@ -634,14 +634,6 @@ export function CreatureDrawerContent(props: {
   );
 }
 
-function CreatureStatBlockView(props: {
-  id: StoreID;
-  creature: Creature;
-  setCreature: SetterOrUpdater<Creature | null>;
-}) {
-  return <Box></Box>;
-}
-
 function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
   const theme = useMantineTheme();
 
