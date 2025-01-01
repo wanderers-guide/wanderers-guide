@@ -29,8 +29,6 @@ import { DisplayIcon } from './IconDisplay';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 
-const IMAGE_SIZE = 120;
-
 export default function StatBlockSection(props: {
   entity: LivingEntity;
   options?: {
@@ -387,6 +385,8 @@ export default function StatBlockSection(props: {
   };
 
   const abilities = _.flatten(Object.values(data.feats_features));
+
+  const IMAGE_SIZE = props.options?.hideImage || !entity.details?.image_url ? 0 : 120;
 
   return (
     <Stack gap={5} pb={15}>
