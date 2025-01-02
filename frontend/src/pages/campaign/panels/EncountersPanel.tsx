@@ -42,7 +42,7 @@ import { openContextModal } from '@mantine/modals';
 import { CreateCombatantModal } from '@modals/CreateCombatantModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
-import { ConditionPills } from '@pages/character_sheet/sections/ConditionSection';
+import { ConditionPills, selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { makeRequest } from '@requests/request-manager';
 import { en } from '@supabase/auth-ui-shared';
 import {
@@ -53,6 +53,7 @@ import {
   IconCylinder,
   IconDownload,
   IconExternalLink,
+  IconHeartPlus,
   IconPlus,
   IconSettings,
   IconSparkles,
@@ -557,10 +558,12 @@ function EncounterView(props: {
         return combatant.creature;
       }
     };
-    return combatants.map((c) => ({
-      ...c,
-      data: getCombatantData(c)!,
-    }));
+    return combatants
+      .map((c) => ({
+        ...c,
+        data: getCombatantData(c)!,
+      }))
+      .filter((c) => c.data !== undefined);
   };
 
   // Get the combatants from the encounter
@@ -1098,7 +1101,14 @@ function CombatantCard(props: {
         />
       )}
       {!isPhone && (
-        <ScrollArea h={40} scrollbars='y'>
+        <ScrollArea
+          h={40}
+          scrollbars='y'
+          style={{
+            position: 'relative',
+          }}
+          px={15}
+        >
           <ConditionPills
             id={getCombatantStoreID(props.combatant)}
             entity={props.combatant.data}
@@ -1117,6 +1127,33 @@ function CombatantCard(props: {
               w: 200,
             }}
           />
+          <ActionIcon
+            variant='subtle'
+            aria-label='Add Condition'
+            size='xs'
+            radius='xl'
+            color='dark.3'
+            onClick={() => {
+              selectCondition(props.combatant?.data.details?.conditions ?? [], (condition) => {
+                if (!props.combatant) return;
+                props.updateEntity({
+                  ...props.combatant.data,
+                  details: {
+                    ...props.combatant.data.details,
+                    conditions: [...(props.combatant.data.details?.conditions ?? []), condition],
+                  },
+                });
+              });
+            }}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: 10,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <IconPlus size='1rem' stroke={1.5} />
+          </ActionIcon>
         </ScrollArea>
       )}
 

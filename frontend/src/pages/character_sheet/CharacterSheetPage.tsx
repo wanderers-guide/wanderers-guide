@@ -40,6 +40,7 @@ import {
   IconNotebook,
   IconNotes,
   IconPaw,
+  IconRefresh,
   IconShadow,
   IconX,
 } from '@tabler/icons-react';
@@ -78,6 +79,7 @@ import { convertToSetEntity } from '@utils/type-fixing';
 import ModeDrawer from '@common/modes/ModesDrawer';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
+import { showNotification } from '@mantine/notifications';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -303,6 +305,29 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       onSuccess: () => {},
     }
   );
+
+  // Poll health & condition updates
+  const { data: polledCharacter } = useQuery({
+    queryKey: [`find-character-polling-updates-${props.characterId}`],
+    queryFn: async () => {
+      return await makeRequest<Character>('find-character', {
+        id: props.characterId,
+      });
+    },
+    refetchInterval: 1800,
+    enabled: debouncedCharacter !== null,
+  });
+  useEffect(() => {
+    if (polledCharacter && !_.isEqual(character, polledCharacter)) {
+      showNotification({
+        icon: <IconRefresh />,
+        title: `Updating character...`,
+        message: `Received a remote update`,
+        autoClose: 1500,
+      });
+      setCharacter(polledCharacter);
+    }
+  }, [polledCharacter]);
 
   // Inventory saving & management
   const getInventory = (character: Character | null) => {
