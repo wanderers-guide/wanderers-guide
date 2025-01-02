@@ -1124,7 +1124,7 @@ function CombatantCard(props: {
               });
             }}
             groupProps={{
-              w: 200,
+              w: 170,
             }}
           />
           <ActionIcon
