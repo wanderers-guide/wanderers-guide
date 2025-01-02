@@ -381,8 +381,6 @@ CREATE TABLE public.creature (
     name character varying NOT NULL,
     level integer DEFAULT 0 NOT NULL,
     rarity character varying DEFAULT 'COMMON'::character varying NOT NULL,
-    size character varying DEFAULT 'MEDIUM'::character varying NOT NULL,
-    traits bigint[],
     meta_data json,
     content_source_id bigint NOT NULL,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
