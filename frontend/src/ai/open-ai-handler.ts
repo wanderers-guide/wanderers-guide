@@ -5,7 +5,7 @@ import { fetchContentPackage } from '@content/content-store';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
 import { makeRequest } from '@requests/request-manager';
 import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Encounter, Trait } from '@typing/content';
-import { findCreatureTraits } from '@utils/creature';
+import { adjustCreature, findCreatureTraits } from '@utils/creature';
 import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
 import yaml from 'js-yaml';
@@ -493,22 +493,60 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
       encounter.combatants.list.length > 0
     ) {
       if (difficulty.status === 'IMPOSSIBLE') {
-        // Remove lowest level creature
-        const lowestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
-          prev.creature!.level < current.creature!.level ? prev : current
-        );
-        encounter.combatants.list = encounter.combatants.list.filter((c) => c !== lowestLevelCreature);
-        console.log('- Removed:', lowestLevelCreature.creature?.name);
-      } else if (difficulty.status === 'Trivial') {
-        // Add another of the highest level creature
         const highestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
           prev.creature!.level > current.creature!.level ? prev : current
         );
-        encounter.combatants.list.push({
-          ..._.cloneDeep(highestLevelCreature),
-          _id: crypto.randomUUID(),
-        });
-        console.log('- Added:', highestLevelCreature.creature?.name);
+        const lowestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
+          prev.creature!.level < current.creature!.level ? prev : current
+        );
+
+        if (highestLevelCreature.creature!.details.adjustment === undefined) {
+          // Weakened highest level creatures
+          encounter.combatants.list = encounter.combatants.list.map((c) => {
+            if (c.creature?.id === highestLevelCreature.creature?.id) {
+              console.log('- Weakened:', highestLevelCreature.creature?.name);
+              return {
+                ...c,
+                creature: adjustCreature(c.creature!, 'WEAK'),
+              };
+            } else {
+              return c;
+            }
+          });
+        } else {
+          // Remove lowest level creature
+          encounter.combatants.list = encounter.combatants.list.filter((c) => c !== lowestLevelCreature);
+          console.log('- Removed:', lowestLevelCreature.creature?.name);
+        }
+      } else if (difficulty.status === 'Trivial') {
+        const highestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
+          prev.creature!.level > current.creature!.level ? prev : current
+        );
+        const lowestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
+          prev.creature!.level < current.creature!.level ? prev : current
+        );
+
+        if (lowestLevelCreature.creature!.details.adjustment === undefined) {
+          // Elite lowest level creatures
+          encounter.combatants.list = encounter.combatants.list.map((c) => {
+            if (c.creature?.id === lowestLevelCreature.creature?.id) {
+              console.log('- Elited:', lowestLevelCreature.creature?.name);
+              return {
+                ...c,
+                creature: adjustCreature(c.creature!, 'ELITE'),
+              };
+            } else {
+              return c;
+            }
+          });
+        } else {
+          // Add another of highest level creature
+          encounter.combatants.list.push({
+            ..._.cloneDeep(highestLevelCreature),
+            _id: crypto.randomUUID(),
+          });
+          console.log('- Added:', highestLevelCreature.creature?.name);
+        }
       }
 
       difficulty = calculateDifficulty(

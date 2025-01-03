@@ -76,6 +76,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
       variable: 'ATTACK_ROLLS_BONUS',
       text: '',
       value: `${sign(mod * 2)}`,
+      type: 'adj',
     },
   } satisfies OperationAddBonusToValue);
   ops.push({
@@ -84,6 +85,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
       variable: 'ATTACK_DAMAGE_BONUS',
       text: '',
       value: `${sign(mod * 2)}`,
+      type: 'adj',
     },
   } satisfies OperationAddBonusToValue);
   ops.push({
@@ -92,6 +94,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
       variable: 'SPELL_DC',
       text: '',
       value: `${sign(mod * 2)}`,
+      type: 'adj',
     },
   } satisfies OperationAddBonusToValue);
 
@@ -103,6 +106,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
         variable: save.name,
         text: '',
         value: `${sign(mod * 2)}`,
+        type: 'adj',
       },
     } satisfies OperationAddBonusToValue);
   }
@@ -114,6 +118,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
       variable: 'PERCEPTION',
       text: '',
       value: `${sign(mod * 2)}`,
+      type: 'adj',
     },
   } satisfies OperationAddBonusToValue);
   for (const skill of getAllSkillVariables(STORE_ID)) {
@@ -123,6 +128,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
         variable: skill.name,
         text: '',
         value: `${sign(mod * 2)}`,
+        type: 'adj',
       },
     } satisfies OperationAddBonusToValue);
   }
