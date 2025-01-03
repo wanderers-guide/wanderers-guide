@@ -5,7 +5,7 @@ import { fetchContentPackage } from '@content/content-store';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
 import { makeRequest } from '@requests/request-manager';
 import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Encounter, Trait } from '@typing/content';
-import { findCreatureTraits } from '@upload/creature-import';
+import { findCreatureTraits } from '@utils/creature';
 import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
 import yaml from 'js-yaml';

@@ -792,11 +792,3 @@ async function getAbilities(json: Record<string, any>, source: ContentSource): P
 function findJsonItems(json: Record<string, any>, type: string): Record<string, any>[] {
   return json?.items?.filter((item: any) => item.type === type) ?? [];
 }
-
-export function findCreatureTraits(creature: Creature) {
-  return (
-    (creature.operations?.filter((op) => op.type === 'giveTrait') as OperationGiveTrait[]).map(
-      (op) => op.data.traitId
-    ) ?? []
-  );
-}

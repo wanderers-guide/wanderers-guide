@@ -45,16 +45,22 @@ import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
 import {
+  IconArrowDown,
+  IconArrowUp,
   IconCheck,
   IconChevronDown,
   IconCircleDotFilled,
   IconCopy,
   IconDots,
+  IconExposureMinus1,
+  IconExposurePlus1,
   IconFilter,
   IconQuestionMark,
   IconSearch,
   IconTransform,
   IconTrash,
+  IconUserDown,
+  IconUserUp,
   IconX,
   IconZoomCheck,
   IconZoomQuestion,
@@ -105,6 +111,7 @@ import {
 } from '../../typing/content';
 import { FilterOptions, SelectedFilter } from './filters';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
+import { adjustCreature } from '@utils/creature';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -3296,9 +3303,64 @@ export function CreatureSelectionOption(props: {
           extra: { addToHistory: true },
         })
       }
+      buttonOverride={
+        <Button.Group>
+          <Button
+            size='compact-xs'
+            variant='filled'
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onClick(props.creature);
+            }}
+            styles={{
+              section: {
+                marginLeft: 3,
+              },
+            }}
+          >
+            Select
+          </Button>
+          <Menu shadow='md' zIndex={1000}>
+            <Menu.Target>
+              <Button
+                size='compact-xs'
+                variant='filled'
+                style={{
+                  borderLeft: '1px solid',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <IconChevronDown size='1.2rem' />
+              </Button>
+            </Menu.Target>
+
+            <Menu.Dropdown>
+              <Menu.Item
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onClick(adjustCreature(props.creature, 'ELITE'));
+                }}
+              >
+                Elite
+              </Menu.Item>
+              <Menu.Item
+                onClick={(e) => {
+                  e.stopPropagation();
+                  props.onClick(adjustCreature(props.creature, 'WEAK'));
+                }}
+              >
+                Weak
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        </Button.Group>
+      }
       buttonTitle='Select'
       disableButton={props.selected}
-      onButtonClick={() => props.onClick(props.creature)}
+      //onButtonClick={() => props.onClick(props.creature)}
       includeOptions={props.includeOptions}
       onOptionsDelete={() => props.onDelete?.(props.creature.id)}
       onOptionsCopy={() => props.onCopy?.(props.creature.id)}

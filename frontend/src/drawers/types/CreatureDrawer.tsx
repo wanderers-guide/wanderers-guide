@@ -2,11 +2,9 @@ import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
-import TraitsDisplay from '@common/TraitsDisplay';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
-import { addExtraItems, checkBulkLimit } from '@items/inv-utils';
 import {
   Title,
   Loader,
@@ -17,26 +15,22 @@ import {
   Button,
   Popover,
   SimpleGrid,
-  Pill,
   Text,
   useMantineTheme,
-  Avatar,
   HoverCard,
 } from '@mantine/core';
 import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
-import { executeCharacterOperations, executeCreatureOperations } from '@operations/operation-controller';
+import { executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth, handleRest } from '@pages/character_sheet/living-entity-utils';
 import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
 import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
-import DetailsPanel from '@pages/character_sheet/panels/DetailsPanel';
 import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
 import NotesPanel from '@pages/character_sheet/panels/NotesPanel';
 import SkillsActionsPanel from '@pages/character_sheet/panels/SkillsActionsPanel';
 import SpellsPanel from '@pages/character_sheet/panels/SpellsPanel';
 import ArmorSection from '@pages/character_sheet/sections/ArmorSection';
 import AttributeSection from '@pages/character_sheet/sections/AttributeSection';
-import EntityInfoSection from '@pages/character_sheet/sections/EntityInfoSection';
 import HealthSection from '@pages/character_sheet/sections/HealthSection';
 import { AltSpeedSection } from '@pages/character_sheet/sections/SpeedSection';
 import {
@@ -49,30 +43,22 @@ import {
   IconFlare,
   IconNotebook,
   IconListDetails,
-  IconPaw,
-  IconNotes,
-  IconBlockquote,
-  IconAddressBook,
   IconDualScreen,
   IconEdit,
   IconZzz,
   IconAlignBoxLeftMiddle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Inventory, LivingEntity, Trait } from '@typing/content';
-import { OperationCharacterResultPackage, OperationCreatureResultPackage } from '@typing/operations';
-import { StoreID, VariableListStr, VariableStr } from '@typing/variables';
-import { findCreatureTraits } from '@upload/creature-import';
-import { convertToSize } from '@upload/foundry-utils';
+import { Creature, Inventory, Trait } from '@typing/content';
+import { OperationCreatureResultPackage } from '@typing/operations';
+import { findCreatureTraits } from '@utils/creature';
 import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { convertToSetEntity, isTruthy, setStateActionToValue, setterOrUpdaterToValue } from '@utils/type-fixing';
+import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
 import { getFinalHealthValue } from '@variables/variable-display';
-import { getAllAncestryTraitVariables, getVariable, setVariable } from '@variables/variable-manager';
 import _ from 'lodash';
-import { set } from 'node_modules/cypress/types/lodash';
 import { useEffect, useRef, useState } from 'react';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 export const CREATURE_DRAWER_ZINDEX = 495;
 
