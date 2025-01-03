@@ -149,6 +149,8 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
   REACH_50: 4204,
   REACH_60: 4181,
   REACH_100: 4183,
+  UNHOLY: 4214,
+  HOLY: 4213,
 };
 
 export async function getTraitIds(traitNames: string[], source: ContentSource, createIfNotFound = true) {
