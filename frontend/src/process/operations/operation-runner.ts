@@ -414,7 +414,14 @@ function isTrainedInAdjValue(varId: StoreID, operation: OperationAdjValue): bool
   }
 
   // If the adj is not a training, don't give another skill selection
-  if (operation.data.value !== 'T') {
+  if (
+    operation?.data?.value !== 'T' &&
+    !(
+      typeof operation.data.value === 'object' &&
+      'value' in operation.data.value &&
+      (operation.data.value as any).value === 'T'
+    )
+  ) {
     return false;
   }
 
