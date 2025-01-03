@@ -11,6 +11,7 @@ import {
   Select,
   Stack,
   Text,
+  Textarea,
   TextInput,
   Title,
   UnstyledButton,
@@ -38,8 +39,6 @@ export default function UpdateEncounterModal({
   const [partyLevel, setPartyLevel] = useState(innerProps.encounter.meta_data.party_level);
   const [description, setDescription] = useState(innerProps.encounter.meta_data.description);
 
-  const [openedModal, setOpenedModal] = useState(false);
-
   const openConfirmModal = () =>
     modals.openConfirmModal({
       title: <Title order={4}>Delete Encounter</Title>,
@@ -55,21 +54,20 @@ export default function UpdateEncounterModal({
 
   return (
     <Stack style={{ position: 'relative' }}>
-      <TextInput
-        label='Title'
-        defaultValue={title}
-        placeholder='Title'
-        onChange={async (e) => {
-          setTitle(e.currentTarget.value);
-        }}
-        w={150}
-      />
-
       <Group wrap='nowrap'>
+        <TextInput
+          label='Title'
+          defaultValue={title}
+          placeholder='Title'
+          onChange={async (e) => {
+            setTitle(e.currentTarget.value);
+          }}
+          w={180}
+        />
         <NumberInput
           label='Party Size'
           placeholder='Party Size'
-          w={120}
+          w={100}
           min={0}
           value={partySize}
           onChange={(value) => {
@@ -79,13 +77,23 @@ export default function UpdateEncounterModal({
         <Select
           label='Party Level'
           data={Array.from({ length: 31 }, (_, i) => i.toString())}
-          w={120}
+          w={100}
           value={partyLevel?.toString()}
           onChange={(value) => {
             setPartyLevel(value ? parseInt(value) : undefined);
           }}
         />
       </Group>
+
+      <Textarea
+        label='Description'
+        placeholder='Context, notes, etc.'
+        value={description}
+        onChange={(e) => setDescription(e.currentTarget.value)}
+        autosize
+        minRows={3}
+        maxRows={3}
+      />
 
       <SelectIcon
         iconOnly
