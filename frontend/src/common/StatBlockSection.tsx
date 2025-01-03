@@ -206,8 +206,8 @@ export default function StatBlockSection(props: {
   };
 
   const getInnateSpellsDisplay = () => {
-    const spellAttack = data.proficiencies['SPELL_ATTACK'].total;
-    const spellDc = parseInt(data.proficiencies['SPELL_DC'].total) + 10;
+    const spellAttack = data.proficiencies['INNATE_SPELL_ATTACK'].total;
+    const spellDc = parseInt(data.proficiencies['INNATE_SPELL_DC'].total);
 
     const spellsDict = _.groupBy(data.innate_spells, (s) => s.tradition);
     return Object.entries(spellsDict).map(([tradition, spells]) => {

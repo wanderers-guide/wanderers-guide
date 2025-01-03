@@ -191,6 +191,16 @@ export async function getJsonV4Content(entity: LivingEntity) {
     }
   }
 
+  // Add spell attack innate and spell DC innate
+  profs[`INNATE_SPELL_ATTACK`] = {
+    total: getFinalProfValue(STORE_ID, 'SPELL_ATTACK', false, 'ATTRIBUTE_CHA'),
+    parts: getProfValueParts(STORE_ID, 'SPELL_ATTACK', 'ATTRIBUTE_CHA'),
+  };
+  profs[`INNATE_SPELL_DC`] = {
+    total: getFinalProfValue(STORE_ID, 'SPELL_DC', true, 'ATTRIBUTE_CHA'),
+    parts: getProfValueParts(STORE_ID, 'SPELL_DC', 'ATTRIBUTE_CHA'),
+  };
+
   // Attribute dump
   const attrs: { [key: string]: any } = {};
   for (const attr of getAllAttributeVariables(STORE_ID)) {
