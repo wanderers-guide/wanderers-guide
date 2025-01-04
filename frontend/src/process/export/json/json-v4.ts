@@ -217,6 +217,8 @@ export async function getJsonV4Content(entity: LivingEntity) {
   return {
     _README: `Here's some compiled data about the character. Should be fairly human-readable. The <character> section is what WG reads, this section is solely for you! Should give you an abundance of compiled stats and info about the character. If you have any questions, feel free to ask on our Discord!`,
     all_traits: alltraits,
+    all_sources: content.sources,
+    all_spells: spellSourceStats.length > 0 ? content.spells : [],
     feats_features: featData,
     character_traits: characterTraits,
     languages: languages,
