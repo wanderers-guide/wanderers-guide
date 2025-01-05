@@ -99,8 +99,6 @@ export default function StatBlockSection(props: {
     </Text>
   ));
 
-  console.log(data);
-
   const getArmorShieldDisplay = (armor: InventoryItem | null, shield: InventoryItem | null) => {
     if (!armor && !shield) {
       return '';

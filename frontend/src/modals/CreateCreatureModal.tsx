@@ -50,6 +50,7 @@ import { useRecoilState } from 'recoil';
 import { selectContent } from '@common/select/SelectContent';
 import { IconBracketsAngle, IconCornerUpRight, IconTransform, IconTransformFilled } from '@tabler/icons-react';
 import StatBlockSection from '@common/StatBlockSection';
+import { extractCreatureInfo } from '@utils/creature';
 
 /**
  * Modal for creating or editing a creature
@@ -127,6 +128,8 @@ export function CreateCreatureModal(props: {
   });
 
   const [description, setDescription] = useState<JSONContent>();
+
+  const [inputStatBlock, setInputStatBlock] = useState('');
 
   // Initialize form
   const form = useForm<Creature>({
@@ -265,7 +268,14 @@ export function CreateCreatureModal(props: {
                   <Stack gap={0}>
                     <Group wrap='nowrap' justify='space-between' py={5}>
                       <Text fz='md'>Input Stat Block</Text>
-                      <Button variant='filled' size='compact-xs' rightSection={<IconCornerUpRight size='1rem' />}>
+                      <Button
+                        variant='filled'
+                        size='compact-xs'
+                        rightSection={<IconCornerUpRight size='1rem' />}
+                        onClick={() => {
+                          const info = extractCreatureInfo(inputStatBlock);
+                        }}
+                      >
                         Process
                       </Button>
                     </Group>
@@ -279,7 +289,15 @@ export function CreateCreatureModal(props: {
                         borderRadius: theme.radius.md,
                       }}
                     >
-                      <Textarea variant='unstyled' placeholder='Paste creature stat block' autosize />
+                      <Textarea
+                        variant='unstyled'
+                        placeholder='Paste creature stat block'
+                        autosize
+                        value={inputStatBlock}
+                        onChange={(e) => {
+                          setInputStatBlock(e.currentTarget.value);
+                        }}
+                      />
                     </ScrollArea>
                   </Stack>
                   <Stack gap={0}>
