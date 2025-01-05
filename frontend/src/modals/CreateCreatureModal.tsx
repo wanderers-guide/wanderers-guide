@@ -22,6 +22,7 @@ import {
   Select,
   Stack,
   Switch,
+  Tabs,
   Text,
   TextInput,
   Textarea,
@@ -47,6 +48,8 @@ import { isTruthy } from '@utils/type-fixing';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { selectContent } from '@common/select/SelectContent';
+import { IconBracketsAngle, IconCornerUpRight, IconTransform, IconTransformFilled } from '@tabler/icons-react';
+import StatBlockSection from '@common/StatBlockSection';
 
 /**
  * Modal for creating or editing a creature
@@ -104,7 +107,6 @@ export function CreateCreatureModal(props: {
         level: creature.level.toString(),
       });
       // setTraits(await fetchTraits(creature.traits));
-      setTotaledOperations(totaledOperations);
 
       form.reset();
       refreshDisplayDescription();
@@ -125,8 +127,6 @@ export function CreateCreatureModal(props: {
   });
 
   const [description, setDescription] = useState<JSONContent>();
-  const [traits, setTraits] = useState<Trait[]>([]);
-  const [totaledOperations, setTotaledOperations] = useState<Operation[]>([]);
 
   // Initialize form
   const form = useForm<Creature>({
@@ -165,8 +165,6 @@ export function CreateCreatureModal(props: {
       ...values,
       name: values.name.trim(),
       level: parseInt(`${values.level}`),
-      // traits: traits.map((trait) => trait.id),
-      operations: [...(values.operations ?? []), ...totaledOperations],
     });
     setTimeout(() => {
       onReset();
@@ -189,13 +187,61 @@ export function CreateCreatureModal(props: {
         props.onCancel();
         onReset();
       }}
-      title={<Title order={3}>{editing ? 'Edit' : 'Create'} Creature</Title>}
+      title={
+        <Group wrap='nowrap' gap={10} justify='space-between'>
+          <Group wrap='nowrap' gap={10}>
+            <Title order={3}>{editing ? 'Edit' : 'Create'} Creature</Title>
+          </Group>
+          <Group wrap='nowrap' justify='space-between' pr='lg'>
+            <Group wrap='nowrap'>
+              <TextInput
+                label='Name'
+                size='xs'
+                required
+                {...form.getInputProps('name')}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData('text/plain');
+                  if (text.toUpperCase() === text) {
+                    e.preventDefault();
+                    form.setFieldValue('name', toLabel(text));
+                  }
+                }}
+                onBlur={() => props.onNameBlur?.(form.values.name)}
+              />
+              <Select
+                label='Level'
+                size='xs'
+                required
+                data={Array.from({ length: 32 }, (_, i) => (i - 1).toString())}
+                w={70}
+                {...form.getInputProps('level')}
+              />
+              <Select
+                label='Rarity'
+                size='xs'
+                required
+                data={[
+                  { value: 'COMMON', label: 'Common' },
+                  { value: 'UNCOMMON', label: 'Uncommon' },
+                  { value: 'RARE', label: 'Rare' },
+                  { value: 'UNIQUE', label: 'Unique' },
+                ]}
+                w={140}
+                {...form.getInputProps('rarity')}
+              />
+            </Group>
+          </Group>
+        </Group>
+      }
       styles={{
+        title: {
+          width: '100%',
+        },
         body: {
           paddingRight: 2,
         },
       }}
-      size={openedOperations ? 'xl' : 'md'}
+      size={'xl'}
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
@@ -203,262 +249,289 @@ export function CreateCreatureModal(props: {
       <ScrollArea pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
-          <Stack gap={10}>
-            <Group wrap='nowrap' justify='space-between'>
-              <Group wrap='nowrap'>
-                <TextInput
-                  label='Name'
-                  required
-                  {...form.getInputProps('name')}
-                  onPaste={(e) => {
-                    const text = e.clipboardData.getData('text/plain');
-                    if (text.toUpperCase() === text) {
-                      e.preventDefault();
-                      form.setFieldValue('name', toLabel(text));
-                    }
-                  }}
-                  onBlur={() => props.onNameBlur?.(form.values.name)}
-                />
-                <Select
-                  label='Level'
-                  required
-                  data={Array.from({ length: 32 }, (_, i) => (i - 1).toString())}
-                  w={70}
-                  {...form.getInputProps('level')}
-                />
-                <Select
-                  label='Rarity'
-                  required
-                  data={[
-                    { value: 'COMMON', label: 'Common' },
-                    { value: 'UNCOMMON', label: 'Uncommon' },
-                    { value: 'RARE', label: 'Rare' },
-                    { value: 'UNIQUE', label: 'Unique' },
-                  ]}
-                  w={140}
-                  {...form.getInputProps('rarity')}
-                />
-              </Group>
-            </Group>
+          <Stack gap={5}>
+            <Tabs defaultValue='builder'>
+              <Tabs.List>
+                <Tabs.Tab value='builder' leftSection={<IconTransform size='1rem' />}>
+                  Auto Builder
+                </Tabs.Tab>
+                <Tabs.Tab value='manual' leftSection={<IconBracketsAngle size='1rem' />}>
+                  Manual
+                </Tabs.Tab>
+              </Tabs.List>
 
-            <Divider
-              my='xs'
-              label={
-                <Group gap={3} wrap='nowrap'>
-                  <Button variant={openedBaseAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Base Abilities
-                  </Button>
-                  {form.values.abilities_base && form.values.abilities_base.length > 0 && (
-                    <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {form.values.abilities_base.length}
-                    </Badge>
-                  )}
-                </Group>
-              }
-              labelPosition='left'
-              onClick={toggleBaseAbilities}
-            />
-            <Collapse in={openedBaseAbilities}>
-              <Stack gap={10}>
-                <Button
-                  size='sm'
-                  variant='light'
-                  fullWidth
-                  onClick={() => {
-                    setOpenedModal(-1);
-                  }}
-                >
-                  Create Custom Ability
-                </Button>
-
-                {form.values.abilities_base?.map((ability, i) => (
-                  <Box key={i}>
-                    <Button
-                      variant='subtle'
-                      size='compact-sm'
-                      fullWidth
-                      onClick={() => {
-                        setOpenedModal(ability);
+              <Tabs.Panel value='builder'>
+                <Group wrap='nowrap' gap={5} align='flex-start' grow>
+                  <Stack gap={0}>
+                    <Group wrap='nowrap' justify='space-between' py={5}>
+                      <Text fz='md'>Input Stat Block</Text>
+                      <Button variant='filled' size='compact-xs' rightSection={<IconCornerUpRight size='1rem' />}>
+                        Process
+                      </Button>
+                    </Group>
+                    <ScrollArea
+                      h={450}
+                      scrollbars='y'
+                      px='sm'
+                      style={{
+                        backgroundColor: theme.colors.dark[6],
+                        border: `1px solid ${theme.colors.dark[4]}`,
+                        borderRadius: theme.radius.md,
                       }}
                     >
-                      {ability.name}{' '}
-                      <ActionSymbol
-                        pl={5}
-                        gap={5}
-                        textProps={{ size: 'xs', c: 'guide' }}
-                        c='guide'
-                        cost={ability.actions}
-                        size={'1.2rem'}
-                      />
-                    </Button>
-                  </Box>
-                ))}
-
-                <Divider />
-              </Stack>
-            </Collapse>
-
-            <Divider
-              my='xs'
-              label={
-                <Group gap={3} wrap='nowrap'>
-                  <Button variant={openedAddedAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Added Abilities
-                  </Button>
-                  {form.values.abilities_added && form.values.abilities_added.length > 0 && (
-                    <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {form.values.abilities_added.length}
-                    </Badge>
-                  )}
-                </Group>
-              }
-              labelPosition='left'
-              onClick={toggleAddedAbilities}
-            />
-            <Collapse in={openedAddedAbilities}>
-              <Stack gap={10}>
-                <Button
-                  size='sm'
-                  variant='light'
-                  fullWidth
-                  onClick={() => {
-                    selectContent<AbilityBlock>(
-                      'ability-block',
-                      (option) => {
-                        form.setValues({
-                          ...form.values,
-                          abilities_added: _.uniq([...(form.values.abilities_added ?? []), option.id]),
-                        });
-                      },
-                      {
-                        overrideLabel: 'Select an Ability',
-                        abilityBlockType: 'feat',
-                      }
-                    );
-                  }}
-                >
-                  Add an Ability
-                </Button>
-
-                {addedAbilities.map((ability, i) => (
-                  <Box key={i}>
-                    <Button
-                      variant='subtle'
-                      size='compact-sm'
-                      fullWidth
-                      onClick={() => {
-                        openDrawer({
-                          type: 'action',
-                          data: { id: ability.id },
-                          extra: { addToHistory: true },
-                        });
+                      <Textarea variant='unstyled' placeholder='Paste creature stat block' autosize />
+                    </ScrollArea>
+                  </Stack>
+                  <Stack gap={0}>
+                    <Group wrap='nowrap' justify='space-between' py={5}>
+                      <Text fz='md'>Resulting Stat Block</Text>
+                    </Group>
+                    <ScrollArea
+                      h={450}
+                      scrollbars='y'
+                      p='sm'
+                      style={{
+                        backgroundColor: theme.colors.dark[6],
+                        border: `1px solid ${theme.colors.dark[4]}`,
+                        borderRadius: theme.radius.md,
                       }}
                     >
-                      {ability.name}{' '}
-                      <ActionSymbol
-                        pl={5}
-                        gap={5}
-                        textProps={{ size: 'xs', c: 'guide' }}
-                        c='guide'
-                        cost={ability.actions}
-                        size={'1.2rem'}
+                      <StatBlockSection
+                        entity={form.values}
+                        options={{
+                          hideName: true,
+                          hideImage: true,
+                        }}
                       />
-                    </Button>
-                  </Box>
-                ))}
-
-                <Divider />
-              </Stack>
-            </Collapse>
-
-            <Divider
-              my='xs'
-              label={
-                <Group gap={3} wrap='nowrap'>
-                  <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Operations
-                  </Button>
-                  {form.values.operations && form.values.operations.length > 0 && (
-                    <Badge variant='light' color={theme.primaryColor} size='xs'>
-                      {form.values.operations.length}
-                    </Badge>
-                  )}
+                    </ScrollArea>
+                  </Stack>
                 </Group>
-              }
-              labelPosition='left'
-              onClick={toggleOperations}
-            />
-            <Collapse in={openedOperations}>
-              <Stack gap={10}>
-                <OperationSection
-                  title={
-                    <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
-                      <HoverCard.Target>
-                        <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
-                          How to Use Operations
-                        </Anchor>
-                      </HoverCard.Target>
-                      <HoverCard.Dropdown>
-                        <Text size='sm'>
-                          Operations are used to make changes to a character. They can give feats, spells, and more, as
-                          well as change stats, skills, and other values.
-                        </Text>
-                        <Text size='sm'>
-                          Use conditionals to apply operations only when certain conditions are met and selections
-                          whenever a choice needs to be made.
-                        </Text>
-                        <Text size='xs' fs='italic'>
-                          For more help, see{' '}
-                          <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
-                            our Discord server
-                          </Anchor>
-                          .
-                        </Text>
-                      </HoverCard.Dropdown>
-                    </HoverCard>
+                <Text fz='xs' ta='center' fs='italic' pt={5}>
+                  Properly format the input stat block until the result looks the same!
+                </Text>
+              </Tabs.Panel>
+
+              <Tabs.Panel value='manual'>
+                <Divider
+                  my='xs'
+                  label={
+                    <Group gap={3} wrap='nowrap'>
+                      <Button variant={openedBaseAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                        Base Abilities
+                      </Button>
+                      {form.values.abilities_base && form.values.abilities_base.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {form.values.abilities_base.length}
+                        </Badge>
+                      )}
+                    </Group>
                   }
-                  operations={form.values.operations}
-                  onChange={(operations) => form.setValues({ ...form.values, operations })}
+                  labelPosition='left'
+                  onClick={toggleBaseAbilities}
                 />
-                <Divider />
-              </Stack>
-            </Collapse>
+                <Collapse in={openedBaseAbilities}>
+                  <Stack gap={10}>
+                    <Button
+                      size='sm'
+                      variant='light'
+                      fullWidth
+                      onClick={() => {
+                        setOpenedModal(-1);
+                      }}
+                    >
+                      Create Custom Ability
+                    </Button>
 
-            <Divider
-              my='xs'
-              label={
-                <Group gap={3} wrap='nowrap'>
-                  <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
-                    Misc. Sections
-                  </Button>
-                </Group>
-              }
-              labelPosition='left'
-              onClick={toggleAdditional}
-            />
-            <Collapse in={openedAdditional}>
-              <Stack gap={10}>
-                <SelectIcon
-                  strValue={form.values.details.image_url ?? ''}
-                  setValue={(strValue) => {
-                    form.setFieldValue('details.image_url', strValue);
-                  }}
+                    {form.values.abilities_base?.map((ability, i) => (
+                      <Box key={i}>
+                        <Button
+                          variant='subtle'
+                          size='compact-sm'
+                          fullWidth
+                          onClick={() => {
+                            setOpenedModal(ability);
+                          }}
+                        >
+                          {ability.name}{' '}
+                          <ActionSymbol
+                            pl={5}
+                            gap={5}
+                            textProps={{ size: 'xs', c: 'guide' }}
+                            c='guide'
+                            cost={ability.actions}
+                            size={'1.2rem'}
+                          />
+                        </Button>
+                      </Box>
+                    ))}
+
+                    <Divider />
+                  </Stack>
+                </Collapse>
+
+                <Divider
+                  my='xs'
+                  label={
+                    <Group gap={3} wrap='nowrap'>
+                      <Button variant={openedAddedAbilities ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                        Added Abilities
+                      </Button>
+                      {form.values.abilities_added && form.values.abilities_added.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {form.values.abilities_added.length}
+                        </Badge>
+                      )}
+                    </Group>
+                  }
+                  labelPosition='left'
+                  onClick={toggleAddedAbilities}
                 />
+                <Collapse in={openedAddedAbilities}>
+                  <Stack gap={10}>
+                    <Button
+                      size='sm'
+                      variant='light'
+                      fullWidth
+                      onClick={() => {
+                        selectContent<AbilityBlock>(
+                          'ability-block',
+                          (option) => {
+                            form.setValues({
+                              ...form.values,
+                              abilities_added: _.uniq([...(form.values.abilities_added ?? []), option.id]),
+                            });
+                          },
+                          {
+                            overrideLabel: 'Select an Ability',
+                            abilityBlockType: 'feat',
+                          }
+                        );
+                      }}
+                    >
+                      Add an Ability
+                    </Button>
 
-                <Divider />
-              </Stack>
-            </Collapse>
+                    {addedAbilities.map((ability, i) => (
+                      <Box key={i}>
+                        <Button
+                          variant='subtle'
+                          size='compact-sm'
+                          fullWidth
+                          onClick={() => {
+                            openDrawer({
+                              type: 'action',
+                              data: { id: ability.id },
+                              extra: { addToHistory: true },
+                            });
+                          }}
+                        >
+                          {ability.name}{' '}
+                          <ActionSymbol
+                            pl={5}
+                            gap={5}
+                            textProps={{ size: 'xs', c: 'guide' }}
+                            c='guide'
+                            cost={ability.actions}
+                            size={'1.2rem'}
+                          />
+                        </Button>
+                      </Box>
+                    ))}
 
-            {displayDescription && (
-              <RichTextInput
-                label='Description'
-                value={description ?? toHTML(form.values.details.description)}
-                onChange={(text, json) => {
-                  setDescription(json);
-                  form.setFieldValue('details.description', text);
-                }}
-              />
-            )}
+                    <Divider />
+                  </Stack>
+                </Collapse>
+
+                <Divider
+                  my='xs'
+                  label={
+                    <Group gap={3} wrap='nowrap'>
+                      <Button variant={openedOperations ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                        Operations
+                      </Button>
+                      {form.values.operations && form.values.operations.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {form.values.operations.length}
+                        </Badge>
+                      )}
+                    </Group>
+                  }
+                  labelPosition='left'
+                  onClick={toggleOperations}
+                />
+                <Collapse in={openedOperations}>
+                  <Stack gap={10}>
+                    <OperationSection
+                      title={
+                        <HoverCard openDelay={250} width={260} shadow='md' withinPortal>
+                          <HoverCard.Target>
+                            <Anchor target='_blank' underline='hover' fz='sm' fs='italic'>
+                              How to Use Operations
+                            </Anchor>
+                          </HoverCard.Target>
+                          <HoverCard.Dropdown>
+                            <Text size='sm'>
+                              Operations are used to make changes to a character. They can give feats, spells, and more,
+                              as well as change stats, skills, and other values.
+                            </Text>
+                            <Text size='sm'>
+                              Use conditionals to apply operations only when certain conditions are met and selections
+                              whenever a choice needs to be made.
+                            </Text>
+                            <Text size='xs' fs='italic'>
+                              For more help, see{' '}
+                              <Anchor href={DISCORD_URL} target='_blank' underline='hover'>
+                                our Discord server
+                              </Anchor>
+                              .
+                            </Text>
+                          </HoverCard.Dropdown>
+                        </HoverCard>
+                      }
+                      operations={form.values.operations}
+                      onChange={(operations) => form.setValues({ ...form.values, operations })}
+                    />
+                    <Divider />
+                  </Stack>
+                </Collapse>
+
+                <Divider
+                  my='xs'
+                  label={
+                    <Group gap={3} wrap='nowrap'>
+                      <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                        Misc. Sections
+                      </Button>
+                    </Group>
+                  }
+                  labelPosition='left'
+                  onClick={toggleAdditional}
+                />
+                <Collapse in={openedAdditional}>
+                  <Stack gap={10}>
+                    <SelectIcon
+                      strValue={form.values.details.image_url ?? ''}
+                      setValue={(strValue) => {
+                        form.setFieldValue('details.image_url', strValue);
+                      }}
+                    />
+
+                    <Divider />
+                  </Stack>
+                </Collapse>
+
+                {displayDescription && (
+                  <RichTextInput
+                    label='Description'
+                    value={description ?? toHTML(form.values.details.description)}
+                    onChange={(text, json) => {
+                      setDescription(json);
+                      form.setFieldValue('details.description', text);
+                    }}
+                  />
+                )}
+              </Tabs.Panel>
+            </Tabs>
 
             <Group justify='flex-end'>
               <Button
