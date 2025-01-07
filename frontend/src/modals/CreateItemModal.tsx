@@ -204,7 +204,7 @@ export function CreateItemModal(props: {
         starfinder: {
           capacity: undefined,
           usage: undefined,
-          grade: 'COMMERCIAL',
+          grade: undefined,
           slots: [],
         },
         charges: {
