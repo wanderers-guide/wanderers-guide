@@ -316,6 +316,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     },
     refetchInterval: 1800,
     enabled: debouncedCharacter !== null,
+    cacheTime: 0,
   });
   useEffect(() => {
     if (polledCharacter && !_.isEqual(character, polledCharacter)) {

@@ -275,6 +275,7 @@ export function CreateCreatureModal(props: {
                         onClick={() => {
                           const info = extractCreatureInfo(inputStatBlock);
                         }}
+                        disabled
                       >
                         Process
                       </Button>
