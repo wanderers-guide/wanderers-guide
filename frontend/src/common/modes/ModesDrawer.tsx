@@ -74,7 +74,6 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
-        overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}
         styles={{
           title: {
             width: '100%',
