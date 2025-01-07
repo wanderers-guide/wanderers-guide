@@ -406,7 +406,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
           variant='light'
           color='gray'
           radius='xl'
-          ref={refEdit}
+          ref={refEdit as React.RefObject<HTMLAnchorElement>}
           style={{
             flex: 1,
             backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
@@ -429,7 +429,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
               color='gray'
               radius='xl'
               aria-label='Options'
-              ref={refOptions}
+              ref={refOptions as React.RefObject<HTMLButtonElement>}
               style={{
                 backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
               }}

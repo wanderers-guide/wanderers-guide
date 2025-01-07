@@ -845,7 +845,7 @@ function SectionPanels(props: {
                     size='lg'
                     radius='xl'
                     aria-label='Tab Options'
-                    ref={tabOptionsRef}
+                    ref={tabOptionsRef as React.RefObject<HTMLButtonElement>}
                     style={{
                       backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
                       color: openedTabOption ? theme.colors.gray[0] : undefined,

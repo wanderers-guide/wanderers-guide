@@ -604,7 +604,7 @@ function ContentSourceCard(props: {
               variant='light'
               color='gray'
               radius='xl'
-              ref={refEdit}
+              ref={refEdit as React.RefObject<HTMLButtonElement>}
               style={{
                 flex: 1,
                 backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
@@ -629,7 +629,7 @@ function ContentSourceCard(props: {
                   color='gray'
                   radius='xl'
                   aria-label='Options'
-                  ref={refOptions}
+                  ref={refOptions as React.RefObject<HTMLButtonElement>}
                   style={{
                     backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
                   }}
