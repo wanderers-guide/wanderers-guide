@@ -59,6 +59,7 @@ import { ItemRunesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
+import { labelToVariable } from '@variables/variable-utils';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -69,7 +70,15 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      return await fetchContentById<Item>('item', id);
+      const item = await fetchContentById<Item>('item', id);
+
+      // Remove base item if it's the same as the item
+      if (item?.meta_data?.base_item && labelToVariable(item.name) === labelToVariable(item.meta_data.base_item)) {
+        item.meta_data.base_item = undefined;
+        item.meta_data.base_item_content = undefined;
+      }
+
+      return item;
     },
     enabled: !!id,
   });
@@ -114,6 +123,12 @@ export function ItemDrawerContent(props: {
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
       const item = await fetchContentById<Item>('item', id);
+
+      // Remove base item if it's the same as the item
+      if (item?.meta_data?.base_item && labelToVariable(item.name) === labelToVariable(item.meta_data.base_item)) {
+        item.meta_data.base_item = undefined;
+        item.meta_data.base_item_content = undefined;
+      }
 
       // Inject base item content
       if (item?.meta_data?.base_item) {

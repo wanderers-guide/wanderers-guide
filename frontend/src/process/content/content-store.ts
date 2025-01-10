@@ -344,7 +344,7 @@ export async function fetchAbilityBlockByName(name?: string, sources?: number[],
 export async function fetchItemByName(name?: string, sources?: number[], id?: number) {
   const results = await fetchContent<Item>('item', {
     id,
-    name,
+    name: name?.replace(/-/g, ' '),
     content_sources: sources ?? defaultSources,
   });
   return results.length > 0 ? results[0] : null;

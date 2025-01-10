@@ -40,6 +40,7 @@ import { Availability, Item, ItemGroup, Trait } from '@typing/content';
 import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
+import { labelToVariable } from '@variables/variable-utils';
 import _ from 'lodash-es';
 import { useState } from 'react';
 
@@ -82,6 +83,12 @@ export function CreateItemModal(props: {
 
       const item = editId ? await fetchContentById<Item>('item', editId) : editItem;
       if (!item) return null;
+
+      // Remove base item if it's the same as the item being edited
+      if (item.meta_data?.base_item && labelToVariable(item.name) === labelToVariable(item.meta_data.base_item)) {
+        item.meta_data.base_item = undefined;
+        item.meta_data.base_item_content = undefined;
+      }
 
       const mergeData = _.merge(form.values, item);
       const damageData = _.merge(form.values.meta_data?.damage, item.meta_data?.damage);
@@ -451,7 +458,7 @@ export function CreateItemModal(props: {
                       filter={(item) => {
                         return (
                           !item.meta_data?.base_item ||
-                          item.meta_data?.base_item === item.name.trim().replace(/\s/g, '-').toLowerCase()
+                          labelToVariable(item.name) === labelToVariable(item.meta_data.base_item!)
                         );
                       }}
                       onChange={(item, name) => {
