@@ -14,6 +14,7 @@ import {
   LanguageSelectionOption,
   ModeSelectionOption,
   PhysicalFeatureSelectionOption,
+  SenseSelectionOption,
   SpellSelectionOption,
   TraitSelectionOption,
   VersatileHeritageSelectionOption,
@@ -50,6 +51,8 @@ import _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { CREATURE_DRAWER_ZINDEX } from './CreatureDrawer';
+import { convertToContentType } from '@content/content-utils';
+import { DrawerType } from '@typing/index';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
   const id = props.data.id;
@@ -208,7 +211,25 @@ export function ContentSourceDrawerContent(props: {
   const actions = content.abilityBlocks.filter((block) => block.type === 'action');
   const feats = content.abilityBlocks.filter((block) => block.type === 'feat');
   const physicalFeatures = content.abilityBlocks.filter((block) => block.type === 'physical-feature');
+  const senses = content.abilityBlocks.filter((block) => block.type === 'sense');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
+
+  // Find uncategorized ability blocks
+  const classTraits = content.traits.filter((trait) => trait.meta_data?.class_trait);
+  const ancestryTraits = content.traits.filter((trait) => trait.meta_data?.ancestry_trait);
+  const uncategorizedAbilities = content.abilityBlocks.filter((ab) => {
+    if (ab.type === 'class-feature' && !classTraits.find((trait) => ab.traits?.includes(trait.id))) {
+      return true;
+    }
+    if (
+      ab.type === 'heritage' &&
+      !ancestryTraits.find((trait) => ab.traits?.includes(trait.id)) &&
+      !content.versatileHeritages.find((vh) => vh.heritage_id === ab.id)
+    ) {
+      return true;
+    }
+    return false;
+  });
 
   return (
     <Box>
@@ -633,6 +654,39 @@ export function ContentSourceDrawerContent(props: {
               </Accordion.Panel>
             </Accordion.Item>
           )}
+          {senses.length > 0 && (
+            <Accordion.Item value={'senses'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>
+                    Senses
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {senses.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {senses.map((record, index) => (
+                  <SenseSelectionOption
+                    key={index}
+                    sense={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: 'sense',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
           {content.spells.length > 0 && (
             <Accordion.Item value={'spells'} w='100%'>
               <Accordion.Control>
@@ -690,6 +744,39 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'trait',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {uncategorizedAbilities.length > 0 && (
+            <Accordion.Item value={'uncategorized'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm' fw={600}>
+                    Uncategorized
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {uncategorizedAbilities.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {uncategorizedAbilities.map((record, index) => (
+                  <ActionSelectionOption
+                    key={index}
+                    action={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: (record.type ?? 'action') as DrawerType,
                         data: { id: a.id },
                         extra: { addToHistory: true },
                       });
