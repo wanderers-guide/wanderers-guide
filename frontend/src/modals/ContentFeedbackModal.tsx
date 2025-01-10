@@ -439,7 +439,7 @@ function ContentFeedbackSection(props: {
             variant='light'
             onClick={() => {
               if (!data.content) return;
-              props.onSubmitUpdate(data.content.id, data.content);
+              props.onSubmitUpdate(data.content.id, _.cloneDeep(data.content));
             }}
           >
             Submit Content Update
