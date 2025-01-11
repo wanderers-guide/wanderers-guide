@@ -425,6 +425,7 @@ export function CreateItemModal(props: {
                   { value: '1+', label: '1+' },
                   { value: '2', label: '2' },
                   { value: '2+', label: '2+' },
+                  { value: '1 or 2', label: '1 or 2' },
                 ]}
                 {...form.getInputProps('hands')}
               />
