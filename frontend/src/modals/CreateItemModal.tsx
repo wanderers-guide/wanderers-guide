@@ -457,8 +457,10 @@ export function CreateItemModal(props: {
                       valueName={baseItem}
                       filter={(item) => {
                         return (
-                          !item.meta_data?.base_item ||
-                          labelToVariable(item.name) === labelToVariable(item.meta_data.base_item!)
+                          (!item.meta_data?.base_item &&
+                            labelToVariable(item.name) !== labelToVariable(form.values.name)) ||
+                          // To support old incorrect items
+                          labelToVariable(item.name) === labelToVariable(item.meta_data?.base_item ?? '')
                         );
                       }}
                       onChange={(item, name) => {
