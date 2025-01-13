@@ -1,5 +1,5 @@
 import { Box, Button, Menu, rem } from '@mantine/core';
-import { IconArrowsExchange, IconChevronDown } from '@tabler/icons-react';
+import { IconArrowsExchange } from '@tabler/icons-react';
 import { InventoryItem } from '@typing/content';
 
 export function MoveItemMenu(props: {
@@ -38,8 +38,8 @@ export function MoveItemMenu(props: {
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
-          pr={5}
-          pl={showOnlyIcon ? 5 : undefined}
+          pr={showOnlyIcon ? 3 : 5}
+          pl={showOnlyIcon ? 3 : undefined}
         >
           <Box hidden={showOnlyIcon}> Move Item</Box>
         </Button>

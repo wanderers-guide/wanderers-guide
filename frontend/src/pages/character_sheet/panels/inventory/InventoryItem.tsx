@@ -114,7 +114,7 @@ export function InvItemOption(props: {
           </Grid>
         </Grid.Col>
       )}
-      <Grid.Col span={props.isPhone ? 3 : 2} offset={1}>
+      <Grid.Col span={3} offset={props.isPhone ? 1 : 0}>
         <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
           {isItemInvestable(props.invItem.item) && (
             <Button
