@@ -5,6 +5,7 @@ import SilverCoin from '@assets/images/currency/silver.png';
 import { drawerState } from '@atoms/navAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { ItemIcon } from '@common/ItemIcon';
+import { MoveItemMenu } from '@common/operations/item/MoveItemMenu';
 import { isItemVisible } from '@content/content-hidden';
 import { isPlayingStarfinder } from '@content/system-handler';
 import classes from '@css/FaqSimple.module.css';
@@ -52,7 +53,7 @@ import { openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
-import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
@@ -423,6 +424,18 @@ export default function InventoryPanel(props: {
 
                             handleUpdateItem(props.setInventory, newInvItem);
                           }}
+                          additionalButtons={
+                            !isPhone && (
+                              <MoveItemMenu
+                                showOnlyIcon
+                                invItem={invItem}
+                                containerItems={invItems.filter((item) => isItemContainer(item.item))}
+                                onItemMove={(invItem, containerItem) =>
+                                  handleMoveItem(props.setInventory, invItem, containerItem)
+                                }
+                              />
+                            )
+                          }
                         />
                       </StatButton>
                     </Box>
@@ -549,6 +562,7 @@ function InvItemOption(props: {
   hideSections?: boolean;
   preventEquip?: boolean;
   isPhone?: boolean;
+  additionalButtons?: React.ReactNode;
 }) {
   const theme = useMantineTheme();
 
@@ -680,6 +694,7 @@ function InvItemOption(props: {
               {props.invItem.is_equipped ? 'Unequip' : 'Equip'}
             </Button>
           )}
+          {props.additionalButtons}
         </Group>
       </Grid.Col>
     </Grid>

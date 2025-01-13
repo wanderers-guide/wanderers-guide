@@ -70,6 +70,7 @@ import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { StoreID } from '@typing/variables';
+import { MoveItemMenu } from '@common/operations/item/MoveItemMenu';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -309,55 +310,7 @@ export function InvItemDrawerContent(props: {
           </Group>
           <Group wrap='nowrap' gap={15} mr={15}>
             {!invItem.item.meta_data?.unselectable && containerItems.length > 0 && (
-              <Menu
-                transitionProps={{ transition: 'pop-top-right' }}
-                position='top-end'
-                // width={140}
-                withinPortal
-                zIndex={10000}
-              >
-                <Menu.Target>
-                  <Button
-                    variant='light'
-                    color='teal'
-                    size='compact-sm'
-                    radius='xl'
-                    rightSection={<IconChevronDown style={{ width: rem(18), height: rem(18) }} stroke={1.5} />}
-                    styles={{
-                      section: {
-                        marginLeft: 5,
-                      },
-                    }}
-                    style={{
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                    }}
-                    pr={5}
-                  >
-                    Move Item
-                  </Button>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  <Menu.Item
-                    onClick={() => {
-                      props.data.onItemMove(invItem, null);
-                    }}
-                  >
-                    Unstored
-                  </Menu.Item>
-                  <Menu.Divider />
-                  {containerItems.map((containerItem, index) => (
-                    <Menu.Item
-                      key={index}
-                      onClick={() => {
-                        props.data.onItemMove(invItem, containerItem);
-                      }}
-                    >
-                      {containerItem.item.name}
-                    </Menu.Item>
-                  ))}
-                </Menu.Dropdown>
-              </Menu>
+              <MoveItemMenu invItem={invItem} containerItems={containerItems} onItemMove={props.data.onItemMove} />
             )}
             <ActionIcon
               variant='light'
