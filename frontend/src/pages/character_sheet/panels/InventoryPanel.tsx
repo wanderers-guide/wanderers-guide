@@ -410,7 +410,14 @@ function ContainerItemEntry(props: {
                 invItem={containedItem}
                 preventEquip
                 onInvest={investItem}
-                additionalButtons={<DesktopMoveItemMenu {...props} />}
+                additionalButtons={
+                  <DesktopMoveItemMenu
+                    invItem={containedItem}
+                    otherContainerItems={props.otherContainerItems}
+                    setInventory={props.setInventory}
+                    isPhone={isPhone}
+                  />
+                }
               />
             </StatButton>
           ))}
@@ -453,7 +460,15 @@ function StandardItemEntry(props: {
           invItem={invItem}
           onEquip={equipItem}
           onInvest={investItem}
-          additionalButtons={<DesktopMoveItemMenu showUnstore={false} {...props} />}
+          additionalButtons={
+            <DesktopMoveItemMenu
+              showUnstore={false}
+              invItem={invItem}
+              otherContainerItems={props.otherContainerItems}
+              setInventory={props.setInventory}
+              isPhone={isPhone}
+            />
+          }
         />
       </StatButton>
     </Box>
