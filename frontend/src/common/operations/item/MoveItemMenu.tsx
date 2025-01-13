@@ -5,11 +5,11 @@ import { InventoryItem } from '@typing/content';
 export function MoveItemMenu(props: {
   invItem: InventoryItem;
   containerItems: InventoryItem[];
+  showUnstore?: boolean;
   showOnlyIcon?: boolean;
-  hidden?: boolean;
   onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
 }) {
-  const { invItem, containerItems, onItemMove, showOnlyIcon } = props;
+  const { invItem, containerItems, onItemMove, showOnlyIcon, showUnstore = true } = props;
 
   return (
     <Menu transitionProps={{ transition: 'pop-top-right' }} position='top-end' withinPortal zIndex={10000}>
@@ -45,15 +45,20 @@ export function MoveItemMenu(props: {
         </Button>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item
-          onClick={(e) => {
-            e.stopPropagation();
-            onItemMove(invItem, null);
-          }}
-        >
-          Unstored
-        </Menu.Item>
-        <Menu.Divider />
+        {showUnstore && (
+          <>
+            <Menu.Item
+              onClick={(e) => {
+                e.stopPropagation();
+                onItemMove(invItem, null);
+              }}
+            >
+              Unstored
+            </Menu.Item>
+            <Menu.Divider />
+          </>
+        )}
+
         {containerItems.map((containerItem, index) => (
           <Menu.Item
             key={index}

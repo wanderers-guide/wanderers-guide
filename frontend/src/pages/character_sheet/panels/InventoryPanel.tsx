@@ -453,7 +453,7 @@ function StandardItemEntry(props: {
           invItem={invItem}
           onEquip={equipItem}
           onInvest={investItem}
-          additionalButtons={<DesktopMoveItemMenu {...props} />}
+          additionalButtons={<DesktopMoveItemMenu showUnstore={false} {...props} />}
         />
       </StatButton>
     </Box>
@@ -463,6 +463,7 @@ function StandardItemEntry(props: {
 function DesktopMoveItemMenu(props: {
   isPhone?: boolean;
   invItem: InventoryItem;
+  showUnstore?: boolean;
   otherContainerItems: InventoryItem[];
   setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
@@ -472,6 +473,7 @@ function DesktopMoveItemMenu(props: {
     <MoveItemMenu
       showOnlyIcon
       invItem={props.invItem}
+      showUnstore={props.showUnstore}
       containerItems={props.otherContainerItems}
       onItemMove={(invItem, containerItem) => handleMoveItem(props.setInventory, invItem, containerItem)}
     />
