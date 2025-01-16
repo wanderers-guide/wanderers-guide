@@ -603,39 +603,43 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
     categoryAndGroupSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group wrap='nowrap' grow>
-          <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.5' span>
-              Category
-            </Text>
-            <Text c='gray.5' span>
-              {toLabel(props.item.meta_data?.category)}
-            </Text>
-          </Group>
-          <Group wrap='nowrap' gap={10}>
-            <Text fw={600} c='gray.5' span>
-              Group
-            </Text>
-            <HoverCard
-              disabled={!groupDesc}
-              width={265}
-              shadow='md'
-              zIndex={2000}
-              openDelay={250}
-              withinPortal
-              withArrow
-            >
-              <HoverCard.Target>
-                <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
-                  {toLabel(props.item.meta_data?.group)}
-                </Text>
-              </HoverCard.Target>
-              <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' store={props.store}>
-                  {groupDesc?.description}
-                </RichText>
-              </HoverCard.Dropdown>
-            </HoverCard>
-          </Group>
+          {props.item.meta_data?.category && (
+            <Group wrap='nowrap' gap={10}>
+              <Text fw={600} c='gray.5' span>
+                Category
+              </Text>
+              <Text c='gray.5' span>
+                {toLabel(props.item.meta_data?.category)}
+              </Text>
+            </Group>
+          )}
+          {props.item.meta_data?.group && (
+            <Group wrap='nowrap' gap={10}>
+              <Text fw={600} c='gray.5' span>
+                Group
+              </Text>
+              <HoverCard
+                disabled={!groupDesc}
+                width={265}
+                shadow='md'
+                zIndex={2000}
+                openDelay={250}
+                withinPortal
+                withArrow
+              >
+                <HoverCard.Target>
+                  <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
+                    {toLabel(props.item.meta_data?.group)}
+                  </Text>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <RichText ta='justify' fz='xs' store={props.store}>
+                    {groupDesc?.description}
+                  </RichText>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </Group>
+          )}
         </Group>
       </Paper>
     );

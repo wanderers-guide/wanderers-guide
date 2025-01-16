@@ -838,39 +838,43 @@ function InvItemSections(props: {
     categoryAndGroupSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={0}>
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.5' span>
-              Category
-            </Text>
-            <Text c='gray.5' span>
-              {toLabel(props.invItem.item.meta_data?.category)}
-            </Text>
-          </Group>
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.5' span>
-              Group
-            </Text>
-            <HoverCard
-              disabled={!groupDesc}
-              width={265}
-              shadow='md'
-              zIndex={2000}
-              openDelay={250}
-              withinPortal
-              withArrow
-            >
-              <HoverCard.Target>
-                <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
-                  {toLabel(props.invItem.item.meta_data?.group)}
-                </Text>
-              </HoverCard.Target>
-              <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' store={props.storeId}>
-                  {groupDesc?.description}
-                </RichText>
-              </HoverCard.Dropdown>
-            </HoverCard>
-          </Group>
+          {props.invItem.item.meta_data?.category && (
+            <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+              <Text fw={600} c='gray.5' span>
+                Category
+              </Text>
+              <Text c='gray.5' span>
+                {toLabel(props.invItem.item.meta_data?.category)}
+              </Text>
+            </Group>
+          )}
+          {props.invItem.item.meta_data?.group && (
+            <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+              <Text fw={600} c='gray.5' span>
+                Group
+              </Text>
+              <HoverCard
+                disabled={!groupDesc}
+                width={265}
+                shadow='md'
+                zIndex={2000}
+                openDelay={250}
+                withinPortal
+                withArrow
+              >
+                <HoverCard.Target>
+                  <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
+                    {toLabel(props.invItem.item.meta_data?.group)}
+                  </Text>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <RichText ta='justify' fz='xs' store={props.storeId}>
+                    {groupDesc?.description}
+                  </RichText>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </Group>
+          )}
         </Group>
       </Paper>
     );
