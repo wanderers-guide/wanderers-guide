@@ -286,6 +286,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   // When you attack with a finesse melee weapon, you can use Dex mod for damage instead of Str mod.
   USE_DEX_FOR_MELEE_FINESSE: newVariable('bool', 'USE_DEX_FOR_MELEE_FINESSE'),
 
+  // The minimum number of damage dice you can have for a weapon.
+  MINIMUM_WEAPON_DAMAGE_DICE: newVariable('num', 'MINIMUM_WEAPON_DAMAGE_DICE', 1),
+
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
 

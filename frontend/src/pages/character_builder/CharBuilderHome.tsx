@@ -499,6 +499,24 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                 />
                 <LinkSwitch
+                  label='Automatic Bonus Progression'
+                  info={`This variant removes the item bonus to rolls and DCs usually provided by magic items (with the exception of armor’s item bonus) and replaces it with a new kind of bonus - potency - to reflect a character’s innate ability. In this variant, magic items, if they exist at all, can provide unique special abilities rather than numerical increases.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=2741'
+                  enabled={character?.variants?.automatic_bonus_progression}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          automatic_bonus_progression: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
                   label='Dual Class'
                   info={`Sometimes, especially when you have a particularly small play group or want to play incredibly versatile characters, you might want to allow dual-class characters that have the full benefits of two different classes.`}
                   url='https://2e.aonprd.com/Rules.aspx?ID=1328'
