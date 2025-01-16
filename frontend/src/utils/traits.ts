@@ -23,6 +23,7 @@ export type TraitType =
   | 'BOMB'
   | 'AGILE'
   | 'FINESSE'
+  | 'FLEXIBLE'
   | 'MULTICLASS'
   | 'DEDICATION'
   | 'ARCHAIC'
@@ -67,6 +68,7 @@ const traitMap: Record<number, TraitType> = {
   1530: 'BOMB',
   1569: 'AGILE',
   1570: 'FINESSE',
+  1580: 'FLEXIBLE',
   1446: 'MULTICLASS',
   1445: 'DEDICATION',
   1504: 'MAGICAL',

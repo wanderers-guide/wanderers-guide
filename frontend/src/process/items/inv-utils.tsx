@@ -178,9 +178,14 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
           const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
           if (checkPenalty > 0) {
             const attrs = ['ATTRIBUTE_STR', 'ATTRIBUTE_DEX'];
-            const skills = getAllSkillVariables(STORE_ID).filter((skill) =>
-              attrs.includes(skill.value.attribute ?? '')
-            );
+            let skills = getAllSkillVariables(STORE_ID).filter((skill) => attrs.includes(skill.value.attribute ?? ''));
+
+            // If armor is flexible, don't apply to Acrobatics or Athletics
+            const isFlexible = hasTraitType('FLEXIBLE', item.item.traits);
+            if (isFlexible) {
+              skills = skills.filter((skill) => skill.name !== 'SKILL_ACROBATICS' && skill.name !== 'SKILL_ATHLETICS');
+            }
+
             for (const skill of skills) {
               addVariableBonus(
                 STORE_ID,
