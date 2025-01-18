@@ -48,8 +48,9 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { openContextModal } from '@mantine/modals';
+import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
+import { CreateItemModal } from '@modals/CreateItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
 import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
@@ -76,6 +77,7 @@ export default function InventoryPanel(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
+  const [creatingCustomItem, setCreatingCustomItem] = useState(false);
 
   const visibleInvItems = props.inventory.items.filter(
     (invItem) => !(!isItemVisible(props.id, invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
@@ -102,9 +104,20 @@ export default function InventoryPanel(props: {
     openContextModal({
       modal: 'addItems',
       title: (
-        <Group wrap='nowrap' gap={20}>
+        <Group wrap='nowrap' gap={20} justify='space-between'>
           <Title order={3}>Add Items</Title>
-          {/* (<CurrencySection character={character} />) */}
+          <Button
+            variant='light'
+            color={theme.colors['gray'][6]}
+            size='compact-xs'
+            mr={5}
+            onClick={() => {
+              modals.closeAll();
+              setCreatingCustomItem(true);
+            }}
+          >
+            Custom Item
+          </Button>
         </Group>
       ),
       innerProps: {
@@ -118,6 +131,11 @@ export default function InventoryPanel(props: {
         },
       },
       zIndex: props.zIndex ?? 499,
+      styles: {
+        title: {
+          width: '100%',
+        },
+      },
     });
   };
 
@@ -459,6 +477,19 @@ export default function InventoryPanel(props: {
             });
           }}
           onClose={() => setConfirmBuyItem(undefined)}
+        />
+      )}
+
+      {creatingCustomItem && (
+        <CreateItemModal
+          opened={creatingCustomItem}
+          onComplete={async (item) => {
+            handleAddItem(props.setInventory, item, false);
+            setCreatingCustomItem(false);
+          }}
+          onCancel={() => {
+            setCreatingCustomItem(false);
+          }}
         />
       )}
     </Box>
