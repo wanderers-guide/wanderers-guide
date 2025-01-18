@@ -261,7 +261,8 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
                           <List size='xs'>
                             {parts.breakdown.conditionals.map((item, i) => (
                               <List.Item key={i}>
-                                {item.text}{' '}
+                                {item.text}
+                                <br />
                                 <Text c='dimmed' span>
                                   {'['}from {item.source}
                                   {']'}

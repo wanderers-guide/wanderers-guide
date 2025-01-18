@@ -206,6 +206,7 @@ export default function ArmorSection(props: {
                     size='xs'
                     variant='light'
                     color='gray.0'
+                    w={20}
                     style={{
                       position: 'absolute',
                       top: '50%',

@@ -180,7 +180,8 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                         <List size='xs'>
                           {acBonusParts.conditionals.map((item, i) => (
                             <List.Item key={i}>
-                              {item.text}{' '}
+                              {item.text}
+                              <br />
                               <Text c='dimmed' span>
                                 {'['}from {item.source}
                                 {']'}
