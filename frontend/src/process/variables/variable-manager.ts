@@ -185,10 +185,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   MAX_HEALTH_BONUS: newVariable('num', 'MAX_HEALTH_BONUS'),
 
   AC_BONUS: newVariable('num', 'AC_BONUS'),
-  // ARMOR_CHECK_PENALTY: newVariable('num', 'ARMOR_CHECK_PENALTY'),
-  // ARMOR_SPEED_PENALTY: newVariable('num', 'ARMOR_SPEED_PENALTY'),
-  // DEX_CAP: newVariable('num', 'DEX_CAP'),
-  // UNARMORED: newVariable('bool', 'UNARMORED'),
 
   SPEED: newVariable('num', 'SPEED'),
   SPEED_FLY: newVariable('num', 'SPEED_FLY'),
@@ -220,7 +216,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
   EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['FIST']),
 
-  //
   // List variables, storing the IDs
   SENSE_IDS: newVariable('list-str', 'SENSE_IDS'),
   MODE_IDS: newVariable('list-str', 'MODE_IDS'),
@@ -285,6 +280,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   // When you attack with a finesse melee weapon, you can use Dex mod for damage instead of Str mod.
   USE_DEX_FOR_MELEE_FINESSE: newVariable('bool', 'USE_DEX_FOR_MELEE_FINESSE'),
+
+  // The minimum number of damage dice you can have for a weapon.
+  MINIMUM_WEAPON_DAMAGE_DICE: newVariable('num', 'MINIMUM_WEAPON_DAMAGE_DICE', 1),
 
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
@@ -354,20 +352,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 };
 
 const variableMap = new Map<string, VariableStore>();
-
-// let variables = _.cloneDeep(DEFAULT_VARIABLES);
-// let variableBonuses: Record<
-//   string,
-//   { value?: number; type?: string; text: string; source: string; timestamp: number }[]
-// > = {};
-// let variableHistory: Record<
-//   string,
-//   { to: VariableValue; from: VariableValue | null; source: string; timestamp: number }[]
-// > = {};
-
-// 2_status_
-// +2 status bonus
-// Map<string, { value?: number, type: string, text: string }[]>
 
 export function getVariableStore(id: StoreID) {
   if (!variableMap.has(id)) {

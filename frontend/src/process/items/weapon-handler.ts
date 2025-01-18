@@ -22,8 +22,13 @@ export function getWeaponStats(id: StoreID, item: Item) {
   // Get adjustments from Starfinder item grade
   const gradeImprovements = getGradeImprovements(item);
 
-  const dice =
+  // Get the number of dice for the weapon
+  let dice =
     (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0) + (gradeImprovements.damage_dice - 1);
+  const minDice = getVariable<VariableNum>(id, 'MINIMUM_WEAPON_DAMAGE_DICE')?.value ?? 1;
+  if (dice < minDice) dice = minDice;
+
+  //
   const die = item.meta_data?.damage?.die ?? '';
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
   const extra = item.meta_data?.damage?.extra;
