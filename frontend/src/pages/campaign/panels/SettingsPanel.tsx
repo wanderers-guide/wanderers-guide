@@ -219,23 +219,38 @@ export default function SettingsPanel(props: {
           backgroundColor: 'rgba(0, 0, 0, 0.13)',
         }}
       >
-        <ScrollArea h='100%' scrollbars='y'>
-          <Tabs defaultValue='books'>
-            <Tabs.List grow>
-              <Tabs.Tab value='books' leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='homebrew' leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='variants' leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='options' leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
-              </Tabs.Tab>
-            </Tabs.List>
-
+        <Tabs defaultValue='books' h='100%'>
+          <Tabs.List grow>
+            <Tabs.Tab
+              value='books'
+              leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='homebrew'
+              leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='variants'
+              leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='options'
+              leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
+            </Tabs.Tab>
+          </Tabs.List>
+          <ScrollArea h='90%' scrollbars='y'>
             <Tabs.Panel value='books'>
               <Stack gap={0} pt='sm'>
                 <LinksGroup
@@ -737,8 +752,8 @@ export default function SettingsPanel(props: {
                 )}
               </Stack>
             </Tabs.Panel>
-          </Tabs>
-        </ScrollArea>
+          </ScrollArea>
+        </Tabs>
       </Paper>
     </Box>
   );

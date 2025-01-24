@@ -365,7 +365,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
     });
 
   return (
-    <BlurBox blur={10} w={isPhone ? '100%' : undefined}>
+    <BlurBox blur={10} w={isPhone ? '90dvw' : undefined}>
       <LoadingOverlay visible={loading} />
       <Box
         w='100%'

@@ -297,10 +297,8 @@ export function CharBuilderCreationInner(props: {
               />
               <Button
                 leftSection={<IconId size={14} />}
-                variant='outline'
+                variant='light'
                 size='xs'
-                mt='sm'
-                mr='md'
                 onClick={() => {
                   setStatPanelOpened((prev) => !prev);
                 }}

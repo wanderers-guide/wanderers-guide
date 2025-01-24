@@ -132,7 +132,7 @@ export function Component() {
         id: characterId,
         ...data,
       });
-      if (_.isArray(resData) && resData.length > 0) {
+      if (resData && _.isArray(resData) && resData.length > 0) {
         handleFetchedCharacter(resData[0]);
       }
       return true;

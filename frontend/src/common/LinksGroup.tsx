@@ -150,7 +150,7 @@ export function GroupLinkSwitch(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group gap={0}>
+    <Group gap={0} wrap='nowrap'>
       <Text<'a'> component='a' className={props.linkCss ? classes.link : undefined} key={props.label}>
         <Switch
           label={props.label}
@@ -201,7 +201,7 @@ export function LinkSwitch(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <Group gap={0}>
+    <Group gap={0} wrap='nowrap'>
       <Text<'a'> component='a'>
         <Switch
           label={props.label}
