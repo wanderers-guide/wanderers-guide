@@ -588,7 +588,7 @@ function InvItemOption(props: {
   return (
     <Grid w={'100%'}>
       <Grid.Col span='auto'>
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
           <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
           <Text c='gray.0' fz='sm'>
             {props.invItem.item.name}
@@ -661,7 +661,7 @@ function InvItemOption(props: {
           </Grid>
         </Grid.Col>
       )}
-      <Grid.Col span={props.isPhone ? 3 : 2} offset={1}>
+      <Grid.Col span={props.isPhone ? 3 : 2} offset={props.isPhone ? 0 : 1}>
         <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
           {isItemInvestable(props.invItem.item) && (
             <Button
