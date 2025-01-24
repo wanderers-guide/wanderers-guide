@@ -29,7 +29,7 @@ import { toLabel } from '@utils/strings';
 import { isTruthy } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
-import _ from 'lodash-es';
+import { groupBy } from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
@@ -116,7 +116,7 @@ export default function ManageSpellsModal(props: {
   }, [charData, allFilteredSpells]);
 
   const slots = useMemo(() => {
-    return _.groupBy(charData?.slots, 'rank');
+    return groupBy(charData?.slots, 'rank');
   }, [charData]);
 
   return (

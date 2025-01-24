@@ -1,11 +1,7 @@
-import { fetchContentAll } from '@content/content-store';
 import { OperationWrapper } from '../Operations';
-import { Autocomplete, Group, Select, Stack } from '@mantine/core';
-import { useDidUpdate } from '@mantine/hooks';
-import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, AbilityBlockType, ContentSource, ContentType, Item } from '@typing/content';
-import { useEffect, useState } from 'react';
-import _ from 'lodash-es';
+import { Group, Select, Stack } from '@mantine/core';
+import { AbilityBlockType, ContentType } from '@typing/content';
+import { useState } from 'react';
 import { SelectContentButton } from '@common/select/SelectContent';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { JSONContent } from '@tiptap/react';

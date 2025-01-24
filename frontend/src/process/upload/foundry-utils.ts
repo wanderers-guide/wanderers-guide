@@ -8,8 +8,7 @@ import {
 import { makeRequest } from '@requests/request-manager';
 import { ActionCost, ContentSource, Item, Language, Rarity, Size, Spell, Trait } from '@typing/content';
 import { toLabel } from '@utils/strings';
-import { labelToVariable } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
+import { isString } from 'lodash-es';
 import { evaluate } from 'mathjs/number';
 
 export function convertToActionCost(actionType: string, actionValue?: number): ActionCost {
@@ -309,7 +308,7 @@ export function extractFromDescription(description?: string) {
       if (!output.heightened) {
         output.heightened = [];
       }
-      if (!_.isString(output.heightened)) {
+      if (!isString(output.heightened)) {
         output.heightened.push({
           amount: heightenedAmount,
           text: text,

@@ -57,7 +57,7 @@ import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity
 import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
-import _ from 'lodash-es';
+import { cloneDeep, truncate } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -277,7 +277,7 @@ export default function InventoryPanel(props: {
               },
             }}
           >
-            {_.cloneDeep(invItems)
+            {cloneDeep(invItems)
               .sort((a, b) => a.item.name.localeCompare(b.item.name))
               .map((invItem, index) => (
                 <Box key={index}>
@@ -292,12 +292,12 @@ export default function InventoryPanel(props: {
                             hideSections
                             invItem={invItem}
                             onEquip={(invItem) => {
-                              const newInvItem = _.cloneDeep(invItem);
+                              const newInvItem = cloneDeep(invItem);
                               newInvItem.is_equipped = !newInvItem.is_equipped;
                               handleUpdateItem(props.setInventory, newInvItem);
                             }}
                             onInvest={(invItem) => {
-                              const newInvItem = _.cloneDeep(invItem);
+                              const newInvItem = cloneDeep(invItem);
 
                               if (isItemInvestable(newInvItem.item)) {
                                 newInvItem.is_invested = !newInvItem.is_invested;
@@ -314,7 +314,7 @@ export default function InventoryPanel(props: {
                                 data: {
                                   storeId: props.id,
                                   zIndex: 100,
-                                  invItem: _.cloneDeep(invItem),
+                                  invItem: cloneDeep(invItem),
                                   onItemUpdate: (newInvItem: InventoryItem) => {
                                     handleUpdateItem(props.setInventory, newInvItem);
                                   },
@@ -343,7 +343,7 @@ export default function InventoryPanel(props: {
                                   data: {
                                     storeId: props.id,
                                     zIndex: 100,
-                                    invItem: _.cloneDeep(containedItem),
+                                    invItem: cloneDeep(containedItem),
                                     onItemUpdate: (newInvItem: InventoryItem) => {
                                       handleUpdateItem(props.setInventory, newInvItem);
                                     },
@@ -366,12 +366,12 @@ export default function InventoryPanel(props: {
                                 invItem={containedItem}
                                 preventEquip
                                 onEquip={(invItem) => {
-                                  const newInvItem = _.cloneDeep(invItem);
+                                  const newInvItem = cloneDeep(invItem);
                                   newInvItem.is_equipped = !newInvItem.is_equipped;
                                   handleUpdateItem(props.setInventory, newInvItem);
                                 }}
                                 onInvest={(invItem) => {
-                                  const newInvItem = _.cloneDeep(invItem);
+                                  const newInvItem = cloneDeep(invItem);
 
                                   if (isItemInvestable(newInvItem.item)) {
                                     newInvItem.is_invested = !newInvItem.is_invested;
@@ -403,7 +403,7 @@ export default function InventoryPanel(props: {
                             data: {
                               storeId: props.id,
                               zIndex: 100,
-                              invItem: _.cloneDeep(invItem),
+                              invItem: cloneDeep(invItem),
                               onItemUpdate: (newInvItem: InventoryItem) => {
                                 handleUpdateItem(props.setInventory, newInvItem);
                               },
@@ -425,12 +425,12 @@ export default function InventoryPanel(props: {
                           isPhone={isPhone}
                           invItem={invItem}
                           onEquip={(invItem) => {
-                            const newInvItem = _.cloneDeep(invItem);
+                            const newInvItem = cloneDeep(invItem);
                             newInvItem.is_equipped = !newInvItem.is_equipped;
                             handleUpdateItem(props.setInventory, newInvItem);
                           }}
                           onInvest={(invItem) => {
-                            const newInvItem = _.cloneDeep(invItem);
+                            const newInvItem = cloneDeep(invItem);
 
                             if (isItemInvestable(newInvItem.item)) {
                               newInvItem.is_invested = !newInvItem.is_invested;
@@ -614,7 +614,7 @@ function InvItemOption(props: {
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>
               <EllipsisText c='gray.6' fz='xs' fs='italic' span>
-                {_.truncate(
+                {truncate(
                   `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
                   { length: props.isPhone ? 15 : 45 }
                 )}

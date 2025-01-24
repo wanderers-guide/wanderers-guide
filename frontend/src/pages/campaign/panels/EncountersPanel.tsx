@@ -1,11 +1,10 @@
 import { drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
-import ConditionPill from '@common/ConditionPill';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { selectContent } from '@common/select/SelectContent';
-import { applyConditions, compiledConditions } from '@conditions/condition-handler';
+import { applyConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage } from '@content/content-store';
 import { defineDefaultSourcesForUser } from '@content/homebrew';
@@ -21,7 +20,6 @@ import {
   Button,
   Stack,
   Group,
-  Avatar,
   Text,
   NumberInput,
   TextInput,
@@ -29,31 +27,18 @@ import {
   MantineColor,
   LoadingOverlay,
 } from '@mantine/core';
-import {
-  getHotkeyHandler,
-  useDebouncedState,
-  useDebouncedValue,
-  useDidUpdate,
-  useElementSize,
-  useHover,
-  useMediaQuery,
-} from '@mantine/hooks';
+import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { CreateCombatantModal } from '@modals/CreateCombatantModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
 import { ConditionPills, selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { makeRequest } from '@requests/request-manager';
-import { en } from '@supabase/auth-ui-shared';
 import {
-  IconAtom2Filled,
   IconBat,
-  IconBrandFunimation,
   IconCheck,
   IconCylinder,
-  IconDownload,
   IconExternalLink,
-  IconHeartPlus,
   IconPlus,
   IconSettings,
   IconSparkles,
@@ -62,16 +47,14 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { JSONContent } from '@tiptap/react';
-import { Campaign, Character, Combatant, Condition, Creature, Encounter, LivingEntity } from '@typing/content';
-import { sleep } from '@utils/async';
-import { isPhoneSized, phoneQuery, usePhoneSized } from '@utils/mobile-responsive';
+import { Campaign, Character, Combatant, Creature, Encounter, LivingEntity } from '@typing/content';
+import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { rollDie } from '@utils/random';
-import { convertToSetEntity, isCharacter, isCreature, setterOrUpdaterToValue } from '@utils/type-fixing';
+import { isCharacter, isCreature, setterOrUpdaterToValue } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
-import _ from 'lodash-es';
+import { cloneDeep, debounce, isEqual, mean, truncate } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
@@ -120,7 +103,7 @@ export default function EncountersPanel(props: {
     null;
 
   const debouncedUpdateRequest = useCallback(
-    _.debounce((e: Encounter) => {
+    debounce((e: Encounter) => {
       makeRequest('create-encounter', { ...e });
     }, 200),
     []
@@ -139,7 +122,7 @@ export default function EncountersPanel(props: {
           e.id = result.id;
         }
         setLoading(false);
-      } else if (!_.isEqual(e, existing)) {
+      } else if (!isEqual(e, existing)) {
         // If it's an existing encounter, update it after a debounce
         debouncedUpdateRequest(e);
       }
@@ -184,15 +167,15 @@ export default function EncountersPanel(props: {
     },
     meta_data: {
       description: '',
-      party_level: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
+      party_level: props.campaign ? mean(props.campaign.players.map((p) => p.level)) : undefined,
       party_size: props.campaign ? props.campaign.players.length : undefined,
     },
   };
 
-  const encounters = _encountersData && _encountersData.length > 0 ? _encountersData : [_.cloneDeep(defaultEncounter)];
+  const encounters = _encountersData && _encountersData.length > 0 ? _encountersData : [cloneDeep(defaultEncounter)];
 
   const addEncounter = (encounter: Encounter) => {
-    const newEncounters = _.cloneDeep(encounters);
+    const newEncounters = cloneDeep(encounters);
     if (props.campaign) {
       encounter.campaign_id = props.campaign.data.id;
     }
@@ -207,7 +190,7 @@ export default function EncountersPanel(props: {
         <EncounterView
           encounter={encounter}
           setEncounter={(e) => {
-            const newEncounters = _.cloneDeep(encounters);
+            const newEncounters = cloneDeep(encounters);
             newEncounters[index] = e;
             updateEncounters(newEncounters);
           }}
@@ -269,7 +252,7 @@ export default function EncountersPanel(props: {
                     setActiveTab(`${index}`);
                   }}
                 >
-                  {_.truncate(encounter.name, { length: 14 })}
+                  {truncate(encounter.name, { length: 14 })}
                 </Menu.Item>
               ))}
 
@@ -286,7 +269,7 @@ export default function EncountersPanel(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  addEncounter(_.cloneDeep(defaultEncounter));
+                  addEncounter(cloneDeep(defaultEncounter));
                 }}
               >
                 New Encounter
@@ -311,7 +294,7 @@ export default function EncountersPanel(props: {
                     modal: 'generateEncounter',
                     title: <Title order={3}>Encounter Generator</Title>,
                     innerProps: {
-                      partyLevel: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
+                      partyLevel: props.campaign ? mean(props.campaign.players.map((p) => p.level)) : undefined,
                       partySize: props.campaign ? props.campaign.players.length : undefined,
                       onComplete: (encounter: Encounter) => {
                         addEncounter(encounter);
@@ -348,12 +331,12 @@ export default function EncountersPanel(props: {
               innerProps: {
                 encounter: encounter,
                 onUpdate: (encounter: Encounter) => {
-                  const newEncounters = _.cloneDeep(encounters);
+                  const newEncounters = cloneDeep(encounters);
                   newEncounters[index] = encounter;
                   updateEncounters(newEncounters);
                 },
                 onDelete: () => {
-                  const newEncounters = _.cloneDeep(encounters);
+                  const newEncounters = cloneDeep(encounters);
                   newEncounters.splice(index, 1);
                   updateEncounters(newEncounters);
                   setActiveTab(`0`);
@@ -418,7 +401,7 @@ export default function EncountersPanel(props: {
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              addEncounter(_.cloneDeep(defaultEncounter));
+              addEncounter(cloneDeep(defaultEncounter));
             }}
           >
             New Encounter
@@ -442,7 +425,7 @@ export default function EncountersPanel(props: {
                 modal: 'generateEncounter',
                 title: <Title order={3}>Encounter Generator</Title>,
                 innerProps: {
-                  partyLevel: props.campaign ? _.mean(props.campaign.players.map((p) => p.level)) : undefined,
+                  partyLevel: props.campaign ? mean(props.campaign.players.map((p) => p.level)) : undefined,
                   partySize: props.campaign ? props.campaign.players.length : undefined,
                   onComplete: (encounter: Encounter) => {
                     addEncounter(encounter);
@@ -483,7 +466,7 @@ function EncounterView(props: {
   const changeCombatants = (
     change: { type: 'ADD'; data: LivingEntity; ally: boolean } | { type: 'REMOVE'; data: Combatant }
   ) => {
-    const newEncounter = _.cloneDeep(props.encounter);
+    const newEncounter = cloneDeep(props.encounter);
 
     if (change.type === 'ADD') {
       newEncounter.combatants.list.push({
@@ -503,7 +486,7 @@ function EncounterView(props: {
 
     // Update party size and level
     const alliesInEncounter = populateCombatants(newEncounter.combatants.list).filter((c) => c.ally);
-    const partyLevel = _.mean(alliesInEncounter.map((p) => p.data.level));
+    const partyLevel = mean(alliesInEncounter.map((p) => p.data.level));
     const partySize = alliesInEncounter.length;
 
     newEncounter.meta_data = {
@@ -523,7 +506,7 @@ function EncounterView(props: {
    * @returns - The updated encounter
    */
   const updateCombatant = (combatant: Combatant) => {
-    const newEncounter = _.cloneDeep(props.encounter);
+    const newEncounter = cloneDeep(props.encounter);
     const index = newEncounter.combatants.list.findIndex((c) => c._id === combatant._id);
     if (index === -1) return;
 
@@ -645,7 +628,7 @@ function EncounterView(props: {
                     innerProps: {
                       combatants: combatants,
                       onConfirm: (rollBonuses: Map<string, number | null>) => {
-                        const newEncounter = _.cloneDeep(props.encounter);
+                        const newEncounter = cloneDeep(props.encounter);
 
                         // Roll initiative for each combatant
                         for (const [_id, bonus] of rollBonuses) {
@@ -698,7 +681,7 @@ function EncounterView(props: {
                           })
                         }
                       >
-                        {_.truncate(player.name, { length: 18 })}
+                        {truncate(player.name, { length: 18 })}
                       </Menu.Item>
                     ))}
                   </Menu.Dropdown>
@@ -803,7 +786,7 @@ function EncounterView(props: {
                   computed={getComputedData(combatant)}
                   // Returning updated populated entity data, will trigger update of the combatant
                   updateEntity={(input) => {
-                    let entity = _.cloneDeep(input);
+                    let entity = cloneDeep(input);
 
                     // If health changes, confirm and update entity with new changes
                     if (entity.hp_current !== combatant.data.hp_current) {
@@ -1202,7 +1185,7 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
         maxHp: combatant.data.meta_data?.calculated_stats?.hp_max ?? 0,
       };
     } else if (combatant.type === 'CREATURE') {
-      const creature = _.cloneDeep(combatant.data) as Creature;
+      const creature = cloneDeep(combatant.data) as Creature;
 
       // Variable store ID
       const STORE_ID = getCombatantStoreID(combatant);
@@ -1246,7 +1229,7 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
 
 export function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatant[]) {
   const alliesInEncounter = combatants.filter((c) => c.ally);
-  const partyLevel = encounter.meta_data.party_level ?? _.mean(alliesInEncounter.map((p) => p.data.level));
+  const partyLevel = encounter.meta_data.party_level ?? mean(alliesInEncounter.map((p) => p.data.level));
   const partySize = encounter.meta_data.party_size ?? alliesInEncounter.length;
 
   let xpBudget = 0;

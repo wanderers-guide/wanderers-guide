@@ -5,7 +5,6 @@ import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ActionCost, ContentType } from '@typing/content';
-import * as _ from 'lodash-es';
 import { ActionSymbol } from '@common/Actions';
 
 export default function ActionSymbolControl() {

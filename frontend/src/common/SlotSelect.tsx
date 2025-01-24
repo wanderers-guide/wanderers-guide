@@ -1,6 +1,5 @@
 import { Box, Button, Grid, Group, NumberInput, Stack, Text } from '@mantine/core';
 import { rankNumber } from '@utils/numbers';
-import _ from 'lodash-es';
 import { useState } from 'react';
 
 export function SlotSelect(props: {

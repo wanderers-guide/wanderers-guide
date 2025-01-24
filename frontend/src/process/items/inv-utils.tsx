@@ -10,7 +10,7 @@ import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
+import { cloneDeep, uniq, uniqBy } from 'lodash-es';
 import { SetterOrUpdater } from 'recoil';
 
 /**
@@ -98,12 +98,12 @@ export const handleAddItem = async (
 ) => {
   const container_contents = await getDefaultContainerContents(item);
   setInventory((prev) => {
-    const itemData = _.cloneDeep(item);
+    const itemData = cloneDeep(item);
     if (itemData.meta_data) {
       itemData.meta_data.hp = itemData.meta_data.hp_max;
     }
     const newItems = [
-      ..._.cloneDeep(prev.items),
+      ...cloneDeep(prev.items),
       {
         id: crypto.randomUUID(),
         item: itemData,
@@ -134,7 +134,7 @@ async function getDefaultContainerContents(item: Item, allItems?: Item[], count 
 
   const invItems: InventoryItem[] = [];
   for (const record of item.meta_data?.container_default_items ?? []) {
-    const containerItem = _.cloneDeep(items.find((i) => i.id === record.id));
+    const containerItem = cloneDeep(items.find((i) => i.id === record.id));
     if (!containerItem) continue;
     if (containerItem.meta_data) {
       containerItem.meta_data.quantity = record.quantity;
@@ -222,7 +222,7 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
     if (!character.inventory) return;
     if (Math.floor(getInvBulk(character.inventory)) > getBulkLimit('CHARACTER')) {
       // Add encumbered condition
-      const newConditions = _.cloneDeep(character.details?.conditions ?? []);
+      const newConditions = cloneDeep(character.details?.conditions ?? []);
       const encumbered = newConditions.find((c) => c.name === 'Encumbered');
       if (!encumbered) {
         newConditions.push(getConditionByName('Encumbered')!);
@@ -247,7 +247,7 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
       }
     } else {
       // Remove encumbered condition
-      // const newConditions = _.cloneDeep(character.details?.conditions ?? []);
+      // const newConditions = cloneDeep(character.details?.conditions ?? []);
       // const encumbered = newConditions.find((c) => c.name === 'Encumbered');
       // if (encumbered) {
       //   newConditions.splice(newConditions.indexOf(encumbered), 1);
@@ -308,11 +308,11 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
         ...c,
         inventory: {
           ...c.inventory!,
-          items: _.uniqBy([...c.inventory!.items, ...extraItems], 'id'),
+          items: uniqBy([...c.inventory!.items, ...extraItems], 'id'),
         },
         meta_data: {
           ...c.meta_data,
-          given_item_ids: _.uniq([...(c.meta_data?.given_item_ids ?? []), ...extraItems.map((item) => item.item.id)]),
+          given_item_ids: uniq([...(c.meta_data?.given_item_ids ?? []), ...extraItems.map((item) => item.item.id)]),
         },
       };
     });
@@ -329,7 +329,7 @@ export const handleDeleteItem = (
   invItem: InventoryItem
 ) => {
   setInventory((prev) => {
-    const newItems = _.cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
+    const newItems = cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
     // Remove from all containers
     newItems.forEach((item) => {
       if (isItemContainer(item.item)) {
@@ -353,9 +353,9 @@ export const handleUpdateItem = (
   invItem: InventoryItem
 ) => {
   setInventory((prev) => {
-    const newItems = _.cloneDeep(prev.items).map((item) => {
+    const newItems = cloneDeep(prev.items).map((item) => {
       if (item.id === invItem.id) {
-        return _.cloneDeep(invItem);
+        return cloneDeep(invItem);
       }
       return item;
     });
@@ -364,7 +364,7 @@ export const handleUpdateItem = (
       if (isItemContainer(item.item)) {
         item.container_contents = item.container_contents.map((containedItem) => {
           if (containedItem.id === invItem.id) {
-            return _.cloneDeep(invItem);
+            return cloneDeep(invItem);
           }
           return containedItem;
         });
@@ -388,23 +388,23 @@ export const handleMoveItem = (
   invItem: InventoryItem,
   containerItem: InventoryItem | null
 ) => {
-  const movingItem = _.cloneDeep(invItem);
+  const movingItem = cloneDeep(invItem);
   handleDeleteItem(setInventory, invItem);
   setTimeout(() => {
     setInventory((prev) => {
       let newItems: InventoryItem[] = [];
       if (containerItem) {
-        const foundContainer = _.cloneDeep(prev.items.find((item) => item.id === containerItem.id));
+        const foundContainer = cloneDeep(prev.items.find((item) => item.id === containerItem.id));
         if (!foundContainer) return prev;
         movingItem.is_equipped = false;
-        newItems = _.cloneDeep(prev.items).map((item) => {
+        newItems = cloneDeep(prev.items).map((item) => {
           if (item.id === foundContainer.id) {
             item.container_contents.push(movingItem);
           }
           return item;
         });
       } else {
-        newItems = [..._.cloneDeep(prev.items), movingItem];
+        newItems = [...cloneDeep(prev.items), movingItem];
       }
       return {
         ...prev,
@@ -847,7 +847,7 @@ export function isItemArchaic(item: Item) {
  * @param item
  */
 export function compileTraits(item: Item) {
-  const traits = _.cloneDeep(item.traits ?? []);
+  const traits = cloneDeep(item.traits ?? []);
   if (item.meta_data?.base_item_content) {
     traits.push(...(item.meta_data.base_item_content.traits ?? []));
   }
@@ -873,7 +873,7 @@ export function compileTraits(item: Item) {
     }
   }
 
-  return _.uniq(traits);
+  return uniq(traits);
 }
 
 /**

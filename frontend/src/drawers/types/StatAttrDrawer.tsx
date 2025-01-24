@@ -53,7 +53,6 @@ import {
   proficiencyTypeToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 
 export function StatAttrDrawerTitle(props: { data: { id: StoreID; attributeName?: string } }) {
   return (

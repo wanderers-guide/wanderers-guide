@@ -33,7 +33,6 @@ import {
 } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
-import _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import FocusSpellsList from './spells_list/FocusSpellsList';
@@ -46,6 +45,7 @@ import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
 import WandSpellsList from './spells_list/WandSpellsList';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
+import { groupBy } from 'lodash-es';
 
 export default function SpellsPanel(props: {
   id: StoreID;
@@ -611,7 +611,7 @@ function SpellList(props: {
       }
     }
 
-    return _.groupBy(filteredSpells, 'rank');
+    return groupBy(filteredSpells, 'rank');
   }, [props.spellIds, props.allSpells]);
 
   const slots = useMemo(() => {
@@ -630,7 +630,7 @@ function SpellList(props: {
         spell: spell,
       };
     });
-    return _.groupBy(mappedSlots, 'rank');
+    return groupBy(mappedSlots, 'rank');
   }, [props.extra?.slots, props.allSpells]);
 
   const innateSpells = useMemo(() => {
@@ -649,7 +649,7 @@ function SpellList(props: {
         };
       })
       .filter((innate) => innate.spell);
-    return _.groupBy(filteredSpells, 'rank');
+    return groupBy(filteredSpells, 'rank');
   }, [props.extra?.innates, props.allSpells]);
 
   if (props.type === 'PREPARED' && props.source) {

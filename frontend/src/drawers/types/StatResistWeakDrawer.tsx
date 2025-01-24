@@ -3,7 +3,6 @@ import { Title, Text, Group, Stack, Box, Badge, Accordion, List } from '@mantine
 import { StoreID, VariableListStr } from '@typing/variables';
 import { displayResistWeak, getResistWeaks } from '@utils/resist-weaks';
 import { getVariable } from '@variables/variable-manager';
-import * as _ from 'lodash-es';
 
 export function StatResistWeakDrawerTitle(props: { data: { id: StoreID } }) {
   return (

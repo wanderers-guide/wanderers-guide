@@ -1,26 +1,20 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
-import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { useMantineTheme, Group, Stack, TextInput, Box, Text, Title } from '@mantine/core';
 import { getHotkeyHandler } from '@mantine/hooks';
-import { StoreID, VariableAttr, VariableNum, VariableProf } from '@typing/variables';
-import { getFinalHealthValue } from '@variables/variable-display';
-import { getVariable } from '@variables/variable-manager';
-import _ from 'lodash-es';
+import { StoreID } from '@typing/variables';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { confirmExperience, handleRest } from '../living-entity-utils';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
-import { Character, LivingEntity, Size } from '@typing/content';
+import { Character, LivingEntity } from '@typing/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
 import { ICON_BG_COLOR } from '@constants/data';
 import { modals } from '@mantine/modals';
-import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
 
 export default function EntityInfoSection(props: {
   id: StoreID;

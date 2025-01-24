@@ -8,7 +8,6 @@ import {
   maxProficiencyType,
 } from './variable-utils';
 import { getAllAttributeVariables, getAllSkillVariables, getVariable } from './variable-manager';
-import * as _ from 'lodash-es';
 import { toLabel } from '@utils/strings';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;

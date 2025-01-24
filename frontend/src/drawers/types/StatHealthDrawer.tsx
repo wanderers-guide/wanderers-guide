@@ -3,7 +3,6 @@ import { IconMathSymbols } from '@tabler/icons-react';
 import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalHealthValue, getHealthValueParts } from '@variables/variable-display';
-import * as _ from 'lodash-es';
 
 export function StatHealthDrawerTitle(props: { data: { id: StoreID } }) {
   return (

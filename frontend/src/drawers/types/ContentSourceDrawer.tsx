@@ -19,39 +19,18 @@ import {
   TraitSelectionOption,
   VersatileHeritageSelectionOption,
 } from '@common/select/SelectContent';
-import {
-  defineDefaultSources,
-  fetchContentPackage,
-  fetchContentSources,
-  getDefaultSources,
-} from '@content/content-store';
+import { fetchContentPackage, fetchContentSources } from '@content/content-store';
 import { defineDefaultSourcesForSource, updateSubscriptions } from '@content/homebrew';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import {
-  Title,
-  Text,
-  Loader,
-  Group,
-  Divider,
-  Box,
-  Button,
-  Accordion,
-  Badge,
-  Select,
-  Stack,
-  ActionIcon,
-} from '@mantine/core';
-import { openContextModal } from '@mantine/modals';
+import { Title, Text, Loader, Group, Divider, Box, Button, Accordion, Badge, Select, ActionIcon } from '@mantine/core';
 import UnlockHomebrewModal from '@modals/UnlockHomebrewModal';
 import { makeRequest } from '@requests/request-manager';
-import { IconExternalLink, IconKey } from '@tabler/icons-react';
+import { IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
-import _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { CREATURE_DRAWER_ZINDEX } from './CreatureDrawer';
-import { convertToContentType } from '@content/content-utils';
 import { DrawerType } from '@typing/index';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {

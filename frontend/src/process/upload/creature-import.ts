@@ -28,7 +28,6 @@ import {
 import { createDefaultOperation } from '@operations/operation-utils';
 import { labelToVariable } from '@variables/variable-utils';
 import { parseDiceRoll, toLabel } from '@utils/strings';
-import _ from 'lodash-es';
 import { resetVariables } from '@variables/variable-manager';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { fetchContentPackage, fetchTraitByName } from '@content/content-store';
@@ -38,6 +37,7 @@ import { hashData, sign } from '@utils/numbers';
 import { findCreatureImage } from '@utils/images';
 import { getWeaponStats } from '@items/weapon-handler';
 import { StoreID } from '@typing/variables';
+import { cloneDeep } from 'lodash-es';
 
 export async function newImportHandler(source: ContentSource, json: Record<string, any>): Promise<Creature> {
   const creature = {
@@ -130,7 +130,7 @@ export async function newImportHandler(source: ContentSource, json: Record<strin
   const STORE_ID = `CREATURE_${crypto.randomUUID()}`;
 
   const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
-  await executeCreatureOperations(STORE_ID, _.cloneDeep(creature), content);
+  await executeCreatureOperations(STORE_ID, cloneDeep(creature), content);
 
   // Run thru totals
   for (const [key, finalTotal] of varTotals) {
@@ -665,7 +665,7 @@ async function addAttacks(id: StoreID, json: Record<string, any>, source: Conten
         //unselectable?: boolean;
         quantity: 1,
         range: range ?? undefined,
-        reload: `${reload}` ?? undefined,
+        reload: reload ? `${reload}` : undefined,
         foundry: {},
       },
       operations: [],
@@ -732,13 +732,13 @@ async function addEquipment(operations: Operation[], json: Record<string, any>) 
       },
     } satisfies OperationGiveItem);
 
-    const itemData = _.cloneDeep(item);
+    const itemData = cloneDeep(item);
     if (itemData.meta_data) {
       itemData.meta_data.hp = itemData.meta_data.hp_max;
     }
     invItems.push({
       id: crypto.randomUUID(),
-      item: _.cloneDeep(item),
+      item: cloneDeep(item),
       is_formula: false,
       is_equipped: false, // isItemEquippable(item), TODO: Fix armor adjusting AC more than supposed to
       is_invested: isItemInvestable(item),

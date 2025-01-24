@@ -19,7 +19,7 @@ import RichText from './RichText';
 import { compactLabels } from '@variables/variable-utils';
 import { rankNumber, sign } from '@utils/numbers';
 import IndentedText from './IndentedText';
-import _ from 'lodash-es';
+import { groupBy, flatten } from 'lodash-es';
 import { actionCostToRichTextInsert } from '@utils/actions';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
@@ -207,9 +207,9 @@ export default function StatBlockSection(props: {
     const spellAttack = data.proficiencies['INNATE_SPELL_ATTACK'].total;
     const spellDc = parseInt(data.proficiencies['INNATE_SPELL_DC'].total);
 
-    const spellsDict = _.groupBy(data.innate_spells, (s) => s.tradition);
+    const spellsDict = groupBy(data.innate_spells, (s) => s.tradition);
     return Object.entries(spellsDict).map(([tradition, spells]) => {
-      const spellsRankDict = _.groupBy(spells, (s) => s.rank);
+      const spellsRankDict = groupBy(spells, (s) => s.rank);
 
       return (
         <RichText ta='justify' fz='xs' span>
@@ -240,7 +240,7 @@ export default function StatBlockSection(props: {
   const getSpontaneousSpellsDisplay = () => {
     const spontSources = data.spell_sources.filter((s) => s.source.type.startsWith('SPONTANEOUS-'));
 
-    const spellsDict = _.groupBy(spontSources, (s) => s.source.tradition);
+    const spellsDict = groupBy(spontSources, (s) => s.source.tradition);
     return Object.entries(spellsDict).map(([tradition, d]) => {
       const spellAttack = d[0].stats.spell_attack.total[0];
       const spellDc = d[0].stats.spell_dc.total;
@@ -248,7 +248,7 @@ export default function StatBlockSection(props: {
       const sources = d.map((s) => s.source.name);
       const spells = data.spell_raw_data.list.filter((s) => sources.includes(s.source));
 
-      const spellsRankDict = _.groupBy(spells, (s) => s.rank);
+      const spellsRankDict = groupBy(spells, (s) => s.rank);
 
       return (
         <RichText ta='justify' fz='xs' span>
@@ -288,7 +288,7 @@ export default function StatBlockSection(props: {
   const getPreparedSpellsDisplay = () => {
     const spontSources = data.spell_sources.filter((s) => s.source.type.startsWith('PREPARED-'));
 
-    const spellsDict = _.groupBy(spontSources, (s) => s.source.tradition);
+    const spellsDict = groupBy(spontSources, (s) => s.source.tradition);
     return Object.entries(spellsDict).map(([tradition, d]) => {
       const spellAttack = d[0].stats.spell_attack.total[0];
       const spellDc = d[0].stats.spell_dc.total;
@@ -296,7 +296,7 @@ export default function StatBlockSection(props: {
       const sources = d.map((s) => s.source.name);
       const slots = data.spell_slots.filter((s) => sources.includes(s.source));
 
-      const spellsRankDict = _.groupBy(slots, (s) => s.rank);
+      const spellsRankDict = groupBy(slots, (s) => s.rank);
 
       return (
         <RichText ta='justify' fz='xs' span>
@@ -324,13 +324,13 @@ export default function StatBlockSection(props: {
   };
 
   const getFocusSpellsDisplay = () => {
-    const spellsDict = _.groupBy(data.focus_spells, (s) => s.casting_source);
+    const spellsDict = groupBy(data.focus_spells, (s) => s.casting_source);
     return Object.entries(spellsDict).map(([source, spells]) => {
       const sourceData = data.spell_sources.find((s) => s.source.name === source);
       const spellAttack = sourceData?.stats.spell_attack.total[0] ?? 0;
       const spellDc = sourceData?.stats.spell_dc.total ?? 0;
 
-      const spellsRankDict = _.groupBy(spells, (s) => s.rank);
+      const spellsRankDict = groupBy(spells, (s) => s.rank);
 
       const maxPoints = spells.filter((s) => s.rank > 0).length;
       const currentPoints = entity.spells?.focus_point_current ?? maxPoints;
@@ -361,7 +361,7 @@ export default function StatBlockSection(props: {
     if (data.spells.rituals.length === 0) {
       return null;
     }
-    const spellsRankDict = _.groupBy(data.spells.rituals, (s) => s.rank);
+    const spellsRankDict = groupBy(data.spells.rituals, (s) => s.rank);
     return (
       <RichText ta='justify' fz='xs' span>
         **Rituals**{' — '}
@@ -382,7 +382,7 @@ export default function StatBlockSection(props: {
     );
   };
 
-  const abilities = _.flatten(Object.values(data.feats_features));
+  const abilities = flatten(Object.values(data.feats_features));
 
   const IMAGE_SIZE = props.options?.hideImage || !entity.details?.image_url ? 0 : 120;
 

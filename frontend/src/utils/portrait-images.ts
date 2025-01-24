@@ -1,5 +1,5 @@
 import { ImageOption } from '@typing/index';
-import * as _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 // TODO: Move this to the db?
 const imageStore: Record<string, ImageOption[]> = {
@@ -345,7 +345,7 @@ const imageStore: Record<string, ImageOption[]> = {
 };
 
 export function getPortraitImageStore() {
-  return _.cloneDeep(imageStore);
+  return cloneDeep(imageStore);
 }
 
 export function getAllPortraitImages() {

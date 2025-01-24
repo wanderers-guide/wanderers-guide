@@ -36,7 +36,7 @@ import {
   OperationSetValue,
   OperationType,
 } from '@typing/operations';
-import * as _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import ConditionalOperation from './conditional/ConditionalOperation';
 import { GiveActionOperation } from './ability_block/GiveActionOperation';
@@ -237,7 +237,7 @@ export function OperationSection(props: {
             <OperationDisplay
               operation={op}
               onChange={(option) => {
-                const newOp = _.cloneDeep(op);
+                const newOp = cloneDeep(op);
                 newOp.data = option.data;
 
                 props.onChange(
@@ -281,7 +281,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -292,7 +292,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -303,7 +303,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -314,7 +314,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -325,7 +325,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -336,7 +336,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -347,7 +347,7 @@ export function OperationDisplay(props: {
               selectedId={opGiveAbilBlock.data.abilityBlockId}
               onSelect={(option) => {
                 opGiveAbilBlock.data.abilityBlockId = option.id;
-                props.onChange(_.cloneDeep(opGiveAbilBlock));
+                props.onChange(cloneDeep(opGiveAbilBlock));
               }}
               onRemove={() => props.onRemove(props.operation.id)}
             />
@@ -361,8 +361,8 @@ export function OperationDisplay(props: {
         <GiveSpellOperation
           data={opGiveSpell.data}
           onSelect={(data) => {
-            opGiveSpell.data = _.cloneDeep(data);
-            props.onChange(_.cloneDeep(opGiveSpell));
+            opGiveSpell.data = cloneDeep(data);
+            props.onChange(cloneDeep(opGiveSpell));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -376,7 +376,7 @@ export function OperationDisplay(props: {
           onSelect={(source, slots) => {
             opGiveSpellSlot.data.castingSource = source;
             opGiveSpellSlot.data.slots = slots;
-            props.onChange(_.cloneDeep(opGiveSpellSlot));
+            props.onChange(cloneDeep(opGiveSpellSlot));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -389,7 +389,7 @@ export function OperationDisplay(props: {
           onSelect={(value) => {
             opDefineCastingSource.data.value = value;
 
-            props.onChange(_.cloneDeep(opDefineCastingSource));
+            props.onChange(cloneDeep(opDefineCastingSource));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -402,7 +402,7 @@ export function OperationDisplay(props: {
           onSelect={(value) => {
             opInjectSelectOption.data.value = value;
 
-            props.onChange(_.cloneDeep(opInjectSelectOption));
+            props.onChange(cloneDeep(opInjectSelectOption));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -419,7 +419,7 @@ export function OperationDisplay(props: {
             opInjectText.data.id = id;
             opInjectText.data.text = text;
 
-            props.onChange(_.cloneDeep(opInjectText));
+            props.onChange(cloneDeep(opInjectText));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -431,7 +431,7 @@ export function OperationDisplay(props: {
           selectedId={opGiveLanguage.data.languageId}
           onSelect={(option) => {
             opGiveLanguage.data.languageId = option.id;
-            props.onChange(_.cloneDeep(opGiveLanguage));
+            props.onChange(cloneDeep(opGiveLanguage));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -443,7 +443,7 @@ export function OperationDisplay(props: {
           selectedId={opGiveItem.data.itemId}
           onSelect={(option) => {
             opGiveItem.data.itemId = option.id;
-            props.onChange(_.cloneDeep(opGiveItem));
+            props.onChange(cloneDeep(opGiveItem));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -455,7 +455,7 @@ export function OperationDisplay(props: {
           selectedId={opGiveTrait.data.traitId}
           onSelect={(option) => {
             opGiveTrait.data.traitId = option.id;
-            props.onChange(_.cloneDeep(opGiveTrait));
+            props.onChange(cloneDeep(opGiveTrait));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -471,7 +471,7 @@ export function OperationDisplay(props: {
             opConditional.data.conditions = conditions;
             opConditional.data.trueOperations = trueOperations;
             opConditional.data.falseOperations = falseOperations;
-            props.onChange(_.cloneDeep(opConditional));
+            props.onChange(cloneDeep(opConditional));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -482,8 +482,8 @@ export function OperationDisplay(props: {
         <SelectionOperation
           data={opSelection.data}
           onChange={(data) => {
-            opSelection.data = _.cloneDeep(data);
-            props.onChange(_.cloneDeep(opSelection));
+            opSelection.data = cloneDeep(data);
+            props.onChange(cloneDeep(opSelection));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -496,11 +496,11 @@ export function OperationDisplay(props: {
           value={opAdjValue.data.value}
           onSelect={(variable) => {
             opAdjValue.data.variable = variable;
-            props.onChange(_.cloneDeep(opAdjValue));
+            props.onChange(cloneDeep(opAdjValue));
           }}
           onValueChange={(value) => {
             opAdjValue.data.value = value;
-            props.onChange(_.cloneDeep(opAdjValue));
+            props.onChange(cloneDeep(opAdjValue));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -513,11 +513,11 @@ export function OperationDisplay(props: {
           value={opSetValue.data.value}
           onSelect={(variable) => {
             opSetValue.data.variable = variable;
-            props.onChange(_.cloneDeep(opSetValue));
+            props.onChange(cloneDeep(opSetValue));
           }}
           onValueChange={(value) => {
             opSetValue.data.value = value;
-            props.onChange(_.cloneDeep(opSetValue));
+            props.onChange(cloneDeep(opSetValue));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -529,17 +529,17 @@ export function OperationDisplay(props: {
           variable={opCreateValue.data.variable}
           onNameChange={(variable) => {
             opCreateValue.data.variable = variable;
-            props.onChange(_.cloneDeep(opCreateValue));
+            props.onChange(cloneDeep(opCreateValue));
           }}
           variableType={opCreateValue.data.type}
           onTypeChange={(variableType) => {
             opCreateValue.data.type = variableType;
-            props.onChange(_.cloneDeep(opCreateValue));
+            props.onChange(cloneDeep(opCreateValue));
           }}
           value={opCreateValue.data.value}
           onValueChange={(value) => {
             opCreateValue.data.value = value;
-            props.onChange(_.cloneDeep(opCreateValue));
+            props.onChange(cloneDeep(opCreateValue));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />
@@ -554,13 +554,13 @@ export function OperationDisplay(props: {
           text={opAddBonusToValue.data.text}
           onSelect={(variable) => {
             opAddBonusToValue.data.variable = variable;
-            props.onChange(_.cloneDeep(opAddBonusToValue));
+            props.onChange(cloneDeep(opAddBonusToValue));
           }}
           onValueChange={(data) => {
             opAddBonusToValue.data.value = data.bonusValue;
             opAddBonusToValue.data.type = data.bonusType;
             opAddBonusToValue.data.text = data.text;
-            props.onChange(_.cloneDeep(opAddBonusToValue));
+            props.onChange(cloneDeep(opAddBonusToValue));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

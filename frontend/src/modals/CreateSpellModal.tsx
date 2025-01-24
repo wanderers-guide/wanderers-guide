@@ -35,7 +35,7 @@ import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
+import { merge } from 'lodash-es';
 import { useState } from 'react';
 
 /**
@@ -78,7 +78,7 @@ export function CreateSpellModal(props: {
       if (!spell) return null;
 
       form.setInitialValues({
-        ..._.merge(form.values, spell),
+        ...merge(form.values, spell),
         // @ts-ignore
         rank: spell.rank.toString(),
         traditions: spell.traditions ?? [],

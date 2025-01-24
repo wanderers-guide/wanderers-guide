@@ -30,7 +30,7 @@ import { useRecoilState } from 'recoil';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
 import { getCachedPublicUser } from '@auth/user-manager';
-import _ from 'lodash-es';
+import { isArray, isEqual } from 'lodash-es';
 
 export function Component() {
   setPageTitle(`Builder`);
@@ -78,7 +78,7 @@ export function Component() {
       window.location.href = '/characters';
     }
 
-    if (!_.isEqual(character, resultCharacter)) {
+    if (!isEqual(character, resultCharacter)) {
       setCharacter(resultCharacter);
     }
   };
@@ -132,7 +132,7 @@ export function Component() {
         id: characterId,
         ...data,
       });
-      if (resData && _.isArray(resData) && resData.length > 0) {
+      if (resData && isArray(resData) && resData.length > 0) {
         handleFetchedCharacter(resData[0]);
       }
       return true;

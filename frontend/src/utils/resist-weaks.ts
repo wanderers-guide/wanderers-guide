@@ -1,7 +1,6 @@
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import { compileExpressions } from '@variables/variable-utils';
-import _ from 'lodash-es';
 import { toLabel } from './strings';
 
 export function displayResistWeak(id: StoreID, text: string) {

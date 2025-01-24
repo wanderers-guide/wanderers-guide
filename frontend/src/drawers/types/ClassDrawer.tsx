@@ -44,7 +44,7 @@ import { AbilityBlock, Character, Class } from '@typing/content';
 import { OperationSelect } from '@typing/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables, getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
-import * as _ from 'lodash-es';
+import { groupBy } from 'lodash-es';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
@@ -118,13 +118,13 @@ export function ClassDrawerContent(props: {
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const classFeatures = _.groupBy(
+  const classFeatures = groupBy(
     (data?.abilityBlocks ?? []).filter(
       (block) => block.type === 'class-feature' && block.traits?.includes(data?.class_?.trait_id ?? -1)
     ),
     'level'
   );
-  const feats = _.groupBy(
+  const feats = groupBy(
     (data?.abilityBlocks ?? []).filter(
       (block) => block.type === 'feat' && block.traits?.includes(data?.class_?.trait_id ?? -1)
     ),

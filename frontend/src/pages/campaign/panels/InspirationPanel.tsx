@@ -1,25 +1,14 @@
 import { generateNPC, generateSessionIdea } from '@ai/open-ai-handler';
 import { npcsState, sessionIdeasState } from '@atoms/campaignAtoms';
-import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
-import { ActionSymbol } from '@common/Actions';
 import BlurBox from '@common/BlurBox';
 import { convertMarkdownToTiptap } from '@common/rich_text_input/utils';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { isAbilityBlockVisible } from '@content/content-hidden';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
-import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
 import {
   useMantineTheme,
   Group,
   Stack,
-  TextInput,
   ScrollArea,
-  Badge,
-  ActionIcon,
-  Accordion,
   Box,
   Text,
   Tabs,
@@ -36,42 +25,12 @@ import {
   Divider,
   Spoiler,
 } from '@mantine/core';
-import { useHover, useMediaQuery } from '@mantine/hooks';
 import { hideNotification, showNotification } from '@mantine/notifications';
-import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import {
-  IconBulbFilled,
-  IconChevronDown,
-  IconPlus,
-  IconSearch,
-  IconSwords,
-  IconUser,
-  IconUsers,
-} from '@tabler/icons-react';
-import {
-  ActionCost,
-  Rarity,
-  ContentPackage,
-  Inventory,
-  AbilityBlock,
-  InventoryItem,
-  Campaign,
-  CampaignSessionIdea,
-  Character,
-  CampaignNPC,
-} from '@typing/content';
-import { DrawerType } from '@typing/index';
-import { findActions } from '@utils/actions';
-import { isPhoneSized, mobileQuery } from '@utils/mobile-responsive';
-import { sign } from '@utils/numbers';
-import { toLabel } from '@utils/strings';
-import { hasTraitType } from '@utils/traits';
-import { displayFinalProfValue } from '@variables/variable-display';
-import { getAllSkillVariables } from '@variables/variable-manager';
-import { variableToLabel } from '@variables/variable-utils';
-import _ from 'lodash-es';
-import { useState, useMemo, useEffect } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
+import { IconBulbFilled, IconChevronDown, IconPlus, IconSwords, IconUser, IconUsers } from '@tabler/icons-react';
+import { Campaign, CampaignSessionIdea, Character, CampaignNPC } from '@typing/content';
+import { isPhoneSized } from '@utils/mobile-responsive';
+import { useState } from 'react';
+import { useRecoilState } from 'recoil';
 
 export default function InspirationPanel(props: {
   panelHeight: number;

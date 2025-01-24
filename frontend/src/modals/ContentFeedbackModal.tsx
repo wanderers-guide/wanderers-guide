@@ -1,25 +1,8 @@
-import {
-  Text,
-  TextInput,
-  Stack,
-  Button,
-  Group,
-  Loader,
-  Avatar,
-  Modal,
-  Title,
-  Box,
-  useMantineTheme,
-  Anchor,
-} from '@mantine/core';
-import { ContextModalProps } from '@mantine/modals';
-import { AbilityBlockType, Character, ContentSource, ContentType } from '@typing/content';
-import * as _ from 'lodash-es';
-import { isValidImage } from '@utils/images';
+import { Text, Stack, Button, Group, Loader, Avatar, Modal, Title, Box, useMantineTheme, Anchor } from '@mantine/core';
+import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import { useEffect, useState } from 'react';
-import { DrawerType } from '@typing/index';
 import { useQuery } from '@tanstack/react-query';
-import { IconBook2, IconHash, IconStar, IconX } from '@tabler/icons-react';
+import { IconBook2, IconHash } from '@tabler/icons-react';
 import { convertToContentType, getIconFromContentType } from '@content/content-utils';
 import {
   defineDefaultSources,
@@ -45,7 +28,8 @@ import { displayError } from '@utils/notifications';
 import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
-import { CreateContentSourceModal, CreateContentSourceOnlyModal } from './CreateContentSourceModal';
+import { CreateContentSourceOnlyModal } from './CreateContentSourceModal';
+import { cloneDeep, uniq } from 'lodash-es';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -64,7 +48,7 @@ export default function ContentFeedbackModal(props: {
 
       // Add the content source to make sure we can reference it's content. TODO: Add required sources too
       if (props.data.contentSourceId && props.data.contentSourceId !== -1) {
-        defineDefaultSources(_.uniq([...getDefaultSources(), props.data.contentSourceId]));
+        defineDefaultSources(uniq([...getDefaultSources(), props.data.contentSourceId]));
       }
     }
   }, []);
@@ -439,7 +423,7 @@ function ContentFeedbackSection(props: {
             variant='light'
             onClick={() => {
               if (!data.content) return;
-              props.onSubmitUpdate(data.content.id, _.cloneDeep(data.content));
+              props.onSubmitUpdate(data.content.id, cloneDeep(data.content));
             }}
           >
             Submit Content Update

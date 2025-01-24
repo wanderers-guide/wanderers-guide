@@ -1,22 +1,15 @@
 import { drawerState } from '@atoms/navAtoms';
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { ActionSelectionOption, FeatSelectionOption } from '@common/select/SelectContent';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { ActionSelectionOption } from '@common/select/SelectContent';
+import { fetchContentAll } from '@content/content-store';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
   Text,
-  Image,
-  Loader,
   Group,
   Divider,
   Stack,
   Box,
-  Flex,
   Badge,
   Accordion,
   Kbd,
@@ -29,12 +22,7 @@ import {
   IconBlockquote,
   IconCaretLeftRight,
   IconFrame,
-  IconGitBranch,
-  IconGitCommit,
-  IconGitPullRequest,
   IconMathSymbols,
-  IconMessageDots,
-  IconPlusMinus,
   IconTimeline,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -47,13 +35,11 @@ import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/
 import {
   compileProficiencyType,
   getProficiencyTypeValue,
-  isProficiencyType,
   isProficiencyValue,
   labelToVariable,
   proficiencyTypeToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { titleCase } from 'title-case';
 

@@ -56,7 +56,6 @@ import {
   proficiencyTypeToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
 

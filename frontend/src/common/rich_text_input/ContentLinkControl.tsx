@@ -5,7 +5,6 @@ import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import * as _ from 'lodash-es';
 import { buildHrefFromContentData, getContentDataFromHref } from './ContentLinkExtension';
 import { toLabel } from '@utils/strings';
 import { convertToContentType } from '@content/content-utils';

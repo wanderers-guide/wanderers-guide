@@ -47,7 +47,6 @@ import {
   labelToVariable,
   maxProficiencyType,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import {
   ObjectWithUUID,
   determineFilteredSelectionList,
@@ -55,6 +54,7 @@ import {
   extendOperations,
 } from './operation-utils';
 import { SelectionTrack } from './selection-tree';
+import { isEqual } from 'lodash-es';
 
 export type OperationOptions = {
   doOnlyValueCreation?: boolean;
@@ -985,9 +985,9 @@ async function runConditional(
         }
       } catch (e) {}
       if (check.operator === 'EQUALS') {
-        return _.isEqual(varValue, checkValue);
+        return isEqual(varValue, checkValue);
       } else if (check.operator === 'NOT_EQUALS') {
-        return !_.isEqual(varValue, checkValue);
+        return !isEqual(varValue, checkValue);
       } else if (check.operator === 'INCLUDES') {
         return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
       } else if (check.operator === 'NOT_INCLUDES') {

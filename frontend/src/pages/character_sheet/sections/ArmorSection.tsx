@@ -21,7 +21,7 @@ import { sign } from '@utils/numbers';
 import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSaveVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
@@ -80,7 +80,7 @@ export default function ArmorSection(props: {
                         data: {
                           storeId: props.id,
                           zIndex: 100,
-                          invItem: _.cloneDeep(invItem),
+                          invItem: cloneDeep(invItem),
                           onItemUpdate: (newInvItem: InventoryItem) => {
                             handleUpdateItem(props.setInventory, newInvItem);
                           },
@@ -128,7 +128,7 @@ export default function ArmorSection(props: {
                       data: {
                         storeId: props.id,
                         zIndex: 100,
-                        invItem: _.cloneDeep(bestShield),
+                        invItem: cloneDeep(bestShield),
                         onItemUpdate: (newInvItem: InventoryItem) => {
                           handleUpdateItem(props.setInventory, newInvItem);
                         },

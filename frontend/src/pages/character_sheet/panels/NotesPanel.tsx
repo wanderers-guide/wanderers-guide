@@ -1,18 +1,17 @@
-import { characterState } from '@atoms/characterAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { GUIDE_BLUE } from '@constants/data';
 import { Tabs, ActionIcon, ScrollArea, Title, Box, Menu, Button } from '@mantine/core';
-import { useDebouncedState, useDidUpdate, useElementSize, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedState, useDidUpdate } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
-import { Character, Creature, LivingEntity } from '@typing/content';
-import { isPhoneSized, phoneQuery, usePhoneSized } from '@utils/mobile-responsive';
+import { LivingEntity } from '@typing/content';
+import { isPhoneSized } from '@utils/mobile-responsive';
 import { isCharacter } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
+import { cloneDeep, truncate } from 'lodash-es';
 import { useEffect, useState } from 'react';
 import { SetterOrUpdater } from 'recoil';
 
@@ -35,7 +34,7 @@ export default function NotesPanel(props: {
   useDidUpdate(() => {
     // Saving notes
     if (!props.entity || !debouncedJson) return;
-    const newPages = _.cloneDeep(pages);
+    const newPages = cloneDeep(pages);
     newPages[debouncedJson.index].contents = debouncedJson.json;
     props.setEntity({
       ...props.entity,
@@ -57,12 +56,12 @@ export default function NotesPanel(props: {
     contents: null,
   };
 
-  const pages = props.entity?.notes?.pages ?? [_.cloneDeep(defaultPage)];
+  const pages = props.entity?.notes?.pages ?? [cloneDeep(defaultPage)];
 
   const addPage = () => {
     if (!props.entity) return;
-    const newPages = _.cloneDeep(pages);
-    newPages.push(_.cloneDeep(defaultPage));
+    const newPages = cloneDeep(pages);
+    newPages.push(cloneDeep(defaultPage));
     props.setEntity({
       ...props.entity,
       notes: {
@@ -135,7 +134,7 @@ export default function NotesPanel(props: {
                     setActiveTab(`${index}`);
                   }}
                 >
-                  {_.truncate(page.name, { length: 16 })}
+                  {truncate(page.name, { length: 16 })}
                 </Menu.Item>
               ))}
 
@@ -184,7 +183,7 @@ export default function NotesPanel(props: {
                 page: page,
                 onUpdate: (name: string, icon: string, color: string) => {
                   if (!props.entity) return;
-                  const newPages = _.cloneDeep(pages);
+                  const newPages = cloneDeep(pages);
                   newPages[index] = {
                     ...newPages[index],
                     name: name,
@@ -201,7 +200,7 @@ export default function NotesPanel(props: {
                 },
                 onDelete: () => {
                   if (!props.entity) return;
-                  const newPages = _.cloneDeep(pages);
+                  const newPages = cloneDeep(pages);
                   newPages.splice(index, 1);
                   props.setEntity({
                     ...props.entity,

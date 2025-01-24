@@ -26,14 +26,14 @@ import { ManageCoinsDrawerContent } from './types/ManageCoinsDrawer';
 import { CreatureDrawerContent } from './types/CreatureDrawer';
 import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
 import { getCachedCustomization } from '@content/customization-cache';
-import _ from 'lodash-es';
 import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer';
+import { cloneDeep } from 'lodash-es';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
 
-  let drawerData = _.cloneDeep(_drawer?.data ?? {});
+  let drawerData = cloneDeep(_drawer?.data ?? {});
   if (_drawer && getCachedCustomization()?.sheet_theme?.view_operations) {
     drawerData = {
       ...drawerData,

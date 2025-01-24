@@ -1,6 +1,5 @@
 import { Condition } from '@typing/content';
 import { StoreID, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
-import * as _ from 'lodash-es';
 import {
   addVariableBonus,
   adjVariable,
@@ -10,8 +9,8 @@ import {
   getVariable,
 } from '../variables/variable-manager';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
-import { getDefaultSources } from '@content/content-store';
 import { isPlayingPathfinder, isPlayingStarfinder } from '@content/system-handler';
+import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 
 const CONDITIONS: Condition[] = [
   {
@@ -343,7 +342,7 @@ const CONDITIONS: Condition[] = [
 ];
 
 export function getConditionByName(name: string, addedSource?: string): Condition | undefined {
-  const foundCondition = _.cloneDeep(
+  const foundCondition = cloneDeep(
     CONDITIONS.find((condition) => condition.name.trim().toLowerCase() === name.trim().toLowerCase())
   );
   if (foundCondition) {
@@ -353,7 +352,7 @@ export function getConditionByName(name: string, addedSource?: string): Conditio
 }
 
 export function getAllConditions() {
-  return _.cloneDeep(CONDITIONS).filter(
+  return cloneDeep(CONDITIONS).filter(
     (condition) =>
       (condition.starfinder_only && isPlayingStarfinder()) ||
       (condition.pathfinder_only && isPlayingPathfinder()) ||
@@ -419,7 +418,7 @@ export function compiledConditions(conditions: Condition[]): Condition[] {
   processConditions();
 
   // Remove duplicates
-  return _.uniqWith(newConditions, _.isEqual).sort((a, b) => a.name.localeCompare(b.name));
+  return uniqWith(newConditions, isEqual).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function applyCondition(id: StoreID, condition: Condition) {

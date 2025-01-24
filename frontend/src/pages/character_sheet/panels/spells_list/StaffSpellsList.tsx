@@ -1,10 +1,7 @@
-import { Accordion, Badge, Box, Button, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core';
-import { getSpellStats } from '@spells/spell-handler';
+import { Accordion, Badge, Box, Divider, Group, Stack, Text, Title } from '@mantine/core';
 import {
   CastingSource,
-  Character,
   InventoryItem,
-  Item,
   LivingEntity,
   Spell,
   SpellInnateEntry,
@@ -12,20 +9,18 @@ import {
   SpellSlot,
   SpellSlotRecord,
 } from '@typing/content';
-import { rankNumber, sign } from '@utils/numbers';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
+import { rankNumber } from '@utils/numbers';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { detectSpells, getSpellcastingType } from '@spells/spell-utils';
-import _ from 'lodash-es';
-import { use } from 'chai';
 import { useEffect } from 'react';
 import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { handleUpdateItemCharges } from '@items/inv-utils';
 import { StoreID } from '@typing/variables';
+import { cloneDeep, groupBy } from 'lodash-es';
 
 export default function StaffSpellsList(props: {
   id: StoreID;
@@ -50,7 +45,7 @@ export default function StaffSpellsList(props: {
   };
   hasFilters: boolean;
 }) {
-  const detectedSpells = _.groupBy(detectSpells(props.staff.item.description, props.allSpells), 'rank');
+  const detectedSpells = groupBy(detectSpells(props.staff.item.description, props.allSpells), 'rank');
 
   // Calculated values (could put in useMemo)
   const maxCharges = props.staff.item.meta_data?.charges?.max ?? 0;
@@ -111,7 +106,7 @@ export default function StaffSpellsList(props: {
                             if (!c) return c;
                             const slots = collectEntitySpellcasting(props.id, c).slots;
 
-                            let newSlots = _.cloneDeep(slots ?? []);
+                            let newSlots = cloneDeep(slots ?? []);
                             newSlots = newSlots.map((s) => {
                               if (s.id === slot.id) {
                                 return {

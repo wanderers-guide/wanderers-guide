@@ -1,5 +1,5 @@
 import { ImageOption } from '@typing/index';
-import * as _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 const imageStore: Record<string, ImageOption[]> = {
   general: [
@@ -483,7 +483,7 @@ const imageStore: Record<string, ImageOption[]> = {
 };
 
 export function getBackgroundImageStore() {
-  return _.cloneDeep(imageStore);
+  return cloneDeep(imageStore);
 }
 
 export function getAllBackgroundImages() {
@@ -514,26 +514,26 @@ async function getBackgroundImageInternal(background?: ImageOption) {
 
   const isValid = await isImageValid(background.url);
   if (isValid) {
-    return _.cloneDeep(background);
+    return cloneDeep(background);
   } else {
     return getOfflineBackgroundImage();
   }
 }
 
 export function getOfflineBackgroundImage() {
-  return _.cloneDeep(imageStore.animated_svgs[0]);
+  return cloneDeep(imageStore.animated_svgs[0]);
 }
 
 export function getDefaultBackgroundImage() {
-  return _.cloneDeep(imageStore.general[0]);
+  return cloneDeep(imageStore.general[0]);
 }
 
 export function getDefaultCampaignBackgroundImage() {
-  return _.cloneDeep(imageStore.general[2]);
+  return cloneDeep(imageStore.general[2]);
 }
 
 export function getHomeBackgroundImage() {
-  return _.cloneDeep(imageStore.jorge_jacinto[0]);
+  return cloneDeep(imageStore.jorge_jacinto[0]);
 }
 
 async function isImageValid(src: string) {

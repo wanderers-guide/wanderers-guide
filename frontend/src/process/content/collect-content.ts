@@ -17,7 +17,7 @@ import { toLabel } from '@utils/strings';
 import { getTraitIdByType, hasTraitType } from '@utils/traits';
 import { getVariable } from '@variables/variable-manager';
 import { compileExpressions, labelToVariable } from '@variables/variable-utils';
-import _ from 'lodash-es';
+import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 import { fetchContent, fetchContentById } from './content-store';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 
@@ -183,7 +183,7 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   slots = mergeSpellSlots(slots, entity.spells?.slots ?? []);
 
   // List of entity's spells
-  let list = _.cloneDeep(entity.spells?.list ?? []);
+  let list = cloneDeep(entity.spells?.list ?? []);
   let focus: { spell_id: number; source: string; rank: number | undefined }[] = [];
   let innate: SpellInnateEntry[] = [];
   for (const strD of spellDatas) {
@@ -212,9 +212,9 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
     }
   }
   // Remove duplicates
-  list = _.uniqWith(list, _.isEqual);
-  focus = _.uniqWith(focus, _.isEqual);
-  innate = _.uniqWith(innate, _.isEqual);
+  list = uniqWith(list, isEqual);
+  focus = uniqWith(focus, isEqual);
+  innate = uniqWith(innate, isEqual);
 
   // Fill current casts from saved character data
   innate = mergeInnateSpells(innate, entity.spells?.innate_casts ?? []);

@@ -15,8 +15,6 @@ import {
   Select,
   Tabs,
   useMantineTheme,
-  FileButton,
-  Button,
   UnstyledButton,
   PasswordInput,
   Image,
@@ -55,8 +53,7 @@ import {
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
 import useRefresh from '@utils/use-refresh';
-import * as _ from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -72,15 +69,14 @@ import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
-import RichText from '@common/RichText';
 import { drawerState } from '@atoms/navAtoms';
 import { AbilityBlockType, Campaign, ContentType } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
-import { set } from 'node_modules/cypress/types/lodash';
 import { updateSubscriptions } from '@content/homebrew';
 import { ImageOption } from '@typing/index';
+import { cloneDeep, isEqual, uniq } from 'lodash-es';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -163,7 +159,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         content_sources: {
           ...prev.content_sources,
           enabled: enabled
-            ? _.uniq([...(prev.content_sources?.enabled ?? []), ...inputIds])
+            ? uniq([...(prev.content_sources?.enabled ?? []), ...inputIds])
             : prev.content_sources?.enabled?.filter((id: number) => !inputIds.includes(id)),
         },
       };
@@ -179,7 +175,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           content_sources: {
             ...prev.content_sources,
             enabled: enabled
-              ? _.uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
+              ? uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
               : prev.content_sources?.enabled?.filter((id: number) => !bookIds.includes(id)),
           },
         };
@@ -197,7 +193,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
     if (enabled) {
       // Handle dependency logic
       const requiredBooks = await findRequiredContentSources(
-        _.uniq([...(character?.content_sources?.enabled ?? []), ...inputIds])
+        uniq([...(character?.content_sources?.enabled ?? []), ...inputIds])
       );
       if (requiredBooks.newSources.length > 0) {
         modals.openConfirmModal({
@@ -819,9 +815,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       title='Custom Operations'
                       opened={openedOperations}
                       onClose={() => setOpenedOperations(false)}
-                      operations={_.cloneDeep(character.custom_operations ?? [])}
+                      operations={cloneDeep(character.custom_operations ?? [])}
                       onChange={(operations) => {
-                        if (_.isEqual(character.custom_operations, operations)) return;
+                        if (isEqual(character.custom_operations, operations)) return;
 
                         setCharacter((prev) => {
                           if (!prev) return prev;
@@ -1033,7 +1029,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
       // Check if the campaign has recommended settings for the character
       if (
-        !_.isEqual(
+        !isEqual(
           {
             sources: character?.content_sources,
             variants: character?.variants,

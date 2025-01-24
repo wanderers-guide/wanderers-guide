@@ -41,7 +41,7 @@ import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import { labelToVariable } from '@variables/variable-utils';
-import _ from 'lodash-es';
+import { merge, truncate } from 'lodash-es';
 import { useState } from 'react';
 
 /**
@@ -90,8 +90,8 @@ export function CreateItemModal(props: {
         item.meta_data.base_item_content = undefined;
       }
 
-      const mergeData = _.merge(form.values, item);
-      const damageData = _.merge(form.values.meta_data?.damage, item.meta_data?.damage);
+      const mergeData = merge(form.values, item);
+      const damageData = merge(form.values.meta_data?.damage, item.meta_data?.damage);
 
       form.setInitialValues({
         ...mergeData,
@@ -908,7 +908,7 @@ export function CreateItemModal(props: {
                                         </ActionIcon>
                                       }
                                     >
-                                      {_.truncate(`${record.name}`, { length: 22 })}
+                                      {truncate(`${record.name}`, { length: 22 })}
                                     </Badge>
                                   ))}
                                 </Group>

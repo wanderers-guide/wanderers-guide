@@ -43,7 +43,7 @@ import { isTruthy } from '@utils/type-fixing';
 import { displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
-import _ from 'lodash-es';
+import { cloneDeep, flattenDeep } from 'lodash-es';
 import { useState, useMemo, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 
@@ -224,7 +224,7 @@ export default function SkillsActionsPanel(props: {
     let explorationFeats: AbilityBlock[] = [];
     if (props.entity) {
       const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
-      explorationFeats = _.flattenDeep(Object.values(results)).filter((ab) => hasTraitType('EXPLORATION', ab.traits));
+      explorationFeats = flattenDeep(Object.values(results)).filter((ab) => hasTraitType('EXPLORATION', ab.traits));
     }
     return [...actions.filter((a) => hasTraitType('EXPLORATION', a.traits)), ...explorationFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
@@ -235,7 +235,7 @@ export default function SkillsActionsPanel(props: {
     let downtimeFeats: AbilityBlock[] = [];
     if (props.entity) {
       const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
-      downtimeFeats = _.flattenDeep(Object.values(results)).filter((ab) => hasTraitType('DOWNTIME', ab.traits));
+      downtimeFeats = flattenDeep(Object.values(results)).filter((ab) => hasTraitType('DOWNTIME', ab.traits));
     }
     return [...actions.filter((a) => hasTraitType('DOWNTIME', a.traits)), ...downtimeFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
@@ -275,7 +275,7 @@ export default function SkillsActionsPanel(props: {
   const featsWithActions = useMemo(() => {
     if (!props.entity) return [];
     const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
-    const feats = _.flattenDeep(Object.values(results)).filter((ab) => ab.actions !== null);
+    const feats = flattenDeep(Object.values(results)).filter((ab) => ab.actions !== null);
 
     // Filter feats
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
@@ -509,7 +509,7 @@ export default function SkillsActionsPanel(props: {
                   drawerData: {
                     storeId: props.id,
                     zIndex: 100,
-                    invItem: _.cloneDeep(weapon.invItem),
+                    invItem: cloneDeep(weapon.invItem),
                     onItemUpdate: (newInvItem: InventoryItem) => {
                       handleUpdateItem(props.setInventory, newInvItem);
                     },
@@ -568,7 +568,7 @@ export default function SkillsActionsPanel(props: {
                     drawerData: {
                       storeId: props.id,
                       zIndex: 100,
-                      invItem: _.cloneDeep(invItem),
+                      invItem: cloneDeep(invItem),
                       onItemUpdate: (newInvItem: InventoryItem) => {
                         handleUpdateItem(props.setInventory, newInvItem);
                       },

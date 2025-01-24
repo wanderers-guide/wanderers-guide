@@ -1,6 +1,5 @@
-import { IconAffiliate, IconLayersLinked } from '@tabler/icons-react';
+import { IconAffiliate } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
-import * as _ from 'lodash-es';
 import { toHTML, toMarkdown } from '@content/content-utils';
 
 export default function AutoContentLinkControl() {

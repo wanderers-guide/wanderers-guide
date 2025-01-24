@@ -31,7 +31,6 @@ import {
   Divider,
   Group,
   HoverCard,
-  Image,
   Menu,
   NumberInput,
   Paper,
@@ -56,8 +55,6 @@ import {
 import { InventoryItem } from '@typing/content';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
 import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
@@ -70,6 +67,7 @@ import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { StoreID } from '@typing/variables';
+import { cloneDeep } from 'lodash-es';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -399,7 +397,7 @@ export function InvItemDrawerContent(props: {
             editItem={invItem.item}
             onComplete={async (item) => {
               const newInvItem = {
-                ..._.cloneDeep(invItem),
+                ...cloneDeep(invItem),
                 item,
               };
               onItemUpdate(newInvItem);

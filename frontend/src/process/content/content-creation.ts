@@ -13,7 +13,6 @@ import {
   Archetype,
   VersatileHeritage,
 } from '@typing/content';
-import * as _ from 'lodash-es';
 import { makeRequest } from '@requests/request-manager';
 
 export async function deleteContent(type: ContentType, id: number) {

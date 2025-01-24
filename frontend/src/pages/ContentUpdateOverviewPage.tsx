@@ -1,24 +1,15 @@
-import { drawerState } from '@atoms/navAtoms';
 import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
-import BlurButton from '@common/BlurButton';
-import { DISCORD_URL } from '@constants/data';
-import { fetchContent, fetchContentSources } from '@content/content-store';
-import { findContentUpdate, findContentUpdates } from '@content/content-update';
-import { mapToDrawerData } from '@drawers/drawer-utils';
+import { findContentUpdates } from '@content/content-update';
 import {
   Center,
   Group,
   Title,
-  ActionIcon,
   Text,
   Divider,
-  Loader,
   Box,
   Stack,
-  Container,
   Anchor,
-  Paper,
   Badge,
   SegmentedControl,
   TextInput,
@@ -26,17 +17,13 @@ import {
   Button,
   LoadingOverlay,
 } from '@mantine/core';
-import { IconArrowBigRightLine, IconThumbUp, IconThumbDown, IconSearch, IconExternalLink } from '@tabler/icons-react';
+import { IconSearch, IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { setPageTitle } from '@utils/document-change';
-import { sign } from '@utils/numbers';
-import { toLabel } from '@utils/strings';
-import _ from 'lodash-es';
-import { useMemo, useState } from 'react';
-import { useLoaderData } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useState } from 'react';
 import { DonutChart } from '@mantine/charts';
 import Paginator from '@common/Paginator';
+import { groupBy, map, orderBy } from 'lodash-es';
 
 export function Component(props: {}) {
   setPageTitle(`Content Updates Overview`);
@@ -46,14 +33,14 @@ export function Component(props: {}) {
     queryFn: async () => {
       const updates = (await findContentUpdates())?.filter((update) => update.discord_msg_id) ?? [];
 
-      const contributors = _.groupBy(updates, (update) => update.user_id);
-      const contributorCounts = _.map(contributors, (contributor) => ({
+      const contributors = groupBy(updates, (update) => update.user_id);
+      const contributorCounts = map(contributors, (contributor) => ({
         user_id: contributor[0].user_id,
         count: contributor.length,
       }));
 
       const topContributors = await Promise.all(
-        _.orderBy(contributorCounts, 'count', 'desc')
+        orderBy(contributorCounts, 'count', 'desc')
           .slice(0, 5)
           .map(async (contributor) => {
             return {

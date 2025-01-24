@@ -54,7 +54,6 @@ import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive'
 import { toLabel } from '@utils/strings';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable, setVariable } from '@variables/variable-manager';
-import * as _ from 'lodash-es';
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
@@ -80,6 +79,7 @@ import ModeDrawer from '@common/modes/ModesDrawer';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 import { showNotification } from '@mantine/notifications';
+import { cloneDeep, isArray, isEqual } from 'lodash-es';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -189,10 +189,10 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       window.location.href = '/sheet-unauthorized';
     }
 
-    if (!_.isEqual(character, resultCharacter)) {
+    if (!isEqual(character, resultCharacter)) {
       setCharacter(resultCharacter);
     }
-    if (!_.isEqual(inventory, getInventory(resultCharacter))) {
+    if (!isEqual(inventory, getInventory(resultCharacter))) {
       setInventory(getInventory(resultCharacter));
     }
   };
@@ -296,7 +296,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         id: props.characterId,
         ...data,
       });
-      if (_.isArray(resData) && resData.length > 0) {
+      if (isArray(resData) && resData.length > 0) {
         handleFetchedCharacter(resData[0]);
       }
       return true;
@@ -319,7 +319,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     cacheTime: 0,
   });
   useEffect(() => {
-    if (polledCharacter && !_.isEqual(character, polledCharacter)) {
+    if (polledCharacter && !isEqual(character, polledCharacter)) {
       showNotification({
         icon: <IconRefresh />,
         title: `Updating character...`,
@@ -333,7 +333,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   // Inventory saving & management
   const getInventory = (character: Character | null) => {
     // Default inventory
-    return _.cloneDeep(
+    return cloneDeep(
       character?.inventory ?? {
         coins: {
           cp: 0,

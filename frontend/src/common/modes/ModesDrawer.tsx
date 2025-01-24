@@ -27,7 +27,7 @@ import useRefresh from '@utils/use-refresh';
 import { IconShadow } from '@tabler/icons-react';
 import { sign } from '@utils/numbers';
 import { Carousel } from '@mantine/carousel';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { hasPatreonAccess } from '@utils/patreon';
@@ -115,7 +115,7 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
                   // Trigger character update (to re-execute operations)
                   setTimeout(() => {
                     setCharacter((prev) => {
-                      return _.cloneDeep(prev);
+                      return cloneDeep(prev);
                     });
                   }, 100);
                 }}

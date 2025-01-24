@@ -13,7 +13,6 @@ import {
 } from '@typing/variables';
 import { Box, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
-import * as _ from 'lodash-es';
 import { useDidUpdate } from '@mantine/hooks';
 
 export function AdjValOperation(props: {

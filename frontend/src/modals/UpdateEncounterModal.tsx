@@ -20,8 +20,8 @@ import { ContextModalProps, modals } from '@mantine/modals';
 import { useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
 import { Encounter } from '@typing/content';
-import _ from 'lodash-es';
 import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
+import { cloneDeep } from 'lodash-es';
 
 export default function UpdateEncounterModal({
   context,
@@ -116,12 +116,12 @@ export default function UpdateEncounterModal({
             disabled={!title.trim() || !icon || !color}
             onClick={() => {
               innerProps.onUpdate({
-                ..._.cloneDeep(innerProps.encounter),
+                ...cloneDeep(innerProps.encounter),
                 name: title,
                 icon,
                 color,
                 meta_data: {
-                  ..._.cloneDeep(innerProps.encounter).meta_data,
+                  ...cloneDeep(innerProps.encounter).meta_data,
                   description,
                   party_size: partySize,
                   party_level: partyLevel,

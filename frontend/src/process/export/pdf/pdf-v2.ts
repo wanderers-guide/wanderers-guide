@@ -38,7 +38,6 @@ import {
   getAllSpeedVariables,
 } from '@variables/variable-manager';
 import { compileExpressions, compileProficiencyType, isProficiencyTypeGreaterOrEqual } from '@variables/variable-utils';
-import _ from 'lodash-es';
 import stripMd from 'remove-markdown';
 
 import { PDFDocument, PDFForm } from 'pdf-lib';
@@ -46,6 +45,7 @@ import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { stripEmojis, toLabel } from '@utils/strings';
 import { isTruthy } from '@utils/type-fixing';
+import { chunk, flattenDeep, groupBy, split } from 'lodash-es';
 
 export async function pdfV2(character: Character) {
   // Load your PDF
@@ -569,8 +569,8 @@ async function fillPDF(form: PDFForm, character: Character) {
   const actionFillIn = (action: AbilityBlock, index: number) => {
     const CHUNK_SIZE = 10;
     function chunkString(str: string, chunkSize: number) {
-      const wordArray = _.split(str, /\s+/);
-      const chunks = _.chunk(wordArray, chunkSize);
+      const wordArray = split(str, /\s+/);
+      const chunks = chunk(wordArray, chunkSize);
       return chunks.map((chunk) => chunk.join(' '));
     }
 
@@ -630,7 +630,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     }
   };
 
-  const featsWithActions = _.flattenDeep(Object.values(featData)).filter((ab) => ab.actions !== null);
+  const featsWithActions = flattenDeep(Object.values(featData)).filter((ab) => ab.actions !== null);
   const reactionFeats = featsWithActions.filter((a) => a.actions === 'REACTION' || a.actions === 'FREE-ACTION');
   const nonReactionFeats = featsWithActions.filter((a) => a.actions !== 'REACTION' && a.actions !== 'FREE-ACTION');
   for (let i = 0; i < reactionFeats.length; i++) {
@@ -796,7 +796,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   }
 
   // Slots
-  const slotData = _.groupBy(spellData.slots, 'rank');
+  const slotData = groupBy(spellData.slots, 'rank');
   for (const rank in Object.keys(slotData)) {
     const slots = slotData[rank];
     try {

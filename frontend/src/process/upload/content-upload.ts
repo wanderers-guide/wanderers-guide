@@ -10,7 +10,6 @@ import {
   getTraitIds,
   stripFoundryLinking,
 } from './foundry-utils';
-import * as _ from 'lodash-es';
 import { throwError } from '@utils/notifications';
 import {
   upsertAbilityBlock,
@@ -28,6 +27,7 @@ import { pluralize, toLabel } from '@utils/strings';
 import { performAutoContentLinking } from './auto-content-linking';
 import { convertCastToActionCost } from '@utils/actions';
 import { newImportHandler } from './creature-import';
+import { cloneDeep } from 'lodash-es';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -50,7 +50,7 @@ function emptyUploadStats() {
   };
 }
 export function getUploadStats() {
-  return _.cloneDeep(uploadStats);
+  return cloneDeep(uploadStats);
 }
 export function resetUploadStats() {
   uploadStats = emptyUploadStats();

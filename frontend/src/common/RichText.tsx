@@ -11,7 +11,7 @@ import { IconQuote } from '@tabler/icons-react';
 import { getAllConditions } from '@conditions/condition-handler';
 import { compileExpressions } from '@variables/variable-utils';
 import { StoreID } from '@typing/variables';
-import _ from 'lodash-es';
+import { isString } from 'lodash-es';
 
 interface RichTextProps extends TextProps {
   children: any;
@@ -273,7 +273,7 @@ function shouldBeIndented(children: React.ReactNode) {
 
   if (React.isValidElement(firstChild)) {
     // @ts-ignore
-    const contents = _.isString(firstChild.props?.children ?? '') ? ((firstChild.props.children ?? '') as string) : '';
+    const contents = isString(firstChild.props?.children ?? '') ? ((firstChild.props.children ?? '') as string) : '';
     //console.log(contents, firstChild.type);
 
     if (firstChild.type === 'strong') {

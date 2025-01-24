@@ -40,13 +40,13 @@ import { AbilityBlock, Combatant, Creature, Trait } from '@typing/content';
 import { Operation, OperationAddBonusToValue, OperationSetValue } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
 import { useState } from 'react';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
 import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
+import { isEqual, uniqWith } from 'lodash-es';
 
 /**
  * Modal for creating or editing a creature
@@ -182,7 +182,7 @@ export function CreateCombatantModal(props: {
         name: values.creature!.name.trim(),
         level: parseInt(`${values.creature!.level}`),
         hp_current: totalMaxHP ?? 0,
-        operations: _.uniqWith([...(values.creature!.operations ?? []), ...STAT_OPS], _.isEqual),
+        operations: uniqWith([...(values.creature!.operations ?? []), ...STAT_OPS], isEqual),
       },
     });
     setTimeout(() => {

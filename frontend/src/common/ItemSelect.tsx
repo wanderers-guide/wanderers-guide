@@ -3,7 +3,7 @@ import { Autocomplete, TagsInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Item } from '@typing/content';
 import { isTruthy } from '@utils/type-fixing';
-import _ from 'lodash-es';
+import { uniq } from 'lodash-es';
 
 function cleanName(name?: string) {
   if (!name) return name;
@@ -38,7 +38,7 @@ export function ItemSelect(props: {
             const item = data.find((item) => item.name === value);
             props.onChange(item, cleanName(item?.name));
           }}
-          data={_.uniq(data.filter(props.filter).map((item) => item.name))}
+          data={uniq(data.filter(props.filter).map((item) => item.name))}
         />
       )}
     </>
@@ -83,7 +83,7 @@ export function ItemMultiSelect(props: {
                 return false;
               })
               .map((item) => item.name)}
-            data={_.uniq(data.filter(props.filter).map((item) => item.name))}
+            data={uniq(data.filter(props.filter).map((item) => item.name))}
             limit={1000}
             onChange={(value) => {
               const items = value.map((name) => data.find((item) => item.name === name)).filter(isTruthy);

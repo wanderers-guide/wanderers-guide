@@ -9,8 +9,7 @@ import { adjustCreature, findCreatureTraits } from '@utils/creature';
 import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
 import yaml from 'js-yaml';
-import _ from 'lodash-es';
-import { constSelector } from 'recoil';
+import { cloneDeep } from 'lodash-es';
 
 export async function generateCompletion(prompt?: string, model = 'gpt-4o-mini') {
   if (!prompt) return null;
@@ -542,7 +541,7 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
         } else {
           // Add another of highest level creature
           encounter.combatants.list.push({
-            ..._.cloneDeep(highestLevelCreature),
+            ...cloneDeep(highestLevelCreature),
             _id: crypto.randomUUID(),
           });
           console.log('- Added:', highestLevelCreature.creature?.name);

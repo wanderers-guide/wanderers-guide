@@ -1,8 +1,8 @@
 import { Rarity } from '@typing/content';
-import * as _ from 'lodash-es';
+import { isString } from 'lodash-es';
 
 export function sign(num: number | string): string {
-  num = _.isString(num) ? parseFloat(num) : num;
+  num = isString(num) ? parseFloat(num) : num;
   return num < 0 ? `${num}` : `+${num}`;
 }
 

@@ -5,7 +5,7 @@ import { LivingEntity } from '@typing/content';
 import { StoreID, VariableAttr, VariableNum, VariableProf } from '@typing/variables';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { SetterOrUpdater } from 'recoil';
 
@@ -30,7 +30,7 @@ export function confirmHealth(
 
   if (maxHealth === 0) return;
 
-  let newConditions = _.cloneDeep(entity.details?.conditions ?? []);
+  let newConditions = cloneDeep(entity.details?.conditions ?? []);
   // Add dying condition
   if (result === 0 && entity.hp_current > 0 && !newConditions.find((c) => c.name === 'Dying')) {
     const dying = getConditionByName('Dying')!;
@@ -101,7 +101,7 @@ export function confirmExperience(exp: string, entity: LivingEntity, setEntity?:
 }
 
 export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: SetterOrUpdater<LivingEntity | null>) {
-  const newEntity = _.cloneDeep(entity);
+  const newEntity = cloneDeep(entity);
   if (!newEntity) return;
 
   // Regen Health
@@ -255,7 +255,7 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   }
 
   // Remove Fatigued Condition
-  let newConditions = _.cloneDeep(entity?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
+  let newConditions = cloneDeep(entity?.details?.conditions ?? []).filter((c) => c.name !== 'Fatigued');
 
   // Remove Wounded condition if we're now at full health
   const wounded = newConditions.find((c) => c.name === 'Wounded');
@@ -287,5 +287,5 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
 
   // Update the entity
   setEntity?.(newEntity);
-  return _.cloneDeep(newEntity);
+  return cloneDeep(newEntity);
 }

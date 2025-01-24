@@ -7,13 +7,12 @@ import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { makeRequest } from '@requests/request-manager';
-import { Session } from '@supabase/supabase-js';
 import { Character } from '@typing/content';
 import { OperationCharacterResultPackage } from '@typing/operations';
 import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
 import { labelToVariable } from '@variables/variable-utils';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 /**
  * FTC - Finder 2e Character - A universal file structure for Pathfinder 2e and Starfinder 2e characters.
@@ -233,7 +232,7 @@ export async function importFromFTC(d: FTC) {
   let hasSelections = true;
   let iteration = 0;
   while (hasSelections) {
-    const results = await executeCharacterOperations(_.cloneDeep(character), content, 'CHARACTER-BUILDER');
+    const results = await executeCharacterOperations(cloneDeep(character), content, 'CHARACTER-BUILDER');
     const found = findFirstSelection(results, checked);
 
     if (found) {
@@ -247,7 +246,7 @@ export async function importFromFTC(d: FTC) {
         selections[found.path] = result._select_uuid;
 
         // Update the resulting selections
-        character.operation_data!.selections = _.cloneDeep(selections);
+        character.operation_data!.selections = cloneDeep(selections);
       }
       checked.add(found.path);
     } else {
@@ -335,7 +334,7 @@ export async function importFromFTC(d: FTC) {
 
   // Random name
   if (data.name === 'RANDOM') {
-    const names = await generateNames(_.cloneDeep(character), 1);
+    const names = await generateNames(cloneDeep(character), 1);
     if (names.length > 0) {
       const name = names[0].replace(/\*/g, '');
       character.name = name;

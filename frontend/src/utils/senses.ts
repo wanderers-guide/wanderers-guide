@@ -2,7 +2,7 @@ import { AbilityBlock, SenseWithRange } from '@typing/content';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
-import _ from 'lodash-es';
+import { values } from 'lodash-es';
 import { toLabel } from './strings';
 
 export function displaySense(sense: SenseWithRange) {
@@ -58,7 +58,7 @@ export function compactSenses(senses: string[]): string[] {
     }
   });
 
-  return _.values(highestPrecedenceSenses);
+  return values(highestPrecedenceSenses);
 }
 
 function convertToSenseID(sense: string) {

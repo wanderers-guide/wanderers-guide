@@ -40,27 +40,20 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useDidUpdate, useElementSize, useHover, useMediaQuery, useMergedRef } from '@mantine/hooks';
+import { useDebouncedState, useDidUpdate, useElementSize, useHover, useMergedRef } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
 import {
-  IconArrowDown,
-  IconArrowUp,
   IconCheck,
   IconChevronDown,
   IconCircleDotFilled,
   IconCopy,
   IconDots,
-  IconExposureMinus1,
-  IconExposurePlus1,
   IconFilter,
-  IconQuestionMark,
   IconSearch,
   IconTransform,
   IconTrash,
-  IconUserDown,
-  IconUserUp,
   IconX,
   IconZoomCheck,
   IconZoomQuestion,
@@ -69,7 +62,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DrawerType } from '@typing/index';
 import { OperationSelectOptionCustom } from '@typing/operations';
 import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@typing/variables';
-import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
+import { isPhoneSized } from '@utils/mobile-responsive';
 import { pluralize, toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
@@ -90,7 +83,6 @@ import {
   prevProficiencyType,
 } from '@variables/variable-utils';
 import * as JsSearch from 'js-search';
-import * as _ from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
@@ -112,6 +104,7 @@ import {
 import { FilterOptions, SelectedFilter } from './filters';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { adjustCreature } from '@utils/creature';
+import { intersection, isNumber, truncate } from 'lodash-es';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -140,7 +133,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         setSelected(undefined);
         return;
       }
-      if (_.isNumber(props.selectedId)) {
+      if (isNumber(props.selectedId)) {
         const content = await fetchContentById<T>(props.type, props.selectedId);
         if (content) {
           setSelected(content);
@@ -476,7 +469,7 @@ export default function SelectContentModal({
                 },
               }}
             >
-              {_.truncate(activeSource?.name ?? 'All Books', { length: 20 })}
+              {truncate(activeSource?.name ?? 'All Books', { length: 20 })}
             </Button>
           )}
 
@@ -579,7 +572,7 @@ export default function SelectContentModal({
 
     // Check if all of the selection options contain at least one of the class traits
     for (const option of options) {
-      if (_.intersection(classTraitIds, option.traits ?? []).length === 0) {
+      if (intersection(classTraitIds, option.traits ?? []).length === 0) {
         return false;
       }
     }
@@ -608,10 +601,8 @@ export default function SelectContentModal({
     if (hasTraitType('DEDICATION', selectedClassFeat.traits)) {
       setClassFeatTab('add-dedication');
     } else if (
-      _.intersection(
-        getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
-        selectedClassFeat.traits ?? []
-      ).length > 0
+      intersection(getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [], selectedClassFeat.traits ?? [])
+        .length > 0
     ) {
       setClassFeatTab('archetype-feat');
     } else {
@@ -635,7 +626,7 @@ export default function SelectContentModal({
 
     // Check if all of the selection options contain at least one of the ancestry traits
     for (const option of options) {
-      if (_.intersection(ancestryTraitIds, option.traits ?? []).length === 0) {
+      if (intersection(ancestryTraitIds, option.traits ?? []).length === 0) {
         return false;
       }
     }
@@ -826,7 +817,7 @@ export default function SelectContentModal({
                       : undefined
                   }
                   filterFn={(option) =>
-                    _.intersection(
+                    intersection(
                       getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
                       option.traits ?? []
                     ).length > 0 && option.level <= classFeatSourceLevel

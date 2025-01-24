@@ -10,7 +10,6 @@ import {
   TextInput,
   ActionIcon,
   Divider,
-  Textarea,
   Pill,
   Accordion,
   Badge,
@@ -19,14 +18,13 @@ import {
   Tabs,
   Autocomplete,
   NumberInput,
-  Select,
   SimpleGrid,
   Button,
   Center,
 } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
-import { ContentPackage, Creature, LivingEntity, PublicUser } from '@typing/content';
+import { ContentPackage, Creature, PublicUser } from '@typing/content';
 import { StoreID, VariableListStr, VariableProf, VariableStr } from '@typing/variables';
 import { displayFinalProfValue } from '@variables/variable-display';
 import {
@@ -38,23 +36,22 @@ import {
   getAllAncestryTraitVariables,
 } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
-import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import classes from '@css/FaqSimple.module.css';
 import { isPhoneSized } from '@utils/mobile-responsive';
-import { useDebouncedState, useDebouncedValue, useDidUpdate } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import { useMutation } from '@tanstack/react-query';
-import { JSendResponse } from '@typing/requests';
 import { useState } from 'react';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
-import _ from 'lodash-es';
 import { Money, getGpGained } from '@utils/money';
 import { pluralize } from '@utils/strings';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { convertToSize } from '@upload/foundry-utils';
 import { DisplayIcon } from '@common/IconDisplay';
+import { cloneDeep } from 'lodash-es';
 
 const SECTION_WIDTH = 280;
 
@@ -951,7 +948,7 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
           opened={true}
           editEntry={character?.details?.info?.organized_play_adventures?.find((a) => `${a.id}` === openedAdventureId)}
           onComplete={async (entry) => {
-            const adventures = _.cloneDeep(character?.details?.info?.organized_play_adventures ?? []);
+            const adventures = cloneDeep(character?.details?.info?.organized_play_adventures ?? []);
 
             const existing = adventures.find((a) => a.id === entry.id);
             if (existing) {

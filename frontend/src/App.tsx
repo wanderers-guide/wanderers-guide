@@ -30,7 +30,7 @@ import SelectImageModal from '@modals/SelectImageModal';
 import UpdateCharacterPortraitModal from '@modals/UpdateCharacterPortraitModal';
 import UpdateNotePageModal from '@modals/UpdateNotePageModal';
 import AddItemsModal from '@modals/AddItemsModal';
-import _ from 'lodash-es';
+import { isEqual } from 'lodash-es';
 import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
 import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
 import InitiativeRollModal from '@modals/InitiativeRollModal';
@@ -143,7 +143,7 @@ export default function App() {
 
   const [theme, setTheme] = useState<any>(generateTheme());
   useEffect(() => {
-    if (_.isEqual(prevCharacer?.details?.sheet_theme, activeCharacer?.details?.sheet_theme)) return;
+    if (isEqual(prevCharacer?.details?.sheet_theme, activeCharacer?.details?.sheet_theme)) return;
     console.log('Updating site theme...');
     setTheme(generateTheme({ color: activeCharacer?.details?.sheet_theme?.color }));
   }, [activeCharacer]);

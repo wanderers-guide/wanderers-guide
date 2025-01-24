@@ -56,7 +56,6 @@ import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
 import { getFinalHealthValue } from '@variables/variable-display';
-import _ from 'lodash';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 

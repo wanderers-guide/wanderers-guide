@@ -27,7 +27,6 @@ import {
   setVariable,
 } from '@variables/variable-manager';
 import { isAttributeValue, labelToVariable, variableToLabel } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
 import {
@@ -41,6 +40,7 @@ import { playingPathfinder, playingStarfinder } from '@content/system-handler';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
+import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -67,7 +67,7 @@ async function executeOperations(
     varId,
     { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
     operations,
-    _.cloneDeep(options),
+    cloneDeep(options),
     sourceLabel
   );
 
@@ -144,7 +144,7 @@ export async function executeCharacterOperations(
     });
 
   // Merge both but only keep one if they both have the same name and level
-  let classFeatures = _.unionWith(
+  let classFeatures = unionWith(
     classFeatures_1,
     classFeatures_2,
     (a, b) => a.name.trim() === b.name.trim() && a.level === b.level
@@ -986,7 +986,7 @@ export async function executeCreatureOperations(
 }
 
 function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {
-  const merged = _.cloneDeep(normal);
+  const merged = cloneDeep(normal);
 
   // New search n fix, fixes `results` array with all nulls when the other doesn't
   const recursiveUpdate = (obj: Record<string, any>, otherObj: Record<string, any>) => {
@@ -1015,13 +1015,13 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
   recursiveUpdate(merged, conditional);
 
   // Merge simple arrays
-  for (const [key, value] of Object.entries(_.cloneDeep(conditional))) {
+  for (const [key, value] of Object.entries(cloneDeep(conditional))) {
     if (merged[key]) {
       merged[key].push(...value);
     } else {
       merged[key] = value;
     }
-    merged[key] = _.uniqWith(merged[key].filter(isTruthy), _.isEqual);
+    merged[key] = uniqWith(merged[key].filter(isTruthy), isEqual);
   }
 
   // Merge arrays of results (like class features)
@@ -1033,7 +1033,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
         found = true;
         const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
         if (duplicate) {
-          v.baseResults = _.mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
+          v.baseResults = mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
             // Update if value is "null" or "undefined"
             if (objValue === null || objValue === undefined) {
               return srcValue;
@@ -1056,7 +1056,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
       }
     }
     if (found) {
-      merged[key] = _.uniqWith(newValue, _.isEqual);
+      merged[key] = uniqWith(newValue, isEqual);
     }
   }
 
@@ -1064,7 +1064,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
 }
 
 function limitBoostOptions(operations: Operation[], operationResults: OperationResult[]): OperationResult[] {
-  operationResults = _.cloneDeep(operationResults);
+  operationResults = cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
 
   // Pull from all selections already made
@@ -1108,7 +1108,7 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
 }
 
 export function getAdjustedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
-  let classOperations = _.cloneDeep(class_.operations ?? []);
+  let classOperations = cloneDeep(class_.operations ?? []);
 
   if (baseTrainings !== null) {
     classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));
@@ -1145,7 +1145,7 @@ export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number):
 }
 
 export function getAdjustedAncestryOperations(varId: StoreID, character: Character, inputOps: Operation[]) {
-  let operations = _.cloneDeep(inputOps);
+  let operations = cloneDeep(inputOps);
   if (character.options?.alternate_ancestry_boosts) {
     // Remove all ancestry boost/flaws operations
     const newOps = operations.filter(
@@ -1222,7 +1222,7 @@ export function getAdjustedAncestryOperations(varId: StoreID, character: Charact
 }
 
 export function getExtendedAncestryOperations(varId: StoreID, ancestry: Ancestry) {
-  let ancestryOperations = _.cloneDeep(ancestry.operations ?? []);
+  let ancestryOperations = cloneDeep(ancestry.operations ?? []);
 
   ancestryOperations.push(...addedAncestryLanguages(varId, ancestry));
 

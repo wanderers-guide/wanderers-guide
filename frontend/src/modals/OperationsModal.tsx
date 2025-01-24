@@ -16,7 +16,7 @@ import {
 import { Operation } from '@typing/operations';
 import { OperationSection } from '@common/operations/Operations';
 import { DISCORD_URL } from '@constants/data';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 export default function OperationsModal(props: {
   title: string;
@@ -70,7 +70,7 @@ export default function OperationsModal(props: {
             </HoverCard>
           }
           operations={props.operations}
-          onChange={(operations) => props.onChange(_.cloneDeep(operations))}
+          onChange={(operations) => props.onChange(cloneDeep(operations))}
         />
       </Box>
     </Modal>
