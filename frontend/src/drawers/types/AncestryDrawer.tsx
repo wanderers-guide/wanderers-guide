@@ -344,7 +344,7 @@ export function AncestryInitialOverview(props: {
       <Group align='flex-start' grow>
         <Paper
           shadow='xs'
-          p='sm'
+          py='sm'
           radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
@@ -380,7 +380,7 @@ export function AncestryInitialOverview(props: {
         </Paper>
         <Paper
           shadow='xs'
-          p='sm'
+          py='sm'
           radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
@@ -424,7 +424,7 @@ export function AncestryInitialOverview(props: {
         </Paper>
         <Paper
           shadow='xs'
-          p='sm'
+          py='sm'
           radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
