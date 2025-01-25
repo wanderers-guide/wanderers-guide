@@ -314,7 +314,11 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
   // Poll remote character updates - only if the character hasn't been updated recently
   const [lDebouncedCharacter] = useDebouncedValue(character, 5000);
-  const notRecentlyUpdated = !!(lDebouncedCharacter && isEqual(lDebouncedCharacter, character));
+  const notRecentlyUpdated = !!(
+    !executingOperations.current &&
+    lDebouncedCharacter &&
+    isEqual(lDebouncedCharacter, character)
+  );
   useQuery({
     queryKey: [`find-character-polling-updates-${props.characterId}`],
     queryFn: async () => {
