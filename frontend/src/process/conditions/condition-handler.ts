@@ -149,7 +149,6 @@ const CONDITIONS: Condition[] = [
   {
     name: 'Hidden',
     description: `While you’re hidden from a creature, that creature knows the space you’re in but can’t tell precisely where you are. You typically become hidden by using Stealth to ${convertToHardcodedLink('action', 'Hide')}. When ${convertToHardcodedLink('action', 'Seek', 'Seeking')} a creature using only imprecise senses, it remains hidden, rather than observed. A creature you’re hidden from is off-guard to you, and it must succeed at a DC 11 flat check when targeting you with an attack, spell, or other effect or it fails to affect you. Area effects aren’t subject to this flat check.`,
-    value: 1,
     for_creature: true,
     for_object: false,
   },

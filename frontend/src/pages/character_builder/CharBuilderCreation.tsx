@@ -27,7 +27,7 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
@@ -125,17 +125,18 @@ export function CharBuilderCreationInner(props: {
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef(false);
+  const [sDebouncedCharacter] = useDebouncedValue(character, 200);
   useEffect(() => {
-    if (!character || executingOperations.current) return;
+    if (!sDebouncedCharacter || executingOperations.current) return;
     setTimeout(() => {
-      if (!character || executingOperations.current) return;
+      if (!sDebouncedCharacter || executingOperations.current) return;
       executingOperations.current = true;
-      executeCharacterOperations(character, props.content, 'CHARACTER-BUILDER').then((results) => {
+      executeCharacterOperations(sDebouncedCharacter, props.content, 'CHARACTER-BUILDER').then((results) => {
         setOperationResults(results);
         executingOperations.current = false;
       });
     }, 1);
-  }, [character]);
+  }, [sDebouncedCharacter]);
 
   useEffect(() => {
     setTimeout(() => {
