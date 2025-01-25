@@ -312,29 +312,31 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     }
   );
 
-  // Poll health & condition updates
-  // const { data: polledCharacter } = useQuery({
-  //   queryKey: [`find-character-polling-updates-${props.characterId}`],
-  //   queryFn: async () => {
-  //     return await makeRequest<Character>('find-character', {
-  //       id: props.characterId,
-  //     });
-  //   },
-  //   refetchInterval: 1800,
-  //   enabled: mDebouncedCharacter !== null,
-  //   cacheTime: 0,
-  // });
-  // useEffect(() => {
-  //   if (polledCharacter && !isEqual(character, polledCharacter)) {
-  //     showNotification({
-  //       icon: <IconRefresh />,
-  //       title: `Updating character...`,
-  //       message: `Received a remote update`,
-  //       autoClose: 1500,
-  //     });
-  //     setCharacter(polledCharacter);
-  //   }
-  // }, [polledCharacter]);
+  // Poll remote character updates - only if the character hasn't been updated recently
+  const [lDebouncedCharacter] = useDebouncedValue(character, 5000);
+  const notRecentlyUpdated = !!(lDebouncedCharacter && isEqual(lDebouncedCharacter, character));
+  useQuery({
+    queryKey: [`find-character-polling-updates-${props.characterId}`],
+    queryFn: async () => {
+      const polledCharacter = await makeRequest<Character>('find-character', {
+        id: props.characterId,
+      });
+
+      if (!isEqual(character, polledCharacter)) {
+        showNotification({
+          icon: <IconRefresh />,
+          title: `Updating character...`,
+          message: `Received a remote update`,
+          autoClose: 1500,
+        });
+        setCharacter(polledCharacter);
+      }
+      return polledCharacter;
+    },
+    refetchInterval: 1000,
+    enabled: notRecentlyUpdated,
+    cacheTime: 0,
+  });
 
   // Inventory saving & management
   const getInventory = (character: Character | null) => {

@@ -222,7 +222,7 @@ async function runSelect(
       // It's probably a feat we selected from an archetype so it's not in the list, let's fetch it
       const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', parseInt(selectionTrack.node.value));
       if (!abilityBlock) {
-        displayError(`Selected node "${selectionTrack.path}" not found`, true);
+        displayError(`Selected node "${selectionTrack.path}" not found, value: ${selectionTrack.node.value}`, true);
         return null;
       }
       selectedOption = {
@@ -243,7 +243,7 @@ async function runSelect(
         God I hope that doesn't become too big of a problem in the future 🤞
       */
       if (!options?.doOnlyValueCreation) {
-        displayError(`Selected node "${selectionTrack.path}" not found`, true);
+        displayError(`Selected node "${selectionTrack.path}" not found, value: ${selectionTrack.node.value}`, true);
       }
       return null;
     }
