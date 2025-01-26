@@ -571,7 +571,7 @@ function applyCondition(id: StoreID, condition: Condition) {
     for (const save of getAllSaveVariables(id)) {
       addVariableBonus(id, save.name, penalty, 'status', '', `Frightened ${condition.value}`);
     }
-    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Frightened ${condition.value}`);
+    addVariableBonus(id, 'ATTACK_ROLLS_BONUS', penalty, 'status', '', `Frightened ${condition.value}`);
     addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Frightened ${condition.value}`);
     addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Frightened ${condition.value}`);
     addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Frightened ${condition.value}`);
@@ -633,7 +633,7 @@ function applyCondition(id: StoreID, condition: Condition) {
     for (const save of getAllSaveVariables(id)) {
       addVariableBonus(id, save.name, penalty, 'status', '', `Sickened ${condition.value}`);
     }
-    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Sickened ${condition.value}`);
+    addVariableBonus(id, 'ATTACK_ROLLS_BONUS', penalty, 'status', '', `Sickened ${condition.value}`);
     addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Sickened ${condition.value}`);
     addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Sickened ${condition.value}`);
     addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Sickened ${condition.value}`);
