@@ -326,7 +326,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         id: props.characterId,
       });
 
-      if (!isEqual(character, polledCharacter)) {
+      if (!isEqual(character, polledCharacter) && notRecentlyUpdated) {
         showNotification({
           icon: <IconRefresh />,
           title: `Updating character...`,
