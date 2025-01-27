@@ -37,6 +37,7 @@ import {
   ThemeIcon,
   Title,
   Transition,
+  UnstyledButton,
   rem,
   useMantineTheme,
 } from '@mantine/core';
@@ -1650,14 +1651,6 @@ export function GenericSelectionOption(props: {
         showButton={props.showButton}
         selected={props.selected}
         onClick={() => {
-          props.onClick(props.option);
-        }}
-        buttonTitle='Details'
-        buttonProps={{
-          variant: 'subtle',
-          size: 'compact-xs',
-        }}
-        onButtonClick={() => {
           openDrawer({
             type: 'generic',
             data: {
@@ -1667,6 +1660,10 @@ export function GenericSelectionOption(props: {
             },
             extra: { addToHistory: true },
           });
+          props.onClick(props.option);
+        }}
+        onButtonClick={() => {
+          props.onClick(props.option);
         }}
         includeOptions={props.includeOptions}
         onOptionsDelete={() => props.onDelete?.(props.option.id)}
@@ -1823,6 +1820,8 @@ export function BaseSelectionOption(props: {
   const { ref: sizeRef, width } = useElementSize();
   const mergedRef = useMergedRef(hoverRef, sizeRef);
 
+  const { hovered: hoveredButton, ref: buttonRef } = useHover();
+
   const isPhone = isPhoneSized(width);
 
   useDidUpdate(() => {
@@ -1882,19 +1881,25 @@ export function BaseSelectionOption(props: {
                 <Box
                   style={{
                     position: 'absolute',
-                    top: 7,
+                    top: 0,
                     right: props.includeOptions ? 45 : 15,
                   }}
                 >
                   <Button
+                    ref={buttonRef}
                     disabled={props.disableButton}
-                    size='compact-xs'
-                    variant='filled'
+                    size='sm'
+                    variant={hoveredButton ? 'filled' : 'light'}
                     onClick={(e) => {
                       e.stopPropagation();
                       props.onButtonClick?.();
                     }}
                     {...props.buttonProps}
+                    style={{
+                      height: 47, // Hardcoded for roughly how tall option is
+                      borderRadius: 0,
+                      ...props.buttonProps?.style,
+                    }}
                   >
                     {props.buttonTitle}
                   </Button>
@@ -2531,6 +2536,11 @@ export function ClassSelectionOption(props: {
         })
       }
       buttonTitle='Select'
+      buttonProps={{
+        style: {
+          height: 63,
+        },
+      }}
       disableButton={props.selected}
       onButtonClick={() => onSelect()}
       includeOptions={props.includeOptions}
@@ -2684,6 +2694,11 @@ export function AncestrySelectionOption(props: {
         })
       }
       buttonTitle='Select'
+      buttonProps={{
+        style: {
+          height: 63,
+        },
+      }}
       disableButton={props.selected}
       onButtonClick={() => onSelect()}
       includeOptions={props.includeOptions}
@@ -2781,6 +2796,11 @@ export function BackgroundSelectionOption(props: {
         })
       }
       buttonTitle='Select'
+      buttonProps={{
+        style: {
+          height: 63,
+        },
+      }}
       disableButton={props.selected}
       onButtonClick={() => onSelect()}
       includeOptions={props.includeOptions}
