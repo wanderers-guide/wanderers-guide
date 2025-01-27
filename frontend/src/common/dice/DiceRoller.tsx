@@ -21,7 +21,7 @@ import {
   Portal,
 } from '@mantine/core';
 import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
-import { tabletQuery } from '@utils/mobile-responsive';
+import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom, findDefaultPresets } from './dice-utils';
@@ -61,6 +61,7 @@ export default function DiceRoller(props: {
 }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
+  const isWideDesktop = useMediaQuery(wideDesktopQuery());
   const [character, setCharacter] = useRecoilState(characterState);
   const [useFallback, setUseFallback] = useState(false);
 
@@ -567,6 +568,8 @@ export default function DiceRoller(props: {
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
+        closeOnClickOutside={!isWideDesktop}
+        withOverlay={!isWideDesktop}
         overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}
         styles={{
           title: {
