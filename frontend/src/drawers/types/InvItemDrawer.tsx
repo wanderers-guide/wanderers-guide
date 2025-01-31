@@ -241,8 +241,9 @@ export function InvItemDrawerContent(props: {
       </Box>
       <Box
         style={{
-          position: 'absolute',
-          bottom: 0,
+          position: 'fixed',
+          bottom: 20,
+          right: 5,
           width: '100%',
         }}
       >

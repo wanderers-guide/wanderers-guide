@@ -63,6 +63,7 @@ export function EllipsisText(props: EllipsisTextProps) {
             maxWidth: '100%',
             fontSize: getAdjustedFontSize(),
           }}
+          lineClamp={1}
         >
           {props.children}
         </Text>

@@ -317,7 +317,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const notRecentlyUpdated = !!(
     !executingOperations.current &&
     lDebouncedCharacter &&
-    isEqual(lDebouncedCharacter, character)
+    isEqual(lDebouncedCharacter, character) &&
+    isEqual(sDebouncedCharacter, character)
   );
   useQuery({
     queryKey: [`find-character-polling-updates-${props.characterId}`],
