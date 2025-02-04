@@ -505,7 +505,7 @@ export function getBestShield(id: StoreID, inv?: Inventory) {
 }
 
 export function getItemOperations(item: Item, content: ContentPackage) {
-  let baseOps = item.operations ?? [];
+  const baseOps = cloneDeep(item.operations) ?? [];
 
   if (isItemWithRunes(item)) {
     if (isItemArmor(item)) {

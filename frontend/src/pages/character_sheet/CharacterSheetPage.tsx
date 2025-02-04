@@ -334,7 +334,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           message: `Received a remote update`,
           autoClose: 1500,
         });
-        setCharacter(polledCharacter);
+        // setCharacter(polledCharacter);
       }
       return polledCharacter;
     },
