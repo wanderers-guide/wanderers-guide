@@ -98,47 +98,10 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
 
   const data = searchQuery.trim() ? constructData(search.current.search(searchQuery.trim())) : rawData;
 
-  return (
-    <Box h='100%'>
-      <Stack gap={5}>
-        <Group>
-          <TextInput
-            style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search feats & features`}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            styles={{
-              input: {
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
-              },
-            }}
-          />
-          <SegmentedControl
-            value={section}
-            onChange={setSection}
-            disabled={!!searchQuery.trim()}
-            data={[
-              { label: 'Feats', value: 'FEATS' },
-              { label: 'Features', value: 'FEATURES' },
-            ]}
-          />
-        </Group>
-        <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-          {data &&
-            data.ancestryFeats.length === 0 &&
-            data.classFeats.length === 0 &&
-            data.generalAndSkillFeats.length === 0 &&
-            data.otherFeats.length === 0 &&
-            data.classFeatures.length === 0 &&
-            data.heritages.length === 0 &&
-            data.physicalFeatures.length === 0 && (
-              <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
-                No feats or features found.
-              </Text>
-            )}
-
-          {data && (section === 'FEATS' || searchQuery.trim()) && (
+  const dualLayout = props.panelWidth > 1000;
+  const featsSection = (
+    <>
+    {data && (section === 'FEATS' || searchQuery.trim() || dualLayout) && (
             <Accordion
               variant='separated'
               multiple
@@ -292,8 +255,12 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
             </Accordion>
           )}
+    </>
+  )
 
-          {data && (section === 'FEATURES' || searchQuery.trim()) && (
+  const featuresSection = (
+    <>
+    {data && (section === 'FEATURES' || searchQuery.trim() || dualLayout) && (
             <Accordion
               variant='separated'
               multiple
@@ -411,6 +378,65 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
               )}
             </Accordion>
           )}
+    </>
+  )
+
+  return (
+    <Box h='100%'>
+      <Stack gap={5}>
+        <Group>
+          <TextInput
+            style={{ flex: 1 }}
+            leftSection={<IconSearch size='0.9rem' />}
+            placeholder={`Search feats & features`}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            styles={{
+              input: {
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+              },
+            }}
+          />
+          {!dualLayout && (
+          <SegmentedControl
+            value={section}
+            onChange={setSection}
+            disabled={!!searchQuery.trim()}
+            data={[
+              { label: 'Feats', value: 'FEATS' },
+              { label: 'Features', value: 'FEATURES' },
+            ]}
+          />
+        )}
+        </Group>
+        <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+          {data &&
+            data.ancestryFeats.length === 0 &&
+            data.classFeats.length === 0 &&
+            data.generalAndSkillFeats.length === 0 &&
+            data.otherFeats.length === 0 &&
+            data.classFeatures.length === 0 &&
+            data.heritages.length === 0 &&
+            data.physicalFeatures.length === 0 && (
+              <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+                No feats or features found.
+              </Text>
+            )}
+            {dualLayout ? (
+              <Group align='flex-start' gap={10} grow>
+                <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+                {featsSection}
+                </ScrollArea>
+                <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+                {featuresSection}
+                </ScrollArea>
+              </Group>
+            ) : (
+              <>
+                {featsSection}
+                {featuresSection}
+              </>
+            )}
         </ScrollArea>
       </Stack>
     </Box>

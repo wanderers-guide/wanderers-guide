@@ -1867,7 +1867,7 @@ export function BaseSelectionOption(props: {
       {!isPhone && props.rightSection && (
         <Group wrap='nowrap' justify='flex-end' style={{ marginLeft: 'auto' }}>
           <Box>{props.rightSection}</Box>
-          {displayButton ? <Box w={props.includeOptions ? 85 : 55}></Box> : null}
+          {displayButton ? <Box w={props.includeOptions ? 95 : 55}></Box> : null}
         </Group>
       )}
 

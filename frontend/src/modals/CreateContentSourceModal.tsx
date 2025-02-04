@@ -1161,6 +1161,10 @@ function ContentList<
                     />
                   }
                   onClick={() => {
+                    setOpenedId(record.id);
+                  }}
+                  buttonTitle='View'
+                  onButtonClick={() => {
                     openDrawer({
                       type: props.abilityBlockType ?? props.type,
                       data: {
@@ -1169,9 +1173,6 @@ function ContentList<
                       },
                       extra: { addToHistory: true },
                     });
-                  }}
-                  onButtonClick={() => {
-                    setOpenedId(record.id);
                   }}
                   level={record.level ?? record.rank}
                   includeOptions
