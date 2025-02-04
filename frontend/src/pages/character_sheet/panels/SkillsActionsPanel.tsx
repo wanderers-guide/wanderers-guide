@@ -76,7 +76,7 @@ export default function SkillsActionsPanel(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
-  const [actionSectionValue, setActionSectionValue] = useState<string | null>(null);
+  const [actionSectionValue, setActionSectionValue] = useState<string>('weapon-attacks');
 
   // This is a hack to fix a big where variables are updated on init load but the sheet state hasn't updated yet
   // const forceUpdate = useForceUpdate();
