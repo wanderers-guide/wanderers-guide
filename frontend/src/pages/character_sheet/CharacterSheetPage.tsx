@@ -558,6 +558,14 @@ function SectionPanels(props: {
     }
   }, [props.isLoaded, activeTab]);
 
+  useEffect(() => {
+    // Add back the sections when switching from phone to desktop
+    if (!isPhone) {
+      props.onHideSections(false);
+      setOpenedPhonePanel(false);
+    }
+  }, [isPhone]);
+
   if (isPhone) {
     return (
       <Box>
