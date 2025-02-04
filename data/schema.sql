@@ -712,14 +712,6 @@ ALTER TABLE ONLY public.ancestry
 
 
 --
--- Name: archetype archetype_dedication_feat_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.archetype
-    ADD CONSTRAINT archetype_dedication_feat_id_key UNIQUE (dedication_feat_id);
-
-
---
 -- Name: archetype archetype_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
