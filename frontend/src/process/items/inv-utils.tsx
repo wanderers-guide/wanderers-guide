@@ -267,6 +267,7 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
 }
 
 export function addExtraItems(items: Item[], character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+  // Add extra items
   setTimeout(async () => {
     if (!character.inventory) return;
 
@@ -317,6 +318,32 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
       };
     });
   }, 100);
+
+  // Remove extra items that are no longer in the list
+  setTimeout(() => {
+    if (!character.inventory) return;
+
+    const givenItemIds = character.meta_data?.given_item_ids ?? [];
+    const extraItemIds = getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? [];
+
+    const itemsToRemove = givenItemIds.filter((id) => !extraItemIds.includes(`${id}`));
+    if (itemsToRemove.length === 0) return;
+
+    setCharacter((c) => {
+      if (!c) return c;
+      return {
+        ...c,
+        inventory: {
+          ...c.inventory!,
+          items: c.inventory!.items.filter((item) => !itemsToRemove.includes(item.item.id)),
+        },
+        meta_data: {
+          ...c.meta_data,
+          given_item_ids: c.meta_data?.given_item_ids?.filter((id) => !itemsToRemove.includes(id)),
+        },
+      };
+    });
+  }, 200);
 }
 
 /**
