@@ -33,6 +33,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
+import { getArmorSpecializations } from '@specializations/armor-specializations';
 import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
@@ -657,16 +658,10 @@ export function CreateItemModal(props: {
                             <Select
                               label='Group'
                               clearable
-                              data={[
-                                { value: 'leather', label: 'Leather' },
-                                { value: 'composite', label: 'Composite' },
-                                { value: 'chain', label: 'Chain' },
-                                { value: 'plate', label: 'Plate' },
-                                // Starfinder armor groups
-                                { value: 'cloth', label: 'Cloth' },
-                                { value: 'ceramic', label: 'Ceramic' },
-                                { value: 'polymer', label: 'Polymer' },
-                              ]}
+                              data={getArmorSpecializations(true).map((spec) => ({
+                                value: spec.name.toLowerCase(),
+                                label: spec.name,
+                              }))}
                               value={armorGroup}
                               onChange={(value) => {
                                 setArmorGroup(value ?? '');
