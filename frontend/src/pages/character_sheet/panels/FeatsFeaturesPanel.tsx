@@ -101,285 +101,285 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
   const dualLayout = props.panelWidth > 1000;
   const featsSection = (
     <>
-    {data && (section === 'FEATS' || searchQuery.trim() || dualLayout) && (
-            <Accordion
-              variant='separated'
-              multiple
-              defaultValue={['class-feats', 'ancestry-feats', 'general-skill-feats', 'other-feats']}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {data.classFeats.length > 0 && (
-                <Accordion.Item value='class-feats'>
-                  <Accordion.Control>
-                    <Text fw={600}>Class Feats</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.classFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.ancestryFeats.length > 0 && (
-                <Accordion.Item value='ancestry-feats'>
-                  <Accordion.Control>
-                    <Text fw={600}>Ancestry Feats</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.ancestryFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.generalAndSkillFeats.length > 0 && (
-                <Accordion.Item value='general-skill-feats'>
-                  <Accordion.Control>
-                    <Text fw={600}>General & Skill Feats</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.generalAndSkillFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.otherFeats.length > 0 && (
-                <Accordion.Item value='other-feats'>
-                  <Accordion.Control>
-                    <Text fw={600}>Other Feats</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.otherFeats.map((feat, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={feat}
-                          displayLevel
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'feat',
-                              data: { id: feat.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-            </Accordion>
+      {data && (section === 'FEATS' || searchQuery.trim() || dualLayout) && (
+        <Accordion
+          variant='separated'
+          multiple
+          defaultValue={['class-feats', 'ancestry-feats', 'general-skill-feats', 'other-feats']}
+          styles={{
+            label: {
+              paddingTop: 5,
+              paddingBottom: 5,
+            },
+            control: {
+              paddingLeft: 13,
+              paddingRight: 13,
+            },
+            item: {
+              marginTop: 0,
+              marginBottom: 5,
+            },
+          }}
+        >
+          {data.classFeats.length > 0 && (
+            <Accordion.Item value='class-feats'>
+              <Accordion.Control>
+                <Text fw={600}>Class Feats</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.classFeats.map((feat, index) => (
+                    <FeatSelectionOption
+                      key={index}
+                      feat={feat}
+                      displayLevel
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'feat',
+                          data: { id: feat.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
           )}
+          {data.ancestryFeats.length > 0 && (
+            <Accordion.Item value='ancestry-feats'>
+              <Accordion.Control>
+                <Text fw={600}>Ancestry Feats</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.ancestryFeats.map((feat, index) => (
+                    <FeatSelectionOption
+                      key={index}
+                      feat={feat}
+                      displayLevel
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'feat',
+                          data: { id: feat.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {data.generalAndSkillFeats.length > 0 && (
+            <Accordion.Item value='general-skill-feats'>
+              <Accordion.Control>
+                <Text fw={600}>General & Skill Feats</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.generalAndSkillFeats.map((feat, index) => (
+                    <FeatSelectionOption
+                      key={index}
+                      feat={feat}
+                      displayLevel
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'feat',
+                          data: { id: feat.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {data.otherFeats.length > 0 && (
+            <Accordion.Item value='other-feats'>
+              <Accordion.Control>
+                <Text fw={600}>Other Feats</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.otherFeats.map((feat, index) => (
+                    <FeatSelectionOption
+                      key={index}
+                      feat={feat}
+                      displayLevel
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'feat',
+                          data: { id: feat.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+        </Accordion>
+      )}
     </>
-  )
+  );
 
   const featuresSection = (
     <>
-    {data && (section === 'FEATURES' || searchQuery.trim() || dualLayout) && (
-            <Accordion
-              variant='separated'
-              multiple
-              defaultValue={['class-features', 'heritages', 'ancestry-features']}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {data.classFeatures.length > 0 && (
-                <Accordion.Item value='class-features'>
-                  <Accordion.Control>
-                    <Text fw={600}>Class Features</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.classFeatures.map((feature, index) => (
-                        <ClassFeatureSelectionOption
-                          key={index}
-                          classFeature={feature}
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'class-feature',
-                              data: { id: feature.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.heritages.length > 0 && (
-                <Accordion.Item value='heritages'>
-                  <Accordion.Control>
-                    <Text fw={600}>Heritage</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.heritages.map((heritage, index) => (
-                        <HeritageSelectionOption
-                          key={index}
-                          heritage={heritage}
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'heritage',
-                              data: { id: heritage.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.physicalFeatures.length > 0 && (
-                <Accordion.Item value='ancestry-features'>
-                  <Accordion.Control>
-                    <Text fw={600}>Ancestry Features</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.physicalFeatures.map((feature, index) => (
-                        <PhysicalFeatureSelectionOption
-                          key={index}
-                          physicalFeature={feature}
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'physical-feature',
-                              data: { id: feature.id },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-            </Accordion>
+      {data && (section === 'FEATURES' || searchQuery.trim() || dualLayout) && (
+        <Accordion
+          variant='separated'
+          multiple
+          defaultValue={['class-features', 'heritages', 'ancestry-features']}
+          styles={{
+            label: {
+              paddingTop: 5,
+              paddingBottom: 5,
+            },
+            control: {
+              paddingLeft: 13,
+              paddingRight: 13,
+            },
+            item: {
+              marginTop: 0,
+              marginBottom: 5,
+            },
+          }}
+        >
+          {data.classFeatures.length > 0 && (
+            <Accordion.Item value='class-features'>
+              <Accordion.Control>
+                <Text fw={600}>Class Features</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.classFeatures.map((feature, index) => (
+                    <ClassFeatureSelectionOption
+                      key={index}
+                      classFeature={feature}
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'class-feature',
+                          data: { id: feature.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
           )}
+          {data.heritages.length > 0 && (
+            <Accordion.Item value='heritages'>
+              <Accordion.Control>
+                <Text fw={600}>Heritage</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.heritages.map((heritage, index) => (
+                    <HeritageSelectionOption
+                      key={index}
+                      heritage={heritage}
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'heritage',
+                          data: { id: heritage.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {data.physicalFeatures.length > 0 && (
+            <Accordion.Item value='ancestry-features'>
+              <Accordion.Control>
+                <Text fw={600}>Ancestry Features</Text>
+              </Accordion.Control>
+              <Accordion.Panel
+                styles={{
+                  content: {
+                    padding: 0,
+                  },
+                }}
+              >
+                <Stack gap={0}>
+                  <Divider color='dark.6' />
+                  {data.physicalFeatures.map((feature, index) => (
+                    <PhysicalFeatureSelectionOption
+                      key={index}
+                      physicalFeature={feature}
+                      showButton={false}
+                      onClick={() => {
+                        openDrawer({
+                          type: 'physical-feature',
+                          data: { id: feature.id },
+                          extra: { addToHistory: true },
+                        });
+                      }}
+                    />
+                  ))}
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+        </Accordion>
+      )}
     </>
-  )
+  );
 
   return (
     <Box h='100%'>
@@ -398,16 +398,16 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             }}
           />
           {!dualLayout && (
-          <SegmentedControl
-            value={section}
-            onChange={setSection}
-            disabled={!!searchQuery.trim()}
-            data={[
-              { label: 'Feats', value: 'FEATS' },
-              { label: 'Features', value: 'FEATURES' },
-            ]}
-          />
-        )}
+            <SegmentedControl
+              value={section}
+              onChange={setSection}
+              disabled={!!searchQuery.trim()}
+              data={[
+                { label: 'Feats', value: 'FEATS' },
+                { label: 'Features', value: 'FEATURES' },
+              ]}
+            />
+          )}
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {data &&
@@ -422,21 +422,21 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 No feats or features found.
               </Text>
             )}
-            {dualLayout ? (
-              <Group align='flex-start' gap={10} grow>
-                <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+          {dualLayout ? (
+            <Group align='flex-start' gap={10} grow>
+              <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
                 {featsSection}
-                </ScrollArea>
-                <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+              </ScrollArea>
+              <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
                 {featuresSection}
-                </ScrollArea>
-              </Group>
-            ) : (
-              <>
-                {featsSection}
-                {featuresSection}
-              </>
-            )}
+              </ScrollArea>
+            </Group>
+          ) : (
+            <>
+              {featsSection}
+              {featuresSection}
+            </>
+          )}
         </ScrollArea>
       </Stack>
     </Box>

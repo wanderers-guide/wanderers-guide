@@ -328,12 +328,12 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       });
 
       if (!isEqual(character, polledCharacter) && notRecentlyUpdated) {
-        showNotification({
-          icon: <IconRefresh />,
-          title: `Updating character...`,
-          message: `Received a remote update`,
-          autoClose: 1500,
-        });
+        // showNotification({
+        //   icon: <IconRefresh />,
+        //   title: `Updating character...`,
+        //   message: `Received a remote update`,
+        //   autoClose: 1500,
+        // });
         // setCharacter(polledCharacter);
       }
       return polledCharacter;

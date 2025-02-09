@@ -417,7 +417,7 @@ export function compiledConditions(conditions: Condition[]): Condition[] {
   processConditions();
 
   // Remove duplicates
-  return uniqWith(newConditions, isEqual).sort((a, b) => a.name.localeCompare(b.name));
+  return uniqWith(newConditions, (a, b) => a.name === b.name).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function applyCondition(id: StoreID, condition: Condition) {
