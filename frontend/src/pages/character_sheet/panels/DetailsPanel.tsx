@@ -639,7 +639,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
+                        <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC', true)}</Text>
                         <Badge variant='default'>
                           {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value)}
                         </Badge>

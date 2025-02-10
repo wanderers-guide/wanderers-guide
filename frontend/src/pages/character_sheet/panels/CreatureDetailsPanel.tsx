@@ -468,7 +468,7 @@ export default function CreatureDetailsPanel(props: {
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue(props.id, 'SPELL_DC')}</Text>
+                        <Text c='gray.0'>{displayFinalProfValue(props.id, 'SPELL_DC', true)}</Text>
                         <Badge variant='default'>
                           {compileProficiencyType(getVariable<VariableProf>(props.id, 'SPELL_DC')?.value)}
                         </Badge>
