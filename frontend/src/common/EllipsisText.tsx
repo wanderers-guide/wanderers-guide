@@ -1,5 +1,5 @@
 import { Box, HoverCard, Text, TextProps, Tooltip, useMantineTheme } from '@mantine/core';
-import _ from 'lodash-es';
+import { isNumber } from 'lodash-es';
 import { useRef } from 'react';
 
 interface EllipsisTextProps extends TextProps {
@@ -25,7 +25,7 @@ export function EllipsisText(props: EllipsisTextProps) {
   function getAdjustedFontSize() {
     //if (!props.fz) return undefined; // Default to md
 
-    if (props.fz?.toString().includes('rem') || props.fz?.toString().includes('px') || _.isNumber(props.fz)) {
+    if (props.fz?.toString().includes('rem') || props.fz?.toString().includes('px') || isNumber(props.fz)) {
       return `calc(${props.fz} * ${getAdjustmentPercent() / 100})`;
     } else {
       // It's a mantine font size
@@ -63,6 +63,7 @@ export function EllipsisText(props: EllipsisTextProps) {
             maxWidth: '100%',
             fontSize: getAdjustedFontSize(),
           }}
+          lineClamp={1}
         >
           {props.children}
         </Text>

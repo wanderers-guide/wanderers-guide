@@ -1,5 +1,4 @@
 import { throwError } from '@utils/notifications';
-import * as _ from 'lodash-es';
 import { isBoolean, isNumber, isString } from 'lodash-es';
 import {
   AttributeValue,
@@ -21,7 +20,6 @@ import {
 import { getVariables } from './variable-manager';
 import { evaluate, to } from 'mathjs/number';
 import { getFinalVariableValue } from './variable-display';
-import { titleCase } from 'title-case';
 import { toLabel } from '@utils/strings';
 
 export function newVariable(type: VariableType, name: string, defaultValue?: VariableValue): Variable {
@@ -254,7 +252,7 @@ export function isExtendedProficiencyType(value?: string): value is ExtendedProf
   return ['U', 'T', 'E', 'M', 'L', '1', '-1'].includes(value ?? '');
 }
 export function isListStr(value?: any): value is string[] {
-  if (_.isString(value)) {
+  if (isString(value)) {
     try {
       value = JSON.parse(value);
     } catch (e) {

@@ -29,7 +29,6 @@ import { DateInput } from '@mantine/dates';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { getFlatInvItems } from '@items/inv-utils';
-import _ from 'lodash-es';
 import { drawerState } from '@atoms/navAtoms';
 import { IconAdjustments, IconCirclePlus, IconPlus, IconX } from '@tabler/icons-react';
 import { selectContent } from '@common/select/SelectContent';
@@ -38,6 +37,7 @@ import { selectCondition } from '@pages/character_sheet/sections/ConditionSectio
 import { modals } from '@mantine/modals';
 import { isItemVisible } from '@content/content-hidden';
 import { getGpGained } from '@utils/money';
+import { cloneDeep, truncate } from 'lodash-es';
 
 export function CreateSocietyAdventureEntryModal(props: {
   opened: boolean;
@@ -71,10 +71,10 @@ export function CreateSocietyAdventureEntryModal(props: {
       rep_gained: props.editEntry?.rep_gained ?? undefined,
       items_snapshot:
         props.editEntry?.items_snapshot ??
-        (character?.inventory ? _.cloneDeep(getFlatInvItems(character?.inventory).map((i) => i.item)) : []),
+        (character?.inventory ? cloneDeep(getFlatInvItems(character?.inventory).map((i) => i.item)) : []),
       conditions_snapshot:
         props.editEntry?.conditions_snapshot ??
-        (character?.details?.conditions ? _.cloneDeep(character.details.conditions) : []),
+        (character?.details?.conditions ? cloneDeep(character.details.conditions) : []),
       items_sold: props.editEntry?.items_sold ?? [],
       items_bought: props.editEntry?.items_bought ?? [],
       items_total_buy: props.editEntry?.items_total_buy ?? undefined,
@@ -266,7 +266,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                             </ActionIcon>
                           }
                         >
-                          {_.truncate(`${convertToGp(item.price)} gp, ${item.name}`, { length: 22 })}
+                          {truncate(`${convertToGp(item.price)} gp, ${item.name}`, { length: 22 })}
                         </Badge>
                       ))}
                     </Group>
@@ -350,7 +350,7 @@ export function CreateSocietyAdventureEntryModal(props: {
                             </ActionIcon>
                           }
                         >
-                          {_.truncate(`${convertToGp(item.price)} gp, ${item.name}`, { length: 22 })}
+                          {truncate(`${convertToGp(item.price)} gp, ${item.name}`, { length: 22 })}
                         </Badge>
                       ))}
                     </Group>

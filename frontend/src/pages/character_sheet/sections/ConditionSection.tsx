@@ -1,5 +1,4 @@
 import HeroPointIcon from '@assets/images/HeroPointIcon';
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import ConditionPill from '@common/ConditionPill';
@@ -9,14 +8,12 @@ import { getConditionByName, getAllConditions, compiledConditions } from '@condi
 import { ICON_BG_COLOR } from '@constants/data';
 import { getInvBulk, getBulkLimit } from '@items/inv-utils';
 import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Text, GroupProps } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import { openContextModal, modals } from '@mantine/modals';
 import { IconPlus, IconJewishStar, IconJewishStarFilled } from '@tabler/icons-react';
-import { Character, Condition, LivingEntity } from '@typing/content';
+import { Condition, LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
-import { phoneQuery } from '@utils/mobile-responsive';
 import { isCharacter } from '@utils/type-fixing';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
@@ -144,7 +141,7 @@ export function ConditionPills(props: {
                       onClick={() => {
                         modals.closeAll();
 
-                        let newConditions = _.cloneDeep(props.entity?.details?.conditions ?? []);
+                        let newConditions = cloneDeep(props.entity?.details?.conditions ?? []);
                         // Remove condition
                         newConditions = newConditions.filter((c) => c.name !== condition.name);
                         // Add wounded condition if we're removing dying

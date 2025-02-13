@@ -35,11 +35,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import _ from 'lodash-es';
 import { compileTraits } from '@items/inv-utils';
 import TraitsInput from '@common/TraitsInput';
 import useRefresh from '@utils/use-refresh';
 import { isItemVisible } from '@content/content-hidden';
+import { intersection } from 'lodash-es';
 
 export default function AddItemsModal({
   context,
@@ -130,7 +130,7 @@ export default function AddItemsModal({
             }
             if (filterSelections?.traits) {
               if (
-                _.intersection(filterSelections.traits, compileTraits(item)).length === filterSelections.traits.length
+                intersection(filterSelections.traits, compileTraits(item)).length === filterSelections.traits.length
               ) {
                 // Match
               } else {

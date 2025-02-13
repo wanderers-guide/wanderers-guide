@@ -26,7 +26,6 @@ import { ContextModalProps, modals } from '@mantine/modals';
 import { useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
 import { Combatant, Encounter } from '@typing/content';
-import _ from 'lodash-es';
 import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
 import { IconBulbFilled, IconSparkles } from '@tabler/icons-react';
 import { generateEncounters } from '@ai/open-ai-handler';
@@ -36,6 +35,7 @@ import { useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
+import { groupBy, map } from 'lodash-es';
 
 export default function GenerateEncounterModal({
   context,
@@ -153,8 +153,8 @@ function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   function getCreatureCounts(combatants: Combatant[]) {
-    const grouped = _.groupBy(combatants, (c) => c.creature?.id);
-    return _.map(grouped, (group, id) => ({
+    const grouped = groupBy(combatants, (c) => c.creature?.id);
+    return map(grouped, (group, id) => ({
       creature: group[0].creature,
       amount: group.length,
     }));

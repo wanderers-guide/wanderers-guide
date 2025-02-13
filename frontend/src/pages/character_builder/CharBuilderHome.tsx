@@ -15,8 +15,6 @@ import {
   Select,
   Tabs,
   useMantineTheme,
-  FileButton,
-  Button,
   UnstyledButton,
   PasswordInput,
   Image,
@@ -55,8 +53,7 @@ import {
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
 import useRefresh from '@utils/use-refresh';
-import * as _ from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -72,15 +69,14 @@ import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
-import RichText from '@common/RichText';
 import { drawerState } from '@atoms/navAtoms';
 import { AbilityBlockType, Campaign, ContentType } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
-import { set } from 'node_modules/cypress/types/lodash';
 import { updateSubscriptions } from '@content/homebrew';
 import { ImageOption } from '@typing/index';
+import { cloneDeep, isEqual, uniq } from 'lodash-es';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -163,7 +159,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         content_sources: {
           ...prev.content_sources,
           enabled: enabled
-            ? _.uniq([...(prev.content_sources?.enabled ?? []), ...inputIds])
+            ? uniq([...(prev.content_sources?.enabled ?? []), ...inputIds])
             : prev.content_sources?.enabled?.filter((id: number) => !inputIds.includes(id)),
         },
       };
@@ -179,7 +175,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           content_sources: {
             ...prev.content_sources,
             enabled: enabled
-              ? _.uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
+              ? uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
               : prev.content_sources?.enabled?.filter((id: number) => !bookIds.includes(id)),
           },
         };
@@ -197,7 +193,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
     if (enabled) {
       // Handle dependency logic
       const requiredBooks = await findRequiredContentSources(
-        _.uniq([...(character?.content_sources?.enabled ?? []), ...inputIds])
+        uniq([...(character?.content_sources?.enabled ?? []), ...inputIds])
       );
       if (requiredBooks.newSources.length > 0) {
         modals.openConfirmModal({
@@ -254,23 +250,38 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
           backgroundColor: 'rgba(0, 0, 0, 0.13)',
         }}
       >
-        <ScrollArea h='100%' scrollbars='y'>
-          <Tabs defaultValue='books'>
-            <Tabs.List grow>
-              <Tabs.Tab value='books' leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='homebrew' leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='variants' leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='options' leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
-              </Tabs.Tab>
-            </Tabs.List>
-
+        <Tabs defaultValue='books' h='100%'>
+          <Tabs.List grow>
+            <Tabs.Tab
+              value='books'
+              leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='homebrew'
+              leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='variants'
+              leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='options'
+              leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
+            </Tabs.Tab>
+          </Tabs.List>
+          <ScrollArea h='90%' scrollbars='y'>
             <Tabs.Panel value='books'>
               <Stack gap={0} pt='sm'>
                 <LinksGroup
@@ -493,6 +504,24 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                         variants: {
                           ...prev.variants,
                           ancestry_paragon: enabled,
+                        },
+                      };
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Automatic Bonus Progression'
+                  info={`This variant removes the item bonus to rolls and DCs usually provided by magic items (with the exception of armor’s item bonus) and replaces it with a new kind of bonus - potency - to reflect a character’s innate ability. In this variant, magic items, if they exist at all, can provide unique special abilities rather than numerical increases.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=2741'
+                  enabled={character?.variants?.automatic_bonus_progression}
+                  onLinkChange={(enabled) => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        variants: {
+                          ...prev.variants,
+                          automatic_bonus_progression: enabled,
                         },
                       };
                     });
@@ -786,9 +815,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       title='Custom Operations'
                       opened={openedOperations}
                       onClose={() => setOpenedOperations(false)}
-                      operations={_.cloneDeep(character.custom_operations ?? [])}
+                      operations={cloneDeep(character.custom_operations ?? [])}
                       onChange={(operations) => {
-                        if (_.isEqual(character.custom_operations, operations)) return;
+                        if (isEqual(character.custom_operations, operations)) return;
 
                         setCharacter((prev) => {
                           if (!prev) return prev;
@@ -803,8 +832,8 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                 )}
               </Stack>
             </Tabs.Panel>
-          </Tabs>
-        </ScrollArea>
+          </ScrollArea>
+        </Tabs>
       </Paper>
     </Box>
   );
@@ -1000,7 +1029,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
       // Check if the campaign has recommended settings for the character
       if (
-        !_.isEqual(
+        !isEqual(
           {
             sources: character?.content_sources,
             variants: character?.variants,
@@ -1076,7 +1105,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                     <List>
                       {missingSources.map((source, index) => (
                         <List.Item key={index}>
-                          <Group gap={3}>
+                          <Group gap={3} wrap='nowrap'>
                             <Text size='sm'>{source.name}</Text>
                             <HoverCard shadow='md' position='top' openDelay={500} withinPortal withArrow>
                               <HoverCard.Target>

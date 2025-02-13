@@ -21,7 +21,7 @@ import {
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, VersatileHeritage } from '@typing/content';
-import * as _ from 'lodash-es';
+import { groupBy } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -98,7 +98,7 @@ export function VersatileHeritageDrawerContent(props: {
   const [descHidden, setDescHidden] = useState(true);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const feats = _.groupBy(
+  const feats = groupBy(
     (data?.abilityBlocks ?? []).filter(
       (block) => block.type === 'feat' && block.traits?.includes(data?.versatileHeritage?.trait_id ?? -1)
     ),

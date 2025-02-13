@@ -35,7 +35,7 @@ import { AbilityBlock, Ancestry, Character, Language } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables } from '@variables/variable-manager';
-import * as _ from 'lodash-es';
+import { groupBy } from 'lodash-es';
 import { useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 
@@ -114,7 +114,7 @@ export function AncestryDrawerContent(props: {
   const heritages = (data?.abilityBlocks ?? []).filter(
     (block) => block.type === 'heritage' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
   );
-  const feats = _.groupBy(
+  const feats = groupBy(
     (data?.abilityBlocks ?? []).filter(
       (block) => block.type === 'feat' && block.traits?.includes(data?.ancestry?.trait_id ?? -1)
     ),
@@ -344,7 +344,7 @@ export function AncestryInitialOverview(props: {
       <Group align='flex-start' grow>
         <Paper
           shadow='xs'
-          p='sm'
+          py='sm'
           radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
@@ -380,7 +380,7 @@ export function AncestryInitialOverview(props: {
         </Paper>
         <Paper
           shadow='xs'
-          p='sm'
+          py='sm'
           radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],
@@ -424,7 +424,7 @@ export function AncestryInitialOverview(props: {
         </Paper>
         <Paper
           shadow='xs'
-          p='sm'
+          py='sm'
           radius='md'
           style={{
             backgroundColor: theme.colors.dark[8],

@@ -27,7 +27,7 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
@@ -43,7 +43,7 @@ import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
 import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
+import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
@@ -125,17 +125,18 @@ export function CharBuilderCreationInner(props: {
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef(false);
+  const [sDebouncedCharacter] = useDebouncedValue(character, 200);
   useEffect(() => {
-    if (!character || executingOperations.current) return;
+    if (!sDebouncedCharacter || executingOperations.current) return;
     setTimeout(() => {
-      if (!character || executingOperations.current) return;
+      if (!sDebouncedCharacter || executingOperations.current) return;
       executingOperations.current = true;
-      executeCharacterOperations(character, props.content, 'CHARACTER-BUILDER').then((results) => {
+      executeCharacterOperations(sDebouncedCharacter, props.content, 'CHARACTER-BUILDER').then((results) => {
         setOperationResults(results);
         executingOperations.current = false;
       });
     }, 1);
-  }, [character]);
+  }, [sDebouncedCharacter]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -297,10 +298,8 @@ export function CharBuilderCreationInner(props: {
               />
               <Button
                 leftSection={<IconId size={14} />}
-                variant='outline'
+                variant='light'
                 size='xs'
-                mt='sm'
-                mr='md'
                 onClick={() => {
                   setStatPanelOpened((prev) => !prev);
                 }}
@@ -580,7 +579,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       >
                         <Box>
                           <Text c='gray.0' fz='sm'>
-                            {_.truncate(variableToLabel(skill), { length: 15 })}
+                            {truncate(variableToLabel(skill), { length: 15 })}
                           </Text>
                         </Box>
                         <Group wrap='nowrap'>
@@ -879,7 +878,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                       </Text>
                     </Box>
                     <Group>
-                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
+                      <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC', true)}</Text>
                       <Badge variant='default'>
                         {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value)}
                       </Badge>
@@ -1258,7 +1257,7 @@ function ClassFeatureAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (featureChoiceCountRef.current) {
         const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
-        if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
+        if (!isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1323,7 +1322,7 @@ function AncestrySectionAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (featureChoiceCountRef.current) {
         const choiceCounts = getChoiceCounts(featureChoiceCountRef.current);
-        if (!_.isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
+        if (!isEqual(choiceCounts, featureChoiceCounts)) setFeatureChoiceCounts(choiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1510,7 +1509,7 @@ function AncestryAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1630,7 +1629,7 @@ function BackgroundAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1738,7 +1737,7 @@ function ClassAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1851,7 +1850,7 @@ function BooksAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1915,7 +1914,7 @@ function ItemsAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
@@ -1981,7 +1980,7 @@ function CustomAccordionItem(props: {
     const intervalId = setInterval(() => {
       if (choiceCountRef.current) {
         const newChoiceCounts = getChoiceCounts(choiceCountRef.current);
-        if (!_.isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
+        if (!isEqual(newChoiceCounts, choiceCounts)) setChoiceCounts(newChoiceCounts);
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);

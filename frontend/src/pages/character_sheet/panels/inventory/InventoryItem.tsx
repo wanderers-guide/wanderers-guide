@@ -20,7 +20,7 @@ import { Button, Grid, Group, Text, useMantineTheme } from '@mantine/core';
 import { InventoryItem, LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
-import _ from 'lodash-es';
+import { truncate } from 'lodash-es';
 
 export function InvItemOption(props: {
   invItem: InventoryItem;
@@ -41,7 +41,7 @@ export function InvItemOption(props: {
   return (
     <Grid w={'100%'}>
       <Grid.Col span='auto'>
-        <Group wrap='nowrap' gap={10}>
+        <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
           <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
           <Text c='gray.0' fz='sm'>
             {props.invItem.item.name}
@@ -67,7 +67,7 @@ export function InvItemOption(props: {
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>
               <EllipsisText c='gray.6' fz='xs' fs='italic' span>
-                {_.truncate(
+                {truncate(
                   `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
                   { length: props.isPhone ? 15 : 45 }
                 )}
@@ -114,7 +114,7 @@ export function InvItemOption(props: {
           </Grid>
         </Grid.Col>
       )}
-      <Grid.Col span={3} offset={props.isPhone ? 1 : 0}>
+      <Grid.Col span={props.isPhone ? 3 : 2} offset={props.isPhone ? 0 : 1}>
         <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
           {isItemInvestable(props.invItem.item) && (
             <Button

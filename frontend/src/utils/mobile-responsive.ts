@@ -10,6 +10,10 @@ export function phoneQuery() {
   return `(max-width: 36em)`;
 }
 
+export function wideDesktopQuery() {
+  return `(min-width: 120em)`;
+}
+
 export function usePhoneSized<T = any>(inputUseElementSize: any): { boundRef: React.RefObject<T>; isPhone: boolean } {
   const { ref, width, height } = inputUseElementSize();
   return { boundRef: ref, isPhone: isPhoneSized(width) };

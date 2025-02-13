@@ -14,7 +14,6 @@ import {
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
-import _ from 'lodash-es';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
@@ -24,6 +23,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { useMemo } from 'react';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
+import { uniq } from 'lodash-es';
 
 export default function FocusSpellsList(props: {
   id: StoreID;
@@ -203,7 +203,7 @@ export default function FocusSpellsList(props: {
                           spell={{
                             ...spell,
                             // Add focus trait in case it doesn't have it
-                            traits: _.uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
+                            traits: uniq([...(spell.traits ?? []), getTraitIdByType('FOCUS')]),
                           }}
                           exhausted={
                             entity?.spells?.focus_point_current === undefined

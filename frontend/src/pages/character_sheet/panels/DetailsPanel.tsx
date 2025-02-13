@@ -48,11 +48,11 @@ import { JSendResponse } from '@typing/requests';
 import { useState } from 'react';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';
-import _ from 'lodash-es';
 import { Money, getGpGained } from '@utils/money';
 import { pluralize, toLabel } from '@utils/strings';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { convertToSize } from '@upload/foundry-utils';
+import { cloneDeep } from 'lodash-es';
 
 const SECTION_WIDTH = 280;
 
@@ -639,7 +639,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
                         </Text>
                       </Box>
                       <Group>
-                        <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC')}</Text>
+                        <Text c='gray.0'>{displayFinalProfValue('CHARACTER', 'SPELL_DC', true)}</Text>
                         <Badge variant='default'>
                           {compileProficiencyType(getVariable<VariableProf>('CHARACTER', 'SPELL_DC')?.value)}
                         </Badge>
@@ -1114,7 +1114,7 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
           opened={true}
           editEntry={character?.details?.info?.organized_play_adventures?.find((a) => `${a.id}` === openedAdventureId)}
           onComplete={async (entry) => {
-            const adventures = _.cloneDeep(character?.details?.info?.organized_play_adventures ?? []);
+            const adventures = cloneDeep(character?.details?.info?.organized_play_adventures ?? []);
 
             const existing = adventures.find((a) => a.id === entry.id);
             if (existing) {

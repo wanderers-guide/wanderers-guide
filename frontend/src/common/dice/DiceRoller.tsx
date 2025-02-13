@@ -21,7 +21,7 @@ import {
   Portal,
 } from '@mantine/core';
 import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
-import { tabletQuery } from '@utils/mobile-responsive';
+import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { deleteDiceRoom, findDefaultPresets } from './dice-utils';
@@ -31,7 +31,7 @@ import { IconArrowBigRightFilled, IconSquareRoundedArrowDown, IconTrash, IconX }
 import { sign } from '@utils/numbers';
 import { DICE_THEMES, fetchDiceThemes, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
-import _ from 'lodash-es';
+import { cloneDeep, groupBy, uniqWith, isEqual } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { hasPatreonAccess } from '@utils/patreon';
@@ -61,6 +61,7 @@ export default function DiceRoller(props: {
 }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
+  const isWideDesktop = useMediaQuery(wideDesktopQuery());
   const [character, setCharacter] = useRecoilState(characterState);
   const [useFallback, setUseFallback] = useState(false);
 
@@ -106,9 +107,9 @@ export default function DiceRoller(props: {
 
   const rollHistoryViewport = useRef<HTMLDivElement>(null);
   const [rollHistory, setRollHistory] = useState(
-    _.cloneDeep((character?.roll_history?.rolls ?? []).concat(props.injectedRolls ?? []))
+    cloneDeep((character?.roll_history?.rolls ?? []).concat(props.injectedRolls ?? []))
   );
-  const groupedRolls = _.groupBy(
+  const groupedRolls = groupBy(
     rollHistory.map((r) => ({ ...r, group: `${r.label}~${r.timestamp}~${r.type}` })),
     (r) => r.group
   );
@@ -132,7 +133,7 @@ export default function DiceRoller(props: {
 
   // Update roll history when injected rolls change
   useEffect(() => {
-    setRollHistory((prev) => _.uniqWith(prev.concat(props.injectedRolls ?? []), _.isEqual));
+    setRollHistory((prev) => uniqWith(prev.concat(props.injectedRolls ?? []), isEqual));
   }, [props.injectedRolls]);
 
   const getRollHistory = () => {
@@ -243,7 +244,7 @@ export default function DiceRoller(props: {
 
   // Presets //
 
-  const [presets, setPresets] = useState(_.cloneDeep(character?.details?.dice?.presets ?? []));
+  const [presets, setPresets] = useState(cloneDeep(character?.details?.dice?.presets ?? []));
   const [debouncedPresets] = useDebouncedValue(presets, 1000);
   useDidUpdate(() => {
     // Saving presets
@@ -323,7 +324,7 @@ export default function DiceRoller(props: {
     return (
       <>
         <Stack gap={5}>
-          {_.cloneDeep(presets)
+          {cloneDeep(presets)
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((preset, i) => (
               <Box key={i}>{getPresetEntry(preset, true)}</Box>
@@ -567,6 +568,8 @@ export default function DiceRoller(props: {
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
+        closeOnClickOutside={!isWideDesktop}
+        withOverlay={!isWideDesktop}
         overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}
         styles={{
           title: {

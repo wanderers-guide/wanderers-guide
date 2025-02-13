@@ -56,7 +56,6 @@ import {
   proficiencyTypeToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import { useMemo } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -534,7 +533,8 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                           <List size='xs'>
                             {parts.breakdown.conditionals.map((item, i) => (
                               <List.Item key={i}>
-                                {item.text}{' '}
+                                {item.text}
+                                <br />
                                 <Text c='dimmed' span>
                                   {'['}from {item.source}
                                   {']'}

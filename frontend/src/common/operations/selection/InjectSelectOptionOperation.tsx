@@ -5,7 +5,7 @@ import { useDidUpdate } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, ContentSource, Item } from '@typing/content';
 import { useEffect, useState } from 'react';
-import _ from 'lodash-es';
+import { flatten, uniqWith, isEqual, uniqBy } from 'lodash-es';
 import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
 import { SelectionPredefinedCustomOption } from './SelectionOperation';
 
@@ -32,19 +32,19 @@ export function InjectSelectOptionOperation(props: {
       const abOpps = (await fetchContentAll<AbilityBlock>('ability-block')).map((ab) => {
         return (ab.operations ?? []).map((op) => ({ ...op, _sourceName: ab.name }));
       });
-      operations.push(..._.uniqWith(_.flatten(abOpps), _.isEqual));
+      operations.push(...uniqWith(flatten(abOpps), isEqual));
 
       const csOpps = (await fetchContentAll<ContentSource>('content-source')).map((cs) => {
         return (cs.operations ?? []).map((op) => ({ ...op, _sourceName: cs.name }));
       });
-      operations.push(..._.uniqWith(_.flatten(csOpps), _.isEqual));
+      operations.push(...uniqWith(flatten(csOpps), isEqual));
 
       const iOpps = (await fetchContentAll<Item>('item')).map((i) => {
         return (i.operations ?? []).map((op) => ({ ...op, _sourceName: i.name }));
       });
-      operations.push(..._.uniqWith(_.flatten(iOpps), _.isEqual));
+      operations.push(...uniqWith(flatten(iOpps), isEqual));
 
-      return _.uniqBy(
+      return uniqBy(
         operations.filter(
           (op) => op.type === 'select' && op.data.modeType === 'PREDEFINED' && op.data.optionType === 'CUSTOM'
         ) as WrappedOperationSelect[],

@@ -1,14 +1,10 @@
-import TraitsInput from '@common/TraitsInput';
 import { OperationSection } from '@common/operations/Operations';
-import { AddBonusToValOperation } from '@common/operations/variables/AddBonusToValOperation';
-import { SetValOperation } from '@common/operations/variables/SetValOperation';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { DISCORD_URL } from '@constants/data';
-import { fetchContentAll, fetchContentById, fetchTraits } from '@content/content-store';
+import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
   Anchor,
-  Autocomplete,
   Badge,
   Box,
   Button,
@@ -21,7 +17,6 @@ import {
   ScrollArea,
   Select,
   Stack,
-  Switch,
   Tabs,
   Text,
   TextInput,
@@ -31,14 +26,11 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { createDefaultOperation } from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, Creature, Trait } from '@typing/content';
-import { Operation, OperationAddBonusToValue, OperationSetValue } from '@typing/operations';
-import { isValidImage } from '@utils/images';
+import { AbilityBlock, Creature } from '@typing/content';
+import { Operation } from '@typing/operations';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
 import { useState } from 'react';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { ActionSymbol } from '@common/Actions';
@@ -48,9 +40,10 @@ import { isTruthy } from '@utils/type-fixing';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { selectContent } from '@common/select/SelectContent';
-import { IconBracketsAngle, IconCornerUpRight, IconTransform, IconTransformFilled } from '@tabler/icons-react';
+import { IconBracketsAngle, IconCornerUpRight, IconTransform } from '@tabler/icons-react';
 import StatBlockSection from '@common/StatBlockSection';
 import { extractCreatureInfo } from '@utils/creature';
+import { uniq } from 'lodash-es';
 
 /**
  * Modal for creating or editing a creature
@@ -417,7 +410,7 @@ export function CreateCreatureModal(props: {
                           (option) => {
                             form.setValues({
                               ...form.values,
-                              abilities_added: _.uniq([...(form.values.abilities_added ?? []), option.id]),
+                              abilities_added: uniq([...(form.values.abilities_added ?? []), option.id]),
                             });
                           },
                           {

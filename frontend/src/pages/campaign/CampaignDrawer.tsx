@@ -4,35 +4,20 @@ import {
   Group,
   Title,
   Stack,
-  Divider,
   useMantineTheme,
   ActionIcon,
   Badge,
-  Button,
   Text,
-  Card,
-  HoverCard,
   Image,
   ScrollArea,
   Paper,
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { tabletQuery } from '@utils/mobile-responsive';
-import { useMemo } from 'react';
-import { IconCopy, IconFlag, IconHeartFilled, IconRefreshDot, IconShadow } from '@tabler/icons-react';
-import _, { truncate } from 'lodash-es';
-import { useRecoilState } from 'recoil';
-import { characterState } from '@atoms/characterAtoms';
-import { AbilityBlock, Campaign, Character, ContentPackage } from '@typing/content';
-import { ModeSelectionOption } from '@common/select/SelectContent';
-import { drawerState } from '@atoms/navAtoms';
-import { getVariable, setVariable } from '@variables/variable-manager';
-import { VariableListStr } from '@typing/variables';
-import { labelToVariable } from '@variables/variable-utils';
-import classes from '@css/UserInfoIcons.module.css';
+import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
+import { IconHeartFilled } from '@tabler/icons-react';
+import { Campaign, Character } from '@typing/content';
 import { useQuery } from '@tanstack/react-query';
 import { makeRequest } from '@requests/request-manager';
-import { showNotification } from '@mantine/notifications';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import { interpolateHealth } from '@utils/colors';
 import { CharacterDetailedInfo } from '@common/CharacterInfo';
@@ -40,6 +25,7 @@ import { CharacterDetailedInfo } from '@common/CharacterInfo';
 export default function CampaignDrawer(props: { opened: boolean; onClose: () => void; campaignId: number }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
+  const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
   const { data: campaign } = useQuery({
     queryKey: [`find-campaign-${props.campaignId}`],
@@ -116,6 +102,8 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
+        closeOnClickOutside={!isWideDesktop}
+        withOverlay={!isWideDesktop}
         styles={{
           title: {
             width: '100%',

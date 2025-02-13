@@ -3,7 +3,6 @@ import { IconMathSymbols } from '@tabler/icons-react';
 import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalHealthValue, getHealthValueParts } from '@variables/variable-display';
-import * as _ from 'lodash-es';
 
 export function StatHealthDrawerTitle(props: { data: { id: StoreID } }) {
   return (
@@ -134,7 +133,8 @@ export function StatHealthDrawerContent(props: { data: { id: StoreID } }) {
                         <List size='xs'>
                           {parts.breakdown.conditionals.map((item, i) => (
                             <List.Item key={i}>
-                              {item.text}{' '}
+                              {item.text}
+                              <br />
                               <Text c='dimmed' span>
                                 {'['}from {item.source}
                                 {']'}

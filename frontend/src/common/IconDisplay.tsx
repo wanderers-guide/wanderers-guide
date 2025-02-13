@@ -18,7 +18,6 @@ import { Icon } from './Icon';
 import { SelectIconModalContents } from '@modals/SelectIconModal';
 import DOMPurify from 'dompurify';
 import { GUIDE_BLUE } from '@constants/data';
-import _ from 'lodash-es';
 import { usePrevious } from '@mantine/hooks';
 import useRefresh from '@utils/use-refresh';
 

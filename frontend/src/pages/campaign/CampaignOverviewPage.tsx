@@ -39,7 +39,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character, Encounter } from '@typing/content';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
-import { truncate } from 'lodash-es';
+import { cloneDeep, truncate } from 'lodash-es';
 import { Suspense, useEffect, useState } from 'react';
 import { GiRollingDices } from 'react-icons/gi';
 import { useLoaderData } from 'react-router-dom';
@@ -54,7 +54,6 @@ import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { useRecoilValue } from 'recoil';
 import D20Loader from '@assets/images/D20Loader';
-import _ from 'lodash';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -354,7 +353,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
             }}
             injectedRolls={(
               characters?.map((c) => {
-                return _.cloneDeep(c.roll_history?.rolls ?? []).map((r) => ({
+                return cloneDeep(c.roll_history?.rolls ?? []).map((r) => ({
                   ...r,
                   label: `${c.name}${r.label ? `: ${r.label}` : ''}`,
                 }));

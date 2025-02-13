@@ -1,42 +1,13 @@
-import {
-  ActionIcon,
-  Text,
-  Box,
-  Button,
-  Drawer,
-  Group,
-  NumberInput,
-  Title,
-  Stack,
-  TextInput,
-  Menu,
-  Badge,
-  Avatar,
-  ScrollArea,
-  Paper,
-  Center,
-  Divider,
-  useMantineTheme,
-  Collapse,
-  Portal,
-} from '@mantine/core';
-import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
-import { tabletQuery } from '@utils/mobile-responsive';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import useRefresh from '@utils/use-refresh';
+import { Box, Drawer, Group, Title, Stack, Divider, useMantineTheme } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
+import { useMemo } from 'react';
 import { IconShadow } from '@tabler/icons-react';
-import { sign } from '@utils/numbers';
-import { Carousel } from '@mantine/carousel';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
-import { hasPatreonAccess } from '@utils/patreon';
-import { getCachedPublicUser } from '@auth/user-manager';
-import { displayPatronOnly } from '@utils/notifications';
-import { rollDie } from '@utils/random';
-import { AbilityBlock, ContentPackage, Dice } from '@typing/content';
-import { openContextModal } from '@mantine/modals';
-import { ModeSelectionOption, PhysicalFeatureSelectionOption } from '@common/select/SelectContent';
+import { AbilityBlock, ContentPackage } from '@typing/content';
+import { ModeSelectionOption } from '@common/select/SelectContent';
 import { drawerState } from '@atoms/navAtoms';
 import { getVariable, setVariable } from '@variables/variable-manager';
 import { VariableListStr } from '@typing/variables';
@@ -45,6 +16,7 @@ import { labelToVariable } from '@variables/variable-utils';
 export default function ModesDrawer(props: { opened: boolean; onClose: () => void; content: ContentPackage }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
+  const isWideDesktop = useMediaQuery(wideDesktopQuery());
   const [character, setCharacter] = useRecoilState(characterState);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -74,6 +46,8 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
+        closeOnClickOutside={!isWideDesktop}
+        withOverlay={!isWideDesktop}
         styles={{
           title: {
             width: '100%',
@@ -115,7 +89,7 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
                   // Trigger character update (to re-execute operations)
                   setTimeout(() => {
                     setCharacter((prev) => {
-                      return _.cloneDeep(prev);
+                      return cloneDeep(prev);
                     });
                   }, 100);
                 }}

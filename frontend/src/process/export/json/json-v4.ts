@@ -27,7 +27,7 @@ import {
   getVariableStore,
   getVariables,
 } from '@variables/variable-manager';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 export default async function jsonV4(entity: LivingEntity) {
   const exportObject = {
@@ -212,7 +212,7 @@ export async function getJsonV4Content(entity: LivingEntity) {
   }
 
   // Raw data dump
-  const rawData = _.cloneDeep(getVariableStore(STORE_ID));
+  const rawData = cloneDeep(getVariableStore(STORE_ID));
 
   return {
     _README: `Here's some compiled data about the character. Should be fairly human-readable. The <character> section is what WG reads, this section is solely for you! Should give you an abundance of compiled stats and info about the character. If you have any questions, feel free to ask on our Discord!`,

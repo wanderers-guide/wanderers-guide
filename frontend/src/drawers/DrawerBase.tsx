@@ -10,7 +10,7 @@ import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
 import { modals } from '@mantine/modals';
-import { phoneQuery } from '@utils/mobile-responsive';
+import { phoneQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -43,6 +43,7 @@ export default function DrawerBase() {
   */
 
   const isPhone = useMediaQuery(phoneQuery());
+  const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -160,6 +161,8 @@ export default function DrawerBase() {
           </>
         }
         withCloseButton={false}
+        closeOnClickOutside={!isWideDesktop}
+        withOverlay={!isWideDesktop}
         position='right'
         zIndex={drawerZIndex ?? _drawer?.data.zIndex ?? 1000}
         styles={{

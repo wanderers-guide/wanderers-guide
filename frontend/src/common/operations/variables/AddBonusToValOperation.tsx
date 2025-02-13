@@ -5,7 +5,7 @@ import { Variable } from '@typing/variables';
 import { getVariable } from '@variables/variable-manager';
 import { useState } from 'react';
 import { OperationWrapper } from '../Operations';
-import _ from 'lodash-es';
+import { isNumber } from 'lodash-es';
 
 export function AddBonusToValOperation(props: {
   variable: string;
@@ -79,11 +79,11 @@ function AddBonusInput(props: {
       <Group wrap='nowrap'>
         <TextInput
           size='xs'
-          prefix={_.isNumber(props.bonusValue) && (props.bonusValue ?? -1) >= 0 ? '+' : undefined}
+          prefix={isNumber(props.bonusValue) && (props.bonusValue ?? -1) >= 0 ? '+' : undefined}
           placeholder='Bonus Amount'
           value={props.bonusValue}
           onChange={(e) => {
-            if (_.isNumber(e.target.value)) {
+            if (isNumber(e.target.value)) {
               props.onChange({ ...props, bonusValue: parseInt(`${e.target.value}`) });
             } else {
               props.onChange({ ...props, bonusValue: e.target.value });

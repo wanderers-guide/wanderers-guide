@@ -47,7 +47,6 @@ import {
   labelToVariable,
   maxProficiencyType,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import {
   ObjectWithUUID,
   determineFilteredSelectionList,
@@ -55,6 +54,7 @@ import {
   extendOperations,
 } from './operation-utils';
 import { SelectionTrack } from './selection-tree';
+import { isEqual } from 'lodash-es';
 
 export type OperationOptions = {
   doOnlyValueCreation?: boolean;
@@ -214,55 +214,6 @@ async function runSelect(
   let selected: ObjectWithUUID | undefined = undefined;
   let results: OperationResult[] = [];
 
-  if (selectionTrack.node && selectionTrack.node.value) {
-    let selectedOption = optionList.find((option) => option._select_uuid === selectionTrack.node?.value);
-    if (selectedOption) {
-      updateVariables(varId, operation, selectedOption, sourceLabel, options);
-    } else if (operation.data.optionType === 'ABILITY_BLOCK') {
-      // It's probably a feat we selected from an archetype so it's not in the list, let's fetch it
-      const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', parseInt(selectionTrack.node.value));
-      if (!abilityBlock) {
-        displayError(`Selected node "${selectionTrack.path}" not found`, true);
-        return null;
-      }
-      selectedOption = {
-        ...abilityBlock,
-        _select_uuid: `${abilityBlock.id}`,
-        _content_type: 'ability-block',
-      } satisfies ObjectWithUUID;
-      updateVariables(varId, operation, selectedOption, sourceLabel, options);
-    } else {
-      /*
-        We don't display an error on value creation because, with trait giving, we can have values
-        that give access to other selection options. In the later passthroughs, they find the options
-        correctly but for this first value creation-only pass, it may not find the option due to not
-        having created the values to give access to those options yet.
-        * This results in a known bug where values that are created can give access to selected options
-        that might also want to create values but they won't be able to find the selected option and
-        therefore can't create that value.
-        God I hope that doesn't become too big of a problem in the future 🤞
-      */
-      if (!options?.doOnlyValueCreation) {
-        displayError(`Selected node "${selectionTrack.path}" not found`, true);
-      }
-      return null;
-    }
-    selected = selectedOption;
-
-    // Run the operations of the selected option
-    const subOperations = await extendOperations(selectedOption, selectedOption.operations);
-    if (subOperations.length > 0 && selectedOption.type !== 'mode') {
-      const subNode = selectionTrack.node?.children[selectedOption._select_uuid];
-      results = await runOperations(
-        varId,
-        { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
-        subOperations,
-        options,
-        operation.data.optionType === 'CUSTOM' ? sourceLabel : selectedOption.name ?? 'Unknown'
-      );
-    }
-  }
-
   // Check if all options are skill proficiencies, aka making this a skill increase
   let foundSkills: string[] = [];
   for (const option of optionList) {
@@ -275,6 +226,67 @@ async function runSelect(
   }
   const skillAdjustment =
     optionList.length > 0 && foundSkills.length === optionList.length ? optionList[0]?.value?.value : undefined;
+
+  // Find selected option
+  if (selectionTrack.node && selectionTrack.node.value) {
+    let selectedOption = optionList.find((option) => option._select_uuid === selectionTrack.node?.value);
+    if (selectedOption) {
+      updateVariables(varId, operation, selectedOption, sourceLabel, options);
+    } else if (operation.data.optionType === 'ABILITY_BLOCK') {
+      // It's probably a feat we selected from an archetype so it's not in the list, let's fetch it
+      const abilityBlock = await fetchContentById<AbilityBlock>('ability-block', parseInt(selectionTrack.node.value));
+      if (!abilityBlock) {
+        displayError(
+          `Selected node "${selectionTrack.path}" not found, value: ${selectionTrack.node.value}, type: ${operation.data.optionType}`,
+          true
+        );
+        selectedOption = undefined;
+      } else {
+        selectedOption = {
+          ...abilityBlock,
+          _select_uuid: `${abilityBlock.id}`,
+          _content_type: 'ability-block',
+        } satisfies ObjectWithUUID;
+        updateVariables(varId, operation, selectedOption, sourceLabel, options);
+      }
+    } else {
+      /*
+        We don't display an error on value creation because, with trait giving, we can have values
+        that give access to other selection options. In the later passthroughs, they find the options
+        correctly but for this first value creation-only pass, it may not find the option due to not
+        having created the values to give access to those options yet.
+        * This results in a known bug where values that are created can give access to selected options
+        that might also want to create values but they won't be able to find the selected option and
+        therefore can't create that value.
+        God I hope that doesn't become too big of a problem in the future 🤞
+      */
+      if (!options?.doOnlyValueCreation) {
+        displayError(
+          `Selected node "${selectionTrack.path}" not found, value: ${selectionTrack.node.value}, type: ${operation.data.optionType}`,
+          true
+        );
+      }
+      selectedOption = undefined;
+    }
+
+    if (selectedOption) {
+      // Run the operations of the selected option
+      const subOperations = await extendOperations(selectedOption, selectedOption.operations);
+      if (subOperations.length > 0 && selectedOption.type !== 'mode') {
+        const subNode = selectionTrack.node?.children[selectedOption._select_uuid];
+        results = await runOperations(
+          varId,
+          { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
+          subOperations,
+          options,
+          operation.data.optionType === 'CUSTOM' ? sourceLabel : selectedOption.name ?? 'Unknown'
+        );
+      }
+    }
+
+    // Set the final selected option to be used in the result
+    selected = selectedOption;
+  }
 
   return {
     selection: {
@@ -985,9 +997,9 @@ async function runConditional(
         }
       } catch (e) {}
       if (check.operator === 'EQUALS') {
-        return _.isEqual(varValue, checkValue);
+        return isEqual(varValue, checkValue);
       } else if (check.operator === 'NOT_EQUALS') {
-        return !_.isEqual(varValue, checkValue);
+        return !isEqual(varValue, checkValue);
       } else if (check.operator === 'INCLUDES') {
         return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
       } else if (check.operator === 'NOT_INCLUDES') {

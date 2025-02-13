@@ -34,15 +34,16 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { openContextModal } from '@mantine/modals';
+import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
+import { CreateItemModal } from '@modals/CreateItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
 import { ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
-import _ from 'lodash-es';
-import { Key, useState } from 'react';
+import { cloneDeep } from 'lodash-es';
+import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { CurrencySection } from './inventory/CoinsSection';
 import { InvItemOption } from './inventory/InventoryItem';
@@ -63,6 +64,7 @@ export default function InventoryPanel(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
+  const [creatingCustomItem, setCreatingCustomItem] = useState(false);
 
   const visibleInvItems = props.inventory.items.filter(
     (invItem) => !(!isItemVisible(props.id, invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
@@ -89,8 +91,20 @@ export default function InventoryPanel(props: {
     openContextModal({
       modal: 'addItems',
       title: (
-        <Group wrap='nowrap' gap={20}>
+        <Group wrap='nowrap' gap={20} justify='space-between'>
           <Title order={3}>Add Items</Title>
+          <Button
+            variant='light'
+            color={theme.colors['gray'][6]}
+            size='compact-xs'
+            mr={5}
+            onClick={() => {
+              modals.closeAll();
+              setCreatingCustomItem(true);
+            }}
+          >
+            Custom Item
+          </Button>
         </Group>
       ),
       innerProps: {
@@ -104,6 +118,11 @@ export default function InventoryPanel(props: {
         },
       },
       zIndex: props.zIndex ?? 499,
+      styles: {
+        title: {
+          width: '100%',
+        },
+      },
     });
   };
 
@@ -245,7 +264,7 @@ export default function InventoryPanel(props: {
               },
             }}
           >
-            {_.cloneDeep(invItems)
+            {cloneDeep(invItems)
               .sort((a: InventoryItem, b: InventoryItem) => a.item.name.localeCompare(b.item.name))
               .map((invItem: InventoryItem, index: number) => (
                 <Box key={index}>
@@ -293,6 +312,19 @@ export default function InventoryPanel(props: {
           onClose={() => setConfirmBuyItem(undefined)}
         />
       )}
+
+      {creatingCustomItem && (
+        <CreateItemModal
+          opened={creatingCustomItem}
+          onComplete={async (item) => {
+            handleAddItem(props.setInventory, item, false);
+            setCreatingCustomItem(false);
+          }}
+          onCancel={() => {
+            setCreatingCustomItem(false);
+          }}
+        />
+      )}
     </Box>
   );
 }
@@ -315,7 +347,7 @@ function ItemEntry(props: {
       data: {
         storeId: props.id,
         zIndex: 100,
-        invItem: _.cloneDeep(invItem),
+        invItem: cloneDeep(invItem),
         onItemUpdate: (newInvItem: InventoryItem) => {
           handleUpdateItem(props.setInventory, newInvItem);
         },
@@ -332,13 +364,13 @@ function ItemEntry(props: {
   };
 
   const equipItem = (invItem: InventoryItem) => {
-    const newInvItem = _.cloneDeep(invItem);
+    const newInvItem = cloneDeep(invItem);
     newInvItem.is_equipped = !newInvItem.is_equipped;
     handleUpdateItem(props.setInventory, newInvItem);
   };
 
   const investItem = (invItem: InventoryItem) => {
-    const newInvItem = _.cloneDeep(invItem);
+    const newInvItem = cloneDeep(invItem);
 
     if (isItemInvestable(newInvItem.item)) {
       newInvItem.is_invested = !newInvItem.is_invested;

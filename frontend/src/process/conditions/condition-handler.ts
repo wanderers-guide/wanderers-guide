@@ -1,6 +1,5 @@
 import { Condition } from '@typing/content';
 import { StoreID, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
-import * as _ from 'lodash-es';
 import {
   addVariableBonus,
   adjVariable,
@@ -10,8 +9,8 @@ import {
   getVariable,
 } from '../variables/variable-manager';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
-import { getDefaultSources } from '@content/content-store';
 import { isPlayingPathfinder, isPlayingStarfinder } from '@content/system-handler';
+import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 
 const CONDITIONS: Condition[] = [
   {
@@ -150,7 +149,6 @@ const CONDITIONS: Condition[] = [
   {
     name: 'Hidden',
     description: `While you’re hidden from a creature, that creature knows the space you’re in but can’t tell precisely where you are. You typically become hidden by using Stealth to ${convertToHardcodedLink('action', 'Hide')}. When ${convertToHardcodedLink('action', 'Seek', 'Seeking')} a creature using only imprecise senses, it remains hidden, rather than observed. A creature you’re hidden from is off-guard to you, and it must succeed at a DC 11 flat check when targeting you with an attack, spell, or other effect or it fails to affect you. Area effects aren’t subject to this flat check.`,
-    value: 1,
     for_creature: true,
     for_object: false,
   },
@@ -343,7 +341,7 @@ const CONDITIONS: Condition[] = [
 ];
 
 export function getConditionByName(name: string, addedSource?: string): Condition | undefined {
-  const foundCondition = _.cloneDeep(
+  const foundCondition = cloneDeep(
     CONDITIONS.find((condition) => condition.name.trim().toLowerCase() === name.trim().toLowerCase())
   );
   if (foundCondition) {
@@ -353,7 +351,7 @@ export function getConditionByName(name: string, addedSource?: string): Conditio
 }
 
 export function getAllConditions() {
-  return _.cloneDeep(CONDITIONS).filter(
+  return cloneDeep(CONDITIONS).filter(
     (condition) =>
       (condition.starfinder_only && isPlayingStarfinder()) ||
       (condition.pathfinder_only && isPlayingPathfinder()) ||
@@ -419,7 +417,7 @@ export function compiledConditions(conditions: Condition[]): Condition[] {
   processConditions();
 
   // Remove duplicates
-  return _.uniqWith(newConditions, _.isEqual).sort((a, b) => a.name.localeCompare(b.name));
+  return uniqWith(newConditions, (a, b) => a.name === b.name).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function applyCondition(id: StoreID, condition: Condition) {
@@ -573,7 +571,7 @@ function applyCondition(id: StoreID, condition: Condition) {
     for (const save of getAllSaveVariables(id)) {
       addVariableBonus(id, save.name, penalty, 'status', '', `Frightened ${condition.value}`);
     }
-    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Frightened ${condition.value}`);
+    addVariableBonus(id, 'ATTACK_ROLLS_BONUS', penalty, 'status', '', `Frightened ${condition.value}`);
     addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Frightened ${condition.value}`);
     addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Frightened ${condition.value}`);
     addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Frightened ${condition.value}`);
@@ -635,7 +633,7 @@ function applyCondition(id: StoreID, condition: Condition) {
     for (const save of getAllSaveVariables(id)) {
       addVariableBonus(id, save.name, penalty, 'status', '', `Sickened ${condition.value}`);
     }
-    addVariableBonus(id, 'SPELL_ATTACK', penalty, 'status', '', `Sickened ${condition.value}`);
+    addVariableBonus(id, 'ATTACK_ROLLS_BONUS', penalty, 'status', '', `Sickened ${condition.value}`);
     addVariableBonus(id, 'SPELL_DC', penalty, 'status', '', `Sickened ${condition.value}`);
     addVariableBonus(id, 'PERCEPTION', penalty, 'status', '', `Sickened ${condition.value}`);
     addVariableBonus(id, 'CLASS_DC', penalty, 'status', '', `Sickened ${condition.value}`);

@@ -18,10 +18,9 @@ import { Variable, VariableType } from '@typing/variables';
 import { useEffect, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
-import * as _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { IconCaretRightFilled, IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { ConditionCheckData, ConditionOperator, Operation } from '@typing/operations';
-import { useDidUpdate } from '@mantine/hooks';
 
 export default function ConditionalOperation(props: {
   conditions?: ConditionCheckData[];
@@ -64,7 +63,7 @@ export default function ConditionalOperation(props: {
               defaultOperator={check.operator}
               defaultValue={check.value}
               onChange={(data) => {
-                let newChecks = _.cloneDeep(checks);
+                let newChecks = cloneDeep(checks);
                 newChecks[index] = data;
                 console.log(newChecks);
                 routeChange({

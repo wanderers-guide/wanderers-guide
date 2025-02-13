@@ -15,11 +15,10 @@ import {
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Availability, Rarity, Size } from '@typing/content';
-import { startCase } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import RichText from './RichText';
 import { getTraitIdByType } from '@utils/traits';
-import _ from 'lodash-es';
+import { uniq } from 'lodash-es';
 import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
 import { VariableBool } from '@typing/variables';
@@ -45,7 +44,7 @@ export default function TraitsDisplay(props: {
   const { data: traits } = useQuery({
     queryKey: [
       `find-traits-${props.traitIds.join('_')}`,
-      { traitIds: props.archaic ? _.uniq([...props.traitIds, getTraitIdByType('ARCHAIC')]) : props.traitIds },
+      { traitIds: props.archaic ? uniq([...props.traitIds, getTraitIdByType('ARCHAIC')]) : props.traitIds },
     ],
     queryFn: async ({ queryKey }) => {
       // @ts-ignore

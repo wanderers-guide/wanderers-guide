@@ -85,7 +85,6 @@ import {
 import { Operation } from '@typing/operations';
 import { pluralize, toLabel } from '@utils/strings';
 import * as JsSearch from 'js-search';
-import * as _ from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { CreateAncestryModal } from './CreateAncestryModal';
@@ -109,6 +108,7 @@ import useRefresh from '@utils/use-refresh';
 import { getPublicUser } from '@auth/user-manager';
 import { defineDefaultSourcesForSource } from '@content/homebrew';
 import OperationsModal from './OperationsModal';
+import { cloneDeep } from 'lodash-es';
 
 export function CreateContentSourceOnlyModal(props: {
   opened: boolean;
@@ -944,11 +944,11 @@ function ContentList<
     search.current = new JsSearch.Search('id');
     search.current.addIndex('name');
     //search.current.addIndex('description');
-    search.current.addDocuments(_.cloneDeep(props.content));
+    search.current.addDocuments(cloneDeep(props.content));
   };
 
   const getContent = () => {
-    let content = _.cloneDeep(props.content);
+    let content = cloneDeep(props.content);
     content = searchQuery ? (search.current.search(searchQuery) as T[]) : content;
 
     // Sort by level/rank then name
@@ -988,7 +988,7 @@ function ContentList<
       const item = (data ??
         (props.content as unknown as AbilityBlock[]).find((i) => i.id === itemId)) as AbilityBlock | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -997,7 +997,7 @@ function ContentList<
     } else if (props.type === 'spell') {
       const item = (data ?? (props.content as unknown as Spell[]).find((i) => i.id === itemId)) as Spell | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1006,7 +1006,7 @@ function ContentList<
     } else if (props.type === 'class') {
       const item = (data ?? (props.content as unknown as Class[]).find((i) => i.id === itemId)) as Class | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1015,7 +1015,7 @@ function ContentList<
     } else if (props.type === 'ancestry') {
       const item = (data ?? (props.content as unknown as Ancestry[]).find((i) => i.id === itemId)) as Ancestry | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1025,7 +1025,7 @@ function ContentList<
       const item = (data ??
         (props.content as unknown as Background[]).find((i) => i.id === itemId)) as Background | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1034,7 +1034,7 @@ function ContentList<
     } else if (props.type === 'item') {
       const item = (data ?? (props.content as unknown as Item[]).find((i) => i.id === itemId)) as Item | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1043,7 +1043,7 @@ function ContentList<
     } else if (props.type === 'trait') {
       const item = (data ?? (props.content as unknown as Trait[]).find((i) => i.id === itemId)) as Trait | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1052,7 +1052,7 @@ function ContentList<
     } else if (props.type === 'creature') {
       const item = (data ?? (props.content as unknown as Creature[]).find((i) => i.id === itemId)) as Creature | null;
       if (item) {
-        const newItem = _.cloneDeep(item);
+        const newItem = cloneDeep(item);
         newItem.id = -1;
         newItem.name = `(Copy) ${item.name}`;
         newItem.content_source_id = props.sourceId;
@@ -1163,10 +1163,7 @@ function ContentList<
                   onClick={() => {
                     setOpenedId(record.id);
                   }}
-                  buttonTitle='Details'
-                  buttonProps={{
-                    variant: 'subtle',
-                  }}
+                  buttonTitle='View'
                   onButtonClick={() => {
                     openDrawer({
                       type: props.abilityBlockType ?? props.type,

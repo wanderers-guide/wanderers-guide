@@ -60,12 +60,12 @@ import {
   labelToVariable,
   variableToLabel,
 } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
 import { OperationResult } from './operation-runner';
 import { throwError } from '@utils/notifications';
 import { InjectedSelectOption } from '@common/operations/selection/InjectSelectOptionOperation';
 import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
+import { isNumber, intersection } from 'lodash-es';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {
@@ -380,7 +380,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
       if (!ab.traits) {
         return false;
       }
-      return _.intersection(ab.traits, traitIds).length > 0;
+      return intersection(ab.traits, traitIds).length > 0;
     });
   }
   if (filters.isFromClass) {
@@ -389,7 +389,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
       if (!ab.traits) {
         return false;
       }
-      return _.intersection(ab.traits, traitIds).length > 0;
+      return intersection(ab.traits, traitIds).length > 0;
     });
   }
   if (filters.isFromArchetype) {
@@ -398,7 +398,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
       if (!ab.traits) {
         return false;
       }
-      return _.intersection(ab.traits, traitIds).length > 0;
+      return intersection(ab.traits, traitIds).length > 0;
     });
   }
 
@@ -406,10 +406,10 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
     const tDatas = await Promise.all(
       filters.traits.map((t) =>
         // If it's a number, it's a trait id, otherwise it's a trait name
-        _.isNumber(t) ? t : fetchTraitByName(t)
+        isNumber(t) ? t : fetchTraitByName(t)
       )
     );
-    const traitIds = tDatas.map((t) => (_.isNumber(t) ? t : t?.id)).filter(isTruthy);
+    const traitIds = tDatas.map((t) => (isNumber(t) ? t : t?.id)).filter(isTruthy);
 
     // Filter out ability blocks that don't have all the traits
     abilityBlocks = abilityBlocks.filter((ab) => {
@@ -419,8 +419,8 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
       if ((!ab.traits && traitIds.length === 0) || (ab.traits && ab.traits.length === 0 && traitIds.length === 0)) {
         return true;
       }
-      const intersection = _.intersection(ab.traits ?? [], traitIds);
-      return intersection.length === traitIds.length;
+      const inter = intersection(ab.traits ?? [], traitIds);
+      return inter.length === traitIds.length;
     });
   }
 
@@ -459,17 +459,17 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
       ) {
         return true;
       }
-      const intersection = _.intersection(spell.traits ?? [], traitIds);
-      return intersection.length === traitIds.length;
+      const inter = intersection(spell.traits ?? [], traitIds);
+      return inter.length === traitIds.length;
     });
   }
   if (filters.traditions !== undefined) {
     spells = spells.filter((spell) => {
-      const intersection = _.intersection(
+      const inter = intersection(
         spell.traditions.map((t) => t.toUpperCase()),
         (filters.traditions ?? []).map((t) => t.toUpperCase())
       );
-      return intersection.length === filters.traditions!.length;
+      return inter.length === filters.traditions!.length;
     });
   }
 

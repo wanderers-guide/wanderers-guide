@@ -1,4 +1,4 @@
-import * as _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 export interface SelectionTreeNode {
   value: string | null;
@@ -40,7 +40,7 @@ function addToSelectionTree(root: SelectionTreeNode, key: string, value: string)
 }
 
 export function getRootSelection() {
-  return _.cloneDeep(selectionTree);
+  return cloneDeep(selectionTree);
 }
 
 export function resetSelections() {
@@ -48,7 +48,7 @@ export function resetSelections() {
 }
 
 export function removeParentSelections(prefix: string, selections?: Record<string, string> | undefined) {
-  const newSelections = _.cloneDeep(selections);
+  const newSelections = cloneDeep(selections);
   for (const key in newSelections) {
     if (key.startsWith(prefix)) {
       delete newSelections[key];

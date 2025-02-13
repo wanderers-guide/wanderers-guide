@@ -28,8 +28,8 @@ import {
   isExtendedProficiencyValue,
   compileExpressions,
 } from './variable-utils';
-import * as _ from 'lodash-es';
 import { throwError } from '@utils/notifications';
+import { cloneDeep, isBoolean, isEqual, isNumber, isString, uniq } from 'lodash-es';
 
 export const HIDDEN_VARIABLES = [
   'SKILL_LORE____',
@@ -185,10 +185,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   MAX_HEALTH_BONUS: newVariable('num', 'MAX_HEALTH_BONUS'),
 
   AC_BONUS: newVariable('num', 'AC_BONUS'),
-  // ARMOR_CHECK_PENALTY: newVariable('num', 'ARMOR_CHECK_PENALTY'),
-  // ARMOR_SPEED_PENALTY: newVariable('num', 'ARMOR_SPEED_PENALTY'),
-  // DEX_CAP: newVariable('num', 'DEX_CAP'),
-  // UNARMORED: newVariable('bool', 'UNARMORED'),
 
   SPEED: newVariable('num', 'SPEED'),
   SPEED_FLY: newVariable('num', 'SPEED_FLY'),
@@ -220,7 +216,6 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   PHYSICAL_FEATURE_NAMES: newVariable('list-str', 'PHYSICAL_FEATURE_NAMES'),
   EXTRA_ITEM_NAMES: newVariable('list-str', 'EXTRA_ITEM_NAMES', ['FIST']),
 
-  //
   // List variables, storing the IDs
   SENSE_IDS: newVariable('list-str', 'SENSE_IDS'),
   MODE_IDS: newVariable('list-str', 'MODE_IDS'),
@@ -285,6 +280,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
   // When you attack with a finesse melee weapon, you can use Dex mod for damage instead of Str mod.
   USE_DEX_FOR_MELEE_FINESSE: newVariable('bool', 'USE_DEX_FOR_MELEE_FINESSE'),
+
+  // The minimum number of damage dice you can have for a weapon.
+  MINIMUM_WEAPON_DAMAGE_DICE: newVariable('num', 'MINIMUM_WEAPON_DAMAGE_DICE', 1),
 
   ATTACK_ROLLS_BONUS: newVariable('num', 'ATTACK_ROLLS_BONUS'),
   ATTACK_DAMAGE_BONUS: newVariable('num', 'ATTACK_DAMAGE_BONUS'),
@@ -355,24 +353,10 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
 const variableMap = new Map<string, VariableStore>();
 
-// let variables = _.cloneDeep(DEFAULT_VARIABLES);
-// let variableBonuses: Record<
-//   string,
-//   { value?: number; type?: string; text: string; source: string; timestamp: number }[]
-// > = {};
-// let variableHistory: Record<
-//   string,
-//   { to: VariableValue; from: VariableValue | null; source: string; timestamp: number }[]
-// > = {};
-
-// 2_status_
-// +2 status bonus
-// Map<string, { value?: number, type: string, text: string }[]>
-
 export function getVariableStore(id: StoreID) {
   if (!variableMap.has(id)) {
     variableMap.set(id, {
-      variables: _.cloneDeep(DEFAULT_VARIABLES),
+      variables: cloneDeep(DEFAULT_VARIABLES),
       bonuses: {},
       history: {},
     });
@@ -394,7 +378,7 @@ export function getVariables(id: StoreID) {
  * @returns - the variable
  */
 export function getVariable<T = Variable>(id: StoreID, name: string): T | null {
-  return _.cloneDeep(getVariables(id)[name]) as T | null;
+  return cloneDeep(getVariables(id)[name]) as T | null;
 }
 
 /**
@@ -412,10 +396,10 @@ export function getVariableBonuses(
   source: string;
   timestamp: number;
 }[] {
-  const rawBonuses = _.cloneDeep(getVariableStore(id).bonuses[name]) ?? [];
+  const rawBonuses = cloneDeep(getVariableStore(id).bonuses[name]) ?? [];
 
   return rawBonuses.map((bonus) => {
-    if (_.isString(bonus.value)) {
+    if (isString(bonus.value)) {
       const c = parseInt(compileExpressions(id, bonus.value.trim(), true) ?? '');
       return {
         ...bonus,
@@ -465,17 +449,17 @@ export function addVariableBonus(
  * @returns - the bonus array
  */
 export function getVariableHistory(id: StoreID, name: string) {
-  return _.cloneDeep(getVariableStore(id).history[name]) ?? [];
+  return cloneDeep(getVariableStore(id).history[name]) ?? [];
 }
 
 function addVariableHistory(id: StoreID, name: string, to: VariableValue, from: VariableValue, source: string) {
-  if (_.isEqual(from, to)) return;
+  if (isEqual(from, to)) return;
   if (!getVariableStore(id).history[name]) {
     getVariableStore(id).history[name] = [];
   }
   getVariableStore(id).history[name].push({
-    to: _.cloneDeep(to),
-    from: _.cloneDeep(from),
+    to: cloneDeep(to),
+    from: cloneDeep(from),
     source,
     timestamp: Date.now(),
   });
@@ -509,7 +493,7 @@ export function addVariable(
     // Add to history
     //addVariableHistory(variable.name, variable.value, null, source ?? 'Created');
   }
-  return _.cloneDeep(variable);
+  return cloneDeep(variable);
 }
 
 /**
@@ -541,9 +525,9 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
   if (!variable) {
     throwError(`Invalid variable name: ${name}`);
   }
-  const oldValue = _.cloneDeep(variable.value);
+  const oldValue = cloneDeep(variable.value);
 
-  if (isVariableNum(variable) && _.isNumber(+value)) {
+  if (isVariableNum(variable) && isNumber(+value)) {
     // Some variables have a special rule where we take the higher value instead of overwriting
     // This is a hack for sure and hopefully won't be too confusing for homebrewers
     // It's to make things like HP for dual-class PCs work
@@ -554,15 +538,15 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
     } else {
       variable.value = parseInt(`${value}`);
     }
-  } else if (isVariableStr(variable) && _.isString(value)) {
+  } else if (isVariableStr(variable) && isString(value)) {
     variable.value = value;
-  } else if (isVariableBool(variable) && _.isBoolean(value)) {
+  } else if (isVariableBool(variable) && isBoolean(value)) {
     variable.value = value;
   } else if (isVariableListStr(variable) && isListStr(value)) {
-    if (_.isString(value)) {
+    if (isString(value)) {
       value = JSON.parse(value);
     }
-    variable.value = _.uniq(value as string[]);
+    variable.value = uniq(value as string[]);
   } else if (isVariableAttr(variable) && isAttributeValue(value)) {
     variable.value.value = value.value;
     variable.value.partial = value.partial;
@@ -591,7 +575,7 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue | E
   if (!variable) {
     throwError(`Invalid variable name: ${name}`);
   }
-  const oldValue = _.cloneDeep(variable.value);
+  const oldValue = cloneDeep(variable.value);
 
   if (isVariableProf(variable)) {
     if (isProficiencyValue(amount) || isExtendedProficiencyValue(amount)) {
@@ -614,7 +598,7 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue | E
       throwError(`Invalid adjust amount for prof: ${name}, ${JSON.stringify(amount)}`);
     }
   } else if (isVariableAttr(variable) && isAttributeValue(amount)) {
-    if (_.isNumber(+amount.value)) {
+    if (isNumber(+amount.value)) {
       const value = parseInt(`${amount.value}`);
       if (value !== 0 && value !== 1 && value !== -1) {
         throwError(`Invalid variable adjustment amount for attribute: ${value} (must be 0, 1, or -1)`);
@@ -634,14 +618,14 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue | E
     if (amount.partial) {
       variable.value.partial = amount.partial;
     }
-  } else if (isVariableNum(variable) && _.isNumber(+amount)) {
+  } else if (isVariableNum(variable) && isNumber(+amount)) {
     variable.value += parseInt(`${amount}`);
-  } else if (isVariableStr(variable) && _.isString(amount)) {
+  } else if (isVariableStr(variable) && isString(amount)) {
     variable.value += amount;
-  } else if (isVariableBool(variable) && _.isBoolean(amount)) {
+  } else if (isVariableBool(variable) && isBoolean(amount)) {
     variable.value = amount ? true : variable.value;
-  } else if (isVariableListStr(variable) && _.isString(amount)) {
-    variable.value = _.uniq([...variable.value, amount]);
+  } else if (isVariableListStr(variable) && isString(amount)) {
+    variable.value = uniq([...variable.value, amount]);
   } else {
     throwError(`Invalid adjust amount for variable: ${name}, ${JSON.stringify(amount)}`);
   }

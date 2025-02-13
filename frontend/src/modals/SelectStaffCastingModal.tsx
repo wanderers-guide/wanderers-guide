@@ -17,7 +17,7 @@ import {
 import { ContextModalProps } from '@mantine/modals';
 import { Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
 import { rankNumber } from '@utils/numbers';
-import _ from 'lodash';
+import { groupBy } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 
 /**
@@ -50,7 +50,7 @@ export function SelectStaffCastingModalContents(props: {
 }) {
   const [character, setCharacter] = useRecoilState(characterState);
   const slots = (character && collectEntitySpellcasting('CHARACTER', character).slots) ?? [];
-  const groupedSlots = _.groupBy(slots, 'rank');
+  const groupedSlots = groupBy(slots, 'rank');
 
   const rankLevels: number[] = [];
   for (const rank of Object.keys(groupedSlots)) {

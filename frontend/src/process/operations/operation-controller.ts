@@ -21,12 +21,12 @@ import {
   addVariable,
   adjVariable,
   getAllAttributeVariables,
+  getAllSkillVariables,
   getVariable,
   resetVariables,
   setVariable,
 } from '@variables/variable-manager';
-import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
-import * as _ from 'lodash-es';
+import { isAttributeValue, labelToVariable, variableToLabel } from '@variables/variable-utils';
 import { hashData, rankNumber } from '@utils/numbers';
 import { StoreID, VariableListStr } from '@typing/variables';
 import {
@@ -39,6 +39,8 @@ import {
 import { playingPathfinder, playingStarfinder } from '@content/system-handler';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
+import { convertToHardcodedLink } from '@content/hardcoded-links';
+import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -65,7 +67,7 @@ async function executeOperations(
     varId,
     { path: `${primarySource}_${selectionNode?.value}`, node: selectionNode },
     operations,
-    _.cloneDeep(options),
+    cloneDeep(options),
     sourceLabel
   );
 
@@ -142,7 +144,7 @@ export async function executeCharacterOperations(
     });
 
   // Merge both but only keep one if they both have the same name and level
-  let classFeatures = _.unionWith(
+  let classFeatures = unionWith(
     classFeatures_1,
     classFeatures_2,
     (a, b) => a.name.trim() === b.name.trim() && a.level === b.level
@@ -276,6 +278,354 @@ export async function executeCharacterOperations(
     }
     classFeatures = newClassFeatures;
   }
+
+  // Automatic Bonus Progression
+  if (character.variants?.automatic_bonus_progression) {
+    const getAbpAbility = (
+      index: number,
+      level: number,
+      type:
+        | 'ATTACK-POTENCY'
+        | 'SKILL-POTENCY'
+        | 'DEVA-ATTACKS'
+        | 'DEFENSE-POTENCY'
+        | 'SAVE-POTENCY'
+        | 'PERCEPTION-POTENCY'
+        | 'ABILITY-APEX',
+      bonus: number
+    ): AbilityBlock | null => {
+      if (type === 'ABILITY-APEX') {
+        return {
+          id: hashData({ name: `class-ability-apex-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `7be7c32a-5d54-4d20-8cda-3e4c7a0a0ba6-${index}`,
+              type: 'select',
+              data: {
+                title: 'Select an Apex Attribute',
+                modeType: 'PREDEFINED',
+                optionType: 'CUSTOM',
+                optionsPredefined: [
+                  { name: 'Strength', var: 'ATTRIBUTE_STR' },
+                  { name: 'Dexterity', var: 'ATTRIBUTE_DEX' },
+                  { name: 'Constitution', var: 'ATTRIBUTE_CON' },
+                  { name: 'Intelligence', var: 'ATTRIBUTE_INT' },
+                  { name: 'Wisdom', var: 'ATTRIBUTE_WIS' },
+                  { name: 'Charisma', var: 'ATTRIBUTE_CHA' },
+                ].map((a, index) => ({
+                  id: `bd558680-9f89-460f-9505-b9decd61ebf4-${index}`,
+                  type: 'CUSTOM',
+                  title: a.name,
+                  description: `You select ${a.name} as your apex attribute.`,
+                  operations: [
+                    {
+                      id: `c675f2d4-0069-4dfb-ae99-76f4bc63830c-${index}`,
+                      type: 'conditional',
+                      data: {
+                        conditions: [
+                          {
+                            id: `de26284d-f691-431a-ad7c-f3edee53774f-${index}`,
+                            name: a.var,
+                            data: {
+                              name: a.var,
+                              type: 'attr',
+                              value: {
+                                value: 0,
+                                partial: false,
+                              },
+                            },
+                            type: 'attr',
+                            operator: 'GREATER_THAN_OR_EQUALS',
+                            value: '4',
+                          },
+                        ],
+                        trueOperations: [
+                          {
+                            id: `97cba452-8931-4173-b9b4-22f7b7cf230f-${index}`,
+                            type: 'adjValue',
+                            data: {
+                              variable: a.var,
+                              value: {
+                                value: 1,
+                              },
+                            },
+                          },
+                        ],
+                        falseOperations: [
+                          {
+                            id: `2d1de3a9-0bfd-478f-b81c-609e60b55ed3-${index}`,
+                            type: 'setValue',
+                            data: {
+                              variable: a.var,
+                              value: {
+                                value: 4,
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                })),
+              },
+            },
+          ],
+          name: `Ability Apex`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: `Choose one attribute to either boost or increase to +4 (whichever grants the higher value).`,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      if (type === 'ATTACK-POTENCY') {
+        return {
+          id: hashData({ name: `class-attack-potency-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `22879f23-5c21-4845-9af0-ae6d8f577601-${index}`,
+              type: 'addBonusToValue',
+              data: {
+                variable: 'ATTACK_ROLLS_BONUS',
+                text: '',
+                value: `+${bonus}`,
+                type: 'potency',
+              },
+            },
+          ],
+          name: `Attack Potency +${bonus}`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: `You gain a +${bonus} potency bonus to attack rolls with all weapons and unarmed attacks.`,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      if (type === 'DEFENSE-POTENCY') {
+        return {
+          id: hashData({ name: `class-defense-potency-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `3e820e64-272d-4993-8b67-ff81434a751d-${index}`,
+              type: 'addBonusToValue',
+              data: {
+                variable: 'AC_BONUS',
+                text: '',
+                value: `+${bonus}`,
+                type: 'potency',
+              },
+            },
+          ],
+          name: `Defense Potency +${bonus}`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: `You gain a +${bonus} potency bonus to AC.`,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      if (type === 'DEVA-ATTACKS') {
+        return {
+          id: hashData({ name: `class-devastating-attacks-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `967c1851-50ed-4efd-98d1-91eab7244647-${index}`,
+              type: 'setValue',
+              data: {
+                variable: 'MINIMUM_WEAPON_DAMAGE_DICE',
+                value: bonus,
+              },
+            },
+          ],
+          name: `Devastating Attacks (${bonus} dice)`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: `Your weapon and unarmed ${convertToHardcodedLink('action', 'Strike', 'Strikes')} have ${bonus} damage dice instead.`,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      if (type === 'SAVE-POTENCY') {
+        return {
+          id: hashData({ name: `class-save-potency-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `a453b818-4ed8-499b-ade5-b58bed8b04eb-${index}`,
+              type: 'addBonusToValue',
+              data: {
+                variable: 'SAVE_FORT',
+                text: '',
+                value: `+${bonus}`,
+                type: 'potency',
+              },
+            },
+            {
+              id: `ae813e9b-aa7f-4ab3-8fcc-991c1db0ad5f-${index}`,
+              type: 'addBonusToValue',
+              data: {
+                variable: 'SAVE_REFLEX',
+                text: '',
+                value: `+${bonus}`,
+                type: 'potency',
+              },
+            },
+            {
+              id: `5da027f7-fb6f-4292-a88e-4ffd387c9515-${index}`,
+              type: 'addBonusToValue',
+              data: {
+                variable: 'SAVE_WILL',
+                text: '',
+                value: `+${bonus}`,
+                type: 'potency',
+              },
+            },
+          ],
+          name: `Saving Throw Potency +${bonus}`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: `You gain a +${bonus} potency bonus to saves.`,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      if (type === 'PERCEPTION-POTENCY') {
+        return {
+          id: hashData({ name: `class-perception-potency-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `808c2515-a700-438c-bd10-8b6d3a7b6690-${index}`,
+              type: 'addBonusToValue',
+              data: {
+                variable: 'PERCEPTION',
+                text: '',
+                value: `+${bonus}`,
+                type: 'potency',
+              },
+            },
+          ],
+          name: `Perception Potency +${bonus}`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: `You gain a +${bonus} potency bonus to Perception.`,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      if (type === 'SKILL-POTENCY') {
+        let description = ``;
+        if (bonus === 1) {
+          description = `Choose a single skill. You gain a +1 potency bonus with that skill.`;
+        } else if (bonus === 2) {
+          description = `Choose a skill you have a +1 potency bonus in and increase its potency bonus to +2.`;
+        } else if (bonus === 3) {
+          description = `Choose a skill you have a +2 potency bonus in and increase its potency bonus to +3.`;
+        } else if (bonus === 4) {
+          description = `Choose a skill you have a +3 potency bonus in and increase its potency bonus to +4.`;
+        }
+
+        description += ' You can spend 1 week to retrain this assignment at any time.';
+
+        return {
+          id: hashData({ name: `class-skill-potency-${index}` }),
+          created_at: '',
+          operations: [
+            {
+              id: `13708367-74f2-4ae5-8610-bf82743c86ba-${index}`,
+              type: 'select',
+              data: {
+                title: 'Select a Skill',
+                modeType: 'PREDEFINED',
+                optionType: 'CUSTOM',
+                optionsPredefined: getAllSkillVariables('CHARACTER').map((v, index) => {
+                  const label = variableToLabel(v);
+                  return {
+                    id: `2e70cccb-cdcd-4e76-8eb1-85f1c72a215e-${index}`,
+                    type: 'CUSTOM',
+                    title: label,
+                    description: `You increase your potency bonus in ${label}.`,
+                    operations: [
+                      {
+                        id: `3a6cc24d-9f48-4bee-bfbe-903d01fc9ee7-${index}`,
+                        type: 'addBonusToValue',
+                        data: {
+                          variable: v.name,
+                          value: `+${bonus}`,
+                          type: 'potency',
+                          text: '',
+                        },
+                      },
+                    ],
+                  };
+                }),
+              },
+            },
+          ], // TODO: Filter to only show skills you have the prev bonus in
+          name: `Skill Potency +${bonus}`,
+          actions: null,
+          level: level,
+          rarity: 'COMMON',
+          description: description,
+          type: 'class-feature',
+          content_source_id: -1,
+        };
+      }
+
+      return null;
+    };
+
+    const abpSections = [
+      getAbpAbility(0, 2, 'ATTACK-POTENCY', 1),
+      getAbpAbility(1, 3, 'SKILL-POTENCY', 1),
+      getAbpAbility(2, 4, 'DEVA-ATTACKS', 2),
+      getAbpAbility(3, 5, 'DEFENSE-POTENCY', 1),
+      getAbpAbility(4, 6, 'SKILL-POTENCY', 1),
+      getAbpAbility(5, 7, 'PERCEPTION-POTENCY', 1),
+      getAbpAbility(6, 8, 'SAVE-POTENCY', 1),
+      getAbpAbility(7, 9, 'SKILL-POTENCY', 2),
+      getAbpAbility(8, 10, 'ATTACK-POTENCY', 2),
+      getAbpAbility(9, 11, 'DEFENSE-POTENCY', 2),
+      getAbpAbility(10, 12, 'DEVA-ATTACKS', 3),
+      getAbpAbility(11, 13, 'PERCEPTION-POTENCY', 2),
+      getAbpAbility(12, 13, 'SKILL-POTENCY', 2),
+      getAbpAbility(13, 13, 'SKILL-POTENCY', 1),
+      getAbpAbility(14, 14, 'SAVE-POTENCY', 2),
+      getAbpAbility(15, 15, 'SKILL-POTENCY', 2),
+      getAbpAbility(16, 15, 'SKILL-POTENCY', 1),
+      getAbpAbility(17, 16, 'ATTACK-POTENCY', 3),
+      getAbpAbility(18, 17, 'ABILITY-APEX', 0),
+      getAbpAbility(19, 17, 'SKILL-POTENCY', 3),
+      getAbpAbility(20, 17, 'SKILL-POTENCY', 1),
+      getAbpAbility(21, 18, 'DEFENSE-POTENCY', 3),
+      getAbpAbility(22, 19, 'DEVA-ATTACKS', 4),
+      getAbpAbility(23, 19, 'PERCEPTION-POTENCY', 3),
+      getAbpAbility(24, 20, 'SAVE-POTENCY', 3),
+      getAbpAbility(25, 20, 'SKILL-POTENCY', 3),
+      getAbpAbility(26, 20, 'SKILL-POTENCY', 2),
+      getAbpAbility(27, 20, 'SKILL-POTENCY', 1),
+    ].filter(isTruthy);
+
+    classFeatures = [...classFeatures, ...abpSections];
+  }
+
+  //
 
   const operationsPassthrough = async (options?: OperationOptions) => {
     let contentSourceResults: {
@@ -636,7 +986,7 @@ export async function executeCreatureOperations(
 }
 
 function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {
-  const merged = _.cloneDeep(normal);
+  const merged = cloneDeep(normal);
 
   // New search n fix, fixes `results` array with all nulls when the other doesn't
   const recursiveUpdate = (obj: Record<string, any>, otherObj: Record<string, any>) => {
@@ -665,13 +1015,13 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
   recursiveUpdate(merged, conditional);
 
   // Merge simple arrays
-  for (const [key, value] of Object.entries(_.cloneDeep(conditional))) {
+  for (const [key, value] of Object.entries(cloneDeep(conditional))) {
     if (merged[key]) {
       merged[key].push(...value);
     } else {
       merged[key] = value;
     }
-    merged[key] = _.uniqWith(merged[key].filter(isTruthy), _.isEqual);
+    merged[key] = uniqWith(merged[key].filter(isTruthy), isEqual);
   }
 
   // Merge arrays of results (like class features)
@@ -683,7 +1033,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
         found = true;
         const duplicate = value.find((v2) => v2.baseSource?.id === v.baseSource?.id);
         if (duplicate) {
-          v.baseResults = _.mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
+          v.baseResults = mergeWith([], duplicate.baseResults, v.baseResults, (objValue, srcValue) => {
             // Update if value is "null" or "undefined"
             if (objValue === null || objValue === undefined) {
               return srcValue;
@@ -706,7 +1056,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
       }
     }
     if (found) {
-      merged[key] = _.uniqWith(newValue, _.isEqual);
+      merged[key] = uniqWith(newValue, isEqual);
     }
   }
 
@@ -714,7 +1064,7 @@ function mergeOperationResults(normal: Record<string, any[]>, conditional: Recor
 }
 
 function limitBoostOptions(operations: Operation[], operationResults: OperationResult[]): OperationResult[] {
-  operationResults = _.cloneDeep(operationResults);
+  operationResults = cloneDeep(operationResults);
   const unselectedOptions: string[] = [];
 
   // Pull from all selections already made
@@ -758,7 +1108,7 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
 }
 
 export function getAdjustedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
-  let classOperations = _.cloneDeep(class_.operations ?? []);
+  let classOperations = cloneDeep(class_.operations ?? []);
 
   if (baseTrainings !== null) {
     classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));
@@ -795,7 +1145,7 @@ export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number):
 }
 
 export function getAdjustedAncestryOperations(varId: StoreID, character: Character, inputOps: Operation[]) {
-  let operations = _.cloneDeep(inputOps);
+  let operations = cloneDeep(inputOps);
   if (character.options?.alternate_ancestry_boosts) {
     // Remove all ancestry boost/flaws operations
     const newOps = operations.filter(
@@ -872,7 +1222,7 @@ export function getAdjustedAncestryOperations(varId: StoreID, character: Charact
 }
 
 export function getExtendedAncestryOperations(varId: StoreID, ancestry: Ancestry) {
-  let ancestryOperations = _.cloneDeep(ancestry.operations ?? []);
+  let ancestryOperations = cloneDeep(ancestry.operations ?? []);
 
   ancestryOperations.push(...addedAncestryLanguages(varId, ancestry));
 

@@ -33,10 +33,8 @@ import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { AbilityBlock, AbilityBlockType, ActionCost, Availability, Rarity, Trait } from '@typing/content';
 import { Operation } from '@typing/operations';
-import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
 import { useState } from 'react';
 
 /**

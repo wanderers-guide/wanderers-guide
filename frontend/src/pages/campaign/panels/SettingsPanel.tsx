@@ -1,41 +1,28 @@
-import { generateNames } from '@ai/fantasygen-dev/name-controller';
-import { characterState } from '@atoms/characterAtoms';
 import { GroupLinkSwitch, LinkSwitch, LinksGroup } from '@common/LinksGroup';
-import { GUIDE_BLUE } from '@constants/data';
 import {
   Stack,
   Group,
   Box,
-  Avatar,
   Title,
   Text,
   TextInput,
-  ActionIcon,
   rem,
   Select,
   Tabs,
   useMantineTheme,
-  FileButton,
   Button,
-  UnstyledButton,
-  PasswordInput,
-  Image,
   Divider,
   Paper,
   ScrollArea,
-  ColorInput,
-  HoverCard,
   List,
   Anchor,
   Textarea,
   Menu,
 } from '@mantine/core';
 import { useElementSize, useMediaQuery } from '@mantine/hooks';
-import { modals, openContextModal } from '@mantine/modals';
+import { modals } from '@mantine/modals';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import {
-  IconUserCircle,
-  IconRefreshDot,
   IconBooks,
   IconAsset,
   IconVocabulary,
@@ -46,18 +33,11 @@ import {
   IconBrandSafari,
   IconDots,
   IconServer,
-  IconFlagPlus,
-  IconKey,
   IconArchive,
   IconHexagonalPrism,
 } from '@tabler/icons-react';
-import { getAllBackgroundImages } from '@utils/background-images';
-import { getAllPortraitImages } from '@utils/portrait-images';
-import useRefresh from '@utils/use-refresh';
-import * as _ from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRecoilState } from 'recoil';
-import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   defineDefaultSources,
@@ -65,18 +45,17 @@ import {
   findRequiredContentSources,
   resetContentStore,
 } from '@content/content-store';
-import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
+import { getPublicUser } from '@auth/user-manager';
 import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';
-import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
-import RichText from '@common/RichText';
 import { drawerState } from '@atoms/navAtoms';
 import { AbilityBlockType, Campaign, Character, ContentType } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
 import { isValidImage } from '@utils/images';
 import { makeRequest } from '@requests/request-manager';
+import { cloneDeep, isEqual, uniq } from 'lodash-es';
 
 export default function SettingsPanel(props: {
   panelHeight: number;
@@ -131,7 +110,7 @@ export default function SettingsPanel(props: {
       recommended_content_sources: {
         ...props.campaign.recommended_content_sources,
         enabled: enabled
-          ? _.uniq([...(props.campaign.recommended_content_sources?.enabled ?? []), ...inputIds])
+          ? uniq([...(props.campaign.recommended_content_sources?.enabled ?? []), ...inputIds])
           : props.campaign.recommended_content_sources?.enabled?.filter((id: number) => !inputIds.includes(id)),
       },
     });
@@ -144,7 +123,7 @@ export default function SettingsPanel(props: {
         recommended_content_sources: {
           ...props.campaign.recommended_content_sources,
           enabled: enabled
-            ? _.uniq([...(props.campaign.recommended_content_sources?.enabled ?? []), ...bookIds])
+            ? uniq([...(props.campaign.recommended_content_sources?.enabled ?? []), ...bookIds])
             : props.campaign.recommended_content_sources?.enabled?.filter((id: number) => !bookIds.includes(id)),
         },
       });
@@ -159,7 +138,7 @@ export default function SettingsPanel(props: {
     if (enabled) {
       // Handle dependency logic
       const requiredBooks = await findRequiredContentSources(
-        _.uniq([...(props.campaign?.recommended_content_sources?.enabled ?? []), ...inputIds])
+        uniq([...(props.campaign?.recommended_content_sources?.enabled ?? []), ...inputIds])
       );
       if (requiredBooks.newSources.length > 0) {
         modals.openConfirmModal({
@@ -219,23 +198,38 @@ export default function SettingsPanel(props: {
           backgroundColor: 'rgba(0, 0, 0, 0.13)',
         }}
       >
-        <ScrollArea h='100%' scrollbars='y'>
-          <Tabs defaultValue='books'>
-            <Tabs.List grow>
-              <Tabs.Tab value='books' leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='homebrew' leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='variants' leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
-              </Tabs.Tab>
-              <Tabs.Tab value='options' leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}>
-                <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
-              </Tabs.Tab>
-            </Tabs.List>
-
+        <Tabs defaultValue='books' h='100%'>
+          <Tabs.List grow>
+            <Tabs.Tab
+              value='books'
+              leftSection={isPhone ? undefined : <IconBooks style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Books</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='homebrew'
+              leftSection={isPhone ? undefined : <IconAsset style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Homebrew</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='variants'
+              leftSection={isPhone ? undefined : <IconVocabulary style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Variant Rules</Text>
+            </Tabs.Tab>
+            <Tabs.Tab
+              value='options'
+              leftSection={isPhone ? undefined : <IconSettings style={iconStyle} />}
+              px={isPhone ? 5 : undefined}
+            >
+              <Text fz={isPhone ? 11 : 'sm'}>Options</Text>
+            </Tabs.Tab>
+          </Tabs.List>
+          <ScrollArea h='90%' scrollbars='y'>
             <Tabs.Panel value='books'>
               <Stack gap={0} pt='sm'>
                 <LinksGroup
@@ -456,6 +450,21 @@ export default function SettingsPanel(props: {
                       recommended_variants: {
                         ...props.campaign.recommended_variants,
                         ancestry_paragon: enabled,
+                      },
+                    });
+                  }}
+                />
+                <LinkSwitch
+                  label='Automatic Bonus Progression'
+                  info={`This variant removes the item bonus to rolls and DCs usually provided by magic items (with the exception of armor’s item bonus) and replaces it with a new kind of bonus - potency - to reflect a character’s innate ability. In this variant, magic items, if they exist at all, can provide unique special abilities rather than numerical increases.`}
+                  url='https://2e.aonprd.com/Rules.aspx?ID=2741'
+                  enabled={props.campaign?.recommended_variants?.automatic_bonus_progression}
+                  onLinkChange={(enabled) => {
+                    props.setCampaign({
+                      ...props.campaign,
+                      recommended_variants: {
+                        ...props.campaign.recommended_variants,
+                        automatic_bonus_progression: enabled,
                       },
                     });
                   }}
@@ -708,9 +717,9 @@ export default function SettingsPanel(props: {
                       title='Custom Operations'
                       opened={openedOperations}
                       onClose={() => setOpenedOperations(false)}
-                      operations={_.cloneDeep(props.campaign.custom_operations ?? [])}
+                      operations={cloneDeep(props.campaign.custom_operations ?? [])}
                       onChange={(operations) => {
-                        if (_.isEqual(props.campaign.custom_operations, operations)) return;
+                        if (isEqual(props.campaign.custom_operations, operations)) return;
 
                         props.setCampaign({
                           ...props.campaign,
@@ -722,8 +731,8 @@ export default function SettingsPanel(props: {
                 )}
               </Stack>
             </Tabs.Panel>
-          </Tabs>
-        </ScrollArea>
+          </ScrollArea>
+        </Tabs>
       </Paper>
     </Box>
   );

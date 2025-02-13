@@ -3,10 +3,9 @@ import { ActionCost, Creature } from '@typing/content';
 import { OperationAddBonusToValue, OperationAdjValue, OperationGiveTrait, OperationSetValue } from '@typing/operations';
 import { sign } from './numbers';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
-import _ from 'lodash-es';
 import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
-import { im } from 'mathjs';
 import { toLabel } from './strings';
+import { cloneDeep } from 'lodash-es';
 
 export function findCreatureTraits(creature: Creature) {
   return (
@@ -17,7 +16,7 @@ export function findCreatureTraits(creature: Creature) {
 }
 
 export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
-  let creature = _.cloneDeep(input);
+  let creature = cloneDeep(input);
   const mod = adjustment === 'ELITE' ? 1 : -1;
 
   // HP Adjustment
@@ -140,7 +139,7 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
   creature.name = `${creature.name} (${adjustment === 'ELITE' ? 'elite' : 'weak'})`;
   creature.details.adjustment = adjustment;
 
-  return _.cloneDeep(creature);
+  return cloneDeep(creature);
 }
 
 export function extractCreatureInfo(text: string) {

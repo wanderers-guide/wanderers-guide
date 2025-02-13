@@ -31,7 +31,6 @@ import {
   Divider,
   Group,
   HoverCard,
-  Image,
   Menu,
   NumberInput,
   Paper,
@@ -56,8 +55,6 @@ import {
 import { InventoryItem } from '@typing/content';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import useRefresh from '@utils/use-refresh';
-import _ from 'lodash-es';
 import { evaluate } from 'mathjs/number';
 import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
@@ -71,6 +68,7 @@ import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { StoreID } from '@typing/variables';
 import { MoveItemMenu } from '@common/operations/item/MoveItemMenu';
+import { cloneDeep } from 'lodash-es';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -244,8 +242,9 @@ export function InvItemDrawerContent(props: {
       </Box>
       <Box
         style={{
-          position: 'absolute',
-          bottom: 0,
+          position: 'fixed',
+          bottom: 20,
+          right: 5,
           width: '100%',
         }}
       >
@@ -352,7 +351,7 @@ export function InvItemDrawerContent(props: {
             editItem={invItem.item}
             onComplete={async (item) => {
               const newInvItem = {
-                ..._.cloneDeep(invItem),
+                ...cloneDeep(invItem),
                 item,
               };
               onItemUpdate(newInvItem);
@@ -791,39 +790,43 @@ function InvItemSections(props: {
     categoryAndGroupSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={0}>
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.5' span>
-              Category
-            </Text>
-            <Text c='gray.5' span>
-              {toLabel(props.invItem.item.meta_data?.category)}
-            </Text>
-          </Group>
-          <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
-            <Text fw={600} c='gray.5' span>
-              Group
-            </Text>
-            <HoverCard
-              disabled={!groupDesc}
-              width={265}
-              shadow='md'
-              zIndex={2000}
-              openDelay={250}
-              withinPortal
-              withArrow
-            >
-              <HoverCard.Target>
-                <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
-                  {toLabel(props.invItem.item.meta_data?.group)}
-                </Text>
-              </HoverCard.Target>
-              <HoverCard.Dropdown>
-                <RichText ta='justify' fz='xs' store={props.storeId}>
-                  {groupDesc?.description}
-                </RichText>
-              </HoverCard.Dropdown>
-            </HoverCard>
-          </Group>
+          {props.invItem.item.meta_data?.category && (
+            <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+              <Text fw={600} c='gray.5' span>
+                Category
+              </Text>
+              <Text c='gray.5' span>
+                {toLabel(props.invItem.item.meta_data?.category)}
+              </Text>
+            </Group>
+          )}
+          {props.invItem.item.meta_data?.group && (
+            <Group wrap='nowrap' gap={10} style={{ flexGrow: 1 }}>
+              <Text fw={600} c='gray.5' span>
+                Group
+              </Text>
+              <HoverCard
+                disabled={!groupDesc}
+                width={265}
+                shadow='md'
+                zIndex={2000}
+                openDelay={250}
+                withinPortal
+                withArrow
+              >
+                <HoverCard.Target>
+                  <Text c='gray.5' style={{ cursor: groupDesc ? 'pointer' : undefined }} span>
+                    {toLabel(props.invItem.item.meta_data?.group)}
+                  </Text>
+                </HoverCard.Target>
+                <HoverCard.Dropdown>
+                  <RichText ta='justify' fz='xs' store={props.storeId}>
+                    {groupDesc?.description}
+                  </RichText>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </Group>
+          )}
         </Group>
       </Paper>
     );

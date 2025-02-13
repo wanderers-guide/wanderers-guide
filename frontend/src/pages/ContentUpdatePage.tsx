@@ -26,7 +26,6 @@ import { useQuery } from '@tanstack/react-query';
 import { setPageTitle } from '@utils/document-change';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import _ from 'lodash-es';
 import { useMemo } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';

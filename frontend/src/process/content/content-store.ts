@@ -18,7 +18,7 @@ import {
 import { RequestType } from '@typing/requests';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';
-import _ from 'lodash-es';
+import { cloneDeep, isString, uniq } from 'lodash-es';
 
 ///////////////////////////////////////////////////////
 //                      Storing                      //
@@ -56,7 +56,7 @@ function emptyIdStore() {
 
 function getStoredNames(type: ContentType, data: Record<string, any>) {
   if (!data.name) return null;
-  if (_.isString(data.name)) {
+  if (isString(data.name)) {
     const contentMap = idStore.get(type);
     if (!contentMap) return null;
     for (const content of contentMap.values()) {
@@ -111,12 +111,12 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 
 let defaultSources: number[] | undefined = undefined; // undefined means all sources
 export function defineDefaultSources(sources?: number[]) {
-  defaultSources = sources ? _.uniq(sources) : undefined;
-  return _.cloneDeep(defaultSources);
+  defaultSources = sources ? uniq(sources) : undefined;
+  return cloneDeep(defaultSources);
 }
 
 export function getDefaultSources() {
-  return _.cloneDeep(defaultSources ?? []);
+  return cloneDeep(defaultSources ?? []);
 }
 
 export function getCachedSources(): ContentSource[] {

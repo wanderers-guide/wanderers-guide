@@ -1,5 +1,5 @@
 import { isPlayingStarfinder } from '@content/system-handler';
-import _ from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 const PATHFINDER_SPECIALIZATIONS = [
   {
@@ -136,9 +136,9 @@ export function getWeaponSpecialization(group: string) {
 }
 
 export function getWeaponSpecializations() {
-  const SPECIALIZATIONS = _.cloneDeep(PATHFINDER_SPECIALIZATIONS);
+  const SPECIALIZATIONS = cloneDeep(PATHFINDER_SPECIALIZATIONS);
   if (isPlayingStarfinder()) {
-    SPECIALIZATIONS.push(..._.cloneDeep(STARFINDER_SPECIALIZATIONS));
+    SPECIALIZATIONS.push(...cloneDeep(STARFINDER_SPECIALIZATIONS));
   }
   return SPECIALIZATIONS.sort((a, b) => a.name.localeCompare(b.name));
 }

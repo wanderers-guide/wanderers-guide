@@ -4,7 +4,7 @@ import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@typing/content';
 import { isTruthy } from '@utils/type-fixing';
-import * as _ from 'lodash-es';
+import { uniq } from 'lodash-es';
 
 interface TraitsInputProps extends TagsInputProps {
   defaultTraits?: number[];
@@ -63,7 +63,7 @@ export default function TraitsInput(props: TraitsInputProps) {
               ? traits.filter((trait) => props.traits?.includes(trait.id)).map((trait) => trait.name)
               : props.value
           }
-          data={_.uniq(traits.map((trait) => trait.name))}
+          data={uniq(traits.map((trait) => trait.name))}
           limit={1000}
           onChange={(value) => {
             if (props.onTraitChange) {

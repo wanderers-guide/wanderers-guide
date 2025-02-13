@@ -1,6 +1,5 @@
 import { Text, Stack, Button, Group, Modal, Title, Box } from '@mantine/core';
 import { Inventory, Item } from '@typing/content';
-import * as _ from 'lodash-es';
 import { CoinSection } from '@pages/character_sheet/panels/inventory/CoinsSection';
 import { convertToCp, purchase } from '@items/currency-handler';
 

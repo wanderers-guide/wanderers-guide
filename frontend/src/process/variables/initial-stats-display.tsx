@@ -18,7 +18,6 @@ import {
   VariableValue,
 } from '@typing/variables';
 import { listToLabel, toLabel } from '@utils/strings';
-import * as _ from 'lodash-es';
 import { ReactNode } from 'react';
 import { SetterOrUpdater } from 'recoil';
 import { getVariable } from './variable-manager';
@@ -32,6 +31,7 @@ import {
   variableToLabel,
 } from './variable-utils';
 import { nodeToString } from '@utils/components';
+import { cloneDeep, isNumber } from 'lodash-es';
 
 type CharacterState = [Character | null, SetterOrUpdater<Character | null>];
 
@@ -160,7 +160,7 @@ export function getStatDisplay(
   };
 
   let uuid = variableName;
-  for (const operation of _.cloneDeep(operations).sort((a, b) => {
+  for (const operation of cloneDeep(operations).sort((a, b) => {
     // Selects should be at the end to make sure we get the proper best value
     if (a.type === 'select' && b.type !== 'select') return 1;
     if (a.type !== 'select' && b.type === 'select') return -1;
@@ -231,7 +231,7 @@ export function getStatDisplay(
     ? // @ts-expect-error TODO actually think this is an error but will leave for now
       bestValue.value
     : bestValue;
-  if (_.isNumber(bestValueNum)) {
+  if (isNumber(bestValueNum)) {
     if (options?.onlyNegatives) {
       if (bestValueNum >= 0) {
         return {
@@ -293,7 +293,7 @@ export function getDisplay(
 
   // Handle attributes
   if (isAttributeValue(value)) {
-    // || (_.isNumber(+value) && variable?.type === 'attr')
+    // || (isNumber(+value) && variable?.type === 'attr')
     if (operation) {
       if (mode === 'READ/WRITE') {
         return (

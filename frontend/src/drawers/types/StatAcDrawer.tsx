@@ -8,7 +8,6 @@ import { Inventory, InventoryItem, LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { getFinalAcValue, getVariableBreakdown } from '@variables/variable-display';
-import * as _ from 'lodash-es';
 import { useRecoilValue } from 'recoil';
 
 export function StatAcDrawerTitle(props: {
@@ -180,7 +179,8 @@ export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: In
                         <List size='xs'>
                           {acBonusParts.conditionals.map((item, i) => (
                             <List.Item key={i}>
-                              {item.text}{' '}
+                              {item.text}
+                              <br />
                               <Text c='dimmed' span>
                                 {'['}from {item.source}
                                 {']'}
