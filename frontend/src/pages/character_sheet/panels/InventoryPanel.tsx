@@ -1,21 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
-import { MoveItemMenu } from '@common/operations/item/MoveItemMenu';
 import { isItemVisible } from '@content/content-hidden';
 
-import classes from '@css/FaqSimple.module.css';
-import {
-  getBulkLimit,
-  getInvBulk,
-  handleAddItem,
-  handleDeleteItem,
-  handleMoveItem,
-  handleUpdateItem,
-  isItemContainer,
-  isItemImplantable,
-  isItemInvestable,
-  isItemWeapon,
-  labelizeBulk,
-} from '@items/inv-utils';
+import { getBulkLimit, getInvBulk, handleAddItem, isItemContainer, isItemWeapon, labelizeBulk } from '@items/inv-utils';
 import {
   Accordion,
   ActionIcon,
@@ -45,7 +31,6 @@ import { cloneDeep } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { CurrencySection } from './inventory/CoinsSection';
-import { InvItemOption } from './inventory/InventoryItem';
 import { ItemEntry } from './inventory/ItemEntry';
 
 export default function InventoryPanel(props: {
