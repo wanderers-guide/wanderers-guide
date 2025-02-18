@@ -314,7 +314,7 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   const profData = getProfTotal(id, item);
   const hasWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false;
   const hasGreaterWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
-  
+
   if (hasGreaterWeaponSpecialization) {
     if (profData.prof === 'E') {
       parts.set(`Since you're expert and have greater weapon specialization, you deal 4 additional damage.`, 4);
@@ -402,15 +402,6 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
   // Weapon Specialization
   const profData = getProfTotal(id, item);
   const hasWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION')?.value ?? false;
-  if (hasWeaponSpecialization) {
-    if (profData.prof === 'E') {
-      parts.set(`Since you're expert and have weapon specialization, you deal 2 additional damage.`, 2);
-    } else if (profData.prof === 'M') {
-      parts.set(`Since you're master and have weapon specialization, you deal 3 additional damage.`, 3);
-    } else if (profData.prof === 'L') {
-      parts.set(`Since you're legendary and have weapon specialization, you deal 4 additional damage.`, 4);
-    }
-  }
   const hasGreaterWeaponSpecialization = getVariable<VariableBool>(id, 'WEAPON_SPECIALIZATION_GREATER')?.value ?? false;
   if (hasGreaterWeaponSpecialization) {
     if (profData.prof === 'E') {
@@ -419,6 +410,14 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
       parts.set(`Since you're master and have greater weapon specialization, you deal 6 additional damage.`, 6);
     } else if (profData.prof === 'L') {
       parts.set(`Since you're legendary and have greater weapon specialization, you deal 8 additional damage.`, 8);
+    }
+  } else if (hasWeaponSpecialization) {
+    if (profData.prof === 'E') {
+      parts.set(`Since you're expert and have weapon specialization, you deal 2 additional damage.`, 2);
+    } else if (profData.prof === 'M') {
+      parts.set(`Since you're master and have weapon specialization, you deal 3 additional damage.`, 3);
+    } else if (profData.prof === 'L') {
+      parts.set(`Since you're legendary and have weapon specialization, you deal 4 additional damage.`, 4);
     }
   }
 
