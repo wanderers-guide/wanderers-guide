@@ -1,7 +1,39 @@
+import { characterState } from '@atoms/characterAtoms';
 import { LEGACY_URL } from '@constants/data';
-import { Center, Stack, Title, Anchor, Text, Box } from '@mantine/core';
+import { fetchContentAll } from '@content/content-store';
+import { Center, Stack, Title, Anchor, Text, Box, Group, Select } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
+import { Creature, Trait } from '@typing/content';
+import { findCreatureTraits } from '@utils/creature';
+import { use } from 'chai';
+import { useMemo, useState } from 'react';
+import { useRecoilState } from 'recoil';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [selectedType, setSelectedType] = useState<number | null>(null);
+
+  const { data, isFetching } = useQuery({
+    queryKey: [`get-companions-data`],
+    queryFn: async () => {
+      const traits = await fetchContentAll<Trait>('trait');
+      const creatures = await fetchContentAll<Creature>('creature');
+
+      return {
+        traits,
+        creatures,
+      };
+    },
+  });
+
+  const selectionTypes = useMemo(() => {
+    return data?.traits?.filter((t) => t.meta_data?.companion_type_trait) ?? [];
+  }, [data]);
+
+  const creatureOptions = useMemo(() => {
+    return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
+  }, [data, selectedType]);
+
   return (
     <Box h={props.panelHeight}>
       <Center pt={50}>
@@ -22,6 +54,37 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           </Text>
         </Stack>
       </Center>
+
+      {/* <Stack>{character?.companions?.list?.map((c) => <Text key={c.id}>{c.name}</Text>)}</Stack>
+
+      <Group gap={0} align='center' justify='center'>
+        <Text pr={10}>Add</Text>
+        <Select
+          placeholder='Companion'
+          data={selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name }))}
+          value={selectedType?.toString()}
+          onChange={(value) => setSelectedType(parseInt(`${value ?? -1}`))}
+          w={200}
+          styles={{
+            input: {
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+            },
+          }}
+        />
+        <Select
+          placeholder='Selection'
+          disabled={!selectedType || selectedType === -1}
+          data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
+          w={200}
+          styles={{
+            input: {
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+            },
+          }}
+        />
+      </Group> */}
     </Box>
   );
 }

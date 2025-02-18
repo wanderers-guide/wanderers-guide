@@ -487,7 +487,9 @@ interface Character extends LivingEntity {
   content_sources?: {
     enabled?: number[];
   };
-  companions?: Record<string, any>; // TODO
+  companions?: {
+    list?: Creature[];
+  };
 }
 
 interface Campaign {
