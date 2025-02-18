@@ -1,4 +1,5 @@
 import { collectEntitySpellcasting } from '@content/collect-content';
+import { fetchContentById } from '@content/content-store';
 import { Item, LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
@@ -123,4 +124,59 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
   }
 
   return detectedSpells;
+}
+
+/**
+ * Utility function to get the rank of a spell
+ * @param spell - Spell
+ * @param entity - Living entity
+ * @returns - Rank of the spell
+ */
+export function getSpellRank(spell: Spell, entity?: LivingEntity | null) {
+  if (spell && isCantrip(spell)) {
+    if (entity) {
+      return Math.ceil(entity.level / 2);
+    } else {
+      return 1;
+    }
+  }
+  if (spell && entity && isFocusSpell(spell)) {
+    return Math.max(Math.ceil(entity.level / 2), spell.rank);
+  }
+  return spell.rank;
+}
+
+/**
+ * Utility function to get the heightening data of a spell
+ * @param spell - Spell
+ * @param entity - Living entity
+ * @returns - Map of heightening data, keyed by the heightening amount, and value being the number of times it's active
+ */
+export async function getHeighteningData(spell: Spell, entity?: LivingEntity | null) {
+  const activeHeightening = new Map<string, number>(); // (heighten amount, number of times it's active)
+
+  const ogSpell = await fetchContentById<Spell>('spell', spell.id);
+  if (!ogSpell) {
+    return activeHeightening;
+  }
+
+  const spellRank = getSpellRank(spell, entity);
+  const ogSpellRank = getSpellRank(ogSpell);
+  const rankDiff = spellRank - ogSpellRank;
+
+  if (spell.heightened && spell.heightened.text.length > 0) {
+    for (const h of spell.heightened.text) {
+      if (h.amount.startsWith('(+')) {
+        const a = parseInt(h.amount.slice(2));
+        activeHeightening.set(h.amount, Math.floor(rankDiff / a));
+      } else if (h.amount.startsWith('(')) {
+        const a = parseInt(h.amount.slice(1));
+        if (spellRank >= a) {
+          activeHeightening.set(h.amount, 1);
+        }
+      }
+    }
+  }
+
+  return activeHeightening;
 }

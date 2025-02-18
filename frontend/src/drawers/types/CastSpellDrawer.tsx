@@ -10,7 +10,7 @@ import { isActionCost } from '@content/content-utils';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, Paper } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
-import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
+import { getHeighteningData, getSpellRank, isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
@@ -40,14 +40,9 @@ export function CastSpellDrawerTitle(props: {
   let disableCasting = false;
 
   let rankTitle = 'Spell';
-  let rank = spell?.rank;
+  const rank = getSpellRank(spell, props.data.entity);
   if (spell && isCantrip(spell)) {
     rankTitle = 'Cantrip';
-    if (props.data.entity) {
-      rank = Math.ceil(props.data.entity.level / 2);
-    } else {
-      rank = 1;
-    }
   }
   if (spell && isRitual(spell)) {
     rankTitle = 'Ritual';
@@ -55,7 +50,6 @@ export function CastSpellDrawerTitle(props: {
 
   if (spell && props.data.entity && isFocusSpell(spell)) {
     // rankTitle = 'Focus';
-    rank = Math.max(Math.ceil(props.data.entity.level / 2), spell.rank);
 
     /*
     "You can’t cast a focus spell if its minimum rank is greater than
@@ -126,6 +120,15 @@ export function CastSpellDrawerContent(props: {
   };
 }) {
   const spell = props.data.spell;
+
+  const { data: heighteningData } = useQuery({
+    queryKey: [`find-spell-heightening-data-${spell.id}`, { id: spell.id }],
+    queryFn: async () => {
+      return await getHeighteningData(spell, props.data.entity);
+    },
+  });
+
+  const hasHeightening = (amount: string) => heighteningData && heighteningData.size > 0 && heighteningData.get(amount);
 
   const CR = [];
   const cast = spell?.cast ?? '';
@@ -316,10 +319,23 @@ export function CastSpellDrawerContent(props: {
             <Divider />
             {spell.heightened.text.map((text, index) => (
               <IndentedText key={index} ta='justify'>
-                <Text fw={600} c='gray.5' span>
-                  Heightened {text.amount}
-                </Text>{' '}
-                <RichText span>{text.text}</RichText>
+                <Text
+                  style={{
+                    opacity: props.data.entity && !hasHeightening(text.amount) ? 0.6 : 1,
+                  }}
+                >
+                  <Text fw={600} c='gray.5' span>
+                    Heightened {text.amount}{' '}
+                    {text.amount.startsWith('(+') && hasHeightening(text.amount) ? (
+                      <Text fw={600} c='gray.5' span>
+                        [{heighteningData?.get(text.amount)}x]
+                      </Text>
+                    ) : (
+                      ''
+                    )}
+                  </Text>{' '}
+                  <RichText span>{text.text}</RichText>
+                </Text>
               </IndentedText>
             ))}
           </Box>
