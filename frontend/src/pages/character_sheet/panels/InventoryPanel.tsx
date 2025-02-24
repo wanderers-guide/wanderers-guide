@@ -1,39 +1,11 @@
-import CopperCoin from '@assets/images/currency/copper.png';
-import GoldCoin from '@assets/images/currency/gold.png';
-import PlatinumCoin from '@assets/images/currency/platinum.png';
-import SilverCoin from '@assets/images/currency/silver.png';
 import { drawerState } from '@atoms/navAtoms';
-import { EllipsisText } from '@common/EllipsisText';
-import { ItemIcon } from '@common/ItemIcon';
 import { isItemVisible } from '@content/content-hidden';
-import { isPlayingStarfinder } from '@content/system-handler';
-import classes from '@css/FaqSimple.module.css';
-import { priceToString } from '@items/currency-handler';
-import {
-  getBulkLimit,
-  getInvBulk,
-  getItemBulk,
-  getItemQuantity,
-  handleAddItem,
-  handleDeleteItem,
-  handleMoveItem,
-  handleUpdateItem,
-  isItemContainer,
-  isItemEquippable,
-  isItemImplantable,
-  isItemInvestable,
-  isItemWeapon,
-  isItemWithQuantity,
-  labelizeBulk,
-  reachedImplantLimit,
-  reachedInvestedLimit,
-} from '@items/inv-utils';
-import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
+
+import { getBulkLimit, getInvBulk, handleAddItem, isItemContainer, isItemWeapon, labelizeBulk } from '@items/inv-utils';
 import {
   Accordion,
   ActionIcon,
   Anchor,
-  Avatar,
   Badge,
   Box,
   Button,
@@ -51,15 +23,15 @@ import {
 import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { CreateItemModal } from '@modals/CreateItemModal';
-import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
-import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
-import { sign } from '@utils/numbers';
-import { cloneDeep, truncate } from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
+import { CurrencySection } from './inventory/CoinsSection';
+import { ItemEntry } from './inventory/ItemEntry';
 
 export default function InventoryPanel(props: {
   id: StoreID;
@@ -278,173 +250,19 @@ export default function InventoryPanel(props: {
             }}
           >
             {cloneDeep(invItems)
-              .sort((a, b) => a.item.name.localeCompare(b.item.name))
-              .map((invItem, index) => (
+              .sort((a: InventoryItem, b: InventoryItem) => a.item.name.localeCompare(b.item.name))
+              .map((invItem: InventoryItem, index: number) => (
                 <Box key={index}>
-                  {isItemContainer(invItem.item) ? (
-                    <Accordion.Item className={classes.item} value={`${index}`} w='100%'>
-                      <Accordion.Control>
-                        <Box pr={5}>
-                          <InvItemOption
-                            id={props.id}
-                            entity={props.entity}
-                            isPhone={isPhone}
-                            hideSections
-                            invItem={invItem}
-                            onEquip={(invItem) => {
-                              const newInvItem = cloneDeep(invItem);
-                              newInvItem.is_equipped = !newInvItem.is_equipped;
-                              handleUpdateItem(props.setInventory, newInvItem);
-                            }}
-                            onInvest={(invItem) => {
-                              const newInvItem = cloneDeep(invItem);
-
-                              if (isItemInvestable(newInvItem.item)) {
-                                newInvItem.is_invested = !newInvItem.is_invested;
-                              }
-                              if (isItemImplantable(newInvItem.item)) {
-                                newInvItem.is_implanted = !newInvItem.is_implanted;
-                              }
-
-                              handleUpdateItem(props.setInventory, newInvItem);
-                            }}
-                            onViewItem={() => {
-                              openDrawer({
-                                type: 'inv-item',
-                                data: {
-                                  storeId: props.id,
-                                  zIndex: 100,
-                                  invItem: cloneDeep(invItem),
-                                  onItemUpdate: (newInvItem: InventoryItem) => {
-                                    handleUpdateItem(props.setInventory, newInvItem);
-                                  },
-                                  onItemDelete: (newInvItem: InventoryItem) => {
-                                    handleDeleteItem(props.setInventory, newInvItem);
-                                    openDrawer(null);
-                                  },
-                                  onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                    handleMoveItem(props.setInventory, invItem, containerItem);
-                                  },
-                                },
-                                extra: { addToHistory: true },
-                              });
-                            }}
-                          />
-                        </Box>
-                      </Accordion.Control>
-                      <Accordion.Panel>
-                        <Stack gap={5}>
-                          {invItem?.container_contents.map((containedItem, index) => (
-                            <StatButton
-                              key={index}
-                              onClick={() => {
-                                openDrawer({
-                                  type: 'inv-item',
-                                  data: {
-                                    storeId: props.id,
-                                    zIndex: 100,
-                                    invItem: cloneDeep(containedItem),
-                                    onItemUpdate: (newInvItem: InventoryItem) => {
-                                      handleUpdateItem(props.setInventory, newInvItem);
-                                    },
-                                    onItemDelete: (newInvItem: InventoryItem) => {
-                                      handleDeleteItem(props.setInventory, newInvItem);
-                                      openDrawer(null);
-                                    },
-                                    onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                      handleMoveItem(props.setInventory, invItem, containerItem);
-                                    },
-                                  },
-                                  extra: { addToHistory: true },
-                                });
-                              }}
-                            >
-                              <InvItemOption
-                                id={props.id}
-                                entity={props.entity}
-                                isPhone={isPhone}
-                                invItem={containedItem}
-                                preventEquip
-                                onEquip={(invItem) => {
-                                  const newInvItem = cloneDeep(invItem);
-                                  newInvItem.is_equipped = !newInvItem.is_equipped;
-                                  handleUpdateItem(props.setInventory, newInvItem);
-                                }}
-                                onInvest={(invItem) => {
-                                  const newInvItem = cloneDeep(invItem);
-
-                                  if (isItemInvestable(newInvItem.item)) {
-                                    newInvItem.is_invested = !newInvItem.is_invested;
-                                  }
-                                  if (isItemImplantable(newInvItem.item)) {
-                                    newInvItem.is_implanted = !newInvItem.is_implanted;
-                                  }
-
-                                  handleUpdateItem(props.setInventory, newInvItem);
-                                }}
-                              />
-                            </StatButton>
-                          ))}
-                          {invItem?.container_contents.length === 0 && (
-                            <Text c='gray.7' fz='sm' ta='center' fs='italic'>
-                              Container is empty
-                            </Text>
-                          )}
-                        </Stack>
-                      </Accordion.Panel>
-                    </Accordion.Item>
-                  ) : (
-                    <Box mb={5}>
-                      <StatButton
-                        key={index}
-                        onClick={() => {
-                          openDrawer({
-                            type: 'inv-item',
-                            data: {
-                              storeId: props.id,
-                              zIndex: 100,
-                              invItem: cloneDeep(invItem),
-                              onItemUpdate: (newInvItem: InventoryItem) => {
-                                handleUpdateItem(props.setInventory, newInvItem);
-                              },
-                              onItemDelete: (newInvItem: InventoryItem) => {
-                                handleDeleteItem(props.setInventory, newInvItem);
-                                openDrawer(null);
-                              },
-                              onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                handleMoveItem(props.setInventory, invItem, containerItem);
-                              },
-                            },
-                            extra: { addToHistory: true },
-                          });
-                        }}
-                      >
-                        <InvItemOption
-                          id={props.id}
-                          entity={props.entity}
-                          isPhone={isPhone}
-                          invItem={invItem}
-                          onEquip={(invItem) => {
-                            const newInvItem = cloneDeep(invItem);
-                            newInvItem.is_equipped = !newInvItem.is_equipped;
-                            handleUpdateItem(props.setInventory, newInvItem);
-                          }}
-                          onInvest={(invItem) => {
-                            const newInvItem = cloneDeep(invItem);
-
-                            if (isItemInvestable(newInvItem.item)) {
-                              newInvItem.is_invested = !newInvItem.is_invested;
-                            }
-                            if (isItemImplantable(newInvItem.item)) {
-                              newInvItem.is_implanted = !newInvItem.is_implanted;
-                            }
-
-                            handleUpdateItem(props.setInventory, newInvItem);
-                          }}
-                        />
-                      </StatButton>
-                    </Box>
-                  )}
+                  <ItemEntry
+                    invItem={invItem}
+                    index={index}
+                    setInventory={props.setInventory}
+                    id={props.id}
+                    entity={props.entity}
+                    isPhone={isPhone}
+                    openDrawer={openDrawer}
+                    containerItems={invItems.filter((item) => isItemContainer(item.item))}
+                  />
                 </Box>
               ))}
             {invItems.length === 0 && (
@@ -493,226 +311,5 @@ export default function InventoryPanel(props: {
         />
       )}
     </Box>
-  );
-}
-
-function CurrencySection(props: { entity: LivingEntity | null; onClick?: () => void }) {
-  const pp = props.entity?.inventory?.coins.pp ?? 0;
-  const gp = props.entity?.inventory?.coins.gp ?? 0;
-  const sp = props.entity?.inventory?.coins.sp ?? 0;
-  const cp = props.entity?.inventory?.coins.cp ?? 0;
-
-  const displayAll = isPlayingStarfinder() ? false : true;
-
-  return (
-    <Group
-      gap={15}
-      wrap='nowrap'
-      justify='center'
-      miw={100}
-      style={{
-        cursor: 'pointer',
-      }}
-      onClick={props.onClick}
-    >
-      <CoinSection pp={pp} gp={gp} sp={sp} cp={cp} displayAll={displayAll} justify='center' />
-    </Group>
-  );
-}
-
-export function CoinSection(props: {
-  cp?: number;
-  sp?: number;
-  gp?: number;
-  pp?: number;
-  displayAll?: boolean;
-  justify?: 'flex-start' | 'center' | 'flex-end';
-}) {
-  const pp = props.pp ?? 0;
-  const gp = props.gp ?? 0;
-  const sp = props.sp ?? 0;
-  const cp = props.cp ?? 0;
-  return (
-    <Group gap={15} wrap='nowrap' justify={props.justify}>
-      {(pp || props.displayAll) && (
-        <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
-            {pp.toLocaleString()}
-          </Text>
-          <Avatar src={PlatinumCoin} alt='Platinum Coins' radius='xs' size='xs' />
-        </Group>
-      )}
-      {(gp || props.displayAll) && (
-        <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
-            {gp.toLocaleString()}
-          </Text>
-          <Avatar src={GoldCoin} alt='Gold Coins' radius='xs' size='xs' />
-        </Group>
-      )}
-      {(sp || (!pp && !gp && !cp)) && ( // Always show silver coins, even if 0
-        <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
-            {sp.toLocaleString()}
-          </Text>
-          <Avatar src={SilverCoin} alt='Silver Coins' radius='xs' size='xs' />
-        </Group>
-      )}
-      {(cp || props.displayAll) && (
-        <Group wrap='nowrap' gap={5}>
-          <Text c='gray.4' fz='md' fw={600}>
-            {cp.toLocaleString()}
-          </Text>
-          <Avatar src={CopperCoin} alt='Copper Coins' radius='xs' size='xs' />
-        </Group>
-      )}
-    </Group>
-  );
-}
-
-function InvItemOption(props: {
-  invItem: InventoryItem;
-  id: StoreID;
-  entity: LivingEntity | null;
-  onEquip?: (invItem: InventoryItem) => void;
-  onInvest?: (invItem: InventoryItem) => void;
-  onViewItem?: (invItem: InventoryItem) => void;
-  hideSections?: boolean;
-  preventEquip?: boolean;
-  isPhone?: boolean;
-}) {
-  const theme = useMantineTheme();
-
-  const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats(props.id, props.invItem.item) : null;
-
-  return (
-    <Grid w={'100%'}>
-      <Grid.Col span='auto'>
-        <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
-          <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
-          <Text c='gray.0' fz='sm'>
-            {props.invItem.item.name}
-          </Text>
-          {isItemContainer(props.invItem.item) && props.hideSections && (
-            <Button
-              variant='light'
-              size='compact-xs'
-              radius='xl'
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                props.onViewItem?.(props.invItem);
-              }}
-            >
-              View Item
-            </Button>
-          )}
-
-          {isItemWeapon(props.invItem.item) && weaponStats && (
-            <Group wrap='nowrap' gap={10} maw={300}>
-              <Text c='gray.6' fz='xs' fs='italic' span>
-                {sign(weaponStats.attack_bonus.total[0])}
-              </Text>
-              <EllipsisText c='gray.6' fz='xs' fs='italic' span>
-                {truncate(
-                  `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
-                  { length: props.isPhone ? 15 : 45 }
-                )}
-              </EllipsisText>
-            </Group>
-          )}
-        </Group>
-      </Grid.Col>
-      {!props.isPhone && (
-        <Grid.Col span={3}>
-          <Grid>
-            <Grid.Col span={2}>
-              {!props.hideSections && (
-                <>
-                  {' '}
-                  {isItemWithQuantity(props.invItem.item) && (
-                    <Text ta='center' fz='xs'>
-                      {getItemQuantity(props.invItem.item)}
-                    </Text>
-                  )}
-                </>
-              )}
-            </Grid.Col>
-            <Grid.Col span={3}>
-              {!props.hideSections && (
-                <>
-                  {' '}
-                  <Text ta='center' fz='xs'>
-                    {labelizeBulk(getItemBulk(props.invItem))}
-                  </Text>
-                </>
-              )}
-            </Grid.Col>
-            <Grid.Col span={7}>
-              {!props.hideSections && (
-                <>
-                  {' '}
-                  <Text ta='left' fz='xs'>
-                    {priceToString(props.invItem.item.price)}
-                  </Text>
-                </>
-              )}
-            </Grid.Col>
-          </Grid>
-        </Grid.Col>
-      )}
-      <Grid.Col span={props.isPhone ? 3 : 2} offset={props.isPhone ? 0 : 1}>
-        <Group justify='flex-end' wrap='nowrap' align='center' h={'100%'} gap={10}>
-          {isItemInvestable(props.invItem.item) && (
-            <Button
-              size='compact-xs'
-              variant={props.invItem.is_invested ? 'subtle' : 'outline'}
-              color={props.invItem.is_invested ? 'gray.7' : undefined}
-              disabled={!props.invItem.is_invested && reachedInvestedLimit(props.id, props.entity?.inventory)}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                props.onInvest?.(props.invItem);
-              }}
-              w={80}
-            >
-              {props.invItem.is_invested ? 'Divest' : 'Invest'}
-            </Button>
-          )}
-          {isItemImplantable(props.invItem.item) && (
-            <Button
-              size='compact-xs'
-              variant={props.invItem.is_implanted ? 'subtle' : 'outline'}
-              color={props.invItem.is_implanted ? 'gray.7' : undefined}
-              disabled={!props.invItem.is_implanted && reachedImplantLimit(props.id, props.entity?.inventory)}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                props.onInvest?.(props.invItem);
-              }}
-              w={80}
-            >
-              {props.invItem.is_implanted ? 'Extract' : 'Implant'}
-            </Button>
-          )}
-          {isItemEquippable(props.invItem.item) && (
-            <Button
-              size='compact-xs'
-              variant={props.invItem.is_equipped ? 'subtle' : 'outline'}
-              color={props.invItem.is_equipped ? 'gray.7' : undefined}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                props.onEquip?.(props.invItem);
-              }}
-              w={80}
-              disabled={props.preventEquip}
-            >
-              {props.invItem.is_equipped ? 'Unequip' : 'Equip'}
-            </Button>
-          )}
-        </Group>
-      </Grid.Col>
-    </Grid>
   );
 }
