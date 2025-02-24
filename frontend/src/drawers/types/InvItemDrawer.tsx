@@ -106,6 +106,10 @@ export function InvItemDrawerContent(props: {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [invItem, setInvItem] = useState(props.data.invItem);
+  useEffect(() => {
+    setInvItem(props.data.invItem);
+  }, [props.data.invItem]);
+
   const [editingItem, setEditingItem] = useState(false);
 
   const character = useRecoilValue(characterState);
