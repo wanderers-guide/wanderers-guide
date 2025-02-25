@@ -836,7 +836,7 @@ export function isItemRangedWeapon(item: Item) {
  * @returns - Whether the item is armor
  */
 export function isItemArmor(item: Item) {
-  return item.meta_data?.dex_cap !== undefined;
+  return !!(item.meta_data?.dex_cap || item.meta_data?.dex_cap === 0);
 }
 
 /**

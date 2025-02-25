@@ -282,8 +282,15 @@ export function ItemDrawerContent(props: {
 
 function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: SetterOrUpdater<any> }) {
   const ac = props.item.meta_data?.ac_bonus;
-  const dexCap = props.item.meta_data?.dex_cap;
-  const strength = props.item.meta_data?.strength;
+  let dexCap = props.item.meta_data?.dex_cap;
+  let strength = props.item.meta_data?.strength;
+  if (!dexCap && dexCap !== 0) {
+    dexCap = undefined;
+  }
+  if (!strength && strength !== 0) {
+    strength = undefined;
+  }
+
   const checkPenalty = props.item.meta_data?.check_penalty;
   const speedPenalty = props.item.meta_data?.speed_penalty;
 
