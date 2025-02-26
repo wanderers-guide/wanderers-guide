@@ -702,6 +702,7 @@ function InvItemSections(props: {
                 <Badge
                   key={index}
                   variant='light'
+                  color='gray.5'
                   style={{
                     cursor: 'pointer',
                   }}

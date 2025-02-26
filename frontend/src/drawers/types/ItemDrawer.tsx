@@ -464,6 +464,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                 <Badge
                   key={index}
                   variant='light'
+                  color='gray.5'
                   style={{
                     cursor: 'pointer',
                   }}
