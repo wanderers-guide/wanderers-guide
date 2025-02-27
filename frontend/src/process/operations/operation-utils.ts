@@ -40,6 +40,7 @@ import {
   OperationSetValue,
   OperationType,
   OperationInjectText,
+  OperationBindValue,
 } from '@typing/operations';
 import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
@@ -106,6 +107,18 @@ export function createDefaultOperation<T = Operation>(type: OperationType): T {
         value: false,
       },
     } satisfies OperationSetValue as T;
+  } else if (type === 'bindValue') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        variable: '',
+        value: {
+          storeId: '',
+          variable: '',
+        },
+      },
+    } satisfies OperationBindValue as T;
   } else if (type === 'createValue') {
     return {
       id: crypto.randomUUID(),

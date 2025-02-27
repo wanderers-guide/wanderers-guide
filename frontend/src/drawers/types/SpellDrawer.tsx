@@ -9,6 +9,7 @@ import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, LivingEntity, Spell } from '@typing/content';
@@ -41,7 +42,7 @@ export function SpellDrawerTitle(props: { data: { id?: number; spell?: Spell; en
   if (spell && isCantrip(spell)) {
     rankTitle = 'Cantrip';
     if (entity) {
-      rank = Math.ceil(entity.level / 2);
+      rank = Math.ceil(getEntityLevel(entity) / 2);
     } else {
       rank = 1;
     }

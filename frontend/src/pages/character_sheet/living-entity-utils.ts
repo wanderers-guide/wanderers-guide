@@ -289,3 +289,11 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   setEntity?.(newEntity);
   return cloneDeep(newEntity);
 }
+
+export function getEntityLevel(entity: LivingEntity) {
+  if (entity.level === -100) {
+    return getVariable<VariableNum>('CHARACTER', 'LEVEL')?.value ?? 0;
+  } else {
+    return entity.level;
+  }
+}

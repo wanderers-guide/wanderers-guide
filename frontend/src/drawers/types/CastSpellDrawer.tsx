@@ -9,6 +9,7 @@ import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, Paper } from '@mantine/core';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { getSpellStats } from '@spells/spell-handler';
 import { getHeighteningData, getSpellRank, isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
@@ -55,7 +56,7 @@ export function CastSpellDrawerTitle(props: {
     "You can’t cast a focus spell if its minimum rank is greater than
     half your level rounded up, even if you somehow gain access to it." (pg. 298)
     */
-    if (spell.rank > Math.ceil(props.data.entity.level / 2)) {
+    if (spell.rank > Math.ceil(getEntityLevel(props.data.entity) / 2)) {
       disableCasting = true;
     }
   }

@@ -28,6 +28,7 @@ import { getVariable } from '@variables/variable-manager';
 import { DisplayIcon } from './IconDisplay';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
 export default function StatBlockSection(props: {
   entity: LivingEntity;
@@ -220,7 +221,7 @@ export default function StatBlockSection(props: {
             })
             .map(
               ([rank, spells]) =>
-                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}** ${spells
+                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(getEntityLevel(entity) / 2))})`)}** ${spells
                   .map((s) => {
                     const spellLink = linkContent(s.spell.name.toLowerCase(), 'spell', s.spell);
                     if (s.casts_max > 1) {
@@ -268,7 +269,7 @@ export default function StatBlockSection(props: {
                   ? ` (${slots.length === remainingSlots.length ? `${slots.length}` : `${remainingSlots.length}/${slots.length}`} ${slots.length > 1 ? 'slots' : 'slot'})`
                   : '';
 
-              return `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}**${slotsStr} ${spells
+              return `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(getEntityLevel(entity) / 2))})`)}**${slotsStr} ${spells
                 .map((s) => {
                   const spellData = data.spells.all.find((_s) => _s.id === s.spell_id);
                   if (!spellData) {
@@ -306,7 +307,7 @@ export default function StatBlockSection(props: {
               return parseInt(br) - parseInt(ar);
             })
             .map(([rank, spellsData]) => {
-              return `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}** ${spellsData
+              return `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(getEntityLevel(entity) / 2))})`)}** ${spellsData
                 .map((s) => {
                   if (!s.spell) {
                     return '';
@@ -345,7 +346,7 @@ export default function StatBlockSection(props: {
             })
             .map(
               ([rank, spells]) =>
-                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(entity.level / 2))})`)}** ${spells
+                `**${rankNumber(parseInt(rank), `Cantrips (${rankNumber(Math.ceil(getEntityLevel(entity) / 2))})`)}** ${spells
                   .map((s) => {
                     return linkContent(s.name.toLowerCase(), 'spell', s);
                   })
@@ -393,7 +394,7 @@ export default function StatBlockSection(props: {
           <Group justify='space-between' wrap='nowrap'>
             <Title order={3}>{toLabel(entity.name)}</Title>
             <Text style={{ textWrap: 'nowrap' }}>
-              {isCharacter(entity) ? 'Character' : 'Creature'} {entity.level}
+              {isCharacter(entity) ? 'Character' : 'Creature'} {getEntityLevel(entity)}
             </Text>
           </Group>
           <Divider />

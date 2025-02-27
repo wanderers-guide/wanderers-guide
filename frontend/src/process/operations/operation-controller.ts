@@ -41,6 +41,7 @@ import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -102,7 +103,7 @@ export async function executeCharacterOperations(
   setVariable('CHARACTER', 'STARFINDER', playingStarfinder(character));
   setVariable('CHARACTER', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
 
-  setVariable('CHARACTER', 'LEVEL', character.level);
+  setVariable('CHARACTER', 'LEVEL', getEntityLevel(character));
 
   try {
     setVariable(
@@ -884,7 +885,7 @@ export async function executeCreatureOperations(
   defineSelectionTree(creature);
   setVariable('CHARACTER', 'PAGE_CONTEXT', 'CHARACTER-SHEET');
 
-  setVariable(id, 'LEVEL', creature.level);
+  setVariable(id, 'LEVEL', getEntityLevel(creature));
 
   const abilities = [
     ...(creature.abilities_base ?? []),

@@ -6,6 +6,7 @@ import {
   ExtendedProficiencyValue,
   ExtendedVariableValue,
   VariableValue,
+  StoreID,
 } from './variables';
 import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource, ContentType } from './content';
 import { OperationResult } from './../process/operations/operation-runner';
@@ -51,6 +52,7 @@ export type Operation =
   | OperationAddBonusToValue
   | OperationSetValue
   | OperationCreateValue
+  | OperationBindValue
   | OperationGiveAbilityBlock
   | OperationRemoveAbilityBlock
   | OperationConditional
@@ -71,6 +73,7 @@ export type OperationType =
   | 'addBonusToValue'
   | 'setValue'
   | 'createValue'
+  | 'bindValue'
   | 'giveAbilityBlock'
   | 'removeAbilityBlock'
   | 'giveLanguage'
@@ -115,6 +118,14 @@ export interface OperationSetValue extends OperationBase {
   data: {
     variable: string;
     value: VariableValue;
+  };
+}
+
+export interface OperationBindValue extends OperationBase {
+  readonly type: 'bindValue';
+  data: {
+    variable: string;
+    value: { storeId: StoreID; variable: string };
   };
 }
 

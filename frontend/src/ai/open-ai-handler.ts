@@ -3,6 +3,7 @@ import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage } from '@content/content-store';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Encounter, Trait } from '@typing/content';
 import { adjustCreature, findCreatureTraits } from '@utils/creature';
@@ -27,7 +28,7 @@ export async function randomCharacterInfo(character: Character) {
   ## Name:
   ${character.name}
   ## Level:
-  ${character.level}
+  ${getEntityLevel(character)}
 
   ## Class:
   ${character.details?.class?.name}
@@ -142,7 +143,7 @@ export async function generateNPC(
   # Players:
   ${players
     .map((player) => {
-      return `Name: ${player.name}\n Level: ${player.level}\n Class: ${player.details?.class?.name}\n Background: ${player.details?.background?.name}\n Ancestry: ${player.details?.ancestry?.name} \n Details: ${JSON.stringify(player.details?.info ?? {})}\n`;
+      return `Name: ${player.name}\n Level: ${getEntityLevel(player)}\n Class: ${player.details?.class?.name}\n Background: ${player.details?.background?.name}\n Ancestry: ${player.details?.ancestry?.name} \n Details: ${JSON.stringify(player.details?.info ?? {})}\n`;
     })
     .join('\n\n-----\n\n')}
 
@@ -199,7 +200,7 @@ export async function generateSessionIdea(
   # Players:
   ${players
     .map((player) => {
-      return `Name: ${player.name}\n Level: ${player.level}\n Class: ${player.details?.class?.name}\n Background: ${player.details?.background?.name}\n Ancestry: ${player.details?.ancestry?.name} \n Details: ${JSON.stringify(player.details?.info ?? {})}\n`;
+      return `Name: ${player.name}\n Level: ${getEntityLevel(player)}\n Class: ${player.details?.class?.name}\n Background: ${player.details?.background?.name}\n Ancestry: ${player.details?.ancestry?.name} \n Details: ${JSON.stringify(player.details?.info ?? {})}\n`;
     })
     .join('\n\n-----\n\n')}
 
@@ -493,10 +494,10 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
     ) {
       if (difficulty.status === 'IMPOSSIBLE') {
         const highestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
-          prev.creature!.level > current.creature!.level ? prev : current
+          getEntityLevel(prev.creature!) > getEntityLevel(current.creature!) ? prev : current
         );
         const lowestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
-          prev.creature!.level < current.creature!.level ? prev : current
+          getEntityLevel(prev.creature!) < getEntityLevel(current.creature!) ? prev : current
         );
 
         if (highestLevelCreature.creature!.details.adjustment === undefined) {
@@ -519,10 +520,10 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
         }
       } else if (difficulty.status === 'Trivial') {
         const highestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
-          prev.creature!.level > current.creature!.level ? prev : current
+          getEntityLevel(prev.creature!) > getEntityLevel(current.creature!) ? prev : current
         );
         const lowestLevelCreature = encounter.combatants.list.reduce((prev, current) =>
-          prev.creature!.level < current.creature!.level ? prev : current
+          getEntityLevel(prev.creature!) < getEntityLevel(current.creature!) ? prev : current
         );
 
         if (lowestLevelCreature.creature!.details.adjustment === undefined) {
@@ -569,7 +570,7 @@ async function selectEncounterCreaturesSample(
   description: string
 ): Promise<{ creatures: number[] } | null> {
   const fightableCreatures = creatures.filter(
-    (creature) => creature.level >= partyLevel - 4 && creature.level <= partyLevel + 4
+    (creature) => getEntityLevel(creature) >= partyLevel - 4 && getEntityLevel(creature) <= partyLevel + 4
   );
 
   const prompt = `
@@ -633,7 +634,7 @@ async function buildEncounters(
 
   # Creatures (ID - Name, Level - Traits):
   ${selectedCreatures.map((creature) => {
-    return `${creature.id} - ${creature.name}, Lvl. ${creature.level} - ${findCreatureTraits(creature)
+    return `${creature.id} - ${creature.name}, Lvl. ${getEntityLevel(creature)} - ${findCreatureTraits(creature)
       .map((traitId) => traits.find((t) => t.id === traitId)?.name)
       .filter(isTruthy)
       .join(', ')}`;

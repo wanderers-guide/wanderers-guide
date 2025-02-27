@@ -106,6 +106,7 @@ import { FilterOptions, SelectedFilter } from './filters';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { adjustCreature } from '@utils/creature';
 import { intersection, isNumber, truncate } from 'lodash-es';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -3301,7 +3302,7 @@ export function CreatureSelectionOption(props: {
       // }
       showButton={props.showButton}
       selected={props.selected}
-      level={props.creature.level}
+      level={getEntityLevel(props.creature)}
       onClick={() =>
         openDrawer({
           type: 'creature',

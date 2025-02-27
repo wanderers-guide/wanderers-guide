@@ -8,7 +8,7 @@ import { StoreID } from '@typing/variables';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
-import { confirmExperience, handleRest } from '../living-entity-utils';
+import { confirmExperience, getEntityLevel, handleRest } from '../living-entity-utils';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@typing/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
@@ -144,7 +144,7 @@ export default function EntityInfoSection(props: {
             <Stack gap={0}>
               <Box>
                 <Text fz='xs' ta='center' c='gray.3'>
-                  Lvl. {props.entity?.level}
+                  Lvl. {props.entity ? getEntityLevel(props.entity) : '?'}
                 </Text>
               </Box>
               <Box>

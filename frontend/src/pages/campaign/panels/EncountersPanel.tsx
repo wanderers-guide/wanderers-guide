@@ -31,7 +31,7 @@ import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { CreateCombatantModal } from '@modals/CreateCombatantModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
-import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import { confirmHealth, getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { ConditionPills, selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { makeRequest } from '@requests/request-manager';
 import {
@@ -167,7 +167,7 @@ export default function EncountersPanel(props: {
     },
     meta_data: {
       description: '',
-      party_level: props.campaign ? mean(props.campaign.players.map((p) => p.level)) : undefined,
+      party_level: props.campaign ? mean(props.campaign.players.map((p) => getEntityLevel(p))) : undefined,
       party_size: props.campaign ? props.campaign.players.length : undefined,
     },
   };
@@ -294,7 +294,9 @@ export default function EncountersPanel(props: {
                     modal: 'generateEncounter',
                     title: <Title order={3}>Encounter Generator</Title>,
                     innerProps: {
-                      partyLevel: props.campaign ? mean(props.campaign.players.map((p) => p.level)) : undefined,
+                      partyLevel: props.campaign
+                        ? mean(props.campaign.players.map((p) => getEntityLevel(p)))
+                        : undefined,
                       partySize: props.campaign ? props.campaign.players.length : undefined,
                       onComplete: (encounter: Encounter) => {
                         addEncounter(encounter);
@@ -425,7 +427,7 @@ export default function EncountersPanel(props: {
                 modal: 'generateEncounter',
                 title: <Title order={3}>Encounter Generator</Title>,
                 innerProps: {
-                  partyLevel: props.campaign ? mean(props.campaign.players.map((p) => p.level)) : undefined,
+                  partyLevel: props.campaign ? mean(props.campaign.players.map((p) => getEntityLevel(p))) : undefined,
                   partySize: props.campaign ? props.campaign.players.length : undefined,
                   onComplete: (encounter: Encounter) => {
                     addEncounter(encounter);
@@ -486,7 +488,7 @@ function EncounterView(props: {
 
     // Update party size and level
     const alliesInEncounter = populateCombatants(newEncounter.combatants.list).filter((c) => c.ally);
-    const partyLevel = mean(alliesInEncounter.map((p) => p.data.level));
+    const partyLevel = mean(alliesInEncounter.map((p) => getEntityLevel(p.data)));
     const partySize = alliesInEncounter.length;
 
     newEncounter.meta_data = {
@@ -1006,7 +1008,7 @@ function CombatantCard(props: {
           }}
         >
           <Text size={'10px'} fw={400} c='dimmed' fs='italic'>
-            Lvl. {props.combatant.data.level}
+            Lvl. {getEntityLevel(props.combatant.data)}
           </Text>
           <ActionIcon size='sm' variant='transparent' radius={100} color='dark.3' onClick={() => {}}>
             {props.combatant.ally ? <></> : <IconSword size='1.0rem' stroke={2} />}
@@ -1229,7 +1231,7 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
 
 export function calculateDifficulty(encounter: Encounter, combatants: PopulatedCombatant[]) {
   const alliesInEncounter = combatants.filter((c) => c.ally);
-  const partyLevel = encounter.meta_data.party_level ?? mean(alliesInEncounter.map((p) => p.data.level));
+  const partyLevel = encounter.meta_data.party_level ?? mean(alliesInEncounter.map((p) => getEntityLevel(p.data)));
   const partySize = encounter.meta_data.party_size ?? alliesInEncounter.length;
 
   let xpBudget = 0;
@@ -1237,7 +1239,7 @@ export function calculateDifficulty(encounter: Encounter, combatants: PopulatedC
     if (entity.ally) {
       continue;
     }
-    switch (entity.data.level - partyLevel) {
+    switch (getEntityLevel(entity.data) - partyLevel) {
       case -4:
         xpBudget += 10;
         break;
@@ -1266,10 +1268,10 @@ export function calculateDifficulty(encounter: Encounter, combatants: PopulatedC
         xpBudget += 160;
         break;
       default:
-        if (entity.data.level > partyLevel) {
+        if (getEntityLevel(entity.data) > partyLevel) {
           // greater than +4
-          xpBudget += (entity.data.level - partyLevel) * 40;
-        } else if (entity.data.level < partyLevel) {
+          xpBudget += (getEntityLevel(entity.data) - partyLevel) * 40;
+        } else if (getEntityLevel(entity.data) < partyLevel) {
           // less than -4
           xpBudget += 0;
         }

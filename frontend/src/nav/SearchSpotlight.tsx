@@ -10,6 +10,7 @@ import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Session } from '@supabase/supabase-js';
 import {
@@ -419,7 +420,7 @@ async function fetchCharacters(
     user_id: session?.user.id,
   });
   return (characters ?? []).map((character) => {
-    const level = character.level;
+    const level = getEntityLevel(character);
     const heritage = ''; //character.details?.heritage?.name ?? '';
     const ancestry = character.details?.ancestry?.name ?? '';
     //const background = character.details?.background?.name ?? '';

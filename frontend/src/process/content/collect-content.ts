@@ -20,6 +20,7 @@ import { compileExpressions, labelToVariable } from '@variables/variable-utils';
 import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 import { fetchContent, fetchContentById } from './content-store';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
 export function collectEntityAbilityBlocks(
   id: StoreID,
@@ -166,7 +167,7 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   for (const strS of spellSlots) {
     const slot = JSON.parse(strS) as { lvl: number; rank: number; amt: number; source: string };
     for (let i = 0; i < slot.amt; i++) {
-      if (slot.lvl !== entity.level) continue;
+      if (slot.lvl !== getEntityLevel(entity)) continue;
       slots.push({
         id: `${id}-spell-slot-${count}`,
         rank: slot.rank,

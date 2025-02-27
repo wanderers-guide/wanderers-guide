@@ -21,6 +21,7 @@ import {
   Operation,
   OperationAddBonusToValue,
   OperationAdjValue,
+  OperationBindValue,
   OperationConditional,
   OperationCreateValue,
   OperationDefineCastingSource,
@@ -62,6 +63,7 @@ import useRefresh from '@utils/use-refresh';
 import { InjectSelectOptionOperation } from './selection/InjectSelectOptionOperation';
 import { InjectTextOperation } from './variables/InjectTextOperation';
 import { GiveModeOperation } from './ability_block/GiveModeOperation';
+import { BindValOperation } from './variables/BindValOperation';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -193,6 +195,7 @@ export function OperationSection(props: {
               },
               { value: 'createValue', label: 'Create Value' },
               { value: 'setValue', label: 'Override Value' },
+              { value: 'bindValue', label: 'Bind Value' },
               { value: 'injectSelectOption', label: 'Inject Select Option' },
               { value: 'injectText', label: 'Inject Text' },
               // { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
@@ -518,6 +521,23 @@ export function OperationDisplay(props: {
           onValueChange={(value) => {
             opSetValue.data.value = value;
             props.onChange(cloneDeep(opSetValue));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'bindValue':
+      let opBindValue = props.operation as OperationBindValue;
+      return (
+        <BindValOperation
+          variable={opBindValue.data.variable}
+          value={opBindValue.data.value}
+          onSelect={(variable) => {
+            opBindValue.data.variable = variable;
+            props.onChange(cloneDeep(opBindValue));
+          }}
+          onValueChange={(value) => {
+            opBindValue.data.value = value;
+            props.onChange(cloneDeep(opBindValue));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

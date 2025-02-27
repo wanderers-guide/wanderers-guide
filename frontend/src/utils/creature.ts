@@ -6,6 +6,7 @@ import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-m
 import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import { toLabel } from './strings';
 import { cloneDeep } from 'lodash-es';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
 export function findCreatureTraits(creature: Creature) {
   return (
@@ -21,21 +22,21 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
 
   // HP Adjustment
   let hpAdjustment = 0;
-  if (creature.level >= 1 && creature.level <= 2) {
+  if (getEntityLevel(creature) >= 1 && getEntityLevel(creature) <= 2) {
     hpAdjustment = mod * 10;
-  } else if (creature.level >= 3 && creature.level <= 5) {
+  } else if (getEntityLevel(creature) >= 3 && getEntityLevel(creature) <= 5) {
     hpAdjustment = mod * 15;
-  } else if (creature.level >= 6 && creature.level <= 20) {
+  } else if (getEntityLevel(creature) >= 6 && getEntityLevel(creature) <= 20) {
     hpAdjustment = mod * 20;
-  } else if (creature.level >= 21) {
+  } else if (getEntityLevel(creature) >= 21) {
     hpAdjustment = mod * 30;
   }
 
   // Level Adjustment
-  if (creature.level <= 1) {
-    creature.level = creature.level + mod * 2;
+  if (getEntityLevel(creature) <= 1) {
+    creature.level = getEntityLevel(creature) + mod * 2;
   } else {
-    creature.level = creature.level + mod;
+    creature.level = getEntityLevel(creature) + mod;
   }
 
   // Min level is -1

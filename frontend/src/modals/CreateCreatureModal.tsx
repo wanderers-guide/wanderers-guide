@@ -208,7 +208,7 @@ export function CreateCreatureModal(props: {
                 label='Level'
                 size='xs'
                 required
-                data={Array.from({ length: 32 }, (_, i) => (i - 1).toString())}
+                data={[...Array.from({ length: 32 }, (_, i) => (i - 1).toString()), { value: '-100', label: 'Char.' }]}
                 w={70}
                 {...form.getInputProps('level')}
               />

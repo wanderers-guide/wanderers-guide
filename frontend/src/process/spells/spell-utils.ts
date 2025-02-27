@@ -1,5 +1,6 @@
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { fetchContentById } from '@content/content-store';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { Item, LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
@@ -135,13 +136,13 @@ export function detectSpells(text: string, allSpells: Spell[], simpleDetect = fa
 export function getSpellRank(spell: Spell, entity?: LivingEntity | null) {
   if (spell && isCantrip(spell)) {
     if (entity) {
-      return Math.ceil(entity.level / 2);
+      return Math.ceil(getEntityLevel(entity) / 2);
     } else {
       return 1;
     }
   }
   if (spell && entity && isFocusSpell(spell)) {
-    return Math.max(Math.ceil(entity.level / 2), spell.rank);
+    return Math.max(Math.ceil(getEntityLevel(entity) / 2), spell.rank);
   }
   return spell.rank;
 }

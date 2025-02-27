@@ -22,7 +22,7 @@ import {
 import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
-import { confirmHealth, handleRest } from '@pages/character_sheet/living-entity-utils';
+import { confirmHealth, getEntityLevel, handleRest } from '@pages/character_sheet/living-entity-utils';
 import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
 import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
 import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
@@ -86,7 +86,7 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
               <Title order={3}>{toLabel(creature.name)}</Title>
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>Creature {creature.level}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>Creature {getEntityLevel(creature)}</Text>
         </Group>
       )}
     </>
@@ -685,7 +685,7 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
         {knowledgeTrait?.name.toLowerCase()}
         {props.entity.rarity !== 'COMMON' ? `, ${props.entity.rarity.toLowerCase()}` : ''}{' '}
       </Text>
-      ) {knowledgeSkill} DC {getDcForLevel(props.entity.level, props.entity.rarity)}
+      ) {knowledgeSkill} DC {getDcForLevel(getEntityLevel(props.entity), props.entity.rarity)}
     </Text>
   );
 }

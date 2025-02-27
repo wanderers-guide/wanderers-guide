@@ -6,6 +6,7 @@ import {
   Operation,
   OperationAddBonusToValue,
   OperationAdjValue,
+  OperationBindValue,
   OperationConditional,
   OperationCreateValue,
   OperationDefineCastingSource,
@@ -144,6 +145,8 @@ export async function runOperations(
       return await runAdjValue(varId, operation, selectionTrack, options, sourceLabel);
     } else if (operation.type === 'setValue') {
       return await runSetValue(varId, operation, sourceLabel);
+    } else if (operation.type === 'bindValue') {
+      return await runBindValue(varId, operation, sourceLabel);
     } else if (operation.type === 'addBonusToValue') {
       return await runAddBonusToValue(varId, operation, sourceLabel);
     } else if (operation.type === 'giveAbilityBlock') {
@@ -489,6 +492,18 @@ async function runSetValue(
   sourceLabel?: string
 ): Promise<OperationResult> {
   setVariable(varId, operation.data.variable, operation.data.value, sourceLabel);
+  return null;
+}
+
+async function runBindValue(
+  varId: StoreID,
+  operation: OperationBindValue,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  const bindValue = getVariable(operation.data.value.storeId, operation.data.value.variable);
+  if (bindValue) {
+    setVariable(varId, operation.data.variable, bindValue.value, sourceLabel);
+  }
   return null;
 }
 

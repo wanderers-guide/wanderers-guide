@@ -47,6 +47,7 @@ import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { isEqual, uniqWith } from 'lodash-es';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
 /**
  * Modal for creating or editing a creature
@@ -180,7 +181,7 @@ export function CreateCombatantModal(props: {
       creature: {
         ...values.creature!,
         name: values.creature!.name.trim(),
-        level: parseInt(`${values.creature!.level}`),
+        level: parseInt(`${getEntityLevel(values.creature!)}`),
         hp_current: totalMaxHP ?? 0,
         operations: uniqWith([...(values.creature!.operations ?? []), ...STAT_OPS], isEqual),
       },
