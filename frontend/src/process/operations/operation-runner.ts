@@ -649,7 +649,8 @@ async function runGiveTrait(
   } else if (
     trait.meta_data?.ancestry_trait ||
     trait.meta_data?.creature_trait ||
-    trait.meta_data?.versatile_heritage_trait
+    trait.meta_data?.versatile_heritage_trait ||
+    trait.meta_data?.companion_type_trait
   ) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
   } else {

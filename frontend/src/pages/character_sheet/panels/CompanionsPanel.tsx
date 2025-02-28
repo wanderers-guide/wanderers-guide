@@ -36,7 +36,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
 
   return (
     <Box h={props.panelHeight}>
-      <Center pt={50}>
+      {/* <Center pt={50}>
         <Stack>
           <Title ta='center' fs='italic' order={2}>
             Coming soon!
@@ -53,9 +53,9 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
             :)
           </Text>
         </Stack>
-      </Center>
+      </Center> */}
 
-      {/* <Stack>{character?.companions?.list?.map((c) => <Text key={c.id}>{c.name}</Text>)}</Stack>
+      <Stack>{character?.companions?.list?.map((c) => <Text key={c.id}>{c.name}</Text>)}</Stack>
 
       <Group gap={0} align='center' justify='center'>
         <Text pr={10}>Add</Text>
@@ -84,7 +84,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
             },
           }}
         />
-      </Group> */}
+      </Group>
     </Box>
   );
 }
