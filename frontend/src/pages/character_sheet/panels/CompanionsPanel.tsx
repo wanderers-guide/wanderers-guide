@@ -1,13 +1,42 @@
 import { characterState } from '@atoms/characterAtoms';
+import { drawerState } from '@atoms/navAtoms';
 import { LEGACY_URL } from '@constants/data';
-import { fetchContentAll } from '@content/content-store';
-import { Center, Stack, Title, Anchor, Text, Box, Group, Select } from '@mantine/core';
+import { fetchContentAll, fetchContentPackage } from '@content/content-store';
+import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
+import {
+  Center,
+  Stack,
+  Title,
+  Anchor,
+  Text,
+  Box,
+  Group,
+  Select,
+  TextInput,
+  ScrollArea,
+  ActionIcon,
+} from '@mantine/core';
+import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Trait } from '@typing/content';
+import { Creature, LivingEntity, Trait } from '@typing/content';
+import { StoreID } from '@typing/variables';
 import { findCreatureTraits } from '@utils/creature';
-import { use } from 'chai';
-import { useMemo, useState } from 'react';
+import { phoneQuery } from '@utils/mobile-responsive';
+import { evaluate } from 'mathjs';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
+import { getEntityLevel } from '../living-entity-utils';
+import { DisplayIcon } from '@common/IconDisplay';
+import { sign } from '@utils/numbers';
+import { ConditionPills, selectCondition } from '../sections/ConditionSection';
+import { setterOrUpdaterToValue } from '@utils/type-fixing';
+import { IconPlus, IconX } from '@tabler/icons-react';
+import { cloneDeep } from 'lodash-es';
+import { executeCreatureOperations } from '@operations/operation-controller';
+import { applyConditions } from '@conditions/condition-handler';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
+import { getBestArmor } from '@items/inv-utils';
+import { modals } from '@mantine/modals';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const [character, setCharacter] = useRecoilState(characterState);
@@ -34,6 +63,22 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
     return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
   }, [data, selectedType]);
 
+  // Calculated data for the companions
+  const companions = character?.companions?.list ?? [];
+  const { data: computedData } = useQuery({
+    queryKey: [
+      `computed-companions`,
+      {
+        companions: companions,
+      },
+    ],
+    queryFn: async () => {
+      if (companions.length === 0) return [];
+      return await computeCombatants(companions);
+    },
+    enabled: companions.length > 0,
+  });
+
   return (
     <Box h={props.panelHeight}>
       {/* <Center pt={50}>
@@ -55,7 +100,62 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         </Stack>
       </Center> */}
 
-      <Stack>{character?.companions?.list?.map((c) => <Text key={c.id}>{c.name}</Text>)}</Stack>
+      <ScrollArea
+        p={8}
+        style={{
+          backgroundColor: `rgb(37, 38, 43)`,
+          borderBottomLeftRadius: 10,
+          borderBottomRightRadius: 10,
+          border: '1px solid #373A40',
+          borderTop: 'none',
+          height: props.panelHeight - 50,
+        }}
+      >
+        <Stack gap={12}>
+          {companions.map((c, index) => (
+            <CompanionCard
+              storeId={`COMPANION_${index}`}
+              companion={c}
+              computed={computedData?.find((d) => d._id === `COMPANION_${index}`)}
+              updateCreature={(e) => {
+                setCharacter((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    companions: {
+                      ...(prev.companions ?? {}),
+                      list: [...(prev.companions?.list ?? [])].map((comp, i) => (i === index ? e : comp)),
+                    },
+                  };
+                });
+              }}
+              onRemove={() => {
+                modals.openConfirmModal({
+                  id: 'remove-option',
+                  title: <Title order={4}>Delete Companion</Title>,
+                  children: (
+                    <Text size='sm'>Are you sure you want to delete "{c.name}"? This action cannot be undone.</Text>
+                  ),
+                  labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                  onCancel: () => {},
+                  onConfirm: () => {
+                    setCharacter((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        companions: {
+                          ...(prev.companions ?? {}),
+                          list: [...(prev.companions?.list ?? [])].filter((_, i) => i !== index),
+                        },
+                      };
+                    });
+                  },
+                });
+              }}
+            />
+          ))}
+        </Stack>
+      </ScrollArea>
 
       <Group gap={0} align='center' justify='center'>
         <Text pr={10}>Add</Text>
@@ -73,9 +173,25 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           }}
         />
         <Select
-          placeholder='Selection'
+          placeholder='Select Companion'
           disabled={!selectedType || selectedType === -1}
           data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
+          onChange={(value) => {
+            if (!value) return;
+            const creature = creatureOptions.find((c) => c.id === parseInt(`${value}`));
+            // Add creature to character
+            setCharacter((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                companions: {
+                  ...(prev.companions ?? {}),
+                  list: [...(prev.companions?.list ?? []), creature!],
+                },
+              };
+            });
+          }}
+          value={''}
           w={200}
           styles={{
             input: {
@@ -87,4 +203,293 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
       </Group>
     </Box>
   );
+}
+
+function CompanionCard(props: {
+  storeId: StoreID;
+  companion: Creature;
+  computed?: {
+    id: number;
+    type: 'character' | 'creature';
+    ac: number;
+    fort: number;
+    reflex: number;
+    will: number;
+    maxHp: number;
+  };
+  updateCreature: (creature: Creature) => void;
+  onRemove: () => void;
+}) {
+  const isPhone = useMediaQuery(phoneQuery());
+  const { hovered, ref } = useHover();
+
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Health
+
+  const [health, setHealth] = useState<string | undefined>();
+  const healthRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (props.companion) {
+      const currentHealth =
+        props.companion.hp_current === undefined ? props.computed?.maxHp ?? 0 : props.companion.hp_current;
+      setHealth(`${currentHealth}`);
+    }
+  }, [props.companion, props.computed]);
+
+  const handleHealthSubmit = () => {
+    const inputHealth = health ?? '0';
+    let result = -1;
+    try {
+      result = evaluate(inputHealth);
+    } catch (e) {
+      result = parseInt(inputHealth);
+    }
+    if (isNaN(result)) result = 0;
+    result = Math.floor(result);
+    if (result < 0) result = 0;
+    if (props.computed && result > props.computed.maxHp) result = props.computed.maxHp;
+
+    props.updateCreature({
+      ...props.companion,
+      hp_current: result,
+    });
+
+    setHealth(`${result}`);
+    healthRef.current?.blur();
+  };
+
+  return (
+    <Group
+      wrap='nowrap'
+      gap={10}
+      style={{
+        position: 'relative',
+      }}
+    >
+      <Group
+        ref={ref}
+        wrap='nowrap'
+        w={`min(60dvw, 320px)`}
+        p={5}
+        style={(t) => ({
+          backgroundColor: hovered ? t.colors.dark[5] : 'transparent',
+          borderRadius: t.radius.md,
+          cursor: 'pointer',
+          position: 'relative',
+        })}
+        onClick={() => {
+          openDrawer({
+            type: 'creature',
+            data: {
+              STORE_ID: props.storeId,
+              creature: props.companion,
+              zIndex: CREATURE_DRAWER_ZINDEX,
+              updateCreature: (creature: Creature) => {
+                props.updateCreature(creature);
+              },
+            },
+          });
+        }}
+      >
+        <Group
+          gap={2}
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 10,
+          }}
+        >
+          <Text size={'10px'} fw={400} c='dimmed' fs='italic'>
+            Lvl. {getEntityLevel(props.companion)}
+          </Text>
+        </Group>
+
+        <Box w={40}>
+          <DisplayIcon
+            strValue={props.companion.details?.image_url ?? 'icon|||avatar|||#373A40'}
+            width={40}
+            iconStyles={{
+              objectFit: 'contain',
+              height: 40,
+            }}
+          />
+        </Box>
+
+        <Box pr={5} style={{ flex: 1 }}>
+          <Group gap={1}>
+            <Text size='sm' fw={600} span>
+              {props.companion.name}
+            </Text>
+          </Group>
+
+          {props.computed && (
+            <Group gap={5} wrap='nowrap'>
+              <Text fz='xs' c='gray.6'>
+                {props.computed.ac} AC
+              </Text>
+              <Text fz='xs' c='gray.7'>
+                |
+              </Text>
+              <Text fz='xs' c='gray.6'>
+                Fort. {sign(props.computed.fort)},
+              </Text>
+              <Text fz='xs' c='gray.6'>
+                Ref. {sign(props.computed.reflex)},
+              </Text>
+              <Text fz='xs' c='gray.6'>
+                Will {sign(props.computed.will)}
+              </Text>
+            </Group>
+          )}
+        </Box>
+      </Group>
+      {!isPhone && (
+        <TextInput
+          ref={healthRef}
+          variant='filled'
+          size='md'
+          w={120}
+          placeholder='HP'
+          autoComplete='nope'
+          value={health}
+          onChange={(e) => {
+            setHealth(e.target.value);
+          }}
+          onBlur={handleHealthSubmit}
+          onKeyDown={getHotkeyHandler([
+            ['mod+Enter', handleHealthSubmit],
+            ['Enter', handleHealthSubmit],
+          ])}
+          rightSection={
+            <Group>
+              <Text>/</Text>
+              <Text>{props.computed?.maxHp}</Text>
+            </Group>
+          }
+          rightSectionWidth={60}
+        />
+      )}
+      {!isPhone && (
+        <ScrollArea
+          h={40}
+          scrollbars='y'
+          style={{
+            position: 'relative',
+          }}
+          px={15}
+        >
+          <ConditionPills
+            id={props.storeId}
+            entity={props.companion}
+            setEntity={(call) => {
+              const result = setterOrUpdaterToValue(call, props.companion);
+
+              props.updateCreature({
+                ...props.companion,
+                details: {
+                  ...props.companion.details,
+                  conditions: result?.details?.conditions ?? [],
+                },
+              });
+            }}
+            groupProps={{
+              w: 170,
+            }}
+          />
+          <ActionIcon
+            variant='subtle'
+            aria-label='Add Condition'
+            size='xs'
+            radius='xl'
+            color='dark.3'
+            onClick={() => {
+              selectCondition(props.companion.details?.conditions ?? [], (condition) => {
+                if (!props.companion) return;
+                props.updateCreature({
+                  ...props.companion,
+                  details: {
+                    ...props.companion.details,
+                    conditions: [...(props.companion.details?.conditions ?? []), condition],
+                  },
+                });
+              });
+            }}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: 10,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <IconPlus size='1rem' stroke={1.5} />
+          </ActionIcon>
+        </ScrollArea>
+      )}
+
+      <ActionIcon
+        size='sm'
+        variant='light'
+        radius={100}
+        color='gray'
+        aria-label='Remove Combatant'
+        onClick={props.onRemove}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          right: 0,
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <IconX size='1.5rem' stroke={2} />
+      </ActionIcon>
+    </Group>
+  );
+}
+
+async function computeCombatants(companions: Creature[]) {
+  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+
+  async function computeCompanion(
+    companion: Creature,
+    index: number
+  ): Promise<{
+    _id: string;
+    id: number;
+    type: 'character' | 'creature';
+    ac: number;
+    fort: number;
+    reflex: number;
+    will: number;
+    maxHp: number;
+  }> {
+    const creature = cloneDeep(companion);
+
+    // Variable store ID
+    const STORE_ID = `COMPANION_${index}`;
+
+    await executeCreatureOperations(STORE_ID, creature, content);
+    // Apply conditions after everything else
+    applyConditions(STORE_ID, creature.details?.conditions ?? []);
+
+    const maxHealth = getFinalHealthValue(STORE_ID);
+    const ac = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, creature.inventory)?.item);
+    const fort = getFinalProfValue(STORE_ID, 'SAVE_FORT');
+    const reflex = getFinalProfValue(STORE_ID, 'SAVE_REFLEX');
+    const will = getFinalProfValue(STORE_ID, 'SAVE_WILL');
+
+    return {
+      _id: STORE_ID,
+      id: creature.id,
+      type: 'creature',
+      ac: ac,
+      fort: parseInt(fort),
+      reflex: parseInt(reflex),
+      will: parseInt(will),
+      maxHp: maxHealth,
+    };
+  }
+
+  return await Promise.all(companions.map(computeCompanion));
 }
