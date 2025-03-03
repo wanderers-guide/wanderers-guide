@@ -80,7 +80,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
   });
 
   return (
-    <Box h={props.panelHeight}>
+    <Stack h={props.panelHeight} gap={15}>
       {/* <Center pt={50}>
         <Stack>
           <Title ta='center' fs='italic' order={2}>
@@ -104,10 +104,8 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         p={8}
         style={{
           backgroundColor: `rgb(37, 38, 43)`,
-          borderBottomLeftRadius: 10,
-          borderBottomRightRadius: 10,
+          borderRadius: 10,
           border: '1px solid #373A40',
-          borderTop: 'none',
           height: props.panelHeight - 50,
         }}
       >
@@ -173,7 +171,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           }}
         />
         <Select
-          placeholder='Select Companion'
+          placeholder='Select Type'
           disabled={!selectedType || selectedType === -1}
           data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
           onChange={(value) => {
@@ -201,7 +199,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           }}
         />
       </Group>
-    </Box>
+    </Stack>
   );
 }
 
