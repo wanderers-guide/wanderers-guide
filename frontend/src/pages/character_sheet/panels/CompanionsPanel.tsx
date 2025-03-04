@@ -30,7 +30,7 @@ import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { ConditionPills, selectCondition } from '../sections/ConditionSection';
 import { setterOrUpdaterToValue } from '@utils/type-fixing';
-import { IconPlus, IconX } from '@tabler/icons-react';
+import { IconPaw, IconPlus, IconX } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { applyConditions } from '@conditions/condition-handler';
@@ -113,6 +113,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           {companions.map((c, index) => (
             <CompanionCard
               storeId={`COMPANION_${index}`}
+              panelWidth={props.panelWidth}
               companion={c}
               computed={computedData?.find((d) => d._id === `COMPANION_${index}`)}
               updateCreature={(e) => {
@@ -156,13 +157,27 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
       </ScrollArea>
 
       <Group gap={0} align='center' justify='center'>
-        <Text pr={10}>Add</Text>
+        <Text c='gray.5' fw={'bolder'}>
+          Add
+        </Text>
+        <ActionIcon
+          variant='transparent'
+          color='gray.5'
+          style={{
+            cursor: 'default',
+          }}
+          ml={5}
+          mr={10}
+        >
+          <IconPaw style={{ width: '80%', height: '80%' }} stroke={1.5} />
+        </ActionIcon>
         <Select
+          variant='filled'
           placeholder='Companion'
           data={selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name }))}
           value={selectedType?.toString()}
           onChange={(value) => setSelectedType(parseInt(`${value ?? -1}`))}
-          w={200}
+          w={150}
           styles={{
             input: {
               borderTopRightRadius: 0,
@@ -171,7 +186,8 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           }}
         />
         <Select
-          placeholder='Select Type'
+          variant='filled'
+          placeholder='Type'
           disabled={!selectedType || selectedType === -1}
           data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
           onChange={(value) => {
@@ -190,7 +206,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
             });
           }}
           value={''}
-          w={200}
+          w={100}
           styles={{
             input: {
               borderTopLeftRadius: 0,
@@ -206,6 +222,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
 function CompanionCard(props: {
   storeId: StoreID;
   companion: Creature;
+  panelWidth: number;
   computed?: {
     id: number;
     type: 'character' | 'creature';
@@ -376,7 +393,7 @@ function CompanionCard(props: {
           style={{
             position: 'relative',
           }}
-          px={15}
+          px={25}
         >
           <ConditionPills
             id={props.storeId}
@@ -393,7 +410,7 @@ function CompanionCard(props: {
               });
             }}
             groupProps={{
-              w: 170,
+              w: props.panelWidth - 500,
             }}
           />
           <ActionIcon
