@@ -321,6 +321,13 @@ function getProfDescription(variableName: string) {
     return `Clothing or simple robes offer little protection, but they don’t hinder your movement.`;
   }
 
+  if (variableName === 'LIGHT_BARDING') {
+    return `Made from supple and thin materials, light barding favors agile companions since it offers some protection without sacrificing much mobility.`;
+  }
+  if (variableName === 'HEAVY_BARDING') {
+    return `Of all forms of barding, heavy barding offers the best protection for companions. These suits of armor cover the entire body and are designed to stop a wide range of attacks.`;
+  }
+
   if (variableName === 'SIMPLE_WEAPONS') {
     return `These weapons are basic armaments that most characters can wield effectively, regardless of their class or skill level.`;
   }

@@ -88,6 +88,11 @@ export default function CreatureDetailsPanel(props: {
   );
   const armorProfs = getAllArmorVariables(props.id).filter((prof) => compileProficiencyType(prof.value) !== 'U');
 
+  // Barding
+  const lightBardingProf = compileProficiencyType(getVariable<VariableProf>(props.id, 'LIGHT_BARDING')?.value);
+  const heavyBardingProf = compileProficiencyType(getVariable<VariableProf>(props.id, 'HEAVY_BARDING')?.value);
+  const hasBardingProf = lightBardingProf !== 'U' || heavyBardingProf !== 'U';
+
   const getInfoSection = () => (
     <Paper
       shadow='sm'
@@ -341,6 +346,46 @@ export default function CreatureDetailsPanel(props: {
                 </Accordion.Control>
                 <Accordion.Panel>
                   <Stack gap={5}>
+                    {hasBardingProf && (
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { id: props.id, variableName: 'LIGHT_BARDING' },
+                            extra: { addToHistory: true },
+                          });
+                        }}
+                      >
+                        <Box>
+                          <Text c='gray.0' fz='sm'>
+                            Light Barding
+                          </Text>
+                        </Box>
+                        <Group>
+                          <Badge variant='default'>{lightBardingProf}</Badge>
+                        </Group>
+                      </StatButton>
+                    )}
+                    {hasBardingProf && (
+                      <StatButton
+                        onClick={() => {
+                          openDrawer({
+                            type: 'stat-prof',
+                            data: { id: props.id, variableName: 'HEAVY_BARDING' },
+                            extra: { addToHistory: true },
+                          });
+                        }}
+                      >
+                        <Box>
+                          <Text c='gray.0' fz='sm'>
+                            Heavy Barding
+                          </Text>
+                        </Box>
+                        <Group>
+                          <Badge variant='default'>{heavyBardingProf}</Badge>
+                        </Group>
+                      </StatButton>
+                    )}
                     <StatButton
                       onClick={() => {
                         openDrawer({

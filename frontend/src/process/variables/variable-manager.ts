@@ -163,6 +163,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   HEAVY_ARMOR: newVariable('prof', 'HEAVY_ARMOR'),
   UNARMORED_DEFENSE: newVariable('prof', 'UNARMORED_DEFENSE'),
 
+  LIGHT_BARDING: newVariable('prof', 'LIGHT_BARDING'),
+  HEAVY_BARDING: newVariable('prof', 'HEAVY_BARDING'),
+
   SIMPLE_WEAPONS: newVariable('prof', 'SIMPLE_WEAPONS'),
   MARTIAL_WEAPONS: newVariable('prof', 'MARTIAL_WEAPONS'),
   ADVANCED_WEAPONS: newVariable('prof', 'ADVANCED_WEAPONS'),
