@@ -227,15 +227,15 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         }
 
         // Add the extra items to the inventory from variables
-        addExtraItems(props.content.items, sDebouncedCharacter, setCharacter);
+        addExtraItems('CHARACTER', props.content.items, sDebouncedCharacter, convertToSetEntity(setCharacter));
 
         // Check bulk limits
         if (sDebouncedCharacter.options?.ignore_bulk_limit !== true) {
-          checkBulkLimit(sDebouncedCharacter, setCharacter);
+          checkBulkLimit('CHARACTER', sDebouncedCharacter, convertToSetEntity(setCharacter));
         }
 
         // Apply armor/shield penalties
-        applyEquipmentPenalties(sDebouncedCharacter, setCharacter);
+        applyEquipmentPenalties('CHARACTER', sDebouncedCharacter, convertToSetEntity(setCharacter));
 
         // Apply conditions after everything else
         applyConditions('CHARACTER', sDebouncedCharacter.details?.conditions ?? []);

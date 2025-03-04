@@ -35,7 +35,7 @@ import { cloneDeep } from 'lodash-es';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { applyConditions } from '@conditions/condition-handler';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
-import { getBestArmor } from '@items/inv-utils';
+import { addExtraItems, getBestArmor } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
@@ -175,7 +175,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           variant='filled'
           placeholder='Companion'
           data={selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name }))}
-          value={selectedType?.toString()}
+          value={selectedType ? `${selectedType}` : null}
           onChange={(value) => setSelectedType(parseInt(`${value ?? -1}`))}
           w={150}
           styles={{
@@ -204,6 +204,8 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
                 },
               };
             });
+
+            setSelectedType(null);
           }}
           value={''}
           w={100}

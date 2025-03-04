@@ -5,6 +5,7 @@ import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
+import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
   Title,
   Loader,
@@ -91,20 +92,6 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
       )}
     </>
   );
-
-  /*
-  Switch mode:
-
-  const [drawerData, setDrawerData] = useLocalStorage<{ view: 'BLOCK' | 'SHEET' }>({
-    key: 'creature-drawer-view',
-    defaultValue: {
-      view: 'SHEET',
-    },
-  });
-
-  
-  
-  */
 }
 
 export function CreatureDrawerContent(props: {
@@ -190,6 +177,17 @@ export function CreatureDrawerContent(props: {
       if (!creature || !content || executingOperations.current) return;
       executingOperations.current = true;
       executeCreatureOperations(STORE_ID, creature, content).then((results) => {
+        // Final execution pipeline:
+
+        // Add the extra items to the inventory from variables
+        addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
+
+        // Check bulk limits
+        checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature));
+
+        // Apply armor/shield penalties
+        applyEquipmentPenalties(STORE_ID, creature, convertToSetEntity(setCreature));
+
         // Apply conditions after everything else
         applyConditions(STORE_ID, creature.details?.conditions ?? []);
         if (creature.meta_data?.reset_hp !== false) {

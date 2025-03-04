@@ -246,13 +246,13 @@ export function CreateCreatureModal(props: {
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={5}>
-            <Tabs defaultValue='builder'>
+            <Tabs defaultValue={editing ? 'manual' : 'builder'}>
               <Tabs.List>
-                <Tabs.Tab value='builder' leftSection={<IconTransform size='1rem' />}>
-                  Auto Builder
-                </Tabs.Tab>
                 <Tabs.Tab value='manual' leftSection={<IconBracketsAngle size='1rem' />}>
                   Manual
+                </Tabs.Tab>
+                <Tabs.Tab value='builder' leftSection={<IconTransform size='1rem' />}>
+                  Auto Builder
                 </Tabs.Tab>
               </Tabs.List>
 

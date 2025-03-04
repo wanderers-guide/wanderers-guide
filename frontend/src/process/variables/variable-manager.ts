@@ -231,7 +231,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   LANGUAGE_IDS: newVariable('list-str', 'LANGUAGE_IDS'),
   CLASS_FEATURE_IDS: newVariable('list-str', 'CLASS_FEATURE_IDS'),
   PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
-  EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', ['9252']), // Hardcoded Fist ID
+  EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', []),
 
   // Used for tracking traits. We create new traits so that they're run first
   //TRAIT_ANCESTRY_<>_IDS: newVariable('num', 'TRAIT_ANCESTRY_<>_IDS'),

@@ -7,6 +7,7 @@ import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity
 import { Operation } from '@typing/operations';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
+import { isCharacter } from '@utils/type-fixing';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-display';
 import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables, getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
@@ -153,11 +154,15 @@ async function getDefaultContainerContents(item: Item, allItems?: Item[], count 
   return invItems;
 }
 
-export function applyEquipmentPenalties(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
-  const STORE_ID = 'CHARACTER';
+export function applyEquipmentPenalties(
+  storeId: StoreID,
+  entity: LivingEntity,
+  setEntity: SetterOrUpdater<LivingEntity | null>
+) {
+  const STORE_ID = storeId;
 
   setTimeout(() => {
-    if (!character.inventory) return;
+    if (!entity.inventory) return;
 
     const applyPenalties = (item: InventoryItem) => {
       if (item.item.meta_data) {
@@ -210,31 +215,35 @@ export function applyEquipmentPenalties(character: Character, setCharacter: Sett
     };
 
     // Use the "best" armor/shield because that's the one we're assumed to be wearing
-    const bestArmor = getBestArmor(STORE_ID, character.inventory);
-    const bestShield = getBestShield(STORE_ID, character.inventory);
+    const bestArmor = getBestArmor(STORE_ID, entity.inventory);
+    const bestShield = getBestShield(STORE_ID, entity.inventory);
     if (bestArmor) applyPenalties(bestArmor);
     if (bestShield) applyPenalties(bestShield);
   }, 200);
 }
 
-export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+export function checkBulkLimit(
+  storeId: StoreID,
+  entity: LivingEntity,
+  setEntity: SetterOrUpdater<LivingEntity | null>
+) {
   setTimeout(() => {
-    if (!character.inventory) return;
-    if (Math.floor(getInvBulk(character.inventory)) > getBulkLimit('CHARACTER')) {
+    if (!entity.inventory) return;
+    if (Math.floor(getInvBulk(entity.inventory)) > getBulkLimit(storeId)) {
       // Add encumbered condition
-      const newConditions = cloneDeep(character.details?.conditions ?? []);
+      const newConditions = cloneDeep(entity.details?.conditions ?? []);
       const encumbered = newConditions.find((c) => c.name === 'Encumbered');
       if (!encumbered) {
         newConditions.push(getConditionByName('Encumbered')!);
 
-        // if (Math.floor(getInvBulk(character.inventory)) > getBulkLimitImmobile('CHARACTER')) {
+        // if (Math.floor(getInvBulk(character.inventory)) > getBulkLimitImmobile(storeId)) {
         //   const immobilized = newConditions.find((c) => c.name === 'Immobilized');
         //   if (!immobilized) {
         //     newConditions.push(getConditionByName('Immobilized')!);
         //   }
         // }
 
-        setCharacter((c) => {
+        setEntity((c) => {
           if (!c) return c;
           return {
             ...c,
@@ -266,16 +275,24 @@ export function checkBulkLimit(character: Character, setCharacter: SetterOrUpdat
   }, 200);
 }
 
-export function addExtraItems(items: Item[], character: Character, setCharacter: SetterOrUpdater<Character | null>) {
+export function addExtraItems(
+  storeId: StoreID,
+  items: Item[],
+  entity: LivingEntity,
+  setEntity: SetterOrUpdater<LivingEntity | null>
+) {
   // Add extra items
   setTimeout(async () => {
-    if (!character.inventory) return;
-
     const extraItems: InventoryItem[] = [];
 
-    for (const itemId of getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? []) {
+    let extraItemIds = getVariable<VariableListStr>(storeId, 'EXTRA_ITEM_IDS')?.value ?? [];
+    if (isCharacter(entity)) {
+      extraItemIds = [...extraItemIds, '9252']; // Hardcoded Fist ID
+    }
+
+    for (const itemId of extraItemIds) {
       const item = items.find((item) => `${item.id}` === itemId);
-      const hasItemAdded = character.meta_data?.given_item_ids?.includes(parseInt(itemId));
+      const hasItemAdded = entity.meta_data?.given_item_ids?.includes(parseInt(itemId));
       if (item && !hasItemAdded) {
         const baseItem = item.meta_data?.base_item
           ? items.find((i) => labelToVariable(i.name) === labelToVariable(item.meta_data!.base_item!))
@@ -303,13 +320,21 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
 
     if (extraItems.length === 0) return;
 
-    setCharacter((c) => {
+    setEntity((c) => {
       if (!c) return c;
       return {
         ...c,
         inventory: {
-          ...c.inventory!,
-          items: uniqBy([...c.inventory!.items, ...extraItems], 'id'),
+          ...(c.inventory ?? {
+            coins: {
+              cp: 0,
+              sp: 0,
+              gp: 0,
+              pp: 0,
+            },
+            items: [],
+          }),
+          items: uniqBy([...(c.inventory?.items ?? []), ...extraItems], 'id'),
         },
         meta_data: {
           ...c.meta_data,
@@ -321,15 +346,18 @@ export function addExtraItems(items: Item[], character: Character, setCharacter:
 
   // Remove extra items that are no longer in the list
   setTimeout(() => {
-    if (!character.inventory) return;
+    if (!entity.inventory) return;
 
-    const givenItemIds = character.meta_data?.given_item_ids ?? [];
-    const extraItemIds = getVariable<VariableListStr>('CHARACTER', 'EXTRA_ITEM_IDS')?.value ?? [];
+    const givenItemIds = entity.meta_data?.given_item_ids ?? [];
+    let extraItemIds = getVariable<VariableListStr>(storeId, 'EXTRA_ITEM_IDS')?.value ?? [];
+    if (isCharacter(entity)) {
+      extraItemIds = [...extraItemIds, '9252']; // Hardcoded Fist ID
+    }
 
     const itemsToRemove = givenItemIds.filter((id) => !extraItemIds.includes(`${id}`));
     if (itemsToRemove.length === 0) return;
 
-    setCharacter((c) => {
+    setEntity((c) => {
       if (!c) return c;
       return {
         ...c,
