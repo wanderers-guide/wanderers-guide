@@ -15,6 +15,7 @@ import {
   TextInput,
   ScrollArea,
   ActionIcon,
+  Paper,
 } from '@mantine/core';
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
@@ -40,28 +41,6 @@ import { modals } from '@mantine/modals';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const [character, setCharacter] = useRecoilState(characterState);
-  const [selectedType, setSelectedType] = useState<number | null>(null);
-
-  const { data, isFetching } = useQuery({
-    queryKey: [`get-companions-data`],
-    queryFn: async () => {
-      const traits = await fetchContentAll<Trait>('trait');
-      const creatures = await fetchContentAll<Creature>('creature');
-
-      return {
-        traits,
-        creatures,
-      };
-    },
-  });
-
-  const selectionTypes = useMemo(() => {
-    return data?.traits?.filter((t) => t.meta_data?.companion_type_trait) ?? [];
-  }, [data]);
-
-  const creatureOptions = useMemo(() => {
-    return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
-  }, [data, selectedType]);
 
   // Calculated data for the companions
   const companions = character?.companions?.list ?? [];
@@ -79,8 +58,29 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
     enabled: companions.length > 0,
   });
 
+  if (companions.length === 0) {
+    return (
+      <ScrollArea
+        p={8}
+        style={{
+          backgroundColor: `rgb(37, 38, 43)`,
+          borderRadius: 10,
+          border: '1px solid #373A40',
+          height: props.panelHeight - 50,
+        }}
+      >
+        <Stack mt={20} gap={10}>
+          <Text ta='center' c='gray.5' fs='italic'>
+            No companions found, want to add one?
+          </Text>
+          <AddCompanionSection />
+        </Stack>
+      </ScrollArea>
+    );
+  }
+
   return (
-    <Stack h={props.panelHeight} gap={15}>
+    <Stack h={props.panelHeight} gap={12}>
       {/* <Center pt={50}>
         <Stack>
           <Title ta='center' fs='italic' order={2}>
@@ -156,68 +156,98 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         </Stack>
       </ScrollArea>
 
-      <Group gap={0} align='center' justify='center'>
-        <Text c='gray.5' fw={'bolder'}>
-          Add
-        </Text>
-        <ActionIcon
-          variant='transparent'
-          color='gray.5'
-          style={{
-            cursor: 'default',
-          }}
-          ml={5}
-          mr={10}
-        >
-          <IconPaw style={{ width: '80%', height: '80%' }} stroke={1.5} />
-        </ActionIcon>
-        <Select
-          variant='filled'
-          placeholder='Companion'
-          data={selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name }))}
-          value={selectedType ? `${selectedType}` : null}
-          onChange={(value) => setSelectedType(parseInt(`${value ?? -1}`))}
-          w={150}
-          styles={{
-            input: {
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
-            },
-          }}
-        />
-        <Select
-          variant='filled'
-          placeholder='Type'
-          disabled={!selectedType || selectedType === -1}
-          data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
-          onChange={(value) => {
-            if (!value) return;
-            const creature = creatureOptions.find((c) => c.id === parseInt(`${value}`));
-            // Add creature to character
-            setCharacter((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                companions: {
-                  ...(prev.companions ?? {}),
-                  list: [...(prev.companions?.list ?? []), creature!],
-                },
-              };
-            });
-
-            setSelectedType(null);
-          }}
-          value={''}
-          w={100}
-          styles={{
-            input: {
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
-            },
-          }}
-        />
-      </Group>
+      <AddCompanionSection />
     </Stack>
+  );
+}
+
+function AddCompanionSection() {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [selectedType, setSelectedType] = useState<number | null>(null);
+
+  const { data, isFetching } = useQuery({
+    queryKey: [`get-companions-data`],
+    queryFn: async () => {
+      const traits = await fetchContentAll<Trait>('trait');
+      const creatures = await fetchContentAll<Creature>('creature');
+
+      return {
+        traits,
+        creatures,
+      };
+    },
+  });
+
+  const selectionTypes = useMemo(() => {
+    return data?.traits?.filter((t) => t.meta_data?.companion_type_trait) ?? [];
+  }, [data]);
+
+  const creatureOptions = useMemo(() => {
+    return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
+  }, [data, selectedType]);
+
+  return (
+    <Group gap={0} align='center' justify='center'>
+      <Text c='gray.5' fw={'bolder'}>
+        Add
+      </Text>
+      <ActionIcon
+        variant='transparent'
+        color='gray.5'
+        style={{
+          cursor: 'default',
+        }}
+        ml={5}
+        mr={10}
+      >
+        <IconPaw style={{ width: '80%', height: '80%' }} stroke={1.5} />
+      </ActionIcon>
+      <Select
+        variant='filled'
+        placeholder='Companion'
+        data={selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name }))}
+        value={selectedType ? `${selectedType}` : null}
+        onChange={(value) => setSelectedType(parseInt(`${value ?? -1}`))}
+        w={150}
+        styles={{
+          input: {
+            borderTopRightRadius: 0,
+            borderBottomRightRadius: 0,
+          },
+        }}
+      />
+      <Select
+        variant='filled'
+        placeholder='Type'
+        disabled={!selectedType || selectedType === -1}
+        data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
+        onChange={(value) => {
+          if (!value) return;
+          const creature = creatureOptions.find((c) => c.id === parseInt(`${value}`));
+          // Add creature to character
+          setCharacter((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              companions: {
+                ...(prev.companions ?? {}),
+                list: [...(prev.companions?.list ?? []), creature!],
+              },
+            };
+          });
+
+          setSelectedType(null);
+        }}
+        value={''}
+        w={100}
+        styles={{
+          input: {
+            borderTopLeftRadius: 0,
+            borderBottomLeftRadius: 0,
+          },
+        }}
+      />
+    </Group>
   );
 }
 
