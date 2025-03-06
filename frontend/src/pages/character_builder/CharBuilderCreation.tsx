@@ -2026,7 +2026,7 @@ function CustomAccordionItem(props: {
 
 //////////////////////////////////////////
 
-function DisplayOperationResult(props: {
+export function DisplayOperationResult(props: {
   source?: ObjectWithUUID;
   level?: number;
   results: OperationResult[];

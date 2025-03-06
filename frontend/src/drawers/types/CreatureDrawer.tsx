@@ -20,9 +20,11 @@ import {
   useMantineTheme,
   HoverCard,
 } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useHover, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
+import { convertKeyToBasePrefix } from '@operations/operation-utils';
+import { DisplayOperationResult } from '@pages/character_builder/CharBuilderCreation';
 import { confirmHealth, getEntityLevel, handleRest } from '@pages/character_sheet/living-entity-utils';
 import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
 import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
@@ -254,6 +256,27 @@ export function CreatureDrawerContent(props: {
     setCreature(call);
   };
 
+  console.log('CREATURE', creature);
+
+  const saveSelectionChange = (path: string, value: string) => {
+    setCreatureInstant((prev) => {
+      if (!prev) return prev;
+      const newSelections = { ...prev.operation_data?.selections };
+      if (!value) {
+        delete newSelections[path];
+      } else {
+        newSelections[path] = `${value}`;
+      }
+      return {
+        ...prev,
+        operation_data: {
+          ...prev.operation_data,
+          selections: newSelections,
+        },
+      };
+    });
+  };
+
   if (loading || !creature || !content) {
     return (
       <Loader
@@ -296,6 +319,16 @@ export function CreatureDrawerContent(props: {
               hideImage: true,
             }}
           />
+
+          {operationResults && (
+            <CreatureOperationResults
+              creature={creature}
+              operationResults={operationResults}
+              onSaveChanges={(path, value) => {
+                saveSelectionChange(path, value);
+              }}
+            />
+          )}
         </Stack>
       ) : (
         <Stack>
@@ -322,6 +355,16 @@ export function CreatureDrawerContent(props: {
                 <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
                 <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
                 <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+
+                {operationResults && (
+                  <CreatureOperationResults
+                    creature={creature}
+                    operationResults={operationResults}
+                    onSaveChanges={(path, value) => {
+                      saveSelectionChange(path, value);
+                    }}
+                  />
+                )}
               </Stack>
             )}
 
@@ -685,5 +728,54 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
       </Text>
       ) {knowledgeSkill} DC {getDcForLevel(getEntityLevel(props.entity), props.entity.rarity)}
     </Text>
+  );
+}
+
+function CreatureOperationResults(props: {
+  operationResults: OperationCreatureResultPackage;
+  onSaveChanges: (path: string, value: string) => void;
+  creature: Creature;
+}) {
+  return (
+    <Stack gap={15} mb={30}>
+      <DisplayOperationResult
+        source={undefined}
+        level={props.creature.level}
+        results={props.operationResults.creatureResults}
+        onChange={(path, value) => {
+          props.onSaveChanges(`${convertKeyToBasePrefix('creatureResults')}_${path}`, value);
+        }}
+      />
+      {props.operationResults.abilityResults.map((s, index) => (
+        <DisplayOperationResult
+          key={index}
+          source={{
+            ...s.baseSource,
+            _select_uuid: `${s.baseSource.id}`,
+            _content_type: 'ability-block',
+          }}
+          level={s.baseSource.level}
+          results={s.baseResults}
+          onChange={(path, value) => {
+            props.onSaveChanges(`${convertKeyToBasePrefix('abilityResults', s.baseSource.id)}_${path}`, value);
+          }}
+        />
+      ))}
+      {props.operationResults.itemResults.map((s, index) => (
+        <DisplayOperationResult
+          key={index}
+          source={{
+            ...s.baseSource,
+            _select_uuid: `${s.baseSource.id}`,
+            _content_type: 'item',
+          }}
+          level={s.baseSource.level}
+          results={s.baseResults}
+          onChange={(path, value) => {
+            props.onSaveChanges(`${convertKeyToBasePrefix('itemResults', s.baseSource.id)}_${path}`, value);
+          }}
+        />
+      ))}
+    </Stack>
   );
 }

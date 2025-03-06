@@ -324,6 +324,8 @@ export function convertKeyToBasePrefix(key: string, id?: number): string {
     classFeatureResults: `class-feature-${id}`,
     contentSourceResults: `content-source-${id}`,
     itemResults: `item-${id}`,
+    creatureResults: `creature`,
+    abilityResults: `creature-ability-${id}`,
   };
   if (mapping[key]) {
     return mapping[key];
