@@ -736,6 +736,8 @@ function CreatureOperationResults(props: {
   onSaveChanges: (path: string, value: string) => void;
   creature: Creature;
 }) {
+  console.log(props.operationResults.abilityResults);
+
   return (
     <Stack gap={15} mb={30}>
       <DisplayOperationResult
