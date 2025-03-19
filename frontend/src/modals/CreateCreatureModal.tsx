@@ -44,6 +44,7 @@ import { IconBracketsAngle, IconCornerUpRight, IconTransform } from '@tabler/ico
 import StatBlockSection from '@common/StatBlockSection';
 import { extractCreatureInfo } from '@utils/creature';
 import { uniq } from 'lodash-es';
+import { hashData } from '@utils/numbers';
 
 /**
  * Modal for creating or editing a creature
@@ -568,15 +569,23 @@ export function CreateCreatureModal(props: {
           editAbilityBlock={openedModal === -1 ? undefined : openedModal}
           onComplete={async (abilityBlock) => {
             if (openedModal === -1) {
+              // Create
               form.setValues({
                 ...form.values,
-                abilities_base: [...(form.values.abilities_base ?? []), abilityBlock],
+                abilities_base: [
+                  ...(form.values.abilities_base ?? []),
+                  {
+                    ...abilityBlock,
+                    id: hashData({ data: crypto.randomUUID() }),
+                  },
+                ],
               });
             } else {
+              // Update
               form.setValues({
                 ...form.values,
                 abilities_base: form.values.abilities_base?.map((ability) =>
-                  ability.name === abilityBlock.name ? abilityBlock : ability
+                  ability.id === abilityBlock.id ? abilityBlock : ability
                 ),
               });
             }

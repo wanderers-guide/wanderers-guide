@@ -526,7 +526,8 @@ export function resetVariables(id?: StoreID) {
 export function setVariable(id: StoreID, name: string, value: VariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
-    throwError(`Invalid variable name: ${name}`);
+    // throwError(`Invalid variable name: ${name}`);
+    return;
   }
   const oldValue = cloneDeep(variable.value);
 
@@ -576,7 +577,8 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
 export function adjVariable(id: StoreID, name: string, amount: VariableValue | ExtendedVariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
-    throwError(`Invalid variable name: ${name}`);
+    // throwError(`Invalid variable name: ${name}`);
+    return;
   }
   const oldValue = cloneDeep(variable.value);
 
