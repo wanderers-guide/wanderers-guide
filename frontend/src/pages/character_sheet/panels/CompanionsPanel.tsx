@@ -54,7 +54,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
     ],
     queryFn: async () => {
       if (companions.length === 0) return [];
-      return await computeCombatants(companions);
+      return await computeCompanions(companions);
     },
     enabled: companions.length > 0,
   });
@@ -512,7 +512,7 @@ function CompanionCard(props: {
         variant='light'
         radius={100}
         color='gray'
-        aria-label='Remove Combatant'
+        aria-label='Remove Companion'
         onClick={props.onRemove}
         style={{
           position: 'absolute',
@@ -527,7 +527,7 @@ function CompanionCard(props: {
   );
 }
 
-async function computeCombatants(companions: Creature[]) {
+async function computeCompanions(companions: Creature[]) {
   const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
 
   async function computeCompanion(

@@ -50,6 +50,8 @@ export default function StatBlockSection(props: {
     },
   });
 
+  const preformattedDescription = isCreature(entity) && entity.details.description?.includes('**');
+
   const stringifySenses = (senses: {
     precise: SenseWithRange[];
     imprecise: SenseWithRange[];
@@ -561,9 +563,15 @@ export default function StatBlockSection(props: {
 
       {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && (
         <Box p='lg'>
-          <RichText ta='justify' fz='xs' fs='italic' c='dimmed' span>
-            {entity.details.description}
-          </RichText>
+          {preformattedDescription ? (
+            <RichText ta='justify' fz='xs'>
+              {entity.details.description}
+            </RichText>
+          ) : (
+            <RichText ta='justify' fz='xs' fs='italic' c='dimmed' span>
+              {entity.details.description}
+            </RichText>
+          )}
         </Box>
       )}
     </Stack>

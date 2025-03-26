@@ -4,6 +4,7 @@ import { DISCORD_URL } from '@constants/data';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
+  ActionIcon,
   Anchor,
   Badge,
   Box,
@@ -40,7 +41,7 @@ import { isTruthy } from '@utils/type-fixing';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { selectContent } from '@common/select/SelectContent';
-import { IconBracketsAngle, IconCornerUpRight, IconTransform } from '@tabler/icons-react';
+import { IconBracketsAngle, IconCornerUpRight, IconTransform, IconX } from '@tabler/icons-react';
 import StatBlockSection from '@common/StatBlockSection';
 import { extractCreatureInfo } from '@utils/creature';
 import { uniq } from 'lodash-es';
@@ -356,7 +357,7 @@ export function CreateCreatureModal(props: {
                     </Button>
 
                     {form.values.abilities_base?.map((ability, i) => (
-                      <Box key={i}>
+                      <Box key={i} style={{ position: 'relative' }}>
                         <Button
                           variant='subtle'
                           size='compact-sm'
@@ -375,6 +376,27 @@ export function CreateCreatureModal(props: {
                             size={'1.2rem'}
                           />
                         </Button>
+                        <ActionIcon
+                          size='xs'
+                          variant='light'
+                          radius={100}
+                          color='gray'
+                          aria-label='Remove Ability'
+                          onClick={() => {
+                            form.setValues({
+                              ...form.values,
+                              abilities_base: form.values.abilities_base?.filter((ab) => ab.id !== ability.id),
+                            });
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            right: 0,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          <IconX size='1.5rem' stroke={2} />
+                        </ActionIcon>
                       </Box>
                     ))}
 
@@ -425,7 +447,7 @@ export function CreateCreatureModal(props: {
                     </Button>
 
                     {addedAbilities.map((ability, i) => (
-                      <Box key={i}>
+                      <Box key={i} style={{ position: 'relative' }}>
                         <Button
                           variant='subtle'
                           size='compact-sm'
@@ -448,6 +470,27 @@ export function CreateCreatureModal(props: {
                             size={'1.2rem'}
                           />
                         </Button>
+                        <ActionIcon
+                          size='xs'
+                          variant='light'
+                          radius={100}
+                          color='gray'
+                          aria-label='Remove Ability'
+                          onClick={() => {
+                            form.setValues({
+                              ...form.values,
+                              abilities_added: form.values.abilities_added?.filter((id) => id !== ability.id),
+                            });
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            right: 0,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          <IconX size='1.5rem' stroke={2} />
+                        </ActionIcon>
                       </Box>
                     ))}
 
