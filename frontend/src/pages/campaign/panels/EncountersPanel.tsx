@@ -709,6 +709,8 @@ function EncounterView(props: {
                       showButton: true,
                       groupBySource: true,
                       zIndex: 400,
+                      // Hide companions
+                      filterFn: (c) => c.level !== -100,
                     }
                   );
                 }}
