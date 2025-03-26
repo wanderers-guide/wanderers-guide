@@ -38,6 +38,7 @@ import { applyConditions } from '@conditions/condition-handler';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
 import { addExtraItems, getBestArmor } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
+import { selectContent } from '@common/select/SelectContent';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const [character, setCharacter] = useRecoilState(characterState);
@@ -205,9 +206,40 @@ function AddCompanionSection() {
       <Select
         variant='filled'
         placeholder='Companion'
-        data={selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name }))}
+        data={[
+          ...selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name })),
+          { value: '-10', label: 'Creature' },
+        ]}
         value={selectedType ? `${selectedType}` : null}
-        onChange={(value) => setSelectedType(parseInt(`${value ?? -1}`))}
+        onChange={(value) => {
+          if (value === '-10') {
+            // Select any creature
+            selectContent<Creature>(
+              'creature',
+              (option) => {
+                // Add creature to character
+                setCharacter((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    companions: {
+                      ...(prev.companions ?? {}),
+                      list: [...(prev.companions?.list ?? []), option!],
+                    },
+                  };
+                });
+              },
+              {
+                showButton: true,
+                groupBySource: true,
+                zIndex: 400,
+              }
+            );
+            setSelectedType(null);
+          } else {
+            setSelectedType(parseInt(`${value ?? -1}`));
+          }
+        }}
         w={150}
         styles={{
           input: {

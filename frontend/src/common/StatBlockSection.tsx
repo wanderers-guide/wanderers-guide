@@ -70,7 +70,18 @@ export default function StatBlockSection(props: {
         `${linkContent(sense.senseName.toLowerCase(), 'sense', sense.sense)} ${sense.range.trim() ? `(${sense.range} ft.)` : ``}`.trim()
       )
       .join(', ');
-    return `precise: ${precise}; imprecise: ${imprecise}; vague: ${vague}`;
+
+    const sParts: string[] = [];
+    if (precise) {
+      sParts.push(`precise: ${precise}`);
+    }
+    if (imprecise) {
+      sParts.push(`imprecise: ${imprecise}`);
+    }
+    if (vague) {
+      sParts.push(`vague: ${vague}`);
+    }
+    return sParts.join('; ');
   };
 
   const linkContent = (text: string, type: ContentType | AbilityBlockType, data: any) => {
@@ -151,7 +162,7 @@ export default function StatBlockSection(props: {
       ab.requirements ? `**Requirements** ${ab.requirements}` : undefined,
     ].filter(isTruthy);
 
-    const specialStr = ab.special ? `\n\n**Special** ${ab.special}` : '';
+    const specialStr = ab.special ? `\n\n &nbsp;&nbsp; **Special** ${ab.special}` : '';
 
     return (
       <RichText ta='justify' fz='xs' span>

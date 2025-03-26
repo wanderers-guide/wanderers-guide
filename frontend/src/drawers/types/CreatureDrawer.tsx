@@ -735,7 +735,7 @@ function CreatureOperationResults(props: {
   creature: Creature;
 }) {
   return (
-    <Stack gap={15} mb={30}>
+    <Stack gap={15} mb={50}>
       <DisplayOperationResult
         source={undefined}
         level={props.creature.level}

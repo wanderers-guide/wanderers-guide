@@ -13,7 +13,13 @@ export function getResistWeaks(id: StoreID, type: 'RESISTANCES' | 'WEAKNESSES') 
   const rwMap = new Map<string, string>();
   for (const rw of rwVar?.value ?? []) {
     const [key, value] = rw.split(',');
-    const compiledValue = compileExpressions(id, value.trim(), true) ?? '';
+    let compiledValue = compileExpressions(id, value.trim(), true) ?? '';
+
+    // Minimum value of 1
+    if (compiledValue === '0') {
+      compiledValue = '1';
+    }
+
     if (isNaN(parseInt(compiledValue))) {
       if (rwMap.get(key) === 'REMOVE') {
         continue;
