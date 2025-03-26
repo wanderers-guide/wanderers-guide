@@ -26,7 +26,7 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { evaluate } from 'mathjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { getEntityLevel } from '../living-entity-utils';
+import { confirmHealth, getEntityLevel } from '../living-entity-utils';
 import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { ConditionPills, selectCondition } from '../sections/ConditionSection';
@@ -103,14 +103,36 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
               panelWidth={props.panelWidth}
               companion={c}
               computed={computedData?.find((d) => d._id === `COMPANION_${index}`)}
-              updateCreature={(e) => {
+              updateCreature={(input) => {
+                let entity = cloneDeep(input);
+
+                // If health changes, confirm and update entity with new changes
+                if (entity.hp_current !== c.hp_current) {
+                  const computed = computedData?.find((d) => d._id === `COMPANION_${index}`);
+                  if (computed) {
+                    const result = confirmHealth(`${entity.hp_current}`, computed.maxHp, c);
+
+                    if (result) {
+                      entity.hp_current = result.entity.hp_current;
+                      entity.details = {
+                        ...entity.details,
+                        conditions: result.entity.details?.conditions ?? [],
+                      };
+                      entity.meta_data = {
+                        ...entity.meta_data,
+                        reset_hp: false,
+                      };
+                    }
+                  }
+                }
+
                 setCharacter((prev) => {
                   if (!prev) return prev;
                   return {
                     ...prev,
                     companions: {
                       ...(prev.companions ?? {}),
-                      list: [...(prev.companions?.list ?? [])].map((comp, i) => (i === index ? e : comp)),
+                      list: [...(prev.companions?.list ?? [])].map((comp, i) => (i === index ? entity : comp)),
                     },
                   };
                 });
