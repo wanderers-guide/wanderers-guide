@@ -500,10 +500,13 @@ async function runBindValue(
   operation: OperationBindValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const bindValue = getVariable(operation.data.value.storeId, operation.data.value.variable);
-  if (bindValue) {
-    setVariable(varId, operation.data.variable, bindValue.value, sourceLabel);
-  }
+  // On outside process
+  setTimeout(() => {
+    const bindValue = getVariable(operation.data.value.storeId, operation.data.value.variable);
+    if (bindValue) {
+      setVariable(varId, operation.data.variable, bindValue.value, sourceLabel);
+    }
+  }, 1);
   return null;
 }
 
