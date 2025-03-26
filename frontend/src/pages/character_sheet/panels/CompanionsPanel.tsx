@@ -39,6 +39,7 @@ import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variab
 import { addExtraItems, getBestArmor } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 import { selectContent } from '@common/select/SelectContent';
+import { hasTraitType } from '@utils/traits';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const [character, setCharacter] = useRecoilState(characterState);
@@ -74,7 +75,11 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
           <Text ta='center' c='gray.5' fs='italic'>
             No companions found, want to add one?
           </Text>
-          <AddCompanionSection />
+          <Group justify='center'>
+            <Paper p='xs'>
+              <AddCompanionSection />
+            </Paper>
+          </Group>
         </Stack>
       </ScrollArea>
     );
@@ -82,35 +87,16 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
 
   return (
     <Stack h={props.panelHeight} gap={12}>
-      {/* <Center pt={50}>
-        <Stack>
-          <Title ta='center' fs='italic' order={2}>
-            Coming soon!
-          </Title>
-          <Text c='dimmed' ta='center' fz='sm' maw={500}>
-            Companions will be added in future update. You can expect to see support for animal companions, familiars,
-            pets, condition tracking, inventory management, in-depth stat breakdowns, and more! 🎉
-          </Text>
-          <Text c='dimmed' ta='center' fz='xs' maw={500} fs='italic'>
-            If you <b>really</b> want companions, you can still use the{' '}
-            <Anchor fz='xs' fs='italic' target='_blank' href={LEGACY_URL}>
-              legacy site
-            </Anchor>{' '}
-            :)
-          </Text>
-        </Stack>
-      </Center> */}
-
       <ScrollArea
         p={8}
         style={{
           backgroundColor: `rgb(37, 38, 43)`,
           borderRadius: 10,
           border: '1px solid #373A40',
-          height: props.panelHeight - 50,
+          height: props.panelHeight,
         }}
       >
-        <Stack gap={12}>
+        <Stack gap={12} mih={props.panelHeight - 75}>
           {companions.map((c, index) => (
             <CompanionCard
               storeId={`COMPANION_${index}`}
@@ -155,9 +141,10 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
             />
           ))}
         </Stack>
+        <Paper p='xs'>
+          <AddCompanionSection />
+        </Paper>
       </ScrollArea>
-
-      <AddCompanionSection />
     </Stack>
   );
 }
@@ -165,6 +152,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
 function AddCompanionSection() {
   const [character, setCharacter] = useRecoilState(characterState);
   const [selectedType, setSelectedType] = useState<number | null>(null);
+  const isPhone = useMediaQuery(phoneQuery());
 
   const { data, isFetching } = useQuery({
     queryKey: [`get-companions-data`],
@@ -189,20 +177,9 @@ function AddCompanionSection() {
 
   return (
     <Group gap={0} align='center' justify='center'>
-      <Text c='gray.5' fw={'bolder'}>
+      <Text c='gray.5' fw={'bolder'} mr={10}>
         Add
       </Text>
-      <ActionIcon
-        variant='transparent'
-        color='gray.5'
-        style={{
-          cursor: 'default',
-        }}
-        ml={5}
-        mr={10}
-      >
-        <IconPaw style={{ width: '80%', height: '80%' }} stroke={1.5} />
-      </ActionIcon>
       <Select
         variant='filled'
         placeholder='Companion'
@@ -240,7 +217,7 @@ function AddCompanionSection() {
             setSelectedType(parseInt(`${value ?? -1}`));
           }
         }}
-        w={150}
+        w={isPhone ? 120 : 150}
         styles={{
           input: {
             borderTopRightRadius: 0,
@@ -271,7 +248,7 @@ function AddCompanionSection() {
           setSelectedType(null);
         }}
         value={''}
-        w={100}
+        w={isPhone ? 120 : 150}
         styles={{
           input: {
             borderTopLeftRadius: 0,
@@ -339,6 +316,10 @@ function CompanionCard(props: {
     healthRef.current?.blur();
   };
 
+  const traits = findCreatureTraits(props.companion);
+  // Use player saves and AC instead
+  const boundSaves = hasTraitType('PET', traits) || hasTraitType('FAMILIAR', traits);
+
   return (
     <Group
       wrap='nowrap'
@@ -398,12 +379,12 @@ function CompanionCard(props: {
 
         <Box pr={5} style={{ flex: 1 }}>
           <Group gap={1}>
-            <Text size='sm' fw={600} span>
+            <Text size={boundSaves ? 'lg' : 'md'} fw={600} span>
               {props.companion.name}
             </Text>
           </Group>
 
-          {props.computed && (
+          {props.computed && !boundSaves && (
             <Group gap={5} wrap='nowrap'>
               <Text fz='xs' c='gray.6'>
                 {props.computed.ac} AC

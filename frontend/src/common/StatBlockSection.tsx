@@ -29,6 +29,7 @@ import { DisplayIcon } from './IconDisplay';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { compiledConditions } from '@conditions/condition-handler';
 
 export default function StatBlockSection(props: {
   entity: LivingEntity;
@@ -50,7 +51,7 @@ export default function StatBlockSection(props: {
     },
   });
 
-  const preformattedDescription = isCreature(entity) && entity.details.description?.includes('**');
+  const isPreformattedDescription = isCreature(entity) && entity.details.description?.includes('**');
 
   const stringifySenses = (senses: {
     precise: SenseWithRange[];
@@ -525,6 +526,24 @@ export default function StatBlockSection(props: {
           {getResistWeaksDisplay(data.resist_weaks)}
         </RichText>
       )}
+      {entity.details?.conditions && entity.details.conditions.length > 0 && (
+        <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
+          <Text fz='xs' fw={600} c='gray.4' span>
+            Conditions
+          </Text>{' '}
+          <RichText ta='justify' fz='xs' span>
+            {compiledConditions(entity.details.conditions)
+              .map((c) => {
+                if (c.value) {
+                  return `${c.name.toLowerCase()} ${c.value}`;
+                } else {
+                  return c.name.toLowerCase();
+                }
+              })
+              .join(', ')}
+          </RichText>
+        </IndentedText>
+      )}
       {abilities
         .filter((ab) => ab.actions === 'FREE-ACTION' || ab.actions === 'REACTION')
         .map((ab) => getAbilityDisplay(ab))}
@@ -563,7 +582,7 @@ export default function StatBlockSection(props: {
 
       {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && (
         <Box p='lg'>
-          {preformattedDescription ? (
+          {isPreformattedDescription ? (
             <RichText ta='justify' fz='xs'>
               {entity.details.description}
             </RichText>
