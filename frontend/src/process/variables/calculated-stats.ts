@@ -2,8 +2,9 @@ import { getBestArmor, getFlatInvItems, isItemEquippable, isItemInvestable } fro
 import { Item, Character, InventoryItem, LivingEntity } from '@typing/content';
 import { ProficiencyType, StoreID, VariableListStr } from '@typing/variables';
 import { SetterOrUpdater } from 'recoil';
-import { getVariable, getVariables } from './variable-manager';
+import { addVariable, getVariable, getVariables, setVariable } from './variable-manager';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-display';
+import { labelToVariable, variableToLabel } from './variable-utils';
 
 export function saveCalculatedStats(
   id: StoreID,
@@ -55,4 +56,26 @@ export function saveCalculatedStats(
       };
     });
   }, 100);
+}
+
+export function setCalculatedStatsInStore(id: StoreID, entity: LivingEntity) {
+  const calcStats = entity.meta_data?.calculated_stats;
+  if (!calcStats) return;
+
+  if (calcStats.ac !== undefined) {
+    addVariable(id, 'num', `CS:AC`, calcStats.ac, 'Calculated Stats');
+  }
+  if (calcStats.hp_max !== undefined) {
+    addVariable(id, 'num', `CS:HP_MAX`, calcStats.hp_max, 'Calculated Stats');
+  }
+  if (calcStats.resolve_max !== undefined) {
+    addVariable(id, 'num', `CS:RESOLVE_MAX`, calcStats.resolve_max, 'Calculated Stats');
+  }
+  if (calcStats.stamina_max !== undefined) {
+    addVariable(id, 'num', `CS:STAMINA_MAX`, calcStats.stamina_max, 'Calculated Stats');
+  }
+  for (const name of Object.keys(calcStats.profs)) {
+    const { total, type } = calcStats.profs[name];
+    addVariable(id, 'num', `CS:${labelToVariable(name)}`, total, 'Calculated Stats');
+  }
 }

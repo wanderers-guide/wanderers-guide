@@ -21,6 +21,7 @@ export default function VariableSelect(props: {
       data={Object.keys(getVariables('CHARACTER'))
         .filter(
           (variable) =>
+            !variable.startsWith('CS:') &&
             !variable.endsWith('____') &&
             !variable.endsWith('_IDS') &&
             // !variable.endsWith('_NAMES') &&
