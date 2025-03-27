@@ -292,7 +292,8 @@ export function compileExpressions(id: StoreID, text?: string, round = false) {
   const expressions = text.match(/{{[^}]+}}/g);
   if (!expressions) return text;
 
-  const variables = Object.keys(getVariables(id));
+  // Get all variables sorted by length (longest first)
+  const variables = Object.keys(getVariables(id)).sort((a, b) => b.length - a.length);
 
   for (const expression of expressions) {
     let compiledExpression = expression.slice(2, -2);
