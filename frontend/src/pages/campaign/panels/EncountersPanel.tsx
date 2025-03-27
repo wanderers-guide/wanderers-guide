@@ -329,7 +329,7 @@ export default function EncountersPanel(props: {
           onClick={() => {
             openContextModal({
               modal: 'updateEncounter',
-              title: <Title order={3}>Update Encounter</Title>,
+              title: <Title order={3}>Encounter Settings</Title>,
               innerProps: {
                 encounter: encounter,
                 onUpdate: (encounter: Encounter) => {

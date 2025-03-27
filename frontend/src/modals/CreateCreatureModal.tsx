@@ -269,6 +269,7 @@ export function CreateCreatureModal(props: {
                         rightSection={<IconCornerUpRight size='1rem' />}
                         onClick={() => {
                           const info = extractCreatureInfo(inputStatBlock);
+                          console.log(info);
                         }}
                         disabled
                       >

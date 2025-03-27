@@ -364,5 +364,7 @@ export function extractCreatureInfo(text: string) {
     processAbility(line);
   }
 
-  console.log(lines, info);
+  console.log(lines);
+
+  return info;
 }
