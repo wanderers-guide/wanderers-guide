@@ -85,7 +85,7 @@ export function Component() {
 
   // Fetch character from db
   const { isLoading, isInitialLoading } = useQuery({
-    queryKey: [`find-character-${characterId}`],
+    queryKey: [`find-character-${characterId}`, { characterId }],
     queryFn: async () => {
       const resultCharacter = await makeRequest<Character>('find-character', {
         id: characterId,

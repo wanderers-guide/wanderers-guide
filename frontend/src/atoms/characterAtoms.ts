@@ -10,6 +10,15 @@ const characterState = selector({
   key: 'characterState',
   get: ({ get }) => {
     const character = get(_internal_characterState);
+
+    if (character) {
+      // If the character isn't matching the URL id, don't return it
+      const matchingCharacterInURL = !!window.location.href.match(new RegExp(`/${character?.id}($|/|\\?)`));
+      if (!matchingCharacterInURL) {
+        return null;
+      }
+    }
+
     character && saveCharacter(character);
     return character;
   },
