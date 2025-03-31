@@ -193,10 +193,10 @@ async function fillPDF(form: PDFForm, character: Character) {
     form.getCheckBox('DEXTERITY PARTIAL BOOST').check();
   }
   if (conValue.partial) {
-    form.getCheckBox('CONSTITUTION PARTIAL BOOST').check();
+    form.getCheckBox('CONSTITUTION PARTIAL BOODST').check();
   }
   if (intValue.partial) {
-    form.getCheckBox('INTELLIGENCE PARTIAL BOOST').check();
+    form.getCheckBox('INTELLIGENCE PARTIAL BOODST').check();
   }
   if (wisValue.partial) {
     form.getCheckBox('WISDOM PARTIAL BOOST').check();
