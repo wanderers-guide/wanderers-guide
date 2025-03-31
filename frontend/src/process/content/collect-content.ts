@@ -165,7 +165,7 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
   let slots: SpellSlotRecord[] = [];
   let count = 0;
   for (const strS of spellSlots) {
-    const slot = JSON.parse(strS) as { lvl: number; rank: number; amt: number; source: string };
+    const slot = JSON.parse(strS) as { lvl: number; rank: number; amt: number; source: string; opId: string };
     for (let i = 0; i < slot.amt; i++) {
       if (slot.lvl !== getEntityLevel(entity)) continue;
       slots.push({

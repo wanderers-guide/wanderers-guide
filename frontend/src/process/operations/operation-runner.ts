@@ -726,6 +726,7 @@ async function runGiveSpellSlot(
       JSON.stringify({
         ...slot,
         source: operation.data.castingSource,
+        opId: operation.id,
       }),
       sourceLabel
     );
