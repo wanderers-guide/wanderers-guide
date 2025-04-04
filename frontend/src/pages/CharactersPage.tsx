@@ -127,16 +127,19 @@ export function Component() {
                 </Text>
               </Title>
             </Box>
-            <Group gap={5} wrap='nowrap'>
+            <Group gap={15} wrap='nowrap'>
               <Tooltip label='Create Character' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
-                  style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  style={{
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                    backdropFilter: 'blur(6px)',
+                  }}
                   loading={loadingCreateCharacter}
-                  variant='subtle'
+                  variant='outline'
                   color='gray.0'
-                  size='xl'
-                  radius='xl'
+                  size='lg'
+                  radius='lg'
                   aria-label='Create Character'
                   onClick={() => {
                     setLoadingCreateCharacter(true);
@@ -151,12 +154,15 @@ export function Component() {
                   <Tooltip label='Import Character' openDelay={750}>
                     <ActionIcon
                       disabled={reachedCharacterLimit}
-                      style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                      style={{
+                        backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                        backdropFilter: 'blur(6px)',
+                      }}
                       loading={loadingImportCharacter}
-                      variant='subtle'
+                      variant='outline'
                       color='gray.0'
-                      size='xl'
-                      radius='xl'
+                      size='lg'
+                      radius='lg'
                       aria-label='Import Character'
                     >
                       <IconUpload size='1.3rem' stroke={2.5} />
@@ -194,12 +200,15 @@ export function Component() {
               <Tooltip label='Random Character' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
-                  style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  style={{
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                    backdropFilter: 'blur(6px)',
+                  }}
                   loading={loadingCreateRandomCharacter}
-                  variant='subtle'
+                  variant='outline'
                   color='gray.0'
-                  size='xl'
-                  radius='xl'
+                  size='lg'
+                  radius='lg'
                   aria-label='Create Character'
                   onClick={async () => {
                     setLoadingCreateRandomCharacter(true);

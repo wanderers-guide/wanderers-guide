@@ -4,10 +4,14 @@ import { cloneDeep } from 'lodash-es';
 const imageStore: Record<string, ImageOption[]> = {
   general: [
     {
+      name: 'Windswept Castle',
+      url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/4.webp',
+      source_url: 'https://www.artstation.com/',
+    },
+    {
       name: 'Coastal Port',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/1.png',
-      //source: 'Geoffroy Thoorens',
-      source_url: 'https://www.artstation.com/djahal',
+      source_url: 'https://www.artstation.com/',
     },
     {
       name: 'Village Road',
@@ -349,6 +353,12 @@ const imageStore: Record<string, ImageOption[]> = {
       source: 'Andreas Rocha',
       source_url: 'https://www.artstation.com/andreasrocha',
     },
+    {
+      name: `Port City`,
+      url: 'https://cdna.artstation.com/p/assets/images/images/076/023/460/large/andreas-rocha-portcity02.jpg',
+      source: 'Andreas Rocha',
+      source_url: 'https://www.artstation.com/andreasrocha',
+    },
   ],
   jorge_jacinto: [
     {
@@ -529,7 +539,7 @@ export function getDefaultBackgroundImage() {
 }
 
 export function getDefaultCampaignBackgroundImage() {
-  return cloneDeep(imageStore.general[2]);
+  return cloneDeep(imageStore.general[3]);
 }
 
 export function getHomeBackgroundImage() {

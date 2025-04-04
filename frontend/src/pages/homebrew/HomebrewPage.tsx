@@ -70,9 +70,7 @@ import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';
 import { hasPatreonAccess } from '@utils/patreon';
-import _, { set } from 'lodash-es';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function Component() {
@@ -96,6 +94,7 @@ export function Component() {
               <BlurButton
                 w={160}
                 leftSection={<IconListDetails size='1rem' />}
+                variant='outline'
                 style={
                   tab === 0 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }
@@ -106,6 +105,7 @@ export function Component() {
               <BlurButton
                 w={160}
                 leftSection={<IconBookmarks size='1rem' />}
+                variant='outline'
                 style={
                   tab === 1 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }
@@ -116,6 +116,7 @@ export function Component() {
               <BlurButton
                 w={160}
                 leftSection={<IconHammer size='1rem' />}
+                variant='outline'
                 style={
                   tab === 2 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }

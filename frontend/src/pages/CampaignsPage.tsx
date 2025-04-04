@@ -86,13 +86,16 @@ export function Component() {
               <Tooltip label='Create Campaign' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCampaignLimit}
-                  style={{ backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  style={{
+                    backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                    backdropFilter: 'blur(6px)',
+                  }}
                   loading={loadingCreateCampaign}
-                  variant='subtle'
+                  variant='outline'
                   color='gray.0'
-                  size='xl'
-                  radius='xl'
-                  aria-label='Create Character'
+                  size='lg'
+                  radius='lg'
+                  aria-label='Create Campaign'
                   onClick={() => {
                     setLoadingCreateCampaign(true);
                     handleCreateCampaign();
