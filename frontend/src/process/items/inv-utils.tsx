@@ -276,8 +276,8 @@ export function checkBulkLimit(
     } else {
       // Remove encumbered condition
       const newConditions = cloneDeep(entity.details?.conditions ?? []);
-      const encumbered = newConditions.find((c) => c.name === 'Encumbered');
-      if (encumbered && encumbered.source === 'Over Bulk Limit') {
+      const encumbered = newConditions.find((c) => c.name === 'Encumbered' && c.source === 'Over Bulk Limit');
+      if (encumbered) {
         newConditions.splice(newConditions.indexOf(encumbered), 1);
         setEntity((c) => {
           if (!c) return c;
