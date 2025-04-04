@@ -253,12 +253,12 @@ export function checkBulkLimit(
       const newConditions = cloneDeep(entity.details?.conditions ?? []);
       const encumbered = newConditions.find((c) => c.name === 'Encumbered');
       if (!encumbered) {
-        newConditions.push(getConditionByName('Encumbered')!);
+        newConditions.push(getConditionByName('Encumbered', 'Over Bulk Limit')!);
 
         // if (Math.floor(getInvBulk(character.inventory)) > getBulkLimitImmobile(storeId)) {
         //   const immobilized = newConditions.find((c) => c.name === 'Immobilized');
         //   if (!immobilized) {
-        //     newConditions.push(getConditionByName('Immobilized')!);
+        //     newConditions.push(getConditionByName('Immobilized', 'Way Over Bulk Limit')!);
         //   }
         // }
 
@@ -275,21 +275,21 @@ export function checkBulkLimit(
       }
     } else {
       // Remove encumbered condition
-      // const newConditions = cloneDeep(character.details?.conditions ?? []);
-      // const encumbered = newConditions.find((c) => c.name === 'Encumbered');
-      // if (encumbered) {
-      //   newConditions.splice(newConditions.indexOf(encumbered), 1);
-      //   setCharacter((c) => {
-      //     if (!c) return c;
-      //     return {
-      //       ...c,
-      //       details: {
-      //         ...c.details,
-      //         conditions: newConditions,
-      //       },
-      //     };
-      //   });
-      // }
+      const newConditions = cloneDeep(entity.details?.conditions ?? []);
+      const encumbered = newConditions.find((c) => c.name === 'Encumbered');
+      if (encumbered && encumbered.source === 'Over Bulk Limit') {
+        newConditions.splice(newConditions.indexOf(encumbered), 1);
+        setEntity((c) => {
+          if (!c) return c;
+          return {
+            ...c,
+            details: {
+              ...c.details,
+              conditions: newConditions,
+            },
+          };
+        });
+      }
     }
   }, 200);
 }
