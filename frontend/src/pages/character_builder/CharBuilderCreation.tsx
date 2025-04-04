@@ -62,7 +62,6 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
       await fetchContentSources();
 
       const content = await fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: false });
-      interval.stop();
       return content;
     },
     refetchOnWindowFocus: false,

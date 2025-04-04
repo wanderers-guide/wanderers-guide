@@ -108,7 +108,6 @@ export function Component(props: {}) {
 
       // Fetch content
       const content = await fetchContentPackage(undefined, { fetchSources: true });
-      interval.stop();
       return content;
     },
     refetchOnWindowFocus: false,
