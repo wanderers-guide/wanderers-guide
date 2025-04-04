@@ -176,6 +176,25 @@ export function applyEquipmentPenalties(
               addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
             }
           }
+
+          // If armor is noisy, apply to Stealth checks even if you meet the required Strength score
+          const isNoisy = hasTraitType('NOISY', item.item.traits);
+          if (isNoisy) {
+            const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
+            if (checkPenalty > 0) {
+              const stealthSkill = getAllSkillVariables(STORE_ID).find((skill) => skill.name === 'SKILL_STEALTH');
+              if (stealthSkill) {
+                addVariableBonus(
+                  STORE_ID,
+                  stealthSkill.name,
+                  -1 * checkPenalty,
+                  undefined,
+                  '', // Could include: (unless it has the attack trait)
+                  `${item.item.name}`
+                );
+              }
+            }
+          }
         } else {
           // If the strength requirement doesn't exist, always include penalty.
           //
