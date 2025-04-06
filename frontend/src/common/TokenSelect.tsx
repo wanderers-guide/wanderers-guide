@@ -1,5 +1,6 @@
 import { MantineSize, Rating, Select } from '@mantine/core';
-import { isTouchDevice } from '@utils/mobile-responsive';
+import { useMediaQuery } from '@mantine/hooks';
+import { isTabletSized, isTouchDevice, tabletQuery } from '@utils/mobile-responsive';
 import { useState } from 'react';
 
 export default function TokenSelect(props: {
@@ -11,11 +12,11 @@ export default function TokenSelect(props: {
   size?: MantineSize;
 }) {
   const [value, setValue] = useState(props.value ?? props.count);
-  const isPhone = isTouchDevice();
+  const isMobileTouch = useMediaQuery(tabletQuery()) && isTouchDevice();
 
   return (
     <>
-      {isPhone ? (
+      {isMobileTouch ? (
         <>
           <Select
             size='xs'
