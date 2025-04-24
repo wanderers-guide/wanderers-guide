@@ -303,7 +303,10 @@ export function getHealthValueParts(id: StoreID) {
   const classHp = getFinalVariableValue(id, 'MAX_HEALTH_CLASS_PER_LEVEL').total;
   const bonusHp = getFinalVariableValue(id, 'MAX_HEALTH_BONUS').total;
   const conMod = getFinalVariableValue(id, 'ATTRIBUTE_CON').total;
-  const level = getVariable<VariableNum>(id, 'LEVEL')!.value;
+  let level = getVariable<VariableNum>(id, 'LEVEL')!.value;
+  if (level === -100) {
+    level = getVariable<VariableNum>('CHARACTER', 'LEVEL')?.value ?? 0;
+  }
 
   const breakdown = getVariableBreakdown(id, 'MAX_HEALTH_BONUS');
   // const ancestryBreakdown = getVariableBreakdown(id, 'MAX_HEALTH_ANCESTRY');
