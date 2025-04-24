@@ -176,7 +176,7 @@ function ProfileSection() {
   let contentTier = '';
   let contentColor: MantineColor = 'gray';
   if (approvedContentUpdates) {
-    if (approvedContentUpdates.length >= 100) {
+    if (approvedContentUpdates.length >= 100 || user.is_community_paragon) {
       contentTier = 'Content Connoisseur';
       contentColor = 'violet';
     } else if (approvedContentUpdates.length >= 50) {
