@@ -182,6 +182,7 @@ function CampaignCard(props: { campaign: Campaign }) {
           component='a'
           href={`/campaign/${props.campaign.id}`}
           style={{
+            zIndex: 1,
             position: 'absolute',
             top: 0,
             left: 0,
