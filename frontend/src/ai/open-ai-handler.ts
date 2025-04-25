@@ -129,7 +129,7 @@ export async function generateNPC(
   additional?: string
 ): Promise<CampaignNPC | null> {
   const prompt = `
-  I’m going to give you some information about a Pathfinder/ Starfinder / D&D campaign and I need you to generate an NPC for it.
+  I’m going to give you some information about a Pathfinder / Starfinder / D&D campaign and I need you to generate an NPC for it.
   Be creative and have fun with it, the most interesting NPCs are ones that embrace archetypes and are complex and interesting.
   The ancestry, background, and class should be the name from the options you could select in Pathfinder / Starfinder.
   The NPC level should be within the range 1-20.
@@ -166,7 +166,7 @@ export async function generateNPC(
   }
 
 
-  Use markdown to format your output. at the Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  Use markdown to format your output. Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
   # Output:
   `.trim();
   const result = await generateCompletion(prompt, 'gpt-4o-mini');
@@ -176,6 +176,46 @@ export async function generateNPC(
   } catch (e) {
     console.warn('Failed to parse response', e);
     return null;
+  }
+}
+
+export async function extractCharacterInfo(info: string): Promise<Record<string, string>> {
+  const prompt = `
+  I’m going to give you some background information about a Pathfinder/ Starfinder / D&D character and I want you to extract certain pieces of information about them. If you can't, just don't include that output field.
+
+  # Character Background Info:
+  ${info}
+  
+  # Output Format:
+  {
+    notes?: string;
+    appearance?: string;
+    personality?: string;
+    alignment?: string;
+    beliefs?: string;
+    age?: string;
+    height?: string;
+    weight?: string;
+    gender?: string;
+    pronouns?: string;
+    faction?: string;
+    reputation?: string;
+    ethnicity?: string;
+    nationality?: string;
+    birthplace?: string;
+  }
+
+
+  Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+  # Output:
+  `.trim();
+  const result = await generateCompletion(prompt, 'gpt-4o-mini');
+
+  try {
+    return yaml.load(result ?? '') as any;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return {};
   }
 }
 
