@@ -244,11 +244,12 @@ export function applyEquipmentPenalties(
 export function checkBulkLimit(
   storeId: StoreID,
   entity: LivingEntity,
-  setEntity: SetterOrUpdater<LivingEntity | null>
+  setEntity: SetterOrUpdater<LivingEntity | null>,
+  addEncumbered: boolean
 ) {
   setTimeout(() => {
     if (!entity.inventory) return;
-    if (Math.floor(getInvBulk(entity.inventory)) > getBulkLimit(storeId)) {
+    if (addEncumbered && Math.floor(getInvBulk(entity.inventory)) > getBulkLimit(storeId)) {
       // Add encumbered condition
       const newConditions = cloneDeep(entity.details?.conditions ?? []);
       const encumbered = newConditions.find((c) => c.name === 'Encumbered');

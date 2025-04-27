@@ -108,29 +108,28 @@ export function ConditionPills(props: {
           text={condition.name}
           amount={condition.value}
           onClick={() => {
-            let source = condition.source;
-
+            //// Unneeded code because 'Over Bulk Limit' is already set ////
             // Check if the condition is from being over bulk limit
-            const isEncumberedFromBulk =
-              condition.name === 'Encumbered' &&
-              props.entity?.inventory &&
-              Math.floor(getInvBulk(props.entity.inventory)) > getBulkLimit(props.id);
-            if (
-              isCharacter(props.entity) &&
-              props.entity?.options?.ignore_bulk_limit !== true &&
-              isEncumberedFromBulk
-            ) {
-              source = 'Over Bulk Limit';
-            }
+            // const isEncumberedFromBulk =
+            //   condition.name === 'Encumbered' &&
+            //   props.entity?.inventory &&
+            //   Math.floor(getInvBulk(props.entity.inventory)) > getBulkLimit(props.id);
+            // if (
+            //   isCharacter(props.entity) &&
+            //   props.entity?.options?.ignore_bulk_limit !== true &&
+            //   isEncumberedFromBulk
+            // ) {
+            //   source = 'Over Bulk Limit';
+            // }
 
             openContextModal({
               modal: 'condition',
               title: (
                 <Group justify='space-between'>
                   <Title order={3}>{condition.name}</Title>
-                  {source ? (
+                  {condition.source ? (
                     <Text fs='italic' fz='sm' mr={15}>
-                      From: <Text span>{source}</Text>
+                      From: <Text span>{condition.source}</Text>
                     </Text>
                   ) : (
                     <Button

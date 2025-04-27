@@ -185,7 +185,7 @@ export function CreatureDrawerContent(props: {
         addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
 
         // Check bulk limits
-        checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature));
+        checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
 
         // Apply armor/shield penalties
         applyEquipmentPenalties(STORE_ID, creature, convertToSetEntity(setCreature));

@@ -229,9 +229,12 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
         addExtraItems('CHARACTER', props.content.items, sDebouncedCharacter, convertToSetEntity(setCharacter));
 
         // Check bulk limits
-        if (sDebouncedCharacter.options?.ignore_bulk_limit !== true) {
-          checkBulkLimit('CHARACTER', sDebouncedCharacter, convertToSetEntity(setCharacter));
-        }
+        checkBulkLimit(
+          'CHARACTER',
+          sDebouncedCharacter,
+          convertToSetEntity(setCharacter),
+          sDebouncedCharacter.options?.ignore_bulk_limit !== true
+        );
 
         // Apply armor/shield penalties
         applyEquipmentPenalties('CHARACTER', sDebouncedCharacter, convertToSetEntity(setCharacter));
