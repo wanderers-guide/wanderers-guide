@@ -28,7 +28,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Clumsy',
-    description: `Your movements become clumsy and inexact. Clumsy always includes a value. You take a status penalty equal to the condition value to Dexterity-based checks and DCs, including AC, Reflex saves, ranged attack rolls, and skill checks using Acrobatics, Stealth, and Thievery.`,
+    description: `Your movements become clumsy and inexact. Clumsy always includes a value. You take a status penalty equal to the condition value to Dexterity-based rolls and DCs, including AC, Reflex saves, ranged attack rolls, and skill checks using Acrobatics, Stealth, and Thievery.`,
     value: 1,
     for_creature: true,
     for_object: false,
@@ -75,7 +75,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Drained',
-    description: `Your health and vitality have been depleted as you’ve lost blood, life force, or some other essence. Drained always includes a value. You take a status penalty equal to your drained value on Constitution-based checks, such as Fortitude saves. You also lose a number of Hit Points equal to your level (minimum 1) times the drained value, and your maximum Hit Points are reduced by the same amount. For example, if you become drained 3 and you’re a 3rd-level character, you lose 9 Hit Points and reduce your maximum Hit Points by 9. Losing these Hit Points doesn’t count as taking damage.
+    description: `Your health and vitality have been depleted as you’ve lost blood, life force, or some other essence. Drained always includes a value. You take a status penalty equal to your drained value to Constitution-based rolls and DCs, such as Fortitude saves. You also lose a number of Hit Points equal to your level (minimum 1) times the drained value, and your maximum Hit Points are reduced by the same amount. For example, if you become drained 3 and you’re a 3rd-level character, you lose 9 Hit Points and reduce your maximum Hit Points by 9. Losing these Hit Points doesn’t count as taking damage.
     Each time you get a full night’s rest, your drained value decreases by 1. This increases your maximum Hit Points, but you don’t immediately recover the lost Hit Points.`,
     value: 1,
     for_creature: true,
@@ -252,7 +252,7 @@ const CONDITIONS: Condition[] = [
   },
   {
     name: 'Stupefied',
-    description: `Your thoughts and instincts are clouded. Stupefied always includes a value. You take a status penalty equal to this value on Intelligence-, Wisdom-, and Charisma-based checks and DCs, including Will saving throws, spell attack modifiers, spell DCs, and skill checks that use these attribute modifiers. Any time you attempt to ${convertToHardcodedLink('action', 'Cast a Spell')} while stupefied, the spell is disrupted unless you succeed at a flat check with a DC equal to 5 + your stupefied value.`,
+    description: `Your thoughts and instincts are clouded. Stupefied always includes a value. You take a status penalty equal to this value on Intelligence-, Wisdom-, and Charisma-based rolls and DCs, including Will saving throws, spell attack modifiers, spell DCs, and skill checks that use these attribute modifiers. Any time you attempt to ${convertToHardcodedLink('action', 'Cast a Spell')} while stupefied, the spell is disrupted unless you succeed at a flat check with a DC equal to 5 + your stupefied value.`,
     value: 1,
     for_creature: true,
     for_object: false,
@@ -455,7 +455,7 @@ function applyCondition(id: StoreID, condition: Condition) {
       addVariableBonus(id, skill.name, penalty, 'status', '', `Clumsy ${condition.value}`);
     }
     addVariableBonus(id, 'DEX_ATTACK_ROLLS_BONUS', penalty, 'status', '', `Clumsy ${condition.value}`);
-    // Wording says only checks, so don't add to damage rolls
+    addVariableBonus(id, 'DEX_ATTACK_DAMAGE_BONUS', penalty, 'status', '', `Clumsy ${condition.value}`);
     return;
   }
   if (condition.name === 'Concealed') {
