@@ -13,6 +13,8 @@ import {
   Tooltip,
   ScrollArea,
   Autocomplete,
+  ActionIcon,
+  HoverCard,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { createDefaultOperation } from '@operations/operation-utils';
@@ -64,6 +66,8 @@ import { InjectSelectOptionOperation } from './selection/InjectSelectOptionOpera
 import { InjectTextOperation } from './variables/InjectTextOperation';
 import { GiveModeOperation } from './ability_block/GiveModeOperation';
 import { BindValOperation } from './variables/BindValOperation';
+import { IconCopy, IconFileUpload } from '@tabler/icons-react';
+import { showNotification } from '@mantine/notifications';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -142,6 +146,7 @@ export function OperationSection(props: {
   blacklist?: string[];
   operations?: Operation[];
   onChange: (operations: Operation[]) => void;
+  allowCopyPaste?: boolean;
 }) {
   const [searchValue, setSearchValue] = useState('');
   const [displaySelect, refreshSelect] = useRefresh();
@@ -161,78 +166,168 @@ export function OperationSection(props: {
     }
   }, [props.operations]);
 
+  const copyOps = () => {
+    const copyString = JSON.stringify(props.operations ?? []);
+    navigator.clipboard.writeText(copyString).then(() => {
+      showNotification({
+        title: 'Copied Operations',
+        message: `Copied ${props.operations?.length ?? 0} operations to clipboard.`,
+        color: 'blue',
+        icon: null,
+        autoClose: 2000,
+      });
+    });
+  };
+
+  const pasteOps = async () => {
+    try {
+      const clipboardString = await navigator.clipboard.readText();
+      const clipboardOperations = JSON.parse(clipboardString) as Operation[];
+
+      const giveUniqueIds = (ops: Operation[]) => {
+        return ops.map((op) => {
+          return {
+            ...op,
+            id: crypto.randomUUID(),
+          };
+        });
+      };
+
+      props.onChange([...(props.operations ?? []), ...giveUniqueIds(clipboardOperations)]);
+      showNotification({
+        title: 'Pasted Operations',
+        message: `Pasted ${clipboardOperations.length} operations from clipboard.`,
+        color: 'blue',
+        icon: null,
+        autoClose: 2000,
+      });
+    } catch (error) {
+      showNotification({
+        title: 'Error Pasting Operations',
+        message: 'Failed to paste operations from clipboard.',
+        color: 'red',
+        icon: null,
+        autoClose: 2000,
+      });
+    }
+  };
+
   return (
     <Stack gap={10}>
       <Group justify='space-between'>
         <Box>{props.title}</Box>
-        {displaySelect && (
-          <Select
-            variant='filled'
-            size='xs'
-            placeholder='Add Operation'
-            data={[
-              { value: 'select', label: 'Selection' },
-              { value: 'conditional', label: 'Conditional' },
-              { value: 'adjValue', label: 'Adjust Value' },
-              { value: 'addBonusToValue', label: 'Add Bonus to Value' },
-              { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
-              { value: 'giveLanguage', label: 'Give Language' },
-              { value: 'giveSpell', label: 'Give Spell' },
-              { value: 'giveSpellSlot', label: 'Give Spell Slots' },
-              { value: 'defineCastingSource', label: 'Define Casting Source' },
-              { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
-              {
-                value: 'giveAbilityBlock:::physical-feature',
-                label: 'Give Physical Feature',
-              },
-              { value: 'giveItem', label: 'Give Item' },
-              { value: 'giveTrait', label: 'Give Trait' },
-              { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
-              { value: 'giveAbilityBlock:::mode', label: 'Give Mode' },
-              {
-                value: 'giveAbilityBlock:::class-feature',
-                label: 'Give Other Class Feature',
-              },
-              { value: 'createValue', label: 'Create Value' },
-              { value: 'setValue', label: 'Override Value' },
-              { value: 'bindValue', label: 'Bind Value' },
-              { value: 'injectSelectOption', label: 'Inject Select Option' },
-              { value: 'injectText', label: 'Inject Text' },
-              // { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
-              // { value: 'RESO', label: 'RESO' }, // TODO
-            ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
-            searchable
-            searchValue={searchValue}
-            onSearchChange={setSearchValue}
-            value={null}
-            onChange={(value) => {
-              if (value) {
-                let abilBlockType = null;
-                if (value.includes('giveAbilityBlock:::')) {
-                  abilBlockType = value.split(':::')[1];
-                  value = 'giveAbilityBlock';
-                }
+        <Group gap={15}>
+          {props.allowCopyPaste !== false && (
+            <Group gap={5}>
+              <HoverCard shadow='md' openDelay={500} position='top' withinPortal>
+                <HoverCard.Target>
+                  <ActionIcon
+                    variant='subtle'
+                    color='gray.6'
+                    radius='lg'
+                    aria-label='Copy Operations'
+                    onClick={copyOps}
+                    disabled={props.operations?.length === 0}
+                  >
+                    <IconCopy style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon>
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={5} px={10}>
+                  <Text c='gray.0' size='sm'>
+                    Copy Operations
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
 
-                const newOp = createDefaultOperation(value as OperationType);
-
-                if (newOp) {
-                  if (abilBlockType) {
-                    (newOp as OperationGiveAbilityBlock).data.type = abilBlockType as AbilityBlockType;
+              <HoverCard shadow='md' openDelay={500} position='top' withinPortal>
+                <HoverCard.Target>
+                  <ActionIcon
+                    variant='subtle'
+                    color='gray.6'
+                    radius='lg'
+                    aria-label='Paste Operations'
+                    onClick={pasteOps}
+                  >
+                    <IconFileUpload style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                  </ActionIcon>
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={5} px={10}>
+                  <Text c='gray.0' size='sm'>
+                    Paste Operations
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </Group>
+          )}
+          {displaySelect && (
+            <Select
+              variant='default'
+              size='xs'
+              placeholder='+ Add Operation'
+              data={[
+                { value: 'select', label: 'Selection' },
+                { value: 'conditional', label: 'Conditional' },
+                { value: 'adjValue', label: 'Adjust Value' },
+                { value: 'addBonusToValue', label: 'Add Bonus to Value' },
+                { value: 'giveAbilityBlock:::feat', label: 'Give Feat' },
+                { value: 'giveLanguage', label: 'Give Language' },
+                { value: 'giveSpell', label: 'Give Spell' },
+                { value: 'giveSpellSlot', label: 'Give Spell Slots' },
+                { value: 'defineCastingSource', label: 'Define Casting Source' },
+                { value: 'giveAbilityBlock:::sense', label: 'Give Sense' },
+                {
+                  value: 'giveAbilityBlock:::physical-feature',
+                  label: 'Give Physical Feature',
+                },
+                { value: 'giveItem', label: 'Give Item' },
+                { value: 'giveTrait', label: 'Give Trait' },
+                { value: 'giveAbilityBlock:::heritage', label: 'Give Heritage' },
+                { value: 'giveAbilityBlock:::mode', label: 'Give Mode' },
+                {
+                  value: 'giveAbilityBlock:::class-feature',
+                  label: 'Give Other Class Feature',
+                },
+                { value: 'createValue', label: 'Create Value' },
+                { value: 'setValue', label: 'Override Value' },
+                { value: 'bindValue', label: 'Bind Value' },
+                { value: 'injectSelectOption', label: 'Inject Select Option' },
+                { value: 'injectText', label: 'Inject Text' },
+                // { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
+                // { value: 'RESO', label: 'RESO' }, // TODO
+              ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
+              searchable
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              value={null}
+              onChange={(value) => {
+                if (value) {
+                  let abilBlockType = null;
+                  if (value.includes('giveAbilityBlock:::')) {
+                    abilBlockType = value.split(':::')[1];
+                    value = 'giveAbilityBlock';
                   }
 
-                  props.onChange([...(props.operations ?? []), newOp]);
-                  setSearchValue('');
-                  refreshSelect();
+                  const newOp = createDefaultOperation(value as OperationType);
+
+                  if (newOp) {
+                    if (abilBlockType) {
+                      (newOp as OperationGiveAbilityBlock).data.type = abilBlockType as AbilityBlockType;
+                    }
+
+                    props.onChange([...(props.operations ?? []), newOp]);
+                    setSearchValue('');
+                    refreshSelect();
+                  }
                 }
-              }
-            }}
-            styles={(t) => ({
-              dropdown: {
-                zIndex: 1500,
-              },
-            })}
-          />
-        )}
+              }}
+              styles={(t) => ({
+                dropdown: {
+                  zIndex: 1500,
+                },
+              })}
+            />
+          )}
+        </Group>
       </Group>
       <Stack gap={10}>
         {(props.operations ?? []).map((op, index) => (
