@@ -36,6 +36,7 @@ import {
   OperationInjectSelectOption,
   OperationInjectText,
   OperationSelect,
+  OperationSendNotification,
   OperationSetValue,
   OperationType,
 } from '@typing/operations';
@@ -68,6 +69,7 @@ import { GiveModeOperation } from './ability_block/GiveModeOperation';
 import { BindValOperation } from './variables/BindValOperation';
 import { IconCopy, IconFileUpload } from '@tabler/icons-react';
 import { showNotification } from '@mantine/notifications';
+import { SendNotificationOperation } from './variables/SendNotificationOperation';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -292,6 +294,7 @@ export function OperationSection(props: {
                 { value: 'bindValue', label: 'Bind Value' },
                 { value: 'injectSelectOption', label: 'Inject Select Option' },
                 { value: 'injectText', label: 'Inject Text' },
+                { value: 'sendNotification', label: 'Send Notification' },
                 // { value: 'giveSelectOption', label: 'Give Select Option' }, // TODO
                 // { value: 'RESO', label: 'RESO' }, // TODO
               ].filter((option) => !(props.blacklist ?? []).includes(option.value))}
@@ -518,6 +521,23 @@ export function OperationDisplay(props: {
             opInjectText.data.text = text;
 
             props.onChange(cloneDeep(opInjectText));
+          }}
+          onRemove={() => props.onRemove(props.operation.id)}
+        />
+      );
+    case 'sendNotification':
+      let opSendNotification = props.operation as OperationSendNotification;
+      return (
+        <SendNotificationOperation
+          title={opSendNotification.data.title}
+          message={opSendNotification.data.message}
+          color={opSendNotification.data.color}
+          onChange={(title, message, color) => {
+            opSendNotification.data.title = title;
+            opSendNotification.data.message = message;
+            opSendNotification.data.color = color;
+
+            props.onChange(cloneDeep(opSendNotification));
           }}
           onRemove={() => props.onRemove(props.operation.id)}
         />

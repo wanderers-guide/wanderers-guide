@@ -22,6 +22,7 @@ import {
   OperationRemoveLanguage,
   OperationRemoveSpell,
   OperationSelect,
+  OperationSendNotification,
   OperationSetValue,
 } from '@typing/operations';
 import {
@@ -56,6 +57,7 @@ import {
 } from './operation-utils';
 import { SelectionTrack } from './selection-tree';
 import { isEqual } from 'lodash-es';
+import { hideNotification, showNotification } from '@mantine/notifications';
 
 export type OperationOptions = {
   doOnlyValueCreation?: boolean;
@@ -171,6 +173,8 @@ export async function runOperations(
       return await runRemoveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'injectText') {
       return await runInjectText(varId, operation, sourceLabel);
+    } else if (operation.type === 'sendNotification') {
+      return await runSendNotification(varId, operation, sourceLabel);
     } else if (operation.type === 'select') {
       const subNode = selectionTrack.node?.children[operation.id];
       return await runSelect(
@@ -767,6 +771,21 @@ async function runInjectText(
     }),
     sourceLabel
   );
+  return null;
+}
+
+async function runSendNotification(
+  varId: StoreID,
+  operation: OperationSendNotification,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  hideNotification(`op-notif-${operation.id}`);
+  showNotification({
+    id: `op-notif-${operation.id}`,
+    title: operation.data.title,
+    message: operation.data.message,
+    color: operation.data.color.trim() || undefined,
+  });
   return null;
 }
 
