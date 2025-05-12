@@ -758,7 +758,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     form.getCheckBox('FP2').check();
   }
   if (focusPoints.current > 2) {
-    form.getCheckBox('FP3').check();
+    form.getCheckBox('FP 3').check();
   }
 
   for (let i = 0; i < focusSpells.length; i++) {
