@@ -1,5 +1,5 @@
 import BlurBox from '@common/BlurBox';
-import { Box, Center, Text, useMantineTheme } from '@mantine/core';
+import { Box, Center, Text, Title, useMantineTheme } from '@mantine/core';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '../main';
@@ -38,9 +38,9 @@ export function Component() {
         <BlurBox w={350} p='lg'>
           <Center>
             <Box w={250}>
-              <Text fz='sm' pb='md' ta='center'>
+              <Title order={5} pb={0} ta='center'>
                 Sign in to continue
-              </Text>
+              </Title>
               <Auth
                 supabaseClient={supabase}
                 providers={['google', 'discord', 'github']}
@@ -75,7 +75,7 @@ export function Component() {
                   },
                 }}
                 theme='dark'
-                socialLayout={'horizontal'}
+                socialLayout={'vertical'}
               />
             </Box>
           </Center>
