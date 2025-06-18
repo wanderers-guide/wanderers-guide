@@ -1142,7 +1142,7 @@ export function convertFoundryCreatureToGranularCreature(json: Record<string, an
         for (const slot of Object.keys(slots)) {
           if (slot.startsWith('slot') && slots[slot].value) {
             const rank = parseInt(slot.replace('slot', ''));
-            const value = slots[slot].value;
+            const value = slots[slot].value!;
             slotsAtRank.push({
               rank: rank,
               amount: value,
