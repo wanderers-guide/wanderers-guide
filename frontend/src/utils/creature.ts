@@ -1,5 +1,5 @@
 import { createDefaultOperation } from '@operations/operation-utils';
-import { ActionCost, Creature } from '@typing/content';
+import { ActionCost, ContentSource, Creature } from '@typing/content';
 import { OperationAddBonusToValue, OperationAdjValue, OperationGiveTrait, OperationSetValue } from '@typing/operations';
 import { sign } from './numbers';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
@@ -7,6 +7,10 @@ import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import { toLabel } from './strings';
 import { cloneDeep } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { parseCreatureStatBlock } from '@ai/open-ai-handler';
+import { convertGranularCreature } from '@upload/creature-import';
+import { fetchContentById } from '@content/content-store';
+import { GranularCreature } from '@typing/index';
 
 export function findCreatureTraits(creature: Creature) {
   return (
@@ -143,228 +147,31 @@ export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {
   return cloneDeep(creature);
 }
 
-export function extractCreatureInfo(text: string) {
-  const info = {
-    traits: [] as string[],
-    perception: {
-      value: 0,
-      senses: [] as string[],
-    },
-    languages: [] as string[],
-    skills: [] as { name: string; bonus: number }[],
-    attributes: [] as { name: string; value: number }[],
-    items: [] as {
-      name: string;
-      quantity: number;
-    }[],
-    speeds: [] as {
-      name: string;
-      value: number;
-    }[],
-    resistances: [] as {
-      type: string;
-      value: number;
-    }[],
-    weaknesses: [] as {
-      type: string;
-      value: number;
-    }[],
-    immunities: [] as string[],
-    ac: 0,
-    saves: {
-      fort: 0,
-      ref: 0,
-      will: 0,
-    },
-    hp: 0,
-    abilities: [] as {
-      name: string;
-      action: ActionCost;
-      traits: string[];
-      description: string;
-      // Extract other fields here
-    }[],
-    attacks: [] as {
-      name: string;
-      traits: string[];
-      bonus: number;
-      damage: string;
-      // Extract damage parts here
-    }[],
-    // Spells
-  };
-
-  const lines = text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-
-  for (const line of lines) {
-    const vLine = labelToVariable(line);
-    const removeFirstWord = (text: string) => text.split(' ').slice(1).join(' ');
-
-    if (vLine.startsWith('PERCEPTION_')) {
-      const parts = removeFirstWord(line).split(/[,;]/g);
-      info.perception.value = parseInt(parts[0]);
-      info.perception.senses = parts.slice(1).map((p) => p.trim());
-      continue;
-    }
-
-    if (vLine.startsWith('LANGUAGES_')) {
-      const parts = removeFirstWord(line)
-        .split(/[,]/g)
-        .map((p) => p.trim());
-      info.languages = parts;
-      continue;
-    }
-
-    if (vLine.startsWith('SKILLS_')) {
-      const parts = removeFirstWord(line).split(/[,]/g);
-      info.skills = parts.map((p) => {
-        const pp = p.split(' ');
-        const bonus = pp.pop();
-        const name = pp.join(' ');
-        return {
-          name: name,
-          bonus: parseInt(bonus || '0'),
-        };
-      });
-      continue;
-    }
-
-    if (vLine.startsWith('STR_') || vLine.startsWith('STRENGTH_')) {
-      const parts = line.split(/[,;]/g);
-      info.attributes = parts.map((p) => {
-        const pp = p.split(' ');
-        const value = pp.pop();
-        const name = pp.join(' ');
-        return {
-          name: name,
-          value: parseInt(value || '0'),
-        };
-      });
-      continue;
-    }
-
-    if (vLine.startsWith('ITEMS_')) {
-      const parts = removeFirstWord(line).split(/[,]/g);
-      info.items = parts.map((p) => {
-        const pp = p.split('(');
-        const name = pp[0].trim();
-        const bonus = parseInt(pp[1]);
-        return {
-          name: name,
-          quantity: isNaN(bonus) ? 1 : bonus,
-        };
-      });
-      continue;
-    }
-
-    if (vLine.startsWith('AC_')) {
-      const parts = line.split(/[,;]/g);
-
-      for (const part of parts) {
-        const fPart = part.trim().toUpperCase();
-        if (fPart.startsWith('AC')) {
-          info.ac = parseInt(fPart.split(' ')[1]);
-        } else if (fPart.startsWith('FORT')) {
-          info.saves.fort = parseInt(fPart.split(' ')[1]);
-        } else if (fPart.startsWith('REF')) {
-          info.saves.ref = parseInt(fPart.split(' ')[1]);
-        } else if (fPart.startsWith('WILL')) {
-          info.saves.will = parseInt(fPart.split(' ')[1]);
-        }
-      }
-      continue;
-    }
-
-    if (vLine.startsWith('HP_')) {
-      const parts = line.split(/[,;]/g);
-      const fPart = parts[0].trim().toUpperCase();
-
-      info.hp = parseInt(fPart.split(' ')[1]);
-
-      continue;
-    }
-
-    if (vLine.startsWith('SPEED_')) {
-      const parts = removeFirstWord(line).split(/[,;]/g);
-      info.speeds = parts.map((p) => {
-        const pp = p.replace(' feet', '').replace(' ft.', '').replace(' ft', '').trim().split(' ');
-        const value = pp.pop();
-        const name = pp.join(' ');
-        return {
-          name: name.trim().length > 0 ? name : 'normal',
-          value: parseInt(value || '0'),
-        };
-      });
-      continue;
-    }
-
-    if (vLine.startsWith('MELEE_') || vLine.startsWith('RANGED_')) {
-      const mainParts = removeFirstWord(line).split(/Damage/gi);
-      console.log(mainParts);
-
-      let name = mainParts[0].replace('[one-action]', '').trim();
-      let traits: string[] = [];
-      if (name.includes(' (')) {
-        const traitsStr = name.split(')')[0].split(' (')[1].trim();
-        traits = traitsStr.split(',').map((t) => t.trim());
-        name = name.split(' (')[0].trim();
-      }
-
-      if (name.includes(' [')) {
-        name = name.split(' [')[0].trim();
-      }
-
-      console.log(name);
-
-      const namePP = name.split(' ');
-      const bonus = namePP.pop();
-      name = namePP.join(' ');
-
-      info.attacks.push({
-        name: name,
-        traits: traits,
-        bonus: parseInt(bonus || '0'),
-        damage: mainParts[1].trim(),
-      });
-      continue;
-    }
-
-    // Find traits / rarity / size
-    if (lines.indexOf(line) === 0 && line.split(' ').every((t) => t[0].toUpperCase() === t[0])) {
-      info.traits = line.split(' ');
-      continue;
-    }
-
-    // Else it's an ability
-    const processAbility = (ability: string) => {
-      const extractName = (ability: string) => {
-        const parts = ability.split(/(\[|\(|DC|\:)/g);
-        const isName = toLabel(parts[0].trim()) === parts[0].trim();
-        if (isName) {
-          return parts[0].trim();
-        } else {
-          return null;
-        }
-      };
-
-      const name = extractName(ability);
-      if (!name) return;
-      const description = ability.replace(name, '').trim();
-
-      info.abilities.push({
-        name: name,
-        action: null,
-        traits: [],
-        description: description,
-      });
-    };
-    processAbility(line);
+export async function extractCreatureInfo(
+  sourceId: number,
+  text: string
+): Promise<{
+  creature: Creature;
+  granular: GranularCreature;
+  source: ContentSource;
+} | null> {
+  const contentSource = await fetchContentById<ContentSource>('content-source', sourceId);
+  if (!contentSource) {
+    console.error('Content source not found for ID:', sourceId);
+    return null;
   }
 
-  console.log(lines);
+  const granularCreature = await parseCreatureStatBlock(text);
+  if (!granularCreature) {
+    console.error('Failed to parse creature stat block from text:', text);
+    return null;
+  }
 
-  return info;
+  const creature = await convertGranularCreature(contentSource, granularCreature);
+
+  return {
+    creature: creature,
+    granular: granularCreature,
+    source: contentSource,
+  };
 }

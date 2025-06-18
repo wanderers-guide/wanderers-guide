@@ -29,20 +29,22 @@ export function convertToActionCost(actionType: string, actionValue?: number): A
 }
 
 export function convertToRarity(value?: string): Rarity {
-  if (value === 'common') {
-    return 'COMMON';
-  } else if (value === 'uncommon') {
-    return 'UNCOMMON';
-  } else if (value === 'rare') {
-    return 'RARE';
-  } else if (value === 'unique') {
-    return 'UNIQUE';
+  switch (value?.toLowerCase()) {
+    case 'common':
+      return 'COMMON';
+    case 'uncommon':
+      return 'UNCOMMON';
+    case 'rare':
+      return 'RARE';
+    case 'unique':
+      return 'UNIQUE';
+    default:
+      return (value?.toUpperCase() || 'COMMON') as Rarity;
   }
-  return 'COMMON';
 }
 
 export function convertToSize(value?: string): Size {
-  switch (value) {
+  switch (value?.toLowerCase()) {
     case 'tiny':
       return 'TINY';
     case 'sm':
@@ -295,7 +297,7 @@ export function extractFromDescription(description?: string) {
     };
 
   const pattern =
-    /<p><strong>(Frequency|Trigger|Requirements|Area|Craft Requirements|Special|Heightened (.*?))<\/strong>(.*?)<\/p>/gs;
+    /<p><strong>(Frequency|Trigger|Requirements|Cost|Area|Craft Requirements|Special|Heightened (.*?))<\/strong>(.*?)<\/p>/gs;
 
   const output: Record<string, string | Record<string, string>[]> = {};
   let match;

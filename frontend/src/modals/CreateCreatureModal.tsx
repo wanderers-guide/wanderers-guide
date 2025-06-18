@@ -11,6 +11,7 @@ import {
   Button,
   Collapse,
   Divider,
+  FocusTrap,
   Group,
   HoverCard,
   LoadingOverlay,
@@ -46,6 +47,7 @@ import StatBlockSection from '@common/StatBlockSection';
 import { extractCreatureInfo } from '@utils/creature';
 import { uniq } from 'lodash-es';
 import { hashData } from '@utils/numbers';
+import { modals } from '@mantine/modals';
 
 /**
  * Modal for creating or editing a creature
@@ -124,6 +126,8 @@ export function CreateCreatureModal(props: {
 
   const [description, setDescription] = useState<JSONContent>();
 
+  const [loadingProcess, setLoadingProcess] = useState(false);
+  const [inputStatBlockActive, { toggle: toggleInputStatBlockActive }] = useDisclosure(false);
   const [inputStatBlock, setInputStatBlock] = useState('');
 
   // Initialize form
@@ -267,11 +271,38 @@ export function CreateCreatureModal(props: {
                         variant='filled'
                         size='compact-xs'
                         rightSection={<IconCornerUpRight size='1rem' />}
-                        onClick={() => {
-                          const info = extractCreatureInfo(inputStatBlock);
-                          console.log(info);
+                        onClick={async () => {
+                          const handleProcess = async () => {
+                            //
+                            setLoadingProcess(true);
+                            // Use player core source for now
+                            const result = await extractCreatureInfo(1, inputStatBlock);
+                            if (result) {
+                              console.log(result.granular);
+                              console.log(result.creature);
+                              form.setValues(result.creature);
+                            }
+                            setLoadingProcess(false);
+                            //
+                          };
+
+                          if (form.values.operations && form.values.operations.length > 0) {
+                            modals.openConfirmModal({
+                              title: <Title order={3}>Override Existing Creature</Title>,
+                              children: (
+                                <Text size='sm'>
+                                  This will override the existing creature. Are you sure you want to proceed?
+                                </Text>
+                              ),
+                              labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                              onCancel: () => {},
+                              onConfirm: handleProcess,
+                            });
+                          } else {
+                            await handleProcess();
+                          }
                         }}
-                        disabled
+                        loading={loadingProcess}
                       >
                         Process
                       </Button>
@@ -285,16 +316,19 @@ export function CreateCreatureModal(props: {
                         border: `1px solid ${theme.colors.dark[4]}`,
                         borderRadius: theme.radius.md,
                       }}
+                      onClick={toggleInputStatBlockActive}
                     >
-                      <Textarea
-                        variant='unstyled'
-                        placeholder='Paste creature stat block'
-                        autosize
-                        value={inputStatBlock}
-                        onChange={(e) => {
-                          setInputStatBlock(e.currentTarget.value);
-                        }}
-                      />
+                      <FocusTrap active={inputStatBlockActive}>
+                        <Textarea
+                          variant='unstyled'
+                          placeholder='Paste creature stat block'
+                          autosize
+                          value={inputStatBlock}
+                          onChange={(e) => {
+                            setInputStatBlock(e.currentTarget.value);
+                          }}
+                        />
+                      </FocusTrap>
                     </ScrollArea>
                   </Stack>
                   <Stack gap={0}>

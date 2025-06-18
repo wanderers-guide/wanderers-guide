@@ -30,6 +30,7 @@ export async function isValidImage(url?: string): Promise<boolean> {
 }
 
 export async function findCreatureImage(name: string): Promise<string | undefined> {
+  if (!name.trim()) return undefined;
   const aonPath = `https://2e.aonprd.com/Images/Monsters/${toLabel(name).replace(/ /g, '_')}.webp`;
   if (await isValidImage(aonPath)) {
     return aonPath;

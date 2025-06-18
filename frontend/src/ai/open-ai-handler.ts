@@ -6,6 +6,7 @@ import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Encounter, Trait } from '@typing/content';
+import { GranularCreature } from '@typing/index';
 import { adjustCreature, findCreatureTraits } from '@utils/creature';
 import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
@@ -710,6 +711,203 @@ async function buildEncounters(
   const result = await generateCompletion(prompt, 'gpt-4o');
   try {
     return yaml.load(result ?? '') as any;
+  } catch (e) {
+    console.warn('Failed to parse response', e);
+    return null;
+  }
+}
+
+export async function parseCreatureStatBlock(text: string) {
+  const prompt =
+    `I need you to parse through a pf2e stat block and extract what you can into the following output structure (follow the TypeScript interface).
+
+### Input stat block:
+
+${text}
+
+### Output interface structure:
+
+interface GranularCreature {
+  name?: string;
+  level?: number;
+  imageUrl?: string;
+  size: 'MEDIUM' | string;
+  rarity: 'COMMON' | string;
+  traits?: string[];
+  perception: {
+    value: number;
+    senses?: { name: string; range?: number; acuity?: 'precise' | 'imprecise' | 'vague' }[];
+    notes?: string;
+  };
+  languages: {
+    value?: string[];
+    notes?: string;
+  };
+  skills?: { name: string; bonus: number }[];
+  attributes: { name: string; value: number }[];
+  items?: {
+    name: string;
+    quantity: number;
+    notes?: string;
+  }[];
+  speeds: {
+    name: string;
+    value: number;
+    notes?: string;
+  }[];
+  resistances?: {
+    type: string;
+    value: number;
+    doubleAgainst?: string[];
+    exceptions?: string[];
+  }[];
+  weaknesses?: {
+    type: string;
+    value: number;
+    doubleAgainst?: string[];
+    exceptions?: string[];
+  }[];
+  immunities?: {
+    type: string;
+    exceptions?: string[];
+  }[];
+  ac: {
+    value: number;
+    notes?: string;
+  };
+  saves: {
+    fort: {
+      value: number;
+      notes?: string;
+    };
+    ref: {
+      value: number;
+      notes?: string;
+    };
+    will: {
+      value: number;
+      notes?: string;
+    };
+    generalNotes?: string;
+  };
+  hp: {
+    value: number;
+    notes?: string;
+  };
+  abilities?: {
+    name: string;
+    action?:
+      | null
+      | 'ONE-ACTION'
+      | 'TWO-ACTIONS'
+      | 'THREE-ACTIONS'
+      | 'REACTION'
+      | 'FREE-ACTION'
+      | 'ONE-TO-TWO-ACTIONS'
+      | 'ONE-TO-THREE-ACTIONS'
+      | 'TWO-TO-THREE-ACTIONS'
+      | 'TWO-TO-TWO-ROUNDS'
+      | 'TWO-TO-THREE-ROUNDS'
+      | 'THREE-TO-TWO-ROUNDS'
+      | 'THREE-TO-THREE-ROUNDS';
+    traits?: string[]; // listed as (traits, separated by commas)
+    description: string; // ability's effect
+    frequency?: string;
+    trigger?: string;
+    requirements?: string;
+    special?: string;
+  }[];
+  attacks?: {
+    attackType: 'melee' | 'ranged';
+    action: 'ONE-ACTION';
+    name: string;
+    attackBonus: { attack1st: number; attack2nd?: number; attack3rd?: number };
+    traits?: string[];
+    damage: {
+      amountOfDice: number;
+      dieType: 'd4' | 'd6' | 'd8' | 'd10' | 'd12';
+      damageType: string;
+      damageBonus?: number;
+      extraEffects?: string[];
+    };
+    misc?: {
+      range?: number;
+      reload?: number;
+    };
+  }[];
+  spellcasting?: {
+    innate?: {
+      tradition: 'ARCANE' | 'DIVINE' | 'PRIMAL' | 'OCCULT';
+      dc?: number;
+      attackBonus?: number;
+      spells: {
+        name: string;
+        rank: number;
+        castsPerDay?: 'AT-WILL' | 'CONSTANT' | number;
+        notes?: string;
+      }[];
+      cantripsHeighteningRank: 1 | number;
+    };
+    focus?: {
+      type: string; // normal, domain, order, hex, etc.
+      dc?: number;
+      attackBonus?: number;
+      focusPoints: 1 | number;
+      spells: {
+        name: string;
+        rank: number;
+        notes?: string;
+      }[];
+      cantripsHeighteningRank: 1 | number;
+    };
+    spontaneous?: {
+      tradition: 'ARCANE' | 'DIVINE' | 'PRIMAL' | 'OCCULT';
+      dc?: number;
+      attackBonus?: number;
+      slots: {
+        rank: number;
+        amount: number;
+      }[];
+      spells: {
+        name: string;
+        rank: number;
+        notes?: string;
+      }[];
+      cantripsHeighteningRank: 1 | number;
+    };
+    prepared?: {
+      tradition: 'ARCANE' | 'DIVINE' | 'PRIMAL' | 'OCCULT';
+      dc?: number;
+      attackBonus?: number;
+      spells: {
+        name: string;
+        rank: number;
+        amount: 1 | number;
+        notes?: string;
+      }[];
+      cantripsHeighteningRank: 1 | number;
+    };
+    rituals?: {
+      dc?: number;
+      attackBonus?: number;
+      spells: {
+        name: string;
+        rank: number;
+        notes?: string;
+      }[];
+    };
+  };
+  description?: string;
+}
+
+Use markdown to format your output. Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+### Output:`.trim();
+
+  const result = (await generateCompletion(prompt)) ?? '';
+
+  try {
+    const r = yaml.load(result ?? '') as GranularCreature;
+    return r;
   } catch (e) {
     console.warn('Failed to parse response', e);
     return null;

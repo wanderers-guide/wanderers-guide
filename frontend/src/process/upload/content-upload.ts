@@ -26,7 +26,7 @@ import { hideNotification, showNotification } from '@mantine/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { performAutoContentLinking } from './auto-content-linking';
 import { convertCastToActionCost } from '@utils/actions';
-import { newImportHandler } from './creature-import';
+import { convertFoundryCreatureToGranularCreature, convertGranularCreature } from './creature-import';
 import { cloneDeep } from 'lodash-es';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
@@ -529,7 +529,9 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>):
   }
 
   try {
-    const creature = await newImportHandler(source, json);
+    const granularCreature = convertFoundryCreatureToGranularCreature(json);
+    const creature = await convertGranularCreature(source, granularCreature);
+    console.log('Conversion Pipeline: ', json, 'vvv', granularCreature, 'vvv', creature);
 
     const createdCreature = await upsertCreature(creature);
     if (DEBUG) {
