@@ -90,7 +90,7 @@ export default function DiceRoller(props: {
 
   // Theme //
 
-  const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 2000);
+  const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 500);
   useDidUpdate(() => {
     // Saving theme
     if (!character || !debouncedTheme) return;
@@ -345,10 +345,10 @@ export default function DiceRoller(props: {
           my='xs'
           label={
             <Group gap={3} wrap='nowrap'>
-              <Button variant={openedDefaultPresets ? 'outline' : 'subtle'} size='compact-xs' color='gray.6'>
+              <Button variant={openedDefaultPresets ? 'light' : 'subtle'} size='compact-xs' color='gray.6'>
                 Default Presets
               </Button>
-              <Badge variant='light' color={theme.primaryColor} size='xs'>
+              <Badge variant='light' color='gray.6' size='xs'>
                 10+
               </Badge>
             </Group>
@@ -364,7 +364,7 @@ export default function DiceRoller(props: {
                   ...preset,
                   dice: preset.dice.map((die) => ({
                     ...die,
-                    theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                    theme: debouncedTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                   })),
                 }))
                 .map((preset, i) => (
@@ -553,7 +553,7 @@ export default function DiceRoller(props: {
               <Button
                 size='xs'
                 color='gray.5'
-                variant={'light'}
+                variant={'subtle'}
                 mr={5}
                 onClick={() => {
                   setOpenedHistory(!openedHistory);
@@ -653,7 +653,7 @@ export default function DiceRoller(props: {
                           newDice.push({
                             id: crypto.randomUUID(),
                             type: currentDiceType,
-                            theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                            theme: debouncedTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                             bonus: i === currentDiceNum - 1 ? currentDiceBonus : 0,
                             label: currentDiceLabel,
                           });
@@ -800,8 +800,8 @@ export default function DiceRoller(props: {
                                   return die;
                                 });
                               });
-                              setDebouncedTheme(theme.theme);
                             }, 500);
+                            setDebouncedTheme(DICE_THEMES[index]?.theme);
                           }}
                         >
                           {DICE_THEMES.map((theme, index) => (
@@ -828,32 +828,34 @@ export default function DiceRoller(props: {
                             <Title order={4}>Presets</Title>
 
                             <Group wrap='nowrap'>
-                              <Button
-                                size='compact-xs'
-                                variant='light'
-                                disabled={dice.length === 0}
-                                onClick={() => {
-                                  closeDiceTray();
-                                  openContextModal({
-                                    modal: 'createDicePreset',
-                                    title: <Title order={3}>Create Preset</Title>,
-                                    innerProps: {
-                                      onConfirm: (name: string) => {
-                                        setPresets((prev) => [
-                                          ...prev,
-                                          {
-                                            id: crypto.randomUUID(),
-                                            name: name,
-                                            dice: dice,
-                                          },
-                                        ]);
+                              {dice.length > 0 && (
+                                <Button
+                                  size='compact-xs'
+                                  variant='light'
+                                  disabled={dice.length === 0}
+                                  onClick={() => {
+                                    closeDiceTray();
+                                    openContextModal({
+                                      modal: 'createDicePreset',
+                                      title: <Title order={3}>Create Preset</Title>,
+                                      innerProps: {
+                                        onConfirm: (name: string) => {
+                                          setPresets((prev) => [
+                                            ...prev,
+                                            {
+                                              id: crypto.randomUUID(),
+                                              name: name,
+                                              dice: dice,
+                                            },
+                                          ]);
+                                        },
                                       },
-                                    },
-                                  });
-                                }}
-                              >
-                                Save tray to preset
-                              </Button>
+                                    });
+                                  }}
+                                >
+                                  Save tray to preset
+                                </Button>
+                              )}
                             </Group>
                           </Group>
                         </Box>
