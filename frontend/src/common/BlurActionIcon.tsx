@@ -1,8 +1,8 @@
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { Box, BoxComponentProps, Button, ButtonProps, useMantineTheme } from '@mantine/core';
+import { ActionIcon, ActionIconProps, Button, useMantineTheme } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 
-interface BlurButtonProps extends ButtonProps {
+interface BlurActionIconProps extends ActionIconProps {
   blur?: number;
   bgColor?: string;
   bgColorHover?: string;
@@ -12,13 +12,13 @@ interface BlurButtonProps extends ButtonProps {
   selected?: boolean;
 }
 
-export default function BlurButton(props: BlurButtonProps) {
+export default function BlurActionIcon(props: BlurActionIconProps) {
   const theme = useMantineTheme();
 
   const { hovered, ref } = useHover<HTMLAnchorElement>();
 
   return (
-    <Button
+    <ActionIcon
       variant='light'
       color='gray.2'
       radius='xl'
@@ -28,7 +28,6 @@ export default function BlurButton(props: BlurButtonProps) {
       href={props.href}
       {...props}
       style={{
-        flex: 1,
         backdropFilter: `blur(${props.blur ?? 6}px)`,
         WebkitBackdropFilter: `blur(${props.blur ?? 6}px)`,
         backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor,
@@ -36,6 +35,6 @@ export default function BlurButton(props: BlurButtonProps) {
       }}
     >
       {props.children}
-    </Button>
+    </ActionIcon>
   );
 }

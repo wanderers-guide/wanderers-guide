@@ -441,6 +441,13 @@ function CompanionCard(props: {
           onChange={(e) => {
             setHealth(e.target.value);
           }}
+          onFocus={(e) => {
+            const length = e.target.value.length;
+            // Move cursor to end
+            requestAnimationFrame(() => {
+              e.target.setSelectionRange(length, length);
+            });
+          }}
           onBlur={handleHealthSubmit}
           onKeyDown={getHotkeyHandler([
             ['mod+Enter', handleHealthSubmit],

@@ -26,7 +26,7 @@ import {
   List,
   Anchor,
 } from '@mantine/core';
-import { useElementSize, useMediaQuery } from '@mantine/hooks';
+import { getHotkeyHandler, useElementSize, useMediaQuery } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import {
@@ -42,7 +42,7 @@ import {
   IconBrandSafari,
   IconDots,
   IconServer,
-  IconFlagPlus,
+  IconPlus,
   IconKey,
   IconArchive,
   IconHexagonalPrism,
@@ -883,6 +883,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
               onChange={(e) => {
                 setCampaignKey(e.target.value);
               }}
+              onKeyDown={getHotkeyHandler([
+                ['mod+Enter', joinCampaign],
+                ['Enter', joinCampaign],
+              ])}
               rightSectionWidth={28}
               leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
               rightSection={
@@ -891,12 +895,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   radius='xl'
                   disabled={!campaignKey}
                   color={theme.primaryColor}
-                  variant='light'
+                  variant='filled'
                   onClick={async () => {
                     await joinCampaign();
                   }}
                 >
-                  <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                  <IconPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                 </ActionIcon>
               }
             />

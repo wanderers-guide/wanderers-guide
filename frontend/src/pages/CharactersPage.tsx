@@ -45,6 +45,7 @@ import {
   IconCopy,
   IconDots,
   IconFileTypePdf,
+  IconPlus,
   IconPrinter,
   IconTrash,
   IconUpload,
@@ -132,7 +133,7 @@ export function Component() {
                 <ActionIcon
                   disabled={reachedCharacterLimit}
                   style={{
-                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(6px)',
                   }}
                   loading={loadingCreateCharacter}
@@ -146,7 +147,7 @@ export function Component() {
                     handleCreateCharacter();
                   }}
                 >
-                  <IconUserPlus size='1.3rem' stroke={2.5} />
+                  <IconPlus size='1.65rem' stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
               <Menu shadow='md' width={240} withArrow withinPortal>

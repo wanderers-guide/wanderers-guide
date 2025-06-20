@@ -97,17 +97,7 @@ export default function Layout(props: { children: React.ReactNode }) {
             <WanderersGuideLogo size={30} />
             <Group gap={0} style={{ flex: 1 }} visibleFrom='md' justify='space-between' wrap='nowrap'>
               {width >= 1050 ? (
-                <Group gap={0}>
-                  {/* <UnstyledButton
-                    component='a'
-                    href={`/`}
-                    className={classes.control}
-                    onClick={() => {
-                      window.location.href = '/';
-                    }}
-                  >
-                    About
-                  </UnstyledButton> */}
+                <Group gap={0} wrap='nowrap'>
                   <UnstyledButton
                     component='a'
                     href={DISCORD_URL}

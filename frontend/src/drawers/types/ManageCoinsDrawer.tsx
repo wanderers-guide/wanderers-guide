@@ -110,6 +110,13 @@ export function ManageCoinsDrawerContent(props: {
           onChange={(e) => {
             setPp(e.target.value);
           }}
+          onFocus={(e) => {
+            const length = e.target.value.length;
+            // Move cursor to end
+            requestAnimationFrame(() => {
+              e.target.setSelectionRange(length, length);
+            });
+          }}
           onBlur={() => handleCoinSubmit('PP')}
           onKeyDown={getHotkeyHandler([
             ['mod+Enter', () => handleCoinSubmit('PP')],
@@ -127,6 +134,13 @@ export function ManageCoinsDrawerContent(props: {
           value={gp}
           onChange={(e) => {
             setGp(e.target.value);
+          }}
+          onFocus={(e) => {
+            const length = e.target.value.length;
+            // Move cursor to end
+            requestAnimationFrame(() => {
+              e.target.setSelectionRange(length, length);
+            });
           }}
           onBlur={() => handleCoinSubmit('GP')}
           onKeyDown={getHotkeyHandler([
@@ -147,6 +161,13 @@ export function ManageCoinsDrawerContent(props: {
           onChange={(e) => {
             setSp(e.target.value);
           }}
+          onFocus={(e) => {
+            const length = e.target.value.length;
+            // Move cursor to end
+            requestAnimationFrame(() => {
+              e.target.setSelectionRange(length, length);
+            });
+          }}
           onBlur={() => handleCoinSubmit('SP')}
           onKeyDown={getHotkeyHandler([
             ['mod+Enter', () => handleCoinSubmit('SP')],
@@ -164,6 +185,13 @@ export function ManageCoinsDrawerContent(props: {
           value={cp}
           onChange={(e) => {
             setCp(e.target.value);
+          }}
+          onFocus={(e) => {
+            const length = e.target.value.length;
+            // Move cursor to end
+            requestAnimationFrame(() => {
+              e.target.setSelectionRange(length, length);
+            });
           }}
           onBlur={() => handleCoinSubmit('CP')}
           onKeyDown={getHotkeyHandler([

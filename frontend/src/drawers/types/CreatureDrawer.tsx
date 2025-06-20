@@ -644,8 +644,18 @@ export function CreatureDrawerContent(props: {
             editCreature={creature}
             onComplete={async (result) => {
               if (result) {
-                setCreature(result);
+                setCreatureInstant(result);
                 toggleEditing();
+
+                // Hacky way to update the drawer data
+                openDrawer({
+                  ..._drawer,
+                  data: {
+                    ...(_drawer?.data ?? {}),
+                    creature: result,
+                  },
+                  type: 'creature',
+                });
               }
             }}
             onCancel={() => {
@@ -699,10 +709,12 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
     fey: 'Nature',
     fiend: 'Religion',
     fungus: 'Nature',
+    'fungus (creature)': 'Nature',
     humanoid: 'Society',
     monitor: 'Religion',
     ooze: 'Occultism',
     plant: 'Nature',
+    'plant (creature)': 'Nature',
     shade: 'Religion',
     spirit: 'Occultism',
     time: 'Occultism',

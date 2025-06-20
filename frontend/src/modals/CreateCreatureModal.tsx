@@ -167,6 +167,9 @@ export function CreateCreatureModal(props: {
       ...values,
       name: values.name.trim(),
       level: parseInt(`${values.level}`),
+      // Just in case ids are overwritten
+      id: editing ? props.editId ?? props.editCreature?.id ?? -1 : -1,
+      content_source_id: editing ? props.editCreature?.content_source_id ?? -1 : -1,
     });
     setTimeout(() => {
       onReset();
@@ -278,8 +281,8 @@ export function CreateCreatureModal(props: {
                             // Use player core source for now
                             const result = await extractCreatureInfo(1, inputStatBlock);
                             if (result) {
-                              console.log(result.granular);
-                              console.log(result.creature);
+                              console.log('Granular', result.granular);
+                              console.log('Final', result.creature);
                               form.setValues(result.creature);
                             }
                             setLoadingProcess(false);

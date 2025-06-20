@@ -64,6 +64,7 @@ export function EllipsisText(props: EllipsisTextProps) {
             fontSize: getAdjustedFontSize(),
           }}
           lineClamp={1}
+          truncate
         >
           {props.children}
         </Text>

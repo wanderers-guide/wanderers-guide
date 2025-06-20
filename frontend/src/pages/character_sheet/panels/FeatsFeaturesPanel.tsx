@@ -98,7 +98,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
 
   const data = searchQuery.trim() ? constructData(search.current.search(searchQuery.trim())) : rawData;
 
-  const dualLayout = props.panelWidth > 1000;
+  const dualLayout = props.panelWidth > 700;
   const featsSection = (
     <>
       {data && (section === 'FEATS' || searchQuery.trim() || dualLayout) && (

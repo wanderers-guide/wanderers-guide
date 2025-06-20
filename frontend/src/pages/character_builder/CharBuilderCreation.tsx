@@ -28,6 +28,7 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { openContextModal } from '@mantine/modals';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
@@ -36,8 +37,10 @@ import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
+import { ImageOption } from '@typing/index';
 import { OperationCharacterResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
+import { getAllPortraitImages } from '@utils/portrait-images';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
 import { displayAttributeValue, displayFinalHealthValue, displayFinalProfValue } from '@variables/variable-display';
@@ -460,6 +463,28 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 filterFn: (option) => option.id !== character?.details?.class?.id,
               }
             );
+          }}
+          onClickImage={() => {
+            openContextModal({
+              modal: 'selectImage',
+              title: <Title order={3}>Select Portrait</Title>,
+              innerProps: {
+                options: getAllPortraitImages(),
+                onSelect: (option: ImageOption) => {
+                  setCharacter((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      details: {
+                        ...prev.details,
+                        image_url: prev.details?.image_url === option.url ? undefined : option.url,
+                      },
+                    };
+                  });
+                },
+                category: 'portraits',
+              },
+            });
           }}
         />
       </Box>

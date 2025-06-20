@@ -21,6 +21,7 @@ import { makeRequest } from '@requests/request-manager';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import { interpolateHealth } from '@utils/colors';
 import { CharacterDetailedInfo } from '@common/CharacterInfo';
+import BlurBox from '@common/BlurBox';
 
 export default function CampaignDrawer(props: { opened: boolean; onClose: () => void; campaignId: number }) {
   const theme = useMantineTheme();
@@ -95,7 +96,15 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
           <Group wrap='nowrap' gap={10} justify='space-between'>
             <Group wrap='nowrap' gap={15}>
               <Title order={3}>{campaign?.name}</Title>
-              <Badge size='sm' variant='light'>
+              <Badge
+                size='sm'
+                variant='light'
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                  color: theme.colors.gray[4],
+                  backdropFilter: 'blur(6px)',
+                }}
+              >
                 {(characters?.length || 0) + ' players'}
               </Badge>
             </Group>
@@ -116,18 +125,29 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
       >
         <Stack justify='space-between' h='100%'>
           <Box>
-            <Image
-              src={campaign?.meta_data?.image_url}
-              alt={campaign?.name}
-              height={70}
-              fallbackSrc={getDefaultCampaignBackgroundImage().url}
-              style={{ borderTopLeftRadius: 10, borderTopRightRadius: 10 }}
-            />
-            <Paper style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }} withBorder>
-              <ScrollArea h={70} my={5} mx={10}>
-                <Text fz='sm'>{campaign?.description || 'A new adventure begins...'}</Text>
-              </ScrollArea>
-            </Paper>
+            <Stack m={0} p={0} gap={0} justify='space-between' style={{ position: 'relative', height: 160 }}>
+              <Image
+                src={campaign?.meta_data?.image_url}
+                alt={campaign?.name}
+                fallbackSrc={getDefaultCampaignBackgroundImage().url}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '100%',
+                  width: '100%',
+                  borderRadius: 10,
+                }}
+              />
+              <Box></Box>
+              {campaign?.description?.trim() && (
+                <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5} m={10}>
+                  <ScrollArea h={55} my={5}>
+                    <Text fz='xs'>{campaign.description.trim()}</Text>
+                  </ScrollArea>
+                </BlurBox>
+              )}
+            </Stack>
 
             {campaign?.meta_data?.settings?.show_party_member_status !== 'OFF' && (
               <ScrollArea mt={15} h={500}>

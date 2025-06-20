@@ -586,11 +586,20 @@ function InvItemOption(props: {
   const weaponStats = isItemWeapon(props.invItem.item) ? getWeaponStats(props.id, props.invItem.item) : null;
 
   return (
-    <Grid w={'100%'}>
+    <Grid
+      w={'100%'}
+      overflow='hidden'
+      styles={{
+        inner: {
+          maxWidth: '70dvw',
+          flexWrap: 'nowrap',
+        },
+      }}
+    >
       <Grid.Col span='auto'>
         <Group wrap='nowrap' gap={props.isPhone ? 5 : 10}>
           <ItemIcon item={props.invItem.item} size='1.0rem' color={theme.colors.gray[6]} />
-          <Text c='gray.0' fz='sm'>
+          <Text c='gray.0' fz='sm' truncate>
             {props.invItem.item.name}
           </Text>
           {isItemContainer(props.invItem.item) && props.hideSections && (
@@ -625,7 +634,7 @@ function InvItemOption(props: {
       </Grid.Col>
       {!props.isPhone && (
         <Grid.Col span={3}>
-          <Grid>
+          <Grid overflow='hidden'>
             <Grid.Col span={2}>
               {!props.hideSections && (
                 <>
