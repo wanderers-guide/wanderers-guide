@@ -149,17 +149,18 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
               )}
             </Stack>
 
-            {campaign?.meta_data?.settings?.show_party_member_status !== 'OFF' && (
-              <ScrollArea mt={15} h={500}>
-                {characters?.map((character, index) => (
-                  <Box key={index}>
-                    {campaign?.meta_data?.settings?.show_party_member_status === 'STATUS'
-                      ? getCharacterStatusCard(character)
-                      : getCharacterDetailedCard(character)}
-                  </Box>
-                ))}
-              </ScrollArea>
-            )}
+            {campaign?.meta_data?.settings?.show_party_member_status &&
+              campaign.meta_data.settings.show_party_member_status !== 'OFF' && (
+                <ScrollArea mt={15} h={500}>
+                  {characters?.map((character, index) => (
+                    <Box key={index}>
+                      {campaign?.meta_data?.settings?.show_party_member_status === 'STATUS'
+                        ? getCharacterStatusCard(character)
+                        : getCharacterDetailedCard(character)}
+                    </Box>
+                  ))}
+                </ScrollArea>
+              )}
           </Box>
         </Stack>
       </Drawer>

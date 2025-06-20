@@ -77,8 +77,11 @@ export default function DiceRoller(props: {
   const [activeDie, setActiveDie] = useState<string | null>(null);
   const [displayCarousel, refreshCarousel] = useRefresh();
 
-  const [openedPresets, setOpenedPresets] = useState(false);
-  const [openedDefaultPresets, { open: openDefaultPresets, toggle: toggleDefaultPresets }] = useDisclosure();
+  const [openedHistory, setOpenedHistory] = useState(false);
+  const [openedDefaultPresets, { open: openDefaultPresets, toggle: toggleDefaultPresets }] = useDisclosure(
+    (character?.details?.dice?.presets ?? []).length === 0 ||
+      cloneDeep((character?.roll_history?.rolls ?? []).concat(props.injectedRolls ?? [])).length === 0
+  );
 
   const [currentDiceNum, setCurrentDiceNum] = useState(props.diceNum ?? 1);
   const [currentDiceType, setCurrentDiceType] = useState(props.diceType ?? 'd20');
@@ -431,7 +434,7 @@ export default function DiceRoller(props: {
       setLoaded(false);
       setDice([]);
       setActiveDie(null);
-      setOpenedPresets(false);
+      setOpenedHistory(false);
       if (dddice.current) {
         dddice.current.clear();
         dddice.current = undefined;
@@ -506,7 +509,7 @@ export default function DiceRoller(props: {
     // Takes a little time to finish rolling
     setTimeout(() => {
       setLoadingRoll(false);
-      setOpenedPresets(false);
+      setOpenedHistory(true);
       // Add to history
       const timestamp = Date.now();
       setRollHistory((prev) => [...prev, ...results.map((result) => ({ ...result, timestamp: timestamp }))]);
@@ -546,25 +549,27 @@ export default function DiceRoller(props: {
               <GiRollingDices size='1.6rem' stroke={'1.5'} />
               <Title order={3}>Dice Roller</Title>
             </Group>
-            <Button
-              size='xs'
-              color='gray.6'
-              variant={openedPresets ? 'outline' : 'subtle'}
-              mr={5}
-              onClick={() => {
-                setOpenedPresets(!openedPresets);
-                setActiveDie(null);
+            {rollHistory.length > 0 && (
+              <Button
+                size='xs'
+                color='gray.5'
+                variant={'light'}
+                mr={5}
+                onClick={() => {
+                  setOpenedHistory(!openedHistory);
+                  setActiveDie(null);
 
-                // Open (& load) default presets if not already opened
-                if (!openedPresets) {
-                  if (character?.details?.dice?.opened_default_presets) {
-                    openDefaultPresets();
+                  // Open (& load) default presets if not already opened
+                  if (!openedHistory) {
+                    if (character?.details?.dice?.opened_default_presets) {
+                      openDefaultPresets();
+                    }
                   }
-                }
-              }}
-            >
-              View Presets
-            </Button>
+                }}
+              >
+                View {openedHistory ? 'Presets' : 'History'}
+              </Button>
+            )}
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
@@ -702,7 +707,7 @@ export default function DiceRoller(props: {
                         } else {
                           refreshCarousel();
                           setActiveDie(die.id);
-                          setOpenedPresets(false);
+                          setOpenedHistory(true);
                         }
                       }}
                       leftSection={
@@ -814,7 +819,7 @@ export default function DiceRoller(props: {
               </>
             ) : (
               <>
-                {openedPresets ? (
+                {!openedHistory ? (
                   <>
                     <Paper withBorder p={5}>
                       <Stack gap={5}>
@@ -876,6 +881,7 @@ export default function DiceRoller(props: {
                                 color='gray.9'
                                 onClick={() => {
                                   setRollHistory([]);
+                                  setOpenedHistory(false);
                                 }}
                               >
                                 <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />
