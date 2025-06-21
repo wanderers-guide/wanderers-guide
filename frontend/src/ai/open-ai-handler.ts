@@ -721,12 +721,6 @@ export async function parseCreatureStatBlock(text: string) {
   const prompt =
     `I need you to parse through a pf2e stat block and extract what you can into the following output structure (follow the TypeScript interface).
 
-### Input stat block:
-
-${text}
-
-### Output interface structure:
-
 interface GranularCreature {
   name?: string;
   level?: number;
@@ -826,8 +820,8 @@ interface GranularCreature {
     damage: {
       amountOfDice: number;
       dieType: 'd4' | 'd6' | 'd8' | 'd10' | 'd12';
-      damageType: string;
       damageBonus?: number;
+      damageType: string;
       extraEffects?: string[];
     };
     misc?: {
@@ -900,7 +894,402 @@ interface GranularCreature {
   description?: string;
 }
 
-Use markdown to format your output. Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+---
+
+Okay, I'm first going to give you an example of an input stat block and the output JSON, then I'll give you the actual stat block that I need you to parse.
+### Example Input stat block:
+
+Grim Reaper
+Creature 21
+Unique Medium Humanoid Undead Unholy 
+Source Monster Core pg. 184 1.1
+Perception +41; darkvision, see the unseen, status sight, truesight
+Languages Common, Necril
+Skills Acrobatics +43, Athletics +38, Deception +40, Intimidation +43, Religion +39, Society +36, Stealth +43
+Str +8, Dex +10, Con +8, Int +5, Wis +7, Cha +8
+Status Sight The Grim Reaper automatically knows the Hit Points, conditions, afflictions, and emotions of all creatures it can see.
+Items scythe
+AC 47; Fort +37, Ref +41, Will +38; +1 status to all saves vs. magic
+HP 320; Immunities bleed, death effects, disease, paralyzed, poison, unconscious; Resistances all damage 15
+Aura of Misfortune (aura, divine, misfortune) Within 20 feet. Living creatures in the aura must roll twice on all d20 rolls and use the lower result.
+Death's Grace The Grim Reaper can choose whether or not it counts as undead for effects that affect undead differently. Even if it does not count as undead, the Grim Reaper still never counts as a living creature.
+Void Healing The Grim Reaper can choose whether or not it takes vitality damage.
+Lurking Death [reaction] (divine, teleportation) Trigger A creature within 100 feet makes a ranged attack or uses an action that has the concentrate, manipulate, or move trait; Effect The Grim Reaper teleports to a square adjacent to the triggering creature and makes a melee Strike against it. If the Strike hits, the Grim Reaper disrupts the triggering action.
+Speed 50 feet, fly 75 feet
+Melee [one-action] keen scythe +40 [+36/+32] (agile, deadly 3d10, magical, reach 10 feet, trip), Damage 4d10+23 slashing plus death strike and energy drain
+Ranged [one-action] crossbow +36 [+31/+26] (magical, range increment 120 feet, reload 1), Damage 1d8+30 piercing
+Divine Innate Spells DC 47, attack +37; 10th execute (×4); 7th interplanar teleport; Constant (6th) truesight; (3rd) haste; (2nd) see the unseen
+Primal Spontaneous Spells DC 46; 1st fleet step, heal, pummeling rubble, runic weapon (4 slots); Cantrips (10th) caustic blast, detect magic, figment, know the way, tangle vine
+Death Strike (death) A creature critically hit by any of the Grim Reaper's attacks or that critically fails against any of its spells must succeed at a DC 47 Fortitude save or die.
+Energy Drain When the Grim Reaper hits and deals damage with its scythe, it regains 20 Hit Points, and the target must succeed at a DC 43 Fortitude save or become doomed 1. If the target is already doomed, the doomed value increases by 1 (to a maximum of doomed 3).
+Final Death A creature killed by the Grim Reaper can't be brought back to life by any means short of divine intervention.
+Infuse Weapon (divine) Any scythe gains the agile trait, can't be disarmed, and becomes a +3 major striking keen scythe while the Grim Reaper wields it. If the Grim Reaper Strikes a creature with a weakness to any specific type of damage, the scythe's damage counts as that type of damage, in addition to slashing.
+Inspiring Display [one-action] (auditory, emotion, linguistic, mental) Requirements The Grim Reaper's previous action was to Cast a Spell; Effect The Grim Reaper uses their magical display to inspire another undead within 30 feet. That undead gains 4 temporary Hit Points that last until the start of the Grim Reaper's next turn.
+
+
+### Example Output:
+{
+    "name": "Grim Reaper",
+    "level": 21,
+    "size": "MEDIUM",
+    "rarity": "UNIQUE",
+    "traits": [
+        "Humanoid",
+        "Undead",
+        "Unholy"
+    ],
+    "perception": {
+        "value": 41,
+        "senses": [
+            {
+                "name": "darkvision"
+            },
+            {
+                "name": "see the unseen"
+            },
+            {
+                "name": "status sight"
+            },
+            {
+                "name": "truesight"
+            }
+        ]
+    },
+    "languages": {
+        "value": [
+            "Common",
+            "Necril"
+        ]
+    },
+    "skills": [
+        {
+            "name": "Acrobatics",
+            "bonus": 43
+        },
+        {
+            "name": "Athletics",
+            "bonus": 38
+        },
+        {
+            "name": "Deception",
+            "bonus": 40
+        },
+        {
+            "name": "Intimidation",
+            "bonus": 43
+        },
+        {
+            "name": "Religion",
+            "bonus": 39
+        },
+        {
+            "name": "Society",
+            "bonus": 36
+        },
+        {
+            "name": "Stealth",
+            "bonus": 43
+        }
+    ],
+    "attributes": [
+        {
+            "name": "Str",
+            "value": 8
+        },
+        {
+            "name": "Dex",
+            "value": 10
+        },
+        {
+            "name": "Con",
+            "value": 8
+        },
+        {
+            "name": "Int",
+            "value": 5
+        },
+        {
+            "name": "Wis",
+            "value": 7
+        },
+        {
+            "name": "Cha",
+            "value": 8
+        }
+    ],
+    "items": [
+        {
+            "name": "scythe",
+            "quantity": 1
+        }
+    ],
+    "speeds": [
+        {
+            "name": "Normal",
+            "value": 50
+        },
+        {
+            "name": "Fly",
+            "value": 75
+        }
+    ],
+    "resistances": [
+        {
+            "type": "all damage",
+            "value": 15
+        }
+    ],
+    "immunities": [
+        {
+            "type": "bleed"
+        },
+        {
+            "type": "death effects"
+        },
+        {
+            "type": "disease"
+        },
+        {
+            "type": "paralyzed"
+        },
+        {
+            "type": "poison"
+        },
+        {
+            "type": "unconscious"
+        }
+    ],
+    "ac": {
+        "value": 47
+    },
+    "saves": {
+        "fort": {
+            "value": 37
+        },
+        "ref": {
+            "value": 41
+        },
+        "will": {
+            "value": 38
+        },
+        "generalNotes": "+1 status to all saves vs. magic"
+    },
+    "hp": {
+        "value": 320
+    },
+    "abilities": [
+        {
+            "name": "Status Sight",
+            "description": "The Grim Reaper automatically knows the Hit Points, conditions, afflictions, and emotions of all creatures it can see."
+        },
+        {
+            "name": "Aura of Misfortune",
+            "traits": [
+                "aura",
+                "divine",
+                "misfortune"
+            ],
+            "description": "Within 20 feet. Living creatures in the aura must roll twice on all d20 rolls and use the lower result."
+        },
+        {
+            "name": "Death's Grace",
+            "description": "The Grim Reaper can choose whether or not it counts as undead for effects that affect undead differently. Even if it does not count as undead, the Grim Reaper still never counts as a living creature."
+        },
+        {
+            "name": "Void Healing",
+            "description": "The Grim Reaper can choose whether or not it takes vitality damage."
+        },
+        {
+            "name": "Lurking Death",
+            "action": "REACTION",
+            "traits": [
+                "divine",
+                "teleportation"
+            ],
+            "trigger": "A creature within 100 feet makes a ranged attack or uses an action that has the concentrate, manipulate, or move trait",
+            "description": "The Grim Reaper teleports to a square adjacent to the triggering creature and makes a melee Strike against it. If the Strike hits, the Grim Reaper disrupts the triggering action."
+        },
+        {
+            "name": "Death Strike",
+            "traits": [
+                "death"
+            ],
+            "description": "A creature critically hit by any of the Grim Reaper's attacks or that critically fails against any of its spells must succeed at a DC 47 Fortitude save or die."
+        },
+        {
+            "name": "Energy Drain",
+            "description": "When the Grim Reaper hits and deals damage with its scythe, it regains 20 Hit Points, and the target must succeed at a DC 43 Fortitude save or become doomed 1. If the target is already doomed, the doomed value increases by 1 (to a maximum of doomed 3)."
+        },
+        {
+            "name": "Final Death",
+            "description": "A creature killed by the Grim Reaper can't be brought back to life by any means short of divine intervention."
+        },
+        {
+            "name": "Infuse Weapon",
+            "traits": [
+                "divine"
+            ],
+            "description": "Any scythe gains the agile trait, can't be disarmed, and becomes a +3 major striking keen scythe while the Grim Reaper wields it. If the Grim Reaper Strikes a creature with a weakness to any specific type of damage, the scythe's damage counts as that type of damage, in addition to slashing."
+        },
+        {
+            "name": "Inspiring Display",
+            "action": "ONE-ACTION",
+            "traits": [
+                "auditory",
+                "emotion",
+                "linguistic",
+                "mental"
+            ],
+            "requirements": "The Grim Reaper's previous action was to Cast a Spell",
+            "description": "The Grim Reaper uses their magical display to inspire another undead within 30 feet. That undead gains 4 temporary Hit Points that last until the start of the Grim Reaper's next turn."
+        }
+    ],
+    "attacks": [
+        {
+            "attackType": "melee",
+            "action": "ONE-ACTION",
+            "name": "keen scythe",
+            "attackBonus": {
+                "attack1st": 40,
+                "attack2nd": 36,
+                "attack3rd": 32
+            },
+            "traits": [
+                "agile",
+                "deadly 3d10",
+                "magical",
+                "reach 10 feet",
+                "trip"
+            ],
+            "damage": {
+                "amountOfDice": 4,
+                "dieType": "d10",
+                "damageBonus": 23,
+                "damageType": "slashing",
+                "extraEffects": [
+                    "death strike",
+                    "energy drain"
+                ]
+            }
+        },
+        {
+            "attackType": "ranged",
+            "action": "ONE-ACTION",
+            "name": "crossbow",
+            "attackBonus": {
+                "attack1st": 36,
+                "attack2nd": 31,
+                "attack3rd": 26
+            },
+            "traits": [
+                "magical"
+            ],
+            "damage": {
+                "amountOfDice": 1,
+                "dieType": "d8",
+                "damageBonus": 30,
+                "damageType": "piercing"
+            },
+            "misc": {
+                "range": 120,
+                "reload": 1
+            }
+        }
+    ],
+    "spellcasting": {
+        "innate": {
+            "tradition": "DIVINE",
+            "dc": 47,
+            "attackBonus": 37,
+            "spells": [
+                {
+                    "name": "execute",
+                    "rank": 10,
+                    "castsPerDay": 4
+                },
+                {
+                    "name": "interplanar teleport",
+                    "rank": 7
+                },
+                {
+                    "name": "truesight",
+                    "rank": 6,
+                    "castsPerDay": "CONSTANT"
+                },
+                {
+                    "name": "haste",
+                    "rank": 3
+                },
+                {
+                    "name": "see the unseen",
+                    "rank": 2
+                }
+            ],
+            "cantripsHeighteningRank": 10
+        },
+        "spontaneous": {
+            "tradition": "PRIMAL",
+            "dc": 46,
+            "slots": [
+                {
+                    "rank": 1,
+                    "amount": 4
+                }
+            ],
+            "spells": [
+                {
+                    "name": "fleet step",
+                    "rank": 1
+                },
+                {
+                    "name": "heal",
+                    "rank": 1
+                },
+                {
+                    "name": "pummeling rubble",
+                    "rank": 1
+                },
+                {
+                    "name": "runic weapon",
+                    "rank": 1
+                },
+                {
+                    "name": "caustic blast",
+                    "rank": 0
+                },
+                {
+                    "name": "detect magic",
+                    "rank": 0
+                },
+                {
+                    "name": "figment",
+                    "rank": 0
+                },
+                {
+                    "name": "know the way",
+                    "rank": 0
+                },
+                {
+                    "name": "tangle vine",
+                    "rank": 0
+                }
+            ],
+            "cantripsHeighteningRank": 10
+        }
+    }
+}
+
+---
+Now it's your turn:
+
+
+### Input stat block:
+
+${text}
+
+
+Note: Use markdown to format your output. Only return the JSON object with the information filled in. DO NOT INCLUDE \`\`\`json\`\`\` in your response.
+
 ### Output:`.trim();
 
   const result = (await generateCompletion(prompt)) ?? '';

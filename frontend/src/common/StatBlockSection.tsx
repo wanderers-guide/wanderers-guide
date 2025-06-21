@@ -195,12 +195,22 @@ export default function StatBlockSection(props: {
       };
     };
   }) => {
-    const traitsStr = (weapon.item.traits ?? [])
+    const traits = (weapon.item.traits ?? [])
       .map((id) => data.all_traits.find((t) => id === t.id))
       .filter(isTruthy)
-      .map((t) => linkContent(t.name.toLowerCase(), 'trait', t))
-      .join(', ')
-      .trim();
+      .map((t) => linkContent(t.name.toLowerCase(), 'trait', t));
+
+    // Add range and reload to be displayed with traits
+    if (isItemRangedWeapon(weapon.item)) {
+      if (weapon.item.meta_data?.range) {
+        traits.push(`range increment ${weapon.item.meta_data.range} ft.`);
+      }
+      if (weapon.item.meta_data?.reload) {
+        traits.push(`reload ${weapon.item.meta_data.reload.replace(/reload/i, '').trim()}`);
+      }
+    }
+
+    const traitsStr = traits.join(', ').trim();
 
     const damageBonus = weapon.stats.damage.bonus.total > 0 ? ` + ${weapon.stats.damage.bonus.total}` : ``;
 
@@ -576,10 +586,11 @@ export default function StatBlockSection(props: {
       {abilities
         .filter((ab) => ab.actions && ab.actions !== 'FREE-ACTION' && ab.actions !== 'REACTION')
         .map((ab) => getAbilityDisplay(ab))}
-      <Divider />
-      {abilities.filter((ab) => !ab.actions).map((ab) => getAbilityDisplay(ab))}
-      <Divider />
 
+      {abilities.filter((ab) => !ab.actions).length > 0 && <Divider />}
+      {abilities.filter((ab) => !ab.actions).map((ab) => getAbilityDisplay(ab))}
+
+      {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && <Divider />}
       {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && (
         <Box p='lg'>
           {isPreformattedDescription ? (

@@ -1,16 +1,5 @@
+import { AbilityBlock, ActionCost, ContentSource, Creature, InventoryItem, Item, Rarity, Size } from '@typing/content';
 import {
-  AbilityBlock,
-  ActionCost,
-  ContentSource,
-  Creature,
-  InventoryItem,
-  Item,
-  Rarity,
-  Size,
-  Trait,
-} from '@typing/content';
-import {
-  EQUIPMENT_TYPES,
   convertToActionCost,
   convertToRarity,
   convertToSize,
@@ -40,7 +29,7 @@ import { compactLabels, labelToVariable } from '@variables/variable-utils';
 import { parseDiceRoll, toLabel } from '@utils/strings';
 import { resetVariables } from '@variables/variable-manager';
 import { executeCreatureOperations } from '@operations/operation-controller';
-import { fetchContentPackage, fetchTraitByName } from '@content/content-store';
+import { fetchContentPackage } from '@content/content-store';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
 import { getBestArmor, isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { hashData, sign } from '@utils/numbers';
@@ -69,7 +58,7 @@ export async function convertGranularCreature(source: ContentSource, g: Granular
         gp: 0,
         pp: 0,
       },
-      items: [], // TODO, Put items in here instead
+      items: [],
     },
     notes: undefined,
     details: {
@@ -117,14 +106,14 @@ export async function convertGranularCreature(source: ContentSource, g: Granular
   // Skills
   operations = addSkills(operations, g, varTotals);
   // Misc Ops
-  const traitIds = await getTraitIds(g.traits ?? [], source);
+  const traitIds = await getTraitIds(g.traits ?? [], source, false);
   operations = addMiscOps(operations, g, traitIds);
   // Spells
   operations = await addSpells(operations, g, varTotals);
   // Items
   const { operations: resultOps, items } = await addEquipment(operations, g);
   operations = resultOps;
-  creature.inventory!.items = [...creature.inventory!.items, ...items];
+  creature.inventory!.items = items;
   //
 
   creature.operations = operations;
@@ -176,9 +165,8 @@ export async function convertGranularCreature(source: ContentSource, g: Granular
     }
   }
 
-  // Add Unarmed Attacks (here because we need to adjust based on totals)
-  const attackItems = await addAttacks(STORE_ID, g, source);
-  creature.inventory!.items = [...creature.inventory!.items, ...attackItems];
+  // Add Weapon Attacks (here because we need to adjust based on totals)
+  creature.inventory!.items = await addAttacks(STORE_ID, g, source, creature.inventory!.items);
   //
 
   // Clean up
@@ -715,15 +703,46 @@ async function addSpells(operations: Operation[], g: GranularCreature, varTotals
   return operations;
 }
 
-async function addAttacks(id: StoreID, g: GranularCreature, source: ContentSource) {
-  const invItems: InventoryItem[] = [];
+async function addAttacks(
+  id: StoreID,
+  g: GranularCreature,
+  source: ContentSource,
+  existingItems: InventoryItem[] = []
+): Promise<InventoryItem[]> {
+  const invItems: InventoryItem[] = cloneDeep(existingItems);
   for (const attack of g.attacks ?? []) {
     let traitNames = attack.traits?.map((trait) => trait.toLowerCase().trim()) ?? [];
 
+    const existingItem = invItems.find(
+      (i) =>
+        // eg. scythe === scythe
+        i.item.name.trim().toLowerCase() === attack.name.trim().toLowerCase() ||
+        // eg. keen scythe === scythe
+        attack.name.trim().toLowerCase().endsWith(` ${i.item.name.trim().toLowerCase()}`)
+    );
+
+    // Extract range and reload from traits
+    const range = (() => {
+      const rangeTrait = traitNames.map((t) => t.replace(/\s/g, '-')).find((trait) => trait.startsWith('range-'));
+      return rangeTrait ? parseInt(rangeTrait.replace('range-increment-', '').replace('range-', '')) : null;
+    })();
+    if (range !== null) {
+      traitNames = traitNames.filter((trait) => !trait.replace(/\s/g, '-').startsWith('range-'));
+    }
+
+    const reload = (() => {
+      const reloadTrait = traitNames.map((t) => t.replace(/\s/g, '-')).find((trait) => trait.startsWith('reload-'));
+      return reloadTrait ? parseInt(reloadTrait.replace('reload-', '')) : null;
+    })();
+    if (reload !== null) {
+      traitNames = traitNames.filter((trait) => !trait.replace(/\s/g, '-').startsWith('reload-'));
+    }
+
+    // Create the item
     const item: Item = {
-      id: hashData({ value: crypto.randomUUID() }),
+      id: existingItem?.item.id ?? hashData({ value: crypto.randomUUID() }),
       created_at: '',
-      name: attack.name,
+      name: attack.name.trim(),
       level: 0,
       rarity: 'COMMON',
       traits: await getTraitIds(traitNames, source, false),
@@ -731,8 +750,8 @@ async function addAttacks(id: StoreID, g: GranularCreature, source: ContentSourc
       group: 'WEAPON',
       size: 'MEDIUM',
       meta_data: {
-        category: 'unarmed_attack',
-        group: 'brawling',
+        category: existingItem?.item.meta_data?.category ?? 'unarmed_attack',
+        group: existingItem?.item.meta_data?.group ?? 'brawling',
         damage: {
           damageType: attack.damage.damageType,
           dice: attack.damage.amountOfDice,
@@ -741,10 +760,10 @@ async function addAttacks(id: StoreID, g: GranularCreature, source: ContentSourc
         },
         attack_bonus: undefined,
         bulk: {},
-        //unselectable?: boolean;
+        unselectable: existingItem?.item.meta_data?.unselectable ?? true,
         quantity: 1,
-        range: attack.misc?.range ?? undefined,
-        reload: attack.misc?.reload ? `${attack.misc.reload}` : undefined,
+        range: attack.misc?.range ?? range ?? undefined,
+        reload: attack.misc?.reload ? `${attack.misc.reload}` : reload ? `${reload}` : undefined,
         foundry: {},
       },
       operations: [],
@@ -771,15 +790,25 @@ async function addAttacks(id: StoreID, g: GranularCreature, source: ContentSourc
     item.meta_data!.damage!.extra = extra.trim() ? extra : undefined;
     item.meta_data!.attack_bonus = attackDiff;
 
-    invItems.push({
-      id: crypto.randomUUID(),
-      item: item,
-      is_formula: false,
-      is_equipped: true,
-      is_invested: false,
-      is_implanted: false,
-      container_contents: [],
-    });
+    // If there's an existing item, just override it
+    if (existingItem) {
+      existingItem.item = item;
+      existingItem.is_formula = false;
+      existingItem.is_equipped = true;
+      existingItem.is_invested = isItemInvestable(item);
+      existingItem.is_implanted = isItemImplantable(item);
+      existingItem.container_contents = [];
+    } else {
+      invItems.push({
+        id: crypto.randomUUID(),
+        item: item,
+        is_formula: false,
+        is_equipped: true,
+        is_invested: isItemInvestable(item),
+        is_implanted: isItemImplantable(item),
+        container_contents: [],
+      });
+    }
   }
 
   return invItems;

@@ -159,6 +159,10 @@ export async function getTraitIds(traitNames: string[], source: ContentSource, c
 
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
+    if (traitName.toLowerCase().endsWith('_feet') || traitName.toLowerCase().endsWith(' feet')) {
+      traitName = traitName.replace(/_feet$/i, '').replace(/ feet$/i, '');
+    }
+
     const traitId = FOUNDRY_TRAIT_MAP[traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')];
     if (traitId) {
       traitIds.push(traitId);

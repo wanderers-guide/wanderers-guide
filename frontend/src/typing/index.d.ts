@@ -130,8 +130,8 @@ export interface GranularCreature {
     damage: {
       amountOfDice: number;
       dieType: 'd4' | 'd6' | 'd8' | 'd10' | 'd12';
-      damageType: string;
       damageBonus?: number;
+      damageType: string;
       extraEffects?: string[];
     };
     misc?: {

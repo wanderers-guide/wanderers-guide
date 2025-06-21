@@ -181,6 +181,11 @@ export function CreateCreatureModal(props: {
     setDescription(undefined);
   };
 
+  const isEmpty =
+    form.values.operations?.length === 0 &&
+    form.values.abilities_base?.length === 0 &&
+    form.values.abilities_added?.length === 0;
+
   const addedAbilities = (form.values.abilities_added ?? [])
     .map((id) => abilityBlocks?.find((ab) => ab.id === id))
     .filter(isTruthy);
@@ -284,6 +289,8 @@ export function CreateCreatureModal(props: {
                               console.log('Granular', result.granular);
                               console.log('Final', result.creature);
                               form.setValues(result.creature);
+                              // @ts-expect-error
+                              form.setFieldValue('level', `${result.creature.level}`);
                             }
                             setLoadingProcess(false);
                             //
@@ -310,29 +317,30 @@ export function CreateCreatureModal(props: {
                         Process
                       </Button>
                     </Group>
-                    <ScrollArea
-                      h={450}
-                      scrollbars='y'
-                      px='sm'
-                      style={{
-                        backgroundColor: theme.colors.dark[6],
-                        border: `1px solid ${theme.colors.dark[4]}`,
-                        borderRadius: theme.radius.md,
-                      }}
-                      onClick={toggleInputStatBlockActive}
-                    >
-                      <FocusTrap active={inputStatBlockActive}>
-                        <Textarea
-                          variant='unstyled'
-                          placeholder='Paste creature stat block'
-                          autosize
-                          value={inputStatBlock}
-                          onChange={(e) => {
-                            setInputStatBlock(e.currentTarget.value);
-                          }}
-                        />
-                      </FocusTrap>
-                    </ScrollArea>
+                    <Box onClick={toggleInputStatBlockActive}>
+                      <ScrollArea
+                        h={450}
+                        scrollbars='y'
+                        px='sm'
+                        style={{
+                          backgroundColor: theme.colors.dark[6],
+                          border: `1px solid ${theme.colors.dark[4]}`,
+                          borderRadius: theme.radius.md,
+                        }}
+                      >
+                        <FocusTrap active={inputStatBlockActive}>
+                          <Textarea
+                            variant='unstyled'
+                            placeholder='Paste creature stat block'
+                            autosize
+                            value={inputStatBlock}
+                            onChange={(e) => {
+                              setInputStatBlock(e.currentTarget.value);
+                            }}
+                          />
+                        </FocusTrap>
+                      </ScrollArea>
+                    </Box>
                   </Stack>
                   <Stack gap={0}>
                     <Group wrap='nowrap' justify='space-between' py={5}>
@@ -348,13 +356,15 @@ export function CreateCreatureModal(props: {
                         borderRadius: theme.radius.md,
                       }}
                     >
-                      <StatBlockSection
-                        entity={form.values}
-                        options={{
-                          hideName: true,
-                          hideImage: true,
-                        }}
-                      />
+                      {!isEmpty && (
+                        <StatBlockSection
+                          entity={form.values}
+                          options={{
+                            hideName: true,
+                            hideImage: true,
+                          }}
+                        />
+                      )}
                     </ScrollArea>
                   </Stack>
                 </Group>

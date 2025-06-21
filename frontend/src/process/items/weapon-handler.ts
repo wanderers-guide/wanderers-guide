@@ -31,7 +31,26 @@ export function getWeaponStats(id: StoreID, item: Item) {
   //
   const die = item.meta_data?.damage?.die ?? '';
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
-  const extra = item.meta_data?.damage?.extra;
+  let extra = (item.meta_data?.damage?.extra ?? '').trim();
+
+  // Remove any starting '+' (we add it later)
+  if (extra.startsWith('+')) {
+    extra = extra.substring(1).trim();
+  }
+
+  // Remove the first number from the extra damage string, to add it to the bonus
+  let extraDamage = 0;
+  extra = extra
+    .replace(/((|-)\d+?)($|\s)/, (_, group1) => {
+      extraDamage = parseInt(group1);
+      return ''; // Remove the first match
+    })
+    .trim();
+
+  // Again, remove any starting '+' (the removed extra damage could be followed by another one)
+  if (extra.startsWith('+')) {
+    extra = extra.substring(1).trim();
+  }
 
   const other: {
     dice: number;
@@ -52,13 +71,19 @@ export function getWeaponStats(id: StoreID, item: Item) {
     });
   }
 
+  const damageBonus = getAttackDamage(id, item);
+  if (extraDamage !== 0) {
+    damageBonus.total += extraDamage;
+    damageBonus.parts.set('This is an extra custom bonus you receive for this item.', extraDamage);
+  }
+
   return {
     attack_bonus: getAttackBonus(id, item),
     damage: {
       dice: dice,
       die: die,
       damageType: damageType,
-      bonus: getAttackDamage(id, item),
+      bonus: damageBonus,
       other: other,
       extra: extra,
     },
