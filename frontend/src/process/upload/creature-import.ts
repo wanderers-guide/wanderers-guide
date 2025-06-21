@@ -377,7 +377,7 @@ function addSpeeds(operations: Operation[], g: GranularCreature) {
 async function addLanguages(operations: Operation[], g: GranularCreature, source: ContentSource) {
   // TODO, we don't include languages.notes but prob should
 
-  const languageIds = await getLanguageIds(g.languages.value ?? [], source);
+  const languageIds = await getLanguageIds(g.languages?.value ?? [], source);
   for (const languageId of languageIds) {
     operations.push({
       ...createDefaultOperation<OperationGiveLanguage>('giveLanguage'),

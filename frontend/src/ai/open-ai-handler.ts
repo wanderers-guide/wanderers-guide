@@ -718,6 +718,8 @@ async function buildEncounters(
 }
 
 export async function parseCreatureStatBlock(text: string) {
+  text = text.replace('\nLegacy Content\n', '');
+
   const prompt =
     `I need you to parse through a pf2e stat block and extract what you can into the following output structure (follow the TypeScript interface).
 
@@ -925,6 +927,11 @@ Energy Drain When the Grim Reaper hits and deals damage with its scythe, it rega
 Final Death A creature killed by the Grim Reaper can't be brought back to life by any means short of divine intervention.
 Infuse Weapon (divine) Any scythe gains the agile trait, can't be disarmed, and becomes a +3 major striking keen scythe while the Grim Reaper wields it. If the Grim Reaper Strikes a creature with a weakness to any specific type of damage, the scythe's damage counts as that type of damage, in addition to slashing.
 Inspiring Display [one-action] (auditory, emotion, linguistic, mental) Requirements The Grim Reaper's previous action was to Cast a Spell; Effect The Grim Reaper uses their magical display to inspire another undead within 30 feet. That undead gains 4 temporary Hit Points that last until the start of the Grim Reaper's next turn.
+Spray Death [two-actions] (mental, poison, incapacitation) The Grim Reaper blasts gray dust in either a 30-foot line or a 15-foot cone. Each creature in the emanation must attempt a DC 40 Will save. Once a creature succeeds at any save against Spray Death, it becomes temporarily immune for 24 hours.
+Success The creature is unaffected.
+Failure The creature is fascinated. For as long as it is fascinated, it must spend each of its actions to move closer to the Grim Reaper as expediently as possible, while avoiding obvious dangers. If the creature is adjacent to the Grim Reaper, it stays still and doesn't act. If anyone takes a hostile action against the creature or its allies, the effect ends. Otherwise, the creature can attempt a new save at the end of each of its turns. On a success, the effects end.
+Critical Failure As failure, but the condition doesn't end automatically if anyone takes a hostile action against the creature or its allies.
+Bore into Brain [three-actions] (manipulate, mental) The Grim Reaper bores dozens of tendrils into the brain of a Small, Medium, or Large humanoid creature that's unconscious, willing, or fascinated by Spray Death, and within reach of the Grim Reaper's tendrils. The creature must succeed at a DC 38 Fortitude save or become stupefied 1 (stupefied 2 on a critical failure). Subsequent failed saves against Bore into Brain increase the stupefied value. If the creature reaches stupefied 5, it is turned into an ashen thrall. Boring into a creature's brain doesn't end fascination caused by Spray Death.
 
 
 ### Example Output:
@@ -1142,6 +1149,25 @@ Inspiring Display [one-action] (auditory, emotion, linguistic, mental) Requireme
             ],
             "requirements": "The Grim Reaper's previous action was to Cast a Spell",
             "description": "The Grim Reaper uses their magical display to inspire another undead within 30 feet. That undead gains 4 temporary Hit Points that last until the start of the Grim Reaper's next turn."
+        },
+        {
+            "name": "Spray Death",
+            "action": "TWO-ACTIONS",
+            "traits": [
+                "mental",
+                "poison",
+                "incapacitation"
+            ],
+            "description": "The Grim Reaper blasts gray dust in either a 30-foot line or a 15-foot cone. Each creature in the emanation must attempt a DC 40 Will save. Once a creature succeeds at any save against Spray Death, it becomes temporarily immune for 24 hours.\\n\\n**Success** The creature is unaffected.\\n\\n**Failure** The creature is fascinated. For as long as it is fascinated, it must spend each of its actions to move closer to the Grim Reaper as expediently as possible, while avoiding obvious dangers. If the creature is adjacent to the Grim Reaper, it stays still and doesn't act. If anyone takes a hostile action against the creature or its allies, the effect ends. Otherwise, the creature can attempt a new save at the end of each of its turns. On a success, the effects end.\\n\\n**Critical Failure** As failure, but the condition doesn't end automatically if anyone takes a hostile action against the creature or its allies."
+        },
+        {
+            "name": "Bore into Brain",
+            "action": "THREE-ACTIONS",
+            "traits": [
+                "manipulate",
+                "mental"
+            ],
+            "description": "The Grim Reaper bores dozens of tendrils into the brain of a Small, Medium, or Large humanoid creature that's unconscious, willing, or fascinated by Spray Death, and within reach of the Grim Reaper's tendrils. The creature must succeed at a DC 38 Fortitude save or become stupefied 1 (stupefied 2 on a critical failure). Subsequent failed saves against Bore into Brain increase the stupefied value. If the creature reaches stupefied 5, it is turned into an ashen thrall. Boring into a creature's brain doesn't end fascination caused by Spray Death."
         }
     ],
     "attacks": [

@@ -43,7 +43,7 @@ export interface GranularCreature {
     senses?: { name: string; range?: number; acuity?: 'precise' | 'imprecise' | 'vague' }[];
     notes?: string;
   };
-  languages: {
+  languages?: {
     value?: string[];
     notes?: string;
   };
