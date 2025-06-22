@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
--- Dumped by pg_dump version 15.10 (Ubuntu 15.10-1.pgdg24.04+1)
+-- Dumped by pg_dump version 16.9 (Ubuntu 16.9-1.pgdg24.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -393,7 +393,13 @@ CREATE TABLE public.creature (
     abilities_base json[],
     spells json,
     deprecated boolean,
-    abilities_added bigint[]
+    abilities_added bigint[],
+    experience integer,
+    hp_current integer,
+    hp_temp integer,
+    stamina_current integer,
+    resolve_current integer,
+    operation_data json
 );
 
 
