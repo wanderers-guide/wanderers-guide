@@ -103,6 +103,7 @@ export function CreatureDrawerContent(props: {
     STORE_ID?: string;
     showOperations?: boolean;
     updateCreature?: (creature: Creature) => void;
+    readOnly?: boolean;
   };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
@@ -188,7 +189,7 @@ export function CreatureDrawerContent(props: {
         checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
 
         // Apply armor/shield penalties
-        applyEquipmentPenalties(STORE_ID, creature, convertToSetEntity(setCreature));
+        applyEquipmentPenalties(STORE_ID, creature);
 
         // Apply conditions after everything else
         applyConditions(STORE_ID, creature.details?.conditions ?? []);
@@ -555,89 +556,91 @@ export function CreatureDrawerContent(props: {
           width: '100%',
         }}
       >
-        <Group justify='space-between' wrap='nowrap'>
-          <Group wrap='nowrap' gap={15} mr={15}>
-            <ActionIcon
-              variant='light'
-              color='cyan'
-              radius='xl'
-              aria-label='Edit Creature'
-              style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}
-              onClick={toggleEditing}
-            >
-              <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
-            </ActionIcon>
-            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
-              <HoverCard.Target>
-                <ActionIcon
-                  variant='light'
-                  color='blue'
-                  radius='xl'
-                  aria-label='Rest Creature'
-                  style={{
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                  }}
-                  onClick={() => {
-                    handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
-                  }}
-                >
-                  <IconZzz style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                </ActionIcon>
-              </HoverCard.Target>
-              <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  Rest
-                </Text>
-              </HoverCard.Dropdown>
-            </HoverCard>
-            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
-              <HoverCard.Target>
-                {drawerData.view === 'BLOCK' ? (
+        {!props.data.readOnly && (
+          <Group justify='space-between' wrap='nowrap'>
+            <Group wrap='nowrap' gap={15} mr={15}>
+              <ActionIcon
+                variant='light'
+                color='cyan'
+                radius='xl'
+                aria-label='Edit Creature'
+                style={{
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                onClick={toggleEditing}
+              >
+                <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon>
+              <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+                <HoverCard.Target>
                   <ActionIcon
                     variant='light'
-                    color='yellow'
+                    color='blue'
                     radius='xl'
-                    aria-label='Switch View Mode'
+                    aria-label='Rest Creature'
                     style={{
                       backdropFilter: 'blur(8px)',
                       WebkitBackdropFilter: 'blur(8px)',
                     }}
                     onClick={() => {
-                      setDrawerData({ view: 'SHEET' });
+                      handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
                     }}
                   >
-                    <IconDualScreen style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    <IconZzz style={{ width: '70%', height: '70%' }} stroke={1.5} />
                   </ActionIcon>
-                ) : (
-                  <ActionIcon
-                    variant='light'
-                    color='yellow'
-                    radius='xl'
-                    aria-label='Switch View Mode'
-                    style={{
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                    }}
-                    onClick={() => {
-                      setDrawerData({ view: 'BLOCK' });
-                    }}
-                  >
-                    <IconAlignBoxLeftMiddle style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                  </ActionIcon>
-                )}
-              </HoverCard.Target>
-              <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
-                </Text>
-              </HoverCard.Dropdown>
-            </HoverCard>
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={5} px={10}>
+                  <Text c='gray.0' size='sm'>
+                    Rest
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+              <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+                <HoverCard.Target>
+                  {drawerData.view === 'BLOCK' ? (
+                    <ActionIcon
+                      variant='light'
+                      color='yellow'
+                      radius='xl'
+                      aria-label='Switch View Mode'
+                      style={{
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                      }}
+                      onClick={() => {
+                        setDrawerData({ view: 'SHEET' });
+                      }}
+                    >
+                      <IconDualScreen style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    </ActionIcon>
+                  ) : (
+                    <ActionIcon
+                      variant='light'
+                      color='yellow'
+                      radius='xl'
+                      aria-label='Switch View Mode'
+                      style={{
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                      }}
+                      onClick={() => {
+                        setDrawerData({ view: 'BLOCK' });
+                      }}
+                    >
+                      <IconAlignBoxLeftMiddle style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    </ActionIcon>
+                  )}
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={5} px={10}>
+                  <Text c='gray.0' size='sm'>
+                    {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </Group>
           </Group>
-        </Group>
+        )}
         {editingCreature && (
           <CreateCreatureModal
             opened={editingCreature}

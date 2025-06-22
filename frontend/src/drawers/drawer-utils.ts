@@ -9,7 +9,11 @@ export function convertContentLink(input: { type: ContentType | AbilityBlockType
 } {
   return {
     type: input.type,
-    data: { id: parseInt(input.id) ? parseInt(input.id) : input.id },
+    data: {
+      id: parseInt(input.id) ? parseInt(input.id) : input.id,
+      readOnly: true,
+      zIndex: input.type === 'creature' ? CREATURE_DRAWER_ZINDEX : undefined,
+    },
   };
 }
 

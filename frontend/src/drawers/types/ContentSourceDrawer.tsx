@@ -459,7 +459,7 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'creature',
-                        data: { id: a.id, zIndex: CREATURE_DRAWER_ZINDEX },
+                        data: { id: a.id, readOnly: true, zIndex: CREATURE_DRAWER_ZINDEX },
                         extra: { addToHistory: true },
                       });
                     }}

@@ -3308,6 +3308,7 @@ export function CreatureSelectionOption(props: {
           type: 'creature',
           data: {
             id: props.creature.id,
+            readOnly: true,
             zIndex: CREATURE_DRAWER_ZINDEX,
             onSelect:
               props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,
