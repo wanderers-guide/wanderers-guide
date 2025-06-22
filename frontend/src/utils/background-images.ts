@@ -13,6 +13,38 @@ const imageStore: Record<string, ImageOption[]> = {
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/1.png',
       source_url: 'https://www.artstation.com/',
     },
+  ],
+  geoffroy_thoorens: [
+    {
+      name: 'Chilling Ape',
+      url: 'https://cdna.artstation.com/p/assets/images/images/073/101/376/large/geoffroy-thoorens-speed-trees-n-rocks-copie.jpg',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
+    },
+    {
+      name: 'Alien 5, City',
+      url: 'https://cdnb.artstation.com/p/assets/images/images/038/550/887/large/geoffroy-thoorens-alien5-building.jpg',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
+    },
+    {
+      name: 'The New Call',
+      url: 'https://cdna.artstation.com/p/assets/images/images/082/887/864/large/geoffroy-thoorens-thecall2-v14.jpg',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
+    },
+    {
+      name: 'Weapon Test',
+      url: 'https://cdnb.artstation.com/p/assets/images/images/022/441/631/large/geoffroy-thoorens-monolith-web.jpg',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
+    },
+    {
+      name: 'Broken Alley',
+      url: 'https://cdnb.artstation.com/p/users/covers/000/022/685/default/7dd65759069d8be826850a4889889e30.jpg',
+      source: 'Geoffroy Thoorens',
+      source_url: 'https://www.artstation.com/djahal',
+    },
     {
       name: 'Village Road',
       url: 'https://fdrjqcyjklatdrmjdnys.supabase.co/storage/v1/object/public/backgrounds/default/2.png',

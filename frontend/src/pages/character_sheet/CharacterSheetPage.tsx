@@ -1,39 +1,23 @@
 import D20Loader from '@assets/images/D20Loader';
 import { characterState } from '@atoms/characterAtoms';
-import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
-import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
-import { saveCustomization } from '@content/customization-cache';
 
-import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
   ActionIcon,
   Box,
   Button,
   Center,
-  Grid,
-  Group,
   Indicator,
   Menu,
   Popover,
   SimpleGrid,
   Stack,
   Tabs,
-  Title,
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import {
-  useDebouncedValue,
-  useDidUpdate,
-  useElementSize,
-  useHover,
-  useInterval,
-  useMediaQuery,
-  usePrevious,
-} from '@mantine/hooks';
-import { executeCharacterOperations } from '@operations/operation-controller';
+import { useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBackpack,
@@ -48,24 +32,19 @@ import {
   IconNotebook,
   IconNotes,
   IconPaw,
-  IconRefresh,
   IconShadow,
   IconX,
 } from '@tabler/icons-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character, ContentPackage, Inventory } from '@typing/content';
-import { OperationCharacterResultPackage } from '@typing/operations';
-import { JSendResponse } from '@typing/requests';
 import { VariableListStr } from '@typing/variables';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { toLabel } from '@utils/strings';
-import { getFinalHealthValue } from '@variables/variable-display';
-import { getVariable, setVariable } from '@variables/variable-manager';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getVariable } from '@variables/variable-manager';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
-import { confirmHealth } from './living-entity-utils';
 import CompanionsPanel from './panels/CompanionsPanel';
 import DetailsPanel from './panels/DetailsPanel';
 import ExtrasPanel from './panels/ExtrasPanel';
@@ -81,13 +60,9 @@ import ConditionSection from './sections/ConditionSection';
 import HealthSection from './sections/HealthSection';
 import SpeedSection from './sections/SpeedSection';
 import { GiRollingDices } from 'react-icons/gi';
-import { saveCalculatedStats } from '@variables/calculated-stats';
 import { convertToSetEntity } from '@utils/type-fixing';
-import ModeDrawer from '@common/modes/ModesDrawer';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
-import { showNotification } from '@mantine/notifications';
-import { cloneDeep, debounce, isArray, isEqual } from 'lodash-es';
 import useCharacter from '@utils/use-character';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
@@ -123,8 +98,9 @@ export function Component(props: {}) {
   });
 
   // Just load progress manually
-  const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 50);
+  const [_p, setPercentage] = useState(0);
+  const percentage = content && !doneLoading ? Math.max(_p, 50) : _p;
+  const interval = useInterval(() => setPercentage(percentage + 2), 50);
   useEffect(() => {
     interval.start();
     return interval.stop;

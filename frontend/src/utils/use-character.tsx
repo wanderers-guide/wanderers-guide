@@ -4,7 +4,7 @@ import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import { addExtraItems, checkBulkLimit, applyEquipmentPenalties } from '@items/inv-utils';
-import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } from '@mantine/hooks';
+import { useDebouncedCallback, useDebouncedValue, useDidUpdate, useFetch, usePrevious } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
@@ -24,6 +24,7 @@ import { convertToSetEntity } from './type-fixing';
 import { IconRefresh } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
+import { use } from 'chai';
 
 export default function useCharacter(
   characterId: number,
@@ -76,21 +77,16 @@ export default function useCharacter(
   };
 
   // Fetch character from db
-  const { data: dbCharacter } = useQuery({
-    queryKey: [`find-character-${characterId}`],
-    queryFn: async () => {
-      return await makeRequest<Character>('find-character', {
+  useEffect(() => {
+    (async () => {
+      const dbCharacter = await makeRequest<Character>('find-character', {
         id: characterId,
       });
-    },
-    refetchOnWindowFocus: false,
-  });
-  useEffect(() => {
-    if (dbCharacter) {
-      handleFetchedCharacter(dbCharacter);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbCharacter]);
+      if (dbCharacter) {
+        handleFetchedCharacter(dbCharacter);
+      }
+    })();
+  }, []);
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
