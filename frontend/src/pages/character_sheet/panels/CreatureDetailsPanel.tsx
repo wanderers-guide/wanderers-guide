@@ -728,20 +728,18 @@ function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
   const [openedAdventureId, setOpenedAdventureId] = useState<string | null>(null);
   const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());
 
-  const { mutate: mutateUser } = useMutation(
-    async (data: Record<string, any>) => {
+  const { mutate: mutateUser } = useMutation({
+    mutationFn: async (data: Record<string, any>) => {
       const response = await makeRequest('update-user', {
         ...data,
       });
       return response;
     },
-    {
-      onSuccess: () => {
-        // Stores to cache again
-        getPublicUser();
-      },
-    }
-  );
+    onSuccess: () => {
+      // Stores to cache again
+      getPublicUser();
+    },
+  });
 
   // Update user in db when state changed
   const [debouncedUser] = useDebouncedValue(user, 200);

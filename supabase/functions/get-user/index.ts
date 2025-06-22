@@ -4,7 +4,7 @@ import { connect, fetchData, getPublicUser } from '../_shared/helpers.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let { id } = body as {
       id?: string;
     };
@@ -27,7 +27,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
 
     if (!user) {
       return {

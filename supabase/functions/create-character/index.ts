@@ -13,7 +13,7 @@ import { hasPatreonAccess } from '../_shared/patreon.ts';
 const CHARACTER_SLOT_CAP = 6;
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let {
       id,
       name,
@@ -39,7 +39,7 @@ serve(async (req: Request) => {
       campaign_id,
     } = body as Character;
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
     if (!user) {
       return {
         status: 'error',

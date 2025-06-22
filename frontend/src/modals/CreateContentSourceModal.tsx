@@ -951,7 +951,7 @@ function ContentList<
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();
-      queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
+      queryClient.refetchQueries({ queryKey: [`find-content-source-details-${props.sourceId}`] });
 
       setSearchQuery(query);
       setLoading(false);

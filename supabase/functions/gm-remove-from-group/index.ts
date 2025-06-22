@@ -4,12 +4,12 @@ import { connect, getPublicUser } from '../_shared/helpers.ts';
 import { removeFromGameMasterGroup } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let { user_id } = body as {
       user_id: string;
     };
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
 
     if (!user) {
       return {

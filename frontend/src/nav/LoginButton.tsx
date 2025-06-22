@@ -10,7 +10,7 @@ export function LoginButton(props: { onClick: () => void }) {
 
   return (
     <UnstyledButton
-      ref={ref as React.RefObject<HTMLButtonElement>}
+      ref={ref}
       onClick={props.onClick}
       style={{
         height: 32,

@@ -298,8 +298,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   }, [mDebouncedCharacter]);
 
   // Update character stats
-  const { mutate: mutateCharacter } = useMutation(
-    async (data: Record<string, any>) => {
+  const { mutate: mutateCharacter } = useMutation({
+    mutationFn: async (data: Record<string, any>) => {
       const resData = await makeRequest('update-character', {
         id: props.characterId,
         ...data,
@@ -309,10 +309,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       }
       return true;
     },
-    {
-      onSuccess: () => {},
-    }
-  );
+    onSuccess: () => {},
+  });
 
   // Poll remote character updates - only if the character hasn't been updated recently
   const [lDebouncedCharacter] = useDebouncedValue(character, 5000);
@@ -342,7 +340,6 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     },
     refetchInterval: 1000,
     enabled: notRecentlyUpdated,
-    cacheTime: 0,
   });
 
   // Inventory saving & management
@@ -868,7 +865,7 @@ function SectionPanels(props: {
                     size='lg'
                     radius='xl'
                     aria-label='Tab Options'
-                    ref={tabOptionsRef as React.RefObject<HTMLButtonElement>}
+                    ref={tabOptionsRef}
                     style={{
                       backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
                       color: openedTabOption ? theme.colors.gray[0] : undefined,

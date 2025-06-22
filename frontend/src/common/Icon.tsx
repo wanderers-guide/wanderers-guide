@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { RefAttributes } from 'react';
 import {
   IconSphere,
   IconBrandThreejs,
   IconBrandSafari,
-  TablerIconsProps,
   IconBrandTelegram,
   IconAffiliateFilled,
   IconAlarmFilled,
@@ -128,6 +127,7 @@ import {
   IconShieldLockFilled,
   IconTimeline,
   IconUserCircle,
+  IconProps as TablerIconsProps,
 } from '@tabler/icons-react';
 import * as GiIcons from 'react-icons/gi';
 import { IconType } from 'react-icons/lib';
@@ -137,7 +137,7 @@ const allGameIcons = Object.entries(GiIcons).map(([name, Component]) => ({
 }));
 
 // Tabler Icons
-const tablerIcons: Record<string, (props: TablerIconsProps) => JSX.Element> = {
+const tablerIcons: Record<string, React.FC<TablerIconsProps>> = {
   avatar: IconUserCircle,
   sphere: IconSphere,
   three: IconBrandThreejs,

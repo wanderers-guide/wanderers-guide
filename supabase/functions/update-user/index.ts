@@ -4,7 +4,7 @@ import { connect, getPublicUser, updateData } from '../_shared/helpers.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let {
       display_name,
       summary,
@@ -15,7 +15,7 @@ serve(async (req: Request) => {
       subscribed_content_sources,
     } = body as PublicUser;
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
 
     if (!user) {
       return {

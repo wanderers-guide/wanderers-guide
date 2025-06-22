@@ -4,10 +4,10 @@ import type { Encounter } from '../_shared/content';
 import { connect, getPublicUser, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let { id, name, icon, color, combatants, meta_data, campaign_id } = body as Encounter;
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
     if (!user) {
       return {
         status: 'error',

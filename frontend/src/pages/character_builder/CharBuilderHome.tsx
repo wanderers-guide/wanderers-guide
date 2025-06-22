@@ -186,7 +186,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         defineDefaultSources(character?.content_sources?.enabled ?? []);
         refetch();
         // queryClient.invalidateQueries([`find-character-${character?.id}`]);
-        queryClient.invalidateQueries([`find-content-${character?.id}`]);
+        queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] });
       }, 200);
     };
 

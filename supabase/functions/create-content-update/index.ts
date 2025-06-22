@@ -10,12 +10,12 @@ import {
 import type { ContentSource, ContentUpdate, PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let { type, ref_id, action, data, content_source_id } = body as ContentUpdate;
 
     const {
       data: { user },
-    } = await client.auth.getUser();
+    } = await client.auth.getUser(token);
     if (!user)
       return {
         status: 'error',

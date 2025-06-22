@@ -205,19 +205,17 @@ function ProfileSection() {
     patronColor = 'blue.3';
   }
 
-  const { mutate: mutateUser } = useMutation(
-    async (data: Record<string, any>) => {
+  const { mutate: mutateUser } = useMutation({
+    mutationFn: async (data: Record<string, any>) => {
       const response = await makeRequest('update-user', {
         ...data,
       });
       return response;
     },
-    {
-      onSuccess: () => {
-        //queryClient.invalidateQueries([`find-account-self`]);
-      },
-    }
-  );
+    onSuccess: () => {
+      //queryClient.invalidateQueries([`find-account-self`]);
+    },
+  });
 
   // Update user in db when state changed
   const [debouncedUser] = useDebouncedValue(user, 500);

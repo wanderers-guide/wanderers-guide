@@ -15,7 +15,8 @@ export async function connect(
   req: Request,
   executeFn: (
     client: SupabaseClient<any, 'public', any>,
-    body: Record<string, any>
+    body: Record<string, any>,
+    token: string
   ) => Promise<JSendResponse>
 ) {
   // This is needed if you're planning to invoke your function from a browser.
@@ -27,6 +28,8 @@ export async function connect(
     const body = (await req.json()) as Record<string, any>;
 
     // Create a Supabase client with the Auth context of the logged in user.
+    const rawAuthHeader = req.headers.get('Authorization')?.trim() ?? '';
+    const token = rawAuthHeader.replace('Bearer ', '').trim();
     const supabaseClient = createClient(
       // Supabase API URL - env var exported by default.
       // @ts-ignore
@@ -38,12 +41,12 @@ export async function connect(
       // This way your row-level-security (RLS) policies are applied.
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: rawAuthHeader },
         },
       }
     );
 
-    const results = await executeFn(supabaseClient, body);
+    const results = await executeFn(supabaseClient, body, token);
 
     return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -65,11 +68,12 @@ export async function connect(
 }
 
 export async function getPublicUser(
-  client: SupabaseClient<any, 'public', any>
+  client: SupabaseClient<any, 'public', any>,
+  token: string
 ): Promise<PublicUser | null> {
   const {
     data: { user },
-  } = await client.auth.getUser();
+  } = await client.auth.getUser(token);
 
   if (!user) {
     return null;

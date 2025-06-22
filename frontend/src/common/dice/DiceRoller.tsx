@@ -20,7 +20,14 @@ import {
   Collapse,
   Portal,
 } from '@mantine/core';
-import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
+import {
+  useDebouncedCallback,
+  useDebouncedState,
+  useDebouncedValue,
+  useDidUpdate,
+  useDisclosure,
+  useMediaQuery,
+} from '@mantine/hooks';
 import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,21 +97,43 @@ export default function DiceRoller(props: {
 
   // Theme //
 
-  const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 500);
+  const [diceTheme, setDiceTheme] = useState<string | null>(null);
+  const [debouncedDiceTheme] = useDebouncedValue(diceTheme, 2000);
   useDidUpdate(() => {
     // Saving theme
-    if (!character || !debouncedTheme) return;
+    if (!character || !debouncedDiceTheme) return;
     setCharacter({
       ...character,
       details: {
         ...character.details,
         dice: {
           ...character.details?.dice,
-          default_theme: debouncedTheme,
+          default_theme: debouncedDiceTheme,
         },
       },
     });
-  }, [debouncedTheme]);
+  }, [debouncedDiceTheme]);
+
+  // Temporary theme just for transition animation from one theme to next (so it doesn't lag UI) //
+  const [transitionThemeIndex, setTransitionThemeIndex] = useState<number>(-1);
+  const transitionDiceTheme = DICE_THEMES[transitionThemeIndex] || null;
+
+  const handleDiceThemeChange = useDebouncedCallback(async (index: number) => {
+    setTransitionThemeIndex(-1);
+    const theme = DICE_THEMES[index];
+    setDice((prev) => {
+      return prev.map((die) => {
+        if (die.id === activeDie) {
+          return {
+            ...die,
+            theme: theme?.theme,
+          };
+        }
+        return die;
+      });
+    });
+    setDiceTheme(theme?.theme);
+  }, 1000);
 
   // Roll History //
 
@@ -364,7 +393,7 @@ export default function DiceRoller(props: {
                   ...preset,
                   dice: preset.dice.map((die) => ({
                     ...die,
-                    theme: debouncedTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                    theme: diceTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                   })),
                 }))
                 .map((preset, i) => (
@@ -410,7 +439,7 @@ export default function DiceRoller(props: {
             roomId.current = room?.data.slug ?? '';
           }
           console.log('Dice Roller 🎲 Connecting to room: ', roomId.current);
-          dddice.current.connect(roomId.current);
+          dddice.current.connect(roomId.current ?? '');
           // Takes a little time to join room and we can't await it,
           setTimeout(() => {
             // Get theme objs for DICE_THEMES
@@ -653,7 +682,7 @@ export default function DiceRoller(props: {
                           newDice.push({
                             id: crypto.randomUUID(),
                             type: currentDiceType,
-                            theme: debouncedTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                            theme: diceTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                             bonus: i === currentDiceNum - 1 ? currentDiceBonus : 0,
                             label: currentDiceLabel,
                           });
@@ -688,8 +717,9 @@ export default function DiceRoller(props: {
                   {dice.map((die, i) => (
                     <Badge
                       key={i}
-                      color='gray'
+                      color='gray.4'
                       variant='light'
+                      size='lg'
                       styles={{
                         root: {
                           textTransform: 'initial',
@@ -711,13 +741,13 @@ export default function DiceRoller(props: {
                         }
                       }}
                       leftSection={
-                        <Avatar size={18} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
+                        <Avatar size={24} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
                       }
                       rightSection={
                         <ActionIcon
                           variant='subtle'
                           color='gray'
-                          size='xs'
+                          size='sm'
                           aria-label='Remove Dice'
                           onClick={(e) => {
                             e.stopPropagation();
@@ -765,11 +795,11 @@ export default function DiceRoller(props: {
                       <Group align='start'>
                         <Avatar
                           size={40}
-                          src={activeDieData.theme.preview[activeDieData.die?.type ?? '']}
+                          src={(transitionDiceTheme ?? activeDieData.theme).preview[activeDieData.die?.type ?? '']}
                           alt='Dice Icon'
                         />
                         <Stack gap={0} h={40}>
-                          <Title order={4}>{activeDieData.theme.name}</Title>
+                          <Title order={4}>{(transitionDiceTheme ?? activeDieData.theme).name}</Title>
                           <Text fz='xs' fs='italic'>
                             {activeDieData.die?.label
                               ? `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}, ${activeDieData.die?.label}`
@@ -783,25 +813,16 @@ export default function DiceRoller(props: {
                         <Carousel
                           slideSize='70%'
                           slideGap='md'
-                          loop
                           height={100}
                           initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
                           onSlideChange={(index) => {
-                            setTimeout(() => {
-                              const theme = DICE_THEMES[index];
-                              setDice((prev) => {
-                                return prev.map((die) => {
-                                  if (die.id === activeDie) {
-                                    return {
-                                      ...die,
-                                      theme: theme.theme,
-                                    };
-                                  }
-                                  return die;
-                                });
-                              });
-                            }, 500);
-                            setDebouncedTheme(DICE_THEMES[index]?.theme);
+                            setTransitionThemeIndex(index);
+                            handleDiceThemeChange(index);
+                          }}
+                          emblaOptions={{
+                            loop: true,
+                            dragFree: false,
+                            align: 'center',
                           }}
                         >
                           {DICE_THEMES.map((theme, index) => (

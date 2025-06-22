@@ -4,13 +4,13 @@ import { connect, getPublicUser } from '../_shared/helpers.ts';
 import { addToGameMasterGroup } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let { gm_user_id, access_code } = body as {
       gm_user_id: string;
       access_code: string;
     };
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
 
     if (!user) {
       return {

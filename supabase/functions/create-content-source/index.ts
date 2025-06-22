@@ -5,7 +5,7 @@ import type { ContentSource } from '../_shared/content';
 import { hasPatreonAccess } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let {
       id,
       name,
@@ -23,7 +23,7 @@ serve(async (req: Request) => {
 
     let user_id: string | undefined = undefined;
     if (!id || id === -1) {
-      const user = await getPublicUser(client);
+      const user = await getPublicUser(client, token);
       if (!user) {
         return {
           status: 'error',

@@ -131,7 +131,10 @@ export function CreateSocietyAdventureEntryModal(props: {
                 label='Date'
                 placeholder='Date'
                 value={form.values.date ? new Date(form.values.date) : new Date()}
-                onChange={(date) => form.setFieldValue('date', date?.getTime())}
+                onChange={(date) => {
+                  console.log(date);
+                  // form.setFieldValue('date', moment(date))
+                }}
               />
             </Group>
             <Group wrap='nowrap'>

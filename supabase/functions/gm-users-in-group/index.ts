@@ -4,8 +4,8 @@ import { connect, getPublicUser } from '../_shared/helpers.ts';
 import { getAllUsersInGameMasterGroup } from '../_shared/patreon.ts';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, _body) => {
-    const user = await getPublicUser(client);
+  return await connect(req, async (client, _body, token) => {
+    const user = await getPublicUser(client, token);
 
     if (!user) {
       return {

@@ -370,7 +370,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
       onCancel: () => {},
       onConfirm: async () => {
         await deleteCharacter(character);
-        queryClient.refetchQueries(['find-character']);
+        queryClient.refetchQueries({ queryKey: ['find-character'] });
       },
     });
 
@@ -416,7 +416,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
           variant='light'
           color='gray'
           radius='xl'
-          ref={refEdit as React.RefObject<HTMLAnchorElement>}
+          ref={refEdit}
           style={{
             flex: 1,
             backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
@@ -439,7 +439,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
               color='gray'
               radius='xl'
               aria-label='Options'
-              ref={refOptions as React.RefObject<HTMLButtonElement>}
+              ref={refOptions}
               style={{
                 backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
               }}
@@ -462,7 +462,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
               leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
               onClick={async () => {
                 const newCharacter = await createCharacterCopy(props.character);
-                queryClient.refetchQueries(['find-character']);
+                queryClient.refetchQueries({ queryKey: ['find-character'] });
               }}
             >
               Create Copy

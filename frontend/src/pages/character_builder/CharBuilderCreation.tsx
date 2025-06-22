@@ -1072,7 +1072,7 @@ export function StatButton(props: {
   return (
     <Box>
       <Button
-        ref={ref as React.RefObject<HTMLButtonElement>}
+        ref={ref}
         disabled={props.disabled}
         variant='default'
         size='compact-lg'

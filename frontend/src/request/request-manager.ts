@@ -28,6 +28,7 @@ export async function makeRequest<T = Record<string, any>>(
   }
 
   const response = data as JSendResponse;
+  console.log(type, { body }, response);
   if (response.status === 'error') {
     throwError(response.message);
     return null;

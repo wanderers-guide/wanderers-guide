@@ -22,7 +22,7 @@ export default function BlurButton(props: BlurButtonProps) {
       variant='light'
       color='gray.2'
       radius='xl'
-      ref={ref as React.RefObject<HTMLAnchorElement>}
+      ref={ref}
       onClick={props.onClick}
       component='a'
       href={props.href}
