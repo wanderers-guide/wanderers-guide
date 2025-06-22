@@ -24,7 +24,15 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
+import {
+  useDebouncedValue,
+  useDidUpdate,
+  useElementSize,
+  useHover,
+  useInterval,
+  useMediaQuery,
+  usePrevious,
+} from '@mantine/hooks';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { makeRequest } from '@requests/request-manager';
 import {
@@ -197,7 +205,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   };
 
   // Fetch character from db
-  const { isLoading, isInitialLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: [`find-character-${props.characterId}`],
     queryFn: async () => {
       const resultCharacter = await makeRequest<Character>('find-character', {
@@ -213,10 +221,24 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef(false);
   const [sDebouncedCharacter] = useDebouncedValue(character, 200);
+  const previousSDebouncedCharacter = usePrevious(sDebouncedCharacter);
   useEffect(() => {
-    if (!sDebouncedCharacter || executingOperations.current) return;
+    if (
+      !sDebouncedCharacter ||
+      executingOperations.current ||
+      isEqual(previousSDebouncedCharacter, sDebouncedCharacter)
+    )
+      return;
     setTimeout(() => {
-      if (!sDebouncedCharacter || executingOperations.current) return;
+      if (
+        !sDebouncedCharacter ||
+        executingOperations.current ||
+        isEqual(previousSDebouncedCharacter, sDebouncedCharacter)
+      )
+        return;
+
+      console.log(sDebouncedCharacter);
+
       executingOperations.current = true;
       executeCharacterOperations(sDebouncedCharacter, props.content, 'CHARACTER-SHEET').then((results) => {
         // Final execution pipeline:
@@ -328,12 +350,12 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
       });
 
       if (!isEqual(character, polledCharacter) && notRecentlyUpdated) {
-        // showNotification({
-        //   icon: <IconRefresh />,
-        //   title: `Updating character...`,
-        //   message: `Received a remote update`,
-        //   autoClose: 1500,
-        // });
+        showNotification({
+          icon: <IconRefresh />,
+          title: `Updating character...`,
+          message: `Received a remote update`,
+          autoClose: 1500,
+        });
         // setCharacter(polledCharacter);
       }
       return polledCharacter;
