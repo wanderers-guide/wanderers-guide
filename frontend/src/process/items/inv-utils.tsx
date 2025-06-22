@@ -154,66 +154,34 @@ async function getDefaultContainerContents(item: Item, allItems?: Item[], count 
   return invItems;
 }
 
-export function applyEquipmentPenalties(
-  storeId: StoreID,
-  entity: LivingEntity,
-  setEntity: SetterOrUpdater<LivingEntity | null>
-) {
+export function applyEquipmentPenalties(storeId: StoreID, entity: LivingEntity) {
   const STORE_ID = storeId;
 
-  setTimeout(() => {
-    if (!entity.inventory) return;
+  if (!entity.inventory) return;
 
-    const applyPenalties = (item: InventoryItem) => {
-      if (item.item.meta_data) {
-        const strMod = getFinalVariableValue(STORE_ID, 'ATTRIBUTE_STR').total;
-        // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
-        if (item.item.meta_data.strength !== undefined && strMod >= item.item.meta_data.strength) {
-          // Take speed penalty, reduced by 5, to all Speeds
-          const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0) - 5;
-          if (speedPenalty > 0) {
-            for (const speed of getAllSpeedVariables(STORE_ID)) {
-              addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
-            }
+  const applyPenalties = (item: InventoryItem) => {
+    if (item.item.meta_data) {
+      const strMod = getFinalVariableValue(STORE_ID, 'ATTRIBUTE_STR').total;
+      // If strength requirement exists and the character's str mod is >= to it, reduce/not include it
+      if (item.item.meta_data.strength !== undefined && strMod >= item.item.meta_data.strength) {
+        // Take speed penalty, reduced by 5, to all Speeds
+        const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0) - 5;
+        if (speedPenalty > 0) {
+          for (const speed of getAllSpeedVariables(STORE_ID)) {
+            addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
           }
+        }
 
-          // If armor is noisy, apply to Stealth checks even if you meet the required Strength score
-          const isNoisy = hasTraitType('NOISY', item.item.traits);
-          if (isNoisy) {
-            const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
-            if (checkPenalty > 0) {
-              const stealthSkill = getAllSkillVariables(STORE_ID).find((skill) => skill.name === 'SKILL_STEALTH');
-              if (stealthSkill) {
-                addVariableBonus(
-                  STORE_ID,
-                  stealthSkill.name,
-                  -1 * checkPenalty,
-                  undefined,
-                  '', // Could include: (unless it has the attack trait)
-                  `${item.item.name}`
-                );
-              }
-            }
-          }
-        } else {
-          // If the strength requirement doesn't exist, always include penalty.
-          //
-          // Take check penalty to Strength- and Dexterity-based skill checks (except for those that have the attack trait)
+        // If armor is noisy, apply to Stealth checks even if you meet the required Strength score
+        const isNoisy = hasTraitType('NOISY', item.item.traits);
+        if (isNoisy) {
           const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
           if (checkPenalty > 0) {
-            const attrs = ['ATTRIBUTE_STR', 'ATTRIBUTE_DEX'];
-            let skills = getAllSkillVariables(STORE_ID).filter((skill) => attrs.includes(skill.value.attribute ?? ''));
-
-            // If armor is flexible, don't apply to Acrobatics or Athletics
-            const isFlexible = hasTraitType('FLEXIBLE', item.item.traits);
-            if (isFlexible) {
-              skills = skills.filter((skill) => skill.name !== 'SKILL_ACROBATICS' && skill.name !== 'SKILL_ATHLETICS');
-            }
-
-            for (const skill of skills) {
+            const stealthSkill = getAllSkillVariables(STORE_ID).find((skill) => skill.name === 'SKILL_STEALTH');
+            if (stealthSkill) {
               addVariableBonus(
                 STORE_ID,
-                skill.name,
+                stealthSkill.name,
                 -1 * checkPenalty,
                 undefined,
                 '', // Could include: (unless it has the attack trait)
@@ -221,24 +189,50 @@ export function applyEquipmentPenalties(
               );
             }
           }
+        }
+      } else {
+        // If the strength requirement doesn't exist, always include penalty.
+        //
+        // Take check penalty to Strength- and Dexterity-based skill checks (except for those that have the attack trait)
+        const checkPenalty = Math.abs(item.item.meta_data.check_penalty ?? 0);
+        if (checkPenalty > 0) {
+          const attrs = ['ATTRIBUTE_STR', 'ATTRIBUTE_DEX'];
+          let skills = getAllSkillVariables(STORE_ID).filter((skill) => attrs.includes(skill.value.attribute ?? ''));
 
-          // Take full speed penalty to all Speeds
-          const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0);
-          if (speedPenalty > 0) {
-            for (const speed of getAllSpeedVariables(STORE_ID)) {
-              addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
-            }
+          // If armor is flexible, don't apply to Acrobatics or Athletics
+          const isFlexible = hasTraitType('FLEXIBLE', item.item.traits);
+          if (isFlexible) {
+            skills = skills.filter((skill) => skill.name !== 'SKILL_ACROBATICS' && skill.name !== 'SKILL_ATHLETICS');
+          }
+
+          for (const skill of skills) {
+            addVariableBonus(
+              STORE_ID,
+              skill.name,
+              -1 * checkPenalty,
+              undefined,
+              '', // Could include: (unless it has the attack trait)
+              `${item.item.name}`
+            );
+          }
+        }
+
+        // Take full speed penalty to all Speeds
+        const speedPenalty = Math.abs(item.item.meta_data.speed_penalty ?? 0);
+        if (speedPenalty > 0) {
+          for (const speed of getAllSpeedVariables(STORE_ID)) {
+            addVariableBonus(STORE_ID, speed.name, -1 * speedPenalty, undefined, '', `${item.item.name}`);
           }
         }
       }
-    };
+    }
+  };
 
-    // Use the "best" armor/shield because that's the one we're assumed to be wearing
-    const bestArmor = getBestArmor(STORE_ID, entity.inventory);
-    const bestShield = getBestShield(STORE_ID, entity.inventory);
-    if (bestArmor) applyPenalties(bestArmor);
-    if (bestShield) applyPenalties(bestShield);
-  }, 200);
+  // Use the "best" armor/shield because that's the one we're assumed to be wearing
+  const bestArmor = getBestArmor(STORE_ID, entity.inventory);
+  const bestShield = getBestShield(STORE_ID, entity.inventory);
+  if (bestArmor) applyPenalties(bestArmor);
+  if (bestShield) applyPenalties(bestShield);
 }
 
 export function checkBulkLimit(

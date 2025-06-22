@@ -54,7 +54,7 @@ export default function RitualSpellsList(props: {
 
   return (
     <Accordion.Item value={props.index}>
-      <Accordion.Control>
+      <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Group gap={10}>
             <Text c='gray.5' fw={700} fz='sm'>
@@ -90,9 +90,8 @@ export default function RitualSpellsList(props: {
           },
         }}
         px={10}
-        pb={10}
       >
-        <Stack gap={5}>
+        <Stack gap={5} pb={10}>
           {/* <Divider color='dark.6' /> */}
           {spells &&
             Object.keys(spells)

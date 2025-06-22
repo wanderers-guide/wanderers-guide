@@ -106,14 +106,7 @@ export async function executeCharacterOperations(
 
   setVariable('CHARACTER', 'LEVEL', getEntityLevel(character));
 
-  try {
-    setVariable(
-      'CHARACTER',
-      'ACTIVE_MODES',
-      JSON.parse(localStorage.getItem(`active-modes-${character.id}`) || '[]'),
-      'Loaded'
-    );
-  } catch (e) {}
+  setVariable('CHARACTER', 'ACTIVE_MODES', character.meta_data?.active_modes ?? [], 'Loaded');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);

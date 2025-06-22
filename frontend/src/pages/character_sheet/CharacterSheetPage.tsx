@@ -88,6 +88,7 @@ import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 import { showNotification } from '@mantine/notifications';
 import { cloneDeep, debounce, isArray, isEqual } from 'lodash-es';
+import useCharacter from '@utils/use-character';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -175,221 +176,15 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
-  const [character, setCharacter] = useRecoilState(characterState);
+  const { character, setCharacter, inventory, setInventory, isLoaded } = useCharacter(
+    props.characterId,
+    props.content,
+    props.onFinishLoading
+  );
+
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
   const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
-
-  const handleFetchedCharacter = (resultCharacter: Character | null) => {
-    if (resultCharacter) {
-      // Make sure we sync the enabled content sources
-      defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
-
-      // Cache character customization for fast loading
-      saveCustomization({
-        background_image_url:
-          resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
-        sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
-      });
-    } else {
-      // Character not found, probably due to unauthorized access
-      window.location.href = '/sheet-unauthorized';
-    }
-
-    if (!isEqual(character, resultCharacter)) {
-      setCharacter(resultCharacter);
-    }
-    if (!isEqual(inventory, getInventory(resultCharacter))) {
-      setInventory(getInventory(resultCharacter));
-    }
-  };
-
-  // Fetch character from db
-  const { isLoading } = useQuery({
-    queryKey: [`find-character-${props.characterId}`],
-    queryFn: async () => {
-      const resultCharacter = await makeRequest<Character>('find-character', {
-        id: props.characterId,
-      });
-      handleFetchedCharacter(resultCharacter);
-      return true;
-    },
-    refetchOnWindowFocus: false,
-  });
-
-  // Execute operations
-  const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
-  const executingOperations = useRef(false);
-  const [sDebouncedCharacter] = useDebouncedValue(character, 200);
-  const previousSDebouncedCharacter = usePrevious(sDebouncedCharacter);
-  useEffect(() => {
-    if (
-      !sDebouncedCharacter ||
-      executingOperations.current ||
-      isEqual(previousSDebouncedCharacter, sDebouncedCharacter)
-    )
-      return;
-    setTimeout(() => {
-      if (
-        !sDebouncedCharacter ||
-        executingOperations.current ||
-        isEqual(previousSDebouncedCharacter, sDebouncedCharacter)
-      )
-        return;
-
-      console.log(sDebouncedCharacter);
-
-      executingOperations.current = true;
-      executeCharacterOperations(sDebouncedCharacter, props.content, 'CHARACTER-SHEET').then((results) => {
-        // Final execution pipeline:
-
-        if (sDebouncedCharacter.variants?.proficiency_without_level) {
-          setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
-        }
-
-        // Add the extra items to the inventory from variables
-        addExtraItems('CHARACTER', props.content.items, sDebouncedCharacter, convertToSetEntity(setCharacter));
-
-        // Check bulk limits
-        checkBulkLimit(
-          'CHARACTER',
-          sDebouncedCharacter,
-          convertToSetEntity(setCharacter),
-          sDebouncedCharacter.options?.ignore_bulk_limit !== true
-        );
-
-        // Apply armor/shield penalties
-        applyEquipmentPenalties('CHARACTER', sDebouncedCharacter, convertToSetEntity(setCharacter));
-
-        // Apply conditions after everything else
-        applyConditions('CHARACTER', sDebouncedCharacter.details?.conditions ?? []);
-        if (sDebouncedCharacter.meta_data?.reset_hp !== false) {
-          // To reset hp, we need to confirm health
-          const maxHealth = getFinalHealthValue('CHARACTER');
-          confirmHealth(`${maxHealth}`, maxHealth, sDebouncedCharacter, convertToSetEntity(setCharacter));
-        } else {
-          // Because of the drained condition, let's confirm health
-          const maxHealth = getFinalHealthValue('CHARACTER');
-          confirmHealth(
-            `${sDebouncedCharacter.hp_current}`,
-            maxHealth,
-            sDebouncedCharacter,
-            convertToSetEntity(setCharacter)
-          );
-        }
-
-        // Save calculated stats
-        saveCalculatedStats('CHARACTER', sDebouncedCharacter, convertToSetEntity(setCharacter));
-
-        setOperationResults(results);
-        executingOperations.current = false;
-
-        setTimeout(() => {
-          props.onFinishLoading?.();
-        }, 100);
-      });
-    }, 1);
-  }, [sDebouncedCharacter]);
-
-  // Update character in db when state changed
-  const [mDebouncedCharacter] = useDebouncedValue(character, 500);
-  useDidUpdate(() => {
-    if (!mDebouncedCharacter) return;
-    mutateCharacter({
-      name: mDebouncedCharacter.name,
-      level: mDebouncedCharacter.level,
-      experience: mDebouncedCharacter.experience,
-      hp_current: mDebouncedCharacter.hp_current,
-      hp_temp: mDebouncedCharacter.hp_temp,
-      hero_points: mDebouncedCharacter.hero_points,
-      stamina_current: mDebouncedCharacter.stamina_current,
-      resolve_current: mDebouncedCharacter.resolve_current,
-      inventory: mDebouncedCharacter.inventory,
-      notes: mDebouncedCharacter.notes,
-      details: mDebouncedCharacter.details,
-      roll_history: mDebouncedCharacter.roll_history,
-      custom_operations: mDebouncedCharacter.custom_operations,
-      meta_data: mDebouncedCharacter.meta_data,
-      options: mDebouncedCharacter.options,
-      variants: mDebouncedCharacter.variants,
-      content_sources: mDebouncedCharacter.content_sources,
-      operation_data: mDebouncedCharacter.operation_data,
-      spells: mDebouncedCharacter.spells,
-      companions: mDebouncedCharacter.companions,
-    });
-  }, [mDebouncedCharacter]);
-
-  // Update character stats
-  const { mutate: mutateCharacter } = useMutation({
-    mutationFn: async (data: Record<string, any>) => {
-      const resData = await makeRequest('update-character', {
-        id: props.characterId,
-        ...data,
-      });
-      if (isArray(resData) && resData.length > 0) {
-        handleFetchedCharacter(resData[0]);
-      }
-      return true;
-    },
-    onSuccess: () => {},
-  });
-
-  // Poll remote character updates - only if the character hasn't been updated recently
-  const [lDebouncedCharacter] = useDebouncedValue(character, 5000);
-  const notRecentlyUpdated = !!(
-    !executingOperations.current &&
-    lDebouncedCharacter &&
-    isEqual(lDebouncedCharacter, character) &&
-    isEqual(sDebouncedCharacter, character)
-  );
-  useQuery({
-    queryKey: [`find-character-polling-updates-${props.characterId}`],
-    queryFn: async () => {
-      const polledCharacter = await makeRequest<Character>('find-character', {
-        id: props.characterId,
-      });
-
-      if (!isEqual(character, polledCharacter) && notRecentlyUpdated) {
-        showNotification({
-          icon: <IconRefresh />,
-          title: `Updating character...`,
-          message: `Received a remote update`,
-          autoClose: 1500,
-        });
-        // setCharacter(polledCharacter);
-      }
-      return polledCharacter;
-    },
-    refetchInterval: 1000,
-    enabled: notRecentlyUpdated,
-  });
-
-  // Inventory saving & management
-  const getInventory = (character: Character | null) => {
-    // Default inventory
-    return cloneDeep(
-      character?.inventory ?? {
-        coins: {
-          cp: 0,
-          sp: 0,
-          gp: 0,
-          pp: 0,
-        },
-        items: [],
-      }
-    );
-  };
-  const [inventory, setInventory] = useState(getInventory(character));
-  const [debouncedInventory] = useDebouncedValue(inventory, 500);
-  useDidUpdate(() => {
-    setCharacter((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        inventory: debouncedInventory,
-      };
-    });
-  }, [debouncedInventory]);
 
   const [openedDiceRoller, setOpenedDiceRoller] = useState(false);
   const [loadedDiceRoller, setLoadedDiceRoller] = useState(false);
@@ -400,7 +195,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const modes = useMemo(() => {
     const givenModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
     return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
-  }, [character, operationResults, props.content]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character, isLoaded, props.content]);
 
   return (
     <Center>
@@ -423,7 +219,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               content={props.content}
               inventory={inventory}
               setInventory={setInventory}
-              isLoaded={!!operationResults}
+              isLoaded={isLoaded}
               panelHeight={panelHeight}
               panelWidth={panelWidth}
               hideSections={hideSections}

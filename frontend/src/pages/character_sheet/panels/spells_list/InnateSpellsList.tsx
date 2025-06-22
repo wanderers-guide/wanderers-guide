@@ -69,7 +69,7 @@ export default function InnateSpellsList(props: {
 
   return (
     <Accordion.Item value={props.index}>
-      <Accordion.Control>
+      <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Text c='gray.5' fw={700} fz='sm'>
             Innate Spells
@@ -126,7 +126,7 @@ export default function InnateSpellsList(props: {
                       </Badge>
                     </Group>
                     <Divider my={5} />
-                    <Stack gap={5} mb='md'>
+                    <Stack gap={5} mb={5}>
                       {innateSpells[rank].map((innate, index) => (
                         <SpellListEntrySection
                           key={index}

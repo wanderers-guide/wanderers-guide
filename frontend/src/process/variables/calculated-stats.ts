@@ -5,6 +5,7 @@ import { SetterOrUpdater } from 'recoil';
 import { addVariable, getVariable, getVariables, setVariable } from './variable-manager';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-display';
 import { labelToVariable, variableToLabel } from './variable-utils';
+import { getDeepDiff } from '@utils/objects';
 
 export function saveCalculatedStats(
   id: StoreID,
@@ -41,7 +42,7 @@ export function saveCalculatedStats(
       profs: finalProfs,
     };
 
-    if (JSON.stringify(calcStats) === JSON.stringify(entity.meta_data?.calculated_stats ?? {})) return;
+    if (Object.keys(getDeepDiff(calcStats, entity.meta_data?.calculated_stats ?? {})).length === 0) return;
 
     // Save the calculated stats
     console.log('Saving calculated stats', calcStats);

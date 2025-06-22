@@ -254,7 +254,7 @@ export function InvItemDrawerContent(props: {
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={15} ml={0}>
             {invItem.item.meta_data?.charges?.max && (
-              <Box mb={-10}>
+              <Box mb={-10} ml={20}>
                 <ScrollArea scrollbars='x' w={180}>
                   <TokenSelect
                     count={invItem.item.meta_data.charges.max}

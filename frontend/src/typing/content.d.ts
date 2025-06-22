@@ -384,6 +384,7 @@ interface LivingEntity {
     notes?: Record<string, string>; // TODO <op UUID> -> string
   };
   meta_data?: {
+    active_modes?: string[];
     given_item_ids?: number[];
     reset_hp?: boolean;
     calculated_stats?: {
@@ -460,7 +461,6 @@ interface Character extends LivingEntity {
       organized_play_adventures?: SocietyAdventureEntry[];
     };
   };
-  campaign_id?: number;
   custom_operations?: Operation[];
   options?: {
     is_public?: boolean;
