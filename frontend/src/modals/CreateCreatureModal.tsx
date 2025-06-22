@@ -16,6 +16,7 @@ import {
   HoverCard,
   LoadingOverlay,
   Modal,
+  Paper,
   ScrollArea,
   Select,
   Stack,
@@ -30,7 +31,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, Creature } from '@typing/content';
+import { AbilityBlock, Creature, InventoryItem, Item } from '@typing/content';
 import { Operation } from '@typing/operations';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
@@ -42,12 +43,13 @@ import { isTruthy } from '@utils/type-fixing';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { selectContent } from '@common/select/SelectContent';
-import { IconBracketsAngle, IconCornerUpRight, IconTransform, IconX } from '@tabler/icons-react';
+import { IconBracketsAngle, IconCirclePlus, IconCornerUpRight, IconTransform, IconX } from '@tabler/icons-react';
 import StatBlockSection from '@common/StatBlockSection';
 import { extractCreatureInfo } from '@utils/creature';
-import { uniq } from 'lodash-es';
+import { truncate, uniq } from 'lodash-es';
 import { hashData } from '@utils/numbers';
 import { modals } from '@mantine/modals';
+import { isItemImplantable, isItemInvestable } from '@items/inv-utils';
 
 /**
  * Modal for creating or editing a creature
@@ -81,6 +83,7 @@ export function CreateCreatureModal(props: {
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
+  const [openedInventory, { toggle: toggleInventory }] = useDisclosure(false);
 
   const [openedModal, setOpenedModal] = useState<AbilityBlock | -1 | null>(null);
 
@@ -597,6 +600,140 @@ export function CreateCreatureModal(props: {
                     />
                     <Divider />
                   </Stack>
+                </Collapse>
+
+                <Divider
+                  my='xs'
+                  label={
+                    <Group gap={3} wrap='nowrap'>
+                      <Button variant={openedInventory ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                        Inventory
+                      </Button>
+                      {form.values.inventory?.items && form.values.inventory.items.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {form.values.inventory.items.length}
+                        </Badge>
+                      )}
+                    </Group>
+                  }
+                  labelPosition='left'
+                  onClick={toggleInventory}
+                />
+                <Collapse in={openedInventory}>
+                  <Box>
+                    <Paper
+                      withBorder
+                      p='xs'
+                      style={{
+                        position: 'relative',
+                      }}
+                    >
+                      <ActionIcon
+                        variant='subtle'
+                        color='gray.5'
+                        radius='lg'
+                        aria-label='Add Item'
+                        onClick={() => {
+                          selectContent<Item>(
+                            'item',
+                            (option) => {
+                              const invItems = [
+                                ...(form.values.inventory?.items ?? []),
+                                {
+                                  id: crypto.randomUUID(),
+                                  item: option,
+                                  is_formula: false,
+                                  is_equipped: true,
+                                  is_invested: isItemInvestable(option),
+                                  is_implanted: isItemImplantable(option),
+                                  container_contents: [],
+                                } satisfies InventoryItem,
+                              ];
+
+                              form.setFieldValue('inventory', {
+                                coins: {
+                                  cp: 0,
+                                  sp: 0,
+                                  gp: 0,
+                                  pp: 0,
+                                },
+                                items: invItems,
+                              });
+                            },
+                            {
+                              showButton: true,
+                              groupBySource: true,
+                            }
+                          );
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 5,
+                          right: 5,
+                          zIndex: 1,
+                        }}
+                      >
+                        <IconCirclePlus style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                      </ActionIcon>
+                      <ScrollArea h={150} scrollbars='y'>
+                        <Group gap={8}>
+                          {form.values.inventory?.items?.map((invItem, i) => (
+                            <Badge
+                              key={i}
+                              size='md'
+                              variant='light'
+                              style={{ cursor: 'pointer' }}
+                              styles={{
+                                root: {
+                                  textTransform: 'initial',
+                                },
+                              }}
+                              onClick={() => {
+                                openDrawer({
+                                  type: 'item',
+                                  data: { item: invItem.item },
+                                });
+                              }}
+                              pr={0}
+                              rightSection={
+                                <ActionIcon
+                                  variant='subtle'
+                                  color='gray'
+                                  size='xs'
+                                  aria-label='Remove Item Bought'
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const invItems = (form.values.inventory?.items ?? []).filter(
+                                      (i) => i.id !== invItem.id
+                                    );
+                                    form.setFieldValue('inventory', {
+                                      coins: {
+                                        cp: 0,
+                                        sp: 0,
+                                        gp: 0,
+                                        pp: 0,
+                                      },
+                                      items: invItems,
+                                    });
+                                  }}
+                                >
+                                  <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                                </ActionIcon>
+                              }
+                            >
+                              {truncate(invItem.item.name, { length: 22 })}
+                            </Badge>
+                          ))}
+                        </Group>
+                        {!form.values.inventory?.items ||
+                          (form.values.inventory.items.length === 0 && (
+                            <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                              No items in inventory.
+                            </Text>
+                          ))}
+                      </ScrollArea>
+                    </Paper>
+                  </Box>
                 </Collapse>
 
                 <Divider

@@ -314,7 +314,7 @@ function CompanionCard(props: {
     if (props.companion) {
       const currentHealth =
         props.companion.hp_current === undefined ? props.computed?.maxHp ?? 0 : props.companion.hp_current;
-      setHealth(`${currentHealth}`);
+      setHealth(`${currentHealth}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${currentHealth}`);
     }
   }, [props.companion, props.computed]);
 
@@ -336,7 +336,7 @@ function CompanionCard(props: {
       hp_current: result,
     });
 
-    setHealth(`${result}`);
+    setHealth(`${result}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${result}`);
     healthRef.current?.blur();
   };
 
