@@ -115,6 +115,7 @@ export function CreatureDrawerContent(props: {
       view: 'SHEET',
     },
   });
+  const view = props.data.readOnly ? 'BLOCK' : drawerData.view;
 
   const { data: content } = useQuery({
     queryKey: [`find-creature-details-${id}`, { id }],
@@ -292,7 +293,7 @@ export function CreatureDrawerContent(props: {
 
   return (
     <Stack>
-      {drawerData.view === 'BLOCK' ? (
+      {view === 'BLOCK' ? (
         <Stack gap={10}>
           <Group gap={15}>
             <Box style={{ flex: 1 }}>
@@ -598,7 +599,7 @@ export function CreatureDrawerContent(props: {
               </HoverCard>
               <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
                 <HoverCard.Target>
-                  {drawerData.view === 'BLOCK' ? (
+                  {view === 'BLOCK' ? (
                     <ActionIcon
                       variant='light'
                       color='yellow'
@@ -634,7 +635,7 @@ export function CreatureDrawerContent(props: {
                 </HoverCard.Target>
                 <HoverCard.Dropdown py={5} px={10}>
                   <Text c='gray.0' size='sm'>
-                    {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
+                    {view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
                   </Text>
                 </HoverCard.Dropdown>
               </HoverCard>

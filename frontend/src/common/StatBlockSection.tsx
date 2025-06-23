@@ -88,7 +88,8 @@ export default function StatBlockSection(props: {
   };
 
   const linkContent = (text: string, type: ContentType | AbilityBlockType, data: any) => {
-    if (data && data.id) {
+    if (data && data.id && `${data.id}`.length < 10) {
+      // Really log IDs are probably custom items
       return `[${text}](link_${type}_${data.id})`;
     } else {
       return text;

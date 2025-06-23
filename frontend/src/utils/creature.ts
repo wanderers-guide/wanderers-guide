@@ -167,6 +167,8 @@ export async function extractCreatureInfo(
     return null;
   }
 
+  console.log(granularCreature);
+
   const creature = await convertGranularCreature(contentSource, granularCreature);
 
   return {

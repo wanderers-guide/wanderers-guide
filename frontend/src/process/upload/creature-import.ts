@@ -821,12 +821,12 @@ async function addEquipment(operations: Operation[], g: GranularCreature) {
   for (const item of items) {
     const gItem = g.items?.find((i) => i.name.trim().toLowerCase() === item.name.trim().toLowerCase());
 
-    operations.push({
-      ...createDefaultOperation<OperationGiveItem>('giveItem'),
-      data: {
-        itemId: item.id,
-      },
-    } satisfies OperationGiveItem);
+    // operations.push({
+    //   ...createDefaultOperation<OperationGiveItem>('giveItem'),
+    //   data: {
+    //     itemId: item.id,
+    //   },
+    // } satisfies OperationGiveItem);
 
     const itemData = cloneDeep(item);
     if (itemData.meta_data) {

@@ -50,6 +50,7 @@ import { truncate, uniq } from 'lodash-es';
 import { hashData } from '@utils/numbers';
 import { modals } from '@mantine/modals';
 import { isItemImplantable, isItemInvestable } from '@items/inv-utils';
+import { displayError } from '@utils/notifications';
 
 /**
  * Modal for creating or editing a creature
@@ -287,13 +288,17 @@ export function CreateCreatureModal(props: {
                             //
                             setLoadingProcess(true);
                             // Use player core source for now
-                            const result = await extractCreatureInfo(1, inputStatBlock);
-                            if (result) {
-                              console.log('Granular', result.granular);
-                              console.log('Final', result.creature);
-                              form.setValues(result.creature);
-                              // @ts-expect-error
-                              form.setFieldValue('level', `${result.creature.level}`);
+                            try {
+                              const result = await extractCreatureInfo(1, inputStatBlock);
+                              if (result) {
+                                console.log('Granular', result.granular);
+                                console.log('Final', result.creature);
+                                form.setValues(result.creature);
+                                // @ts-expect-error
+                                form.setFieldValue('level', `${result.creature.level}`);
+                              }
+                            } catch (e) {
+                              displayError('Failed to extract creature info, please try again later');
                             }
                             setLoadingProcess(false);
                             //
