@@ -7,6 +7,9 @@ import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
+  workbox: {
+    maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
+  },
   manifest: {
     name: "Wanderer's Guide",
     short_name: "Wanderer's Guide",

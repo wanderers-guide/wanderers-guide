@@ -64,6 +64,8 @@ import { labelToVariable } from '@variables/variable-utils';
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
+  console.log(props.data);
+
   const { data: _item } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
