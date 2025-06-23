@@ -172,8 +172,8 @@ export function CreateCreatureModal(props: {
       name: values.name.trim(),
       level: parseInt(`${values.level}`),
       // Just in case ids are overwritten
-      id: editing ? props.editId ?? props.editCreature?.id ?? -1 : -1,
-      content_source_id: editing ? props.editCreature?.content_source_id ?? -1 : -1,
+      id: data?.id ?? props.editCreature?.id ?? values.id ?? -1,
+      content_source_id: data?.content_source_id ?? props.editCreature?.content_source_id ?? values.content_source_id,
     });
     setTimeout(() => {
       onReset();

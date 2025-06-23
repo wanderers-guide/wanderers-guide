@@ -16,11 +16,12 @@ serve(async (req: Request) => {
     const {
       data: { user },
     } = await client.auth.getUser(token);
-    if (!user)
+    if (!user) {
       return {
         status: 'error',
         message: 'Invalid user',
       };
+    }
 
     // Create the content_update record
     const result = await insertData<ContentUpdate>(client, 'content_update', {
