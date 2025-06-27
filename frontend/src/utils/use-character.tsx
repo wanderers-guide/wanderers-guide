@@ -41,7 +41,7 @@ export default function useCharacter(
 } {
   const [character, setCharacter] = useRecoilState(characterState);
 
-  const handleFetchedCharacter = (resultCharacter: Character | null) => {
+  const handleFetchedCharacter = (resultCharacter: Character | null | undefined) => {
     if (resultCharacter) {
       // Don't update if they're the same
       if (isEqual(character, resultCharacter)) {
@@ -82,9 +82,7 @@ export default function useCharacter(
       const dbCharacter = await makeRequest<Character>('find-character', {
         id: characterId,
       });
-      if (dbCharacter) {
-        handleFetchedCharacter(dbCharacter);
-      }
+      handleFetchedCharacter(dbCharacter);
     })();
   }, []);
 
