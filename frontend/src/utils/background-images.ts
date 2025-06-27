@@ -571,7 +571,7 @@ export function getDefaultBackgroundImage() {
 }
 
 export function getDefaultCampaignBackgroundImage() {
-  return cloneDeep(imageStore.general[3]);
+  return cloneDeep(imageStore.geoffroy_thoorens[0]);
 }
 
 export function getHomeBackgroundImage() {
