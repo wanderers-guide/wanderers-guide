@@ -266,7 +266,7 @@ export default function useCharacter(
       return polledCharacter;
     },
     refetchInterval: 1000,
-    enabled: notRecentlyUpdated,
+    enabled: false, // notRecentlyUpdated, Fix polling on char item update
   });
 
   // Inventory saving & management

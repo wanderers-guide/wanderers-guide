@@ -9,7 +9,7 @@ export async function makeRequest<T = Record<string, any>>(
   body: Record<string, any>,
   attempt = 1
 ): Promise<T | null> {
-  const { data, error } = await supabase.functions.invoke(type, { body });
+  const { data, error } = await invokeWithRetries(type, body, MAX_ATTEMPTS);
   if (error instanceof FunctionsHttpError) {
     const errorMessage = await error.context.json();
     console.error('Request Function returned an error', errorMessage);
@@ -36,5 +36,48 @@ export async function makeRequest<T = Record<string, any>>(
     return null;
   } else {
     return response.data as T;
+  }
+}
+
+async function invokeWithTimeout(
+  type: RequestType,
+  body: Record<string, any>,
+  timeout = 5000
+): Promise<{ data: any; error: any }> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Timeout')), timeout);
+
+    supabase.functions
+      .invoke(type, { body })
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
+async function invokeWithRetries(
+  type: RequestType,
+  body: Record<string, any>,
+  retries = 3,
+  timeout = 5000
+): Promise<{ data: any; error: any }> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await invokeWithTimeout(type, body, timeout);
+    } catch (e: any) {
+      console.warn(`Attempt ${i + 1} failed: ${e.message}`);
+    }
+  }
+
+  // Final fallback without timeout
+  try {
+    return await supabase.functions.invoke(type, { body });
+  } catch (e) {
+    return { data: null, error: e };
   }
 }

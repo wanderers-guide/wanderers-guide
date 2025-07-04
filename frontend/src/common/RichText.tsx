@@ -77,7 +77,7 @@ export default function RichText(props: RichTextProps) {
             // If we're intending a success tier and the prev was intended, we need to indent it twice
             if (indented.reason === 'SUCCESS-TIER' && prevIntended?.value) {
               return (
-                <IndentedText {...props} indentMod={2} className={className}>
+                <IndentedText {...props} indentMod={1} className={className}>
                   <IndentedText {...props} className={className}>
                     {children}
                   </IndentedText>

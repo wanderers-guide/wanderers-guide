@@ -38,7 +38,6 @@ import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Availability, Item, ItemGroup, Trait } from '@typing/content';
-import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import { labelToVariable } from '@variables/variable-utils';
