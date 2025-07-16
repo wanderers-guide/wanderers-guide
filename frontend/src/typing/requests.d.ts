@@ -13,6 +13,7 @@ export type RequestType =
   | 'find-content-source'
   | 'create-content-source'
   | 'delete-content'
+  | 'delete-user'
   | 'find-trait'
   | 'create-trait'
   | 'create-ability-block'

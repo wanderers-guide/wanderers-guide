@@ -1,11 +1,8 @@
 import {
   Title,
-  Image,
   Text,
   Button,
-  Container,
   Group,
-  rem,
   useMantineTheme,
   Box,
   Center,
@@ -15,7 +12,6 @@ import {
   Divider,
   Badge,
   MantineColor,
-  ColorInput,
   ColorSwatch,
   Popover,
   ColorPicker,
@@ -34,19 +30,17 @@ import {
   Slider,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
-import { useNavigate } from 'react-router-dom';
 import BlurBox from '@common/BlurBox';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
-import { IconAdjustments, IconBrandPatreon, IconReload, IconUpload } from '@tabler/icons-react';
+import { IconAdjustments, IconBrandPatreon, IconUpload } from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@typing/content';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
-import { JSendResponse } from '@typing/requests';
 import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -56,6 +50,8 @@ import { hasPatreonAccess } from '@utils/patreon';
 import { userState } from '@atoms/userAtoms';
 import { findApprovedContentUpdates } from '@content/content-update';
 import { resetContentStore, fetchContentSources } from '@content/content-store';
+import { supabase } from '../main';
+import { showNotification } from '@mantine/notifications';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -92,6 +88,7 @@ function ProfileSection() {
   const theme = useMantineTheme();
   const [loading, setLoading] = useState(false);
   const [_user, setUser] = useRecoilState(userState);
+  const queryClient = useQueryClient();
 
   // User should always be defined here
   const user = _user!;
@@ -759,6 +756,47 @@ function ProfileSection() {
                 </Paper>
               </Box>
             )}
+
+            <Divider mt={10} />
+
+            <Anchor
+              underline='always'
+              onClick={() => {
+                modals.openConfirmModal({
+                  id: 'delete-account',
+                  title: <Title order={4}>{`Delete Account`}</Title>,
+                  children: (
+                    <Stack>
+                      <Text>Are you absolutely, positively sure you want to delete your account?</Text>
+                      <Text>All your characters, homebrew, campaigns, and encounters will be deleted forever! 😱</Text>
+                    </Stack>
+                  ),
+                  labels: { confirm: 'Delete It.', cancel: 'Cancel' },
+                  onCancel: () => {},
+                  onConfirm: async () => {
+                    const result = await makeRequest('delete-user', {});
+
+                    if (result) {
+                      supabase.auth.signOut();
+                      localStorage.clear();
+                      queryClient.clear();
+                    } else {
+                      showNotification({
+                        title: `Failed to Delete Account`,
+                        message: `There was an error deleting your account. Please get support on our Discord.`,
+                        color: 'red',
+                      });
+                    }
+                  },
+                });
+              }}
+              c='gray.6'
+              ta='center'
+              size='xs'
+              pt={10}
+            >
+              Delete Account
+            </Anchor>
           </Card>
         </BlurBox>
       </Box>

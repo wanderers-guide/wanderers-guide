@@ -40,12 +40,14 @@ import WanderersGuideLogo from './WanderersGuideLogo';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
+  const queryClient = useQueryClient();
 
   const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());
   //const [userIcon, setUserIcon] = useRecoilState(userIconState);
@@ -294,6 +296,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                         onClick={async () => {
                           supabase.auth.signOut();
                           localStorage.clear();
+                          queryClient.clear();
                         }}
                       >
                         Logout
@@ -434,6 +437,7 @@ export default function Layout(props: { children: React.ReactNode }) {
               onClick={async () => {
                 supabase.auth.signOut();
                 localStorage.clear();
+                queryClient.clear();
                 close();
               }}
             >
