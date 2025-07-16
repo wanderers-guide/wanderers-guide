@@ -140,6 +140,10 @@ const router = createBrowserRouter([
         lazy: () => import('./pages/LoginPage.tsx'),
       },
       {
+        path: 'update-password',
+        lazy: () => import('./pages/UpdatePasswordPage.tsx'),
+      },
+      {
         path: '*',
         lazy: () => import('./pages/MissingPage.tsx'),
       },

@@ -3,7 +3,6 @@ import { SpellSelectionOption } from '@common/select/SelectContent';
 import { Text } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { en } from '@supabase/auth-ui-shared';
 import { LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { useRecoilState } from 'recoil';
