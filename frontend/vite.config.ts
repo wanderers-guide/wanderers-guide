@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
+import babel from '@rollup/plugin-babel';
 
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
@@ -83,5 +84,13 @@ export default defineConfig({
       filename: 'stats.html',
     }),
     VitePWA(manifestForPlugin),
+    babel({
+      babelHelpers: 'bundled',
+      presets: [['@babel/preset-env', { targets: { ios: '15' } }]],
+      extensions: ['.ts', '.js', '.tsx'],
+    }),
   ],
+  build: {
+    target: 'es2015',
+  },
 });

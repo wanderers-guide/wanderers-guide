@@ -76,6 +76,9 @@
     "turndown": "^7.2.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@rollup/plugin-babel": "^6.0.4",
     "@types/cypress": "^1.1.3",
     "@types/js-search": "^1.4.1",
     "@types/js-yaml": "^4.0.9",
@@ -88,7 +91,7 @@
     "@types/turndown": "^5.0.2",
     "@typescript-eslint/eslint-plugin": "^6.20.0",
     "@typescript-eslint/parser": "^6.20.0",
-    "@vitejs/plugin-react": "^4.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
     "cypress": "^13.8.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
