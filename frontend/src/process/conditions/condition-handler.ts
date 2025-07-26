@@ -455,7 +455,8 @@ function applyCondition(id: StoreID, condition: Condition) {
       addVariableBonus(id, skill.name, penalty, 'status', '', `Clumsy ${condition.value}`);
     }
     addVariableBonus(id, 'DEX_ATTACK_ROLLS_BONUS', penalty, 'status', '', `Clumsy ${condition.value}`);
-    addVariableBonus(id, 'DEX_ATTACK_DAMAGE_BONUS', penalty, 'status', '', `Clumsy ${condition.value}`);
+    // Damage is not affected by the clumsy condition
+    // addVariableBonus(id, 'DEX_ATTACK_DAMAGE_BONUS', penalty, 'status', '', `Clumsy ${condition.value}`);
     return;
   }
   if (condition.name === 'Concealed') {
