@@ -816,7 +816,11 @@ export function isItemWithRunes(item: Item) {
 export function isItemWithPropertyRunes(item: Item) {
   if (!item.meta_data?.runes) return false;
 
-  return item.meta_data.runes.property && item.meta_data.runes.property.length > 0;
+  return (
+    item.meta_data.runes.property &&
+    item.meta_data.runes.property.length > 0 &&
+    item.meta_data.runes.property.every((r) => r.id && r.name)
+  );
 }
 
 /**
