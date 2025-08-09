@@ -295,6 +295,8 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   const hasSplash = hasTraitType('SPLASH', itemTraits);
   const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
 
+  const hasFlare = hasTraitType('FLARE', itemTraits);
+
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
 
   const parts = new Map<string, number>();
@@ -303,6 +305,12 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   if (hasThrown && !hasSplash) {
     parts.set(
       'This is your Strength modifier. Because this is a thrown ranged weapon, you add your Strength modifier to the damage.',
+      strMod
+    );
+    usesStr = true;
+  } else if (hasFlare) {
+    parts.set(
+      'This is your Strength modifier. Because this is a flare ranged weapon, you add your Strength modifier to the damage.',
       strMod
     );
     usesStr = true;
