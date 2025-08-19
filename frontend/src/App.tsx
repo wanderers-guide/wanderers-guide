@@ -38,6 +38,7 @@ import { update } from 'node_modules/cypress/types/lodash';
 import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 import GenerateEncounterModal from '@modals/GenerateEncounterModal';
 import { getShadesFromColor } from '@utils/colors';
+import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -61,6 +62,7 @@ const modals = {
   updateNotePage: UpdateNotePageModal,
   generateEncounter: GenerateEncounterModal,
   updateEncounter: UpdateEncounterModal,
+  updateApiClient: UpdateApiClientModal,
   condition: ConditionModal,
   createDicePreset: CreateDicePresetModal,
   addItems: AddItemsModal,

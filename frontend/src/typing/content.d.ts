@@ -639,6 +639,17 @@ interface PublicUser {
       };
     };
   };
+  api?: {
+    clients?: {
+      id: string;
+      name: string;
+      description?: string;
+      image_url?: string;
+      api_key: string;
+    }[];
+  }; // oauth/access?client_id={}&character_id={}
+  // Open a confirm access page.
+  // Adds the { publicUserId, clientId }
   deactivated: boolean;
   summary?: string;
   organized_play_id?: string;

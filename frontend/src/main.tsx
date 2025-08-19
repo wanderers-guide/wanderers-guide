@@ -85,6 +85,10 @@ const router = createBrowserRouter([
             },
           },
           {
+            path: 'oauth/access',
+            lazy: async () => import('@pages/OAuthAccessPage.tsx'),
+          },
+          {
             path: 'campaign/:campaignId',
             lazy: () => import('@pages/campaign/CampaignOverviewPage.tsx'),
             loader: async ({ params }: { params: any }) => {

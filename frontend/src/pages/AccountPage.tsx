@@ -28,6 +28,7 @@ import {
   Stack,
   Switch,
   Slider,
+  PasswordInput,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
 import BlurBox from '@common/BlurBox';
@@ -36,7 +37,7 @@ import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
-import { IconAdjustments, IconBrandPatreon, IconUpload } from '@tabler/icons-react';
+import { IconAdjustments, IconBrandPatreon, IconCirclePlus, IconUpload } from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@typing/content';
 import { useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
@@ -45,13 +46,14 @@ import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { modals } from '@mantine/modals';
+import { modals, openContextModal } from '@mantine/modals';
 import { hasPatreonAccess } from '@utils/patreon';
 import { userState } from '@atoms/userAtoms';
 import { findApprovedContentUpdates } from '@content/content-update';
 import { resetContentStore, fetchContentSources } from '@content/content-store';
 import { supabase } from '../main';
 import { showNotification } from '@mantine/notifications';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -224,6 +226,7 @@ function ProfileSection() {
       image_url: debouncedUser.image_url,
       background_image_url: debouncedUser.background_image_url,
       site_theme: debouncedUser.site_theme,
+      api: debouncedUser.api,
     });
   }, [debouncedUser]);
 
@@ -756,6 +759,112 @@ function ProfileSection() {
                 </Paper>
               </Box>
             )}
+
+            <Divider my={10} />
+
+            <Stack gap={5}>
+              <Group justify='center' align='center' gap={5}>
+                <Text fz='sm' ta='center' c='gray'>
+                  API Clients
+                </Text>
+                <ActionIcon
+                  size='sm'
+                  radius='xl'
+                  variant='subtle'
+                  color='gray'
+                  onClick={() => {
+                    setUser((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        api: {
+                          ...prev.api,
+                          clients: [
+                            ...(prev.api?.clients || []),
+                            {
+                              name: 'New Client',
+                              id: crypto.randomUUID().split('-')[0],
+                              api_key: crypto.randomUUID(),
+                              image_url: 'icon|||abstract064|||#359fdf',
+                            },
+                          ],
+                        },
+                      };
+                    });
+                  }}
+                >
+                  <IconCirclePlus size='0.9rem' />
+                </ActionIcon>
+              </Group>
+              <Stack gap={10}>
+                {user.api?.clients?.map((client) => (
+                  <BlurBox p='sm'>
+                    <Stack gap={5}>
+                      <Group justify='space-between' align='center'>
+                        <Group>
+                          <DisplayIcon width={25} strValue={client.image_url} />
+                          <Text size='md'>{client.name}</Text>
+                        </Group>
+                        <Button
+                          variant='light'
+                          size='xs'
+                          onClick={() => {
+                            openContextModal({
+                              modal: 'updateApiClient',
+                              title: <Title order={3}>API Client</Title>,
+                              innerProps: {
+                                client: client,
+                                onUpdate: (
+                                  id: string,
+                                  name: string,
+                                  description: string,
+                                  image_url: string,
+                                  api_key: string
+                                ) => {
+                                  setUser((prev) => {
+                                    if (!prev) return prev;
+                                    const newClients = prev.api?.clients?.map((c) => {
+                                      if (c.id === id) {
+                                        return { ...c, name, description, image_url, api_key };
+                                      }
+                                      return c;
+                                    });
+                                    return { ...prev, api: { ...prev.api, clients: newClients } };
+                                  });
+                                },
+                                onDelete: () => {
+                                  setUser((prev) => {
+                                    if (!prev) return prev;
+                                    const newClients = prev.api?.clients?.filter((c) => c.id !== client.id);
+                                    return { ...prev, api: { ...prev.api, clients: newClients } };
+                                  });
+                                },
+                              },
+                            });
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </Group>
+                      <PasswordInput
+                        size='sm'
+                        label='API Key'
+                        description='Your private key to access the API.'
+                        value={client.api_key}
+                        readOnly
+                      />
+                      <TextInput
+                        size='sm'
+                        label='Character OAuth Access URL'
+                        description='Set <ID> to the character ID you want access to.'
+                        value={`${window.location.origin}/oauth/access?user_id=${user.id}&client_id=${client.id}&character_id=<ID>`}
+                        readOnly
+                      />
+                    </Stack>
+                  </BlurBox>
+                ))}
+              </Stack>
+            </Stack>
 
             <Divider mt={10} />
 
