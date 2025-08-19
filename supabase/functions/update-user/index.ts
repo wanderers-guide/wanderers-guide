@@ -13,6 +13,7 @@ serve(async (req: Request) => {
       organized_play_id,
       site_theme,
       subscribed_content_sources,
+      api,
     } = body as PublicUser;
 
     const user = await getPublicUser(client, token);
@@ -32,6 +33,7 @@ serve(async (req: Request) => {
       organized_play_id,
       site_theme,
       subscribed_content_sources,
+      api,
     });
 
     if (status === 'SUCCESS') {
