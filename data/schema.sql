@@ -551,7 +551,8 @@ CREATE TABLE public.public_user (
     patreon jsonb,
     organized_play_id character varying,
     is_developer boolean,
-    is_community_paragon boolean
+    is_community_paragon boolean,
+    api jsonb
 );
 
 
