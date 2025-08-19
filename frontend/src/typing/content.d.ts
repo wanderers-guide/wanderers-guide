@@ -438,6 +438,9 @@ interface Character extends LivingEntity {
     sheet_theme?: {
       color: string;
     };
+    api_clients?: {
+      client_access: { publicUserId: string; clientId: string; addedAt: number }[];
+    };
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;

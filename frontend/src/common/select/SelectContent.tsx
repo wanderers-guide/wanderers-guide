@@ -421,7 +421,7 @@ export default function SelectContentModal({
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, {}] = queryKey;
-      return await fetchContentSources();
+      return await fetchContentSources({ includeCommonCore: true });
     },
     enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
   });

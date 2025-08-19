@@ -41,7 +41,7 @@ export function getWeaponStats(id: StoreID, item: Item) {
   // Remove the first number from the extra damage string, to add it to the bonus
   let extraDamage = 0;
   extra = extra
-    .replace(/((|-)\d+?)($|\s)/, (_, group1) => {
+    .replace(/(([^d]|^)(|-)\d+?)($|\s)/, (_, group1) => {
       extraDamage = parseInt(group1);
       return ''; // Remove the first match
     })

@@ -18,7 +18,7 @@ export default function BackgroundFixer() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      const sources = await fetchContentSources({ homebrew: false, ids: 'all' });
+      const sources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
       defineDefaultSources(sources.map((source) => source.id));
       return sources;
     },

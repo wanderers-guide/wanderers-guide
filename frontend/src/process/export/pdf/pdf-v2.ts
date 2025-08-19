@@ -96,7 +96,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   defineDefaultSources(character.content_sources?.enabled ?? []);
 
   // Prefetch content sources
-  await fetchContentSources();
+  await fetchContentSources({ includeCommonCore: true });
 
   // Fetch the content package
   const content = await fetchContentPackage(undefined, { fetchSources: true });

@@ -178,7 +178,7 @@ export async function importFromFTC(d: FTC) {
   } satisfies Character as Character;
 
   // Get the content sources
-  const sources = await fetchContentSources({ ids: 'all' });
+  const sources = await fetchContentSources({ ids: 'all', includeCommonCore: true });
   character.content_sources!.enabled =
     data.content_sources === 'ALL'
       ? sources.map((source) => source.id)

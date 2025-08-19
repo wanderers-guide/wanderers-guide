@@ -44,6 +44,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
       const [_key, { id }] = queryKey;
       const sources = await fetchContentSources({
         ids: [id],
+        includeCommonCore: true,
       });
       return sources.length > 0 ? sources[0] : null;
     },

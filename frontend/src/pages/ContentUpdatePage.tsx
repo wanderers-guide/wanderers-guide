@@ -48,7 +48,7 @@ export function Component(props: {}) {
 
       const user = (await getPublicUser(contentUpdate.user_id))!;
 
-      const sources = await fetchContentSources({ ids: [contentUpdate.content_source_id] });
+      const sources = await fetchContentSources({ ids: [contentUpdate.content_source_id], includeCommonCore: true });
       if (sources.length === 0) {
         return null;
       }

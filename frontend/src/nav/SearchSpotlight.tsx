@@ -395,6 +395,7 @@ async function fetchBooks(
   const sources = await fetchContentSources({
     published: true,
     ids: 'all',
+    includeCommonCore: true,
   });
   return sources.map((source) => {
     return {

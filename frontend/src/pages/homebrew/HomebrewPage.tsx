@@ -152,7 +152,7 @@ function BrowseSection(props: {}) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-homebrew-content-sources-public`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true }))
+      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true, includeCommonCore: true }))
         .filter((c) => c.user_id)
         .sort((a, b) => {
           if (a.require_key && !b.require_key) return 1;
@@ -232,7 +232,7 @@ function SubscriptionsSection(props: {}) {
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-subscribed`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
+      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
     },
@@ -309,7 +309,7 @@ function CreationsSection(props: {}) {
     queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
       resetContentStore(true);
-      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
+      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
         (c) => c.user_id && c.user_id === user?.user_id
       );
     },

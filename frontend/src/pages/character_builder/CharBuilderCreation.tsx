@@ -62,7 +62,7 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
     queryKey: [`find-content-${character?.id}`],
     queryFn: async () => {
       // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources();
+      await fetchContentSources({ includeCommonCore: true });
 
       const content = await fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: false });
       return content;

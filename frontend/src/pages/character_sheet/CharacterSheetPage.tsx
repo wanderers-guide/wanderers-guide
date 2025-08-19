@@ -88,7 +88,7 @@ export function Component(props: {}) {
       defineDefaultSources(character?.content_sources?.enabled);
 
       // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources();
+      await fetchContentSources({ includeCommonCore: true });
 
       // Fetch content
       const content = await fetchContentPackage(undefined, { fetchSources: true });
