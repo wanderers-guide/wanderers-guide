@@ -142,8 +142,6 @@ export function Component(props: {}) {
 }
 
 function CharacterSheetInner(props: { content: ContentPackage; characterId: number; onFinishLoading: () => void }) {
-  const queryClient = useQueryClient();
-
   const isTablet = useMediaQuery(tabletQuery());
   const isPhone = useMediaQuery(phoneQuery());
   const { ref, width, height } = useElementSize();

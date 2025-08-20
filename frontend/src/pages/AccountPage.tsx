@@ -797,8 +797,8 @@ function ProfileSection() {
                 </ActionIcon>
               </Group>
               <Stack gap={10}>
-                {user.api?.clients?.map((client) => (
-                  <BlurBox p='sm'>
+                {user.api?.clients?.map((client, index) => (
+                  <BlurBox key={index} p='sm'>
                     <Stack gap={5}>
                       <Group justify='space-between' align='center'>
                         <Group>
