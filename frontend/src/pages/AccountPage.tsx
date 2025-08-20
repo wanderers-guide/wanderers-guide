@@ -855,7 +855,7 @@ function ProfileSection() {
                       />
                       <TextInput
                         size='sm'
-                        label='Character OAuth Access URL'
+                        label='Character Authorization URL'
                         description='Set <ID> to the character ID you want access to.'
                         value={`${window.location.origin}/oauth/access?user_id=${user.id}&client_id=${client.id}&character_id=<ID>`}
                         readOnly
