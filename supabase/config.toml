@@ -132,3 +132,112 @@ port = 54327
 vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
+
+# Disable verify_jwt on API endpoints
+[functions.create-ability-block]
+verify_jwt = false
+
+[functions.create-ancestry]
+verify_jwt = false
+
+[functions.create-archetype]
+verify_jwt = false
+
+[functions.create-background]
+verify_jwt = false
+
+[functions.create-campaign]
+verify_jwt = false
+
+[functions.create-character]
+verify_jwt = false
+
+[functions.create-class]
+verify_jwt = false
+
+[functions.create-content-source]
+verify_jwt = false
+
+[functions.create-creature]
+verify_jwt = false
+
+[functions.create-encounter]
+verify_jwt = false
+
+[functions.create-item]
+verify_jwt = false
+
+[functions.create-language]
+verify_jwt = false
+
+[functions.create-spell]
+verify_jwt = false
+
+[functions.create-trait]
+verify_jwt = false
+
+[functions.create-versatile-heritage]
+verify_jwt = false
+
+[functions.delete-content]
+verify_jwt = false
+
+[functions.find-ability-block]
+verify_jwt = false
+
+[functions.find-ancestry]
+verify_jwt = false
+
+[functions.find-archetype]
+verify_jwt = false
+
+[functions.find-background]
+verify_jwt = false
+
+[functions.find-campaign]
+verify_jwt = false
+
+[functions.find-character]
+verify_jwt = false
+
+[functions.find-class]
+verify_jwt = false
+
+[functions.find-content-source]
+verify_jwt = false
+
+[functions.find-creature]
+verify_jwt = false
+
+[functions.find-encounter]
+verify_jwt = false
+
+[functions.find-item]
+verify_jwt = false
+
+[functions.find-language]
+verify_jwt = false
+
+[functions.find-spell]
+verify_jwt = false
+
+[functions.find-trait]
+verify_jwt = false
+
+[functions.find-versatile-heritage]
+verify_jwt = false
+
+[functions.get-content-source-stats]
+verify_jwt = false
+
+[functions.get-user]
+verify_jwt = false
+
+[functions.remove-from-campaign]
+verify_jwt = false
+
+[functions.search-data]
+verify_jwt = false
+
+[functions.update-character]
+verify_jwt = false

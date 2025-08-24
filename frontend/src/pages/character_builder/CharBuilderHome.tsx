@@ -1021,7 +1021,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
               <ScrollArea h={150} scrollbars='y'>
                 <Stack gap={5}>
                   {apiClients?.map((client, index) => (
-                    <BlurBox key={index} p='sm'>
+                    <BlurBox key={index} p='sm' bgColor={theme.colors.dark[6]}>
                       <Stack gap={5}>
                         <Group>
                           <DisplayIcon width={25} strValue={client?.image_url} />

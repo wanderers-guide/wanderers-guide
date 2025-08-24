@@ -77,7 +77,7 @@ export function Component() {
           <ActionIcon variant='transparent' color='gray.6' size='lg'>
             <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
           </ActionIcon>
-          <DisplayIcon strValue={data?.character?.details?.image_url} radius={500} />
+          <DisplayIcon strValue={data?.character?.details?.image_url ?? 'icon|||avatar|||#868e96'} radius={500} />
         </Group>
         <Stack gap={5}>
           <Title order={3} ta='center'>

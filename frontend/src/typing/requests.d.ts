@@ -1,5 +1,4 @@
 export type RequestType =
-  | 'get-sheet-content'
   | 'upload-public-file'
   | 'handle-patreon-redirect'
   | 'search-data'

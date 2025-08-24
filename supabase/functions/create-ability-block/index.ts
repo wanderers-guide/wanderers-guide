@@ -1,10 +1,10 @@
 // @ts-ignore
 import { serve } from 'std/server';
-import { connect, insertData, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
-import type { AbilityBlock, Trait } from '../_shared/content';
+import { connect, upsertData, upsertResponseWrapper } from '../_shared/helpers.ts';
+import type { AbilityBlock } from '../_shared/content';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect<AbilityBlock>(req, async (client, body) => {
     let {
       id,
       operations,
@@ -26,7 +26,7 @@ serve(async (req: Request) => {
       traits,
       content_source_id,
       version,
-    } = body as AbilityBlock;
+    } = body;
 
     const { procedure, result } = await upsertData<AbilityBlock>(
       client,

@@ -32,6 +32,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { CREATURE_DRAWER_ZINDEX } from './CreatureDrawer';
 import { DrawerType } from '@typing/index';
+import { COMMON_CORE_ID, PATHFINDER_CORE_ID, STARFINDER_CORE_ID } from '@constants/data';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
   const id = props.data.id;
@@ -219,6 +220,26 @@ export function ContentSourceDrawerContent(props: {
 
       {source.contact_info?.trim() && <Text>{source.contact_info}</Text>}
       {/* TODO: Required sources */}
+
+      {(source.id === PATHFINDER_CORE_ID || source.id === STARFINDER_CORE_ID) && (
+        <Box pb='sm'>
+          <Button
+            onClick={() => {
+              openDrawer({
+                type: 'content-source',
+                data: {
+                  ...props.data,
+                  id: COMMON_CORE_ID,
+                },
+              });
+            }}
+            variant='light'
+            fullWidth
+          >
+            Includes Shared Content
+          </Button>
+        </Box>
+      )}
 
       <Box>
         <Accordion
