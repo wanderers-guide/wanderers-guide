@@ -80,7 +80,7 @@ export function Component(props: {}) {
       if (key.toLowerCase() === 'uuid') continue;
 
       if (key === 'meta_data') {
-        for (const metaKey of Object.keys(updated.meta_data)) {
+        for (const metaKey of Object.keys(updated.meta_data ?? {})) {
           if (JSON.stringify(original.meta_data[metaKey] ?? '') !== JSON.stringify(updated.meta_data[metaKey] ?? '')) {
             changedFields.push(metaKey);
           }
@@ -139,7 +139,7 @@ export function Component(props: {}) {
                 {data.contentUpdate.action === 'UPDATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from the{' '}
+                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from{' '}
                       <b>{data.source.name}</b>.
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
