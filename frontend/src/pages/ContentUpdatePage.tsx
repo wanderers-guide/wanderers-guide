@@ -72,7 +72,7 @@ export function Component(props: {}) {
   const changedFields = useMemo(() => {
     if (!data || !data.originalContent) return [];
     const original = data.originalContent;
-    const updated = data.contentUpdate.data;
+    const updated = data.contentUpdate.data ?? {};
 
     // Compare all fields in the original and updated content, and check all fields in meta_data if it exists
     const changedFields = [];
@@ -97,7 +97,7 @@ export function Component(props: {}) {
   const sizeDiff = useMemo(() => {
     if (!data || !data.originalContent) return 0;
 
-    const byteDiff = JSON.stringify(data.contentUpdate.data).length - JSON.stringify(data.originalContent).length;
+    const byteDiff = JSON.stringify(data.contentUpdate.data ?? {}).length - JSON.stringify(data.originalContent).length;
 
     if (byteDiff > 300) {
       return sign((byteDiff / 1000).toFixed(2)) + ' kb';
@@ -194,7 +194,7 @@ export function Component(props: {}) {
                           fw={500}
                           onClick={() => {
                             openDrawer(
-                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
                                 noFeedback: true,
                                 showOperations: true,
                               })
@@ -241,7 +241,7 @@ export function Component(props: {}) {
                 {data.contentUpdate.action === 'CREATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      Add <b>{data.contentUpdate.data.name}</b> to the <b>{data.source.name}</b>.
+                      Add <b>{data.contentUpdate.data?.name}</b> to the <b>{data.source.name}</b>.
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
                       <Box>
@@ -250,14 +250,14 @@ export function Component(props: {}) {
                           fw={500}
                           onClick={() => {
                             openDrawer(
-                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
                                 noFeedback: true,
                                 showOperations: true,
                               })
                             );
                           }}
                         >
-                          View {toLabel((data.contentUpdate.data.type ?? data.contentUpdate.type).replace(/-/g, ' '))}
+                          View {toLabel((data.contentUpdate.data?.type ?? data.contentUpdate.type).replace(/-/g, ' '))}
                         </BlurButton>
                       </Box>
                     </Group>
