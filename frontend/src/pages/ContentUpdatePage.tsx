@@ -3,7 +3,7 @@ import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { DISCORD_URL } from '@constants/data';
-import { fetchContent, fetchContentSources } from '@content/content-store';
+import { defineDefaultSources, fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
 import { mapToDrawerData } from '@drawers/drawer-utils';
 import {
@@ -52,6 +52,7 @@ export function Component(props: {}) {
       if (sources.length === 0) {
         return null;
       }
+      defineDefaultSources(sources.map((s) => s.id));
 
       const originalContent = contentUpdate.ref_id
         ? await fetchContent(contentUpdate.type, {

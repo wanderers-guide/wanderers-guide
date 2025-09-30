@@ -220,12 +220,15 @@ export async function fetchContentSources(options?: {
   ids?: number[] | 'all';
   includeCommonCore?: boolean;
 }) {
+  const sourceIds = uniq([...(options?.ids ?? defaultSources ?? []), COMMON_CORE_ID]);
+
   const sources = await fetchContent<ContentSource>('content-source', {
     group: options?.group,
     homebrew: options?.homebrew,
     published: options?.published,
-    id: options?.ids === 'all' ? undefined : options?.ids ?? defaultSources,
+    id: options?.ids === 'all' ? undefined : sourceIds,
   });
+
   return sources
     .sort((a, b) => a.name.localeCompare(b.name))
     .filter((source) => source.id !== COMMON_CORE_ID || options?.includeCommonCore);
