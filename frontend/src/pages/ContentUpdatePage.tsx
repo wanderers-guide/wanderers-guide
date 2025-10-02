@@ -63,7 +63,7 @@ export function Component(props: {}) {
       return {
         contentUpdate,
         user,
-        source: sources[0],
+        source: sources.find((s) => s.id === contentUpdate.content_source_id)!,
         originalContent: originalContent.length > 0 ? originalContent[0] : null,
       };
     },
