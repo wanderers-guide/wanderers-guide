@@ -63,7 +63,7 @@ export default function SelectImageModal({
         <SimpleGrid cols={3} pl={5} py={5} pr={15}>
           <FileButton
             onChange={async (file) => {
-              if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+              if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
                 displayPatronOnly();
                 return;
               }

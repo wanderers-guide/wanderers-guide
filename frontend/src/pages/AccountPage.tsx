@@ -238,7 +238,7 @@ function ProfileSection() {
           <Card pt={0} pb={'md'} radius='md' style={{ backgroundColor: 'transparent' }}>
             <FileButton
               onChange={async (file) => {
-                if (!hasPatreonAccess(user, 2)) {
+                if (!hasPatreonAccess(user, 1)) {
                   displayPatronOnly();
                   return;
                 }
@@ -330,7 +330,7 @@ function ProfileSection() {
                         format='hex'
                         value={user.site_theme?.color || GUIDE_BLUE}
                         onChange={(value) => {
-                          if (!hasPatreonAccess(user, 2)) {
+                          if (!hasPatreonAccess(user, 1)) {
                             displayPatronOnly();
                             return;
                           }
@@ -430,7 +430,7 @@ function ProfileSection() {
             <Center>
               <FileButton
                 onChange={async (file) => {
-                  if (!hasPatreonAccess(user, 2)) {
+                  if (!hasPatreonAccess(user, 1)) {
                     displayPatronOnly();
                     return;
                   }

@@ -513,7 +513,7 @@ export default function DiceRoller(props: {
             },
           }))
           .map((die) => {
-            if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 2)) {
+            if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 1)) {
               displayPatronOnly('Special dice themes are only available to patrons!');
               return {
                 ...die,

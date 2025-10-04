@@ -122,7 +122,7 @@ export function Component() {
                 }
                 onClick={() => {
                   if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
-                    displayPatronOnly();
+                    displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
                     return;
                   }
 

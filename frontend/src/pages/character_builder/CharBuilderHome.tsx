@@ -955,7 +955,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
             ]}
             swatchesPerRow={7}
             onChange={(color) => {
-              if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+              if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
                 displayPatronOnly();
                 return;
               }
@@ -985,7 +985,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   innerProps: {
                     options: getAllBackgroundImages(),
                     onSelect: (option: ImageOption) => {
-                      if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+                      if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
                         displayPatronOnly();
                         return;
                       }
