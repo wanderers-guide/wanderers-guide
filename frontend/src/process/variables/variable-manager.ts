@@ -588,6 +588,9 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue | E
       if (isProficiencyType(value)) {
         variable.value.value = maxProficiencyType(variable.value.value, value);
       } else if (isExtendedProficiencyType(value)) {
+        if (!variable.value.increases) {
+          variable.value.increases = 0;
+        }
         if (value === '1') {
           variable.value.increases += 1;
         } else if (value === '-1') {
