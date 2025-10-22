@@ -47,7 +47,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
         ids: [id],
         includeCommonCore: true,
       });
-      return sources.length > 0 ? sources[0] : null;
+      return sources?.find((s) => s.id === id) ?? null;
     },
     enabled: !!id,
   });
@@ -156,8 +156,7 @@ export function ContentSourceDrawerContent(props: {
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
     },
   });
-  const source =
-    props.data.source ?? (content && content.sources && content.sources.length > 0 ? content.sources[0] : null);
+  const source = props.data.source ?? content?.sources?.find((s) => s.id === id) ?? null;
 
   const [openedUnlockModal, setOpenedUnlockModal] = useState(false);
   useEffect(() => {
