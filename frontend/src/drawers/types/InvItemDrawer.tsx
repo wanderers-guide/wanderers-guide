@@ -62,7 +62,7 @@ import { getArmorSpecialization } from '@specializations/armor-specializations';
 import { getWeaponSpecialization } from '@specializations/weapon-specializations';
 import { drawerState } from '@atoms/navAtoms';
 import TokenSelect from '@common/TokenSelect';
-import { ItemRunesDescription } from '@common/ItemRunesDescription';
+import { ItemRunesDescription, ItemUpgradesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
@@ -230,7 +230,7 @@ export function InvItemDrawerContent(props: {
                 Upgrades
               </Accordion.Control>
               <Accordion.Panel>
-                <ItemRunesDescription item={invItem.item} />
+                <ItemUpgradesDescription item={invItem.item} />
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
@@ -254,7 +254,7 @@ export function InvItemDrawerContent(props: {
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={15} ml={0}>
             {invItem.item.meta_data?.charges?.max && (
-              <Box mb={-10}>
+              <Box mb={-10} ml={20}>
                 <ScrollArea scrollbars='x' w={180}>
                   <TokenSelect
                     count={invItem.item.meta_data.charges.max}
@@ -543,6 +543,13 @@ function InvItemSections(props: {
               onChange={(e) => {
                 setHealth(e.target.value);
               }}
+              onFocus={(e) => {
+                const length = e.target.value.length;
+                // Move cursor to end
+                requestAnimationFrame(() => {
+                  e.target.setSelectionRange(length, length);
+                });
+              }}
               onBlur={handleHealthSubmit}
               onKeyDown={getHotkeyHandler([
                 ['mod+Enter', handleHealthSubmit],
@@ -734,7 +741,7 @@ function InvItemSections(props: {
     upgradeSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={10}>
-          <Group wrap='nowrap' mr={20}>
+          <Group wrap='nowrap' mr={5}>
             <Text fw={600} c='gray.5' span>
               Grade
             </Text>{' '}

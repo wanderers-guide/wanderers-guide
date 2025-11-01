@@ -1,5 +1,6 @@
 import { Item } from '@typing/content';
 import { StoreID, VariableNum } from '@typing/variables';
+import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue, getVariableBreakdown } from '@variables/variable-display';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
@@ -8,11 +9,19 @@ function getProfTotal(id: StoreID, item: Item) {
   const category = item.meta_data?.category ?? 'light';
   let categoryProfTotal = 0;
   if (category === 'light') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_ARMOR`));
+    if (hasTraitType('COMPANION', item.traits)) {
+      categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_BARDING`));
+    } else {
+      categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_ARMOR`));
+    }
   } else if (category === 'medium') {
     categoryProfTotal = parseInt(getFinalProfValue(id, `MEDIUM_ARMOR`));
   } else if (category === 'heavy') {
-    categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_ARMOR`));
+    if (hasTraitType('COMPANION', item.traits)) {
+      categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_BARDING`));
+    } else {
+      categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_ARMOR`));
+    }
   } else if (category === 'unarmored_defense') {
     categoryProfTotal = parseInt(getFinalProfValue(id, `UNARMORED_DEFENSE`));
   }

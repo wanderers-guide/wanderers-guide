@@ -167,7 +167,12 @@ export function SelectIcon(props: {
   );
 }
 
-export function DisplayIcon(props: { strValue: string | undefined; iconStyles?: MantineStyleProp; width?: number }) {
+export function DisplayIcon(props: {
+  strValue: string | undefined;
+  iconStyles?: MantineStyleProp;
+  width?: number;
+  radius?: number;
+}) {
   const iconValue = parseIconValue(props.strValue ?? '');
   const width = props.width ?? 90;
 
@@ -187,7 +192,7 @@ export function DisplayIcon(props: { strValue: string | undefined; iconStyles?: 
           ...props.iconStyles,
         }}
         ml='sm'
-        radius='lg'
+        radius={props.radius ?? 'lg'}
         color={iconValue.color}
       >
         <Icon name={iconValue.value} style={{ width: width, height: width }} stroke={1.5} />
@@ -204,7 +209,7 @@ export function DisplayIcon(props: { strValue: string | undefined; iconStyles?: 
           ...props.iconStyles,
         }}
         ml='sm'
-        radius='md'
+        radius={props.radius ?? 'md'}
         fit='contain'
         src={iconValue.value}
       />

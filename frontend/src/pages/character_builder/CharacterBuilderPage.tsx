@@ -84,8 +84,8 @@ export function Component() {
   };
 
   // Fetch character from db
-  const { isLoading, isInitialLoading } = useQuery({
-    queryKey: [`find-character-${characterId}`],
+  const { isLoading } = useQuery({
+    queryKey: [`find-character-${characterId}`, { characterId }],
     queryFn: async () => {
       const resultCharacter = await makeRequest<Character>('find-character', {
         id: characterId,
@@ -115,8 +115,8 @@ export function Component() {
   }, [debouncedCharacter]);
 
   // Update character stats
-  const { mutate: mutateCharacter } = useMutation(
-    async (data: {
+  const { mutate: mutateCharacter } = useMutation({
+    mutationFn: async (data: {
       name?: string;
       level?: number;
       details?: any;
@@ -137,10 +137,8 @@ export function Component() {
       }
       return true;
     },
-    {
-      onSuccess: () => {},
-    }
-  );
+    onSuccess: () => {},
+  });
 
   return (
     <Center>

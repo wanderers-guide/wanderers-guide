@@ -29,6 +29,7 @@ import { DisplayIcon } from './IconDisplay';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { compiledConditions } from '@conditions/condition-handler';
 
 export default function StatBlockSection(props: {
   entity: LivingEntity;
@@ -50,6 +51,8 @@ export default function StatBlockSection(props: {
     },
   });
 
+  const isPreformattedDescription = isCreature(entity) && entity.details.description?.includes('**');
+
   const stringifySenses = (senses: {
     precise: SenseWithRange[];
     imprecise: SenseWithRange[];
@@ -70,11 +73,23 @@ export default function StatBlockSection(props: {
         `${linkContent(sense.senseName.toLowerCase(), 'sense', sense.sense)} ${sense.range.trim() ? `(${sense.range} ft.)` : ``}`.trim()
       )
       .join(', ');
-    return `precise: ${precise}; imprecise: ${imprecise}; vague: ${vague}`;
+
+    const sParts: string[] = [];
+    if (precise) {
+      sParts.push(`precise: ${precise}`);
+    }
+    if (imprecise) {
+      sParts.push(`imprecise: ${imprecise}`);
+    }
+    if (vague) {
+      sParts.push(`vague: ${vague}`);
+    }
+    return sParts.join('; ');
   };
 
   const linkContent = (text: string, type: ContentType | AbilityBlockType, data: any) => {
-    if (data && data.id) {
+    if (data && data.id && `${data.id}`.length < 10) {
+      // Really log IDs are probably custom items
       return `[${text}](link_${type}_${data.id})`;
     } else {
       return text;
@@ -151,7 +166,7 @@ export default function StatBlockSection(props: {
       ab.requirements ? `**Requirements** ${ab.requirements}` : undefined,
     ].filter(isTruthy);
 
-    const specialStr = ab.special ? `\n\n**Special** ${ab.special}` : '';
+    const specialStr = ab.special ? `\n\n &nbsp;&nbsp; **Special** ${ab.special}` : '';
 
     return (
       <RichText ta='justify' fz='xs' span>
@@ -181,12 +196,22 @@ export default function StatBlockSection(props: {
       };
     };
   }) => {
-    const traitsStr = (weapon.item.traits ?? [])
+    const traits = (weapon.item.traits ?? [])
       .map((id) => data.all_traits.find((t) => id === t.id))
       .filter(isTruthy)
-      .map((t) => linkContent(t.name.toLowerCase(), 'trait', t))
-      .join(', ')
-      .trim();
+      .map((t) => linkContent(t.name.toLowerCase(), 'trait', t));
+
+    // Add range and reload to be displayed with traits
+    if (isItemRangedWeapon(weapon.item)) {
+      if (weapon.item.meta_data?.range) {
+        traits.push(`range increment ${weapon.item.meta_data.range} ft.`);
+      }
+      if (weapon.item.meta_data?.reload) {
+        traits.push(`reload ${weapon.item.meta_data.reload.replace(/reload/i, '').trim()}`);
+      }
+    }
+
+    const traitsStr = traits.join(', ').trim();
 
     const damageBonus = weapon.stats.damage.bonus.total > 0 ? ` + ${weapon.stats.damage.bonus.total}` : ``;
 
@@ -512,6 +537,24 @@ export default function StatBlockSection(props: {
           {getResistWeaksDisplay(data.resist_weaks)}
         </RichText>
       )}
+      {entity.details?.conditions && entity.details.conditions.length > 0 && (
+        <IndentedText ta='justify' fz='xs' pr={IMAGE_SIZE} span>
+          <Text fz='xs' fw={600} c='gray.4' span>
+            Conditions
+          </Text>{' '}
+          <RichText ta='justify' fz='xs' span>
+            {compiledConditions(entity.details.conditions)
+              .map((c) => {
+                if (c.value) {
+                  return `${c.name.toLowerCase()} ${c.value}`;
+                } else {
+                  return c.name.toLowerCase();
+                }
+              })
+              .join(', ')}
+          </RichText>
+        </IndentedText>
+      )}
       {abilities
         .filter((ab) => ab.actions === 'FREE-ACTION' || ab.actions === 'REACTION')
         .map((ab) => getAbilityDisplay(ab))}
@@ -544,15 +587,22 @@ export default function StatBlockSection(props: {
       {abilities
         .filter((ab) => ab.actions && ab.actions !== 'FREE-ACTION' && ab.actions !== 'REACTION')
         .map((ab) => getAbilityDisplay(ab))}
-      <Divider />
-      {abilities.filter((ab) => !ab.actions).map((ab) => getAbilityDisplay(ab))}
-      <Divider />
 
+      {abilities.filter((ab) => !ab.actions).length > 0 && <Divider />}
+      {abilities.filter((ab) => !ab.actions).map((ab) => getAbilityDisplay(ab))}
+
+      {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && <Divider />}
       {!props.options?.hideDescription && isCreature(entity) && entity.details.description.trim() && (
         <Box p='lg'>
-          <RichText ta='justify' fz='xs' fs='italic' c='dimmed' span>
-            {entity.details.description}
-          </RichText>
+          {isPreformattedDescription ? (
+            <RichText ta='justify' fz='xs'>
+              {entity.details.description}
+            </RichText>
+          ) : (
+            <RichText ta='justify' fz='xs' fs='italic' c='dimmed' span>
+              {entity.details.description}
+            </RichText>
+          )}
         </Box>
       )}
     </Stack>

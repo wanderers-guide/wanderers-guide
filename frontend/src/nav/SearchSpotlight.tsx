@@ -7,6 +7,7 @@ import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { fetchContentSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import { defineDefaultSourcesForUser } from '@content/homebrew';
+import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
@@ -367,10 +368,15 @@ async function queryResults(
       label: `${data.name}`,
       description: data.description ? description : undefined,
       onClick: () => {
-        setQueryParam('open', `link_${abilityBlockType ?? data._type}_${data.id}`);
+        const type = (abilityBlockType ?? data._type) as DrawerType;
+        setQueryParam('open', `link_${type}_${data.id}`);
         openDrawer({
-          type: (abilityBlockType ?? data._type) as DrawerType,
-          data: { id: data.id },
+          type: type,
+          data: {
+            id: data.id,
+            readOnly: true,
+            zIndex: type === 'creature' ? CREATURE_DRAWER_ZINDEX : undefined,
+          },
         });
       },
       leftSection: getIconFromContentType(data._type as ContentType, '1.5rem'),
@@ -389,6 +395,7 @@ async function fetchBooks(
   const sources = await fetchContentSources({
     published: true,
     ids: 'all',
+    includeCommonCore: true,
   });
   return sources.map((source) => {
     return {

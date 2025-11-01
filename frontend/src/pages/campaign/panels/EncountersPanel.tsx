@@ -329,7 +329,7 @@ export default function EncountersPanel(props: {
           onClick={() => {
             openContextModal({
               modal: 'updateEncounter',
-              title: <Title order={3}>Update Encounter</Title>,
+              title: <Title order={3}>Encounter Settings</Title>,
               innerProps: {
                 encounter: encounter,
                 onUpdate: (encounter: Encounter) => {
@@ -709,6 +709,8 @@ function EncounterView(props: {
                       showButton: true,
                       groupBySource: true,
                       zIndex: 400,
+                      // Hide companions
+                      filterFn: (c) => c.level !== -100,
                     }
                   );
                 }}
@@ -919,7 +921,7 @@ function CombatantCard(props: {
     if (props.combatant.data) {
       const currentHealth =
         props.combatant.data.hp_current === undefined ? props.computed?.maxHp ?? 0 : props.combatant.data.hp_current;
-      setHealth(`${currentHealth}`);
+      setHealth(`${currentHealth}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${currentHealth}`);
     }
   }, [props.combatant, props.computed]);
 
@@ -941,7 +943,7 @@ function CombatantCard(props: {
       hp_current: result,
     });
 
-    setHealth(`${result}`);
+    setHealth(`${result}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${result}`);
     healthRef.current?.blur();
   };
 
@@ -957,18 +959,28 @@ function CombatantCard(props: {
         ref={initiativeRef}
         variant='filled'
         w={70}
-        size='md'
+        size='sm'
         placeholder='Init.'
         autoComplete='nope'
         value={initiative ?? undefined}
         onChange={(val) => {
           setInitiative(parseInt(`${val}`));
         }}
+        onFocus={(e) => {
+          const length = e.target.value.length;
+          // Move cursor to end
+          requestAnimationFrame(() => {
+            e.target.setSelectionRange(length, length);
+          });
+        }}
         onBlur={handleInitiativeSubmit}
         onKeyDown={getHotkeyHandler([
           ['mod+Enter', handleInitiativeSubmit],
           ['Enter', handleInitiativeSubmit],
         ])}
+        style={{
+          opacity: 0.65,
+        }}
       />
       <Group
         ref={ref}
@@ -1023,6 +1035,7 @@ function CombatantCard(props: {
               objectFit: 'contain',
               height: 40,
             }}
+            radius={40}
           />
         </Box>
 
@@ -1070,6 +1083,13 @@ function CombatantCard(props: {
           value={health}
           onChange={(e) => {
             setHealth(e.target.value);
+          }}
+          onFocus={(e) => {
+            const length = e.target.value.length;
+            // Move cursor to end
+            requestAnimationFrame(() => {
+              e.target.setSelectionRange(length, length);
+            });
           }}
           onBlur={handleHealthSubmit}
           onKeyDown={getHotkeyHandler([

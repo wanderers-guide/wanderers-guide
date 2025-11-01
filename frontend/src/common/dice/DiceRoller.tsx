@@ -20,7 +20,14 @@ import {
   Collapse,
   Portal,
 } from '@mantine/core';
-import { useDebouncedState, useDebouncedValue, useDidUpdate, useDisclosure, useMediaQuery } from '@mantine/hooks';
+import {
+  useDebouncedCallback,
+  useDebouncedState,
+  useDebouncedValue,
+  useDidUpdate,
+  useDisclosure,
+  useMediaQuery,
+} from '@mantine/hooks';
 import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { ThreeDDice } from 'dddice-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -77,8 +84,11 @@ export default function DiceRoller(props: {
   const [activeDie, setActiveDie] = useState<string | null>(null);
   const [displayCarousel, refreshCarousel] = useRefresh();
 
-  const [openedPresets, setOpenedPresets] = useState(false);
-  const [openedDefaultPresets, { open: openDefaultPresets, toggle: toggleDefaultPresets }] = useDisclosure();
+  const [openedHistory, setOpenedHistory] = useState(false);
+  const [openedDefaultPresets, { open: openDefaultPresets, toggle: toggleDefaultPresets }] = useDisclosure(
+    (character?.details?.dice?.presets ?? []).length === 0 ||
+      cloneDeep((character?.roll_history?.rolls ?? []).concat(props.injectedRolls ?? [])).length === 0
+  );
 
   const [currentDiceNum, setCurrentDiceNum] = useState(props.diceNum ?? 1);
   const [currentDiceType, setCurrentDiceType] = useState(props.diceType ?? 'd20');
@@ -87,21 +97,43 @@ export default function DiceRoller(props: {
 
   // Theme //
 
-  const [debouncedTheme, setDebouncedTheme] = useDebouncedState<string | null>(null, 2000);
+  const [diceTheme, setDiceTheme] = useState<string | null>(null);
+  const [debouncedDiceTheme] = useDebouncedValue(diceTheme, 2000);
   useDidUpdate(() => {
     // Saving theme
-    if (!character || !debouncedTheme) return;
+    if (!character || !debouncedDiceTheme) return;
     setCharacter({
       ...character,
       details: {
         ...character.details,
         dice: {
           ...character.details?.dice,
-          default_theme: debouncedTheme,
+          default_theme: debouncedDiceTheme,
         },
       },
     });
-  }, [debouncedTheme]);
+  }, [debouncedDiceTheme]);
+
+  // Temporary theme just for transition animation from one theme to next (so it doesn't lag UI) //
+  const [transitionThemeIndex, setTransitionThemeIndex] = useState<number>(-1);
+  const transitionDiceTheme = DICE_THEMES[transitionThemeIndex] || null;
+
+  const handleDiceThemeChange = useDebouncedCallback(async (index: number) => {
+    setTransitionThemeIndex(-1);
+    const theme = DICE_THEMES[index];
+    setDice((prev) => {
+      return prev.map((die) => {
+        if (die.id === activeDie) {
+          return {
+            ...die,
+            theme: theme?.theme,
+          };
+        }
+        return die;
+      });
+    });
+    setDiceTheme(theme?.theme);
+  }, 1000);
 
   // Roll History //
 
@@ -342,10 +374,10 @@ export default function DiceRoller(props: {
           my='xs'
           label={
             <Group gap={3} wrap='nowrap'>
-              <Button variant={openedDefaultPresets ? 'outline' : 'subtle'} size='compact-xs' color='gray.6'>
+              <Button variant={openedDefaultPresets ? 'light' : 'subtle'} size='compact-xs' color='gray.6'>
                 Default Presets
               </Button>
-              <Badge variant='light' color={theme.primaryColor} size='xs'>
+              <Badge variant='light' color='gray.6' size='xs'>
                 10+
               </Badge>
             </Group>
@@ -361,7 +393,7 @@ export default function DiceRoller(props: {
                   ...preset,
                   dice: preset.dice.map((die) => ({
                     ...die,
-                    theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                    theme: diceTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                   })),
                 }))
                 .map((preset, i) => (
@@ -407,7 +439,7 @@ export default function DiceRoller(props: {
             roomId.current = room?.data.slug ?? '';
           }
           console.log('Dice Roller 🎲 Connecting to room: ', roomId.current);
-          dddice.current.connect(roomId.current);
+          dddice.current.connect(roomId.current ?? '');
           // Takes a little time to join room and we can't await it,
           setTimeout(() => {
             // Get theme objs for DICE_THEMES
@@ -431,7 +463,7 @@ export default function DiceRoller(props: {
       setLoaded(false);
       setDice([]);
       setActiveDie(null);
-      setOpenedPresets(false);
+      setOpenedHistory(false);
       if (dddice.current) {
         dddice.current.clear();
         dddice.current = undefined;
@@ -481,7 +513,7 @@ export default function DiceRoller(props: {
             },
           }))
           .map((die) => {
-            if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 2)) {
+            if (die.theme !== DICE_THEMES[0].theme && !hasPatreonAccess(getCachedPublicUser(), 1)) {
               displayPatronOnly('Special dice themes are only available to patrons!');
               return {
                 ...die,
@@ -506,7 +538,7 @@ export default function DiceRoller(props: {
     // Takes a little time to finish rolling
     setTimeout(() => {
       setLoadingRoll(false);
-      setOpenedPresets(false);
+      setOpenedHistory(true);
       // Add to history
       const timestamp = Date.now();
       setRollHistory((prev) => [...prev, ...results.map((result) => ({ ...result, timestamp: timestamp }))]);
@@ -546,25 +578,27 @@ export default function DiceRoller(props: {
               <GiRollingDices size='1.6rem' stroke={'1.5'} />
               <Title order={3}>Dice Roller</Title>
             </Group>
-            <Button
-              size='xs'
-              color='gray.6'
-              variant={openedPresets ? 'outline' : 'subtle'}
-              mr={5}
-              onClick={() => {
-                setOpenedPresets(!openedPresets);
-                setActiveDie(null);
+            {rollHistory.length > 0 && (
+              <Button
+                size='xs'
+                color='gray.5'
+                variant={'subtle'}
+                mr={5}
+                onClick={() => {
+                  setOpenedHistory(!openedHistory);
+                  setActiveDie(null);
 
-                // Open (& load) default presets if not already opened
-                if (!openedPresets) {
-                  if (character?.details?.dice?.opened_default_presets) {
-                    openDefaultPresets();
+                  // Open (& load) default presets if not already opened
+                  if (!openedHistory) {
+                    if (character?.details?.dice?.opened_default_presets) {
+                      openDefaultPresets();
+                    }
                   }
-                }
-              }}
-            >
-              View Presets
-            </Button>
+                }}
+              >
+                View {openedHistory ? 'Presets' : 'History'}
+              </Button>
+            )}
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
@@ -648,7 +682,7 @@ export default function DiceRoller(props: {
                           newDice.push({
                             id: crypto.randomUUID(),
                             type: currentDiceType,
-                            theme: character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
+                            theme: diceTheme ?? character?.details?.dice?.default_theme ?? DICE_THEMES[0].theme,
                             bonus: i === currentDiceNum - 1 ? currentDiceBonus : 0,
                             label: currentDiceLabel,
                           });
@@ -683,8 +717,9 @@ export default function DiceRoller(props: {
                   {dice.map((die, i) => (
                     <Badge
                       key={i}
-                      color='gray'
+                      color='gray.4'
                       variant='light'
+                      size='lg'
                       styles={{
                         root: {
                           textTransform: 'initial',
@@ -702,17 +737,17 @@ export default function DiceRoller(props: {
                         } else {
                           refreshCarousel();
                           setActiveDie(die.id);
-                          setOpenedPresets(false);
+                          setOpenedHistory(true);
                         }
                       }}
                       leftSection={
-                        <Avatar size={18} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
+                        <Avatar size={24} src={findDiceTheme(die.theme).preview[die.type]} alt='Dice Icon' />
                       }
                       rightSection={
                         <ActionIcon
                           variant='subtle'
                           color='gray'
-                          size='xs'
+                          size='sm'
                           aria-label='Remove Dice'
                           onClick={(e) => {
                             e.stopPropagation();
@@ -760,11 +795,11 @@ export default function DiceRoller(props: {
                       <Group align='start'>
                         <Avatar
                           size={40}
-                          src={activeDieData.theme.preview[activeDieData.die?.type ?? '']}
+                          src={(transitionDiceTheme ?? activeDieData.theme).preview[activeDieData.die?.type ?? '']}
                           alt='Dice Icon'
                         />
                         <Stack gap={0} h={40}>
-                          <Title order={4}>{activeDieData.theme.name}</Title>
+                          <Title order={4}>{(transitionDiceTheme ?? activeDieData.theme).name}</Title>
                           <Text fz='xs' fs='italic'>
                             {activeDieData.die?.label
                               ? `${activeDieData.die?.type}${activeDieData.die?.bonus ? `${sign(activeDieData.die?.bonus)}` : ''}, ${activeDieData.die?.label}`
@@ -778,25 +813,16 @@ export default function DiceRoller(props: {
                         <Carousel
                           slideSize='70%'
                           slideGap='md'
-                          loop
                           height={100}
                           initialSlide={DICE_THEMES.findIndex((theme) => theme.theme === activeDieData.theme.theme)}
                           onSlideChange={(index) => {
-                            setTimeout(() => {
-                              const theme = DICE_THEMES[index];
-                              setDice((prev) => {
-                                return prev.map((die) => {
-                                  if (die.id === activeDie) {
-                                    return {
-                                      ...die,
-                                      theme: theme.theme,
-                                    };
-                                  }
-                                  return die;
-                                });
-                              });
-                              setDebouncedTheme(theme.theme);
-                            }, 500);
+                            setTransitionThemeIndex(index);
+                            handleDiceThemeChange(index);
+                          }}
+                          emblaOptions={{
+                            loop: true,
+                            dragFree: false,
+                            align: 'center',
                           }}
                         >
                           {DICE_THEMES.map((theme, index) => (
@@ -814,7 +840,7 @@ export default function DiceRoller(props: {
               </>
             ) : (
               <>
-                {openedPresets ? (
+                {!openedHistory ? (
                   <>
                     <Paper withBorder p={5}>
                       <Stack gap={5}>
@@ -823,32 +849,34 @@ export default function DiceRoller(props: {
                             <Title order={4}>Presets</Title>
 
                             <Group wrap='nowrap'>
-                              <Button
-                                size='compact-xs'
-                                variant='light'
-                                disabled={dice.length === 0}
-                                onClick={() => {
-                                  closeDiceTray();
-                                  openContextModal({
-                                    modal: 'createDicePreset',
-                                    title: <Title order={3}>Create Preset</Title>,
-                                    innerProps: {
-                                      onConfirm: (name: string) => {
-                                        setPresets((prev) => [
-                                          ...prev,
-                                          {
-                                            id: crypto.randomUUID(),
-                                            name: name,
-                                            dice: dice,
-                                          },
-                                        ]);
+                              {dice.length > 0 && (
+                                <Button
+                                  size='compact-xs'
+                                  variant='light'
+                                  disabled={dice.length === 0}
+                                  onClick={() => {
+                                    closeDiceTray();
+                                    openContextModal({
+                                      modal: 'createDicePreset',
+                                      title: <Title order={3}>Create Preset</Title>,
+                                      innerProps: {
+                                        onConfirm: (name: string) => {
+                                          setPresets((prev) => [
+                                            ...prev,
+                                            {
+                                              id: crypto.randomUUID(),
+                                              name: name,
+                                              dice: dice,
+                                            },
+                                          ]);
+                                        },
                                       },
-                                    },
-                                  });
-                                }}
-                              >
-                                Save tray to preset
-                              </Button>
+                                    });
+                                  }}
+                                >
+                                  Save tray to preset
+                                </Button>
+                              )}
                             </Group>
                           </Group>
                         </Box>
@@ -876,6 +904,7 @@ export default function DiceRoller(props: {
                                 color='gray.9'
                                 onClick={() => {
                                   setRollHistory([]);
+                                  setOpenedHistory(false);
                                 }}
                               >
                                 <IconTrash style={{ width: '60%', height: '60%' }} stroke={1.5} />

@@ -96,7 +96,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   defineDefaultSources(character.content_sources?.enabled ?? []);
 
   // Prefetch content sources
-  await fetchContentSources();
+  await fetchContentSources({ includeCommonCore: true });
 
   // Fetch the content package
   const content = await fetchContentPackage(undefined, { fetchSources: true });
@@ -193,10 +193,10 @@ async function fillPDF(form: PDFForm, character: Character) {
     form.getCheckBox('DEXTERITY PARTIAL BOOST').check();
   }
   if (conValue.partial) {
-    form.getCheckBox('CONSTITUTION PARTIAL BOOST').check();
+    form.getCheckBox('CONSTITUTION PARTIAL BOODST').check();
   }
   if (intValue.partial) {
-    form.getCheckBox('INTELLIGENCE PARTIAL BOOST').check();
+    form.getCheckBox('INTELLIGENCE PARTIAL BOODST').check();
   }
   if (wisValue.partial) {
     form.getCheckBox('WISDOM PARTIAL BOOST').check();
@@ -758,7 +758,7 @@ async function fillPDF(form: PDFForm, character: Character) {
     form.getCheckBox('FP2').check();
   }
   if (focusPoints.current > 2) {
-    form.getCheckBox('FP3').check();
+    form.getCheckBox('FP 3').check();
   }
 
   for (let i = 0; i < focusSpells.length; i++) {

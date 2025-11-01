@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   ColorInput,
+  FileButton,
   Group,
   Modal,
   NumberInput,
@@ -15,13 +16,18 @@ import {
   TextInput,
   Title,
   UnstyledButton,
+  VisuallyHidden,
 } from '@mantine/core';
 import { ContextModalProps, modals } from '@mantine/modals';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
 import { Encounter } from '@typing/content';
 import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
 import { cloneDeep } from 'lodash-es';
+import { IconDownload, IconUpload } from '@tabler/icons-react';
+import { downloadObjectAsJson } from '@export/export-to-json';
+import { getFileContents } from '@import/json/import-from-json';
+import { hideNotification, showNotification } from '@mantine/notifications';
 
 export default function UpdateEncounterModal({
   context,
@@ -51,6 +57,56 @@ export default function UpdateEncounterModal({
       },
       zIndex: 1001,
     });
+
+  const importEncounterRef = useRef<HTMLButtonElement>(null);
+  async function importEncounter(file: File) {
+    const contents = await getFileContents(file);
+    let encounter: Encounter | null = null;
+    try {
+      const obj = JSON.parse(contents);
+
+      if (obj.version === 1) {
+        encounter = obj.encounter;
+      } else {
+        throw new Error();
+      }
+    } catch (e) {
+      hideNotification(`importing-${file.name}`);
+      showNotification({
+        title: 'Import failed',
+        message: 'Invalid JSON file',
+        color: 'red',
+        icon: null,
+        autoClose: false,
+      });
+    }
+    return encounter;
+  }
+  const openConfirmImportModal = (encounter: Encounter) =>
+    modals.openConfirmModal({
+      title: <Title order={4}>Import Encounter</Title>,
+      children: <Text size='sm'>Are you sure you want to import? It will override the existing encounter.</Text>,
+      labels: { confirm: 'Override', cancel: 'Cancel' },
+      onCancel: () => {},
+      onConfirm: () => {
+        innerProps.onUpdate(encounter);
+        context.closeModal(id);
+      },
+      zIndex: 1001,
+    });
+
+  async function exportEncounter(encounter: Encounter) {
+    const exportObject = {
+      version: 1,
+      encounter: encounter,
+    };
+
+    const fileName = encounter.name
+      .trim()
+      .toLowerCase()
+      .replace(/([^a-z0-9]+)/gi, '-');
+    downloadObjectAsJson(exportObject, fileName);
+  }
 
   return (
     <Stack style={{ position: 'relative' }}>
@@ -105,9 +161,36 @@ export default function UpdateEncounterModal({
       />
 
       <Group justify='space-between'>
-        <Button variant='light' size='compact-xs' color='red' onClick={() => openConfirmModal()}>
-          Delete Encounter
-        </Button>
+        <Group gap={5}>
+          <VisuallyHidden>
+            {/* This is a hack to get the FileButton to work with the button component */}
+            <FileButton
+              onChange={async (file) => {
+                if (!file) return;
+                const encounter = await importEncounter(file);
+                if (encounter) {
+                  openConfirmImportModal(encounter);
+                }
+              }}
+              accept='application/JSON'
+            >
+              {(props) => (
+                <Button ref={importEncounterRef} {...props}>
+                  Import
+                </Button>
+              )}
+            </FileButton>
+          </VisuallyHidden>
+          <Button variant='light' size='compact-xs' color='gray' onClick={() => importEncounterRef.current?.click()}>
+            Import
+          </Button>
+          <Button variant='light' size='compact-xs' color='gray' onClick={() => exportEncounter(innerProps.encounter)}>
+            Export
+          </Button>
+          <Button variant='light' size='compact-xs' color='red' onClick={() => openConfirmModal()}>
+            Delete
+          </Button>
+        </Group>
         <Group justify='flex-end'>
           <Button variant='default' onClick={() => context.closeModal(id)}>
             Cancel
@@ -130,7 +213,7 @@ export default function UpdateEncounterModal({
               context.closeModal(id);
             }}
           >
-            Update
+            Save
           </Button>
         </Group>
       </Group>

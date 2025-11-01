@@ -5,6 +5,7 @@ import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
+import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
   Title,
   Loader,
@@ -19,9 +20,11 @@ import {
   useMantineTheme,
   HoverCard,
 } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useHover, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
+import { convertKeyToBasePrefix } from '@operations/operation-utils';
+import { DisplayOperationResult } from '@pages/character_builder/CharBuilderCreation';
 import { confirmHealth, getEntityLevel, handleRest } from '@pages/character_sheet/living-entity-utils';
 import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
 import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
@@ -91,20 +94,6 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
       )}
     </>
   );
-
-  /*
-  Switch mode:
-
-  const [drawerData, setDrawerData] = useLocalStorage<{ view: 'BLOCK' | 'SHEET' }>({
-    key: 'creature-drawer-view',
-    defaultValue: {
-      view: 'SHEET',
-    },
-  });
-
-  
-  
-  */
 }
 
 export function CreatureDrawerContent(props: {
@@ -114,6 +103,7 @@ export function CreatureDrawerContent(props: {
     STORE_ID?: string;
     showOperations?: boolean;
     updateCreature?: (creature: Creature) => void;
+    readOnly?: boolean;
   };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
@@ -125,6 +115,7 @@ export function CreatureDrawerContent(props: {
       view: 'SHEET',
     },
   });
+  const view = props.data.readOnly ? 'BLOCK' : drawerData.view;
 
   const { data: content } = useQuery({
     queryKey: [`find-creature-details-${id}`, { id }],
@@ -190,6 +181,17 @@ export function CreatureDrawerContent(props: {
       if (!creature || !content || executingOperations.current) return;
       executingOperations.current = true;
       executeCreatureOperations(STORE_ID, creature, content).then((results) => {
+        // Final execution pipeline:
+
+        // Add the extra items to the inventory from variables
+        addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
+
+        // Check bulk limits
+        checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
+
+        // Apply armor/shield penalties
+        applyEquipmentPenalties(STORE_ID, creature);
+
         // Apply conditions after everything else
         applyConditions(STORE_ID, creature.details?.conditions ?? []);
         if (creature.meta_data?.reset_hp !== false) {
@@ -256,6 +258,25 @@ export function CreatureDrawerContent(props: {
     setCreature(call);
   };
 
+  const saveSelectionChange = (path: string, value: string) => {
+    setCreatureInstant((prev) => {
+      if (!prev) return prev;
+      const newSelections = { ...prev.operation_data?.selections };
+      if (!value) {
+        delete newSelections[path];
+      } else {
+        newSelections[path] = `${value}`;
+      }
+      return {
+        ...prev,
+        operation_data: {
+          ...prev.operation_data,
+          selections: newSelections,
+        },
+      };
+    });
+  };
+
   if (loading || !creature || !content) {
     return (
       <Loader
@@ -272,7 +293,7 @@ export function CreatureDrawerContent(props: {
 
   return (
     <Stack>
-      {drawerData.view === 'BLOCK' ? (
+      {view === 'BLOCK' ? (
         <Stack gap={10}>
           <Group gap={15}>
             <Box style={{ flex: 1 }}>
@@ -298,6 +319,16 @@ export function CreatureDrawerContent(props: {
               hideImage: true,
             }}
           />
+
+          {operationResults && (
+            <CreatureOperationResults
+              creature={creature}
+              operationResults={operationResults}
+              onSaveChanges={(path, value) => {
+                saveSelectionChange(path, value);
+              }}
+            />
+          )}
         </Stack>
       ) : (
         <Stack>
@@ -324,6 +355,16 @@ export function CreatureDrawerContent(props: {
                 <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
                 <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
                 <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+
+                {operationResults && (
+                  <CreatureOperationResults
+                    creature={creature}
+                    operationResults={operationResults}
+                    onSaveChanges={(path, value) => {
+                      saveSelectionChange(path, value);
+                    }}
+                  />
+                )}
               </Stack>
             )}
 
@@ -516,97 +557,109 @@ export function CreatureDrawerContent(props: {
           width: '100%',
         }}
       >
-        <Group justify='space-between' wrap='nowrap'>
-          <Group wrap='nowrap' gap={15} mr={15}>
-            <ActionIcon
-              variant='light'
-              color='cyan'
-              radius='xl'
-              aria-label='Edit Creature'
-              style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-              }}
-              onClick={toggleEditing}
-            >
-              <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
-            </ActionIcon>
-            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
-              <HoverCard.Target>
-                <ActionIcon
-                  variant='light'
-                  color='blue'
-                  radius='xl'
-                  aria-label='Rest Creature'
-                  style={{
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                  }}
-                  onClick={() => {
-                    handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
-                  }}
-                >
-                  <IconZzz style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                </ActionIcon>
-              </HoverCard.Target>
-              <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  Rest
-                </Text>
-              </HoverCard.Dropdown>
-            </HoverCard>
-            <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
-              <HoverCard.Target>
-                {drawerData.view === 'BLOCK' ? (
+        {!props.data.readOnly && (
+          <Group justify='space-between' wrap='nowrap'>
+            <Group wrap='nowrap' gap={15} mr={15}>
+              <ActionIcon
+                variant='light'
+                color='cyan'
+                radius='xl'
+                aria-label='Edit Creature'
+                style={{
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                }}
+                onClick={toggleEditing}
+              >
+                <IconEdit style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon>
+              <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+                <HoverCard.Target>
                   <ActionIcon
                     variant='light'
-                    color='yellow'
+                    color='blue'
                     radius='xl'
-                    aria-label='Switch View Mode'
+                    aria-label='Rest Creature'
                     style={{
                       backdropFilter: 'blur(8px)',
                       WebkitBackdropFilter: 'blur(8px)',
                     }}
                     onClick={() => {
-                      setDrawerData({ view: 'SHEET' });
+                      handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
                     }}
                   >
-                    <IconDualScreen style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    <IconZzz style={{ width: '70%', height: '70%' }} stroke={1.5} />
                   </ActionIcon>
-                ) : (
-                  <ActionIcon
-                    variant='light'
-                    color='yellow'
-                    radius='xl'
-                    aria-label='Switch View Mode'
-                    style={{
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
-                    }}
-                    onClick={() => {
-                      setDrawerData({ view: 'BLOCK' });
-                    }}
-                  >
-                    <IconAlignBoxLeftMiddle style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                  </ActionIcon>
-                )}
-              </HoverCard.Target>
-              <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  {drawerData.view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
-                </Text>
-              </HoverCard.Dropdown>
-            </HoverCard>
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={5} px={10}>
+                  <Text c='gray.0' size='sm'>
+                    Rest
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+              <HoverCard shadow='md' openDelay={250} zIndex={1000} withinPortal>
+                <HoverCard.Target>
+                  {view === 'BLOCK' ? (
+                    <ActionIcon
+                      variant='light'
+                      color='yellow'
+                      radius='xl'
+                      aria-label='Switch View Mode'
+                      style={{
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                      }}
+                      onClick={() => {
+                        setDrawerData({ view: 'SHEET' });
+                      }}
+                    >
+                      <IconDualScreen style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    </ActionIcon>
+                  ) : (
+                    <ActionIcon
+                      variant='light'
+                      color='yellow'
+                      radius='xl'
+                      aria-label='Switch View Mode'
+                      style={{
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
+                      }}
+                      onClick={() => {
+                        setDrawerData({ view: 'BLOCK' });
+                      }}
+                    >
+                      <IconAlignBoxLeftMiddle style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                    </ActionIcon>
+                  )}
+                </HoverCard.Target>
+                <HoverCard.Dropdown py={5} px={10}>
+                  <Text c='gray.0' size='sm'>
+                    {view === 'BLOCK' ? 'Open Sheet View' : 'Open Stat Block View'}
+                  </Text>
+                </HoverCard.Dropdown>
+              </HoverCard>
+            </Group>
           </Group>
-        </Group>
+        )}
         {editingCreature && (
           <CreateCreatureModal
             opened={editingCreature}
             editCreature={creature}
             onComplete={async (result) => {
               if (result) {
-                setCreature(result);
+                setCreatureInstant(result);
                 toggleEditing();
+
+                // Hacky way to update the drawer data
+                openDrawer({
+                  ..._drawer,
+                  data: {
+                    ...(_drawer?.data ?? {}),
+                    creature: result,
+                  },
+                  type: 'creature',
+                });
               }
             }}
             onCancel={() => {
@@ -660,10 +713,12 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
     fey: 'Nature',
     fiend: 'Religion',
     fungus: 'Nature',
+    'fungus (creature)': 'Nature',
     humanoid: 'Society',
     monitor: 'Religion',
     ooze: 'Occultism',
     plant: 'Nature',
+    'plant (creature)': 'Nature',
     shade: 'Religion',
     spirit: 'Occultism',
     time: 'Occultism',
@@ -687,5 +742,54 @@ export function RecallKnowledgeText(props: { entity: Creature; traits: Trait[] }
       </Text>
       ) {knowledgeSkill} DC {getDcForLevel(getEntityLevel(props.entity), props.entity.rarity)}
     </Text>
+  );
+}
+
+function CreatureOperationResults(props: {
+  operationResults: OperationCreatureResultPackage;
+  onSaveChanges: (path: string, value: string) => void;
+  creature: Creature;
+}) {
+  return (
+    <Stack gap={15} mb={50}>
+      <DisplayOperationResult
+        source={undefined}
+        level={props.creature.level}
+        results={props.operationResults.creatureResults}
+        onChange={(path, value) => {
+          props.onSaveChanges(`${convertKeyToBasePrefix('creatureResults')}_${path}`, value);
+        }}
+      />
+      {props.operationResults.abilityResults.map((s, index) => (
+        <DisplayOperationResult
+          key={index}
+          source={{
+            ...s.baseSource,
+            _select_uuid: `${s.baseSource.id}`,
+            _content_type: 'ability-block',
+          }}
+          level={s.baseSource.level}
+          results={s.baseResults}
+          onChange={(path, value) => {
+            props.onSaveChanges(`${convertKeyToBasePrefix('abilityResults', s.baseSource.id)}_${path}`, value);
+          }}
+        />
+      ))}
+      {props.operationResults.itemResults.map((s, index) => (
+        <DisplayOperationResult
+          key={index}
+          source={{
+            ...s.baseSource,
+            _select_uuid: `${s.baseSource.id}`,
+            _content_type: 'item',
+          }}
+          level={s.baseSource.level}
+          results={s.baseResults}
+          onChange={(path, value) => {
+            props.onSaveChanges(`${convertKeyToBasePrefix('itemResults', s.baseSource.id)}_${path}`, value);
+          }}
+        />
+      ))}
+    </Stack>
   );
 }

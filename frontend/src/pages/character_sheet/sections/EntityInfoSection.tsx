@@ -159,6 +159,13 @@ export default function EntityInfoSection(props: {
                   onChange={(e) => {
                     setExp(e.currentTarget.value);
                   }}
+                  onFocus={(e) => {
+                    const length = e.target.value.length;
+                    // Move cursor to end
+                    requestAnimationFrame(() => {
+                      e.target.setSelectionRange(length, length);
+                    });
+                  }}
                   onBlur={handleExperienceSubmit}
                   onKeyDown={getHotkeyHandler([
                     ['mod+Enter', handleExperienceSubmit],

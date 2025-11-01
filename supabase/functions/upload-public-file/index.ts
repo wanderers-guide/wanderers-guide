@@ -8,7 +8,7 @@ import { hasPatreonAccess } from '../_shared/patreon.ts';
 const MAX_SIZE = 3_000_000; // roughly 0.8MB
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let { data, category, type } = body as { data: string; category: string; type: string };
     if (data.length > MAX_SIZE)
       return {
@@ -26,7 +26,7 @@ serve(async (req: Request) => {
         message: 'Invalid category',
       };
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
     if (!user) {
       return {
         status: 'error',
@@ -34,7 +34,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const access = await hasPatreonAccess(user, 2);
+    const access = await hasPatreonAccess(user, 1);
     if (!access) {
       return {
         status: 'error',

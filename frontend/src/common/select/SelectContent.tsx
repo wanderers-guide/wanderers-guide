@@ -421,7 +421,7 @@ export default function SelectContentModal({
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, {}] = queryKey;
-      return await fetchContentSources();
+      return await fetchContentSources({ includeCommonCore: true });
     },
     enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
   });
@@ -3308,6 +3308,7 @@ export function CreatureSelectionOption(props: {
           type: 'creature',
           data: {
             id: props.creature.id,
+            readOnly: true,
             zIndex: CREATURE_DRAWER_ZINDEX,
             onSelect:
               props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,

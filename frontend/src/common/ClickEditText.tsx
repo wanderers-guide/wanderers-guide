@@ -21,12 +21,7 @@ export default function ClickEditText(props: {
 
   return (
     <Box style={{ position: 'relative' }}>
-      <Group
-        h={props.height}
-        align='center'
-        justify='center'
-        style={{ visibility: editing ? 'hidden' : undefined }}
-      >
+      <Group h={props.height} align='center' justify='center' style={{ visibility: editing ? 'hidden' : undefined }}>
         <Text
           c={props.color}
           size={props.size}
@@ -51,6 +46,13 @@ export default function ClickEditText(props: {
             size={props.size}
             value={value === '—' ? '' : value}
             onChange={(event) => setValue(event.currentTarget.value)}
+            onFocus={(e) => {
+              const length = e.target.value.length;
+              // Move cursor to end
+              requestAnimationFrame(() => {
+                e.target.setSelectionRange(length, length);
+              });
+            }}
             onBlur={finishEditing}
             onKeyDown={getHotkeyHandler([
               ['mod+Enter', finishEditing],

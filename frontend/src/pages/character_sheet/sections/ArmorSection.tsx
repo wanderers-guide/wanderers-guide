@@ -131,6 +131,7 @@ export default function ArmorSection(props: {
                         invItem: cloneDeep(bestShield),
                         onItemUpdate: (newInvItem: InventoryItem) => {
                           handleUpdateItem(props.setInventory, newInvItem);
+                          openDrawer(null); // Patch fix for shield item drawer reverting updates
                         },
                         onItemDelete: (newInvItem: InventoryItem) => {
                           handleDeleteItem(props.setInventory, newInvItem);

@@ -42,6 +42,7 @@ import { isTruthy } from '@utils/type-fixing';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -105,14 +106,7 @@ export async function executeCharacterOperations(
 
   setVariable('CHARACTER', 'LEVEL', getEntityLevel(character));
 
-  try {
-    setVariable(
-      'CHARACTER',
-      'ACTIVE_MODES',
-      JSON.parse(localStorage.getItem(`active-modes-${character.id}`) || '[]'),
-      'Loaded'
-    );
-  } catch (e) {}
+  setVariable('CHARACTER', 'ACTIVE_MODES', character.meta_data?.active_modes ?? [], 'Loaded');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
 
   const class_ = content.classes.find((c) => c.id === character.details?.class?.id);
@@ -873,6 +867,9 @@ export async function executeCharacterOperations(
     ],
   });
 
+  // Set calculated stats
+  setCalculatedStatsInStore('CHARACTER', character);
+
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }
 
@@ -982,6 +979,9 @@ export async function executeCreatureOperations(
   const conditionalResults = await operationsPassthrough({
     doOnlyConditionals: true,
   });
+
+  // Set calculated stats
+  setCalculatedStatsInStore(id, creature);
 
   return mergeOperationResults(results, conditionalResults) as typeof results;
 }

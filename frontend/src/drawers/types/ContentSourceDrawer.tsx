@@ -32,6 +32,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import { CREATURE_DRAWER_ZINDEX } from './CreatureDrawer';
 import { DrawerType } from '@typing/index';
+import { COMMON_CORE_ID, PATHFINDER_CORE_ID, STARFINDER_CORE_ID } from '@constants/data';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {
   const id = props.data.id;
@@ -44,8 +45,9 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
       const [_key, { id }] = queryKey;
       const sources = await fetchContentSources({
         ids: [id],
+        includeCommonCore: true,
       });
-      return sources.length > 0 ? sources[0] : null;
+      return sources?.find((s) => s.id === id) ?? null;
     },
     enabled: !!id,
   });
@@ -154,8 +156,7 @@ export function ContentSourceDrawerContent(props: {
       return await fetchContentPackage([_id], { fetchSources: true, fetchCreatures: true });
     },
   });
-  const source =
-    props.data.source ?? (content && content.sources && content.sources.length > 0 ? content.sources[0] : null);
+  const source = props.data.source ?? content?.sources?.find((s) => s.id === id) ?? null;
 
   const [openedUnlockModal, setOpenedUnlockModal] = useState(false);
   useEffect(() => {
@@ -218,6 +219,26 @@ export function ContentSourceDrawerContent(props: {
 
       {source.contact_info?.trim() && <Text>{source.contact_info}</Text>}
       {/* TODO: Required sources */}
+
+      {(source.id === PATHFINDER_CORE_ID || source.id === STARFINDER_CORE_ID) && (
+        <Box pb='sm'>
+          <Button
+            onClick={() => {
+              openDrawer({
+                type: 'content-source',
+                data: {
+                  ...props.data,
+                  id: COMMON_CORE_ID,
+                },
+              });
+            }}
+            variant='light'
+            fullWidth
+          >
+            Includes Shared Content
+          </Button>
+        </Box>
+      )}
 
       <Box>
         <Accordion
@@ -459,7 +480,7 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'creature',
-                        data: { id: a.id, zIndex: CREATURE_DRAWER_ZINDEX },
+                        data: { id: a.id, readOnly: true, zIndex: CREATURE_DRAWER_ZINDEX },
                         extra: { addToHistory: true },
                       });
                     }}

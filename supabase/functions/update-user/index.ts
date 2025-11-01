@@ -4,7 +4,7 @@ import { connect, getPublicUser, updateData } from '../_shared/helpers.ts';
 import type { PublicUser } from '../_shared/content';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     let {
       display_name,
       summary,
@@ -13,9 +13,10 @@ serve(async (req: Request) => {
       organized_play_id,
       site_theme,
       subscribed_content_sources,
+      api,
     } = body as PublicUser;
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
 
     if (!user) {
       return {
@@ -32,6 +33,7 @@ serve(async (req: Request) => {
       organized_play_id,
       site_theme,
       subscribed_content_sources,
+      api,
     });
 
     if (status === 'SUCCESS') {

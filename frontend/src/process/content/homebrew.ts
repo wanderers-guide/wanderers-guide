@@ -20,7 +20,7 @@ export async function updateSubscriptions(user: PublicUser | undefined | null, s
 }
 
 export async function defineDefaultSourcesForSource(source: ContentSource) {
-  const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
+  const allSources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
   const user = await getPublicUser();
   // TODO: change to only the bundle's required sources
   return defineDefaultSources([
@@ -32,7 +32,7 @@ export async function defineDefaultSourcesForSource(source: ContentSource) {
 }
 
 export async function defineDefaultSourcesForUser() {
-  const allSources = await fetchContentSources({ homebrew: false, ids: 'all' });
+  const allSources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
   const user = await getPublicUser();
   return defineDefaultSources([
     ...allSources.map((source) => source.id),

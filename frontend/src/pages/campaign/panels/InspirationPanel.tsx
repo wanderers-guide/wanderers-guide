@@ -1,4 +1,4 @@
-import { generateNPC, generateSessionIdea } from '@ai/open-ai-handler';
+import { generateNPC, generateSessionIdea, extractCharacterInfo, generateEncounters } from '@ai/open-ai-handler';
 import { npcsState, sessionIdeasState } from '@atoms/campaignAtoms';
 import BlurBox from '@common/BlurBox';
 import { convertMarkdownToTiptap } from '@common/rich_text_input/utils';
@@ -26,9 +26,20 @@ import {
   Spoiler,
 } from '@mantine/core';
 import { hideNotification, showNotification } from '@mantine/notifications';
-import { IconBulbFilled, IconChevronDown, IconPlus, IconSwords, IconUser, IconUsers } from '@tabler/icons-react';
-import { Campaign, CampaignSessionIdea, Character, CampaignNPC } from '@typing/content';
+import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { makeRequest } from '@requests/request-manager';
+import {
+  IconBulbFilled,
+  IconChevronDown,
+  IconPlus,
+  IconSwords,
+  IconUser,
+  IconUserPlus,
+  IconUsers,
+} from '@tabler/icons-react';
+import { Campaign, CampaignSessionIdea, Character, CampaignNPC, Encounter } from '@typing/content';
 import { isPhoneSized } from '@utils/mobile-responsive';
+import { mean } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -125,9 +136,44 @@ export default function InspirationPanel(props: {
                 setCampaign={props.setCampaign}
                 onGenerateNPC={async (content) => {
                   const npc = await generateNPC(props.campaign, [], [], content);
-                  if (npc) {
-                    setNPCs((prev) => [...prev, npc]);
+                  if (!npc) {
+                    showNotification({
+                      id: 'generation-npc-failed',
+                      title: 'Generation Failed',
+                      message: `Failed to generate NPC, please try again later.`,
+                      color: 'red',
+                    });
+                    return;
                   }
+
+                  setNPCs((prev) => [...prev, npc]);
+                }}
+                onGenerateEncounter={async (name, description) => {
+                  const encounters = await generateEncounters(
+                    mean(props.players.map((p) => getEntityLevel(p))),
+                    props.players.length,
+                    description
+                  );
+                  if (!encounters || encounters.length === 0) {
+                    showNotification({
+                      id: 'generation-encounter-failed',
+                      title: 'Generation Failed',
+                      message: `Failed to generate encounters, please try again later.`,
+                      color: 'red',
+                    });
+                    return;
+                  }
+
+                  //
+                  await makeRequest<Encounter>('create-encounter', {
+                    ...encounters[0],
+                    name: name,
+                    meta_data: {
+                      ...encounters[0].meta_data,
+                      description: description,
+                    },
+                  });
+                  window.open(`/encounters`, '_blank');
                 }}
               />
             ))}
@@ -315,14 +361,19 @@ function SessionIdeaCard(props: {
   campaign: Campaign;
   setCampaign: (campaign: Campaign) => void;
   onGenerateNPC: (content: string) => void;
+  onGenerateEncounter: (name: string, description: string) => void;
 }) {
+  const [loading, setLoading] = useState(false);
+
   return (
     <BlurBox px='sm' pb='sm'>
       <Stack>
         <Box>
-          <Title order={2}>{props.idea.name}</Title>
+          <Title order={3}>{props.idea.name}</Title>
           <Spoiler maxHeight={350} showLabel='Show more' hideLabel='Hide'>
-            <RichText ta='justify'>{props.idea.outline}</RichText>
+            <RichText fz='sm' ta='justify'>
+              {props.idea.outline}
+            </RichText>
           </Spoiler>
         </Box>
         <Group justify='space-between'>
@@ -331,6 +382,7 @@ function SessionIdeaCard(props: {
               <Button
                 size='xs'
                 rightSection={<IconChevronDown style={{ width: rem(20), height: rem(20) }} stroke={1.5} />}
+                loading={loading}
               >
                 Generate ...
               </Button>
@@ -349,14 +401,17 @@ function SessionIdeaCard(props: {
                   }
                   onClick={async (e) => {
                     e.stopPropagation();
+                    setLoading(true);
 
                     if (action.type === 'NPC') {
                       await props.onGenerateNPC(
                         `Generate only the following NPC: ${action.name}, ${action.description}`
                       );
                     } else if (action.type === 'ENCOUNTER') {
-                      // TODO
+                      await props.onGenerateEncounter(action.name, action.description);
                     }
+
+                    setLoading(false);
                   }}
                 >
                   {action.name}
@@ -399,35 +454,41 @@ function SessionIdeaCard(props: {
 }
 
 function NPCCard(props: { npc: CampaignNPC }) {
+  const [loading, setLoading] = useState(false);
+
   return (
     <BlurBox px='sm' pb='sm'>
       <Stack>
         <Box>
           <Title order={3}>
             {props.npc.name}{' '}
-            <Text fz='md' fs='italic' fw={600} span>
+            <Text fz='sm' fs='italic' fw={600} span>
               (lvl. {props.npc.level})
             </Text>
           </Title>
-          <Text ta='justify'>
+          <Text fz='sm' ta='justify'>
             <b>Ancestry</b> {props.npc.ancestry}
           </Text>
-          <Text ta='justify'>
+          <Text fz='sm' ta='justify'>
             <b>Background</b> {props.npc.background}
           </Text>
-          <Text ta='justify'>
+          <Text fz='sm' ta='justify'>
             <b>Class</b> {props.npc.class}
           </Text>
           <Divider />
           <Spoiler maxHeight={120} showLabel='Show more' hideLabel='Hide'>
-            <RichText ta='justify'>{props.npc.description}</RichText>
+            <RichText fz='sm' ta='justify'>
+              {props.npc.description}
+            </RichText>
           </Spoiler>
         </Box>
         <Group justify='space-between'>
           <Button
             size='xs'
-            rightSection={<IconPlus style={{ width: rem(20), height: rem(20) }} stroke={1.5} />}
+            rightSection={<IconUserPlus style={{ width: rem(15), height: rem(15) }} stroke={1.5} />}
+            loading={loading}
             onClick={async () => {
+              setLoading(true);
               showNotification({
                 id: `create-character`,
                 title: `Creating character`,
@@ -436,6 +497,7 @@ function NPCCard(props: { npc: CampaignNPC }) {
                 withCloseButton: false,
                 loading: true,
               });
+
               const character = await importFromFTC({
                 version: '1.0',
                 data: {
@@ -449,9 +511,11 @@ function NPCCard(props: { npc: CampaignNPC }) {
                   items: [],
                   spells: [],
                   conditions: [],
+                  info: await extractCharacterInfo(props.npc.description),
                 },
               });
               hideNotification(`create-character`);
+              setLoading(false);
 
               window.open(`/sheet/${character?.id}`, '_blank');
             }}

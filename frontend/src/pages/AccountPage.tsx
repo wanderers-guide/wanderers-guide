@@ -1,11 +1,8 @@
 import {
   Title,
-  Image,
   Text,
   Button,
-  Container,
   Group,
-  rem,
   useMantineTheme,
   Box,
   Center,
@@ -15,7 +12,6 @@ import {
   Divider,
   Badge,
   MantineColor,
-  ColorInput,
   ColorSwatch,
   Popover,
   ColorPicker,
@@ -32,30 +28,32 @@ import {
   Stack,
   Switch,
   Slider,
+  PasswordInput,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
-import { useNavigate } from 'react-router-dom';
 import BlurBox from '@common/BlurBox';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
-import { IconAdjustments, IconBrandPatreon, IconReload, IconUpload } from '@tabler/icons-react';
+import { IconAdjustments, IconBrandPatreon, IconCirclePlus, IconUpload } from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@typing/content';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
-import { JSendResponse } from '@typing/requests';
 import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { modals } from '@mantine/modals';
+import { modals, openContextModal } from '@mantine/modals';
 import { hasPatreonAccess } from '@utils/patreon';
 import { userState } from '@atoms/userAtoms';
 import { findApprovedContentUpdates } from '@content/content-update';
 import { resetContentStore, fetchContentSources } from '@content/content-store';
+import { supabase } from '../main';
+import { showNotification } from '@mantine/notifications';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export function Component() {
   setPageTitle(`Account`);
@@ -92,6 +90,7 @@ function ProfileSection() {
   const theme = useMantineTheme();
   const [loading, setLoading] = useState(false);
   const [_user, setUser] = useRecoilState(userState);
+  const queryClient = useQueryClient();
 
   // User should always be defined here
   const user = _user!;
@@ -176,7 +175,7 @@ function ProfileSection() {
   let contentTier = '';
   let contentColor: MantineColor = 'gray';
   if (approvedContentUpdates) {
-    if (approvedContentUpdates.length >= 100) {
+    if (approvedContentUpdates.length >= 100 || user.is_community_paragon) {
       contentTier = 'Content Connoisseur';
       contentColor = 'violet';
     } else if (approvedContentUpdates.length >= 50) {
@@ -205,19 +204,17 @@ function ProfileSection() {
     patronColor = 'blue.3';
   }
 
-  const { mutate: mutateUser } = useMutation(
-    async (data: Record<string, any>) => {
+  const { mutate: mutateUser } = useMutation({
+    mutationFn: async (data: Record<string, any>) => {
       const response = await makeRequest('update-user', {
         ...data,
       });
       return response;
     },
-    {
-      onSuccess: () => {
-        //queryClient.invalidateQueries([`find-account-self`]);
-      },
-    }
-  );
+    onSuccess: () => {
+      //queryClient.invalidateQueries([`find-account-self`]);
+    },
+  });
 
   // Update user in db when state changed
   const [debouncedUser] = useDebouncedValue(user, 500);
@@ -229,6 +226,7 @@ function ProfileSection() {
       image_url: debouncedUser.image_url,
       background_image_url: debouncedUser.background_image_url,
       site_theme: debouncedUser.site_theme,
+      api: debouncedUser.api,
     });
   }, [debouncedUser]);
 
@@ -240,7 +238,7 @@ function ProfileSection() {
           <Card pt={0} pb={'md'} radius='md' style={{ backgroundColor: 'transparent' }}>
             <FileButton
               onChange={async (file) => {
-                if (!hasPatreonAccess(user, 2)) {
+                if (!hasPatreonAccess(user, 1)) {
                   displayPatronOnly();
                   return;
                 }
@@ -332,7 +330,7 @@ function ProfileSection() {
                         format='hex'
                         value={user.site_theme?.color || GUIDE_BLUE}
                         onChange={(value) => {
-                          if (!hasPatreonAccess(user, 2)) {
+                          if (!hasPatreonAccess(user, 1)) {
                             displayPatronOnly();
                             return;
                           }
@@ -432,7 +430,7 @@ function ProfileSection() {
             <Center>
               <FileButton
                 onChange={async (file) => {
-                  if (!hasPatreonAccess(user, 2)) {
+                  if (!hasPatreonAccess(user, 1)) {
                     displayPatronOnly();
                     return;
                   }
@@ -761,6 +759,153 @@ function ProfileSection() {
                 </Paper>
               </Box>
             )}
+
+            <Divider my={10} />
+
+            <Stack gap={5}>
+              <Group justify='center' align='center' gap={5}>
+                <Text fz='sm' ta='center' c='gray'>
+                  API Clients
+                </Text>
+                <ActionIcon
+                  size='sm'
+                  radius='xl'
+                  variant='subtle'
+                  color='gray'
+                  onClick={() => {
+                    setUser((prev) => {
+                      if (!prev) return prev;
+                      return {
+                        ...prev,
+                        api: {
+                          ...prev.api,
+                          clients: [
+                            ...(prev.api?.clients || []),
+                            {
+                              name: 'New Client',
+                              id: crypto.randomUUID().split('-')[0],
+                              api_key: crypto.randomUUID(),
+                              image_url: 'icon|||abstract064|||#359fdf',
+                            },
+                          ],
+                        },
+                      };
+                    });
+                  }}
+                >
+                  <IconCirclePlus size='0.9rem' />
+                </ActionIcon>
+              </Group>
+              <Stack gap={10}>
+                {user.api?.clients?.map((client, index) => (
+                  <BlurBox key={index} p='sm'>
+                    <Stack gap={5}>
+                      <Group justify='space-between' align='center'>
+                        <Group>
+                          <DisplayIcon width={25} strValue={client.image_url} />
+                          <Text size='md'>{client.name}</Text>
+                        </Group>
+                        <Button
+                          variant='light'
+                          size='xs'
+                          onClick={() => {
+                            openContextModal({
+                              modal: 'updateApiClient',
+                              title: <Title order={3}>API Client</Title>,
+                              innerProps: {
+                                client: client,
+                                onUpdate: (
+                                  id: string,
+                                  name: string,
+                                  description: string,
+                                  image_url: string,
+                                  api_key: string
+                                ) => {
+                                  setUser((prev) => {
+                                    if (!prev) return prev;
+                                    const newClients = prev.api?.clients?.map((c) => {
+                                      if (c.id === id) {
+                                        return { ...c, name, description, image_url, api_key };
+                                      }
+                                      return c;
+                                    });
+                                    return { ...prev, api: { ...prev.api, clients: newClients } };
+                                  });
+                                },
+                                onDelete: () => {
+                                  setUser((prev) => {
+                                    if (!prev) return prev;
+                                    const newClients = prev.api?.clients?.filter((c) => c.id !== client.id);
+                                    return { ...prev, api: { ...prev.api, clients: newClients } };
+                                  });
+                                },
+                              },
+                            });
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </Group>
+                      <PasswordInput
+                        size='sm'
+                        label='API Key'
+                        description='Your private key to access the API.'
+                        value={client.api_key}
+                        readOnly
+                      />
+                      <TextInput
+                        size='sm'
+                        label='Character Authorization URL'
+                        description='Set <ID> to the character ID you want access to.'
+                        value={`${window.location.origin}/oauth/access?user_id=${user.id}&client_id=${client.id}&character_id=<ID>`}
+                        readOnly
+                      />
+                    </Stack>
+                  </BlurBox>
+                ))}
+              </Stack>
+            </Stack>
+
+            <Divider mt={10} />
+
+            <Anchor
+              underline='always'
+              onClick={() => {
+                modals.openConfirmModal({
+                  id: 'delete-account',
+                  title: <Title order={4}>{`Delete Account`}</Title>,
+                  children: (
+                    <Stack>
+                      <Text>Are you absolutely, positively sure you want to delete your account?</Text>
+                      <Text>All your characters, homebrew, campaigns, and encounters will be deleted forever! 😱</Text>
+                    </Stack>
+                  ),
+                  labels: { confirm: 'Delete It.', cancel: 'Cancel' },
+                  onCancel: () => {},
+                  onConfirm: async () => {
+                    const result = await makeRequest('delete-user', {});
+
+                    if (result) {
+                      supabase.auth.signOut();
+                      localStorage.clear();
+                      queryClient.clear();
+                    } else {
+                      showNotification({
+                        title: `Failed to Delete Account`,
+                        message: `There was an error deleting your account. Please get support on our Discord.`,
+                        color: 'red',
+                      });
+                    }
+                  },
+                });
+              }}
+              c='gray.6'
+              ta='center'
+              size='xs'
+              pt={10}
+            >
+              Delete Account
+            </Anchor>
           </Card>
         </BlurBox>
       </Box>

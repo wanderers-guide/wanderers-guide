@@ -5,7 +5,7 @@ import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
 import { useRecoilState } from 'recoil';
-import React from 'react';
+import React, { ReactNode, useRef } from 'react';
 import IndentedText from './IndentedText';
 import { IconQuote } from '@tabler/icons-react';
 import { getAllConditions } from '@conditions/condition-handler';
@@ -22,6 +22,7 @@ interface RichTextProps extends TextProps {
 export default function RichText(props: RichTextProps) {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const prevProcessedP = useRef<ReactNode | null>(null);
   let convertedChildren = props.children as string | undefined | null;
 
   if (Array.isArray(convertedChildren)) {
@@ -68,12 +69,27 @@ export default function RichText(props: RichTextProps) {
         // Override the default html tags with Mantine components
         p(innerProps) {
           const { children, className } = innerProps;
-          if (shouldBeIndented(children)) {
-            return (
-              <IndentedText {...props} className={className}>
-                {children}
-              </IndentedText>
-            );
+          const indented = shouldBeIndented(children);
+          const prevIntended = prevProcessedP.current ? shouldBeIndented(prevProcessedP.current) : null;
+          //
+          prevProcessedP.current = children;
+          if (indented.value) {
+            // If we're intending a success tier and the prev was intended, we need to indent it twice
+            if (indented.reason === 'SUCCESS-TIER' && prevIntended?.value) {
+              return (
+                <IndentedText {...props} indentMod={1} className={className}>
+                  <IndentedText {...props} className={className}>
+                    {children}
+                  </IndentedText>
+                </IndentedText>
+              );
+            } else {
+              return (
+                <IndentedText {...props} className={className}>
+                  {children}
+                </IndentedText>
+              );
+            }
           } else {
             return (
               <Text {...props} className={className}>
@@ -267,7 +283,7 @@ export default function RichText(props: RichTextProps) {
   );
 }
 
-function shouldBeIndented(children: React.ReactNode) {
+function shouldBeIndented(children: React.ReactNode): { value: boolean; reason?: 'SUCCESS-TIER' | 'ACTION' | 'OTHER' } {
   const childrenArray = React.Children.toArray(children);
   const firstChild = childrenArray.length > 0 ? childrenArray[0] : null;
 
@@ -277,10 +293,24 @@ function shouldBeIndented(children: React.ReactNode) {
     //console.log(contents, firstChild.type);
 
     if (firstChild.type === 'strong') {
-      if (['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents)) return true;
-      if (contents.length <= 45) return true;
+      if (['Critical Success', 'Success', 'Failure', 'Critical Failure'].includes(contents))
+        return {
+          value: true,
+          reason: 'SUCCESS-TIER',
+        };
+      if (contents.length <= 45)
+        return {
+          value: true,
+          reason: 'OTHER',
+        };
     }
-    if (contents.startsWith('action_symbol_')) return true;
+    if (contents.startsWith('action_symbol_'))
+      return {
+        value: true,
+        reason: 'ACTION',
+      };
   }
-  return false;
+  return {
+    value: false,
+  };
 }

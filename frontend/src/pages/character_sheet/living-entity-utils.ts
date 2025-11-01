@@ -107,6 +107,7 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   // Regen Health
   const conMod = getVariable<VariableAttr>(id, 'ATTRIBUTE_CON')?.value.value ?? 0;
   const level = getVariable<VariableNum>(id, 'LEVEL')!.value;
+  // TODO: Might be bug here, need to maybe use `getEntityLevel(entity)`
   let regenAmount = level * (1 > conMod ? 1 : conMod);
   if (regenAmount < 1) regenAmount = 1;
 

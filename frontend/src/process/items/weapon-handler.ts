@@ -31,7 +31,26 @@ export function getWeaponStats(id: StoreID, item: Item) {
   //
   const die = item.meta_data?.damage?.die ?? '';
   const damageType = convertDamageType(item.meta_data?.damage?.damageType ?? '');
-  const extra = item.meta_data?.damage?.extra;
+  let extra = (item.meta_data?.damage?.extra ?? '').trim();
+
+  // Remove any starting '+' (we add it later)
+  if (extra.startsWith('+')) {
+    extra = extra.substring(1).trim();
+  }
+
+  // Remove the first number from the extra damage string, to add it to the bonus
+  let extraDamage = 0;
+  extra = extra
+    .replace(/(([^d]|^)(|-)\d+?)($|\s)/, (_, group1) => {
+      extraDamage = parseInt(group1);
+      return ''; // Remove the first match
+    })
+    .trim();
+
+  // Again, remove any starting '+' (the removed extra damage could be followed by another one)
+  if (extra.startsWith('+')) {
+    extra = extra.substring(1).trim();
+  }
 
   const other: {
     dice: number;
@@ -52,13 +71,19 @@ export function getWeaponStats(id: StoreID, item: Item) {
     });
   }
 
+  const damageBonus = getAttackDamage(id, item);
+  if (extraDamage !== 0) {
+    damageBonus.total += extraDamage;
+    damageBonus.parts.set('This is an extra custom bonus you receive for this item.', extraDamage);
+  }
+
   return {
     attack_bonus: getAttackBonus(id, item),
     damage: {
       dice: dice,
       die: die,
       damageType: damageType,
-      bonus: getAttackDamage(id, item),
+      bonus: damageBonus,
       other: other,
       extra: extra,
     },
@@ -200,10 +225,12 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
     parts.set('This is a bonus you receive to all attack rolls.', attackBonus);
   }
 
+  // Only if we added the Dexterity modifier because we don't want to penalize non-dexerity-based melee weapons
   if (dexAttackBonus && usesDex) {
     parts.set('This is a bonus you receive to Dexterity-based attack rolls.', dexAttackBonus);
   }
 
+  // Only if we didn't add the Dexterity modifier (aka it's therefore a Strength-based ranged weapon)
   if (strAttackBonus && !usesDex) {
     parts.set('This is a bonus you receive to Strength-based attack rolls.', strAttackBonus);
   }
@@ -268,15 +295,25 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   const hasSplash = hasTraitType('SPLASH', itemTraits);
   const hasPropulsive = hasTraitType('PROPULSIVE', itemTraits);
 
+  const hasFlare = hasTraitType('FLARE', itemTraits);
+
   const strMod = getFinalVariableValue(id, 'ATTRIBUTE_STR').total;
 
   const parts = new Map<string, number>();
 
+  let usesStr = false;
   if (hasThrown && !hasSplash) {
     parts.set(
       'This is your Strength modifier. Because this is a thrown ranged weapon, you add your Strength modifier to the damage.',
       strMod
     );
+    usesStr = true;
+  } else if (hasFlare) {
+    parts.set(
+      'This is your Strength modifier. Because this is a flare ranged weapon, you add your Strength modifier to the damage.',
+      strMod
+    );
+    usesStr = true;
   } else if (hasPropulsive) {
     if (strMod >= 0) {
       let halfStr = Math.floor(strMod / 2);
@@ -292,17 +329,20 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
         strMod
       );
     }
+    usesStr = true;
   }
 
   if (attackDamage) {
     parts.set('This is a bonus you receive to all attack damage.', attackDamage);
   }
 
-  if (dexAttackDamage) {
+  // Only if we didn't add the Strength modifier (aka it's therefore a Dexterity-based ranged weapon)
+  if (dexAttackDamage && !usesStr) {
     parts.set('This is a bonus you receive to damage for Dexterity-based attacks.', dexAttackDamage);
   }
 
-  if (strAttackDamage) {
+  // Only if we added the Strength modifier because we don't want to penalize non-strength-based ranged weapons
+  if (strAttackDamage && usesStr) {
     parts.set('This is a bonus you receive to damage for Strength-based attacks.', strAttackDamage);
   }
 

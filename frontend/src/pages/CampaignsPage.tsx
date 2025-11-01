@@ -21,12 +21,13 @@ import {
   useMantineTheme,
   HoverCard,
   ScrollArea,
+  Badge,
 } from '@mantine/core';
 import { useHover, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
-import { IconFlagPlus, IconUserPlus } from '@tabler/icons-react';
+import { IconFlagPlus, IconPlus, IconUserPlus } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Campaign } from '@typing/content';
+import { Campaign, Character } from '@typing/content';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
@@ -86,19 +87,22 @@ export function Component() {
               <Tooltip label='Create Campaign' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCampaignLimit}
-                  style={{ backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  style={{
+                    backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(6px)',
+                  }}
                   loading={loadingCreateCampaign}
-                  variant='subtle'
+                  variant='outline'
                   color='gray.0'
-                  size='xl'
-                  radius='xl'
-                  aria-label='Create Character'
+                  size='lg'
+                  radius='lg'
+                  aria-label='Create Campaign'
                   onClick={() => {
                     setLoadingCreateCampaign(true);
                     handleCreateCampaign();
                   }}
                 >
-                  <IconFlagPlus size='1.3rem' stroke={2.5} />
+                  <IconPlus size='1.65rem' stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
             </Group>
@@ -157,6 +161,15 @@ function CampaignCard(props: { campaign: Campaign }) {
 
   const { hovered: hoveredMain, ref: refMain } = useHover();
 
+  const { data: characters, isLoading } = useQuery({
+    queryKey: [`find-campaign-characters`, { campaign_id: props.campaign.id }],
+    queryFn: async () => {
+      return await makeRequest<Character[]>('find-character', {
+        campaign_id: props.campaign.id,
+      });
+    },
+  });
+
   return (
     <BlurBox blur={10} w={isPhone ? '100%' : 240}>
       <Box
@@ -179,6 +192,7 @@ function CampaignCard(props: { campaign: Campaign }) {
           component='a'
           href={`/campaign/${props.campaign.id}`}
           style={{
+            zIndex: 1,
             position: 'absolute',
             top: 0,
             left: 0,
@@ -187,35 +201,61 @@ function CampaignCard(props: { campaign: Campaign }) {
           }}
         ></Box>
         <Card radius='md' style={{ backgroundColor: 'transparent' }}>
-          <Card.Section>
-            <Image
-              src={props.campaign?.meta_data?.image_url}
-              alt={props.campaign?.name}
-              height={70}
-              fallbackSrc={getDefaultCampaignBackgroundImage().url}
-            />
-          </Card.Section>
+          <Image
+            src={props.campaign?.meta_data?.image_url}
+            alt={props.campaign?.name}
+            fallbackSrc={getDefaultCampaignBackgroundImage().url}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              height: '100%',
+              width: '100%',
+            }}
+          />
+          <Badge
+            size='xs'
+            variant='light'
+            style={{
+              position: 'absolute',
+              top: 5,
+              right: 5,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: theme.colors.gray[4],
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            {(characters?.length || 0) + ' players'}
+          </Badge>
 
-          <Card.Section className={classes.section} mt='xs' mb={0} px='md'>
+          <Card.Section className={classes.section} mb={0} px='md'>
             <Group justify='apart'>
-              <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
-                <HoverCard.Target>
-                  <Title c='gray.3' order={4} className={classes.name}>
-                    {truncate(props.campaign?.name || 'My Campaign', {
-                      length: 30,
-                    })}
-                  </Title>
-                </HoverCard.Target>
-                <HoverCard.Dropdown py={5} px={10}>
-                  <Text c='gray.3' size='sm'>
-                    {props.campaign?.name || 'My Campaign'}
-                  </Text>
-                </HoverCard.Dropdown>
-              </HoverCard>
+              <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5}>
+                <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
+                  <HoverCard.Target>
+                    <Title c='gray.3' order={4} className={classes.name}>
+                      {truncate(props.campaign?.name || 'My Campaign', {
+                        length: 30,
+                      })}
+                    </Title>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown py={5} px={10}>
+                    <Text c='gray.3' size='sm'>
+                      {props.campaign?.name || 'My Campaign'}
+                    </Text>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              </BlurBox>
             </Group>
-            <ScrollArea h={60} my={5}>
-              <Text fz='sm'>{props.campaign?.description || 'A new adventure begins...'}</Text>
-            </ScrollArea>
+            {props.campaign?.description?.trim() ? (
+              <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5} mt={10}>
+                <ScrollArea h={60} my={5}>
+                  <Text fz='xs'>{props.campaign.description.trim()}</Text>
+                </ScrollArea>
+              </BlurBox>
+            ) : (
+              <Box h={90}></Box>
+            )}
           </Card.Section>
         </Card>
       </Box>

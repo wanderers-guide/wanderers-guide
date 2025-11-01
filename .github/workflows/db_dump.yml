@@ -2,12 +2,11 @@ name: Update schema
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   workflow_dispatch:
   schedule:
     # Every day at midnight
-    - cron: "0 0 * * *"
-    
+    - cron: '0 0 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     services:
       postgres:
         image: postgres:15
@@ -42,7 +41,7 @@ jobs:
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb\_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
           sudo apt update
-          sudo apt install postgresql-client-15 postgresql-15 postgresql-common locate -y
+          sudo apt install postgresql-client-15 locate -y
       - name: Dump Database
         working-directory: ./data
         env:
@@ -57,8 +56,8 @@ jobs:
         run: ./clear-user-data.sh ${{ env.LOCAL_DB }}
       - name: Dump clean data
         working-directory: ./data
-        run: PGCLUSTER=15/main pg_dump --data-only --table="public.*" ${{ env.LOCAL_DB }} > data.sql
+        run: pg_dump --data-only --table="public.*" ${{ env.LOCAL_DB }} > data.sql
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "[no ci] Update Schema"
+          commit_message: '[no ci] Update Schema'

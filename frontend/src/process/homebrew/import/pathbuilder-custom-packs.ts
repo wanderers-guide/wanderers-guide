@@ -62,7 +62,7 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
   if (!source) return null;
 
   // Define default sources
-  const sources = await fetchContentSources({ ids: 'all' });
+  const sources = await fetchContentSources({ ids: 'all', includeCommonCore: true });
   defineDefaultSources([...sources.map((s) => s.id), source.id]);
 
   // Importing data

@@ -10,7 +10,7 @@ export function SearchBar({ isSmall }: { isSmall?: boolean }) {
 
   return (
     <UnstyledButton
-      ref={ref as React.RefObject<HTMLButtonElement>}
+      ref={ref}
       onClick={spotlight.open}
       style={{
         width: isSmall ? '100%' : 275,

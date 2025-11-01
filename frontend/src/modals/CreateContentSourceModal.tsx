@@ -1,6 +1,5 @@
-import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { BaseSelectionOption, SelectionOptionsInner, selectContent } from '@common/select/SelectContent';
+import { BaseSelectionOption, selectContent } from '@common/select/SelectContent';
 import {
   deleteContent,
   upsertAbilityBlock,
@@ -16,25 +15,16 @@ import {
   upsertArchetype,
   upsertVersatileHeritage,
 } from '@content/content-creation';
-import {
-  defineDefaultSources,
-  fetchContentPackage,
-  fetchContentSources,
-  resetContentStore,
-} from '@content/content-store';
+import { fetchContentPackage, fetchContentSources, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
 import {
   ActionIcon,
-  Anchor,
-  Autocomplete,
   Badge,
   Box,
   Button,
   Center,
-  Collapse,
   Divider,
   Group,
-  HoverCard,
   List,
   LoadingOverlay,
   Menu,
@@ -49,21 +39,9 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDebouncedState, useDisclosure } from '@mantine/hooks';
+import { useDebouncedState } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
-import {
-  IconArrowsLeftRight,
-  IconChevronDown,
-  IconDatabaseImport,
-  IconFlagPlus,
-  IconMessageCircle,
-  IconPhoto,
-  IconPlus,
-  IconRefreshDot,
-  IconSearch,
-  IconSettings,
-  IconTrash,
-} from '@tabler/icons-react';
+import { IconChevronDown, IconDatabaseImport, IconRefreshDot, IconSearch } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -94,7 +72,6 @@ import { CreateItemModal } from './CreateItemModal';
 import { CreateSpellModal } from './CreateSpellModal';
 import { CreateTraitModal } from './CreateTraitModal';
 import { CreateLanguageModal } from './CreateLanguageModal';
-import { DISCORD_URL } from '@constants/data';
 import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
@@ -105,7 +82,6 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { ActionSymbol } from '@common/Actions';
 import { modals } from '@mantine/modals';
 import useRefresh from '@utils/use-refresh';
-import { getPublicUser } from '@auth/user-manager';
 import { defineDefaultSourcesForSource } from '@content/homebrew';
 import OperationsModal from './OperationsModal';
 import { cloneDeep } from 'lodash-es';
@@ -161,7 +137,9 @@ export function ContentSourceEditor(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-only-${props.sourceId}`],
     queryFn: async () => {
-      const source = (await fetchContentSources({ ids: [props.sourceId] }))[0];
+      const source = (await fetchContentSources({ ids: [props.sourceId], includeCommonCore: true })).find(
+        (s) => s.id === props.sourceId
+      )!;
 
       form.setInitialValues({
         id: source.id,
@@ -409,7 +387,9 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      const source = (await fetchContentSources({ ids: [props.sourceId] }))[0];
+      const source = (await fetchContentSources({ ids: [props.sourceId], includeCommonCore: true })).find(
+        (s) => s.id === props.sourceId
+      )!;
       await defineDefaultSourcesForSource(source);
 
       // Fill content store with all content (async)
@@ -975,7 +955,7 @@ function ContentList<
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();
-      queryClient.refetchQueries([`find-content-source-details-${props.sourceId}`]);
+      queryClient.refetchQueries({ queryKey: [`find-content-source-details-${props.sourceId}`] });
 
       setSearchQuery(query);
       setLoading(false);

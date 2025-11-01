@@ -70,9 +70,7 @@ import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';
 import { hasPatreonAccess } from '@utils/patreon';
-import _, { set } from 'lodash-es';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
 export function Component() {
@@ -96,6 +94,7 @@ export function Component() {
               <BlurButton
                 w={160}
                 leftSection={<IconListDetails size='1rem' />}
+                variant='outline'
                 style={
                   tab === 0 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }
@@ -106,6 +105,7 @@ export function Component() {
               <BlurButton
                 w={160}
                 leftSection={<IconBookmarks size='1rem' />}
+                variant='outline'
                 style={
                   tab === 1 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }
@@ -116,12 +116,13 @@ export function Component() {
               <BlurButton
                 w={160}
                 leftSection={<IconHammer size='1rem' />}
+                variant='outline'
                 style={
                   tab === 2 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
                 }
                 onClick={() => {
                   if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
-                    displayPatronOnly();
+                    displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
                     return;
                   }
 
@@ -151,7 +152,7 @@ function BrowseSection(props: {}) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-homebrew-content-sources-public`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true }))
+      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true, includeCommonCore: true }))
         .filter((c) => c.user_id)
         .sort((a, b) => {
           if (a.require_key && !b.require_key) return 1;
@@ -231,7 +232,7 @@ function SubscriptionsSection(props: {}) {
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-subscribed`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
+      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
     },
@@ -308,7 +309,7 @@ function CreationsSection(props: {}) {
     queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
       resetContentStore(true);
-      return (await fetchContentSources({ ids: 'all', homebrew: true })).filter(
+      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
         (c) => c.user_id && c.user_id === user?.user_id
       );
     },
@@ -604,7 +605,7 @@ function ContentSourceCard(props: {
               variant='light'
               color='gray'
               radius='xl'
-              ref={refEdit as React.RefObject<HTMLButtonElement>}
+              ref={refEdit}
               style={{
                 flex: 1,
                 backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
@@ -629,7 +630,7 @@ function ContentSourceCard(props: {
                   color='gray'
                   radius='xl'
                   aria-label='Options'
-                  ref={refOptions as React.RefObject<HTMLButtonElement>}
+                  ref={refOptions}
                   style={{
                     backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
                   }}

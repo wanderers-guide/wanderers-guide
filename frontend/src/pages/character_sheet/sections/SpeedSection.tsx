@@ -7,19 +7,12 @@ import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
 import { useMantineTheme, Group, Stack, Box, Text } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { LivingEntity } from '@typing/content';
-import { StoreID, VariableListStr } from '@typing/variables';
-import { compactSenses, displayPrimaryVisionSense } from '@utils/senses';
-import {
-  displayFinalProfValue,
-  displayFinalSpeedValue,
-  displayFinalVariableValue,
-  getFinalVariableValue,
-  getSpeedValue,
-} from '@variables/variable-display';
+import { StoreID } from '@typing/variables';
+import { displayPrimaryVisionSense } from '@utils/senses';
+import { displayFinalProfValue, displayFinalSpeedValue, getSpeedValue } from '@variables/variable-display';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { ConditionSection } from './ConditionSection';
 import { getAllSpeedVariables } from '@variables/variable-manager';
-import { en } from '@supabase/auth-ui-shared';
 
 function PerceptionSection(props: { id: StoreID }) {
   const { hovered: perceptionHovered, ref: perceptionRef } = useHover();

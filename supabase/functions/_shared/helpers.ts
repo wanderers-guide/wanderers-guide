@@ -2,8 +2,11 @@ import { corsHeaders } from './cors.ts';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 import { uniqueId } from './upload-utils.ts';
 import _ from 'lodash';
+// @ts-ignore
+import { SignJWT } from 'npm:jose@5.9.6';
 import type {
   AbilityBlockType,
+  Character,
   ContentSource,
   ContentType,
   JSendResponse,
@@ -11,44 +14,60 @@ import type {
   Trait,
 } from './content';
 
-export async function connect(
+export async function connect<T = Record<string, any>>(
   req: Request,
   executeFn: (
     client: SupabaseClient<any, 'public', any>,
-    body: Record<string, any>
-  ) => Promise<JSendResponse>
+    body: T,
+    token: string
+  ) => Promise<JSendResponse>,
+  options?: {
+    supportsCharacterAPI?: boolean;
+  }
 ) {
-  // This is needed if you're planning to invoke your function from a browser.
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const body = (await req.json()) as Record<string, any>;
+    const body = (await req.json()) as T;
 
     // Create a Supabase client with the Auth context of the logged in user.
-    const supabaseClient = createClient(
-      // Supabase API URL - env var exported by default.
-      // @ts-ignore
-      Deno.env.get('SUPABASE_URL') ?? '',
-      // Supabase API ANON KEY - env var exported by default.
-      // @ts-ignore
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      // Create client with Auth context of the user that called the function.
-      // This way your row-level-security (RLS) policies are applied.
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
+    const rawAuthHeader = req.headers.get('Authorization')?.trim() ?? '';
+    const token = rawAuthHeader.replace('Bearer ', '').trim();
 
-    const results = await executeFn(supabaseClient, body);
+    if (token.length === 36) {
+      // Assume it's an API key - so this request is coming from someone trying to access the API directly.
 
-    return new Response(JSON.stringify(results), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
+      return await handleApiRouting<T>(token, body, executeFn, options?.supportsCharacterAPI);
+      //
+    } else {
+      // Normal JWT request, this request is coming from the frontend.
+
+      const supabaseClient = createClient(
+        // Supabase API URL - env var exported by default.
+        // @ts-ignore
+        Deno.env.get('SUPABASE_URL') ?? '',
+        // Supabase API ANON KEY - env var exported by default.
+        // @ts-ignore
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        // Create client with Auth context of the user that called the function.
+        // This way row-level-security (RLS) policies are applied.
+        {
+          global: {
+            headers: { Authorization: rawAuthHeader },
+          },
+        }
+      );
+
+      const results = await executeFn(supabaseClient, body, token);
+
+      return new Response(JSON.stringify(results), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+      //
+    }
   } catch (error) {
     console.error(error);
     return new Response(
@@ -64,12 +83,168 @@ export async function connect(
   }
 }
 
+async function handleApiRouting<T = Record<string, any>>(
+  apiKey: string,
+  body: T,
+  executeFn: (
+    client: SupabaseClient<any, 'public', any>,
+    body: T,
+    token: string
+  ) => Promise<JSendResponse>,
+  supportsCharacterAPI?: boolean
+): Promise<Response> {
+  const adminClient = createClient(
+    // @ts-ignore
+    Deno.env.get('SUPABASE_URL') ?? '',
+    // @ts-ignore
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+
+  const { data: publicUsers, error: errorPublicUsers } = await adminClient
+    .from('public_user')
+    .select('*')
+    .not('api', 'is', null)
+    .contains('api', { clients: [{ api_key: apiKey }] });
+
+  if (errorPublicUsers || !publicUsers || publicUsers.length === 0) {
+    return new Response(
+      JSON.stringify({
+        status: 'fail',
+        data: {
+          message: 'Invalid API Key',
+        },
+      } satisfies JSendResponse),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      }
+    );
+  }
+
+  const publicUser = publicUsers[0] as PublicUser;
+  const apiClient = publicUser.api?.clients?.find((client) => client.api_key === apiKey);
+
+  if (!apiClient) {
+    return new Response(
+      JSON.stringify({
+        status: 'fail',
+        data: {
+          message: 'Invalid API Key, no client found',
+        },
+      } satisfies JSendResponse),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      }
+    );
+  }
+
+  // The user ID to create the Supabase client for.
+  let userId = publicUser.user_id;
+
+  // If we're hitting a character endpoint and they've given access, use the character owner's user ID instead.
+  if (
+    supportsCharacterAPI &&
+    (body as Record<string, any>)?.id &&
+    typeof (body as Record<string, any>).id === 'number'
+  ) {
+    const characters = await fetchData<Character>(adminClient, 'character', [
+      { column: 'id', value: (body as Record<string, any>).id },
+    ]);
+    const character = characters.find((c) =>
+      c.details?.api_clients?.client_access.find(
+        (c) => c.clientId === apiClient.id && c.publicUserId === `${publicUser.id}`
+      )
+    );
+
+    if (!character) {
+      return new Response(
+        JSON.stringify({
+          status: 'fail',
+          data: {
+            message: 'You do not have access to this character',
+          },
+        } satisfies JSendResponse),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        }
+      );
+    }
+
+    userId = character.user_id;
+  }
+
+  const { data: userData, error: errorUser } = await adminClient.auth.admin.getUserById(userId);
+
+  if (errorUser || !userData) {
+    return new Response(
+      JSON.stringify({
+        status: 'error',
+        message: 'Failed to retrieve user data',
+      } satisfies JSendResponse),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
+  }
+
+  // Create a JWT for the user the API key belongs to.
+  const limitedUserToken = await generateUserJWT(userData.user.id);
+
+  const supabaseClient = createClient(
+    // Supabase API URL - env var exported by default.
+    // @ts-ignore
+    Deno.env.get('SUPABASE_URL') ?? '',
+    // Supabase API ANON KEY - env var exported by default.
+    // @ts-ignore
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    // Create client with Auth context of the user that called the function.
+    // This way row-level-security (RLS) policies are applied.
+    {
+      global: {
+        headers: { Authorization: `Bearer ${limitedUserToken}` },
+      },
+    }
+  );
+
+  const results = await executeFn(supabaseClient, body, limitedUserToken);
+
+  return new Response(JSON.stringify(results), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status: 200,
+  });
+}
+
+async function generateUserJWT(userId: string) {
+  // @ts-ignore
+  const JWT_SECRET = Deno.env.get('SB_JWT_SECRET');
+  if (!JWT_SECRET) throw new Error('Missing SB_JWT_SECRET');
+
+  const key = new TextEncoder().encode(JWT_SECRET);
+
+  const jwt = await new SignJWT({
+    sub: userId,
+    role: 'authenticated',
+    aud: 'authenticated',
+    iss: 'https://fdrjqcyjklatdrmjdnys.supabase.co/auth/v1',
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(key);
+
+  return jwt;
+}
+
 export async function getPublicUser(
-  client: SupabaseClient<any, 'public', any>
+  client: SupabaseClient<any, 'public', any>,
+  token: string
 ): Promise<PublicUser | null> {
   const {
     data: { user },
-  } = await client.auth.getUser();
+  } = await client.auth.getUser(token);
 
   if (!user) {
     return null;
@@ -245,7 +420,6 @@ export async function handleAssociatedTrait(
         },
       }
     );
-    console.log(traitProcedure, traitResult);
     if (traitResult && (traitResult as Trait).id && traitProcedure === 'insert') {
       trait_id = (traitResult as Trait).id;
     }

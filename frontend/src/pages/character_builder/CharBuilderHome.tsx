@@ -26,7 +26,7 @@ import {
   List,
   Anchor,
 } from '@mantine/core';
-import { useElementSize, useMediaQuery } from '@mantine/hooks';
+import { getHotkeyHandler, useElementSize, useMediaQuery } from '@mantine/hooks';
 import { modals, openContextModal } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import {
@@ -42,7 +42,7 @@ import {
   IconBrandSafari,
   IconDots,
   IconServer,
-  IconFlagPlus,
+  IconPlus,
   IconKey,
   IconArchive,
   IconHexagonalPrism,
@@ -70,13 +70,15 @@ import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { drawerState } from '@atoms/navAtoms';
-import { AbilityBlockType, Campaign, ContentType } from '@typing/content';
+import { AbilityBlockType, Campaign, ContentType, PublicUser } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
 import { updateSubscriptions } from '@content/homebrew';
 import { ImageOption } from '@typing/index';
 import { cloneDeep, isEqual, uniq } from 'lodash-es';
+import BlurBox from '@common/BlurBox';
+import { DisplayIcon } from '@common/IconDisplay';
 
 export default function CharBuilderHome(props: { pageHeight: number }) {
   const theme = useMantineTheme();
@@ -105,6 +107,31 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       const user = await getPublicUser();
       setUser(user);
       return user;
+    },
+  });
+
+  const { data: apiClients } = useQuery({
+    queryKey: [`get-api-clients`, character?.details?.api_clients],
+    queryFn: async () => {
+      //
+      if (character?.details?.api_clients?.client_access) {
+        const users = await Promise.all(
+          character.details.api_clients.client_access.map((client) =>
+            makeRequest<PublicUser>('get-user', {
+              _id: client.publicUserId,
+            })
+          )
+        );
+
+        return character.details.api_clients.client_access.map((c) => {
+          const user = users?.find((u) => `${u?.id ?? ''}` === c.publicUserId);
+          const fullClient = user?.api?.clients?.find((cl) => cl.id === c.clientId) ?? null;
+
+          return fullClient;
+        });
+      } else {
+        return [];
+      }
     },
   });
 
@@ -185,8 +212,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
         resetContentStore();
         defineDefaultSources(character?.content_sources?.enabled ?? []);
         refetch();
-        // queryClient.invalidateQueries([`find-character-${character?.id}`]);
-        queryClient.invalidateQueries([`find-content-${character?.id}`]);
+        queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] });
       }, 200);
     };
 
@@ -883,6 +909,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
               onChange={(e) => {
                 setCampaignKey(e.target.value);
               }}
+              onKeyDown={getHotkeyHandler([
+                ['mod+Enter', joinCampaign],
+                ['Enter', joinCampaign],
+              ])}
               rightSectionWidth={28}
               leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
               rightSection={
@@ -891,12 +921,12 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   radius='xl'
                   disabled={!campaignKey}
                   color={theme.primaryColor}
-                  variant='light'
+                  variant='filled'
                   onClick={async () => {
                     await joinCampaign();
                   }}
                 >
-                  <IconFlagPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                  <IconPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                 </ActionIcon>
               }
             />
@@ -925,7 +955,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
             ]}
             swatchesPerRow={7}
             onChange={(color) => {
-              if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+              if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
                 displayPatronOnly();
                 return;
               }
@@ -955,7 +985,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   innerProps: {
                     options: getAllBackgroundImages(),
                     onSelect: (option: ImageOption) => {
-                      if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+                      if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
                         displayPatronOnly();
                         return;
                       }
@@ -984,6 +1014,70 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
               />
             </UnstyledButton>
           </Box>
+          {apiClients && apiClients.length > 0 && (
+            <Stack gap={5}>
+              <Divider my={0} />
+              <Text fz='sm'>Authorized Clients</Text>
+              <ScrollArea h={150} scrollbars='y'>
+                <Stack gap={5}>
+                  {apiClients?.map((client, index) => (
+                    <BlurBox key={index} p='sm' bgColor={theme.colors.dark[6]}>
+                      <Stack gap={5}>
+                        <Group>
+                          <DisplayIcon width={25} strValue={client?.image_url} />
+                          <Text size='md'>{client?.name}</Text>
+                        </Group>
+                        {client?.description && <Text fz='xs'>{client?.description}</Text>}
+                        <Anchor
+                          underline='always'
+                          onClick={() => {
+                            modals.openConfirmModal({
+                              id: 'remove-client-access',
+                              title: <Title order={4}>{`Revoke Access`}</Title>,
+                              children: (
+                                <Stack>
+                                  <Text>
+                                    Are you sure you want to revoke access for {client?.name} to read and edit this
+                                    character?
+                                  </Text>
+                                </Stack>
+                              ),
+                              labels: { confirm: 'Remove', cancel: 'Cancel' },
+                              onCancel: () => {},
+                              onConfirm: async () => {
+                                setCharacter((prev) => {
+                                  if (!prev) return prev;
+                                  return {
+                                    ...prev,
+                                    details: {
+                                      ...prev.details,
+                                      api_clients: {
+                                        ...prev.details?.api_clients,
+                                        client_access:
+                                          prev.details?.api_clients?.client_access.filter(
+                                            (c) => c.clientId !== client?.id
+                                          ) ?? [],
+                                      },
+                                    },
+                                  };
+                                });
+                                queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] });
+                              },
+                            });
+                          }}
+                          c='gray.7'
+                          ta='center'
+                          size='xs'
+                        >
+                          Revoke Access
+                        </Anchor>
+                      </Stack>
+                    </BlurBox>
+                  ))}
+                </Stack>
+              </ScrollArea>
+            </Stack>
+          )}
         </Stack>
       </Paper>
     </Box>

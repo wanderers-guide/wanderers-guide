@@ -40,12 +40,14 @@ import WanderersGuideLogo from './WanderersGuideLogo';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
+  const queryClient = useQueryClient();
 
   const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());
   //const [userIcon, setUserIcon] = useRecoilState(userIconState);
@@ -97,17 +99,7 @@ export default function Layout(props: { children: React.ReactNode }) {
             <WanderersGuideLogo size={30} />
             <Group gap={0} style={{ flex: 1 }} visibleFrom='md' justify='space-between' wrap='nowrap'>
               {width >= 1050 ? (
-                <Group gap={0}>
-                  {/* <UnstyledButton
-                    component='a'
-                    href={`/`}
-                    className={classes.control}
-                    onClick={() => {
-                      window.location.href = '/';
-                    }}
-                  >
-                    About
-                  </UnstyledButton> */}
+                <Group gap={0} wrap='nowrap'>
                   <UnstyledButton
                     component='a'
                     href={DISCORD_URL}
@@ -303,6 +295,8 @@ export default function Layout(props: { children: React.ReactNode }) {
                         leftSection={<IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />}
                         onClick={async () => {
                           supabase.auth.signOut();
+                          localStorage.clear();
+                          queryClient.clear();
                         }}
                       >
                         Logout
@@ -442,6 +436,8 @@ export default function Layout(props: { children: React.ReactNode }) {
               className={classes.control}
               onClick={async () => {
                 supabase.auth.signOut();
+                localStorage.clear();
+                queryClient.clear();
                 close();
               }}
             >

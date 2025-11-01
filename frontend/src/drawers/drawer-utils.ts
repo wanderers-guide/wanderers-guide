@@ -1,6 +1,7 @@
 import { DrawerType } from '@typing/index';
 import { ContentType, AbilityBlockType } from '@typing/content';
 import { isAbilityBlockType } from '@content/content-utils';
+import { CREATURE_DRAWER_ZINDEX } from './types/CreatureDrawer';
 
 export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition'; id: string }): {
   type: DrawerType;
@@ -8,7 +9,11 @@ export function convertContentLink(input: { type: ContentType | AbilityBlockType
 } {
   return {
     type: input.type,
-    data: { id: parseInt(input.id) ? parseInt(input.id) : input.id },
+    data: {
+      id: parseInt(input.id) ? parseInt(input.id) : input.id,
+      readOnly: true,
+      zIndex: input.type === 'creature' ? CREATURE_DRAWER_ZINDEX : undefined,
+    },
   };
 }
 
@@ -55,6 +60,13 @@ export function mapToDrawerData(
     if (drawerType === 'archetype') key = 'archetype';
     if (drawerType === 'versatile-heritage') key = 'versatileHeritage';
     if (drawerType === 'content-source') key = 'source';
+    if (drawerType === 'creature') {
+      key = 'creature';
+      dataInject = {
+        ...(dataInject ?? {}),
+        zIndex: CREATURE_DRAWER_ZINDEX,
+      };
+    }
     drawerData = {
       [key]: data,
       ...(dataInject ?? {}),

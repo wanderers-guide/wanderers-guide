@@ -41,6 +41,7 @@ import {
   OperationType,
   OperationInjectText,
   OperationBindValue,
+  OperationSendNotification,
 } from '@typing/operations';
 import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
@@ -207,6 +208,16 @@ export function createDefaultOperation<T = Operation>(type: OperationType): T {
         text: '',
       },
     } satisfies OperationInjectText as T;
+  } else if (type === 'sendNotification') {
+    return {
+      id: crypto.randomUUID(),
+      type: type,
+      data: {
+        title: '',
+        message: '',
+        color: '',
+      },
+    } satisfies OperationSendNotification as T;
   } else if (type === 'removeAbilityBlock') {
     return {
       id: crypto.randomUUID(),
@@ -324,6 +335,8 @@ export function convertKeyToBasePrefix(key: string, id?: number): string {
     classFeatureResults: `class-feature-${id}`,
     contentSourceResults: `content-source-${id}`,
     itemResults: `item-${id}`,
+    creatureResults: `creature`,
+    abilityResults: `ability-${id}`,
   };
   if (mapping[key]) {
     return mapping[key];

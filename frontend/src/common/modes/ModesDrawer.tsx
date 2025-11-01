@@ -84,14 +84,19 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
                     activeModes = [...activeModes, modeName];
                   }
                   setVariable('CHARACTER', 'ACTIVE_MODES', activeModes, 'Selected');
-                  localStorage.setItem(`active-modes-${character?.id}`, JSON.stringify(activeModes));
+                  setCharacter((prev) => {
+                    if (!prev) return null;
+                    return {
+                      ...prev,
+                      meta_data: {
+                        ...prev.meta_data,
+                        active_modes: activeModes,
+                      },
+                    };
+                  });
 
-                  // Trigger character update (to re-execute operations)
-                  setTimeout(() => {
-                    setCharacter((prev) => {
-                      return cloneDeep(prev);
-                    });
-                  }, 100);
+                  // Close the drawer
+                  props.onClose();
                 }}
               />
             ))}

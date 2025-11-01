@@ -163,6 +163,9 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   HEAVY_ARMOR: newVariable('prof', 'HEAVY_ARMOR'),
   UNARMORED_DEFENSE: newVariable('prof', 'UNARMORED_DEFENSE'),
 
+  LIGHT_BARDING: newVariable('prof', 'LIGHT_BARDING'),
+  HEAVY_BARDING: newVariable('prof', 'HEAVY_BARDING'),
+
   SIMPLE_WEAPONS: newVariable('prof', 'SIMPLE_WEAPONS'),
   MARTIAL_WEAPONS: newVariable('prof', 'MARTIAL_WEAPONS'),
   ADVANCED_WEAPONS: newVariable('prof', 'ADVANCED_WEAPONS'),
@@ -228,7 +231,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
   LANGUAGE_IDS: newVariable('list-str', 'LANGUAGE_IDS'),
   CLASS_FEATURE_IDS: newVariable('list-str', 'CLASS_FEATURE_IDS'),
   PHYSICAL_FEATURE_IDS: newVariable('list-str', 'PHYSICAL_FEATURE_IDS'),
-  EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', ['9252']), // Hardcoded Fist ID
+  EXTRA_ITEM_IDS: newVariable('list-str', 'EXTRA_ITEM_IDS', []),
 
   // Used for tracking traits. We create new traits so that they're run first
   //TRAIT_ANCESTRY_<>_IDS: newVariable('num', 'TRAIT_ANCESTRY_<>_IDS'),
@@ -523,7 +526,8 @@ export function resetVariables(id?: StoreID) {
 export function setVariable(id: StoreID, name: string, value: VariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
-    throwError(`Invalid variable name: ${name}`);
+    // throwError(`Invalid variable name: ${name}`);
+    return;
   }
   const oldValue = cloneDeep(variable.value);
 
@@ -573,7 +577,8 @@ export function setVariable(id: StoreID, name: string, value: VariableValue, sou
 export function adjVariable(id: StoreID, name: string, amount: VariableValue | ExtendedVariableValue, source?: string) {
   let variable = getVariables(id)[name];
   if (!variable) {
-    throwError(`Invalid variable name: ${name}`);
+    // throwError(`Invalid variable name: ${name}`);
+    return;
   }
   const oldValue = cloneDeep(variable.value);
 
@@ -583,6 +588,9 @@ export function adjVariable(id: StoreID, name: string, amount: VariableValue | E
       if (isProficiencyType(value)) {
         variable.value.value = maxProficiencyType(variable.value.value, value);
       } else if (isExtendedProficiencyType(value)) {
+        if (!variable.value.increases) {
+          variable.value.increases = 0;
+        }
         if (value === '1') {
           variable.value.increases += 1;
         } else if (value === '-1') {

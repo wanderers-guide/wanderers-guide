@@ -55,7 +55,7 @@ import { getWeaponSpecialization } from '@specializations/weapon-specializations
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';
 import ShowInjectedText from '@drawers/ShowInjectedText';
-import { ItemRunesDescription } from '@common/ItemRunesDescription';
+import { ItemRunesDescription, ItemUpgradesDescription } from '@common/ItemRunesDescription';
 import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
@@ -63,6 +63,8 @@ import { labelToVariable } from '@variables/variable-utils';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
+
+  console.log(props.data);
 
   const { data: _item } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
@@ -261,7 +263,7 @@ export function ItemDrawerContent(props: {
                 Upgrades
               </Accordion.Control>
               <Accordion.Panel>
-                <ItemRunesDescription item={item} />
+                <ItemUpgradesDescription item={item} />
               </Accordion.Panel>
             </Accordion.Item>
           </Accordion>
@@ -496,7 +498,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
     upgradeSection = (
       <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
         <Group gap={10}>
-          <Group wrap='nowrap' mr={20}>
+          <Group wrap='nowrap' mr={5}>
             <Text fw={600} c='gray.5' span>
               Grade
             </Text>{' '}

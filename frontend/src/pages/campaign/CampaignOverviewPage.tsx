@@ -54,6 +54,8 @@ import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { useRecoilValue } from 'recoil';
 import D20Loader from '@assets/images/D20Loader';
+import BlurButton from '@common/BlurButton';
+import BlurActionIcon from '@common/BlurActionIcon';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -147,7 +149,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
   }, [debouncedCampaign]);
 
   const { data: characters, isLoading } = useQuery({
-    queryKey: [`find-campaign-characters`],
+    queryKey: [`find-campaign-characters`, { campaign_id: props.campaignId }],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', {
         campaign_id: props.campaignId,
@@ -183,50 +185,73 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
             <Box>
               <Grid>
                 <Grid.Col span={isTablet ? 12 : 4}>
-                  <BlurBox blur={10} h={235}>
-                    <Card radius='md' p='md' style={{ backgroundColor: 'transparent' }}>
-                      <Card.Section>
-                        <Image
-                          src={campaign?.meta_data?.image_url}
-                          alt={campaign?.name}
-                          height={70}
-                          fallbackSrc={getDefaultCampaignBackgroundImage().url}
-                        />
-                      </Card.Section>
+                  <Box>
+                    <Card radius='md' p='md' style={{ backgroundColor: 'transparent' }} h={235}>
+                      <Image
+                        src={campaign?.meta_data?.image_url}
+                        alt={campaign?.name}
+                        fallbackSrc={getDefaultCampaignBackgroundImage().url}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          height: '100%',
+                          width: '100%',
+                        }}
+                      />
+                      <Badge
+                        size='xs'
+                        variant='light'
+                        style={{
+                          position: 'absolute',
+                          top: 5,
+                          right: 5,
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                          color: theme.colors.gray[4],
+                          backdropFilter: 'blur(6px)',
+                        }}
+                      >
+                        {(characters?.length || 0) + ' players'}
+                      </Badge>
 
-                      <Card.Section className={classes.section} mt='md' px='md'>
+                      <Card.Section className={classes.section} mb={0} px='md'>
                         <Group justify='apart'>
-                          <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
-                            <HoverCard.Target>
-                              <Title c='gray.3' order={4} className={classes.name}>
-                                {truncate(campaign?.name || 'My Campaign', {
-                                  length: 30,
-                                })}
-                              </Title>
-                            </HoverCard.Target>
-                            <HoverCard.Dropdown py={5} px={10}>
-                              <Text c='gray.3' size='sm'>
-                                {campaign?.name || 'My Campaign'}
-                              </Text>
-                            </HoverCard.Dropdown>
-                          </HoverCard>
-
-                          <Badge size='sm' variant='light'>
-                            {(characters?.length || 0) + ' players'}
-                          </Badge>
+                          <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5}>
+                            <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
+                              <HoverCard.Target>
+                                <Title c='gray.3' order={4} className={classes.name}>
+                                  {truncate(campaign?.name || 'My Campaign', {
+                                    length: 30,
+                                  })}
+                                </Title>
+                              </HoverCard.Target>
+                              <HoverCard.Dropdown py={5} px={10}>
+                                <Text c='gray.3' size='md'>
+                                  {campaign?.name || 'My Campaign'}
+                                </Text>
+                              </HoverCard.Dropdown>
+                            </HoverCard>
+                          </BlurBox>
                         </Group>
-                        <ScrollArea h={60} mt='xs'>
-                          <Text fz='sm'>{campaign?.description || 'A new adventure begins...'}</Text>
-                        </ScrollArea>
+                        {campaign?.description?.trim() ? (
+                          <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5} mt={10}>
+                            <ScrollArea h={100} my={5}>
+                              <Text fz='xs'>{campaign.description.trim()}</Text>
+                            </ScrollArea>
+                          </BlurBox>
+                        ) : (
+                          <Box h={130}></Box>
+                        )}
                       </Card.Section>
 
                       <Group mt='xs'>
-                        <Button
+                        <BlurButton
                           radius='md'
                           size='xs'
                           variant='light'
-                          color='gray'
-                          style={{ flex: 1 }}
+                          bgColor='rgba(0, 0, 0, 0.5)'
+                          bgColorHover='rgba(0, 0, 0, 0.7)'
+                          color='gray.4'
                           onClick={() => {
                             setTimeout(() => setRevealedKey(false), 5000);
                             if (!revealedKey) {
@@ -242,15 +267,17 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                               });
                             }
                           }}
-                          leftSection={revealedKey ? <IconCopy size='0.9rem' /> : <></>}
+                          rightSection={revealedKey ? <IconCopy size='0.9rem' /> : <></>}
                         >
                           {revealedKey ? campaign?.join_key : 'Reveal Join Key'}
-                        </Button>
-                        <ActionIcon
+                        </BlurButton>
+                        <BlurActionIcon
                           variant='light'
-                          color='gray'
+                          color='gray.4'
                           radius='md'
                           size={30}
+                          bgColor='rgba(0, 0, 0, 0.5)'
+                          bgColorHover='rgba(0, 0, 0, 0.7)'
                           onClick={async () => {
                             if (!campaign) return;
 
@@ -270,23 +297,18 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           loading={loadingKey}
                         >
                           <IconRefreshDot size='1.1rem' stroke={1.5} />
-                        </ActionIcon>
+                        </BlurActionIcon>
                       </Group>
                     </Card>
-                  </BlurBox>
+                  </Box>
                 </Grid.Col>
                 <Grid.Col span={isTablet ? 12 : 8}>
                   <BlurBox blur={10} p='sm'>
                     <ScrollArea h={210} scrollbars='y'>
                       <Group>
                         {characters?.map((character) => (
-                          <BlurBox blur={10} maw={280} py={5} px='sm'>
-                            <CharacterDetailedInfo
-                              character={character}
-                              onClick={() => {
-                                window.open(`/sheet/${character.id}`, '_blank');
-                              }}
-                            />
+                          <BlurBox blur={10} maw={280} py={3} px='sm'>
+                            <CharacterDetailedInfo character={character} />
                           </BlurBox>
                         ))}
                         {characters?.length === 0 && (

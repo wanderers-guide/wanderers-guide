@@ -14,10 +14,10 @@ interface ResetCampaignKeyBody {
 }
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     const { id } = body as ResetCampaignKeyBody;
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
     if (!user) {
       return {
         status: 'error',

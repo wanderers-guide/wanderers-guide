@@ -77,7 +77,7 @@ export default function FocusSpellsList(props: {
 
   return (
     <Accordion.Item value={props.index}>
-      <Accordion.Control>
+      <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Text c='gray.5' fw={700} fz='sm'>
             {toLabel(props.source!.name)} Focus Spells
@@ -194,7 +194,7 @@ export default function FocusSpellsList(props: {
                       </Badge>
                     </Group>
                     <Divider my={5} />
-                    <Stack gap={5} mb='md'>
+                    <Stack gap={5} mb={5}>
                       {spells[rank].map((spell, index) => (
                         <SpellListEntrySection
                           key={index}

@@ -10,7 +10,7 @@ interface RemoveFromCampaignBody {
 }
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (client, body, token) => {
     const { character_id, campaign_id } = body as RemoveFromCampaignBody;
 
     const characters = await fetchData<Character>(client, 'character', [
@@ -24,7 +24,7 @@ serve(async (req: Request) => {
       };
     }
 
-    const user = await getPublicUser(client);
+    const user = await getPublicUser(client, token);
     if (!user) {
       return {
         status: 'error',

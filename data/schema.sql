@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
+\restrict jvpL32RgYoQlGK72tuj9rhlpoixvarnZz1yFT6OYeoFzMTFCsUZ8j884F1bn0CU
+
 -- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
--- Dumped by pg_dump version 15.10 (Ubuntu 15.10-1.pgdg24.04+1)
+-- Dumped by pg_dump version 16.10 (Ubuntu 16.10-1.pgdg24.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -393,7 +395,13 @@ CREATE TABLE public.creature (
     abilities_base json[],
     spells json,
     deprecated boolean,
-    abilities_added bigint[]
+    abilities_added bigint[],
+    experience integer,
+    hp_current integer,
+    hp_temp integer,
+    stamina_current integer,
+    resolve_current integer,
+    operation_data json
 );
 
 
@@ -545,7 +553,8 @@ CREATE TABLE public.public_user (
     patreon jsonb,
     organized_play_id character varying,
     is_developer boolean,
-    is_community_paragon boolean
+    is_community_paragon boolean,
+    api jsonb
 );
 
 
@@ -2117,4 +2126,6 @@ GRANT ALL ON SEQUENCE public.versatile_heritage_id_seq TO service_role;
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict jvpL32RgYoQlGK72tuj9rhlpoixvarnZz1yFT6OYeoFzMTFCsUZ8j884F1bn0CU
 

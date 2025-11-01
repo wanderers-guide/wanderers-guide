@@ -1,14 +1,6 @@
-import { Box, Button, MantineSize, Menu, Rating, Select, Text } from '@mantine/core';
+import { MantineSize, Rating, Select } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import {
-  IconSettings,
-  IconMessageCircle,
-  IconPhoto,
-  IconSearch,
-  IconArrowsLeftRight,
-  IconTrash,
-} from '@tabler/icons-react';
-import { phoneQuery } from '@utils/mobile-responsive';
+import { isTabletSized, isTouchDevice, tabletQuery } from '@utils/mobile-responsive';
 import { useState } from 'react';
 
 export default function TokenSelect(props: {
@@ -20,11 +12,11 @@ export default function TokenSelect(props: {
   size?: MantineSize;
 }) {
   const [value, setValue] = useState(props.value ?? props.count);
-  const isPhone = useMediaQuery(phoneQuery());
+  const isMobileTouch = useMediaQuery(tabletQuery()) && isTouchDevice();
 
   return (
     <>
-      {isPhone ? (
+      {isMobileTouch ? (
         <>
           <Select
             size='xs'

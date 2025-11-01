@@ -3,7 +3,7 @@ import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { DISCORD_URL } from '@constants/data';
-import { fetchContent, fetchContentSources } from '@content/content-store';
+import { defineDefaultSources, fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
 import { mapToDrawerData } from '@drawers/drawer-utils';
 import {
@@ -48,10 +48,11 @@ export function Component(props: {}) {
 
       const user = (await getPublicUser(contentUpdate.user_id))!;
 
-      const sources = await fetchContentSources({ ids: [contentUpdate.content_source_id] });
+      const sources = await fetchContentSources({ ids: [contentUpdate.content_source_id], includeCommonCore: true });
       if (sources.length === 0) {
         return null;
       }
+      defineDefaultSources(sources.map((s) => s.id));
 
       const originalContent = contentUpdate.ref_id
         ? await fetchContent(contentUpdate.type, {
@@ -62,7 +63,7 @@ export function Component(props: {}) {
       return {
         contentUpdate,
         user,
-        source: sources[0],
+        source: sources.find((s) => s.id === contentUpdate.content_source_id)!,
         originalContent: originalContent.length > 0 ? originalContent[0] : null,
       };
     },
@@ -72,7 +73,7 @@ export function Component(props: {}) {
   const changedFields = useMemo(() => {
     if (!data || !data.originalContent) return [];
     const original = data.originalContent;
-    const updated = data.contentUpdate.data;
+    const updated = data.contentUpdate.data ?? {};
 
     // Compare all fields in the original and updated content, and check all fields in meta_data if it exists
     const changedFields = [];
@@ -80,7 +81,7 @@ export function Component(props: {}) {
       if (key.toLowerCase() === 'uuid') continue;
 
       if (key === 'meta_data') {
-        for (const metaKey of Object.keys(updated.meta_data)) {
+        for (const metaKey of Object.keys(updated.meta_data ?? {})) {
           if (JSON.stringify(original.meta_data[metaKey] ?? '') !== JSON.stringify(updated.meta_data[metaKey] ?? '')) {
             changedFields.push(metaKey);
           }
@@ -97,7 +98,7 @@ export function Component(props: {}) {
   const sizeDiff = useMemo(() => {
     if (!data || !data.originalContent) return 0;
 
-    const byteDiff = JSON.stringify(data.contentUpdate.data).length - JSON.stringify(data.originalContent).length;
+    const byteDiff = JSON.stringify(data.contentUpdate.data ?? {}).length - JSON.stringify(data.originalContent).length;
 
     if (byteDiff > 300) {
       return sign((byteDiff / 1000).toFixed(2)) + ' kb';
@@ -139,7 +140,7 @@ export function Component(props: {}) {
                 {data.contentUpdate.action === 'UPDATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from the{' '}
+                      {toLabel(data.contentUpdate.action)} <b>{data.originalContent?.name}</b> from{' '}
                       <b>{data.source.name}</b>.
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
@@ -194,7 +195,7 @@ export function Component(props: {}) {
                           fw={500}
                           onClick={() => {
                             openDrawer(
-                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
                                 noFeedback: true,
                                 showOperations: true,
                               })
@@ -241,7 +242,7 @@ export function Component(props: {}) {
                 {data.contentUpdate.action === 'CREATE' && (
                   <Stack gap={10}>
                     <Text fz='lg' ta='center'>
-                      Add <b>{data.contentUpdate.data.name}</b> to the <b>{data.source.name}</b>.
+                      Add <b>{data.contentUpdate.data?.name}</b> to the <b>{data.source.name}</b>.
                     </Text>
                     <Group wrap='nowrap' align='center' justify='center'>
                       <Box>
@@ -250,14 +251,14 @@ export function Component(props: {}) {
                           fw={500}
                           onClick={() => {
                             openDrawer(
-                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data, {
+                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
                                 noFeedback: true,
                                 showOperations: true,
                               })
                             );
                           }}
                         >
-                          View {toLabel((data.contentUpdate.data.type ?? data.contentUpdate.type).replace(/-/g, ' '))}
+                          View {toLabel((data.contentUpdate.data?.type ?? data.contentUpdate.type).replace(/-/g, ' '))}
                         </BlurButton>
                       </Box>
                     </Group>

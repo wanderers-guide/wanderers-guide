@@ -384,6 +384,7 @@ interface LivingEntity {
     notes?: Record<string, string>; // TODO <op UUID> -> string
   };
   meta_data?: {
+    active_modes?: string[];
     given_item_ids?: number[];
     reset_hp?: boolean;
     calculated_stats?: {
@@ -437,6 +438,9 @@ interface Character extends LivingEntity {
     sheet_theme?: {
       color: string;
     };
+    api_clients?: {
+      client_access: { publicUserId: string; clientId: string; addedAt: number }[];
+    };
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;
@@ -460,7 +464,6 @@ interface Character extends LivingEntity {
       organized_play_adventures?: SocietyAdventureEntry[];
     };
   };
-  campaign_id?: number;
   custom_operations?: Operation[];
   options?: {
     is_public?: boolean;
@@ -639,6 +642,17 @@ interface PublicUser {
       };
     };
   };
+  api?: {
+    clients?: {
+      id: string;
+      name: string;
+      description?: string;
+      image_url?: string;
+      api_key: string;
+    }[];
+  }; // oauth/access?client_id={}&character_id={}
+  // Open a confirm access page.
+  // Adds the { publicUserId, clientId }
   deactivated: boolean;
   summary?: string;
   organized_play_id?: string;

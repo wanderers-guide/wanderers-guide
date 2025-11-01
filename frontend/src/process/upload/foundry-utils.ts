@@ -29,20 +29,22 @@ export function convertToActionCost(actionType: string, actionValue?: number): A
 }
 
 export function convertToRarity(value?: string): Rarity {
-  if (value === 'common') {
-    return 'COMMON';
-  } else if (value === 'uncommon') {
-    return 'UNCOMMON';
-  } else if (value === 'rare') {
-    return 'RARE';
-  } else if (value === 'unique') {
-    return 'UNIQUE';
+  switch (value?.toLowerCase()) {
+    case 'common':
+      return 'COMMON';
+    case 'uncommon':
+      return 'UNCOMMON';
+    case 'rare':
+      return 'RARE';
+    case 'unique':
+      return 'UNIQUE';
+    default:
+      return (value?.toUpperCase() || 'COMMON') as Rarity;
   }
-  return 'COMMON';
 }
 
 export function convertToSize(value?: string): Size {
-  switch (value) {
+  switch (value?.toLowerCase()) {
     case 'tiny':
       return 'TINY';
     case 'sm':
@@ -153,10 +155,14 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
 };
 
 export async function getTraitIds(traitNames: string[], source: ContentSource, createIfNotFound = true) {
-  const sources = await fetchContentSources({ ids: 'all', homebrew: false });
+  const sources = await fetchContentSources({ ids: 'all', homebrew: false, includeCommonCore: true });
 
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
+    if (traitName.toLowerCase().endsWith('_feet') || traitName.toLowerCase().endsWith(' feet')) {
+      traitName = traitName.replace(/_feet$/i, '').replace(/ feet$/i, '');
+    }
+
     const traitId = FOUNDRY_TRAIT_MAP[traitName.trim().toUpperCase().replace(/-/g, '_').replace(/\s+/g, '_')];
     if (traitId) {
       traitIds.push(traitId);
@@ -188,7 +194,7 @@ export async function getTraitIds(traitNames: string[], source: ContentSource, c
 }
 
 export async function getLanguageIds(languageNames: string[], source: ContentSource) {
-  const sources = await fetchContentSources();
+  const sources = await fetchContentSources({ includeCommonCore: true });
 
   const languageIds: number[] = [];
   for (let languageName of languageNames) {
@@ -212,7 +218,7 @@ export async function getLanguageIds(languageNames: string[], source: ContentSou
 }
 
 export async function getSpellByName(spellNames: string[]) {
-  const sources = await fetchContentSources();
+  const sources = await fetchContentSources({ includeCommonCore: true });
 
   const resultSpells: Spell[] = [];
   for (let spellName of spellNames) {
@@ -231,7 +237,7 @@ export async function getSpellByName(spellNames: string[]) {
 }
 
 export async function getItemsByName(itemNames: string[]) {
-  const sources = await fetchContentSources();
+  const sources = await fetchContentSources({ includeCommonCore: true });
 
   const resultItems: Item[] = [];
   for (let itemName of itemNames) {
@@ -295,7 +301,7 @@ export function extractFromDescription(description?: string) {
     };
 
   const pattern =
-    /<p><strong>(Frequency|Trigger|Requirements|Area|Craft Requirements|Special|Heightened (.*?))<\/strong>(.*?)<\/p>/gs;
+    /<p><strong>(Frequency|Trigger|Requirements|Cost|Area|Craft Requirements|Special|Heightened (.*?))<\/strong>(.*?)<\/p>/gs;
 
   const output: Record<string, string | Record<string, string>[]> = {};
   let match;

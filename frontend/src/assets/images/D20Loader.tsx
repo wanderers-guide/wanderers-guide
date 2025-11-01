@@ -26,7 +26,16 @@ export default function D20Loader(props: { size: number; color: string; percenta
           </g>
         </motion.svg>
       </Group>
-      <Text fz='sm' ta='center' fs='italic' c='gray.2'>
+      <Text
+        fz='sm'
+        ta='center'
+        fs='italic'
+        c='gray.0'
+        style={{
+          backdropFilter: 'blur(6px)',
+          borderRadius: '25px',
+        }}
+      >
         {props.status}
       </Text>
     </Stack>

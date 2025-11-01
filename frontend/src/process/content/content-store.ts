@@ -1,3 +1,4 @@
+import { COMMON_CORE_ID } from '@constants/data';
 import { makeRequest } from '@requests/request-manager';
 import {
   AbilityBlock,
@@ -111,12 +112,12 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 
 let defaultSources: number[] | undefined = undefined; // undefined means all sources
 export function defineDefaultSources(sources?: number[]) {
-  defaultSources = sources ? uniq(sources) : undefined;
+  defaultSources = sources ? uniq([COMMON_CORE_ID, ...sources]) : undefined;
   return cloneDeep(defaultSources);
 }
 
 export function getDefaultSources() {
-  return cloneDeep(defaultSources ?? []);
+  return cloneDeep([COMMON_CORE_ID, ...(defaultSources ?? [])]);
 }
 
 export function getCachedSources(): ContentSource[] {
@@ -180,7 +181,7 @@ export async function fetchContent<T = Record<string, any>>(
     const newData = { ...data };
     if (type !== 'content-source' && !newData.content_sources) {
       // This will fetch the default content sources...
-      const sources = await fetchContentSources();
+      const sources = await fetchContentSources({ includeCommonCore: true });
       newData.content_sources = sources.map((source) => source.id);
     }
 
@@ -217,14 +218,20 @@ export async function fetchContentSources(options?: {
   homebrew?: boolean;
   published?: boolean;
   ids?: number[] | 'all';
+  includeCommonCore?: boolean;
 }) {
+  const sourceIds = uniq([...(options?.ids ?? defaultSources ?? []), COMMON_CORE_ID]);
+
   const sources = await fetchContent<ContentSource>('content-source', {
     group: options?.group,
     homebrew: options?.homebrew,
     published: options?.published,
-    id: options?.ids === 'all' ? undefined : options?.ids ?? defaultSources,
+    id: options?.ids === 'all' ? undefined : sourceIds,
   });
-  return sources.sort((a, b) => a.name.localeCompare(b.name));
+
+  return sources
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .filter((source) => source.id !== COMMON_CORE_ID || options?.includeCommonCore);
 }
 
 export async function fetchContentPackage(
@@ -246,7 +253,7 @@ export async function fetchContentPackage(
     options?.fetchCreatures ? fetchContentAll<Creature>('creature', sources) : [],
     fetchContentAll<Archetype>('archetype', sources),
     fetchContentAll<VersatileHeritage>('versatile-heritage', sources),
-    options?.fetchSources ? fetchContentSources({ ids: sources }) : null,
+    options?.fetchSources ? fetchContentSources({ ids: sources, includeCommonCore: true }) : null,
   ]);
 
   return {
@@ -271,7 +278,7 @@ export async function findRequiredContentSources(sourceIds?: number[]) {
   }
 
   // Prefetch published content sources (homebrew still needs to be fetched individually)
-  await fetchContentSources({ ids: 'all' });
+  await fetchContentSources({ ids: 'all', includeCommonCore: true });
 
   const required = new Map<number, ContentSource>();
   const findRequired = async (sourceId: number) => {

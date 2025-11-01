@@ -3,10 +3,14 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { VitePWA, VitePWAOptions } from 'vite-plugin-pwa';
+import babel from '@rollup/plugin-babel';
 
 const manifestForPlugin: Partial<VitePWAOptions> = {
   registerType: 'prompt',
   includeAssets: ['apple-icon-180.png', 'maskable_icon.png'],
+  workbox: {
+    maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MiB
+  },
   manifest: {
     name: "Wanderer's Guide",
     short_name: "Wanderer's Guide",
@@ -80,5 +84,13 @@ export default defineConfig({
       filename: 'stats.html',
     }),
     VitePWA(manifestForPlugin),
+    babel({
+      babelHelpers: 'bundled',
+      presets: [['@babel/preset-env', { targets: { ios: '15' } }]],
+      extensions: ['.ts', '.js', '.tsx'],
+    }),
   ],
+  build: {
+    target: 'es2015',
+  },
 });

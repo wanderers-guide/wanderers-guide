@@ -95,7 +95,7 @@ export function Component() {
       <BackgroundImage
         src={background?.url ?? ''}
         radius={0}
-        style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000 }}
+        style={{ position: 'fixed', top: 0, left: 0, zIndex: -1000, backgroundPosition: 'top' }}
         w='100dvw'
         h='100dvh'
       />

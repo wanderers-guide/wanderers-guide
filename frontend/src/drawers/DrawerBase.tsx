@@ -11,6 +11,7 @@ import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
 import { modals } from '@mantine/modals';
 import { phoneQuery, wideDesktopQuery } from '@utils/mobile-responsive';
+import { cloneDeep } from 'lodash-es';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -32,7 +33,7 @@ const NO_FEEDBACK_DRAWERS = [
   'stat-weapon',
   'add-spell',
   'inv-item',
-  'creature',
+  // 'creature',
 ];
 
 export default function DrawerBase() {
@@ -220,11 +221,19 @@ export default function DrawerBase() {
                     right: 5,
                   }}
                   onClick={() => {
+                    const type = isAbilityBlockType(_drawer.type)
+                      ? _drawer.type
+                      : convertToContentType(_drawer.type as ContentType);
+                    const data = cloneDeep(_drawer.data);
+
+                    // Use creature id from .creature to allow edited creatures to get content updates on original
+                    if (type === 'creature' && data.creature?.id) {
+                      data.id = data.creature.id;
+                    }
+
                     setFeedbackData({
-                      type: isAbilityBlockType(_drawer.type)
-                        ? _drawer.type
-                        : convertToContentType(_drawer.type as ContentType),
-                      data: _drawer.data,
+                      type: type,
+                      data: data,
                     });
                   }}
                 >

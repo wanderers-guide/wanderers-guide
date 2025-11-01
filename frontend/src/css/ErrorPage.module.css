@@ -33,6 +33,6 @@
   max-width: rem(540px);
   margin: auto;
   margin-top: var(--mantine-spacing-xl);
-  margin-bottom: calc(var(--mantine-spacing-xl) * 1.5);
+  margin-bottom: calc(var(--mantine-spacing-xl));
   color: var(--mantine-color-blue-1);
 }

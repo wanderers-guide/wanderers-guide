@@ -31,8 +31,6 @@ export default function UpdateNotePageModal({
   const [icon, setIcon] = useState(innerProps.page.icon);
   const [color, setColor] = useState(innerProps.page.color);
 
-  const [openedModal, setOpenedModal] = useState(false);
-
   const openConfirmModal = () =>
     modals.openConfirmModal({
       title: <Title order={4}>Delete Page</Title>,

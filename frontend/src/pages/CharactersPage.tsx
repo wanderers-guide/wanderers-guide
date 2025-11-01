@@ -45,6 +45,7 @@ import {
   IconCopy,
   IconDots,
   IconFileTypePdf,
+  IconPlus,
   IconPrinter,
   IconTrash,
   IconUpload,
@@ -127,23 +128,26 @@ export function Component() {
                 </Text>
               </Title>
             </Box>
-            <Group gap={5} wrap='nowrap'>
+            <Group gap={15} wrap='nowrap'>
               <Tooltip label='Create Character' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
-                  style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  style={{
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(6px)',
+                  }}
                   loading={loadingCreateCharacter}
-                  variant='subtle'
+                  variant='outline'
                   color='gray.0'
-                  size='xl'
-                  radius='xl'
+                  size='lg'
+                  radius='lg'
                   aria-label='Create Character'
                   onClick={() => {
                     setLoadingCreateCharacter(true);
                     handleCreateCharacter();
                   }}
                 >
-                  <IconUserPlus size='1.3rem' stroke={2.5} />
+                  <IconPlus size='1.65rem' stroke={2.5} />
                 </ActionIcon>
               </Tooltip>
               <Menu shadow='md' width={240} withArrow withinPortal>
@@ -151,12 +155,15 @@ export function Component() {
                   <Tooltip label='Import Character' openDelay={750}>
                     <ActionIcon
                       disabled={reachedCharacterLimit}
-                      style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                      style={{
+                        backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                        backdropFilter: 'blur(6px)',
+                      }}
                       loading={loadingImportCharacter}
-                      variant='subtle'
+                      variant='outline'
                       color='gray.0'
-                      size='xl'
-                      radius='xl'
+                      size='lg'
+                      radius='lg'
                       aria-label='Import Character'
                     >
                       <IconUpload size='1.3rem' stroke={2.5} />
@@ -194,12 +201,15 @@ export function Component() {
               <Tooltip label='Random Character' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
-                  style={{ backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined }}
+                  style={{
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
+                    backdropFilter: 'blur(6px)',
+                  }}
                   loading={loadingCreateRandomCharacter}
-                  variant='subtle'
+                  variant='outline'
                   color='gray.0'
-                  size='xl'
-                  radius='xl'
+                  size='lg'
+                  radius='lg'
                   aria-label='Create Character'
                   onClick={async () => {
                     setLoadingCreateRandomCharacter(true);
@@ -360,7 +370,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
       onCancel: () => {},
       onConfirm: async () => {
         await deleteCharacter(character);
-        queryClient.refetchQueries(['find-character']);
+        queryClient.refetchQueries({ queryKey: ['find-character'] });
       },
     });
 
@@ -406,7 +416,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
           variant='light'
           color='gray'
           radius='xl'
-          ref={refEdit as React.RefObject<HTMLAnchorElement>}
+          ref={refEdit}
           style={{
             flex: 1,
             backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
@@ -429,7 +439,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
               color='gray'
               radius='xl'
               aria-label='Options'
-              ref={refOptions as React.RefObject<HTMLButtonElement>}
+              ref={refOptions}
               style={{
                 backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
               }}
@@ -452,7 +462,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
               leftSection={<IconCopy style={{ width: rem(14), height: rem(14) }} />}
               onClick={async () => {
                 const newCharacter = await createCharacterCopy(props.character);
-                queryClient.refetchQueries(['find-character']);
+                queryClient.refetchQueries({ queryKey: ['find-character'] });
               }}
             >
               Create Copy

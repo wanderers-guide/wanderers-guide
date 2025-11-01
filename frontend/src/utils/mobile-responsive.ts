@@ -22,3 +22,19 @@ export function usePhoneSized<T = any>(inputUseElementSize: any): { boundRef: Re
 export function isPhoneSized(width: number): boolean {
   return width < 36 * 16;
 }
+
+export function isTabletSized(width: number): boolean {
+  return width < 64 * 16;
+}
+
+export function isDesktopSized(width: number): boolean {
+  return width >= 64 * 16;
+}
+
+export function isWideDesktopSized(width: number): boolean {
+  return width >= 120 * 16;
+}
+
+export function isTouchDevice() {
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}

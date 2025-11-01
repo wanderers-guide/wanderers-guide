@@ -2,12 +2,11 @@
 import { serve } from 'std/server';
 import { connect } from '../_shared/helpers.ts';
 
-// TODO: This function URL is relatively safe to expose to the public, it's rate limited.
-//       However, we should move & change it if any abuse happens.
-const AI_FUNCTION_URL = `https://msgback.azurewebsites.net/api/OpenAICompletion?code=URUj647XlDjbH1PMiOXrVZQi7OEoBGezlfnb5VOfOMeqAzFuD92TcQ==`;
+// @ts-ignore
+const AI_FUNCTION_URL = Deno.env.get('AI_FUNCTION_URL') ?? '';
 
 serve(async (req: Request) => {
-  return await connect(req, async (client, body) => {
+  return await connect(req, async (_client, body) => {
     let { content, model } = body as { content: string; model?: string };
 
     const res = await fetch(AI_FUNCTION_URL, {

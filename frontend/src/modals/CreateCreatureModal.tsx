@@ -4,16 +4,19 @@ import { DISCORD_URL } from '@constants/data';
 import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
+  ActionIcon,
   Anchor,
   Badge,
   Box,
   Button,
   Collapse,
   Divider,
+  FocusTrap,
   Group,
   HoverCard,
   LoadingOverlay,
   Modal,
+  Paper,
   ScrollArea,
   Select,
   Stack,
@@ -28,7 +31,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, Creature } from '@typing/content';
+import { AbilityBlock, Creature, InventoryItem, Item } from '@typing/content';
 import { Operation } from '@typing/operations';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
@@ -40,10 +43,14 @@ import { isTruthy } from '@utils/type-fixing';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { selectContent } from '@common/select/SelectContent';
-import { IconBracketsAngle, IconCornerUpRight, IconTransform } from '@tabler/icons-react';
+import { IconBracketsAngle, IconCirclePlus, IconCornerUpRight, IconTransform, IconX } from '@tabler/icons-react';
 import StatBlockSection from '@common/StatBlockSection';
 import { extractCreatureInfo } from '@utils/creature';
-import { uniq } from 'lodash-es';
+import { truncate, uniq } from 'lodash-es';
+import { hashData } from '@utils/numbers';
+import { modals } from '@mantine/modals';
+import { isItemImplantable, isItemInvestable } from '@items/inv-utils';
+import { displayError } from '@utils/notifications';
 
 /**
  * Modal for creating or editing a creature
@@ -77,6 +84,7 @@ export function CreateCreatureModal(props: {
 
   const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
+  const [openedInventory, { toggle: toggleInventory }] = useDisclosure(false);
 
   const [openedModal, setOpenedModal] = useState<AbilityBlock | -1 | null>(null);
 
@@ -122,6 +130,8 @@ export function CreateCreatureModal(props: {
 
   const [description, setDescription] = useState<JSONContent>();
 
+  const [loadingProcess, setLoadingProcess] = useState(false);
+  const [inputStatBlockActive, { toggle: toggleInputStatBlockActive }] = useDisclosure(false);
   const [inputStatBlock, setInputStatBlock] = useState('');
 
   // Initialize form
@@ -161,6 +171,9 @@ export function CreateCreatureModal(props: {
       ...values,
       name: values.name.trim(),
       level: parseInt(`${values.level}`),
+      // Just in case ids are overwritten
+      id: data?.id ?? props.editCreature?.id ?? values.id ?? -1,
+      content_source_id: data?.content_source_id ?? props.editCreature?.content_source_id ?? values.content_source_id,
     });
     setTimeout(() => {
       onReset();
@@ -171,6 +184,11 @@ export function CreateCreatureModal(props: {
     form.reset();
     setDescription(undefined);
   };
+
+  const isEmpty =
+    form.values.operations?.length === 0 &&
+    form.values.abilities_base?.length === 0 &&
+    form.values.abilities_added?.length === 0;
 
   const addedAbilities = (form.values.abilities_added ?? [])
     .map((id) => abilityBlocks?.find((ab) => ab.id === id))
@@ -246,13 +264,13 @@ export function CreateCreatureModal(props: {
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={5}>
-            <Tabs defaultValue='builder'>
+            <Tabs defaultValue={editing ? 'manual' : 'builder'}>
               <Tabs.List>
-                <Tabs.Tab value='builder' leftSection={<IconTransform size='1rem' />}>
-                  Auto Builder
-                </Tabs.Tab>
                 <Tabs.Tab value='manual' leftSection={<IconBracketsAngle size='1rem' />}>
                   Manual
+                </Tabs.Tab>
+                <Tabs.Tab value='builder' leftSection={<IconTransform size='1rem' />}>
+                  Auto Builder
                 </Tabs.Tab>
               </Tabs.List>
 
@@ -265,34 +283,72 @@ export function CreateCreatureModal(props: {
                         variant='filled'
                         size='compact-xs'
                         rightSection={<IconCornerUpRight size='1rem' />}
-                        onClick={() => {
-                          const info = extractCreatureInfo(inputStatBlock);
+                        onClick={async () => {
+                          const handleProcess = async () => {
+                            //
+                            setLoadingProcess(true);
+                            // Use player core source for now
+                            try {
+                              const result = await extractCreatureInfo(1, inputStatBlock);
+                              if (result) {
+                                console.log('Granular', result.granular);
+                                console.log('Final', result.creature);
+                                form.setValues(result.creature);
+                                // @ts-expect-error
+                                form.setFieldValue('level', `${result.creature.level}`);
+                              }
+                            } catch (e) {
+                              displayError('Failed to extract creature info, please try again later');
+                            }
+                            setLoadingProcess(false);
+                            //
+                          };
+
+                          if (form.values.operations && form.values.operations.length > 0) {
+                            modals.openConfirmModal({
+                              title: <Title order={3}>Override Existing Creature</Title>,
+                              children: (
+                                <Text size='sm'>
+                                  This will override the existing creature. Are you sure you want to proceed?
+                                </Text>
+                              ),
+                              labels: { confirm: 'Confirm', cancel: 'Cancel' },
+                              onCancel: () => {},
+                              onConfirm: handleProcess,
+                            });
+                          } else {
+                            await handleProcess();
+                          }
                         }}
-                        disabled
+                        loading={loadingProcess}
                       >
                         Process
                       </Button>
                     </Group>
-                    <ScrollArea
-                      h={450}
-                      scrollbars='y'
-                      px='sm'
-                      style={{
-                        backgroundColor: theme.colors.dark[6],
-                        border: `1px solid ${theme.colors.dark[4]}`,
-                        borderRadius: theme.radius.md,
-                      }}
-                    >
-                      <Textarea
-                        variant='unstyled'
-                        placeholder='Paste creature stat block'
-                        autosize
-                        value={inputStatBlock}
-                        onChange={(e) => {
-                          setInputStatBlock(e.currentTarget.value);
+                    <Box onClick={toggleInputStatBlockActive}>
+                      <ScrollArea
+                        h={450}
+                        scrollbars='y'
+                        px='sm'
+                        style={{
+                          backgroundColor: theme.colors.dark[6],
+                          border: `1px solid ${theme.colors.dark[4]}`,
+                          borderRadius: theme.radius.md,
                         }}
-                      />
-                    </ScrollArea>
+                      >
+                        <FocusTrap active={inputStatBlockActive}>
+                          <Textarea
+                            variant='unstyled'
+                            placeholder='Paste creature stat block'
+                            autosize
+                            value={inputStatBlock}
+                            onChange={(e) => {
+                              setInputStatBlock(e.currentTarget.value);
+                            }}
+                          />
+                        </FocusTrap>
+                      </ScrollArea>
+                    </Box>
                   </Stack>
                   <Stack gap={0}>
                     <Group wrap='nowrap' justify='space-between' py={5}>
@@ -308,13 +364,15 @@ export function CreateCreatureModal(props: {
                         borderRadius: theme.radius.md,
                       }}
                     >
-                      <StatBlockSection
-                        entity={form.values}
-                        options={{
-                          hideName: true,
-                          hideImage: true,
-                        }}
-                      />
+                      {!isEmpty && (
+                        <StatBlockSection
+                          entity={form.values}
+                          options={{
+                            hideName: true,
+                            hideImage: true,
+                          }}
+                        />
+                      )}
                     </ScrollArea>
                   </Stack>
                 </Group>
@@ -355,7 +413,7 @@ export function CreateCreatureModal(props: {
                     </Button>
 
                     {form.values.abilities_base?.map((ability, i) => (
-                      <Box key={i}>
+                      <Box key={i} style={{ position: 'relative' }}>
                         <Button
                           variant='subtle'
                           size='compact-sm'
@@ -374,6 +432,27 @@ export function CreateCreatureModal(props: {
                             size={'1.2rem'}
                           />
                         </Button>
+                        <ActionIcon
+                          size='xs'
+                          variant='light'
+                          radius={100}
+                          color='gray'
+                          aria-label='Remove Ability'
+                          onClick={() => {
+                            form.setValues({
+                              ...form.values,
+                              abilities_base: form.values.abilities_base?.filter((ab) => ab.id !== ability.id),
+                            });
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            right: 0,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          <IconX size='1.5rem' stroke={2} />
+                        </ActionIcon>
                       </Box>
                     ))}
 
@@ -424,7 +503,7 @@ export function CreateCreatureModal(props: {
                     </Button>
 
                     {addedAbilities.map((ability, i) => (
-                      <Box key={i}>
+                      <Box key={i} style={{ position: 'relative' }}>
                         <Button
                           variant='subtle'
                           size='compact-sm'
@@ -447,6 +526,27 @@ export function CreateCreatureModal(props: {
                             size={'1.2rem'}
                           />
                         </Button>
+                        <ActionIcon
+                          size='xs'
+                          variant='light'
+                          radius={100}
+                          color='gray'
+                          aria-label='Remove Ability'
+                          onClick={() => {
+                            form.setValues({
+                              ...form.values,
+                              abilities_added: form.values.abilities_added?.filter((id) => id !== ability.id),
+                            });
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            right: 0,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          <IconX size='1.5rem' stroke={2} />
+                        </ActionIcon>
                       </Box>
                     ))}
 
@@ -511,6 +611,140 @@ export function CreateCreatureModal(props: {
                   my='xs'
                   label={
                     <Group gap={3} wrap='nowrap'>
+                      <Button variant={openedInventory ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                        Inventory
+                      </Button>
+                      {form.values.inventory?.items && form.values.inventory.items.length > 0 && (
+                        <Badge variant='light' color={theme.primaryColor} size='xs'>
+                          {form.values.inventory.items.length}
+                        </Badge>
+                      )}
+                    </Group>
+                  }
+                  labelPosition='left'
+                  onClick={toggleInventory}
+                />
+                <Collapse in={openedInventory}>
+                  <Box>
+                    <Paper
+                      withBorder
+                      p='xs'
+                      style={{
+                        position: 'relative',
+                      }}
+                    >
+                      <ActionIcon
+                        variant='subtle'
+                        color='gray.5'
+                        radius='lg'
+                        aria-label='Add Item'
+                        onClick={() => {
+                          selectContent<Item>(
+                            'item',
+                            (option) => {
+                              const invItems = [
+                                ...(form.values.inventory?.items ?? []),
+                                {
+                                  id: crypto.randomUUID(),
+                                  item: option,
+                                  is_formula: false,
+                                  is_equipped: true,
+                                  is_invested: isItemInvestable(option),
+                                  is_implanted: isItemImplantable(option),
+                                  container_contents: [],
+                                } satisfies InventoryItem,
+                              ];
+
+                              form.setFieldValue('inventory', {
+                                coins: {
+                                  cp: 0,
+                                  sp: 0,
+                                  gp: 0,
+                                  pp: 0,
+                                },
+                                items: invItems,
+                              });
+                            },
+                            {
+                              showButton: true,
+                              groupBySource: true,
+                            }
+                          );
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 5,
+                          right: 5,
+                          zIndex: 1,
+                        }}
+                      >
+                        <IconCirclePlus style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                      </ActionIcon>
+                      <ScrollArea h={150} scrollbars='y'>
+                        <Group gap={8}>
+                          {form.values.inventory?.items?.map((invItem, i) => (
+                            <Badge
+                              key={i}
+                              size='md'
+                              variant='light'
+                              style={{ cursor: 'pointer' }}
+                              styles={{
+                                root: {
+                                  textTransform: 'initial',
+                                },
+                              }}
+                              onClick={() => {
+                                openDrawer({
+                                  type: 'item',
+                                  data: { item: invItem.item },
+                                });
+                              }}
+                              pr={0}
+                              rightSection={
+                                <ActionIcon
+                                  variant='subtle'
+                                  color='gray'
+                                  size='xs'
+                                  aria-label='Remove Item Bought'
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const invItems = (form.values.inventory?.items ?? []).filter(
+                                      (i) => i.id !== invItem.id
+                                    );
+                                    form.setFieldValue('inventory', {
+                                      coins: {
+                                        cp: 0,
+                                        sp: 0,
+                                        gp: 0,
+                                        pp: 0,
+                                      },
+                                      items: invItems,
+                                    });
+                                  }}
+                                >
+                                  <IconX style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                                </ActionIcon>
+                              }
+                            >
+                              {truncate(invItem.item.name, { length: 22 })}
+                            </Badge>
+                          ))}
+                        </Group>
+                        {!form.values.inventory?.items ||
+                          (form.values.inventory.items.length === 0 && (
+                            <Text fz='sm' c='dimmed' ta='center' fs='italic'>
+                              No items in inventory.
+                            </Text>
+                          ))}
+                      </ScrollArea>
+                    </Paper>
+                  </Box>
+                </Collapse>
+
+                <Divider
+                  my='xs'
+                  label={
+                    <Group gap={3} wrap='nowrap'>
                       <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
                         Misc. Sections
                       </Button>
@@ -568,15 +802,23 @@ export function CreateCreatureModal(props: {
           editAbilityBlock={openedModal === -1 ? undefined : openedModal}
           onComplete={async (abilityBlock) => {
             if (openedModal === -1) {
+              // Create
               form.setValues({
                 ...form.values,
-                abilities_base: [...(form.values.abilities_base ?? []), abilityBlock],
+                abilities_base: [
+                  ...(form.values.abilities_base ?? []),
+                  {
+                    ...abilityBlock,
+                    id: hashData({ data: crypto.randomUUID() }),
+                  },
+                ],
               });
             } else {
+              // Update
               form.setValues({
                 ...form.values,
                 abilities_base: form.values.abilities_base?.map((ability) =>
-                  ability.name === abilityBlock.name ? abilityBlock : ability
+                  ability.id === abilityBlock.id ? abilityBlock : ability
                 ),
               });
             }

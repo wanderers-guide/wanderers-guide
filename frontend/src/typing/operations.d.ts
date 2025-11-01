@@ -66,6 +66,7 @@ export type Operation =
   | OperationGiveTrait
   | OperationInjectSelectOption
   | OperationInjectText
+  | OperationSendNotification
   | OperationDefineCastingSource;
 
 export type OperationType =
@@ -87,6 +88,7 @@ export type OperationType =
   | 'giveSpellSlot'
   | 'injectSelectOption'
   | 'injectText'
+  | 'sendNotification'
   | 'defineCastingSource';
 
 interface OperationBase {
@@ -237,6 +239,15 @@ export interface OperationInjectText extends OperationBase {
     type: ContentType | AbilityBlockType;
     id: number;
     text: string;
+  };
+}
+
+export interface OperationSendNotification extends OperationBase {
+  readonly type: 'sendNotification';
+  data: {
+    title: string;
+    message: string;
+    color: string;
   };
 }
 

@@ -20,6 +20,9 @@ import {
   GiPocketBow,
   GiAbdominalArmor,
   GiNinjaArmor,
+  GiDirewolf,
+  GiDorsalScales,
+  GiMetalScales,
 } from 'react-icons/gi';
 
 type ItemIconType =
@@ -39,6 +42,8 @@ type ItemIconType =
   | 'LIGHT_ARMOR'
   | 'MEDIUM_ARMOR'
   | 'HEAVY_ARMOR'
+  | 'LIGHT_BARDING'
+  | 'HEAVY_BARDING'
   | 'HIGH_TECH_GUN';
 
 export const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
@@ -58,6 +63,8 @@ export const getIconMap = (size: string, color: string): Record<ItemIconType, JS
   LIGHT_ARMOR: <GiNinjaArmor color={color} size={size} />,
   MEDIUM_ARMOR: <GiChestArmor color={color} size={size} />,
   HEAVY_ARMOR: <GiAbdominalArmor color={color} size={size} />,
+  LIGHT_BARDING: <GiDorsalScales color={color} size={size} />,
+  HEAVY_BARDING: <GiMetalScales color={color} size={size} />,
   HIGH_TECH_GUN: <GiBolterGun color={color} size={size} />,
 });
 
@@ -89,12 +96,22 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
   }
 
   if (isItemArmor(props.item)) {
-    if (props.item.meta_data?.category === 'light') {
-      type = 'LIGHT_ARMOR';
-    } else if (props.item.meta_data?.category === 'medium') {
-      type = 'MEDIUM_ARMOR';
-    } else if (props.item.meta_data?.category === 'heavy') {
-      type = 'HEAVY_ARMOR';
+    if (hasTraitType('COMPANION', props.item.traits)) {
+      if (props.item.meta_data?.category === 'light') {
+        type = 'LIGHT_BARDING';
+      } else if (props.item.meta_data?.category === 'heavy') {
+        type = 'HEAVY_BARDING';
+      } else {
+        type = 'HEAVY_BARDING';
+      }
+    } else {
+      if (props.item.meta_data?.category === 'light') {
+        type = 'LIGHT_ARMOR';
+      } else if (props.item.meta_data?.category === 'medium') {
+        type = 'MEDIUM_ARMOR';
+      } else if (props.item.meta_data?.category === 'heavy') {
+        type = 'HEAVY_ARMOR';
+      }
     }
   }
 

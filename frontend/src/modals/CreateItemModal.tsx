@@ -38,7 +38,6 @@ import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { Availability, Item, ItemGroup, Trait } from '@typing/content';
-import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import { labelToVariable } from '@variables/variable-utils';
@@ -116,6 +115,7 @@ export function CreateItemModal(props: {
       setResilientRune(item.meta_data?.runes?.resilient);
       setPotencyRune(item.meta_data?.runes?.potency);
       setPropertyRunes(item.meta_data?.runes?.property);
+      setUpgradeSlots(item.meta_data?.starfinder?.slots);
       setBaseItem(item.meta_data?.base_item);
       setBaseItemContent(item.meta_data?.base_item_content);
       setMaterialType(item.meta_data?.material?.type);
@@ -253,6 +253,12 @@ export function CreateItemModal(props: {
           resilient: resilientRune,
           potency: potencyRune,
           property: propertyRunes,
+        },
+        starfinder: {
+          capacity: values.meta_data?.starfinder?.capacity,
+          usage: values.meta_data?.starfinder?.usage,
+          grade: values.meta_data?.starfinder?.grade,
+          slots: upgradeSlots,
         },
         category: weaponCategory ? weaponCategory : armorCategory,
         group: weaponGroup ? weaponGroup : armorGroup,

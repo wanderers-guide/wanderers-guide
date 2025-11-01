@@ -22,6 +22,7 @@ import {
   OperationRemoveLanguage,
   OperationRemoveSpell,
   OperationSelect,
+  OperationSendNotification,
   OperationSetValue,
 } from '@typing/operations';
 import {
@@ -56,6 +57,7 @@ import {
 } from './operation-utils';
 import { SelectionTrack } from './selection-tree';
 import { isEqual } from 'lodash-es';
+import { hideNotification, showNotification } from '@mantine/notifications';
 
 export type OperationOptions = {
   doOnlyValueCreation?: boolean;
@@ -171,6 +173,8 @@ export async function runOperations(
       return await runRemoveSpell(varId, operation, sourceLabel);
     } else if (operation.type === 'injectText') {
       return await runInjectText(varId, operation, sourceLabel);
+    } else if (operation.type === 'sendNotification') {
+      return await runSendNotification(varId, operation, sourceLabel);
     } else if (operation.type === 'select') {
       const subNode = selectionTrack.node?.children[operation.id];
       return await runSelect(
@@ -500,10 +504,13 @@ async function runBindValue(
   operation: OperationBindValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  const bindValue = getVariable(operation.data.value.storeId, operation.data.value.variable);
-  if (bindValue) {
-    setVariable(varId, operation.data.variable, bindValue.value, sourceLabel);
-  }
+  // On outside process
+  setTimeout(() => {
+    const bindValue = getVariable(operation.data.value.storeId, operation.data.value.variable);
+    if (bindValue) {
+      setVariable(varId, operation.data.variable, bindValue.value, sourceLabel);
+    }
+  }, 1);
   return null;
 }
 
@@ -649,7 +656,8 @@ async function runGiveTrait(
   } else if (
     trait.meta_data?.ancestry_trait ||
     trait.meta_data?.creature_trait ||
-    trait.meta_data?.versatile_heritage_trait
+    trait.meta_data?.versatile_heritage_trait ||
+    trait.meta_data?.companion_type_trait
   ) {
     addVariable(varId, 'num', labelToVariable(`TRAIT_ANCESTRY_${trait.name}_IDS`), trait.id, sourceLabel);
   } else {
@@ -722,6 +730,7 @@ async function runGiveSpellSlot(
       JSON.stringify({
         ...slot,
         source: operation.data.castingSource,
+        opId: operation.id,
       }),
       sourceLabel
     );
@@ -762,6 +771,21 @@ async function runInjectText(
     }),
     sourceLabel
   );
+  return null;
+}
+
+async function runSendNotification(
+  varId: StoreID,
+  operation: OperationSendNotification,
+  sourceLabel?: string
+): Promise<OperationResult> {
+  hideNotification(`op-notif-${operation.id}`);
+  showNotification({
+    id: `op-notif-${operation.id}`,
+    title: operation.data.title,
+    message: operation.data.message,
+    color: operation.data.color.trim() || undefined,
+  });
   return null;
 }
 
