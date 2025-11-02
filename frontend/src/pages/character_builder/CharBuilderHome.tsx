@@ -69,7 +69,7 @@ import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
-import { drawerState } from '@atoms/navAtoms';
+import { drawerState, feedbackState } from '@atoms/navAtoms';
 import { AbilityBlockType, Campaign, ContentType, PublicUser } from '@typing/content';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import { userState } from '@atoms/userAtoms';
@@ -89,10 +89,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [feedbackData, setFeedbackData] = useState<{
-    type: ContentType | AbilityBlockType;
-    data: { id?: number; contentSourceId?: number };
-  } | null>(null);
 
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
@@ -239,9 +235,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                           type: 'content-source',
                           data: {
                             id: source.id,
-                            onFeedback: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => {
-                              setFeedbackData({ type, data: { id, contentSourceId } });
-                            },
                           },
                         });
                       }}
@@ -328,9 +321,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconServer}
@@ -349,9 +339,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'starfinder-core').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <Box py={8}>
@@ -375,9 +362,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconBrandSafari}
@@ -396,9 +380,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'standalone-adventure').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <LinksGroup
@@ -419,9 +400,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconArchive}
@@ -440,9 +418,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'legacy').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <LinksGroup
@@ -463,9 +438,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconDots}
@@ -484,9 +456,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'misc').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
               </Stack>
@@ -1491,25 +1460,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
             {getSidebarSection()}
           </Box>
         </Group>
-      )}
-
-      {feedbackData && (
-        <ContentFeedbackModal
-          opened={true}
-          onCancel={() => {
-            setFeedbackData(null);
-          }}
-          onStartFeedback={() => {
-            modals.closeAll();
-            openDrawer(null);
-          }}
-          onCompleteFeedback={() => {
-            openDrawer(null);
-            setFeedbackData(null);
-          }}
-          type={feedbackData.type}
-          data={feedbackData.data}
-        />
       )}
     </Stack>
   );

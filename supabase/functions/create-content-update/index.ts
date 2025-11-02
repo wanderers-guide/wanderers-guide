@@ -45,7 +45,7 @@ serve(async (req: Request) => {
       const sources = await fetchData<ContentSource>(client, 'content_source', [
         { column: 'id', value: result.content_source_id },
       ]);
-      const sourceName = sources.length > 0 ? sources[0].name : 'Unknown';
+      const sourceName = sources.find((s) => s.id === result.content_source_id)?.name ?? 'Unknown';
 
       // Get user name
       const users = await fetchData<PublicUser>(client, 'public_user', [

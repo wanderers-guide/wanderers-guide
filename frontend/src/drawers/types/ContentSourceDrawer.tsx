@@ -1,4 +1,4 @@
-import { drawerState } from '@atoms/navAtoms';
+import { drawerState, feedbackState } from '@atoms/navAtoms';
 import { userState } from '@atoms/userAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import RichText from '@common/RichText';
@@ -136,7 +136,6 @@ export function ContentSourceDrawerContent(props: {
     id?: number;
     source?: ContentSource;
     showOperations?: boolean;
-    onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
   };
 }) {
   const id = props.data.id;
@@ -145,6 +144,7 @@ export function ContentSourceDrawerContent(props: {
   const [searchValue, setSearchValue] = useState('');
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_feedbackData, setFeedbackData] = useRecoilState(feedbackState);
 
   const { data: content } = useQuery({
     queryKey: [`find-content-source-package-${id}`, { id, source: props.data.source }],
@@ -830,7 +830,14 @@ export function ContentSourceDrawerContent(props: {
               if (!value) return;
               missingSelectRef.current?.blur();
               setSearchValue('');
-              props.data.onFeedback?.(value as ContentType | AbilityBlockType, -1, source.id);
+
+              setFeedbackData({
+                type: value as ContentType | AbilityBlockType,
+                data: {
+                  id: -1,
+                  contentSourceId: source.id,
+                },
+              });
             }}
           />
         </Box>

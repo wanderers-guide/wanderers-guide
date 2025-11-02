@@ -1,4 +1,4 @@
-import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
+import { drawerState, drawerZIndexState, feedbackState } from '@atoms/navAtoms';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
@@ -53,10 +53,7 @@ export default function DrawerBase() {
 
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
-  const [feedbackData, setFeedbackData] = useState<{
-    type: ContentType | AbilityBlockType;
-    data: { id?: number };
-  } | null>(null);
+  const [feedbackData, setFeedbackData] = useRecoilState(feedbackState);
 
   const viewport = useRef<HTMLDivElement>(null);
   const [value, setValue] = useLocalStorage<PrevMetadata>({

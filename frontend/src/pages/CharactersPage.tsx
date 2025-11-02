@@ -46,10 +46,8 @@ import {
   IconDots,
   IconFileTypePdf,
   IconPlus,
-  IconPrinter,
   IconTrash,
   IconUpload,
-  IconUserPlus,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character } from '@typing/content';
@@ -58,9 +56,10 @@ import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useEffect, useRef, useState } from 'react';
-import { GiRollingDiceCup } from 'react-icons/gi';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
+
+const BOX_SHADOW = '0 0 5px 2px rgb(255 255 255 / 30%)';
 
 export function Component() {
   setPageTitle(`Characters`);
@@ -135,6 +134,7 @@ export function Component() {
                   style={{
                     backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(6px)',
+                    boxShadow: BOX_SHADOW,
                   }}
                   loading={loadingCreateCharacter}
                   variant='outline'
@@ -158,6 +158,7 @@ export function Component() {
                       style={{
                         backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
                         backdropFilter: 'blur(6px)',
+                        boxShadow: BOX_SHADOW,
                       }}
                       loading={loadingImportCharacter}
                       variant='outline'
@@ -204,6 +205,7 @@ export function Component() {
                   style={{
                     backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
                     backdropFilter: 'blur(6px)',
+                    boxShadow: BOX_SHADOW,
                   }}
                   loading={loadingCreateRandomCharacter}
                   variant='outline'

@@ -1,4 +1,3 @@
-import { queryByName } from '@ai/vector-db/vector-manager';
 import { drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
@@ -20,15 +19,11 @@ import {
   IconAsset,
   IconBrandDiscord,
   IconBrandPatreon,
-  IconFileText,
   IconFlag,
   IconHome,
   IconSearch,
   IconSettings,
-  IconSoup,
-  IconSpeakerphone,
   IconSwords,
-  IconUser,
   IconUsers,
 } from '@tabler/icons-react';
 import { AbilityBlockType, Character, ContentType } from '@typing/content';
@@ -406,7 +401,9 @@ async function fetchBooks(
         setQueryParam('open', `link_content-source_${source.id}`);
         openDrawer({
           type: 'content-source',
-          data: { id: source.id },
+          data: {
+            id: source.id,
+          },
         });
       },
       leftSection: getIconFromContentType('content-source', '1.5rem'),

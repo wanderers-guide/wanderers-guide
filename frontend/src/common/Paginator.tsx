@@ -35,6 +35,7 @@ export default function Paginator(props: { h?: number; records: React.ReactNode[
       </ScrollArea>
       <Center>
         <Pagination
+          pt='xs'
           size='sm'
           total={Math.ceil(props.records.length / NUM_PER_PAGE)}
           value={activePage}

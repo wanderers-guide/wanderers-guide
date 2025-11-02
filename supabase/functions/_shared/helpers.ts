@@ -500,7 +500,8 @@ export function deleteResponseWrapper(result: 'SUCCESS' | 'ERROR_UNKNOWN'): JSen
 export async function fetchData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
-  filters: SelectFilter[]
+  filters: SelectFilter[],
+  created?: { from?: string; to?: string }
 ) {
   // Check if we're fetching all rows
   const hasNoId = ((fil: SelectFilter[]) => {
@@ -559,6 +560,14 @@ export async function fetchData<T = Record<string, any>>(
           }
         }
       }
+    }
+
+    if (created) {
+      // Default to entire history → now
+      const from = created?.from ?? '1970-01-01T00:00:00Z';
+      const to = created?.to ?? new Date().toISOString();
+
+      query = query.gte('created_at', from).lte('created_at', to);
     }
 
     const { data, error } = await query.range(offset, offset + CHUNK_SIZE - 1);

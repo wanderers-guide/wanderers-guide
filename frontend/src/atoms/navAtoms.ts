@@ -1,6 +1,7 @@
+import { AbilityBlockType, ContentType } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isDefaultValue } from '@utils/type-fixing';
-import { DefaultValue, atom, selector } from 'recoil';
+import { atom, selector } from 'recoil';
 
 const userIconState = atom({
   key: 'user-svg-icon',
@@ -68,4 +69,12 @@ const drawerZIndexState = atom({
   default: null as number | null,
 });
 
-export { userIconState, drawerState, drawerZIndexState };
+const feedbackState = atom({
+  key: 'feedback-data',
+  default: null as {
+    type: ContentType | AbilityBlockType;
+    data: { id?: number; contentSourceId?: number };
+  } | null,
+});
+
+export { userIconState, drawerState, drawerZIndexState, feedbackState };

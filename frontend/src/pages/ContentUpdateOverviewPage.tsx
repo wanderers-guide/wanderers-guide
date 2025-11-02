@@ -16,6 +16,7 @@ import {
   useMantineTheme,
   Button,
   LoadingOverlay,
+  Select,
 } from '@mantine/core';
 import { IconSearch, IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
@@ -28,10 +29,12 @@ import { groupBy, map, orderBy } from 'lodash-es';
 export function Component(props: {}) {
   setPageTitle(`Content Updates Overview`);
 
+  const [timeframe, setTimeframe] = useState('30');
+
   const { data, isFetching } = useQuery({
-    queryKey: [`find-content-update-overview`],
+    queryKey: [`find-content-update-overview`, timeframe],
     queryFn: async () => {
-      const updates = (await findContentUpdates())?.filter((update) => update.discord_msg_id) ?? [];
+      const updates = (await findContentUpdates(timeframe))?.filter((update) => update.discord_msg_id) ?? [];
 
       const contributors = groupBy(updates, (update) => update.user_id);
       const contributorCounts = map(contributors, (contributor) => ({
@@ -81,14 +84,50 @@ export function Component(props: {}) {
       <Box maw={500} w='100%'>
         <BlurBox w={'100%'} p='md'>
           <Stack gap={0} pb={10}>
-            <Title order={2} ta='center'>
-              Content Update Overview
-            </Title>
+            <Group wrap='nowrap' py='xs'>
+              <Title order={4} ta='center'>
+                Content Update Overview
+              </Title>
+              <Select
+                size='sm'
+                placeholder='Select Timeframe'
+                value={timeframe}
+                onChange={(value) => {
+                  setTimeframe(value ?? '30');
+                }}
+                data={[
+                  {
+                    label: 'Last Week',
+                    value: '7',
+                  },
+                  {
+                    label: 'Last Month',
+                    value: '30',
+                  },
+                  {
+                    label: 'Last Quarter',
+                    value: '90',
+                  },
+                  {
+                    label: 'Last Half-Year',
+                    value: '180',
+                  },
+                  {
+                    label: 'Last Year',
+                    value: '365',
+                  },
+                  {
+                    label: 'All Time',
+                    value: 'ALL',
+                  },
+                ]}
+              />
+            </Group>
             <Divider color='gray.6' />
           </Stack>
           <Group wrap='nowrap' grow>
             <DonutChart
-              chartLabel='Total Updates'
+              chartLabel={`Total Updates`}
               data={[
                 {
                   name: 'Approved',
@@ -125,7 +164,7 @@ export function Component(props: {}) {
               <TextInput
                 style={{ flex: 1 }}
                 leftSection={<IconSearch size='0.9rem' />}
-                placeholder={`Search updates`}
+                placeholder={`Search ${data ? data.updates.length + ' ' : ''}updates`}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 styles={{
                   input: {

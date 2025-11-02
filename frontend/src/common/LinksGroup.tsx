@@ -8,27 +8,18 @@ import {
   UnstyledButton,
   rem,
   Badge,
-  useMantineTheme,
   Switch,
   Button,
   ActionIcon,
-  Tooltip,
   HoverCard,
 } from '@mantine/core';
-import {
-  IconChevronRight,
-  IconExternalLink,
-  IconInfoCircle,
-  IconInfoCircleFilled,
-  IconInfoSmall,
-} from '@tabler/icons-react';
+import { IconChevronRight, IconExternalLink } from '@tabler/icons-react';
 import classes from '@css/LinksGroup.module.css';
 import switchClasses from '@css/CustomSwitch.module.css';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
-import { ContentType, AbilityBlockType } from '@typing/content';
 
 interface LinksGroupProps {
   icon: React.FC<any>;
@@ -37,21 +28,10 @@ interface LinksGroupProps {
   links?: { label: string; id: number; url: string; enabled?: boolean }[];
   onLinkChange?: (id: number, enabled: boolean) => void;
   onEnableAll?: () => void;
-  onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
 }
 
-export function LinksGroup({
-  icon: Icon,
-  label,
-  initiallyOpened,
-  links,
-  onLinkChange,
-  onEnableAll,
-  onFeedback,
-}: LinksGroupProps) {
-  const theme = useMantineTheme();
+export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkChange, onEnableAll }: LinksGroupProps) {
   const isPhone = useMediaQuery(phoneQuery());
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const hasLinks = Array.isArray(links);
   const [opened, setOpened] = useState(initiallyOpened || false);
   const items = (hasLinks ? links : [])
@@ -72,7 +52,6 @@ export function LinksGroup({
         url={link.url}
         enabled={link.enabled}
         onLinkChange={onLinkChange}
-        onFeedback={onFeedback}
         linkCss
       />
     ));
@@ -145,7 +124,6 @@ export function GroupLinkSwitch(props: {
   enabled?: boolean | undefined;
   linkCss?: boolean;
   onLinkChange?: (id: number, enabled: boolean) => void;
-  onFeedback?: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -175,7 +153,6 @@ export function GroupLinkSwitch(props: {
                 data: {
                   id: props.id,
                   showOperations: true,
-                  onFeedback: props.onFeedback,
                 },
               });
             }}
