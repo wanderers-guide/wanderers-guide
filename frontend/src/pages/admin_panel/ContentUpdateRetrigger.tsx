@@ -14,7 +14,7 @@ export default function ContentUpdateRetrigger() {
   const { data, isFetching } = useQuery({
     queryKey: [`find-all-content-updates`],
     queryFn: async () => {
-      return (await findContentUpdates()) ?? [];
+      return (await findContentUpdates('30')) ?? [];
     },
     refetchOnWindowFocus: false,
   });
