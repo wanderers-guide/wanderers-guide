@@ -296,6 +296,7 @@ export function CreateCreatureModal(props: {
                                 form.setValues(result.creature);
                                 // @ts-expect-error
                                 form.setFieldValue('level', `${result.creature.level}`);
+                                form.setFieldValue('content_source_id', -1);
                               }
                             } catch (e) {
                               displayError('Failed to extract creature info, please try again later');

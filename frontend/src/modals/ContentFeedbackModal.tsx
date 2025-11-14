@@ -74,7 +74,7 @@ export default function ContentFeedbackModal(props: {
       convertToContentType(props.type),
       props.data.id === -1 ? 'CREATE' : 'UPDATE',
       data,
-      contentSourceId === -1 ? props.data.contentSourceId ?? -1 : contentSourceId,
+      contentSourceId === -1 ? (props.data.contentSourceId ?? -1) : contentSourceId,
       refId === -1 ? undefined : refId
     );
 
@@ -302,6 +302,8 @@ export default function ContentFeedbackModal(props: {
               opened={true}
               editId={submitUpdate.id}
               onComplete={async (creature) => {
+                console.log('WDdwwd', submitUpdate.id, creature.content_source_id);
+
                 await handleComplete(creature.id, creature.content_source_id, creature);
               }}
               onCancel={() => handleReset()}
