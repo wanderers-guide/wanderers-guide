@@ -171,8 +171,17 @@ export default function useCharacter(
 
         if (debouncedCharacter.meta_data?.reset_hp !== false) {
           // To reset hp, we need to confirm health
-          const maxHealth = getFinalHealthValue('CHARACTER');
-          confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+
+          const handleRestHP = () => {
+            const maxHealth = getFinalHealthValue('CHARACTER');
+            confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+          };
+
+          // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
+          handleRestHP();
+          setTimeout(() => {
+            handleRestHP();
+          }, 750);
         } else {
           // Because of the drained condition, let's confirm health
           const maxHealth = getFinalHealthValue('CHARACTER');

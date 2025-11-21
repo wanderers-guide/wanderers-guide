@@ -516,7 +516,11 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
 }
 
 async function createCharacter() {
-  const result = await makeRequest<Character>('create-character', {});
+  const result = await makeRequest<Character>('create-character', {
+    meta_data: {
+      reset_hp: true,
+    },
+  });
   return result;
 }
 
