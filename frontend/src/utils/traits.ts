@@ -77,7 +77,7 @@ const traitMap: Record<number, TraitType> = {
   1580: 'FLEXIBLE',
   1446: 'MULTICLASS',
   1445: 'DEDICATION',
-  1444: 'DESTINY',
+  4074: 'DESTINY',
   1504: 'MAGICAL',
   1546: 'STAFF',
   1665: 'WAND',
