@@ -179,7 +179,7 @@ export function CreateArchetypeModal(props: {
                 showButton: false,
                 overrideLabel: 'Select a Dedication',
                 abilityBlockType: 'feat',
-                filterFn: (feat) => hasTraitType('DEDICATION', feat.traits),
+                filterFn: (feat) => hasTraitType('DEDICATION', feat.traits) || hasTraitType('DESTINY', feat.traits),
               }}
               selectedId={form.values.dedication_feat_id}
             />
