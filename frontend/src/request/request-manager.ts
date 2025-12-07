@@ -7,6 +7,7 @@ const MAX_ATTEMPTS = 3;
 export async function makeRequest<T = Record<string, any>>(
   type: RequestType,
   body: Record<string, any>,
+  notifyFailure = true,
   attempt = 1
 ): Promise<T | null> {
   const { data, error } = await invokeWithRetries(type, body, MAX_ATTEMPTS);
@@ -18,7 +19,7 @@ export async function makeRequest<T = Record<string, any>>(
   } else if (error instanceof FunctionsFetchError) {
     console.error('Request Fetch error:', error.message);
     if (attempt <= MAX_ATTEMPTS) {
-      return await makeRequest<T>(type, body, attempt + 1);
+      return await makeRequest<T>(type, body, notifyFailure, attempt + 1);
     }
   } else if (error) {
     console.error('Request Unknown error:', error);
@@ -29,10 +30,14 @@ export async function makeRequest<T = Record<string, any>>(
 
   const response = data as JSendResponse;
   if (response.status === 'error') {
-    throwError(response.message);
+    if (notifyFailure) {
+      throwError(response.message);
+    }
     return null;
   } else if (response.status === 'fail') {
-    displayError('Failed to make request');
+    if (notifyFailure) {
+      displayError('Failed to make request');
+    }
     return null;
   } else {
     return response.data as T;

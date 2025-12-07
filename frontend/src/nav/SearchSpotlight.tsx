@@ -420,9 +420,13 @@ async function fetchCharacters(
   theme: MantineTheme,
   session: Session | null
 ): Promise<SpotlightActionData[]> {
-  const characters = await makeRequest<Character[]>('find-character', {
-    user_id: session?.user.id,
-  });
+  const characters = await makeRequest<Character[]>(
+    'find-character',
+    {
+      user_id: session?.user.id,
+    },
+    false
+  );
   return (characters ?? []).map((character) => {
     const level = getEntityLevel(character);
     const heritage = ''; //character.details?.heritage?.name ?? '';
