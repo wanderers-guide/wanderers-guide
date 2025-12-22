@@ -72,18 +72,23 @@ export function AdvancedSearchModal<T = ContentType>(props: {
   zIndex?: number;
   type?: T;
 
-  onSearch?: (params: Record<string, any>) => void;
+  onSearch?: (filters: FiltersParams) => void;
   onSelect?: (option: T) => void;
   onClose?: () => void;
 }) {
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
   const [traitsCached, setTraitsCached] = useState<Record<number, string>>({});
+
+  const [accordionValue, setAccordionValue] = useState<string | null>('filters');
 
   const [filters, setFilters] = useState<FiltersParams>({
     type: props.type as ContentType,
   });
 
-  const updateFilters = (updates: { key: keyof FiltersParams; value: any }[]) => {
+  const updateFilters = (
+    updates: { key: keyof FiltersParams; value: any }[],
+    callback?: (result: FiltersParams) => void
+  ) => {
     setFilters((prev) => {
       const newFilters = { ...prev };
       updates.forEach(({ key, value }) => {
@@ -93,16 +98,18 @@ export function AdvancedSearchModal<T = ContentType>(props: {
           newFilters[key] = value;
         }
       });
+      callback?.({ ...newFilters });
       return newFilters;
     });
   };
 
-  const removeFilters = (keys: (keyof FiltersParams)[]) => {
+  const removeFilters = (keys: (keyof FiltersParams)[], callback?: (result: FiltersParams) => void) => {
     setFilters((prev) => {
       const newFilters = { ...prev };
       keys.forEach((key) => {
         delete newFilters[key];
       });
+      callback?.({ ...newFilters });
       return newFilters;
     });
   };
@@ -111,10 +118,17 @@ export function AdvancedSearchModal<T = ContentType>(props: {
     queryKey: [`perform-advanced-search`, { filters }],
     queryFn: async () => {
       setLoading(true);
-      return 0;
+      return [];
     },
     refetchOnWindowFocus: false,
   });
+
+  const handleSearch = (f: FiltersParams) => {
+    props.onSearch?.(f);
+  };
+
+  const showLoader = isLoading || isFetching;
+  const results = showLoader ? null : (data ?? null);
 
   const renderFiltersSection = () => {
     const filterRecords = Object.keys(filters)
@@ -203,9 +217,13 @@ export function AdvancedSearchModal<T = ContentType>(props: {
             onRemove={() => {
               if (record.key.endsWith('_min')) {
                 const correspondingMaxKey = record.key.replace('_min', '_max') as keyof FiltersParams;
-                removeFilters([record.key, correspondingMaxKey]);
+                removeFilters([record.key, correspondingMaxKey], (newFilters) => {
+                  handleSearch(newFilters);
+                });
               } else {
-                removeFilters([record.key]);
+                removeFilters([record.key], (newFilters) => {
+                  handleSearch(newFilters);
+                });
               }
             }}
           >
@@ -217,8 +235,6 @@ export function AdvancedSearchModal<T = ContentType>(props: {
   };
 
   console.log('Rendering AdvancedSearchModal with filters:', filters);
-
-  const results = [];
 
   return (
     <Modal
@@ -249,6 +265,13 @@ export function AdvancedSearchModal<T = ContentType>(props: {
               marginTop: 0,
               marginBottom: 0,
             },
+          }}
+          value={accordionValue}
+          onChange={(v) => {
+            setAccordionValue(v);
+            if (v === 'results') {
+              handleSearch(filters);
+            }
           }}
         >
           <Accordion.Item
@@ -706,28 +729,37 @@ export function AdvancedSearchModal<T = ContentType>(props: {
               </ScrollArea>
             </Accordion.Panel>
           </Accordion.Item>
-          <Accordion.Item
-            value='results'
-            onClick={() => {
-              console.log('dwdwdwwddw');
-            }}
-          >
+          <Accordion.Item value='results'>
             <Accordion.Control>
               <Group align='center' gap='xs'>
                 <Text>Results</Text>
-                {results.length === 0 ? (
-                  <Text fz='xs' fs='italic' c='gray.6'>
-                    — None —
-                  </Text>
+                {results ? (
+                  <>
+                    {results.length === 0 ? (
+                      <Text fz='xs' fs='italic' c='gray.6'>
+                        — None —
+                      </Text>
+                    ) : (
+                      <Pill c='guide' size='md'>
+                        {5}
+                      </Pill>
+                    )}
+                  </>
                 ) : (
-                  <Pill c='guide' size='md'>
-                    {5}
-                  </Pill>
+                  <ActionIcon
+                    variant='transparent'
+                    c='dark.2'
+                    style={{
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <IconLineDotted size='2rem' stroke={1.5} />
+                  </ActionIcon>
                 )}
               </Group>
             </Accordion.Control>
             <Accordion.Panel>
-              <Divider mb='xs' />
+              {!showLoader && <Divider />}
               <ScrollArea pr={14} scrollbars='y' h={MAX_SECTION_HEIGHT}>
                 {!filters.type && (
                   <Center h={MAX_SECTION_HEIGHT * 0.9}>
@@ -751,7 +783,7 @@ export function AdvancedSearchModal<T = ContentType>(props: {
 
                 {filters.type && (
                   <>
-                    {results.length === 0 && (
+                    {results && results.length === 0 && (
                       <Center h={MAX_SECTION_HEIGHT * 0.9}>
                         <Stack align='center' justify='center' gap={0}>
                           <ActionIcon
@@ -771,15 +803,20 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                       </Center>
                     )}
 
-                    {results.length > 0 && (
-                      <Stack>
+                    {results && results.length > 0 && (
+                      <Stack mt='xs'>
                         <Text>Results go here</Text>
                       </Stack>
                     )}
+
+                    <LoadingOverlay
+                      visible={showLoader}
+                      overlayProps={{
+                        radius: 'md',
+                      }}
+                    />
                   </>
                 )}
-
-                {/* <LoadingOverlay visible={loading || isFetching} /> */}
               </ScrollArea>
             </Accordion.Panel>
           </Accordion.Item>
