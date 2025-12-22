@@ -10,6 +10,7 @@ import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
+import { AdvancedSearchModal } from '@modals/AdvancedSearchModal';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Session } from '@supabase/supabase-js';
@@ -48,6 +49,8 @@ export default function SearchSpotlight() {
 
   const navigate = useNavigate();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  const [advancedSearchMode, setAdvancedSearchMode] = useState(false);
 
   const currentQuery = useRef('');
   const [query, setQuery] = useDebouncedState('', 400);
@@ -162,89 +165,98 @@ export default function SearchSpotlight() {
   } satisfies SpotlightActionGroupData;
 
   return (
-    <Spotlight
-      scrollable
-      onQueryChange={(query: string) => {
-        /* Whenever input changes, this function is called and query is set via setQuery
-         * setQuery is a debouncer, after the set debounce time the above useEffect callback is executed.
-         * That callback fetches the result data and updates queryResult accordingly.
-         */
-        setQuery(query.trim());
-        currentQuery.current = query.trim();
-        if (query.trim() === '') {
-          setQueryResult(false);
-        } else {
-          setQueryResult(null);
-        }
-      }}
-      actions={queryResult === null ? [] : queryResult === false || query === '' ? [defaultActions] : [...queryResult]}
-      nothingFound={
-        queryResult === null ? (
-          <Center h={200}>
-            <Loader type='dots' size='lg' />
-          </Center>
-        ) : (
-          <Center h={200}>
-            <Text c='dimmed' fs='italic'>
-              Nothing found...
-            </Text>
-          </Center>
-        )
-      }
-      highlightQuery
-      searchProps={{
-        leftSection: <IconSearch style={{ width: rem(20), height: rem(20) }} stroke={1.5} />,
-        rightSection: (
-          <HoverCard shadow='md' position='top' openDelay={250} zIndex={10000} withinPortal>
-            <HoverCard.Target>
-              <ActionIcon
-                variant='subtle'
-                radius='xl'
-                size='lg'
-                color='gray.6'
-                aria-label='Advanced Search'
-                onClick={() => {
-                  console.log('Advanced Search');
-                  spotlight.close();
-                  displayComingSoon();
-                }}
-                style={{
-                  pointerEvents: 'auto',
-                }}
-              >
-                <IconAdjustments style={{ width: rem(20), height: rem(20) }} stroke={1.5} />
-              </ActionIcon>
-            </HoverCard.Target>
-            <HoverCard.Dropdown px={10} py={5}>
-              <Text size='sm'>Advanced Search</Text>
-            </HoverCard.Dropdown>
-          </HoverCard>
-        ),
-        placeholder: 'Search anything...',
-      }}
-      filter={(query, actions) => {
-        if (!query) return actions;
-        const newGroups = [];
-        for (let group of actions as SpotlightActionGroupData[]) {
-          const newActions = group.actions.filter((action) => {
-            if (getQueryType(action)) {
-              return true;
-            } else {
-              const inLabel = action.label?.toLowerCase().includes(query.toLowerCase());
-              const inDescription = action.description?.toLowerCase().includes(query.toLowerCase());
-              const inKeywords = (isArray(action.keywords) ? action.keywords : []).some((keyword) =>
-                keyword.toLowerCase().includes(query.toLowerCase())
-              );
-              return inLabel || inDescription || inKeywords;
-            }
-          });
-          if (newActions.length > 0) {
-            newGroups.push({ ...group, actions: newActions });
+    <>
+      <Spotlight
+        scrollable
+        onQueryChange={(query: string) => {
+          /* Whenever input changes, this function is called and query is set via setQuery
+           * setQuery is a debouncer, after the set debounce time the above useEffect callback is executed.
+           * That callback fetches the result data and updates queryResult accordingly.
+           */
+          setQuery(query.trim());
+          currentQuery.current = query.trim();
+          if (query.trim() === '') {
+            setQueryResult(false);
+          } else {
+            setQueryResult(null);
           }
+        }}
+        actions={
+          queryResult === null ? [] : queryResult === false || query === '' ? [defaultActions] : [...queryResult]
         }
-        return newGroups;
-      }}
-    />
+        nothingFound={
+          queryResult === null ? (
+            <Center h={200}>
+              <Loader type='dots' size='lg' />
+            </Center>
+          ) : (
+            <Center h={200}>
+              <Text c='dimmed' fs='italic'>
+                Nothing found...
+              </Text>
+            </Center>
+          )
+        }
+        highlightQuery
+        searchProps={{
+          leftSection: <IconSearch style={{ width: rem(20), height: rem(20) }} stroke={1.5} />,
+          rightSection: (
+            <HoverCard shadow='md' position='top' openDelay={250} zIndex={10000} withinPortal>
+              <HoverCard.Target>
+                <ActionIcon
+                  variant='subtle'
+                  radius='xl'
+                  size='lg'
+                  color='gray.6'
+                  aria-label='Advanced Search'
+                  onClick={() => {
+                    setAdvancedSearchMode(true);
+                    spotlight.close();
+                  }}
+                  style={{
+                    pointerEvents: 'auto',
+                  }}
+                >
+                  <IconAdjustments style={{ width: rem(20), height: rem(20) }} stroke={1.5} />
+                </ActionIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown px={10} py={5}>
+                <Text size='sm'>Advanced Search</Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          ),
+          placeholder: 'Search anything...',
+        }}
+        filter={(query, actions) => {
+          if (!query) return actions;
+          const newGroups = [];
+          for (let group of actions as SpotlightActionGroupData[]) {
+            const newActions = group.actions.filter((action) => {
+              if (getQueryType(action)) {
+                return true;
+              } else {
+                const inLabel = action.label?.toLowerCase().includes(query.toLowerCase());
+                const inDescription = action.description?.toLowerCase().includes(query.toLowerCase());
+                const inKeywords = (isArray(action.keywords) ? action.keywords : []).some((keyword) =>
+                  keyword.toLowerCase().includes(query.toLowerCase())
+                );
+                return inLabel || inDescription || inKeywords;
+              }
+            });
+            if (newActions.length > 0) {
+              newGroups.push({ ...group, actions: newActions });
+            }
+          }
+          return newGroups;
+        }}
+      />
+      <AdvancedSearchModal
+        opened={advancedSearchMode}
+        onClose={() => {
+          setAdvancedSearchMode(false);
+        }}
+      />
+    </>
   );
 }
 
