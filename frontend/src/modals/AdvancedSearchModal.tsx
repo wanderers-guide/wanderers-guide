@@ -1,5 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import ActionsInput from '@common/ActionsInput';
 import TraitsInput from '@common/TraitsInput';
+import { fetchContent } from '@content/content-store';
+import { defineDefaultSourcesForUser } from '@content/homebrew';
 import {
   Accordion,
   Group,
@@ -21,13 +24,25 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { makeRequest } from '@requests/request-manager';
 import { IconBoomFilled, IconLineDotted } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlockType, ActionCost, Availability, ContentType, ItemGroup, Rarity, Size } from '@typing/content';
+import {
+  AbilityBlockType,
+  ActionCost,
+  Availability,
+  ContentSource,
+  ContentType,
+  ItemGroup,
+  Rarity,
+  Size,
+} from '@typing/content';
 import { Operation } from '@typing/operations';
 import { actionCostToLabel } from '@utils/actions';
+import { displayError } from '@utils/notifications';
+import { hashData } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface FiltersParams {
   type?: ContentType;
@@ -66,6 +81,7 @@ interface FiltersParams {
 }
 
 const MAX_SECTION_HEIGHT = 350;
+const MAX_RESULTS_RETURNED = 10000;
 
 export function AdvancedSearchModal<T = ContentType>(props: {
   opened: boolean;
@@ -78,6 +94,7 @@ export function AdvancedSearchModal<T = ContentType>(props: {
 }) {
   const [isLoading, setLoading] = useState(false);
   const [traitsCached, setTraitsCached] = useState<Record<number, string>>({});
+  const [contentSourcesCached, setContentSourcesCached] = useState<ContentSource[]>([]);
 
   const [accordionValue, setAccordionValue] = useState<string | null>('filters');
 
@@ -114,21 +131,90 @@ export function AdvancedSearchModal<T = ContentType>(props: {
     });
   };
 
-  const { data, isFetching } = useQuery({
-    queryKey: [`perform-advanced-search`, { filters }],
-    queryFn: async () => {
-      setLoading(true);
-      return [];
-    },
-    refetchOnWindowFocus: false,
-  });
+  // Load content sources
+  useEffect(() => {
+    if (props.opened) {
+      defineDefaultSourcesForUser().then(async (sourceIds) => {
+        const sources = await fetchContent<ContentSource>('content-source', {
+          id: sourceIds,
+        });
+        setContentSourcesCached(sources);
+      });
+    }
+  }, [props.opened]);
 
-  const handleSearch = (f: FiltersParams) => {
+  const [_data, _setData] = useState<Record<string, any>[]>([]);
+  const isOverMaxResults = _data.length >= MAX_RESULTS_RETURNED;
+  const [prevFiltersHash, setPrevFiltersHash] = useState<number>(-1);
+  const isResultsStale = useMemo(() => {
+    const currentHash = hashData(filters);
+    return currentHash !== prevFiltersHash;
+  }, [filters, prevFiltersHash]);
+
+  // Auto-search when results are stale and user views results tab
+  useEffect(() => {
+    if (isResultsStale && accordionValue === 'results') {
+      handleSearch(filters);
+    }
+  }, [isResultsStale]);
+
+  const handleSearch = async (f: FiltersParams) => {
+    // No type selected
+    if (!f.type) {
+      _setData([]);
+      return;
+    }
+
+    // Prevent duplicate searches
+    const hash = hashData(f);
+    if (hash === prevFiltersHash) {
+      return;
+    }
+    setPrevFiltersHash(hash);
+
+    // Notify parent
     props.onSearch?.(f);
+
+    // Fetch data
+    setLoading(true);
+    const result = await makeRequest('search-data', {
+      is_advanced: true,
+      ...f,
+    });
+
+    if (result) {
+      if (f.type === 'ability-block') {
+        _setData(result.ability_blocks ?? []);
+      } else if (f.type === 'ancestry') {
+        _setData(result.ancestries ?? []);
+      } else if (f.type === 'archetype') {
+        _setData(result.archetypes ?? []);
+      } else if (f.type === 'background') {
+        _setData(result.backgrounds ?? []);
+      } else if (f.type === 'class') {
+        _setData(result.classes ?? []);
+      } else if (f.type === 'creature') {
+        _setData(result.creatures ?? []);
+      } else if (f.type === 'item') {
+        _setData(result.items ?? []);
+      } else if (f.type === 'language') {
+        _setData(result.languages ?? []);
+      } else if (f.type === 'spell') {
+        _setData(result.spells ?? []);
+      } else if (f.type === 'trait') {
+        _setData(result.traits ?? []);
+      } else if (f.type === 'versatile-heritage') {
+        _setData(result.versatile_heritages ?? []);
+      } else {
+        _setData([]);
+      }
+      setLoading(false);
+    } else {
+      displayError('Failed to fetch search results.');
+    }
   };
 
-  const showLoader = isLoading || isFetching;
-  const results = showLoader ? null : (data ?? null);
+  const results = isLoading ? null : _data;
 
   const renderFiltersSection = () => {
     const filterRecords = Object.keys(filters)
@@ -162,6 +248,13 @@ export function AdvancedSearchModal<T = ContentType>(props: {
           } else if (key === 'traits' && Array.isArray(value)) {
             // Handle traits array
             v = `[ ${value.map((traitId) => traitsCached[Number(traitId)] ?? `${traitId}`).join(', ')} ]`;
+          } else if (key === 'content_sources' && Array.isArray(value)) {
+            // Handle content sources array
+            v = `[ ${value
+              .map((sourceId) => {
+                return contentSourcesCached.find((source) => source.id === sourceId)?.name ?? `${sourceId}`;
+              })
+              .join(', ')} ]`;
           } else {
             v = JSON.stringify(v);
           }
@@ -213,17 +306,14 @@ export function AdvancedSearchModal<T = ContentType>(props: {
           <Pill
             key={index}
             size='sm'
+            c='dark.1'
             withRemoveButton={record.key !== 'type'}
             onRemove={() => {
               if (record.key.endsWith('_min')) {
                 const correspondingMaxKey = record.key.replace('_min', '_max') as keyof FiltersParams;
-                removeFilters([record.key, correspondingMaxKey], (newFilters) => {
-                  handleSearch(newFilters);
-                });
+                removeFilters([record.key, correspondingMaxKey]);
               } else {
-                removeFilters([record.key], (newFilters) => {
-                  handleSearch(newFilters);
-                });
+                removeFilters([record.key]);
               }
             }}
           >
@@ -303,7 +393,6 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                       { value: 'ancestry', label: 'Ancestry' },
                       { value: 'background', label: 'Background' },
                       { value: 'language', label: 'Language' },
-                      { value: 'content-source', label: 'Content Source' },
                     ]}
                     placeholder='Select content type'
                     searchable
@@ -332,39 +421,41 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                       updateFilters([{ key: 'description', value: e.currentTarget.value }]);
                     }}
                   />
-                  <Group wrap='nowrap' justify='stretch'>
-                    <Select
-                      label='Rarity'
-                      placeholder='Any'
-                      searchable
-                      clearable
-                      data={[
-                        { value: 'COMMON', label: 'Common' },
-                        { value: 'UNCOMMON', label: 'Uncommon' },
-                        { value: 'RARE', label: 'Rare' },
-                        { value: 'UNIQUE', label: 'Unique' },
-                      ]}
-                      value={filters.rarity ?? null}
-                      onChange={(value) => {
-                        updateFilters([{ key: 'rarity', value }]);
-                      }}
-                    />
-                    <Select
-                      label='Availability'
-                      placeholder='Any'
-                      searchable
-                      clearable
-                      data={[
-                        { value: 'STANDARD', label: 'Standard' },
-                        { value: 'LIMITED', label: 'Limited' },
-                        { value: 'RESTRICTED', label: 'Restricted' },
-                      ]}
-                      value={filters.availability ?? null}
-                      onChange={(value) => {
-                        updateFilters([{ key: 'availability', value }]);
-                      }}
-                    />
-                  </Group>
+                  {filters.type !== 'trait' && (
+                    <Group wrap='nowrap' justify='stretch'>
+                      <Select
+                        label='Rarity'
+                        placeholder='Any'
+                        searchable
+                        clearable
+                        data={[
+                          { value: 'COMMON', label: 'Common' },
+                          { value: 'UNCOMMON', label: 'Uncommon' },
+                          { value: 'RARE', label: 'Rare' },
+                          { value: 'UNIQUE', label: 'Unique' },
+                        ]}
+                        value={filters.rarity ?? null}
+                        onChange={(value) => {
+                          updateFilters([{ key: 'rarity', value }]);
+                        }}
+                      />
+                      <Select
+                        label='Availability'
+                        placeholder='Any'
+                        searchable
+                        clearable
+                        data={[
+                          { value: 'STANDARD', label: 'Standard' },
+                          { value: 'LIMITED', label: 'Limited' },
+                          { value: 'RESTRICTED', label: 'Restricted' },
+                        ]}
+                        value={filters.availability ?? null}
+                        onChange={(value) => {
+                          updateFilters([{ key: 'availability', value }]);
+                        }}
+                      />
+                    </Group>
+                  )}
                   {['item', 'spell', 'ability-block'].includes(filters.type ?? '<!>') && (
                     <TraitsInput
                       label='Traits'
@@ -725,6 +816,37 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                       }}
                     />
                   )}
+
+                  {filters.type !== 'content-source' && (
+                    <TagsInput
+                      label='Content Sources'
+                      placeholder='Select books'
+                      splitChars={[',', ';', '|']}
+                      // Store names for easier selection
+                      data={contentSourcesCached.map((source) => source.name)}
+                      value={
+                        // Map IDs to names
+                        filters.content_sources
+                          ?.map((s) => {
+                            return contentSourcesCached.find((source) => source.id === s)?.name;
+                          })
+                          .filter((s) => s !== undefined) ?? []
+                      }
+                      onChange={(value) => {
+                        // Convert back to IDs
+                        updateFilters([
+                          {
+                            key: 'content_sources',
+                            value: value
+                              .map((name) => {
+                                return contentSourcesCached.find((s) => s.name === name)?.id;
+                              })
+                              .filter((id) => id !== undefined),
+                          },
+                        ]);
+                      }}
+                    />
+                  )}
                 </Stack>
               </ScrollArea>
             </Accordion.Panel>
@@ -733,33 +855,37 @@ export function AdvancedSearchModal<T = ContentType>(props: {
             <Accordion.Control>
               <Group align='center' gap='xs'>
                 <Text>Results</Text>
-                {results ? (
+                {results && !isResultsStale ? (
                   <>
                     {results.length === 0 ? (
                       <Text fz='xs' fs='italic' c='gray.6'>
                         — None —
                       </Text>
                     ) : (
-                      <Pill c='guide' size='md'>
-                        {5}
+                      <Pill c='dark.1' size='md'>
+                        {results.length.toLocaleString()}
+                        {isOverMaxResults ? '+' : ''}
                       </Pill>
                     )}
                   </>
                 ) : (
-                  <ActionIcon
-                    variant='transparent'
-                    c='dark.2'
-                    style={{
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <IconLineDotted size='2rem' stroke={1.5} />
-                  </ActionIcon>
+                  <Pill size='md'>
+                    <ActionIcon
+                      variant='transparent'
+                      c='dark.1'
+                      size='md'
+                      style={{
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <IconLineDotted size='2rem' stroke={1.5} />
+                    </ActionIcon>
+                  </Pill>
                 )}
               </Group>
             </Accordion.Control>
             <Accordion.Panel>
-              {!showLoader && <Divider />}
+              {!isLoading && <Divider />}
               <ScrollArea pr={14} scrollbars='y' h={MAX_SECTION_HEIGHT}>
                 {!filters.type && (
                   <Center h={MAX_SECTION_HEIGHT * 0.9}>
@@ -810,7 +936,7 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                     )}
 
                     <LoadingOverlay
-                      visible={showLoader}
+                      visible={isLoading}
                       overlayProps={{
                         radius: 'md',
                       }}
