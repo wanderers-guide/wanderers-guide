@@ -210,7 +210,8 @@ export default function SearchSpotlight() {
                   color='gray.6'
                   aria-label='Advanced Search'
                   onClick={() => {
-                    setAdvancedSearchMode(true);
+                    // setAdvancedSearchMode(true);
+                    displayComingSoon();
                     spotlight.close();
                   }}
                   style={{
