@@ -1,7 +1,9 @@
 import { Operation } from './operations';
 
+type Availability = 'STANDARD' | 'LIMITED' | 'RESTRICTED';
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'UNIQUE';
 type Size = 'TINY' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'HUGE' | 'GARGANTUAN';
+type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'UPGRADE' | 'MATERIAL';
 type ActionCost =
   | 'ONE-ACTION'
   | 'TWO-ACTIONS'
