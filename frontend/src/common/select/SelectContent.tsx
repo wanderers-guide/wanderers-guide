@@ -157,7 +157,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
-  const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
+  const label = selected ? selected.name : (props.options?.overrideLabel ?? `Select ${typeName}`);
 
   const onSelect = () => {
     selectContent<T>(
@@ -1846,7 +1846,7 @@ export function BaseSelectionOption(props: {
         width: '100%',
         pointerEvents: props.disabled ? 'none' : undefined,
       }}
-      onClick={displayButton ? props.onClick : props.onButtonClick ?? props.onClick}
+      onClick={displayButton ? props.onClick : (props.onButtonClick ?? props.onClick)}
       justify='space-between'
     >
       {props.level && parseInt(`${props.level}`) !== 0 && !isNaN(parseInt(`${props.level}`)) && (
@@ -2566,7 +2566,7 @@ export function AncestrySelectionOption(props: {
 
   const operations = character
     ? getAdjustedAncestryOperations('CHARACTER', character, props.ancestry.operations ?? [])
-    : props.ancestry.operations ?? [];
+    : (props.ancestry.operations ?? []);
 
   const ancestryHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_ANCESTRY', operations, 'READ');
   const attributes = getStatBlockDisplay(

@@ -40,8 +40,6 @@ export function mapToDrawerData(
     drawerType = data.type;
   }
 
-  console.log('drawerType', drawerType, 'data', data, 'dataInject', dataInject);
-
   let drawerData: Record<string, any> = {};
   if (typeof data === 'number') {
     drawerData = { id: data, ...(dataInject ?? {}) };

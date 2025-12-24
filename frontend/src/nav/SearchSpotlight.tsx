@@ -27,7 +27,7 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentType } from '@typing/content';
+import { AbilityBlockType, Character, ContentType, Spell } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
 import { displayComingSoon } from '@utils/notifications';

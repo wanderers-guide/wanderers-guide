@@ -139,6 +139,10 @@ async function handleAdvancedSearch(
     if (filters.content_sources?.length) {
       query = query.in('content_source_id', filters.content_sources);
     }
+
+    // Sort alphabetically by name
+    query = query.order('name', { ascending: true });
+
     return query;
   };
 

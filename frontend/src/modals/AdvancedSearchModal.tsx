@@ -1,8 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { drawerState } from '@atoms/navAtoms';
 import ActionsInput from '@common/ActionsInput';
+import { SelectionOptionsInner } from '@common/select/SelectContent';
 import TraitsInput from '@common/TraitsInput';
 import { fetchContent } from '@content/content-store';
 import { defineDefaultSourcesForUser } from '@content/homebrew';
+import { mapToDrawerData } from '@drawers/drawer-utils';
 import {
   Accordion,
   Group,
@@ -22,6 +25,7 @@ import {
   TagsInput,
   Center,
   ActionIcon,
+  Box,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { makeRequest } from '@requests/request-manager';
@@ -37,12 +41,14 @@ import {
   Rarity,
   Size,
 } from '@typing/content';
+import { DrawerType } from '@typing/index';
 import { Operation } from '@typing/operations';
 import { actionCostToLabel } from '@utils/actions';
 import { displayError } from '@utils/notifications';
 import { hashData } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { useEffect, useMemo, useState } from 'react';
+import { useRecoilState } from 'recoil';
 
 interface FiltersParams {
   type?: ContentType;
@@ -83,13 +89,13 @@ interface FiltersParams {
 const MAX_SECTION_HEIGHT = 350;
 const MAX_RESULTS_RETURNED = 10000;
 
-export function AdvancedSearchModal<T = ContentType>(props: {
+export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(props: {
   opened: boolean;
   zIndex?: number;
   type?: T;
 
   onSearch?: (filters: FiltersParams) => void;
-  onSelect?: (option: T) => void;
+  onSelect?: (option: C) => void;
   onClose?: () => void;
 }) {
   const [isLoading, setLoading] = useState(false);
@@ -143,6 +149,7 @@ export function AdvancedSearchModal<T = ContentType>(props: {
     }
   }, [props.opened]);
 
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [_data, _setData] = useState<Record<string, any>[]>([]);
   const isOverMaxResults = _data.length >= MAX_RESULTS_RETURNED;
   const [prevFiltersHash, setPrevFiltersHash] = useState<number>(-1);
@@ -178,8 +185,9 @@ export function AdvancedSearchModal<T = ContentType>(props: {
     // Fetch data
     setLoading(true);
     const result = await makeRequest('search-data', {
-      is_advanced: true,
       ...f,
+      is_advanced: true,
+      content_sources: f.content_sources ?? contentSourcesCached.map((source) => source.id),
     });
 
     if (result) {
@@ -324,8 +332,6 @@ export function AdvancedSearchModal<T = ContentType>(props: {
     );
   };
 
-  console.log('Rendering AdvancedSearchModal with filters:', filters);
-
   return (
     <Modal
       opened={props.opened}
@@ -355,6 +361,9 @@ export function AdvancedSearchModal<T = ContentType>(props: {
               marginTop: 0,
               marginBottom: 0,
             },
+            content: {
+              padding: 0,
+            },
           }}
           value={accordionValue}
           onChange={(v) => {
@@ -373,8 +382,8 @@ export function AdvancedSearchModal<T = ContentType>(props: {
             <Accordion.Control>{renderFiltersSection()}</Accordion.Control>
             <Accordion.Panel>
               <Divider />
-              <ScrollArea pr={14} scrollbars='y' h={MAX_SECTION_HEIGHT}>
-                <Stack mt='xs'>
+              <ScrollArea px={14} scrollbars='y' h={MAX_SECTION_HEIGHT}>
+                <Stack mt='xs' mb='md'>
                   <Select
                     label='Search for'
                     data={[
@@ -389,7 +398,7 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                       { value: 'spell', label: 'Spell' },
                       { value: 'archetype', label: 'Archetype' },
                       { value: 'versatile-heritage', label: 'Versatile Heritage' },
-                      { value: 'creature', label: 'Creature' },
+                      // { value: 'creature', label: 'Creature' },
                       { value: 'ancestry', label: 'Ancestry' },
                       { value: 'background', label: 'Background' },
                       { value: 'language', label: 'Language' },
@@ -403,6 +412,7 @@ export function AdvancedSearchModal<T = ContentType>(props: {
                         { key: 'ab_type', value: value?.split('_')[1] as AbilityBlockType },
                       ]);
                     }}
+                    disabled={props.type !== undefined}
                     readOnly={props.type !== undefined}
                   />
                   <TextInput
@@ -886,64 +896,84 @@ export function AdvancedSearchModal<T = ContentType>(props: {
             </Accordion.Control>
             <Accordion.Panel>
               {!isLoading && <Divider />}
-              <ScrollArea pr={14} scrollbars='y' h={MAX_SECTION_HEIGHT}>
-                {!filters.type && (
-                  <Center h={MAX_SECTION_HEIGHT * 0.9}>
-                    <Stack align='center' justify='center' gap={0}>
-                      <ActionIcon
-                        variant='transparent'
-                        c='dark'
-                        size={100}
-                        style={{
-                          pointerEvents: 'none',
-                        }}
-                      >
-                        <IconLineDotted size='5rem' stroke={1.5} />
-                      </ActionIcon>
-                      <Text fz='sm' fs='italic' c='gray.6'>
-                        Please select a content type to search for.
-                      </Text>
-                    </Stack>
-                  </Center>
-                )}
-
-                {filters.type && (
-                  <>
-                    {results && results.length === 0 && (
-                      <Center h={MAX_SECTION_HEIGHT * 0.9}>
-                        <Stack align='center' justify='center' gap={0}>
-                          <ActionIcon
-                            variant='transparent'
-                            c='dark'
-                            size={100}
-                            style={{
-                              pointerEvents: 'none',
-                            }}
-                          >
-                            <IconBoomFilled size='5rem' stroke={1.5} />
-                          </ActionIcon>
-                          <Text fz='sm' fs='italic' c='gray.6'>
-                            No results found, try adjusting your filters.
-                          </Text>
-                        </Stack>
-                      </Center>
-                    )}
-
-                    {results && results.length > 0 && (
-                      <Stack mt='xs'>
-                        <Text>Results go here</Text>
-                      </Stack>
-                    )}
-
-                    <LoadingOverlay
-                      visible={isLoading}
-                      overlayProps={{
-                        radius: 'md',
+              {!filters.type && (
+                <Center h={MAX_SECTION_HEIGHT * 0.9}>
+                  <Stack align='center' justify='center' gap={0}>
+                    <ActionIcon
+                      variant='transparent'
+                      c='dark'
+                      size={100}
+                      style={{
+                        pointerEvents: 'none',
                       }}
-                    />
-                  </>
-                )}
-              </ScrollArea>
+                    >
+                      <IconLineDotted size='5rem' stroke={1.5} />
+                    </ActionIcon>
+                    <Text fz='sm' fs='italic' c='gray.6'>
+                      Please select a content type to search for.
+                    </Text>
+                  </Stack>
+                </Center>
+              )}
+
+              {filters.type && (
+                <Box mih={MAX_SECTION_HEIGHT}>
+                  {results && results.length === 0 && (
+                    <Center h={MAX_SECTION_HEIGHT * 0.9}>
+                      <Stack align='center' justify='center' gap={0}>
+                        <ActionIcon
+                          variant='transparent'
+                          c='dark'
+                          size={100}
+                          style={{
+                            pointerEvents: 'none',
+                          }}
+                        >
+                          <IconBoomFilled size='5rem' stroke={1.5} />
+                        </ActionIcon>
+                        <Text fz='sm' fs='italic' c='gray.6'>
+                          No results found, try adjusting your filters.
+                        </Text>
+                      </Stack>
+                    </Center>
+                  )}
+
+                  {results && results.length > 0 && (
+                    <Stack gap='xs' mb='xs'>
+                      <SelectionOptionsInner
+                        isLoading={isLoading}
+                        options={results}
+                        type={filters.type!}
+                        abilityBlockType={filters.ab_type}
+                        onClick={(option) => {
+                          if (props.onSelect) {
+                            props.onSelect(option as C);
+                          } else {
+                            const drawerType: DrawerType = filters.ab_type ?? filters.type ?? 'generic';
+                            openDrawer({
+                              type: drawerType,
+                              data: {
+                                id: option.id,
+                                onSelect:
+                                  props.onSelect !== undefined ? () => props.onSelect?.(option as C) : undefined,
+                              },
+                              extra: { addToHistory: true },
+                            });
+                          }
+                        }}
+                        showButton={props.onSelect !== undefined}
+                      />
+                    </Stack>
+                  )}
+
+                  <LoadingOverlay
+                    visible={isLoading}
+                    overlayProps={{
+                      radius: 'md',
+                    }}
+                  />
+                </Box>
+              )}
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>
