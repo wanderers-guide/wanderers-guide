@@ -90,9 +90,9 @@ export default function useCharacter(
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const [executingOperations, setExecutingOperations] = useState(false);
 
-  const [debouncedCharacter] = useDebouncedValue(character, 200);
+  const [debouncedCharacter] = useDebouncedValue(character, 1000);
   const prevDebouncedCharacter = usePrevious(debouncedCharacter);
-  const setCharacterDebounced = useDebouncedCallback(setCharacter, 200);
+  const setCharacterDebounced = useDebouncedCallback(setCharacter, 1000);
 
   const getUpdateHash = (c: Character | null | undefined) => {
     return hashData(
@@ -181,7 +181,7 @@ export default function useCharacter(
           handleRestHP();
           setTimeout(() => {
             handleRestHP();
-          }, 750);
+          }, 1500);
         } else {
           // Because of the drained condition, let's confirm health
           const maxHealth = getFinalHealthValue('CHARACTER');
@@ -242,8 +242,7 @@ export default function useCharacter(
     },
     onSuccess: (c) => {
       if (c) {
-        console.log('> Updated character #', getUpdateHash(debouncedCharacter));
-        handleFetchedCharacter(c);
+        console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(c));
       }
     },
   });
