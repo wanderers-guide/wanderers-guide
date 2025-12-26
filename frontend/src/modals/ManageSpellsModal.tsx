@@ -3,7 +3,7 @@ import { SelectContentButton, SpellSelectionOption, selectContent } from '@commo
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { isSpellVisible } from '@content/content-hidden';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import {
   Box,
   Button,
@@ -44,7 +44,8 @@ export default function ManageSpellsModal(props: {
   type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
   filter?: {
     traditions?: string[];
-    ranks?: string[];
+    rank_min?: number;
+    rank_max?: number;
   };
   zIndex?: number;
 }) {
@@ -84,7 +85,7 @@ export default function ManageSpellsModal(props: {
   }, [props.entity]);
 
   const allFilteredSpells =
-    (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined) : allRawSpells ?? []) ??
+    (searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[] | undefined) : (allRawSpells ?? [])) ??
     [];
 
   const spells = useMemo(() => {
@@ -205,14 +206,13 @@ const SlotsSection = (props: {
   source: string;
   filter?: {
     traditions?: string[];
-    ranks?: string[];
+    rank_min?: number;
+    rank_max?: number;
   };
 }) => {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [displaySlots, refreshSlots] = useRefresh();
-
-  props.slots;
 
   const { slots } = props;
   // Filter the slots to only show the slots for the source
@@ -226,6 +226,8 @@ const SlotsSection = (props: {
     },
     {} as Record<string, SpellSlotRecord[]>
   );
+
+  console.log('wddwwd', getDefaultSources());
 
   return (
     <ScrollArea pr={14} h={`calc(min(80dvh, ${EDIT_MODAL_HEIGHT}px))`} scrollbars='y'>
@@ -319,40 +321,13 @@ const SlotsSection = (props: {
                             return isNormalSpell(spell) && spell.rank <= parseInt(rank) && !isCantrip(spell);
                           }
                         },
-                        filterOptions: {
-                          options: [
-                            {
-                              title: 'Tradition',
-                              type: 'MULTI-SELECT',
-                              options: [
-                                { label: 'Arcane', value: 'arcane' },
-                                { label: 'Divine', value: 'divine' },
-                                { label: 'Occult', value: 'occult' },
-                                { label: 'Primal', value: 'primal' },
-                              ],
-                              key: 'traditions',
-                              default: props.filter?.traditions,
-                            },
-                            {
-                              title: 'Rank',
-                              type: 'MULTI-SELECT',
-                              default: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
-                              options: [
-                                { label: 'Cantrip', value: '0' },
-                                { label: '1st', value: '1' },
-                                { label: '2nd', value: '2' },
-                                { label: '3rd', value: '3' },
-                                { label: '4th', value: '4' },
-                                { label: '5th', value: '5' },
-                                { label: '6th', value: '6' },
-                                { label: '7th', value: '7' },
-                                { label: '8th', value: '8' },
-                                { label: '9th', value: '9' },
-                                { label: '10th', value: '10' },
-                              ],
-                              key: 'rank',
-                            },
-                          ],
+                        advancedPresetFilters: {
+                          type: 'spell',
+                          spell_type: props.source === 'RITUALS' ? 'RITUAL' : 'NORMAL',
+                          traditions: props.filter?.traditions,
+                          rank_min: props.filter?.rank_min,
+                          rank_max: props.filter?.rank_max,
+                          content_sources: getDefaultSources(),
                         },
                       }}
                     />
@@ -379,7 +354,8 @@ const ListSection = (props: {
   setSearchQuery: (val: string) => void;
   filter?: {
     traditions?: string[];
-    ranks?: string[];
+    rank_min?: number;
+    rank_max?: number;
   };
 }) => {
   const isRituals = props.source === 'RITUALS';
@@ -452,6 +428,8 @@ const ListSection = (props: {
             selectContent<Spell>(
               'spell',
               (option) => {
+                console.log('Selected spell to add:', option);
+
                 if (option.rank === 0 || option.rank === 10 || isRitual(option)) {
                   addSpell(option, option.rank);
                 } else {
@@ -464,7 +442,6 @@ const ListSection = (props: {
               },
               {
                 showButton: true,
-                groupBySource: true,
                 overrideLabel: `Add ${isRituals ? 'Ritual' : 'Spell'}`,
 
                 filterFn: (spellRec: Record<string, any>) => {
@@ -475,41 +452,13 @@ const ListSection = (props: {
                     return isNormalSpell(s);
                   }
                 },
-
-                filterOptions: {
-                  options: [
-                    {
-                      title: 'Tradition',
-                      type: 'MULTI-SELECT',
-                      default: props.filter?.traditions,
-                      options: [
-                        { label: 'Arcane', value: 'arcane' },
-                        { label: 'Divine', value: 'divine' },
-                        { label: 'Occult', value: 'occult' },
-                        { label: 'Primal', value: 'primal' },
-                      ],
-                      key: 'traditions',
-                    },
-                    {
-                      title: 'Rank',
-                      type: 'MULTI-SELECT',
-                      default: props.filter?.ranks,
-                      options: [
-                        { label: 'Cantrip', value: '0' },
-                        { label: '1st', value: '1' },
-                        { label: '2nd', value: '2' },
-                        { label: '3rd', value: '3' },
-                        { label: '4th', value: '4' },
-                        { label: '5th', value: '5' },
-                        { label: '6th', value: '6' },
-                        { label: '7th', value: '7' },
-                        { label: '8th', value: '8' },
-                        { label: '9th', value: '9' },
-                        { label: '10th', value: '10' },
-                      ],
-                      key: 'rank',
-                    },
-                  ],
+                advancedPresetFilters: {
+                  type: 'spell',
+                  spell_type: isRituals ? 'RITUAL' : 'NORMAL',
+                  traditions: props.filter?.traditions,
+                  rank_min: props.filter?.rank_min,
+                  rank_max: props.filter?.rank_max,
+                  content_sources: getDefaultSources(),
                 },
               }
             );

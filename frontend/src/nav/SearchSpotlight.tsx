@@ -36,6 +36,7 @@ import { setQueryParam } from '@utils/url';
 import { labelToVariable } from '@variables/variable-utils';
 import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
+import { set } from 'node_modules/cypress/types/lodash';
 import { useEffect, useRef, useState } from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
@@ -50,7 +51,7 @@ export default function SearchSpotlight() {
   const navigate = useNavigate();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const [advancedSearchMode, setAdvancedSearchMode] = useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
   const currentQuery = useRef('');
   const [query, setQuery] = useDebouncedState('', 400);
@@ -210,8 +211,7 @@ export default function SearchSpotlight() {
                   color='gray.6'
                   aria-label='Advanced Search'
                   onClick={() => {
-                    setAdvancedSearchMode(true);
-                    // displayComingSoon();
+                    setAdvancedSearchOpen(true);
                     spotlight.close();
                   }}
                   style={{
@@ -252,9 +252,9 @@ export default function SearchSpotlight() {
         }}
       />
       <AdvancedSearchModal
-        opened={advancedSearchMode}
+        opened={advancedSearchOpen}
         onClose={() => {
-          setAdvancedSearchMode(false);
+          setAdvancedSearchOpen(false);
         }}
       />
     </>

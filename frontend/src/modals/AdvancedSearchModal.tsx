@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import ActionsInput from '@common/ActionsInput';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
 import TraitsInput from '@common/TraitsInput';
-import { fetchContent } from '@content/content-store';
+import { fetchContent, getCachedSources } from '@content/content-store';
 import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { mapToDrawerData } from '@drawers/drawer-utils';
 import {
@@ -50,7 +50,7 @@ import { toLabel } from '@utils/strings';
 import { useEffect, useMemo, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
-interface FiltersParams {
+export interface FiltersParams {
   type?: ContentType;
   name?: string;
   rarity?: Rarity;
@@ -82,6 +82,7 @@ interface FiltersParams {
   group?: ItemGroup;
   hands?: string;
   craft_requirements?: string;
+  spell_type?: 'FOCUS' | 'RITUAL' | 'NORMAL';
   usage?: string;
   content_sources?: number[];
 }
@@ -89,24 +90,35 @@ interface FiltersParams {
 const MAX_SECTION_HEIGHT = 350;
 const MAX_RESULTS_RETURNED = 10000;
 
-export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(props: {
+export function AdvancedSearchModal<C = Record<string, any>>(props: {
   opened: boolean;
   zIndex?: number;
-  type?: T;
+  presetFilters?: Partial<FiltersParams>;
 
+  extraFilterFn?: (item: C) => boolean;
   onSearch?: (filters: FiltersParams) => void;
   onSelect?: (option: C) => void;
   onClose?: () => void;
 }) {
   const [isLoading, setLoading] = useState(false);
   const [traitsCached, setTraitsCached] = useState<Record<number, string>>({});
-  const [contentSourcesCached, setContentSourcesCached] = useState<ContentSource[]>([]);
+  const [contentSourcesCached, setContentSourcesCached] = useState<ContentSource[]>(
+    getCachedSources().filter((source) => props.presetFilters?.content_sources?.includes(source.id) ?? true)
+  );
+  const zIndex = props.zIndex ?? 500;
 
   const [accordionValue, setAccordionValue] = useState<string | null>('filters');
 
   const [filters, setFilters] = useState<FiltersParams>({
-    type: props.type as ContentType,
+    ...props.presetFilters,
   });
+
+  // Sync preset filters state
+  useEffect(() => {
+    setFilters({
+      ...props.presetFilters,
+    });
+  }, [props.presetFilters]);
 
   const updateFilters = (
     updates: { key: keyof FiltersParams; value: any }[],
@@ -137,15 +149,27 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
     });
   };
 
-  // Load content sources
   useEffect(() => {
     if (props.opened) {
-      defineDefaultSourcesForUser().then(async (sourceIds) => {
-        const sources = await fetchContent<ContentSource>('content-source', {
-          id: sourceIds,
+      // Load content sources
+      if (props.presetFilters?.content_sources) {
+        fetchContent<ContentSource>('content-source', {
+          id: props.presetFilters.content_sources,
+        }).then((sources) => {
+          setContentSourcesCached(sources);
         });
-        setContentSourcesCached(sources);
-      });
+      } else {
+        defineDefaultSourcesForUser().then(async (sourceIds) => {
+          const sources = await fetchContent<ContentSource>('content-source', {
+            id: sourceIds,
+          });
+          setContentSourcesCached(sources);
+        });
+      }
+
+      // Reset to filters tab
+      setAccordionValue('filters');
+      setPrevFiltersHash(-1);
     }
   }, [props.opened]);
 
@@ -190,32 +214,38 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
       content_sources: f.content_sources ?? contentSourcesCached.map((source) => source.id),
     });
 
+    let newData: Record<string, any>[] = [];
+
     if (result) {
       if (f.type === 'ability-block') {
-        _setData(result.ability_blocks ?? []);
+        newData = result.ability_blocks ?? [];
       } else if (f.type === 'ancestry') {
-        _setData(result.ancestries ?? []);
+        newData = result.ancestries ?? [];
       } else if (f.type === 'archetype') {
-        _setData(result.archetypes ?? []);
+        newData = result.archetypes ?? [];
       } else if (f.type === 'background') {
-        _setData(result.backgrounds ?? []);
+        newData = result.backgrounds ?? [];
       } else if (f.type === 'class') {
-        _setData(result.classes ?? []);
+        newData = result.classes ?? [];
       } else if (f.type === 'creature') {
-        _setData(result.creatures ?? []);
+        newData = result.creatures ?? [];
       } else if (f.type === 'item') {
-        _setData(result.items ?? []);
+        newData = result.items ?? [];
       } else if (f.type === 'language') {
-        _setData(result.languages ?? []);
+        newData = result.languages ?? [];
       } else if (f.type === 'spell') {
-        _setData(result.spells ?? []);
+        newData = result.spells ?? [];
       } else if (f.type === 'trait') {
-        _setData(result.traits ?? []);
+        newData = result.traits ?? [];
       } else if (f.type === 'versatile-heritage') {
-        _setData(result.versatile_heritages ?? []);
+        newData = result.versatile_heritages ?? [];
       } else {
-        _setData([]);
+        newData = [];
       }
+
+      // Apply extra filter if provided
+      _setData(newData.filter((item) => (props.extraFilterFn ? props.extraFilterFn(item as C) : true)));
+
       setLoading(false);
     } else {
       displayError('Failed to fetch search results.');
@@ -242,16 +272,16 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
           let v = value;
           if (key === 'type' && filters.ab_type) {
             // Handle ability block type
-            v = JSON.stringify(filters.ab_type);
+            v = `'${filters.ab_type}'`;
           } else if (key.endsWith('_min')) {
             // Handle min - max values
             const minValue = value;
             const maxValue = filters[key.replace('_min', '_max') as keyof FiltersParams];
 
             if (minValue === maxValue) {
-              v = JSON.stringify(`${minValue}`);
+              v = `'${minValue}'`;
             } else {
-              v = JSON.stringify(`${minValue} - ${maxValue}`);
+              v = `'${minValue} - ${maxValue}'`;
             }
           } else if (key === 'traits' && Array.isArray(value)) {
             // Handle traits array
@@ -264,7 +294,7 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
               })
               .join(', ')} ]`;
           } else {
-            v = JSON.stringify(v);
+            v = `'${v?.toString()}'`;
           }
 
           return toLabel(v);
@@ -315,7 +345,7 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
             key={index}
             size='sm'
             c='dark.1'
-            withRemoveButton={record.key !== 'type'}
+            withRemoveButton={props.presetFilters?.[record.key] === undefined}
             onRemove={() => {
               if (record.key.endsWith('_min')) {
                 const correspondingMaxKey = record.key.replace('_min', '_max') as keyof FiltersParams;
@@ -343,6 +373,7 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
       closeOnClickOutside={false}
       closeOnEscape={false}
       keepMounted={false}
+      zIndex={zIndex}
     >
       <Stack>
         <Accordion
@@ -412,8 +443,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                         { key: 'ab_type', value: value?.split('_')[1] as AbilityBlockType },
                       ]);
                     }}
-                    disabled={props.type !== undefined}
-                    readOnly={props.type !== undefined}
+                    styles={{
+                      dropdown: {
+                        zIndex: zIndex + 1,
+                      },
+                    }}
+                    disabled={props.presetFilters?.type !== undefined}
                   />
                   <TextInput
                     label='Name'
@@ -422,6 +457,7 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                     onChange={(e) => {
                       updateFilters([{ key: 'name', value: e.currentTarget.value }]);
                     }}
+                    disabled={props.presetFilters?.name !== undefined}
                   />
                   <TextInput
                     label='Description'
@@ -430,6 +466,7 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                     onChange={(e) => {
                       updateFilters([{ key: 'description', value: e.currentTarget.value }]);
                     }}
+                    disabled={props.presetFilters?.description !== undefined}
                   />
                   {filters.type !== 'trait' && (
                     <Group wrap='nowrap' justify='stretch'>
@@ -448,6 +485,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                         onChange={(value) => {
                           updateFilters([{ key: 'rarity', value }]);
                         }}
+                        styles={{
+                          dropdown: {
+                            zIndex: zIndex + 1,
+                          },
+                        }}
+                        disabled={props.presetFilters?.rarity !== undefined}
                       />
                       <Select
                         label='Availability'
@@ -463,6 +506,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                         onChange={(value) => {
                           updateFilters([{ key: 'availability', value }]);
                         }}
+                        styles={{
+                          dropdown: {
+                            zIndex: zIndex + 1,
+                          },
+                        }}
+                        disabled={props.presetFilters?.availability !== undefined}
                       />
                     </Group>
                   )}
@@ -482,43 +531,16 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                         updateFilters([{ key: 'traits', value: traits.map((trait) => trait.id) }]);
                       }}
                       style={{ flex: 1 }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.traits !== undefined}
                     />
                   )}
-                  {['spell', 'ability-block'].includes(filters.type ?? '<!>') &&
-                    ['action', 'feat', 'physical-feature'].includes(filters.ab_type ?? '') && (
-                      <TextInput
-                        label='Cost'
-                        placeholder='Any -'
-                        value={filters.cost ?? ''}
-                        onChange={(e) => {
-                          updateFilters([{ key: 'cost', value: e.currentTarget.value }]);
-                        }}
-                      />
-                    )}
-                  {['spell', 'ability-block'].includes(filters.type ?? '<!>') &&
-                    ['action', 'feat', 'physical-feature'].includes(filters.ab_type ?? '') && (
-                      <TextInput
-                        label='Trigger'
-                        placeholder='Any -'
-                        value={filters.trigger ?? ''}
-                        onChange={(e) => {
-                          updateFilters([{ key: 'trigger', value: e.currentTarget.value }]);
-                        }}
-                      />
-                    )}
-                  {['spell', 'ability-block'].includes(filters.type ?? '<!>') &&
-                    ['action', 'feat', 'physical-feature'].includes(filters.ab_type ?? '') && (
-                      <TextInput
-                        label='Requirements'
-                        placeholder='Any -'
-                        value={filters.requirements ?? ''}
-                        onChange={(e) => {
-                          updateFilters([{ key: 'requirements', value: e.currentTarget.value }]);
-                        }}
-                      />
-                    )}
                   {['item', 'ability-block', 'creature'].includes(filters.type ?? '<!>') &&
-                    ['feat', 'class-feature'].includes(filters.ab_type ?? '') && (
+                    ['feat', 'class-feature', ''].includes(filters.ab_type ?? '') && (
                       <Stack gap={5} pb={10}>
                         <Text fz='sm'>Level</Text>
                         <RangeSlider
@@ -537,6 +559,11 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                             duration: 150,
                             timingFunction: 'linear',
                           }}
+                          styles={{
+                            label: {
+                              zIndex: zIndex + 1,
+                            },
+                          }}
                           marks={[
                             { value: 0, label: '0' },
                             { value: 5, label: '5' },
@@ -546,29 +573,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                             { value: 25, label: '25' },
                             { value: 30, label: '30' },
                           ]}
+                          disabled={
+                            props.presetFilters?.level_min !== undefined || props.presetFilters?.level_max !== undefined
+                          }
                         />
                       </Stack>
                     )}
-                  {['item', 'creature'].includes(filters.type ?? '<!>') && (
-                    <Select
-                      label='Size'
-                      placeholder='Any'
-                      searchable
-                      clearable
-                      data={[
-                        { value: 'TINY', label: 'Tiny' },
-                        { value: 'SMALL', label: 'Small' },
-                        { value: 'MEDIUM', label: 'Medium' },
-                        { value: 'LARGE', label: 'Large' },
-                        { value: 'HUGE', label: 'Huge' },
-                        { value: 'GARGANTUAN', label: 'Gargantuan' },
-                      ]}
-                      value={filters.size ?? null}
-                      onChange={(value) => {
-                        updateFilters([{ key: 'size', value }]);
-                      }}
-                    />
-                  )}
                   {filters.type === 'spell' && (
                     <Stack gap={5} pb={10}>
                       <Text fz='sm'>Rank</Text>
@@ -588,6 +598,11 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                           duration: 150,
                           timingFunction: 'linear',
                         }}
+                        styles={{
+                          label: {
+                            zIndex: zIndex + 1,
+                          },
+                        }}
                         marks={[
                           { value: 0, label: 'C.' },
                           { value: 1, label: '1' },
@@ -601,13 +616,16 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                           { value: 9, label: '9' },
                           { value: 10, label: '10' },
                         ]}
+                        disabled={
+                          props.presetFilters?.rank_min !== undefined || props.presetFilters?.rank_max !== undefined
+                        }
                       />
                     </Stack>
                   )}
                   {filters.type === 'spell' && (
                     <Select
                       label='Cast'
-                      placeholder='Any'
+                      placeholder='Any casting time'
                       clearable
                       data={[
                         { value: 'ONE-ACTION', label: actionCostToLabel('ONE-ACTION') },
@@ -646,6 +664,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                       onChange={(value) => {
                         updateFilters([{ key: 'cast', value }]);
                       }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.cast !== undefined}
                     />
                   )}
                   {filters.type === 'spell' && (
@@ -658,56 +682,67 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                       onChange={(value) => {
                         updateFilters([{ key: 'traditions', value }]);
                       }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.traditions !== undefined}
                     />
                   )}
                   {filters.type === 'spell' && (
                     <TextInput
                       label='Defense'
-                      placeholder='Any -'
+                      placeholder='Any defense, e.g. "basic Reflex"'
                       value={filters.defense ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'defense', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.defense !== undefined}
                     />
                   )}
                   {filters.type === 'spell' && (
                     <TextInput
                       label='Range'
-                      placeholder='Any -'
+                      placeholder='Any range, e.g. "30 feet"'
                       value={filters.range ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'range', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.range !== undefined}
                     />
                   )}
                   {filters.type === 'spell' && (
                     <TextInput
                       label='Area'
-                      placeholder='Any -'
+                      placeholder='Any area, e.g. "15-foot cone"'
                       value={filters.area ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'area', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.area !== undefined}
                     />
                   )}
                   {filters.type === 'spell' && (
                     <TextInput
                       label='Targets'
-                      placeholder='Any -'
+                      placeholder='Any targets, e.g. "1 creature"'
                       value={filters.targets ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'targets', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.targets !== undefined}
                     />
                   )}
                   {filters.type === 'spell' && (
                     <TextInput
                       label='Duration'
-                      placeholder='Any -'
+                      placeholder='Any duration, e.g. "sustained up to 1 minute"'
                       value={filters.duration ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'duration', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.duration !== undefined}
                     />
                   )}
                   {filters.type === 'ability-block' &&
@@ -719,6 +754,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                         onChange={(value) => {
                           updateFilters([{ key: 'actions', value }]);
                         }}
+                        styles={{
+                          dropdown: {
+                            zIndex: zIndex + 1,
+                          },
+                        }}
+                        disabled={props.presetFilters?.actions !== undefined}
                       />
                     )}
                   {filters.type === 'ability-block' && ['feat'].includes(filters.ab_type ?? '<!>') && (
@@ -730,63 +771,121 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                       onChange={(value) => {
                         updateFilters([{ key: 'prerequisites', value }]);
                       }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.prerequisites !== undefined}
                     />
                   )}
                   {filters.type === 'ability-block' &&
                     ['action', 'feat', 'physical-feature'].includes(filters.ab_type ?? '<!>') && (
                       <TextInput
                         label='Frequency'
-                        placeholder='Any -'
+                        placeholder='Any frequency, e.g. "once per day"'
                         value={filters.frequency ?? ''}
                         onChange={(e) => {
                           updateFilters([{ key: 'frequency', value: e.currentTarget.value }]);
                         }}
+                        disabled={props.presetFilters?.frequency !== undefined}
+                      />
+                    )}
+                  {['spell', 'ability-block'].includes(filters.type ?? '<!>') &&
+                    ['action', 'feat', 'physical-feature', ''].includes(filters.ab_type ?? '') && (
+                      <TextInput
+                        label='Trigger'
+                        placeholder='Any trigger, e.g. "you take damage"'
+                        value={filters.trigger ?? ''}
+                        onChange={(e) => {
+                          updateFilters([{ key: 'trigger', value: e.currentTarget.value }]);
+                        }}
+                        disabled={props.presetFilters?.trigger !== undefined}
+                      />
+                    )}
+                  {['spell', 'ability-block'].includes(filters.type ?? '<!>') &&
+                    ['action', 'feat', 'physical-feature', ''].includes(filters.ab_type ?? '') && (
+                      <TextInput
+                        label='Requirements'
+                        placeholder='Any requirements, e.g. "you have a free hand"'
+                        value={filters.requirements ?? ''}
+                        onChange={(e) => {
+                          updateFilters([{ key: 'requirements', value: e.currentTarget.value }]);
+                        }}
+                        disabled={props.presetFilters?.requirements !== undefined}
+                      />
+                    )}
+                  {['spell', 'ability-block'].includes(filters.type ?? '<!>') &&
+                    ['action', 'feat', 'physical-feature', ''].includes(filters.ab_type ?? '') && (
+                      <TextInput
+                        label='Cost'
+                        placeholder='Any cost, e.g. "oils worth 3 gp"'
+                        value={filters.cost ?? ''}
+                        onChange={(e) => {
+                          updateFilters([{ key: 'cost', value: e.currentTarget.value }]);
+                        }}
+                        disabled={props.presetFilters?.cost !== undefined}
                       />
                     )}
                   {filters.type === 'ability-block' && ['feat', 'heritage'].includes(filters.ab_type ?? '<!>') && (
                     <TextInput
                       label='Access'
-                      placeholder='Any -'
+                      placeholder='Any access, e.g. "You are from Old Cheliax."'
                       value={filters.access ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'access', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.access !== undefined}
                     />
                   )}
                   {filters.type === 'ability-block' && (
                     <TextInput
                       label='Special'
-                      placeholder='Any -'
+                      placeholder='Any, e.g. "You cannot select another dedication feat until..."'
                       value={filters.special ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'special', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.special !== undefined}
                     />
                   )}
                   {filters.type === 'item' && (
                     <TextInput
-                      label='Bulk'
-                      placeholder='Any -'
-                      value={filters.bulk ?? ''}
+                      label='Usage'
+                      placeholder='Any usage, e.g. "held in one hand"'
+                      value={filters.usage ?? ''}
                       onChange={(e) => {
-                        updateFilters([{ key: 'bulk', value: e.currentTarget.value }]);
+                        updateFilters([{ key: 'usage', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.usage !== undefined}
                     />
                   )}
                   {filters.type === 'item' && (
                     <TextInput
                       label='Hands'
-                      placeholder='Any -'
+                      placeholder='Any hands, e.g. "1+"'
                       value={filters.hands ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'hands', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.hands !== undefined}
+                    />
+                  )}
+                  {filters.type === 'item' && (
+                    <TextInput
+                      label='Bulk'
+                      placeholder='Any bulk, e.g. "1" or "0.1" (for L)'
+                      value={filters.bulk ?? ''}
+                      onChange={(e) => {
+                        updateFilters([{ key: 'bulk', value: e.currentTarget.value }]);
+                      }}
+                      disabled={props.presetFilters?.bulk !== undefined}
                     />
                   )}
                   {filters.type === 'item' && (
                     <Select
                       label='Group'
-                      placeholder='Any'
+                      placeholder='Any item group'
                       searchable
                       clearable
                       data={
@@ -804,29 +903,74 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                       onChange={(value) => {
                         updateFilters([{ key: 'group', value }]);
                       }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.group !== undefined}
+                    />
+                  )}
+                  {['item', 'creature'].includes(filters.type ?? '<!>') && (
+                    <Select
+                      label='Size'
+                      placeholder='Any size'
+                      searchable
+                      clearable
+                      data={[
+                        { value: 'TINY', label: 'Tiny' },
+                        { value: 'SMALL', label: 'Small' },
+                        { value: 'MEDIUM', label: 'Medium' },
+                        { value: 'LARGE', label: 'Large' },
+                        { value: 'HUGE', label: 'Huge' },
+                        { value: 'GARGANTUAN', label: 'Gargantuan' },
+                      ]}
+                      value={filters.size ?? null}
+                      onChange={(value) => {
+                        updateFilters([{ key: 'size', value }]);
+                      }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.size !== undefined}
                     />
                   )}
                   {filters.type === 'item' && (
                     <TextInput
                       label='Craft Requirements'
-                      placeholder='Any -'
+                      placeholder='Any, e.g. "duskwood worth at least 55 gp"'
                       value={filters.craft_requirements ?? ''}
                       onChange={(e) => {
                         updateFilters([{ key: 'craft_requirements', value: e.currentTarget.value }]);
                       }}
+                      disabled={props.presetFilters?.craft_requirements !== undefined}
                     />
                   )}
-                  {filters.type === 'item' && (
-                    <TextInput
-                      label='Usage'
-                      placeholder='Any -'
-                      value={filters.usage ?? ''}
-                      onChange={(e) => {
-                        updateFilters([{ key: 'usage', value: e.currentTarget.value }]);
+                  {filters.type === 'spell' && (
+                    <Select
+                      label='Spell Type'
+                      placeholder='Any spell type'
+                      searchable
+                      clearable
+                      data={[
+                        { value: 'NORMAL', label: 'Normal' },
+                        { value: 'FOCUS', label: 'Focus' },
+                        { value: 'RITUAL', label: 'Ritual' },
+                      ]}
+                      value={filters.spell_type ?? null}
+                      onChange={(value) => {
+                        updateFilters([{ key: 'spell_type', value }]);
                       }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.spell_type !== undefined}
                     />
                   )}
-
                   {filters.type !== 'content-source' && (
                     <TagsInput
                       label='Content Sources'
@@ -855,6 +999,12 @@ export function AdvancedSearchModal<T = ContentType, C = Record<string, any>>(pr
                           },
                         ]);
                       }}
+                      styles={{
+                        dropdown: {
+                          zIndex: zIndex + 1,
+                        },
+                      }}
+                      disabled={props.presetFilters?.content_sources !== undefined}
                     />
                   )}
                 </Stack>

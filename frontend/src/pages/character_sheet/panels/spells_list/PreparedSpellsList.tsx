@@ -41,7 +41,8 @@ export default function PreparedSpellsList(props: {
     type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
     filter?: {
       traditions?: string[];
-      ranks?: string[];
+      rank_min?: number;
+      rank_max?: number;
     }
   ) => void;
   slots: Dictionary<
@@ -87,7 +88,8 @@ export default function PreparedSpellsList(props: {
                   props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
                   {
                     traditions: [props.source!.tradition.toLowerCase()],
-                    ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
+                    rank_min: 0,
+                    rank_max: highestRank,
                   }
                 );
               }}
@@ -203,7 +205,8 @@ export default function PreparedSpellsList(props: {
                               props.source!.type === 'PREPARED-LIST' ? 'SLOTS-AND-LIST' : 'SLOTS-ONLY',
                               {
                                 traditions: [props.source!.tradition.toLowerCase()],
-                                ranks: Array.from({ length: parseInt(rank) + 1 }, (_, i) => i.toString()),
+                                rank_min: 0,
+                                rank_max: parseInt(rank),
                               }
                             );
                           }}

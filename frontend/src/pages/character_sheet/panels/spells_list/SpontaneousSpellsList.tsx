@@ -53,7 +53,8 @@ export default function SpontaneousSpellsList(props: {
     type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
     filter?: {
       traditions?: string[];
-      ranks?: string[];
+      rank_min?: number;
+      rank_max?: number;
     }
   ) => void;
   slots: Dictionary<
@@ -97,7 +98,8 @@ export default function SpontaneousSpellsList(props: {
                 e.preventDefault();
                 props.openManageSpells?.(props.source!.name, 'LIST-ONLY', {
                   traditions: [props.source!.tradition.toLowerCase()],
-                  ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
+                  rank_min: 0,
+                  rank_max: highestRank,
                 });
               }}
             >

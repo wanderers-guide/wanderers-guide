@@ -1102,7 +1102,6 @@ function ContentList<
                       },
                       {
                         abilityBlockType: props.abilityBlockType,
-                        groupBySource: true,
                       }
                     );
                   }}

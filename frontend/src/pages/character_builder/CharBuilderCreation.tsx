@@ -5,9 +5,8 @@ import { CharacterInfo } from '@common/CharacterInfo';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
-import { FilterOptions, defaultFeatOptions, prereqFilterOption } from '@common/select/filters';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { fetchContentPackage, fetchContentSources } from '@content/content-store';
+import { fetchContentPackage, fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
 import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
@@ -206,7 +205,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.ancestry?.id,
                     }
                   );
@@ -233,7 +231,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.background?.id,
                     }
                   );
@@ -263,7 +260,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.class?.id,
                       filterFn: (option) => option.id !== character?.details?.class_2?.id,
                     }
@@ -291,7 +287,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.class_2?.id,
                       filterFn: (option) => option.id !== character?.details?.class?.id,
                     }
@@ -373,7 +368,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.ancestry?.id,
               }
             );
@@ -400,7 +394,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.background?.id,
               }
             );
@@ -430,7 +423,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.class?.id,
                 filterFn: (option) => option.id !== character?.details?.class_2?.id,
               }
@@ -458,7 +450,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.class_2?.id,
                 filterFn: (option) => option.id !== character?.details?.class?.id,
               }
@@ -2097,28 +2088,11 @@ function OperationResultSelector(props: {
   onChange: (path: string, value: string) => void;
 }) {
   const character = useRecoilValue(characterState);
-  const showPrereqFilter = () => {
-    const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
-    if (!DETECT_PREREQUS) {
-      return false;
-    }
-    if ((props.result?.selection?.options ?? []).length == 0) {
-      return false;
-    }
-    return (
-      props.result?.selection?.options[0]._content_type === 'ability-block' &&
-      props.result?.selection?.options[0].type === 'feat'
-    );
-  };
-  let filterOptions: FilterOptions = { options: defaultFeatOptions };
-  if (showPrereqFilter()) {
-    filterOptions = { options: [prereqFilterOption, ...defaultFeatOptions] };
-  }
   return (
     <SelectContentButton
       type={
         (props.result?.selection?.options ?? []).length > 0
-          ? props.result?.selection?.options[0]._content_type ?? 'ability-block'
+          ? (props.result?.selection?.options[0]._content_type ?? 'ability-block')
           : 'ability-block'
       }
       onClick={(option) => {
@@ -2137,7 +2111,13 @@ function OperationResultSelector(props: {
         abilityBlockType:
           (props.result?.selection?.options ?? []).length > 0 ? props.result?.selection?.options[0].type : undefined,
         skillAdjustment: props.result?.selection?.skillAdjustment,
-        filterOptions,
+        // advancedPresetFilters: {
+        //   type: props.result?.selection?.options[0]._content_type,
+        //   ab_type: props.result?.selection?.options[0].type,
+        //   content_sources: character ? character.content_sources?.enabled : getDefaultSources(),
+        //   level_max: character ? character.level : undefined,
+        //   level_min: 1,
+        // },
       }}
     />
   );

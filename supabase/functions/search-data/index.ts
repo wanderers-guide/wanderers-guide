@@ -48,6 +48,7 @@ serve(async (req: Request) => {
       area?: string;
       targets?: string;
       duration?: string;
+      spell_type?: 'FOCUS' | 'RITUAL' | 'NORMAL';
 
       // Ability Block
       actions?: ActionCost;
@@ -76,6 +77,44 @@ serve(async (req: Request) => {
   });
 });
 
+/// Advanced search token handlers
+
+type SearchToken =
+  | { type: 'word'; value: string }
+  | { type: 'phrase'; value: string }
+  | { type: 'wildcard'; value: string };
+
+type ParsedSearch = {
+  positive: SearchToken[];
+  negative: SearchToken[];
+};
+
+function parseSimpleSearch(input: string): ParsedSearch {
+  const positive: SearchToken[] = [];
+  const negative: SearchToken[] = [];
+
+  const tokenRegex = /(-)?("(?:[^"\\]|\\.)*"|\S+)/gi;
+
+  for (const match of input.matchAll(tokenRegex)) {
+    const isNegated = !!match[1];
+    const raw = match[2];
+
+    let token: SearchToken;
+
+    if (raw.startsWith('"')) {
+      token = { type: 'phrase', value: raw.slice(1, -1) };
+    } else if (raw.includes('*')) {
+      token = { type: 'wildcard', value: raw };
+    } else {
+      token = { type: 'word', value: raw };
+    }
+
+    (isNegated ? negative : positive).push(token);
+  }
+
+  return { positive, negative };
+}
+
 /**
  * Handles an advanced search with multiple filters.
  * @param client - Supabase client
@@ -99,6 +138,7 @@ async function handleAdvancedSearch(
     size?: Size;
     rank_min?: number;
     rank_max?: number;
+    spell_type?: 'FOCUS' | 'RITUAL' | 'NORMAL';
     cast?: ActionCost | string;
     traditions?: string[];
     defense?: string;
@@ -120,12 +160,56 @@ async function handleAdvancedSearch(
     content_sources?: number[];
   }
 ): Promise<JSendResponseSuccess> {
+  function applySimpleSearch(
+    query: PostgrestFilterBuilder<any, any, any>,
+    column: string,
+    search: string
+  ) {
+    const parsed = parseSimpleSearch(search);
+
+    // -----------------------------
+    // AND: plain words
+    // -----------------------------
+    for (const t of parsed.positive) {
+      if (t.type === 'word') {
+        query = query.ilike(column, `%${t.value}%`);
+      }
+    }
+
+    // -----------------------------
+    // OR: phrases / wildcards
+    // -----------------------------
+    const orClauses = parsed.positive
+      .filter((t) => t.type !== 'word')
+      .map((t) => {
+        switch (t.type) {
+          case 'phrase':
+            return `${column}.ilike.%${t.value}%`;
+
+          case 'wildcard':
+            return `${column}.ilike.${t.value.replace(/\*/g, '%')}`;
+        }
+      });
+    if (orClauses.length) {
+      query = query.or(orClauses.join(','));
+    }
+
+    // -----------------------------
+    // NOT: negatives (unchanged)
+    // -----------------------------
+    for (const t of parsed.negative) {
+      query = query.not(column, 'ilike', `%${t.value.replace(/\*/g, '%')}%`);
+    }
+
+    return query;
+  }
+
   const applyCommonFilters = (query: PostgrestFilterBuilder<any, any, any>) => {
     if (filters.name) {
-      query = query.ilike('name', `%${filters.name}%`);
+      query = applySimpleSearch(query, 'name', filters.name);
     }
     if (filters.description) {
-      query = query.ilike('description', `%${filters.description}%`);
+      query = applySimpleSearch(query, 'description', filters.description);
     }
     if (filters.rarity) {
       query = query.eq('rarity', filters.rarity);
@@ -136,11 +220,30 @@ async function handleAdvancedSearch(
     if (filters.traits?.length) {
       query = query.contains('traits', filters.traits);
     }
+    if (filters.cost) {
+      query = applySimpleSearch(query, 'cost', filters.cost);
+    }
+    if (filters.trigger) {
+      query = applySimpleSearch(query, 'trigger', filters.trigger);
+    }
+    if (filters.requirements) {
+      query = applySimpleSearch(query, 'requirements', filters.requirements);
+    }
+    if (filters.size) {
+      query = query.eq('size', filters.size);
+    }
     if (filters.content_sources?.length) {
       query = query.in('content_source_id', filters.content_sources);
     }
 
-    // Sort alphabetically by name
+    // First sort by level/rank
+    if (filters.type === 'spell') {
+      query = query.order('rank', { ascending: true });
+    } else {
+      query = query.order('level', { ascending: true });
+    }
+
+    // Secondary sort by name
     query = query.order('name', { ascending: true });
 
     return query;
@@ -154,10 +257,10 @@ async function handleAdvancedSearch(
     if (filters.ab_type) q = q.eq('type', filters.ab_type);
     if (filters.level_min !== undefined) q = q.gte('level', filters.level_min);
     if (filters.level_max !== undefined) q = q.lte('level', filters.level_max);
-    if (filters.frequency) q = q.ilike('frequency', `%${filters.frequency}%`);
+    if (filters.frequency) q = applySimpleSearch(q, 'frequency', filters.frequency);
     if (filters.prerequisites?.length) q = q.contains('prerequisites', filters.prerequisites);
-    if (filters.access) q = q.ilike('access', `%${filters.access}%`);
-    if (filters.special) q = q.ilike('special', `%${filters.special}%`);
+    if (filters.access) q = applySimpleSearch(q, 'access', filters.access);
+    if (filters.special) q = applySimpleSearch(q, 'special', filters.special);
 
     const { data } = await q;
     return data ?? [];
@@ -171,11 +274,24 @@ async function handleAdvancedSearch(
     if (filters.rank_max !== undefined) q = q.lte('rank', filters.rank_max);
     if (filters.cast) q = q.eq('cast', filters.cast);
     if (filters.traditions?.length) q = q.overlaps('traditions', filters.traditions);
-    if (filters.range) q = q.ilike('range', `%${filters.range}%`);
-    if (filters.area) q = q.ilike('area', `%${filters.area}%`);
-    if (filters.targets) q = q.ilike('targets', `%${filters.targets}%`);
-    if (filters.duration) q = q.ilike('duration', `%${filters.duration}%`);
-    if (filters.defense) q = q.ilike('defense', `%${filters.defense}%`);
+    if (filters.range) q = applySimpleSearch(q, 'range', filters.range);
+    if (filters.area) q = applySimpleSearch(q, 'area', filters.area);
+    if (filters.targets) q = applySimpleSearch(q, 'targets', filters.targets);
+    if (filters.duration) q = applySimpleSearch(q, 'duration', filters.duration);
+    if (filters.defense) q = applySimpleSearch(q, 'defense', filters.defense);
+    if (filters.spell_type) {
+      if (filters.spell_type === 'FOCUS') {
+        q = q
+          .or(['traits.cs.{1856}', 'meta_data->focus.not.is.null'].join(','))
+          .not('meta_data->focus', 'eq', false);
+      } else if (filters.spell_type === 'RITUAL') {
+        q = q.not('meta_data->ritual', 'is', null).not('meta_data->ritual', 'eq', false);
+      } else if (filters.spell_type === 'NORMAL') {
+        q = q
+          .or(['meta_data->focus.is.null', 'meta_data->focus.eq.false'].join(','))
+          .or(['meta_data->ritual.is.null', 'meta_data->ritual.eq.false'].join(','));
+      }
+    }
 
     const { data } = await q;
     return data ?? [];
@@ -190,9 +306,9 @@ async function handleAdvancedSearch(
     if (filters.bulk) q = q.eq('bulk', filters.bulk);
     if (filters.group) q = q.eq('group', filters.group);
     if (filters.hands) q = q.eq('hands', filters.hands);
-    if (filters.usage) q = q.ilike('usage', `%${filters.usage}%`);
+    if (filters.usage) q = applySimpleSearch(q, 'usage', filters.usage);
     if (filters.craft_requirements)
-      q = q.ilike('craft_requirements', `%${filters.craft_requirements}%`);
+      q = applySimpleSearch(q, 'craft_requirements', filters.craft_requirements);
 
     const { data } = await q;
     return data ?? [];

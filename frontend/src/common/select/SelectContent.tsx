@@ -4,7 +4,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
+import { fetchContentAll, fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { isItemArchaic } from '@items/inv-utils';
@@ -16,19 +16,12 @@ import {
   Button,
   ButtonProps,
   Center,
-  Checkbox,
-  CloseButton,
-  Divider,
   FocusTrap,
   Group,
   Indicator,
   Loader,
   Menu,
-  MultiSelect,
-  MultiSelectProps,
-  Overlay,
   Pagination,
-  Popover,
   ScrollArea,
   Stack,
   Tabs,
@@ -36,8 +29,6 @@ import {
   TextInput,
   ThemeIcon,
   Title,
-  Transition,
-  UnstyledButton,
   rem,
   useMantineTheme,
 } from '@mantine/core';
@@ -46,12 +37,12 @@ import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
 import {
+  IconAdjustments,
   IconCheck,
   IconChevronDown,
   IconCircleDotFilled,
   IconCopy,
   IconDots,
-  IconFilter,
   IconSearch,
   IconTransform,
   IconTrash,
@@ -89,7 +80,6 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   AbilityBlock,
   AbilityBlockType,
-  ActionCost,
   Ancestry,
   Archetype,
   Background,
@@ -102,11 +92,11 @@ import {
   Trait,
   VersatileHeritage,
 } from '../../typing/content';
-import { FilterOptions, SelectedFilter } from './filters';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { adjustCreature } from '@utils/creature';
-import { intersection, isNumber, truncate } from 'lodash-es';
+import { intersection, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -118,9 +108,8 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
-    groupBySource?: boolean;
-    filterOptions?: FilterOptions;
     filterFn?: (option: T) => boolean;
+    advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
   };
@@ -170,15 +159,14 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         overrideOptions: props.options?.overrideOptions as Record<string, any>[],
         overrideLabel: props.options?.overrideLabel,
         abilityBlockType: props.options?.abilityBlockType,
-        groupBySource: props.options?.groupBySource,
         skillAdjustment: props.options?.skillAdjustment,
         // @ts-ignore
         selectedId: selected?.id,
         // @ts-ignore
         filterFn: props.options?.filterFn,
-        filterOptions: props.options?.filterOptions,
         showButton: props.options?.showButton,
         includeOptions: props.options?.includeOptions,
+        advancedPresetFilters: props.options?.advancedPresetFilters,
       }
     );
   };
@@ -271,10 +259,9 @@ export function selectContent<T = Record<string, any>>(
     overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
-    groupBySource?: boolean;
-    filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
+    advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
     zIndex?: number;
@@ -306,108 +293,23 @@ export default function SelectContentModal({
     overrideOptions?: Record<string, any>[];
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
-    groupBySource?: boolean;
-    filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
+    advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
     zIndex?: number;
   };
 }>) {
-  const [openedDrawer, setOpenedDrawer] = useState(false);
-
   const theme = useMantineTheme();
 
   const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
-  const [selectedSource, setSelectedSource] = useState<number | 'all'>('all');
+  // const [_advancedSearch, setAdvancedSearch] = useRecoilState(advancedSearchData);
 
-  let initialFilters = {};
-
-  if (innerProps.options?.filterOptions) {
-    initialFilters = innerProps.options.filterOptions.options.reduce(
-      (acc, option) => {
-        if (option.default) {
-          acc[option.key] = {
-            filter: option,
-            value: option.default,
-          };
-        }
-        return acc;
-      },
-      {} as Record<string, SelectedFilter>
-    );
-  }
-
-  const [filterSelections, setFilterSelections] = useState<Record<string, SelectedFilter>>(initialFilters);
-  const [openedFilters, setOpenedFilters] = useState(false);
-
-  const updateFilterSelection = (key: string, selectedFilter: SelectedFilter) => {
-    const value = selectedFilter.value;
-    if (!value || (Array.isArray(value) && value.length === 0)) {
-      // Remove
-      const newFilterSelections = { ...filterSelections };
-      delete newFilterSelections[key];
-      setFilterSelections(newFilterSelections);
-    } else {
-      // Add
-      setFilterSelections((prev) => ({ ...prev, [key]: selectedFilter }));
-    }
-  };
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
   const getMergedFilterFn = () => {
     const newFilterFn = (option: Record<string, any>) => {
-      for (const key of Object.keys(filterSelections)) {
-        const value = option[key];
-        const selectedFilter = filterSelections[key];
-        if (selectedFilter.filter.filterFn) {
-          return selectedFilter.filter.filterFn(option);
-        }
-        const filterValue = selectedFilter.value;
-        if (Array.isArray(value)) {
-          if (Array.isArray(filterValue)) {
-            if (!value.some((val) => filterValue.includes(val))) {
-              return false;
-            }
-          } else {
-            if (!filterValue.includes(value)) {
-              return false;
-            }
-          }
-        } else if (typeof value === 'number') {
-          if (Array.isArray(filterValue)) {
-            if (!filterValue.find((val) => `${val}` === `${value}`)) {
-              return false;
-            }
-          } else {
-            if (`${value}` !== `${filterValue}`) {
-              return false;
-            }
-          }
-        } else if (typeof value === 'string') {
-          if (Array.isArray(filterValue)) {
-            if (!filterValue.find((val) => value.toLowerCase().includes(val.toLowerCase()))) {
-              return false;
-            }
-          } else {
-            if (!value.toLowerCase().includes(filterValue.toLowerCase())) {
-              return false;
-            }
-          }
-        } else if (typeof value === 'boolean') {
-          if (Array.isArray(filterValue)) {
-            if (!filterValue.find((val) => val === value)) {
-              return false;
-            }
-          } else {
-            if (value !== filterValue) {
-              return false;
-            }
-          }
-        } else if (!value) {
-          return false;
-        }
-      }
       return innerProps.options?.filterFn ? innerProps.options.filterFn(option) : true;
     };
     return newFilterFn;
@@ -415,32 +317,7 @@ export default function SelectContentModal({
 
   const typeName = toLabel(innerProps.options?.abilityBlockType || innerProps.type);
 
-  const { data: contentSources, isFetching } = useQuery({
-    queryKey: [`enabled-content-sources`, {}],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-      // eslint-disable-next-line
-      const [_key, {}] = queryKey;
-      return await fetchContentSources({ includeCommonCore: true });
-    },
-    enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
-  });
-
-  const activeSource = contentSources?.find((source) => source.id === selectedSource);
-
-  const totalOptionCount =
-    contentSources?.reduce(
-      (total, source) =>
-        ((source.meta_data?.counts
-          ? source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
-          : undefined) ?? 0) + total,
-      0
-    ) ?? 0;
-
   const getSelectionContents = (selectionOptions: React.ReactNode) => {
-    const renderActionOption: MultiSelectProps['renderOption'] = ({ option }) => (
-      <ActionSymbol gap={10} size='xl' cost={option.value as ActionCost} />
-    );
     return (
       <Stack gap={10}>
         <Group wrap='nowrap'>
@@ -458,101 +335,37 @@ export default function SelectContentModal({
               }}
             />
           </FocusTrap>
-          {innerProps.options?.groupBySource && (
-            <Button
-              size='compact-lg'
-              fz='xs'
-              variant='light'
-              onClick={() => setOpenedDrawer(true)}
-              rightSection={<IconChevronDown size='1.1rem' />}
-              styles={{
-                section: {
-                  marginLeft: 3,
-                },
-              }}
-            >
-              {truncate(activeSource?.name ?? 'All Books', { length: 20 })}
-            </Button>
-          )}
-
-          {innerProps.options?.filterOptions && (
-            <Popover
-              width={200}
-              withinPortal
-              position='bottom'
-              withArrow
-              shadow='md'
-              opened={openedFilters}
-              closeOnClickOutside={false}
-              zIndex={(innerProps.options?.zIndex ?? 499) + 1}
-            >
-              <Popover.Target>
-                <Indicator
-                  inline
-                  label={`${Object.keys(filterSelections).length}`}
-                  size={16}
-                  zIndex={1000}
-                  disabled={Object.keys(filterSelections).length === 0}
-                >
-                  <ActionIcon
-                    size='lg'
-                    variant='light'
-                    radius='md'
-                    aria-label='Filters'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setOpenedFilters(!openedFilters);
-                    }}
-                  >
-                    <IconFilter size='1rem' />
-                  </ActionIcon>
-                </Indicator>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <Group wrap='nowrap' justify='space-between'>
-                  <Title order={5}>Filters</Title>
-                  <CloseButton
-                    onClick={() => {
-                      setOpenedFilters(false);
-                    }}
-                  />
-                </Group>
-                <Divider mt={5} />
-                <Stack gap={10} pt={5}>
-                  {innerProps.options.filterOptions.options.map((option, index) => (
-                    <Box key={index}>
-                      {option.type === 'MULTI-SELECT' && (
-                        <MultiSelect
-                          label={option.title}
-                          renderOption={option.isActionOption ? renderActionOption : undefined}
-                          data={option.options ?? []}
-                          onChange={(value) => {
-                            updateFilterSelection(option.key, { filter: option, value });
-                          }}
-                          value={filterSelections[option.key]?.value ?? []}
-                          comboboxProps={{
-                            zIndex: (innerProps.options?.zIndex ?? 499) + 2,
-                          }}
-                        />
-                      )}
-                      {option.type === 'CHECKBOX' && (
-                        <Checkbox
-                          label={option.title}
-                          checked={filterSelections[option.key]?.value ?? false}
-                          onChange={(event) => {
-                            updateFilterSelection(option.key, {
-                              filter: option,
-                              value: event.currentTarget.checked,
-                            });
-                          }}
-                        />
-                      )}
-                    </Box>
-                  ))}
-                </Stack>
-              </Popover.Dropdown>
-            </Popover>
+          {innerProps.options?.advancedPresetFilters && (
+            <>
+              <ActionIcon
+                size='lg'
+                variant='light'
+                radius='md'
+                aria-label='Advanced Search'
+                color='gray'
+                onClick={() => {
+                  setAdvancedSearchOpen(true);
+                }}
+              >
+                <IconAdjustments size='1rem' stroke={1.5} />
+              </ActionIcon>
+              <AdvancedSearchModal
+                opened={advancedSearchOpen}
+                presetFilters={innerProps.options?.advancedPresetFilters}
+                onSelect={
+                  innerProps.onClick
+                    ? (option) => {
+                        innerProps.onClick!(option);
+                        context.closeModal(id);
+                      }
+                    : undefined
+                }
+                onClose={() => {
+                  setAdvancedSearchOpen(false);
+                  context.closeModal(id);
+                }}
+              />
+            </>
           )}
         </Group>
 
@@ -664,101 +477,6 @@ export default function SelectContentModal({
 
   return (
     <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 490 }}>
-      <Transition mounted={openedDrawer} transition='slide-right'>
-        {(styles) => (
-          <Box
-            style={{
-              ...styles,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              backgroundColor: theme.colors.dark[7],
-              width: 'calc(max(50%, 275px))',
-              height: '100%',
-              zIndex: 100,
-
-              borderRightWidth: 2,
-              borderRightStyle: 'solid',
-              borderRightColor: theme.colors.dark[6],
-            }}
-          >
-            <Box
-              style={{
-                position: 'relative',
-                height: '100%',
-                //borderTop: '1px solid ' + theme.colors.dark[6],
-              }}
-            >
-              {/* <CloseButton
-                variant='subtle'
-                size='xs'
-                aria-label='Close Content Sources'
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                }}
-                m={5}
-                onClick={() => setOpenedDrawer(false)}
-              /> */}
-              {isFetching && (
-                <Loader
-                  type='bars'
-                  style={{
-                    position: 'absolute',
-                    top: '35%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                />
-              )}
-              <ContentSourceOption
-                name={'All Books'}
-                description={`${totalOptionCount.toLocaleString()} ${pluralize(
-                  innerProps.options?.abilityBlockType ?? innerProps.type
-                )}`}
-                onClick={() => {
-                  setSelectedSource('all');
-                  setOpenedDrawer(false);
-                }}
-                selected={selectedSource === 'all'}
-              />
-              {contentSources
-                ?.filter(
-                  (source) =>
-                    source.meta_data?.counts &&
-                    source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
-                )
-                .map((source, index) => (
-                  <ContentSourceOption
-                    key={index}
-                    name={source.name}
-                    description={`${source.meta_data!.counts![
-                      innerProps.options?.abilityBlockType ?? innerProps.type
-                    ].toLocaleString()} ${pluralize(innerProps.options?.abilityBlockType ?? innerProps.type)}`}
-                    onClick={() => {
-                      setSelectedSource(source.id);
-                      setOpenedDrawer(false);
-                    }}
-                    selected={source.id === selectedSource}
-                  />
-                ))}
-            </Box>
-          </Box>
-        )}
-      </Transition>
-      {openedDrawer && (
-        <Overlay
-          color={theme.colors.dark[7]}
-          backgroundOpacity={0.35}
-          blur={2}
-          zIndex={99}
-          onClick={() => {
-            setOpenedDrawer(false);
-          }}
-        />
-      )}
-
       {isClassFeat && (
         <Tabs value={classFeatTab} onChange={setClassFeatTab}>
           <Tabs.List grow mb={10}>
@@ -774,7 +492,6 @@ export default function SelectContentModal({
                   type={innerProps.type}
                   abilityBlockType={innerProps.options?.abilityBlockType}
                   skillAdjustment={innerProps.options?.skillAdjustment}
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   overrideOptions={innerProps.options?.overrideOptions}
                   searchQuery={searchQuery}
@@ -801,7 +518,6 @@ export default function SelectContentModal({
                 <SelectionOptions
                   type='ability-block'
                   abilityBlockType='feat'
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   searchQuery={searchQuery}
                   onClick={
@@ -838,7 +554,6 @@ export default function SelectContentModal({
                 <SelectionOptions
                   type='ability-block'
                   abilityBlockType='feat'
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   searchQuery={searchQuery}
                   onClick={
@@ -882,7 +597,6 @@ export default function SelectContentModal({
                   type={innerProps.type}
                   abilityBlockType={innerProps.options?.abilityBlockType}
                   skillAdjustment={innerProps.options?.skillAdjustment}
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   overrideOptions={innerProps.options?.overrideOptions}
                   searchQuery={searchQuery}
@@ -911,7 +625,6 @@ export default function SelectContentModal({
                 <SelectionOptions
                   type='ability-block'
                   abilityBlockType='heritage'
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
                   selectedId={innerProps.options?.selectedId}
                   searchQuery={searchQuery}
                   onClick={
@@ -946,7 +659,6 @@ export default function SelectContentModal({
               type={innerProps.type}
               abilityBlockType={innerProps.options?.abilityBlockType}
               skillAdjustment={innerProps.options?.skillAdjustment}
-              sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
               selectedId={innerProps.options?.selectedId}
               overrideOptions={innerProps.options?.overrideOptions}
               searchQuery={searchQuery}
@@ -1018,6 +730,7 @@ function SelectionOptions(props: {
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
   filterFn?: (option: Record<string, any>) => boolean;
+  advancedPresetFilters?: Partial<FiltersParams>;
   includeOptions?: boolean;
   showButton?: boolean;
   limitSelectedOptions: boolean;

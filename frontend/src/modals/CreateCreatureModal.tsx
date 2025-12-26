@@ -668,7 +668,6 @@ export function CreateCreatureModal(props: {
                             },
                             {
                               showButton: true,
-                              groupBySource: true,
                             }
                           );
                         }}

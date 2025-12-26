@@ -230,7 +230,6 @@ function AddCompanionSection() {
               },
               {
                 showButton: true,
-                groupBySource: true,
                 zIndex: 400,
                 // Hide companions
                 filterFn: (c) => c.level !== -100,
@@ -313,7 +312,7 @@ function CompanionCard(props: {
   useEffect(() => {
     if (props.companion) {
       const currentHealth =
-        props.companion.hp_current === undefined ? props.computed?.maxHp ?? 0 : props.companion.hp_current;
+        props.companion.hp_current === undefined ? (props.computed?.maxHp ?? 0) : props.companion.hp_current;
       setHealth(`${currentHealth}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${currentHealth}`);
     }
   }, [props.companion, props.computed]);

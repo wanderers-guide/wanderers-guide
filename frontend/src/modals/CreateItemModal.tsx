@@ -860,7 +860,6 @@ export function CreateItemModal(props: {
                                     },
                                     {
                                       showButton: true,
-                                      groupBySource: true,
                                     }
                                   );
                                 }}

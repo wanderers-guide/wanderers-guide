@@ -64,7 +64,8 @@ export default function SpellsPanel(props: {
         type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
         filter?: {
           traditions?: string[];
-          ranks?: string[];
+          rank_min?: number;
+          rank_max?: number;
         };
       }
     | undefined
@@ -104,7 +105,7 @@ export default function SpellsPanel(props: {
   // Filter spells by action cost
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
 
-  const searchSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
+  const searchSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : (spells ?? []);
   const allSpells = searchSpells.filter((spell) => spell.cast === actionTypeFilter || actionTypeFilter === 'ALL');
   const hasFilters = searchQuery.trim().length > 0 || actionTypeFilter !== 'ALL';
 
@@ -464,7 +465,8 @@ function SpellList(props: {
     type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
     filter?: {
       traditions?: string[];
-      ranks?: string[];
+      rank_min?: number;
+      rank_max?: number;
     }
   ) => void;
 }) {

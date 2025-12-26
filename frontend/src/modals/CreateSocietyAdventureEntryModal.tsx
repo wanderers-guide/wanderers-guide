@@ -211,7 +211,6 @@ export function CreateSocietyAdventureEntryModal(props: {
                         },
                         {
                           showButton: true,
-                          groupBySource: true,
                         }
                       );
                     }}
@@ -295,7 +294,6 @@ export function CreateSocietyAdventureEntryModal(props: {
                         },
                         {
                           showButton: true,
-                          groupBySource: true,
                         }
                       );
                     }}

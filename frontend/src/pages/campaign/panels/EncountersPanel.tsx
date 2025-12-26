@@ -707,7 +707,6 @@ function EncounterView(props: {
                     },
                     {
                       showButton: true,
-                      groupBySource: true,
                       zIndex: 400,
                       // Hide companions
                       filterFn: (c) => c.level !== -100,
@@ -920,7 +919,7 @@ function CombatantCard(props: {
   useEffect(() => {
     if (props.combatant.data) {
       const currentHealth =
-        props.combatant.data.hp_current === undefined ? props.computed?.maxHp ?? 0 : props.combatant.data.hp_current;
+        props.combatant.data.hp_current === undefined ? (props.computed?.maxHp ?? 0) : props.combatant.data.hp_current;
       setHealth(`${currentHealth}` === 'null' ? `${props.computed?.maxHp ?? ''}` : `${currentHealth}`);
     }
   }, [props.combatant, props.computed]);
