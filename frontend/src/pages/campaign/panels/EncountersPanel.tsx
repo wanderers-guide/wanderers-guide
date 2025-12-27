@@ -6,8 +6,7 @@ import { DisplayIcon } from '@common/IconDisplay';
 import { selectContent } from '@common/select/SelectContent';
 import { applyConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE } from '@constants/data';
-import { fetchContentPackage } from '@content/content-store';
-import { defineDefaultSourcesForUser } from '@content/homebrew';
+import { defineDefaultSources, fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { getBestArmor } from '@items/inv-utils';
 import {
@@ -84,10 +83,10 @@ export default function EncountersPanel(props: {
       });
 
       // Prefetch content package for creature calculations
-      await defineDefaultSourcesForUser().then(() => {
-        // We could await fetch content for a more seemless experience but it takes a bit too long imo - Quzzar
-        fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
-      });
+
+      const sv = defineDefaultSources('PAGE', 'ALL-USER-ACCESSIBLE');
+      // We could await fetch content for a more seemless experience but it takes a bit too long imo - Quzzar
+      fetchContentPackage(sv, { fetchSources: false, fetchCreatures: false });
 
       return result ?? [];
     },
@@ -1182,7 +1181,7 @@ function CombatantCard(props: {
 }
 
 async function computeCombatants(combatants: PopulatedCombatant[]) {
-  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+  const content = await fetchContentPackage(getDefaultSources('PAGE'), { fetchSources: false, fetchCreatures: false });
 
   async function computeCombatant(combatant: PopulatedCombatant): Promise<{
     _id: string;

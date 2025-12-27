@@ -1,12 +1,10 @@
 import BlurBox from '@common/BlurBox';
-import { deleteContent, upsertAbilityBlock, upsertCreature, upsertItem, upsertSpell } from '@content/content-creation';
-import { fetchContentSources, defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { findContentUpdates, submitContentUpdate } from '@content/content-update';
 import { Center, Group, Title, Select, Button, Text, Stack, Anchor } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
-import { ContentPackage, ContentUpdate, Trait } from '@typing/content';
-import { useMemo, useState } from 'react';
+import { ContentUpdate } from '@typing/content';
+import { useState } from 'react';
 
 const ENABLED = true;
 

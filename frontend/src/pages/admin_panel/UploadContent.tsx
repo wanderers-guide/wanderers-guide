@@ -20,9 +20,7 @@ export default function UploadContent() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      const sources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
-      defineDefaultSources(sources.map((source) => source.id));
-      return sources;
+      return await fetchContentSources(defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC'));
     },
     refetchInterval: 1000,
   });

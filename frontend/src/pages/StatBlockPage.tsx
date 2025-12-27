@@ -1,7 +1,6 @@
 import StatBlockSection from '@common/StatBlockSection';
 import { GUIDE_BLUE } from '@constants/data';
-import { defineDefaultSources, fetchContentById } from '@content/content-store';
-import { defineDefaultSourcesForUser } from '@content/homebrew';
+import { fetchContentById } from '@content/content-store';
 import DrawerBase from '@drawers/DrawerBase';
 import { ActionIcon, Box, Button, createTheme, LoadingOverlay, MantineProvider, Stack, Text } from '@mantine/core';
 import { makeRequest } from '@requests/request-manager';

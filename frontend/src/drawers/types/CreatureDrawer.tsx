@@ -3,7 +3,7 @@ import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
-import { fetchContentById, fetchContentPackage } from '@content/content-store';
+import { fetchContentById, fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
@@ -129,7 +129,10 @@ export function CreatureDrawerContent(props: {
         setCreature(_creature);
       }
 
-      const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+      const content = await fetchContentPackage(getDefaultSources('INFO'), {
+        fetchSources: false,
+        fetchCreatures: false,
+      });
       return content;
     },
   });

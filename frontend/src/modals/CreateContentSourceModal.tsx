@@ -137,9 +137,7 @@ export function ContentSourceEditor(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-only-${props.sourceId}`],
     queryFn: async () => {
-      const source = (await fetchContentSources({ ids: [props.sourceId], includeCommonCore: true })).find(
-        (s) => s.id === props.sourceId
-      )!;
+      const source = (await fetchContentSources([props.sourceId])).find((s) => s.id === props.sourceId)!;
 
       form.setInitialValues({
         id: source.id,
@@ -387,13 +385,11 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      const source = (await fetchContentSources({ ids: [props.sourceId], includeCommonCore: true })).find(
-        (s) => s.id === props.sourceId
-      )!;
-      await defineDefaultSourcesForSource(source);
+      const source = (await fetchContentSources([props.sourceId])).find((s) => s.id === props.sourceId)!;
+      const sv = await defineDefaultSourcesForSource('INFO', source);
 
       // Fill content store with all content (async)
-      fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: true });
+      fetchContentPackage(sv, { fetchSources: true, fetchCreatures: true });
 
       // Fetch the source's content
       const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });

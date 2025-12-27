@@ -3,9 +3,8 @@ import { sessionState } from '@atoms/supabaseAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
-import { fetchContentSources } from '@content/content-store';
+import { fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
-import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
@@ -323,18 +322,14 @@ async function queryResults(
 
   // Traditional search
   const queryDbSearch = async () => {
-    // Filter out all sources that's not been subscribed or official
-    let user = getCachedPublicUser();
-    if (!user) {
-      user = await getPublicUser();
-    }
-    const validSources = await defineDefaultSourcesForUser();
+    // Gets the current default sources
+    const sources = await fetchContentSources(getDefaultSources('INFO'));
 
     // Fetch search results
     const searchData =
       (await makeRequest('search-data', {
         text: query,
-        content_sources: validSources,
+        content_sources: sources.map((s) => s.id),
       })) ?? {};
 
     // Format results to single array
@@ -400,11 +395,7 @@ async function fetchBooks(
   openDrawer: DrawerStateSet,
   theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
-  const sources = await fetchContentSources({
-    published: true,
-    ids: 'all',
-    includeCommonCore: true,
-  });
+  const sources = await fetchContentSources(getDefaultSources('INFO'));
   return sources.map((source) => {
     return {
       id: `content-source-${source.id}`,

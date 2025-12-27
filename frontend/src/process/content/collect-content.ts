@@ -1,24 +1,20 @@
 import {
-  Character,
   AbilityBlock,
-  Spell,
   SpellSlot,
-  SpellListEntry,
   SpellInnateEntry,
   CastingSource,
   SenseWithRange,
   LivingEntity,
   SpellSlotRecord,
 } from '@typing/content';
-import { GiveSpellData, SpellMetadata } from '@typing/operations';
+import { GiveSpellData } from '@typing/operations';
 import { StoreID, VariableListStr, VariableNum } from '@typing/variables';
 import { attemptToFindSense, compactSensesWithRange } from '@utils/senses';
 import { toLabel } from '@utils/strings';
-import { getTraitIdByType, hasTraitType } from '@utils/traits';
+import { hasTraitType } from '@utils/traits';
 import { getVariable } from '@variables/variable-manager';
-import { compileExpressions, labelToVariable } from '@variables/variable-utils';
+import { compileExpressions } from '@variables/variable-utils';
 import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
-import { fetchContent, fetchContentById } from './content-store';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 
@@ -107,9 +103,9 @@ export function collectEntityAbilityBlocks(
     physicalFeatures: physicalFeatures.sort((a, b) => a.name.localeCompare(b.name)),
     heritages: heritages.sort((a, b) => a.name.localeCompare(b.name)),
     // For creature:
-    baseAbilities: isCreature(entity) ? entity.abilities_base ?? [] : [],
+    baseAbilities: isCreature(entity) ? (entity.abilities_base ?? []) : [],
     addedAbilities: isCreature(entity)
-      ? entity.abilities_added?.map((id) => blocks.find((b) => id === b.id)).filter(isTruthy) ?? []
+      ? (entity.abilities_added?.map((id) => blocks.find((b) => id === b.id)).filter(isTruthy) ?? [])
       : [],
   };
 }

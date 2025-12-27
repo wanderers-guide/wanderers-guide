@@ -4,7 +4,12 @@ import {
   collectEntitySpellcasting,
   getFocusPoints,
 } from '@content/collect-content';
-import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
+import {
+  defineDefaultSources,
+  fetchContentPackage,
+  fetchContentSources,
+  getDefaultSources,
+} from '@content/content-store';
 import {
   isItemWeapon,
   getFlatInvItems,
@@ -74,7 +79,7 @@ export async function pdfV2(character: Character) {
 
 function downloadPDF(pdfBytes: Uint8Array, fileName: string) {
   // Create a Blob from the PDF bytes
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
 
   // Create a link element for the download
   const downloadLink = document.createElement('a');
@@ -93,13 +98,13 @@ async function fillPDF(form: PDFForm, character: Character) {
   // See Field names: https://www.pdfescape.com //
 
   // Get all content that the character uses
-  defineDefaultSources(character.content_sources?.enabled ?? []);
+  const sv = defineDefaultSources('PAGE', character.content_sources?.enabled ?? []);
 
   // Prefetch content sources
-  await fetchContentSources({ includeCommonCore: true });
+  await fetchContentSources(sv);
 
   // Fetch the content package
-  const content = await fetchContentPackage(undefined, { fetchSources: true });
+  const content = await fetchContentPackage(sv, { fetchSources: true });
   const STORE_ID = 'CHARACTER';
 
   const compileText = (text: string) => {

@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -76,7 +76,7 @@ export default function SpellsPanel(props: {
     queryFn: async () => {
       if (!props.entity) return null;
 
-      return await fetchContentAll<Spell>('spell');
+      return await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'));
     },
   });
 

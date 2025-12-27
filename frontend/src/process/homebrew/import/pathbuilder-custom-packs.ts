@@ -62,8 +62,8 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
   if (!source) return null;
 
   // Define default sources
-  const sources = await fetchContentSources({ ids: 'all', includeCommonCore: true });
-  defineDefaultSources([...sources.map((s) => s.id), source.id]);
+  const sources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
+  defineDefaultSources('PAGE', [...sources.map((s) => s.id), source.id]);
 
   // Importing data
   const traitMap = new Map<string, number>();
@@ -326,7 +326,7 @@ function convertActions(actions?: number): ActionCost {
 
 async function findTraits(input: string | undefined, traitMap: Map<string, number>) {
   if (!input) return [];
-  const traits = await fetchContentAll<Trait>('trait');
+  const traits = await fetchContentAll<Trait>('trait', 'ALL-OFFICIAL-PUBLIC');
 
   const output: number[] = [];
   for (const trait of input.split(/,/g)) {

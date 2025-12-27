@@ -1,7 +1,12 @@
 import D20Loader from '@assets/images/D20Loader';
 import { characterState } from '@atoms/characterAtoms';
 import BlurBox from '@common/BlurBox';
-import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
+import {
+  defineDefaultSources,
+  fetchContentPackage,
+  fetchContentSources,
+  getDefaultSources,
+} from '@content/content-store';
 
 import {
   ActionIcon,
@@ -85,13 +90,13 @@ export function Component(props: {}) {
       const character = await makeRequest<Character>('find-character', {
         id: characterId,
       });
-      defineDefaultSources(character?.content_sources?.enabled);
+      const sv = defineDefaultSources('PAGE', character?.content_sources?.enabled ?? []);
 
       // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources({ includeCommonCore: true });
+      await fetchContentSources(sv);
 
       // Fetch content
-      const content = await fetchContentPackage(undefined, { fetchSources: true });
+      const content = await fetchContentPackage(sv, { fetchSources: true });
       return content;
     },
     refetchOnWindowFocus: false,

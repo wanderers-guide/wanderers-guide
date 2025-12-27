@@ -1,7 +1,7 @@
 import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import { LEGACY_URL } from '@constants/data';
-import { fetchContentAll, fetchContentPackage } from '@content/content-store';
+import { fetchContentAll, fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import {
   Center,
@@ -179,8 +179,8 @@ function AddCompanionSection() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-companions-data`],
     queryFn: async () => {
-      const traits = await fetchContentAll<Trait>('trait');
-      const creatures = await fetchContentAll<Creature>('creature');
+      const traits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
+      const creatures = await fetchContentAll<Creature>('creature', getDefaultSources('PAGE'));
 
       return {
         traits,
@@ -539,7 +539,7 @@ function CompanionCard(props: {
 }
 
 async function computeCompanions(companions: Creature[]) {
-  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+  const content = await fetchContentPackage(getDefaultSources('PAGE'), { fetchSources: false, fetchCreatures: false });
 
   async function computeCompanion(
     companion: Creature,

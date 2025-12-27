@@ -62,7 +62,7 @@ export default function useCharacter(
       setCharacter(resultCharacter);
 
       // Make sure we sync the enabled content sources
-      defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+      defineDefaultSources('PAGE', resultCharacter.content_sources?.enabled ?? []);
 
       // Cache character customization for fast loading
       saveCustomization({

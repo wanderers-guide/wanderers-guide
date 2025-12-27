@@ -4,20 +4,12 @@ import { userState } from '@atoms/userAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
-import { CharacterDetailedInfo, CharacterInfo } from '@common/CharacterInfo';
 import { ContentSourceInfo } from '@common/ContentSourceInfo';
-import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
+import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { deleteContent, upsertContentSource } from '@content/content-creation';
 import { fetchContentSources, resetContentStore } from '@content/content-store';
 import { updateSubscriptions } from '@content/homebrew';
-import exportToJSON from '@export/export-to-json';
-import exportToPDF from '@export/export-to-pdf';
 import { importFromCustomPack } from '@homebrew/import/pathbuilder-custom-packs';
-import { importFromFTC } from '@import/ftc/import-from-ftc';
-import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
-import importFromJSON from '@import/json/import-from-json';
-import PathbuilderInputModal from '@import/pathbuilder/PathbuilderInputModal';
-import { importFromPathbuilder } from '@import/pathbuilder/import-from-pathbuilder';
 import {
   ActionIcon,
   Box,
@@ -29,43 +21,29 @@ import {
   Loader,
   Text,
   Menu,
-  SimpleGrid,
   Stack,
   Title,
-  Tooltip,
   VisuallyHidden,
   rem,
   useMantineTheme,
-  Tabs,
-  MantineProvider,
   TextInput,
-  Badge,
 } from '@mantine/core';
 import { useMediaQuery, useHover } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { showNotification, hideNotification } from '@mantine/notifications';
 import { CreateContentSourceModal } from '@modals/CreateContentSourceModal';
 import { makeRequest } from '@requests/request-manager';
 import {
-  IconUserPlus,
   IconUpload,
-  IconCodeDots,
-  IconBrandTidal,
-  IconArchive,
-  IconArrowsShuffle,
   IconBookmarks,
   IconListDetails,
   IconHammer,
   IconSearch,
-  IconCopy,
   IconDots,
-  IconFileTypePdf,
   IconTrash,
   IconChevronDown,
 } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, ContentSource } from '@typing/content';
-import { isPlayable } from '@utils/character';
+import { useQuery } from '@tanstack/react-query';
+import { ContentSource } from '@typing/content';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';
@@ -152,7 +130,7 @@ function BrowseSection(props: {}) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-homebrew-content-sources-public`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true, includeCommonCore: true }))
+      return (await fetchContentSources('ALL-HOMEBREW-PUBLIC'))
         .filter((c) => c.user_id)
         .sort((a, b) => {
           if (a.require_key && !b.require_key) return 1;
@@ -232,7 +210,7 @@ function SubscriptionsSection(props: {}) {
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-subscribed`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
+      return (await fetchContentSources('ALL-HOMEBREW-ACCESSIBLE')).filter(
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
     },
@@ -309,7 +287,7 @@ function CreationsSection(props: {}) {
     queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
       resetContentStore(true);
-      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
+      return (await fetchContentSources('ALL-HOMEBREW-ACCESSIBLE')).filter(
         (c) => c.user_id && c.user_id === user?.user_id
       );
     },

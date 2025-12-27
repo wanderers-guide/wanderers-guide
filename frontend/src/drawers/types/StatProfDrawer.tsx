@@ -1,7 +1,7 @@
 import { drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { ActionSelectionOption } from '@common/select/SelectContent';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
@@ -422,7 +422,7 @@ function SkillActionsSection(props: { variableName: string }) {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { variableName }] = queryKey;
-      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
       return abilityBlocks.filter((block) => {
         if (!block.meta_data?.skill) return false;
         if (block.type !== 'action') return false;

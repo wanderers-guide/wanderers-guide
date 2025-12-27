@@ -25,7 +25,7 @@ export function GiveFeatOperation(props: {
           // advancedPresetFilters: {
           //   type: 'ability-block',
           //   ab_type: 'feat',
-          //   content_sources: character ? character.content_sources?.enabled : getDefaultSources(),
+          //   content_sources: character ? character.content_sources?.enabled : undefined,
           //   level_max: character ? character.level : undefined,
           //   level_min: 1,
           // },

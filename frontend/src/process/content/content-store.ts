@@ -1,3 +1,4 @@
+import { getPublicUser } from '@auth/user-manager';
 import { COMMON_CORE_ID } from '@constants/data';
 import { makeRequest } from '@requests/request-manager';
 import {
@@ -19,7 +20,7 @@ import {
 import { RequestType } from '@typing/requests';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';
-import { cloneDeep, isString, uniq } from 'lodash-es';
+import { cloneDeep, isString, uniq, uniqBy } from 'lodash-es';
 
 ///////////////////////////////////////////////////////
 //                      Storing                      //
@@ -110,27 +111,55 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 //                      Fetching                     //
 ///////////////////////////////////////////////////////
 
-let defaultSources: number[] | undefined = undefined; // undefined means all sources
-export function defineDefaultSources(sources?: number[]) {
-  defaultSources = sources ? uniq([COMMON_CORE_ID, ...sources]) : undefined;
-  return cloneDeep(defaultSources);
+export type SourceKey = 'PAGE' | 'INFO';
+export type SourceValue =
+  | number[]
+  | 'ALL-USER-ACCESSIBLE'
+  | 'ALL-OFFICIAL-PUBLIC'
+  | 'ALL-HOMEBREW-PUBLIC'
+  | 'ALL-PUBLIC'
+  | 'ALL-HOMEBREW-ACCESSIBLE';
+
+let DEFAULT_SOURCES: Record<SourceKey, SourceValue> = {
+  PAGE: 'ALL-USER-ACCESSIBLE',
+  INFO: 'ALL-USER-ACCESSIBLE',
+};
+
+export function defineDefaultSources(view: SourceKey | 'BOTH', sources: SourceValue): SourceValue {
+  if (view === 'BOTH') {
+    defineDefaultSources('PAGE', sources);
+    return defineDefaultSources('INFO', sources);
+  }
+
+  if (Array.isArray(sources)) {
+    DEFAULT_SOURCES[view] = uniq([COMMON_CORE_ID, ...sources]);
+  } else {
+    DEFAULT_SOURCES[view] = sources;
+  }
+
+  console.log('+ Defining default content sources:', view, DEFAULT_SOURCES);
+  return cloneDeep(DEFAULT_SOURCES[view]);
 }
 
-export function getDefaultSources() {
-  return cloneDeep([COMMON_CORE_ID, ...(defaultSources ?? [])]);
+export function getDefaultSources(view: SourceKey) {
+  if (Array.isArray(DEFAULT_SOURCES[view])) {
+    return uniq(cloneDeep([COMMON_CORE_ID, ...DEFAULT_SOURCES[view]]));
+  } else {
+    return cloneDeep(DEFAULT_SOURCES[view]);
+  }
 }
 
 export function getCachedSources(): ContentSource[] {
   return [...(idStore.get('content-source')?.values() ?? [])].filter(isTruthy) as ContentSource[];
 }
 
-export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number, sources?: number[]) {
+export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number) {
   if (!id || id === -1) return null;
-  const results = await fetchContent<T>(type, { id, content_sources: sources });
+  const results = await fetchContent<T>(type, { id });
   return results.length > 0 ? results[0] : null;
 }
 
-export async function fetchContentAll<T = Record<string, any>>(type: ContentType, sources?: number[]) {
+export async function fetchContentAll<T = Record<string, any>>(type: ContentType, sources?: SourceValue) {
   return await fetchContent<T>(type, { content_sources: sources });
 }
 
@@ -179,10 +208,30 @@ export async function fetchContent<T = Record<string, any>>(
   } else {
     // Make sure we're always filtering by content source
     const newData = { ...data };
-    if (type !== 'content-source' && !newData.content_sources) {
-      // This will fetch the default content sources...
-      const sources = await fetchContentSources({ includeCommonCore: true });
-      newData.content_sources = sources.map((source) => source.id);
+
+    if (type !== 'content-source') {
+      if (!newData.content_sources) {
+        console.warn(
+          '⚠️ No content sources specified for fetch of type',
+          type,
+          'with data',
+          data,
+          '. Using default sources on PAGE.',
+          getDefaultSources('PAGE')
+        );
+      }
+
+      let sv: SourceValue = newData.content_sources ?? getDefaultSources('PAGE');
+      let svN: number[] = [];
+
+      if (Array.isArray(sv)) {
+        svN = sv;
+      } else {
+        // Convert SourceValue as string -> number array
+        svN = (await fetchContentSources(sv)).map((source) => source.id);
+      }
+
+      newData.content_sources = uniq(svN);
     }
 
     const result = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
@@ -203,7 +252,7 @@ export async function fetchContent<T = Record<string, any>>(
 export function resetContentStore(resetSources = true) {
   console.warn('⚠️ Resetting Content Store ⚠️');
   if (resetSources) {
-    defineDefaultSources([]);
+    defineDefaultSources('BOTH', 'ALL-OFFICIAL-PUBLIC');
   }
   contentStore.clear();
   idStore = emptyIdStore();
@@ -213,29 +262,72 @@ export function resetContentStore(resetSources = true) {
 //                 Utility Functions                 //
 ///////////////////////////////////////////////////////
 
-export async function fetchContentSources(options?: {
-  group?: string;
-  homebrew?: boolean;
-  published?: boolean;
-  ids?: number[] | 'all';
-  includeCommonCore?: boolean;
-}) {
-  const sourceIds = uniq([...(options?.ids ?? defaultSources ?? []), COMMON_CORE_ID]);
+export async function fetchContentSources(sources: SourceValue) {
+  let results: ContentSource[] = [];
 
-  const sources = await fetchContent<ContentSource>('content-source', {
-    group: options?.group,
-    homebrew: options?.homebrew,
-    published: options?.published,
-    id: options?.ids === 'all' ? undefined : sourceIds,
-  });
+  if (Array.isArray(sources)) {
+    // Fetch by ids
+    results = await fetchContent<ContentSource>('content-source', {
+      id: sources,
+    });
+  } else if (sources === 'ALL-OFFICIAL-PUBLIC') {
+    // This gives us everything public that is not homebrew
+    results = await fetchContent<ContentSource>('content-source', {
+      homebrew: false,
+      published: true,
+    });
+  } else if (sources === 'ALL-HOMEBREW-PUBLIC') {
+    // This gives us everything public, including homebrew
+    const r = await fetchContent<ContentSource>('content-source', {
+      homebrew: true,
+      published: true,
+    });
+    // So we now need to filter out the official content
+    results = r.filter((source) => source.user_id !== null);
+    //
+  } else if (sources === 'ALL-PUBLIC') {
+    // This gives us everything public, including homebrew
+    results = await fetchContent<ContentSource>('content-source', {
+      homebrew: true,
+      published: true,
+    });
+  } else if (sources === 'ALL-USER-ACCESSIBLE') {
+    // This gives us everything public that is not homebrew
+    const pr = await fetchContent<ContentSource>('content-source', {
+      homebrew: false,
+      published: true,
+    });
 
-  return sources
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .filter((source) => source.id !== COMMON_CORE_ID || options?.includeCommonCore);
+    const user = await getPublicUser();
+    // Now fetch all the other sources the user has subscribed to
+    const ur = await fetchContent<ContentSource>('content-source', {
+      id: user?.subscribed_content_sources?.map((s) => s.source_id) ?? [],
+    });
+
+    results = uniqBy([...pr, ...ur], (source) => source.id);
+  } else if (sources === 'ALL-HOMEBREW-ACCESSIBLE') {
+    // This gives everything with homebrew (that the user can access)
+    const pr = await fetchContent<ContentSource>('content-source', {
+      id: undefined,
+      homebrew: true,
+    });
+
+    const user = await getPublicUser();
+    // Filter out the homebrew
+    results = pr.filter(
+      (c) =>
+        // The user owns the homebrew OR
+        (c.user_id && c.user_id === user?.user_id) ||
+        // The user has subscribed to the homebrew
+        user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
+    );
+  }
+
+  return results.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchContentPackage(
-  sources?: number[],
+  sources: SourceValue,
   options?: {
     fetchSources?: boolean;
     fetchCreatures?: boolean;
@@ -253,7 +345,7 @@ export async function fetchContentPackage(
     options?.fetchCreatures ? fetchContentAll<Creature>('creature', sources) : [],
     fetchContentAll<Archetype>('archetype', sources),
     fetchContentAll<VersatileHeritage>('versatile-heritage', sources),
-    options?.fetchSources ? fetchContentSources({ ids: sources, includeCommonCore: true }) : null,
+    options?.fetchSources ? fetchContentSources(sources) : null,
   ]);
 
   return {
@@ -278,7 +370,7 @@ export async function findRequiredContentSources(sourceIds?: number[]) {
   }
 
   // Prefetch published content sources (homebrew still needs to be fetched individually)
-  await fetchContentSources({ ids: 'all', includeCommonCore: true });
+  await fetchContentSources('ALL-OFFICIAL-PUBLIC');
 
   const required = new Map<number, ContentSource>();
   const findRequired = async (sourceId: number) => {
@@ -332,51 +424,51 @@ export async function fetchTraits(ids?: number[]) {
     id: ids,
   });
 }
-export async function fetchTraitByName(name?: string, sources?: number[], id?: number) {
+export async function fetchTraitByName(name?: string, sources?: SourceValue, id?: number) {
   const results = await fetchContent<Trait>('trait', {
     id,
     name,
-    content_sources: sources ?? defaultSources,
+    content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
 }
-export async function fetchAbilityBlockByName(name?: string, sources?: number[], id?: number) {
+export async function fetchAbilityBlockByName(name?: string, sources?: SourceValue, id?: number) {
   const results = await fetchContent<AbilityBlock>('ability-block', {
     id,
     name,
-    content_sources: sources ?? defaultSources,
+    content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
 }
-export async function fetchItemByName(name?: string, sources?: number[], id?: number) {
+export async function fetchItemByName(name?: string, sources?: SourceValue, id?: number) {
   const results = await fetchContent<Item>('item', {
     id,
     name: name?.replace(/-/g, ' '),
-    content_sources: sources ?? defaultSources,
+    content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
 }
-export async function fetchLanguageByName(name?: string, sources?: number[], id?: number) {
+export async function fetchLanguageByName(name?: string, sources?: SourceValue, id?: number) {
   const results = await fetchContent<Language>('language', {
     id,
     name,
-    content_sources: sources ?? defaultSources,
+    content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
 }
-export async function fetchSpellByName(name?: string, sources?: number[], id?: number) {
+export async function fetchSpellByName(name?: string, sources?: SourceValue, id?: number) {
   const results = await fetchContent<Spell>('spell', {
     id,
     name,
-    content_sources: sources ?? defaultSources,
+    content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
 }
-export async function fetchCreatureByName(name?: string, sources?: number[], id?: number) {
+export async function fetchCreatureByName(name?: string, sources?: SourceValue, id?: number) {
   const results = await fetchContent<Creature>('creature', {
     id,
     name,
-    content_sources: sources ?? defaultSources,
+    content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
 }

@@ -83,9 +83,9 @@ export default function SettingsPanel(props: {
   });
 
   const { data: fetchedBooks, refetch } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-campaign-settings`, { campaignId: props.campaign.id }],
     queryFn: async () => {
-      return await fetchContentSources({ ids: 'all' });
+      return (await fetchContentSources('ALL-OFFICIAL-PUBLIC')).filter((book) => book.deprecated !== true);
     },
   });
   const books = fetchedBooks ?? [];
@@ -121,7 +121,7 @@ export default function SettingsPanel(props: {
       setTimeout(() => {
         // Refresh data to repopulate with new book content
         resetContentStore();
-        defineDefaultSources(props.campaign?.recommended_content_sources?.enabled ?? []);
+        defineDefaultSources('PAGE', props.campaign?.recommended_content_sources?.enabled ?? []);
         refetch();
       }, 200);
     };

@@ -12,7 +12,6 @@ import {
   fetchItemByName,
   fetchSpellByName,
   fetchTraitByName,
-  getDefaultSources,
 } from '@content/content-store';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { hideNotification, showNotification } from '@mantine/notifications';
@@ -29,7 +28,7 @@ import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 import { CreateContentSourceOnlyModal } from './CreateContentSourceModal';
-import { cloneDeep, uniq } from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -46,10 +45,8 @@ export default function ContentFeedbackModal(props: {
       props.onStartFeedback();
       setSubmitUpdate({ id: undefined, content: props.type });
 
-      // Add the content source to make sure we can reference it's content. TODO: Add required sources too
-      if (props.data.contentSourceId && props.data.contentSourceId !== -1) {
-        defineDefaultSources(uniq([...getDefaultSources(), props.data.contentSourceId]));
-      }
+      // Add the content source to make sure we can reference it's content
+      defineDefaultSources('INFO', props.data.contentSourceId ? [props.data.contentSourceId] : 'ALL-USER-ACCESSIBLE');
     }
   }, []);
 

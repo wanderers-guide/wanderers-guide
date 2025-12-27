@@ -61,9 +61,12 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
     queryKey: [`find-content-${character?.id}`],
     queryFn: async () => {
       // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources({ includeCommonCore: true });
+      await fetchContentSources(getDefaultSources('PAGE'));
 
-      const content = await fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: false });
+      const content = await fetchContentPackage(getDefaultSources('PAGE'), {
+        fetchSources: true,
+        fetchCreatures: false,
+      });
       return content;
     },
     refetchOnWindowFocus: false,
@@ -2114,7 +2117,7 @@ function OperationResultSelector(props: {
         // advancedPresetFilters: {
         //   type: props.result?.selection?.options[0]._content_type,
         //   ab_type: props.result?.selection?.options[0].type,
-        //   content_sources: character ? character.content_sources?.enabled : getDefaultSources(),
+        //   content_sources: character ? character.content_sources?.enabled : undefined,
         //   level_max: character ? character.level : undefined,
         //   level_min: 1,
         // },

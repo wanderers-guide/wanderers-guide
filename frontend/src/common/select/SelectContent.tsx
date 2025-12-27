@@ -4,7 +4,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { isItemArchaic } from '@items/inv-utils';
@@ -456,7 +456,7 @@ export default function SelectContentModal({
       // eslint-disable-next-line
       const [_key, { selectedId }] = queryKey;
       const heritage = await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
-      const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage');
+      const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage', getDefaultSources('PAGE'));
       return {
         heritage,
         versHeritages,
@@ -741,7 +741,10 @@ function SelectionOptions(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { sourceId }] = queryKey;
-      return (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? undefined : [sourceId])) ?? null;
+      return (
+        (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? getDefaultSources('PAGE') : [sourceId])) ??
+        null
+      );
     },
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch

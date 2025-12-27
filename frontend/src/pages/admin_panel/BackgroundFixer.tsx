@@ -3,7 +3,6 @@ import { queryByName } from '@ai/vector-db/vector-manager';
 import BlurBox from '@common/BlurBox';
 import { upsertBackground } from '@content/content-creation';
 import { fetchContentSources, defineDefaultSources, fetchContent } from '@content/content-store';
-import { defineDefaultSourcesForUser } from '@content/homebrew';
 import { Center, Group, Title, Select } from '@mantine/core';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
@@ -18,9 +17,7 @@ export default function BackgroundFixer() {
   const { data, isFetching } = useQuery({
     queryKey: [`get-content-sources`],
     queryFn: async () => {
-      const sources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
-      defineDefaultSources(sources.map((source) => source.id));
-      return sources;
+      return await fetchContentSources(defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC'));
     },
     refetchInterval: 1000,
   });

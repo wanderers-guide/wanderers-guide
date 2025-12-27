@@ -155,7 +155,7 @@ const FOUNDRY_TRAIT_MAP: Record<string, number> = {
 };
 
 export async function getTraitIds(traitNames: string[], source: ContentSource, createIfNotFound = true) {
-  const sources = await fetchContentSources({ ids: 'all', homebrew: false, includeCommonCore: true });
+  const sources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
 
   const traitIds: number[] = [];
   for (let traitName of traitNames) {
@@ -194,7 +194,7 @@ export async function getTraitIds(traitNames: string[], source: ContentSource, c
 }
 
 export async function getLanguageIds(languageNames: string[], source: ContentSource) {
-  const sources = await fetchContentSources({ includeCommonCore: true });
+  const sources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
 
   const languageIds: number[] = [];
   for (let languageName of languageNames) {
@@ -218,7 +218,7 @@ export async function getLanguageIds(languageNames: string[], source: ContentSou
 }
 
 export async function getSpellByName(spellNames: string[]) {
-  const sources = await fetchContentSources({ includeCommonCore: true });
+  const sources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
 
   const resultSpells: Spell[] = [];
   for (let spellName of spellNames) {
@@ -237,7 +237,7 @@ export async function getSpellByName(spellNames: string[]) {
 }
 
 export async function getItemsByName(itemNames: string[]) {
-  const sources = await fetchContentSources({ includeCommonCore: true });
+  const sources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
 
   const resultItems: Item[] = [];
   for (let itemName of itemNames) {

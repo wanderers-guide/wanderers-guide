@@ -1,29 +1,10 @@
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
-import {
-  FeatSelectionOption,
-  ClassFeatureSelectionOption,
-  HeritageSelectionOption,
-  PhysicalFeatureSelectionOption,
-} from '@common/select/SelectContent';
-import { fetchContentAll } from '@content/content-store';
-import {
-  useMantineTheme,
-  Stack,
-  Group,
-  TextInput,
-  SegmentedControl,
-  ScrollArea,
-  Accordion,
-  Divider,
-  Box,
-  Text,
-} from '@mantine/core';
+import { FeatSelectionOption } from '@common/select/SelectContent';
+import { useMantineTheme, Stack, Group, TextInput, ScrollArea, Accordion, Divider, Box, Text } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, ContentPackage, Creature } from '@typing/content';
+import { ContentPackage, Creature } from '@typing/content';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useRecoilValue, useRecoilState, SetterOrUpdater } from 'recoil';
+import { useRecoilState, SetterOrUpdater } from 'recoil';
 import * as JsSearch from 'js-search';
 import { isTruthy } from '@utils/type-fixing';
 

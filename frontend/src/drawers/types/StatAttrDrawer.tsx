@@ -1,58 +1,10 @@
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentById } from '@content/content-store';
-import {
-  Title,
-  Text,
-  Image,
-  Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Badge,
-  Accordion,
-  Kbd,
-  Timeline,
-  HoverCard,
-  List,
-  Table,
-  useMantineTheme,
-} from '@mantine/core';
-import {
-  IconBadgesFilled,
-  IconFrame,
-  IconGitBranch,
-  IconGitCommit,
-  IconGitPullRequest,
-  IconMathSymbols,
-  IconMessageDots,
-  IconPlusMinus,
-  IconTimeline,
-} from '@tabler/icons-react';
-import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
-import { AttributeValue, StoreID, VariableAttr, VariableProf, VariableValue } from '@typing/variables';
+import { Title, Text, Group, Box, HoverCard, Table, useMantineTheme } from '@mantine/core';
+import { AttributeValue, StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
-import {
-  getAllAttributeVariables,
-  getVariable,
-  getVariableBonuses,
-  getVariableHistory,
-} from '@variables/variable-manager';
-import {
-  compactLabels,
-  getProficiencyTypeValue,
-  isProficiencyType,
-  proficiencyTypeToLabel,
-  variableToLabel,
-} from '@variables/variable-utils';
+import { getAllAttributeVariables, getVariableHistory } from '@variables/variable-manager';
+import { compactLabels, variableToLabel } from '@variables/variable-utils';
 
 export function StatAttrDrawerTitle(props: { data: { id: StoreID; attributeName?: string } }) {
   return (

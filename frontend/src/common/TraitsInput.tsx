@@ -1,5 +1,5 @@
 import { isTraitVisible } from '@content/content-hidden';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Trait } from '@typing/content';
@@ -18,7 +18,7 @@ export default function TraitsInput(props: TraitsInputProps) {
   const { data, isFetching } = useQuery({
     queryKey: [`get-traits`],
     queryFn: async () => {
-      return await fetchContentAll<Trait>('trait');
+      return await fetchContentAll<Trait>('trait', getDefaultSources('INFO'));
     },
   });
 

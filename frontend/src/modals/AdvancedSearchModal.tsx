@@ -3,9 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import ActionsInput from '@common/ActionsInput';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
 import TraitsInput from '@common/TraitsInput';
-import { fetchContent, getCachedSources } from '@content/content-store';
-import { defineDefaultSourcesForUser } from '@content/homebrew';
-import { mapToDrawerData } from '@drawers/drawer-utils';
+import { fetchContent, fetchContentSources, getCachedSources, getDefaultSources } from '@content/content-store';
 import {
   Accordion,
   Group,
@@ -84,7 +82,7 @@ export interface FiltersParams {
   craft_requirements?: string;
   spell_type?: 'FOCUS' | 'RITUAL' | 'NORMAL';
   usage?: string;
-  content_sources?: number[];
+  content_sources?: number[] | string;
 }
 
 const MAX_SECTION_HEIGHT = 350;
@@ -100,10 +98,25 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
   onSelect?: (option: C) => void;
   onClose?: () => void;
 }) {
+  const convertContentSources = (sources: number[] | string | undefined) => {
+    if (sources === undefined || typeof sources === 'string') {
+      const ds = getDefaultSources('INFO');
+      if (Array.isArray(ds)) {
+        return ds;
+      } else {
+        return undefined;
+      }
+    } else {
+      return sources;
+    }
+  };
+
   const [isLoading, setLoading] = useState(false);
   const [traitsCached, setTraitsCached] = useState<Record<number, string>>({});
   const [contentSourcesCached, setContentSourcesCached] = useState<ContentSource[]>(
-    getCachedSources().filter((source) => props.presetFilters?.content_sources?.includes(source.id) ?? true)
+    getCachedSources().filter(
+      (source) => convertContentSources(props.presetFilters?.content_sources)?.includes(source.id) ?? true
+    )
   );
   const zIndex = props.zIndex ?? 500;
 
@@ -152,20 +165,11 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
   useEffect(() => {
     if (props.opened) {
       // Load content sources
-      if (props.presetFilters?.content_sources) {
-        fetchContent<ContentSource>('content-source', {
-          id: props.presetFilters.content_sources,
-        }).then((sources) => {
-          setContentSourcesCached(sources);
-        });
-      } else {
-        defineDefaultSourcesForUser().then(async (sourceIds) => {
-          const sources = await fetchContent<ContentSource>('content-source', {
-            id: sourceIds,
-          });
-          setContentSourcesCached(sources);
-        });
-      }
+      fetchContentSources(
+        convertContentSources(props.presetFilters?.content_sources) ?? getDefaultSources('INFO')
+      ).then((sources) => {
+        setContentSourcesCached(sources);
+      });
 
       // Reset to filters tab
       setAccordionValue('filters');
@@ -211,7 +215,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
     const result = await makeRequest('search-data', {
       ...f,
       is_advanced: true,
-      content_sources: f.content_sources ?? contentSourcesCached.map((source) => source.id),
+      content_sources: convertContentSources(f.content_sources) ?? contentSourcesCached.map((source) => source.id),
     });
 
     let newData: Record<string, any>[] = [];
@@ -286,9 +290,12 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
           } else if (key === 'traits' && Array.isArray(value)) {
             // Handle traits array
             v = `[ ${value.map((traitId) => traitsCached[Number(traitId)] ?? `${traitId}`).join(', ')} ]`;
-          } else if (key === 'content_sources' && Array.isArray(value)) {
+          } else if (
+            key === 'content_sources' &&
+            Array.isArray(convertContentSources(value as FiltersParams['content_sources']))
+          ) {
             // Handle content sources array
-            v = `[ ${value
+            v = `[ ${(convertContentSources(value as FiltersParams['content_sources']) ?? [])
               .map((sourceId) => {
                 return contentSourcesCached.find((source) => source.id === sourceId)?.name ?? `${sourceId}`;
               })
@@ -980,7 +987,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                       data={contentSourcesCached.map((source) => source.name)}
                       value={
                         // Map IDs to names
-                        filters.content_sources
+                        convertContentSources(filters.content_sources)
                           ?.map((s) => {
                             return contentSourcesCached.find((source) => source.id === s)?.name;
                           })
@@ -1004,7 +1011,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                           zIndex: zIndex + 1,
                         },
                       }}
-                      disabled={props.presetFilters?.content_sources !== undefined}
+                      disabled={convertContentSources(props.presetFilters?.content_sources) !== undefined}
                     />
                   )}
                 </Stack>

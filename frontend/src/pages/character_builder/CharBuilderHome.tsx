@@ -132,9 +132,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   });
 
   const { data: fetchedBooks, refetch } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-character-settings`, { characterId: character?.id }],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all' })).filter((book) => book.deprecated !== true);
+      return (await fetchContentSources('ALL-OFFICIAL-PUBLIC')).filter((book) => book.deprecated !== true);
     },
   });
   const books = fetchedBooks ?? [];
@@ -206,7 +206,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       setTimeout(() => {
         // Refresh data to repopulate with new book content
         resetContentStore();
-        defineDefaultSources(character?.content_sources?.enabled ?? []);
+        defineDefaultSources('PAGE', character?.content_sources?.enabled ?? []);
         refetch();
         queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] });
       }, 200);
@@ -1127,9 +1127,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
             const missingSourceIds = homebrewSources?.filter((id: number) => !subscribedSources.includes(id));
             const missingSources =
-              missingSourceIds && missingSourceIds.length > 0
-                ? await fetchContentSources({ homebrew: true, ids: missingSourceIds })
-                : [];
+              missingSourceIds && missingSourceIds.length > 0 ? await fetchContentSources(missingSourceIds) : [];
 
             const subscribeToMissingSources = async () => {
               if (!user) return;

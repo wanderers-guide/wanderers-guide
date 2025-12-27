@@ -1,6 +1,6 @@
 import { ItemIcon } from '@common/ItemIcon';
 import { getConditionByName } from '@conditions/condition-handler';
-import { fetchContentAll, getCachedSources } from '@content/content-store';
+import { fetchContentAll, getCachedSources, getDefaultSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
 import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
@@ -77,7 +77,7 @@ export function getItemBulk(invItem: InventoryItem) {
   const armorWornModifier = isItemArmor(invItem.item) && !invItem.is_equipped ? 1 : 0;
 
   const baseItemBulk = invItem.is_equipped
-    ? invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0)
+    ? (invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0))
     : parseFloat(invItem.item.bulk ?? '0') || 0;
 
   totalBulk = (baseItemBulk + armorWornModifier) * getItemQuantity(invItem.item);
@@ -131,7 +131,7 @@ export const handleAddItem = async (
 async function getDefaultContainerContents(item: Item, allItems?: Item[], count = 1): Promise<InventoryItem[]> {
   if (count > 10) return [];
   if ((item.meta_data?.container_default_items ?? []).length === 0) return [];
-  const items = allItems ? allItems : await fetchContentAll<Item>('item');
+  const items = allItems ? allItems : await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
 
   const invItems: InventoryItem[] = [];
   for (const record of item.meta_data?.container_default_items ?? []) {

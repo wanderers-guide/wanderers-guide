@@ -6,7 +6,7 @@ import {
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
 } from '@common/select/SelectContent';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import {
   useMantineTheme,
   Stack,
@@ -39,7 +39,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
     queryFn: async () => {
       if (!character) return null;
 
-      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
       return collectEntityAbilityBlocks('CHARACTER', character, abilityBlocks, {
         filterBasicClassFeatures: true,
       });

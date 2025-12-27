@@ -1,5 +1,5 @@
 import { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
-import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, SourceValue } from '@content/content-store';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import { isItemWeapon, getFlatInvItems, getBestArmor, getBestShield, getInvBulk, labelizeBulk } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
@@ -45,12 +45,13 @@ export default async function jsonV4(entity: LivingEntity) {
 
 export async function getJsonV4Content(entity: LivingEntity) {
   // Get all content that the character uses
+  let sv: SourceValue = 'ALL-OFFICIAL-PUBLIC';
   if (isCharacter(entity)) {
-    defineDefaultSources(entity.content_sources?.enabled ?? []);
+    sv = defineDefaultSources('PAGE', entity.content_sources?.enabled ?? []);
   } else if (isCreature(entity)) {
-    defineDefaultSources(undefined);
+    sv = defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC');
   }
-  const content = await fetchContentPackage(undefined, { fetchSources: true });
+  const content = await fetchContentPackage(sv, { fetchSources: true });
   const STORE_ID = isCharacter(entity) ? 'CHARACTER' : `CREATURE_${entity.id}`;
 
   // Execute all operations (to update the variables)

@@ -60,7 +60,9 @@ export default function AddItemsModal({
   const { data: rawItems, isFetching } = useQuery({
     queryKey: [`find-items-add-items`],
     queryFn: async () => {
-      return (await fetchContentAll<Item>('item')).filter((item) => isItemVisible('CHARACTER', item));
+      return (await fetchContentAll<Item>('item', getDefaultSources('PAGE'))).filter((item) =>
+        isItemVisible('CHARACTER', item)
+      );
     },
   });
 
@@ -144,7 +146,7 @@ export default function AddItemsModal({
             opened={advancedSearchOpen}
             presetFilters={{
               type: 'item',
-              content_sources: getDefaultSources(),
+              content_sources: getDefaultSources('PAGE'),
             }}
             extraFilterFn={(item) => isItemVisible('CHARACTER', item)}
             onSelect={(item) => {

@@ -226,7 +226,10 @@ export default function DrawerBase() {
                     // Use creature id from .creature to allow edited creatures to get content updates on original
                     if (type === 'creature' && data.creature?.id) {
                       data.id = data.creature.id;
+                      data.content_source_id = data.creature.content_source_id;
                     }
+
+                    console.log('Opening feedback for drawer type:', type, 'data:', data);
 
                     setFeedbackData({
                       type: type,

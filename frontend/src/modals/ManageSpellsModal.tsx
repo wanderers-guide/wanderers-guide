@@ -51,14 +51,15 @@ export default function ManageSpellsModal(props: {
 }) {
   const isRituals = props.source === 'RITUALS';
 
-  const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const { data: allRawSpells, isFetching } = useQuery({
-    queryKey: [`find-spells`],
+    queryKey: [`find-spells-in-manage-spells-modal`, { entityId: props.entity?.id, source: props.source }],
     queryFn: async () => {
-      return (await fetchContentAll<Spell>('spell')).filter((spell) => isSpellVisible(props.id, spell));
+      return (await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'))).filter((spell) =>
+        isSpellVisible(props.id, spell)
+      );
     },
   });
 
@@ -227,8 +228,6 @@ const SlotsSection = (props: {
     {} as Record<string, SpellSlotRecord[]>
   );
 
-  console.log('wddwwd', getDefaultSources());
-
   return (
     <ScrollArea pr={14} h={`calc(min(80dvh, ${EDIT_MODAL_HEIGHT}px))`} scrollbars='y'>
       <Stack gap={10}>
@@ -327,7 +326,7 @@ const SlotsSection = (props: {
                           traditions: props.filter?.traditions,
                           rank_min: props.filter?.rank_min,
                           rank_max: props.filter?.rank_max,
-                          content_sources: getDefaultSources(),
+                          content_sources: getDefaultSources('PAGE'),
                         },
                       }}
                     />
@@ -458,7 +457,7 @@ const ListSection = (props: {
                   traditions: props.filter?.traditions,
                   rank_min: props.filter?.rank_min,
                   rank_max: props.filter?.rank_max,
-                  content_sources: getDefaultSources(),
+                  content_sources: getDefaultSources('PAGE'),
                 },
               }
             );

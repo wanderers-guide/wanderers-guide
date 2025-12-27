@@ -2,7 +2,6 @@ import { drawerState } from '@atoms/navAtoms';
 import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
-import { DISCORD_URL } from '@constants/data';
 import { defineDefaultSources, fetchContent, fetchContentSources } from '@content/content-store';
 import { findContentUpdate } from '@content/content-update';
 import { mapToDrawerData } from '@drawers/drawer-utils';
@@ -48,15 +47,15 @@ export function Component(props: {}) {
 
       const user = (await getPublicUser(contentUpdate.user_id))!;
 
-      const sources = await fetchContentSources({ ids: [contentUpdate.content_source_id], includeCommonCore: true });
+      const sources = await fetchContentSources(defineDefaultSources('PAGE', [contentUpdate.content_source_id]));
       if (sources.length === 0) {
         return null;
       }
-      defineDefaultSources(sources.map((s) => s.id));
 
       const originalContent = contentUpdate.ref_id
         ? await fetchContent(contentUpdate.type, {
             id: contentUpdate.ref_id,
+            content_sources: sources.map((s) => s.id),
           })
         : [];
 

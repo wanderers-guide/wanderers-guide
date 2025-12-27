@@ -43,10 +43,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
-      const sources = await fetchContentSources({
-        ids: [id],
-        includeCommonCore: true,
-      });
+      const sources = await fetchContentSources([id]);
       return sources?.find((s) => s.id === id) ?? null;
     },
     enabled: !!id,
@@ -78,7 +75,7 @@ export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: 
 
   useEffect(() => {
     if (!source) return;
-    defineDefaultSourcesForSource(source);
+    defineDefaultSourcesForSource('INFO', source);
   }, [source]);
 
   return (

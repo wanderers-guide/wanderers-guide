@@ -1,7 +1,7 @@
 import { getAllIcons } from '@common/Icon';
 import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
 import { GUIDE_BLUE } from '@constants/data';
-import { fetchContentPackage } from '@content/content-store';
+import { fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { makeRequest } from '@requests/request-manager';
@@ -465,7 +465,7 @@ ${description}
 }
 
 export async function generateEncounters(partyLevel: number, partySize: number, description: string) {
-  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: true });
+  const content = await fetchContentPackage(getDefaultSources('PAGE'), { fetchSources: false, fetchCreatures: true });
 
   const creatureIds = await selectEncounterCreaturesSample(partyLevel, content.creatures, content.traits, description);
   if (!creatureIds) return null;

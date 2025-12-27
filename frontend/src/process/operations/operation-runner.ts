@@ -25,15 +25,7 @@ import {
   OperationSendNotification,
   OperationSetValue,
 } from '@typing/operations';
-import {
-  ExtendedProficiencyType,
-  ExtendedProficiencyValue,
-  ProficiencyType,
-  ProficiencyValue,
-  StoreID,
-  VariableNum,
-  VariableProf,
-} from '@typing/variables';
+import { ExtendedProficiencyType, ProficiencyType, StoreID, VariableNum, VariableProf } from '@typing/variables';
 import { displayError, throwError } from '@utils/notifications';
 import {
   addVariable,
@@ -43,12 +35,7 @@ import {
   getVariables,
   setVariable,
 } from '@variables/variable-manager';
-import {
-  compileExpressions,
-  compileProficiencyType,
-  labelToVariable,
-  maxProficiencyType,
-} from '@variables/variable-utils';
+import { compileProficiencyType, labelToVariable, maxProficiencyType } from '@variables/variable-utils';
 import {
   ObjectWithUUID,
   determineFilteredSelectionList,
@@ -286,7 +273,7 @@ async function runSelect(
           { path: `${selectionTrack.path}_${subNode?.value}`, node: subNode },
           subOperations,
           options,
-          operation.data.optionType === 'CUSTOM' ? sourceLabel : selectedOption.name ?? 'Unknown'
+          operation.data.optionType === 'CUSTOM' ? sourceLabel : (selectedOption.name ?? 'Unknown')
         );
       }
     }
