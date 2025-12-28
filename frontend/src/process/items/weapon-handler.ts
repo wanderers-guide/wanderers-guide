@@ -24,7 +24,9 @@ export function getWeaponStats(id: StoreID, item: Item) {
 
   // Get the number of dice for the weapon
   let dice =
-    (item.meta_data?.damage?.dice ?? 1) + (item.meta_data?.runes?.striking ?? 0) + (gradeImprovements.damage_dice - 1);
+    (item.meta_data?.damage?.dice ?? 1) +
+    Math.min(item.meta_data?.runes?.striking ?? 0, 4) +
+    (gradeImprovements.damage_dice - 1);
   const minDice = getVariable<VariableNum>(id, 'MINIMUM_WEAPON_DAMAGE_DICE')?.value ?? 1;
   if (dice < minDice) dice = minDice;
 
@@ -134,7 +136,10 @@ function getRangedAttackBonus(id: StoreID, item: Item) {
   }
 
   if (item.meta_data?.runes?.potency) {
-    parts.set("This is the bonus you receive from the weapon's potency rune.", item.meta_data.runes.potency);
+    parts.set(
+      "This is the bonus you receive from the weapon's potency rune.",
+      Math.min(item.meta_data.runes.potency, 4)
+    );
   }
 
   if (attackBonus) {
@@ -218,7 +223,10 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   }
 
   if (item.meta_data?.runes?.potency) {
-    parts.set("This is the bonus you receive from the weapon's potency rune.", item.meta_data.runes.potency);
+    parts.set(
+      "This is the bonus you receive from the weapon's potency rune.",
+      Math.min(item.meta_data.runes.potency, 4)
+    );
   }
 
   if (attackBonus) {

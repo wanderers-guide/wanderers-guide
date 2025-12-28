@@ -487,10 +487,10 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
       range: json.system?.range,
       reload: json.system?.reload?.value,
       runes: {
-        resilient: json.system?.runes?.resilient,
-        striking: json.system?.runes?.striking,
-        potency: json.system?.runes?.potency,
-        property: json.system?.runes?.property,
+        resilient: json.system?.runes?.resilient ?? undefined,
+        striking: json.system?.runes?.striking ?? undefined,
+        potency: json.system?.runes?.potency ?? undefined,
+        property: json.system?.runes?.property ?? undefined,
       },
       foundry: {
         rules: json.system?.rules,

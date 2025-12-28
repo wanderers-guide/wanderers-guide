@@ -579,7 +579,7 @@ export function getItemOperations(item: Item, content: ContentPackage) {
   if (isItemWithRunes(item)) {
     if (isItemArmor(item)) {
       // Armor potency
-      const potency = item.meta_data?.runes?.potency ?? 0;
+      const potency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);
       if (potency > 0) {
         const ops: Operation[] = [
           {
@@ -597,7 +597,7 @@ export function getItemOperations(item: Item, content: ContentPackage) {
       }
 
       // Armor resilient
-      const resilient = item.meta_data?.runes?.resilient ?? 0;
+      const resilient = Math.min(item.meta_data?.runes?.resilient ?? 0, 4);
       if (resilient > 0) {
         const ops: Operation[] = [
           {
@@ -805,7 +805,7 @@ export function isItemEquippable(item: Item) {
 export function isItemWithRunes(item: Item) {
   if (!item.meta_data?.runes) return false;
 
-  return item.meta_data.runes.potency || item.meta_data.runes.striking || item.meta_data.runes.resilient;
+  return !!(item.meta_data.runes.potency || item.meta_data.runes.striking || item.meta_data.runes.resilient);
 }
 
 /**
@@ -821,6 +821,36 @@ export function isItemWithPropertyRunes(item: Item) {
     item.meta_data.runes.property.length > 0 &&
     item.meta_data.runes.property.every((r) => r.id && r.name)
   );
+}
+
+// Fundamental Rune IDs Map
+export const FUNDAMENTAL_RUNES: Record<string, number> = {
+  potency_weapon_1: 7950, // Weapon Potency I
+  potency_weapon_2: 7951, // Weapon Potency II
+  potency_weapon_3: 7952, // Weapon Potency III
+  potency_weapon_4: 19854, // Weapon Potency IV
+  potency_weapon_10: 16927, // Weapon Potency (Mythic)
+  potency_armor_1: 6719, // Armor Potency I
+  potency_armor_2: 6720, // Armor Potency II
+  potency_armor_3: 6721, // Armor Potency III
+  potency_armor_10: 16924, // Armor Potency (Mythic)
+  striking_1: 7862, // Striking
+  striking_2: 7860, // Striking (Greater)
+  striking_3: 7861, // Striking (Major)
+  striking_10: 16926, // Striking (Mythic)
+  resilient_1: 7703, // Resilient
+  resilient_2: 7701, // Resilient (Greater)
+  resilient_3: 7702, // Resilient (Major)
+  resilient_10: 16925, // Resilient (Mythic)
+} as const;
+
+/**
+ * Utility function to detect if an item IS a fundamental rune
+ * @param item - Item
+ * @returns - Whether the item is a fundamental rune
+ */
+export function isItemFundamentalRune(item: Item) {
+  return Object.values(FUNDAMENTAL_RUNES).includes(item.id);
 }
 
 /**

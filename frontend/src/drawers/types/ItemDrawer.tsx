@@ -243,12 +243,10 @@ export function ItemDrawerContent(props: {
           {item.description}
         </RichText>
 
-        {isItemWithPropertyRunes(item) && (
+        {isItemWithRunes(item) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='runes'>
-              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>
-                Property Runes
-              </Accordion.Control>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>Runes</Accordion.Control>
               <Accordion.Panel>
                 <ItemRunesDescription item={item} />
               </Accordion.Panel>
@@ -430,6 +428,8 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
       strikingLabel = 'Greater Striking';
     } else if (props.item.meta_data!.runes!.striking === 3) {
       strikingLabel = 'Major Striking';
+    } else if (props.item.meta_data!.runes!.striking === 10) {
+      strikingLabel = 'Mythic Striking';
     }
 
     let resilientLabel = '';
@@ -439,18 +439,20 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
       resilientLabel = 'Greater Resilient';
     } else if (props.item.meta_data!.runes!.resilient === 3) {
       resilientLabel = 'Major Resilient';
+    } else if (props.item.meta_data!.runes!.resilient === 10) {
+      resilientLabel = 'Mythic Resilient';
     }
 
     let potencyLabel = '';
     if (props.item.meta_data!.runes!.potency) {
-      potencyLabel = `+${props.item.meta_data!.runes!.potency} `;
+      potencyLabel = `+${Math.min(props.item.meta_data!.runes!.potency, 4)} `;
     }
 
     const rightLabel = strikingLabel || resilientLabel;
 
     runesSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group gap={10}>
+      <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
+        <Group gap={5}>
           {potencyLabel && (
             <Text fw={600} c='gray.5' span>
               {potencyLabel}

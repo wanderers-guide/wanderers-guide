@@ -192,7 +192,7 @@ export default function App() {
                 zIndex: 1,
               }}
             >
-              <IconBrush size='0.5rem' /> {background.source}
+              <IconBrush size='0.55rem' /> {background.source}
             </Text>
           </Anchor>
         )}

@@ -27,7 +27,7 @@ import {
 } from '@mantine/core';
 import { getHotkeyHandler, useDidUpdate } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
-import { IconSearch, IconAdjustments, IconFilter } from '@tabler/icons-react';
+import { IconSearch, IconAdjustments, IconFilter, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Item, ItemGroup, Spell } from '@typing/content';
 import { labelToVariable } from '@variables/variable-utils';
@@ -118,11 +118,28 @@ export default function AddItemsModal({
               style={{ flex: 1 }}
               leftSection={<IconSearch size='0.9rem' />}
               placeholder={`Search all items`}
+              value={searchQuery}
               onChange={(e) => {
                 const value = e.target.value;
                 setPage(1);
                 setSearchQuery(value);
               }}
+              rightSection={
+                searchQuery.trim() ? (
+                  <ActionIcon
+                    variant='subtle'
+                    size='md'
+                    color='gray'
+                    radius='xl'
+                    aria-label='Clear search'
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    <IconX size='1.2rem' stroke={2} />
+                  </ActionIcon>
+                ) : undefined
+              }
               styles={{
                 input: {
                   borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
