@@ -1,3 +1,4 @@
+import { sleep } from './async';
 import { toLabel } from './strings';
 
 export async function getShapeIcon(content: string) {
@@ -6,6 +7,7 @@ export async function getShapeIcon(content: string) {
 }
 
 export async function getRingIcon(content: string) {
+  // await sleep(100); // to avoid rate limiting
   const res = await fetch(`https://api.dicebear.com/7.x/rings/svg?seed=${content}`);
   return res.ok ? await res.text() : '';
 }

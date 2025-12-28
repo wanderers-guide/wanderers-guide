@@ -2,6 +2,7 @@ import { sessionState } from '@atoms/supabaseAtoms';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
+import Paginator from '@common/Paginator';
 import { CAMPAIGN_SLOT_CAP } from '@constants/data';
 import classes from '@css/UserInfoIcons.module.css';
 import {
@@ -22,10 +23,11 @@ import {
   HoverCard,
   ScrollArea,
   Badge,
+  TextInput,
 } from '@mantine/core';
 import { useHover, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
-import { IconFlagPlus, IconPlus, IconUserPlus } from '@tabler/icons-react';
+import { IconFlag, IconFlagPlus, IconPlus, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Campaign, Character } from '@typing/content';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
@@ -42,11 +44,10 @@ export function Component() {
   const session = useRecoilValue(sessionState);
   const navigate = useNavigate();
 
-  const {
-    data: campaigns,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const isPhone = useMediaQuery(phoneQuery());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const { data, isLoading, refetch } = useQuery({
     queryKey: [`find-campaigns`],
     queryFn: async () => {
       return await makeRequest<Campaign[]>('find-campaign', {
@@ -67,29 +68,40 @@ export function Component() {
     setLoadingCreateCampaign(false);
   };
 
-  const reachedCampaignLimit =
-    (campaigns?.length ?? 0) >= CAMPAIGN_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);
+  const reachedCampaignLimit = (data?.length ?? 0) >= CAMPAIGN_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);
+
+  const getSearchStr = (campaign: Campaign) => {
+    return JSON.stringify({
+      _: campaign.name,
+      ___: campaign.description,
+    }).toLowerCase();
+  };
+
+  const campaigns =
+    data
+      ?.filter((c) => getSearchStr(c).includes(searchQuery.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name)) ?? [];
 
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <Box>
+        <BlurBox bgColor='rgba(20, 21, 23, 0.827)'>
           <Group px='sm' justify='space-between' wrap='nowrap'>
-            <Box>
-              <Title order={1} c='gray.0'>
+            <Group gap={10} py={5}>
+              {!isPhone && <IconFlag size='1.8rem' stroke={1.5} />}
+              <Title size={28} c='gray.0'>
                 Campaigns
                 <Text pl={10} fz='xl' fw={500} c='gray.2' span>
-                  {campaigns && reachedCampaignLimit ? `(${campaigns.length}/${CAMPAIGN_SLOT_CAP})` : ''}
+                  {data && reachedCampaignLimit ? `(${data.length}/${CAMPAIGN_SLOT_CAP})` : ''}
                 </Text>
               </Title>
-            </Box>
+            </Group>
             <Group gap={5} wrap='nowrap'>
               <Tooltip label='Create Campaign' openDelay={750}>
                 <ActionIcon
                   disabled={reachedCampaignLimit}
                   style={{
-                    backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(6px)',
+                    backgroundColor: reachedCampaignLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
                   }}
                   loading={loadingCreateCampaign}
                   variant='outline'
@@ -108,7 +120,38 @@ export function Component() {
             </Group>
           </Group>
           <Divider color='gray.2' />
-        </Box>
+          <Box py={5}>
+            <TextInput
+              style={{ flex: 1 }}
+              leftSection={<IconSearch size='0.9rem' />}
+              placeholder={`Search campaigns`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              variant='unstyled'
+              rightSection={
+                searchQuery.trim() ? (
+                  <ActionIcon
+                    variant='subtle'
+                    size='md'
+                    color='gray'
+                    radius='xl'
+                    aria-label='Clear search'
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    <IconX size='1.2rem' stroke={2} />
+                  </ActionIcon>
+                ) : undefined
+              }
+              styles={(theme) => ({
+                input: {
+                  '--input-placeholder-color': theme.colors.gray[5],
+                },
+              })}
+            />
+          </Box>
+        </BlurBox>
         <Group pt='sm'>
           {isLoading && (
             <Loader
@@ -122,10 +165,24 @@ export function Component() {
               }}
             />
           )}
-          {(campaigns ?? []).map((campaign, index) => (
-            <CampaignCard key={index} campaign={campaign} />
-          ))}
-          {!isLoading && (campaigns ?? []).length === 0 && (
+
+          {campaigns.length > 0 && (
+            <Center w='100%'>
+              <Stack w='100%'>
+                <Paginator
+                  h={500}
+                  records={campaigns.map((c, i) => (
+                    <CampaignCard key={i} campaign={c} />
+                  ))}
+                  numPerPage={isPhone ? 3 : 9}
+                  numInRow={isPhone ? 1 : 3}
+                  gap='xs'
+                />
+              </Stack>
+            </Center>
+          )}
+
+          {!isLoading && (data ?? []).length === 0 && (
             <BlurBox w={'100%'} h={200}>
               <Stack mt={50} gap={10}>
                 <Text ta='center' c='gray.5' fs='italic'>
@@ -156,8 +213,6 @@ export function Component() {
 function CampaignCard(props: { campaign: Campaign }) {
   const theme = useMantineTheme();
   const navigate = useNavigate();
-  const isPhone = useMediaQuery(phoneQuery());
-  const queryClient = useQueryClient();
 
   const { hovered: hoveredMain, ref: refMain } = useHover();
 
@@ -171,7 +226,7 @@ function CampaignCard(props: { campaign: Campaign }) {
   });
 
   return (
-    <BlurBox blur={10} w={isPhone ? '100%' : 240}>
+    <BlurBox blur={10}>
       <Box
         w='100%'
         ref={refMain}

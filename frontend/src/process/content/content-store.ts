@@ -137,7 +137,7 @@ export function defineDefaultSources(view: SourceKey | 'BOTH', sources: SourceVa
     DEFAULT_SOURCES[view] = sources;
   }
 
-  console.log('+ Defining default content sources:', view, DEFAULT_SOURCES);
+  console.log('[CONTENT-SOURCES] Defining default content sources:', view, DEFAULT_SOURCES);
   return cloneDeep(DEFAULT_SOURCES[view]);
 }
 
@@ -210,21 +210,26 @@ export async function fetchContent<T = Record<string, any>>(
     const newData = { ...data };
 
     if (type !== 'content-source') {
-      if (!newData.content_sources) {
-        console.warn(
-          '⚠️ No content sources specified for fetch of type',
+      let sv: SourceValue | undefined = cloneDeep(newData.content_sources);
+      let svN: number[] = [];
+
+      if (!sv) {
+        console.log(
+          '[CONTENT-SOURCES] ⚠️ No content sources specified for fetch of type',
           type,
           'with data',
           data,
-          '. Using default sources on PAGE.',
+          '. Using BOTH default sources',
+          getDefaultSources('INFO'),
+          'and',
           getDefaultSources('PAGE')
         );
-      }
-
-      let sv: SourceValue = newData.content_sources ?? getDefaultSources('PAGE');
-      let svN: number[] = [];
-
-      if (Array.isArray(sv)) {
+        // Use both default sources to be safe
+        svN = uniq([
+          ...(await fetchContentSources(getDefaultSources('INFO'))).map((source) => source.id),
+          ...(await fetchContentSources(getDefaultSources('PAGE'))).map((source) => source.id),
+        ]);
+      } else if (Array.isArray(sv)) {
         svN = sv;
       } else {
         // Convert SourceValue as string -> number array

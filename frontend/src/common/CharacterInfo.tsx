@@ -22,6 +22,25 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';
 import { LegacyRef, forwardRef } from 'react';
 
+const ProfilePic = (props: { src?: string }) => {
+  const theme = useMantineTheme();
+
+  return (
+    <Avatar
+      src={props.src}
+      alt='Character Portrait'
+      size={75}
+      radius={75}
+      mt={10}
+      ml={5}
+      mr={10}
+      variant='transparent'
+      color='dark.3'
+      bg={theme.colors.dark[6]}
+    />
+  );
+};
+
 export const CharacterInfo = forwardRef(
   (
     props: {
@@ -38,28 +57,12 @@ export const CharacterInfo = forwardRef(
     },
     ref: LegacyRef<HTMLDivElement>
   ) => {
-    const theme = useMantineTheme();
     const isPhone = useMediaQuery(phoneQuery());
 
     const hasClass = props.character?.details?.class?.name !== undefined;
     const hasAncestry = props.character?.details?.ancestry?.name !== undefined;
     const hasBackground = props.character?.details?.background?.name !== undefined;
     const hasClass2 = props.character?.details?.class_2?.name !== undefined;
-
-    const ProfilePic = () => (
-      <Avatar
-        src={props.character?.details?.image_url}
-        alt='Character Portrait'
-        size={75}
-        radius={75}
-        mt={10}
-        ml={5}
-        mr={10}
-        variant='transparent'
-        color='dark.3'
-        bg={theme.colors.dark[6]}
-      />
-    );
 
     return (
       <div ref={ref} style={{ width: isPhone ? undefined : 240 }}>
@@ -72,10 +75,10 @@ export const CharacterInfo = forwardRef(
                     props.onClickImage?.();
                   }}
                 >
-                  <ProfilePic />
+                  <ProfilePic src={props.character?.details?.image_url} />
                 </UnstyledButton>
               ) : (
-                <ProfilePic />
+                <ProfilePic src={props.character?.details?.image_url} />
               )}
             </>
           )}
