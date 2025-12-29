@@ -32,7 +32,14 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useDidUpdate, useElementSize, useHover, useMergedRef } from '@mantine/hooks';
+import {
+  useDebouncedState,
+  useDebouncedValue,
+  useDidUpdate,
+  useElementSize,
+  useHover,
+  useMergedRef,
+} from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
@@ -303,7 +310,8 @@ export default function SelectContentModal({
 }>) {
   const theme = useMantineTheme();
 
-  const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
   // const [_advancedSearch, setAdvancedSearch] = useRecoilState(advancedSearchData);
 
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
@@ -327,7 +335,24 @@ export default function SelectContentModal({
               style={{ flex: 1 }}
               leftSection={<IconSearch size='0.9rem' />}
               placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
+              value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              rightSection={
+                searchQuery.trim() ? (
+                  <ActionIcon
+                    variant='subtle'
+                    size='md'
+                    color='gray'
+                    radius='xl'
+                    aria-label='Clear search'
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    <IconX size='1.2rem' stroke={2} />
+                  </ActionIcon>
+                ) : undefined
+              }
               styles={{
                 input: {
                   borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
@@ -494,7 +519,7 @@ export default function SelectContentModal({
                   skillAdjustment={innerProps.options?.skillAdjustment}
                   selectedId={innerProps.options?.selectedId}
                   overrideOptions={innerProps.options?.overrideOptions}
-                  searchQuery={searchQuery}
+                  searchQuery={searchQueryDebounced}
                   onClick={
                     innerProps.onClick
                       ? (option) => {
@@ -519,7 +544,7 @@ export default function SelectContentModal({
                   type='ability-block'
                   abilityBlockType='feat'
                   selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQuery}
+                  searchQuery={searchQueryDebounced}
                   onClick={
                     innerProps.onClick
                       ? (option) => {
@@ -555,7 +580,7 @@ export default function SelectContentModal({
                   type='ability-block'
                   abilityBlockType='feat'
                   selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQuery}
+                  searchQuery={searchQueryDebounced}
                   onClick={
                     innerProps.onClick
                       ? (option) => {
@@ -599,7 +624,7 @@ export default function SelectContentModal({
                   skillAdjustment={innerProps.options?.skillAdjustment}
                   selectedId={innerProps.options?.selectedId}
                   overrideOptions={innerProps.options?.overrideOptions}
-                  searchQuery={searchQuery}
+                  searchQuery={searchQueryDebounced}
                   onClick={
                     innerProps.onClick
                       ? (option) => {
@@ -626,7 +651,7 @@ export default function SelectContentModal({
                   type='ability-block'
                   abilityBlockType='heritage'
                   selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQuery}
+                  searchQuery={searchQueryDebounced}
                   onClick={
                     innerProps.onClick
                       ? (option) => {
@@ -661,7 +686,7 @@ export default function SelectContentModal({
               skillAdjustment={innerProps.options?.skillAdjustment}
               selectedId={innerProps.options?.selectedId}
               overrideOptions={innerProps.options?.overrideOptions}
-              searchQuery={searchQuery}
+              searchQuery={searchQueryDebounced}
               onClick={
                 innerProps.onClick
                   ? (option) => {
