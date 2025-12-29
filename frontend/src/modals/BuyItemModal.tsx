@@ -5,12 +5,12 @@ import { convertToCp, purchase } from '@items/currency-handler';
 
 export function BuyItemModal(props: {
   open: boolean;
-  inventory: Inventory;
+  inventory: Inventory | undefined;
   item: Item;
   onConfirm: (coins: { cp: number; sp: number; gp: number; pp: number }) => void;
   onClose: () => void;
 }) {
-  const resultingCoins = purchase(props.item.price ?? {}, props.inventory.coins);
+  const resultingCoins = props.inventory ? purchase(props.item.price ?? {}, props.inventory.coins) : null;
 
   return (
     <Modal

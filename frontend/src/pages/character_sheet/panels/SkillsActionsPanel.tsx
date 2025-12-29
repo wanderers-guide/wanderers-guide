@@ -45,7 +45,7 @@ import { getAllSkillVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { cloneDeep, flattenDeep } from 'lodash-es';
 import { useState, useMemo, useEffect } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
+import { useRecoilValue, useRecoilState, SetterOrUpdater } from 'recoil';
 
 interface ActionItem {
   id: number;
@@ -62,11 +62,10 @@ interface ActionItem {
 export default function SkillsActionsPanel(props: {
   id: StoreID;
   entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
   content: ContentPackage;
   panelHeight: number;
   panelWidth: number;
-  inventory: Inventory;
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
 }) {
   const isPhone = isPhoneSized(props.panelWidth);
 
@@ -114,9 +113,10 @@ export default function SkillsActionsPanel(props: {
   }, [props.content.abilityBlocks, actionTypeFilter, searchQuery, props.id]);
 
   const weapons = useMemo(() => {
-    const weapons = props.inventory.items
-      .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
-      .sort((a, b) => a.item.name.localeCompare(b.item.name));
+    const weapons =
+      props.entity?.inventory?.items
+        .filter((invItem) => invItem.is_equipped && isItemWeapon(invItem.item))
+        .sort((a, b) => a.item.name.localeCompare(b.item.name)) ?? [];
 
     // Filter weapons
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
@@ -135,7 +135,7 @@ export default function SkillsActionsPanel(props: {
           return false;
         })
       : weapons;
-  }, [props.inventory.items, actionTypeFilter, searchQuery]);
+  }, [props.entity?.inventory?.items, actionTypeFilter, searchQuery]);
 
   const [updateWeaponAttacks, setUpdateWeaponAttacks] = useState(0);
   const weaponAttacks = useMemo(() => {
@@ -243,9 +243,10 @@ export default function SkillsActionsPanel(props: {
   }, [actions, props.content.abilityBlocks, props.entity, props.id]);
 
   const itemsWithActions = useMemo(() => {
-    const actionItems = props.inventory.items.filter((invItem) => {
-      return findActions(invItem.item.description).length > 0;
-    });
+    const actionItems =
+      props.entity?.inventory?.items.filter((invItem) => {
+        return findActions(invItem.item.description).length > 0;
+      }) ?? [];
 
     // Filter items
     return searchQuery.trim() || actionTypeFilter !== 'ALL'
@@ -270,7 +271,7 @@ export default function SkillsActionsPanel(props: {
           return false;
         })
       : actionItems;
-  }, [props.inventory.items, actionTypeFilter, searchQuery]);
+  }, [props.entity?.inventory?.items, actionTypeFilter, searchQuery]);
 
   const featsWithActions = useMemo(() => {
     if (!props.entity) return [];
@@ -511,14 +512,14 @@ export default function SkillsActionsPanel(props: {
                     zIndex: 100,
                     invItem: cloneDeep(weapon.invItem),
                     onItemUpdate: (newInvItem: InventoryItem) => {
-                      handleUpdateItem(props.setInventory, newInvItem);
+                      handleUpdateItem(props.setEntity, newInvItem);
                     },
                     onItemDelete: (newInvItem: InventoryItem) => {
-                      handleDeleteItem(props.setInventory, newInvItem);
+                      handleDeleteItem(props.setEntity, newInvItem);
                       openDrawer(null);
                     },
                     onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                      handleMoveItem(props.setInventory, invItem, containerItem);
+                      handleMoveItem(props.setEntity, invItem, containerItem);
                     },
                   },
                   cost: null,
@@ -570,14 +571,14 @@ export default function SkillsActionsPanel(props: {
                       zIndex: 100,
                       invItem: cloneDeep(invItem),
                       onItemUpdate: (newInvItem: InventoryItem) => {
-                        handleUpdateItem(props.setInventory, newInvItem);
+                        handleUpdateItem(props.setEntity, newInvItem);
                       },
                       onItemDelete: (newInvItem: InventoryItem) => {
-                        handleDeleteItem(props.setInventory, newInvItem);
+                        handleDeleteItem(props.setEntity, newInvItem);
                         openDrawer(null);
                       },
                       onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                        handleMoveItem(props.setInventory, invItem, containerItem);
+                        handleMoveItem(props.setEntity, invItem, containerItem);
                       },
                     },
                     cost: action,

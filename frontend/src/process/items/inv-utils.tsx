@@ -40,9 +40,9 @@ export function getFlatInvItems(inv: Inventory) {
  * @param inv - Inventory
  * @returns - Total bulk as a number
  */
-export function getInvBulk(inv: Inventory) {
+export function getInvBulk(inv: Inventory | undefined) {
   let totalBulk = 0;
-  for (const invItem of inv.items) {
+  for (const invItem of inv?.items ?? []) {
     totalBulk += getItemBulk(invItem);
 
     if (isItemContainer(invItem.item)) {
@@ -88,23 +88,25 @@ export function getItemBulk(invItem: InventoryItem) {
 
 /**
  * Utility function to handle adding an item to the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param item - Item to add
  * @param is_formula - Whether the item is a formula
  */
 export const handleAddItem = async (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
+  setEntity: SetterOrUpdater<LivingEntity | null>,
   item: Item,
   is_formula: boolean
 ) => {
   const container_contents = await getDefaultContainerContents(item);
-  setInventory((prev) => {
+  setEntity((prev) => {
+    if (!prev) return prev;
+
     const itemData = cloneDeep(item);
     if (itemData.meta_data) {
       itemData.meta_data.hp = itemData.meta_data.hp_max;
     }
     const newItems = [
-      ...cloneDeep(prev.items),
+      ...cloneDeep(prev.inventory?.items ?? []),
       {
         id: crypto.randomUUID(),
         item: itemData,
@@ -115,9 +117,21 @@ export const handleAddItem = async (
         container_contents,
       },
     ].sort((a, b) => a.item.name.localeCompare(b.item.name));
+
     return {
       ...prev,
-      items: newItems,
+      inventory: {
+        ...(prev?.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items: newItems,
+      },
     };
   });
   showNotification({
@@ -390,39 +404,49 @@ export function addExtraItems(
 
 /**
  * Utility function to handle deleting an item from the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to delete
  */
-export const handleDeleteItem = (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
-  invItem: InventoryItem
-) => {
-  setInventory((prev) => {
-    const newItems = cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
+export const handleDeleteItem = (setEntity: SetterOrUpdater<LivingEntity | null>, invItem: InventoryItem) => {
+  setEntity((prev) => {
+    if (!prev) return prev;
+
+    const newItems = cloneDeep(prev.inventory?.items.filter((item) => item.id !== invItem.id) ?? []);
     // Remove from all containers
     newItems.forEach((item) => {
       if (isItemContainer(item.item)) {
         item.container_contents = item.container_contents.filter((containedItem) => containedItem.id !== invItem.id);
       }
     });
+
     return {
       ...prev,
-      items: newItems,
+      inventory: {
+        ...(prev?.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items: newItems,
+      },
     };
   });
 };
 
 /**
  * Utility function to handle updating an item in the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to update
  */
-export const handleUpdateItem = (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
-  invItem: InventoryItem
-) => {
-  setInventory((prev) => {
-    const newItems = cloneDeep(prev.items).map((item) => {
+export const handleUpdateItem = (setEntity: SetterOrUpdater<LivingEntity | null>, invItem: InventoryItem) => {
+  setEntity((prev) => {
+    if (!prev) return prev;
+
+    const newItems = cloneDeep(prev.inventory?.items ?? []).map((item) => {
       if (item.id === invItem.id) {
         return cloneDeep(invItem);
       }
@@ -439,45 +463,71 @@ export const handleUpdateItem = (
         });
       }
     });
+
     return {
       ...prev,
-      items: newItems,
+      inventory: {
+        ...(prev?.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items: newItems,
+      },
     };
   });
 };
 
 /**
  * Utility function to handle moving an item in the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to move
  * @param containerItem - Container item to move to
  */
 export const handleMoveItem = (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
+  setEntity: SetterOrUpdater<LivingEntity | null>,
   invItem: InventoryItem,
   containerItem: InventoryItem | null
 ) => {
   const movingItem = cloneDeep(invItem);
-  handleDeleteItem(setInventory, invItem);
+  handleDeleteItem(setEntity, invItem);
   setTimeout(() => {
-    setInventory((prev) => {
+    setEntity((prev) => {
+      if (!prev) return prev;
+
       let newItems: InventoryItem[] = [];
       if (containerItem) {
-        const foundContainer = cloneDeep(prev.items.find((item) => item.id === containerItem.id));
+        const foundContainer = cloneDeep(prev.inventory?.items.find((item) => item.id === containerItem.id));
         if (!foundContainer) return prev;
         movingItem.is_equipped = false;
-        newItems = cloneDeep(prev.items).map((item) => {
+        newItems = cloneDeep(prev.inventory?.items ?? []).map((item) => {
           if (item.id === foundContainer.id) {
             item.container_contents.push(movingItem);
           }
           return item;
         });
       } else {
-        newItems = [...cloneDeep(prev.items), movingItem];
+        newItems = [...cloneDeep(prev.inventory?.items ?? []), movingItem];
       }
+
       return {
         ...prev,
-        items: newItems,
+        inventory: {
+          ...(prev?.inventory ?? {
+            coins: {
+              cp: 0,
+              sp: 0,
+              gp: 0,
+              pp: 0,
+            },
+            items: [],
+          }),
+          items: newItems,
+        },
       };
     });
   }, 100);

@@ -4,7 +4,7 @@ import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import { addExtraItems, checkBulkLimit, applyEquipmentPenalties } from '@items/inv-utils';
-import { useDebouncedCallback, useDebouncedValue, useDidUpdate, useFetch, usePrevious } from '@mantine/hooks';
+import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
@@ -15,16 +15,13 @@ import { OperationCharacterResultPackage } from '@typing/operations';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { setVariable } from '@variables/variable-manager';
-import { display } from 'colorjs.io/fn';
 import { isEqual, isArray, cloneDeep } from 'lodash-es';
-import { props } from 'node_modules/cypress/types/bluebird';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { convertToSetEntity } from './type-fixing';
 import { IconRefresh } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
-import { use } from 'chai';
 
 export default function useCharacter(
   characterId: number,
@@ -33,9 +30,6 @@ export default function useCharacter(
 ): {
   character: Character | null;
   setCharacter: SetterOrUpdater<Character | null>;
-  //
-  inventory: Inventory;
-  setInventory: SetterOrUpdater<Inventory>;
   //
   isLoaded: boolean;
 } {
@@ -277,36 +271,9 @@ export default function useCharacter(
     enabled: false, // notRecentlyUpdated, Fix polling on char item update
   });
 
-  // Inventory saving & management
-  const getInventory = (character: Character | null) => {
-    // Default inventory
-    return cloneDeep(
-      character?.inventory ?? {
-        coins: {
-          cp: 0,
-          sp: 0,
-          gp: 0,
-          pp: 0,
-        },
-        items: [],
-      }
-    );
-  };
-  const setInventory: SetterOrUpdater<Inventory> = (u) => {
-    setCharacter((c) => {
-      if (!c) return null;
-      return {
-        ...c,
-        inventory: c?.inventory ? (typeof u === 'function' ? u(c?.inventory) : u) : undefined,
-      };
-    });
-  };
-
   return {
-    character: character,
+    character,
     setCharacter,
-    inventory: getInventory(character),
-    setInventory,
     isLoaded: !!operationResults,
   };
 }

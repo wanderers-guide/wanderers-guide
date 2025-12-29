@@ -98,17 +98,18 @@ export function InvItemDrawerContent(props: {
     onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
   };
 }) {
-  const onItemUpdate = (invItem: InventoryItem) => {
-    props.data.onItemUpdate(invItem);
-    setInvItem(invItem);
+  // InvItem cache (to handle updates while the drawer is still open)
+  const [_cachedInvItem, _setCachedInvItem] = useState<InventoryItem | null>(null);
+  const onItemUpdate = (i: InventoryItem) => {
+    const cloneI = cloneDeep(i);
+    props.data.onItemUpdate(cloneI);
+    _setCachedInvItem(cloneI);
   };
+  const invItem = _cachedInvItem ?? props.data.invItem;
+  //
 
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [invItem, setInvItem] = useState(props.data.invItem);
-  useEffect(() => {
-    setInvItem(props.data.invItem);
-  }, [props.data.invItem]);
 
   const [editingItem, setEditingItem] = useState(false);
 

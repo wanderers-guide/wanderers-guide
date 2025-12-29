@@ -1,6 +1,5 @@
 import ArmorIcon from '@assets/images/ArmorIcon';
 import ShieldIcon from '@assets/images/ShieldIcon';
-import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
@@ -15,22 +14,20 @@ import {
 } from '@items/inv-utils';
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
-import { Inventory, InventoryItem } from '@typing/content';
+import { InventoryItem, LivingEntity } from '@typing/content';
 import { StoreID, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-display';
-import { addVariableBonus, getAllSaveVariables } from '@variables/variable-manager';
+import { getAllSaveVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { cloneDeep } from 'lodash-es';
-import { useNavigate } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export default function ArmorSection(props: {
   id: StoreID;
-  inventory: Inventory;
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
 }) {
-  const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -46,8 +43,10 @@ export default function ArmorSection(props: {
     });
   };
 
-  const bestArmor = getBestArmor(props.id, props.inventory);
-  const bestShield = getBestShield(props.id, props.inventory);
+  const inventory = props.entity?.inventory ?? undefined;
+
+  const bestArmor = getBestArmor(props.id, inventory);
+  const bestShield = getBestShield(props.id, inventory);
   const bestShieldHealth = bestShield ? getItemHealth(bestShield.item) : null;
 
   return (
@@ -73,7 +72,7 @@ export default function ArmorSection(props: {
                   type: 'stat-ac',
                   data: {
                     id: props.id,
-                    inventory: props.inventory,
+                    inventory: inventory,
                     onViewItem: (invItem: InventoryItem) => {
                       openDrawer({
                         type: 'inv-item',
@@ -82,14 +81,14 @@ export default function ArmorSection(props: {
                           zIndex: 100,
                           invItem: cloneDeep(invItem),
                           onItemUpdate: (newInvItem: InventoryItem) => {
-                            handleUpdateItem(props.setInventory, newInvItem);
+                            handleUpdateItem(props.setEntity, newInvItem);
                           },
                           onItemDelete: (newInvItem: InventoryItem) => {
-                            handleDeleteItem(props.setInventory, newInvItem);
+                            handleDeleteItem(props.setEntity, newInvItem);
                             openDrawer(null);
                           },
                           onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                            handleMoveItem(props.setInventory, invItem, containerItem);
+                            handleMoveItem(props.setEntity, invItem, containerItem);
                           },
                         },
                         extra: { addToHistory: true },
@@ -130,15 +129,15 @@ export default function ArmorSection(props: {
                         zIndex: 100,
                         invItem: cloneDeep(bestShield),
                         onItemUpdate: (newInvItem: InventoryItem) => {
-                          handleUpdateItem(props.setInventory, newInvItem);
+                          handleUpdateItem(props.setEntity, newInvItem);
                           openDrawer(null); // Patch fix for shield item drawer reverting updates
                         },
                         onItemDelete: (newInvItem: InventoryItem) => {
-                          handleDeleteItem(props.setInventory, newInvItem);
+                          handleDeleteItem(props.setEntity, newInvItem);
                           openDrawer(null);
                         },
                         onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                          handleMoveItem(props.setInventory, invItem, containerItem);
+                          handleMoveItem(props.setEntity, invItem, containerItem);
                         },
                       },
                       extra: { addToHistory: true },

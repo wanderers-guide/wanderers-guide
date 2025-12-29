@@ -41,7 +41,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, ContentPackage, Inventory } from '@typing/content';
+import { Character, ContentPackage, Inventory, LivingEntity } from '@typing/content';
 import { VariableListStr } from '@typing/variables';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
@@ -49,7 +49,7 @@ import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 import CompanionsPanel from './panels/CompanionsPanel';
 import DetailsPanel from './panels/DetailsPanel';
 import ExtrasPanel from './panels/ExtrasPanel';
@@ -155,11 +155,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
-  const { character, setCharacter, inventory, setInventory, isLoaded } = useCharacter(
-    props.characterId,
-    props.content,
-    props.onFinishLoading
-  );
+  const { character, setCharacter, isLoaded } = useCharacter(props.characterId, props.content, props.onFinishLoading);
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -189,15 +185,15 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                   <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <ConditionSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
-                  <ArmorSection id='CHARACTER' inventory={inventory} setInventory={setInventory} />
+                  <ArmorSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <SpeedSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                 </>
               )}
             </SimpleGrid>
             <SectionPanels
               content={props.content}
-              inventory={inventory}
-              setInventory={setInventory}
+              entity={character}
+              setEntity={convertToSetEntity(setCharacter)}
               isLoaded={isLoaded}
               panelHeight={panelHeight}
               panelWidth={panelWidth}
@@ -293,8 +289,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
 
 function SectionPanels(props: {
   content: ContentPackage;
-  inventory: Inventory;
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+  entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
   isLoaded: boolean;
   hideSections: boolean;
   onHideSections: (hide: boolean) => void;
@@ -304,7 +300,6 @@ function SectionPanels(props: {
   const theme = useMantineTheme();
   const isPhone = isPhoneSized(props.panelWidth);
 
-  const [character, setCharacter] = useRecoilState(characterState);
   const [openedPhonePanel, setOpenedPhonePanel] = useState(false);
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -370,24 +365,22 @@ function SectionPanels(props: {
             {activeTab === 'skills-actions' && (
               <SkillsActionsPanel
                 id='CHARACTER'
-                entity={character}
+                entity={props.entity}
+                setEntity={props.setEntity}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                inventory={props.inventory}
-                setInventory={props.setInventory}
               />
             )}
 
             {activeTab === 'inventory' && (
               <InventoryPanel
                 id='CHARACTER'
-                entity={character}
+                entity={props.entity}
+                setEntity={props.setEntity}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                inventory={props.inventory}
-                setInventory={props.setInventory}
               />
             )}
 
@@ -396,8 +389,8 @@ function SectionPanels(props: {
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
                 id={'CHARACTER'}
-                entity={character}
-                setEntity={convertToSetEntity(setCharacter)}
+                entity={props.entity}
+                setEntity={props.setEntity}
               />
             )}
 
@@ -417,8 +410,8 @@ function SectionPanels(props: {
               <NotesPanel
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                entity={character}
-                setEntity={convertToSetEntity(setCharacter)}
+                entity={props.entity}
+                setEntity={props.setEntity}
               />
             )}
 
@@ -697,24 +690,22 @@ function SectionPanels(props: {
             <Tabs.Panel value='skills-actions'>
               <SkillsActionsPanel
                 id='CHARACTER'
-                entity={character}
+                entity={props.entity}
+                setEntity={props.setEntity}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                inventory={props.inventory}
-                setInventory={props.setInventory}
               />
             </Tabs.Panel>
 
             <Tabs.Panel value='inventory'>
               <InventoryPanel
                 id='CHARACTER'
-                entity={character}
+                entity={props.entity}
+                setEntity={props.setEntity}
                 content={props.content}
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                inventory={props.inventory}
-                setInventory={props.setInventory}
               />
             </Tabs.Panel>
 
@@ -723,8 +714,8 @@ function SectionPanels(props: {
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
                 id={'CHARACTER'}
-                entity={character}
-                setEntity={convertToSetEntity(setCharacter)}
+                entity={props.entity}
+                setEntity={props.setEntity}
               />
             </Tabs.Panel>
 
@@ -744,8 +735,8 @@ function SectionPanels(props: {
               <NotesPanel
                 panelHeight={props.panelHeight}
                 panelWidth={props.panelWidth}
-                entity={character}
-                setEntity={convertToSetEntity(setCharacter)}
+                entity={props.entity}
+                setEntity={props.setEntity}
               />
             </Tabs.Panel>
 

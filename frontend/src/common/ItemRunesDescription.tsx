@@ -64,8 +64,6 @@ export function ItemRunesDescription({ item }: { item: Item }) {
   const fundamentalRunes = data || [];
   const propertyRunes = (item.meta_data?.runes?.property || []).sort((a, b) => a.name.localeCompare(b.name));
 
-  console.log('rune fundamental items', data, isFetching);
-
   return (
     <>
       {propertyRunes.length > 0 && (
