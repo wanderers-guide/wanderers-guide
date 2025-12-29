@@ -149,8 +149,34 @@ export function getDefaultSources(view: SourceKey) {
   }
 }
 
-export function getCachedSources(): ContentSource[] {
-  return [...(idStore.get('content-source')?.values() ?? [])].filter(isTruthy) as ContentSource[];
+/**
+ * Get all cached content of a specific type
+ * @param type - Content type to get
+ * @returns - Array of cached content
+ */
+export function getCachedContent<T = Record<string, any>>(type: ContentType): T[] {
+  return [...(idStore.get(type)?.values() ?? [])].filter(isTruthy) as T[];
+}
+
+/**
+ * Get content by ids from cache, and fetch missing ones in the background
+ * @param type - Content type
+ * @param ids - Array of ids to get
+ * @returns - Array of content found in cache
+ */
+export function getContentFast<T extends Record<string, any> & { id: number }>(type: ContentType, ids: number[]): T[] {
+  const cached = getCachedContent<T>(type);
+  const cachedById = new Map(cached.map((c) => [c.id, c]));
+
+  const missingIds = ids.filter((id) => !cachedById.has(id));
+
+  if (missingIds.length > 0) {
+    // Fetch every missing id in the background for the future
+    void Promise.allSettled(missingIds.map((id) => fetchContentById<T>(type, id)));
+  }
+
+  // Return what we have now
+  return ids.map((id) => cachedById.get(id)).filter((c): c is T => Boolean(c));
 }
 
 export async function fetchContentById<T = Record<string, any>>(type: ContentType, id: number) {

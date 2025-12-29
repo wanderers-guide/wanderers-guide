@@ -6,7 +6,7 @@ import {
   HeritageSelectionOption,
   PhysicalFeatureSelectionOption,
 } from '@common/select/SelectContent';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import {
   useMantineTheme,
   Stack,
@@ -18,10 +18,11 @@ import {
   Divider,
   Box,
   Text,
+  ActionIcon,
 } from '@mantine/core';
-import { IconSearch } from '@tabler/icons-react';
+import { IconSearch, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock, Trait } from '@typing/content';
 import { useState, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
@@ -52,28 +53,35 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
     if (!rawData) return;
     search.current.addIndex('name');
     search.current.addIndex('description');
+    search.current.addIndex('rarity');
     search.current.addIndex('_group');
-    search.current.addDocuments([
-      ...rawData.ancestryFeats.map((feat) => ({
-        ...feat,
-        _group: 'ancestryFeats',
-      })),
-      ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
-      ...rawData.generalAndSkillFeats.map((feat) => ({
-        ...feat,
-        _group: 'generalAndSkillFeats',
-      })),
-      ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
-      ...rawData.classFeatures.map((feat) => ({
-        ...feat,
-        _group: 'classFeatures',
-      })),
-      ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
-      ...rawData.physicalFeatures.map((feat) => ({
-        ...feat,
-        _group: 'physicalFeatures',
-      })),
-    ]);
+    search.current.addIndex('_traitsNames');
+    search.current.addDocuments(
+      [
+        ...rawData.ancestryFeats.map((feat) => ({
+          ...feat,
+          _group: 'ancestryFeats',
+        })),
+        ...rawData.classFeats.map((feat) => ({ ...feat, _group: 'classFeats' })),
+        ...rawData.generalAndSkillFeats.map((feat) => ({
+          ...feat,
+          _group: 'generalAndSkillFeats',
+        })),
+        ...rawData.otherFeats.map((feat) => ({ ...feat, _group: 'otherFeats' })),
+        ...rawData.classFeatures.map((feat) => ({
+          ...feat,
+          _group: 'classFeatures',
+        })),
+        ...rawData.heritages.map((feat) => ({ ...feat, _group: 'heritages' })),
+        ...rawData.physicalFeatures.map((feat) => ({
+          ...feat,
+          _group: 'physicalFeatures',
+        })),
+      ].map((ab) => ({
+        ...ab,
+        _traitsNames: getContentFast<Trait>('trait', ab.traits ?? []).map((t) => t.name),
+      }))
+    );
   }, [rawData]);
 
   const constructData = (data: Record<string, any>[]) => {
@@ -389,7 +397,24 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search feats & features`}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            rightSection={
+              searchQuery.trim() ? (
+                <ActionIcon
+                  variant='subtle'
+                  size='md'
+                  color='gray'
+                  radius='xl'
+                  aria-label='Clear search'
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                >
+                  <IconX size='1.2rem' stroke={2} />
+                </ActionIcon>
+              ) : undefined
+            }
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',

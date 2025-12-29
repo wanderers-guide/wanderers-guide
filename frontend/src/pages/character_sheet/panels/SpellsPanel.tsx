@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { fetchContentAll, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -19,7 +19,7 @@ import {
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { isCantrip } from '@spells/spell-utils';
-import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
+import { IconSearch, IconSquareRounded, IconSquareRoundedFilled, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActionCost,
@@ -30,6 +30,7 @@ import {
   SpellListEntry,
   SpellSectionType,
   SpellSlot,
+  Trait,
 } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
@@ -99,7 +100,14 @@ export default function SpellsPanel(props: {
     search.current.addIndex('trigger');
     search.current.addIndex('cost');
     search.current.addIndex('defense');
-    search.current.addDocuments(spells);
+    search.current.addIndex('rarity');
+    search.current.addIndex('_traitsNames');
+    search.current.addDocuments(
+      spells.map((s) => ({
+        ...s,
+        _traitsNames: getContentFast<Trait>('trait', s.traits ?? []).map((t) => t.name),
+      }))
+    );
   }, [spells]);
 
   // Filter spells by action cost
@@ -118,13 +126,22 @@ export default function SpellsPanel(props: {
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search spells`}
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             rightSection={
-              <CloseButton
-                aria-label='Clear input'
-                onClick={() => setSearchQuery('')}
-                style={{ display: searchQuery.trim() ? undefined : 'none' }}
-              />
+              searchQuery.trim() ? (
+                <ActionIcon
+                  variant='subtle'
+                  size='md'
+                  color='gray'
+                  radius='xl'
+                  aria-label='Clear search'
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                >
+                  <IconX size='1.2rem' stroke={2} />
+                </ActionIcon>
+              ) : undefined
             }
             styles={{
               input: {

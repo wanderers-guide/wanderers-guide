@@ -5,6 +5,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
+import { getContentFast } from '@content/content-store';
 import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
@@ -20,9 +21,9 @@ import {
   Text,
   Tabs,
 } from '@mantine/core';
-import { useHover, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useHover, useMediaQuery } from '@mantine/hooks';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import { IconSearch } from '@tabler/icons-react';
+import { IconSearch, IconX } from '@tabler/icons-react';
 import {
   ActionCost,
   Rarity,
@@ -31,6 +32,7 @@ import {
   AbilityBlock,
   InventoryItem,
   LivingEntity,
+  Trait,
 } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { StoreID } from '@typing/variables';
@@ -72,6 +74,10 @@ export default function SkillsActionsPanel(props: {
   const theme = useMantineTheme();
   const [skillsSearch, setSkillsSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const [skillsSearchDebounced] = useDebouncedValue(skillsSearch, 250);
+  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 250);
+
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
@@ -93,24 +99,29 @@ export default function SkillsActionsPanel(props: {
       .sort((a, b) => a.name.localeCompare(b.name));
 
     // Filter actions
-    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
       ? allActions.filter((action) => {
           // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+          const query = searchQueryDebounced.trim().toLowerCase();
 
           const checkAction = (action: AbilityBlock) => {
             if (actionTypeFilter !== 'ALL' && action.actions !== actionTypeFilter) return false;
 
-            if (action.name.toLowerCase().includes(query)) return true;
-            //if (action.description.toLowerCase().includes(query)) return true;
-            return false;
+            const searchStr = JSON.stringify({
+              _: action.name,
+              ___: getContentFast<Trait>('trait', action.traits ?? []).map((t) => t.name),
+              ____: action.meta_data?.skill,
+              _____: action.rarity,
+            }).toLowerCase();
+
+            return searchStr.includes(query);
           };
 
           if (checkAction(action)) return true;
           return false;
         })
       : allActions;
-  }, [props.content.abilityBlocks, actionTypeFilter, searchQuery, props.id]);
+  }, [props.content.abilityBlocks, actionTypeFilter, searchQueryDebounced, props.id]);
 
   const weapons = useMemo(() => {
     const weapons =
@@ -119,23 +130,30 @@ export default function SkillsActionsPanel(props: {
         .sort((a, b) => a.item.name.localeCompare(b.item.name)) ?? [];
 
     // Filter weapons
-    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
       ? weapons.filter((invItem) => {
           // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+          const query = searchQueryDebounced.trim().toLowerCase();
 
           const checkInvItem = (invItem: InventoryItem) => {
             if (actionTypeFilter !== 'ALL') return false;
 
-            if (invItem.item.name.toLowerCase().includes(query)) return true;
-            return false;
+            const searchStr = JSON.stringify({
+              _: invItem.item.name,
+              ___: getContentFast<Trait>('trait', invItem.item.traits ?? []).map((t) => t.name),
+              ____: invItem.item.description,
+              _____: invItem.item.group,
+              ______: invItem.item.rarity,
+            }).toLowerCase();
+
+            return searchStr.includes(query);
           };
 
           if (checkInvItem(invItem)) return true;
           return false;
         })
       : weapons;
-  }, [props.entity?.inventory?.items, actionTypeFilter, searchQuery]);
+  }, [props.entity?.inventory?.items, actionTypeFilter, searchQueryDebounced]);
 
   const [updateWeaponAttacks, setUpdateWeaponAttacks] = useState(0);
   const weaponAttacks = useMemo(() => {
@@ -249,10 +267,10 @@ export default function SkillsActionsPanel(props: {
       }) ?? [];
 
     // Filter items
-    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
       ? actionItems.filter((invItem) => {
           // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+          const query = searchQueryDebounced.trim().toLowerCase();
 
           const checkInvItem = (invItem: InventoryItem) => {
             if (actionTypeFilter !== 'ALL') {
@@ -260,10 +278,16 @@ export default function SkillsActionsPanel(props: {
               const hasAction = actions.find((action) => action === actionTypeFilter);
               if (!hasAction) return false;
             }
-            if (invItem.item.name.toLowerCase().includes(query)) return true;
-            if (invItem.item.description.toLowerCase().includes(query)) return true;
-            if (invItem.item.group.toLowerCase().includes(query)) return true;
-            return false;
+
+            const searchStr = JSON.stringify({
+              _: invItem.item.name,
+              ___: getContentFast<Trait>('trait', invItem.item.traits ?? []).map((t) => t.name),
+              ____: invItem.item.description,
+              _____: invItem.item.group,
+              ______: invItem.item.rarity,
+            }).toLowerCase();
+
+            return searchStr.includes(query);
           };
 
           if (checkInvItem(invItem)) return true;
@@ -271,7 +295,7 @@ export default function SkillsActionsPanel(props: {
           return false;
         })
       : actionItems;
-  }, [props.entity?.inventory?.items, actionTypeFilter, searchQuery]);
+  }, [props.entity?.inventory?.items, actionTypeFilter, searchQueryDebounced]);
 
   const featsWithActions = useMemo(() => {
     if (!props.entity) return [];
@@ -279,23 +303,29 @@ export default function SkillsActionsPanel(props: {
     const feats = flattenDeep(Object.values(results)).filter((ab) => ab.actions !== null);
 
     // Filter feats
-    return searchQuery.trim() || actionTypeFilter !== 'ALL'
+    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
       ? feats.filter((feat) => {
           // Custom search, alt could be to use JsSearch here
-          const query = searchQuery.trim().toLowerCase();
+          const query = searchQueryDebounced.trim().toLowerCase();
 
           const checkFeat = (feat: AbilityBlock) => {
             if (actionTypeFilter !== 'ALL' && feat.actions !== actionTypeFilter) return false;
 
-            if (feat.name.toLowerCase().includes(query)) return true;
-            return false;
+            const searchStr = JSON.stringify({
+              _: feat.name,
+              ___: getContentFast<Trait>('trait', feat.traits ?? []).map((t) => t.name),
+              ____: feat.meta_data?.skill,
+              _____: feat.rarity,
+            }).toLowerCase();
+
+            return searchStr.includes(query);
           };
 
           if (checkFeat(feat)) return true;
           return false;
         })
       : feats;
-  }, [props.entity, props.content.abilityBlocks, actionTypeFilter, searchQuery, props.id]);
+  }, [props.entity, props.content.abilityBlocks, actionTypeFilter, searchQueryDebounced, props.id]);
 
   const getSkillsSection = () => (
     <Box>
@@ -312,7 +342,24 @@ export default function SkillsActionsPanel(props: {
           style={{ flex: 1 }}
           leftSection={<IconSearch size='0.9rem' />}
           placeholder={`Search skills`}
-          onChange={(event) => setSkillsSearch(event.target.value)}
+          value={skillsSearch}
+          onChange={(e) => setSkillsSearch(e.target.value)}
+          rightSection={
+            skillsSearch.trim() ? (
+              <ActionIcon
+                variant='subtle'
+                size='md'
+                color='gray'
+                radius='xl'
+                aria-label='Clear search'
+                onClick={() => {
+                  setSkillsSearch('');
+                }}
+              >
+                <IconX size='1.2rem' stroke={2} />
+              </ActionIcon>
+            ) : undefined
+          }
           styles={{
             input: {
               backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -328,11 +375,11 @@ export default function SkillsActionsPanel(props: {
                 (skill) =>
                   variableToLabel(skill) // Normal filter by query
                     .toLowerCase()
-                    .includes(skillsSearch.toLowerCase().trim()) || // If it starts with "Strength" find those skills
+                    .includes(skillsSearchDebounced.toLowerCase().trim()) || // If it starts with "Strength" find those skills
                   toLabel(skill.value.attribute ?? '')
                     .toLowerCase()
-                    .endsWith(skillsSearch.toLowerCase().trim()) || // If it starrts with "Str" find those skills
-                  skill.value.attribute?.toLowerCase().endsWith(skillsSearch.toLowerCase().trim())
+                    .endsWith(skillsSearchDebounced.toLowerCase().trim()) || // If it starrts with "Str" find those skills
+                  skill.value.attribute?.toLowerCase().endsWith(skillsSearchDebounced.toLowerCase().trim())
               )
               .map((skill, index) => (
                 <StatButton
@@ -370,7 +417,24 @@ export default function SkillsActionsPanel(props: {
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
             placeholder={`Search actions & activities`}
+            value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
+            rightSection={
+              searchQuery.trim() ? (
+                <ActionIcon
+                  variant='subtle'
+                  size='md'
+                  color='gray'
+                  radius='xl'
+                  aria-label='Clear search'
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                >
+                  <IconX size='1.2rem' stroke={2} />
+                </ActionIcon>
+              ) : undefined
+            }
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',

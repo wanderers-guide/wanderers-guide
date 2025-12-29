@@ -6,6 +6,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { ItemIcon } from '@common/ItemIcon';
 import { isItemVisible } from '@content/content-hidden';
+import { getContentFast } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import classes from '@css/FaqSimple.module.css';
 import { priceToString } from '@items/currency-handler';
@@ -52,8 +53,8 @@ import { modals, openContextModal } from '@mantine/modals';
 import { BuyItemModal } from '@modals/BuyItemModal';
 import { CreateItemModal } from '@modals/CreateItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
-import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { IconCoins, IconMenu2, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
+import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity, Trait } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
@@ -88,10 +89,15 @@ export default function InventoryPanel(props: {
         const query = searchQuery.trim().toLowerCase();
 
         const checkInvItem = (invItem: InventoryItem) => {
-          if (invItem.item.name.toLowerCase().includes(query)) return true;
-          if (invItem.item.description.toLowerCase().includes(query)) return true;
-          if (invItem.item.group.toLowerCase().includes(query)) return true;
-          return false;
+          const searchStr = JSON.stringify({
+            _: invItem.item.name,
+            ___: getContentFast<Trait>('trait', invItem.item.traits ?? []).map((t) => t.name),
+            ____: invItem.item.description,
+            _____: invItem.item.group,
+            ______: invItem.item.rarity,
+          }).toLowerCase();
+
+          return searchStr.includes(query);
         };
 
         if (checkInvItem(invItem)) return true;
@@ -176,8 +182,25 @@ export default function InventoryPanel(props: {
           <TextInput
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search items`}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder='Search items'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            rightSection={
+              searchQuery.trim() ? (
+                <ActionIcon
+                  variant='subtle'
+                  size='md'
+                  color='gray'
+                  radius='xl'
+                  aria-label='Clear search'
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                >
+                  <IconX size='1.2rem' stroke={2} />
+                </ActionIcon>
+              ) : undefined
+            }
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',

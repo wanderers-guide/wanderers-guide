@@ -324,8 +324,8 @@ const SlotsSection = (props: {
                           type: 'spell',
                           spell_type: props.source === 'RITUALS' ? 'RITUAL' : 'NORMAL',
                           traditions: props.filter?.traditions,
-                          rank_min: props.filter?.rank_min,
-                          rank_max: props.filter?.rank_max,
+                          rank_min: parseInt(rank),
+                          rank_max: parseInt(rank),
                           content_sources: getDefaultSources('PAGE'),
                         },
                       }}

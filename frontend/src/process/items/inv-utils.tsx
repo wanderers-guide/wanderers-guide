@@ -1,9 +1,9 @@
 import { ItemIcon } from '@common/ItemIcon';
 import { getConditionByName } from '@conditions/condition-handler';
-import { fetchContentAll, getCachedSources, getDefaultSources } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
-import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
@@ -987,7 +987,7 @@ export function isItemArchaic(item: Item) {
     return false;
   }
 
-  const source = getCachedSources().find((source) => source.id === item.content_source_id);
+  const source = getContentFast<ContentSource>('content-source', [item.content_source_id])[0];
   if (!source) {
     return false;
   }

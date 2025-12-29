@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import ActionsInput from '@common/ActionsInput';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
 import TraitsInput from '@common/TraitsInput';
-import { fetchContent, fetchContentSources, getCachedSources, getDefaultSources } from '@content/content-store';
+import { fetchContentSources, getCachedContent, getDefaultSources } from '@content/content-store';
 import {
   Accordion,
   Group,
@@ -114,7 +114,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
   const [isLoading, setLoading] = useState(false);
   const [traitsCached, setTraitsCached] = useState<Record<number, string>>({});
   const [contentSourcesCached, setContentSourcesCached] = useState<ContentSource[]>(
-    getCachedSources().filter(
+    getCachedContent<ContentSource>('content-source').filter(
       (source) => convertContentSources(props.presetFilters?.content_sources)?.includes(source.id) ?? true
     )
   );
