@@ -16,6 +16,7 @@ import {
   ScrollArea,
   ActionIcon,
   Paper,
+  useMantineTheme,
 } from '@mantine/core';
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
@@ -42,6 +43,7 @@ import { selectContent } from '@common/select/SelectContent';
 import { hasTraitType } from '@utils/traits';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
+  const theme = useMantineTheme();
   const [character, setCharacter] = useRecoilState(characterState);
 
   // Calculated data for the companions
@@ -65,9 +67,6 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
       <ScrollArea
         p={8}
         style={{
-          backgroundColor: `rgb(37, 38, 43)`,
-          borderRadius: 10,
-          border: '1px solid #373A40',
           height: props.panelHeight - 50,
         }}
       >
@@ -76,9 +75,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
             No companions found, want to add one?
           </Text>
           <Group justify='center'>
-            <Paper p='xs'>
-              <AddCompanionSection />
-            </Paper>
+            <AddCompanionSection />
           </Group>
         </Stack>
       </ScrollArea>
@@ -90,9 +87,6 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
       <ScrollArea
         p={8}
         style={{
-          backgroundColor: `rgb(37, 38, 43)`,
-          borderRadius: 10,
-          border: '1px solid #373A40',
           height: props.panelHeight,
         }}
       >
@@ -164,123 +158,11 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
             />
           ))}
         </Stack>
-        <Paper p='xs'>
+        <Group justify='center'>
           <AddCompanionSection />
-        </Paper>
+        </Group>
       </ScrollArea>
     </Stack>
-  );
-}
-
-function AddCompanionSection() {
-  const [character, setCharacter] = useRecoilState(characterState);
-  const [selectedType, setSelectedType] = useState<number | null>(null);
-  const isPhone = useMediaQuery(phoneQuery());
-
-  const { data, isFetching } = useQuery({
-    queryKey: [`get-companions-data`],
-    queryFn: async () => {
-      const traits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
-      const creatures = await fetchContentAll<Creature>('creature', getDefaultSources('PAGE'));
-
-      return {
-        traits,
-        creatures,
-      };
-    },
-  });
-
-  const selectionTypes = useMemo(() => {
-    return data?.traits?.filter((t) => t.meta_data?.companion_type_trait) ?? [];
-  }, [data]);
-
-  const creatureOptions = useMemo(() => {
-    return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
-  }, [data, selectedType]);
-
-  return (
-    <Group gap={0} align='center' justify='center'>
-      <Text c='gray.5' fw={'bolder'} mr={10}>
-        Add
-      </Text>
-      <Select
-        variant='filled'
-        placeholder='Companion'
-        data={[
-          ...selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name })),
-          { value: '-10', label: 'Creature' },
-        ]}
-        value={selectedType ? `${selectedType}` : null}
-        onChange={(value) => {
-          if (value === '-10') {
-            // Select any creature
-            selectContent<Creature>(
-              'creature',
-              (option) => {
-                // Add creature to character
-                setCharacter((prev) => {
-                  if (!prev) return prev;
-                  return {
-                    ...prev,
-                    companions: {
-                      ...(prev.companions ?? {}),
-                      list: [...(prev.companions?.list ?? []), option!],
-                    },
-                  };
-                });
-              },
-              {
-                showButton: true,
-                zIndex: 400,
-                // Hide companions
-                filterFn: (c) => c.level !== -100,
-              }
-            );
-            setSelectedType(null);
-          } else {
-            setSelectedType(parseInt(`${value ?? -1}`));
-          }
-        }}
-        w={isPhone ? 120 : 150}
-        styles={{
-          input: {
-            borderTopRightRadius: 0,
-            borderBottomRightRadius: 0,
-          },
-        }}
-      />
-      <Select
-        variant='filled'
-        placeholder='Type'
-        disabled={!selectedType || selectedType === -1}
-        data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
-        onChange={(value) => {
-          if (!value) return;
-          const creature = creatureOptions.find((c) => c.id === parseInt(`${value}`));
-          // Add creature to character
-          setCharacter((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              companions: {
-                ...(prev.companions ?? {}),
-                list: [...(prev.companions?.list ?? []), creature!],
-              },
-            };
-          });
-
-          setSelectedType(null);
-        }}
-        value={''}
-        w={isPhone ? 120 : 150}
-        styles={{
-          input: {
-            borderTopLeftRadius: 0,
-            borderBottomLeftRadius: 0,
-          },
-        }}
-      />
-    </Group>
   );
 }
 
@@ -375,6 +257,7 @@ function CompanionCard(props: {
       style={{
         position: 'relative',
       }}
+      align='stretch'
     >
       <Group
         ref={ref}
@@ -382,7 +265,7 @@ function CompanionCard(props: {
         w={`min(60dvw, 320px)`}
         p={5}
         style={(t) => ({
-          backgroundColor: hovered ? t.colors.dark[5] : 'transparent',
+          backgroundColor: hovered ? t.colors.dark[5] : t.colors.dark[6],
           borderRadius: t.radius.md,
           cursor: 'pointer',
           position: 'relative',
@@ -417,7 +300,7 @@ function CompanionCard(props: {
 
         <Box pr={5} style={{ flex: 1 }}>
           <Group gap={1}>
-            <Text size={boundSaves ? 'lg' : 'md'} fw={600} span>
+            <Text size='md' fw={550} span>
               {props.companion.name}
             </Text>
           </Group>
@@ -447,6 +330,16 @@ function CompanionCard(props: {
         <TextInput
           ref={healthRef}
           variant='filled'
+          styles={(t) => ({
+            wrapper: {
+              height: '100%',
+            },
+            input: {
+              backgroundColor: t.colors.dark[6],
+              borderRadius: t.radius.md,
+              height: '100%',
+            },
+          })}
           size='md'
           w={120}
           placeholder='HP'
@@ -478,7 +371,7 @@ function CompanionCard(props: {
       )}
       {!isPhone && (
         <ScrollArea
-          h={40}
+          h={50}
           scrollbars='y'
           style={{
             position: 'relative',
@@ -508,7 +401,7 @@ function CompanionCard(props: {
             aria-label='Add Condition'
             size='xs'
             radius='xl'
-            color='dark.3'
+            color='dark.0'
             onClick={() => {
               selectCondition(props.companion.details?.conditions ?? [], (condition) => {
                 if (!props.companion) return;
@@ -597,4 +490,128 @@ async function computeCompanions(companions: Creature[]) {
   }
 
   return await Promise.all(companions.map(computeCompanion));
+}
+
+function AddCompanionSection() {
+  const [character, setCharacter] = useRecoilState(characterState);
+  const [selectedType, setSelectedType] = useState<number | null>(null);
+  const isPhone = useMediaQuery(phoneQuery());
+
+  const { data, isFetching } = useQuery({
+    queryKey: [`get-companions-data`],
+    queryFn: async () => {
+      const traits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
+      const creatures = await fetchContentAll<Creature>('creature', getDefaultSources('PAGE'));
+
+      return {
+        traits,
+        creatures,
+      };
+    },
+  });
+
+  const selectionTypes = useMemo(() => {
+    return data?.traits?.filter((t) => t.meta_data?.companion_type_trait) ?? [];
+  }, [data]);
+
+  const creatureOptions = useMemo(() => {
+    return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
+  }, [data, selectedType]);
+
+  return (
+    <Box
+      p='xs'
+      style={(t) => ({
+        backgroundColor: t.colors.dark[6],
+        borderRadius: t.radius.xl,
+      })}
+    >
+      <Group gap={0} align='center' justify='center'>
+        <Text c='gray.5' mx={10}>
+          Add
+        </Text>
+        <Select
+          variant='filled'
+          size='sm'
+          placeholder='Companion'
+          data={[
+            ...selectionTypes.map((t) => ({ value: `${t.id}`, label: t.name })),
+            { value: '-10', label: 'Creature' },
+          ]}
+          value={selectedType ? `${selectedType}` : null}
+          onChange={(value) => {
+            if (value === '-10') {
+              // Select any creature
+              selectContent<Creature>(
+                'creature',
+                (option) => {
+                  // Add creature to character
+                  setCharacter((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      companions: {
+                        ...(prev.companions ?? {}),
+                        list: [...(prev.companions?.list ?? []), option!],
+                      },
+                    };
+                  });
+                },
+                {
+                  showButton: true,
+                  zIndex: 400,
+                  // Hide companions
+                  filterFn: (c) => c.level !== -100,
+                }
+              );
+              setSelectedType(null);
+            } else {
+              setSelectedType(parseInt(`${value ?? -1}`));
+            }
+          }}
+          w={isPhone ? 120 : 150}
+          styles={(theme) => ({
+            input: {
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              '--input-placeholder-color': theme.colors.gray[6],
+            },
+          })}
+        />
+        <Select
+          variant='filled'
+          size='sm'
+          placeholder='Type'
+          disabled={!selectedType || selectedType === -1}
+          data={creatureOptions.map((c) => ({ value: `${c.id}`, label: c.name }))}
+          onChange={(value) => {
+            if (!value) return;
+            const creature = creatureOptions.find((c) => c.id === parseInt(`${value}`));
+            // Add creature to character
+            setCharacter((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                companions: {
+                  ...(prev.companions ?? {}),
+                  list: [...(prev.companions?.list ?? []), creature!],
+                },
+              };
+            });
+
+            setSelectedType(null);
+          }}
+          value={''}
+          w={isPhone ? 120 : 150}
+          styles={(theme) => ({
+            input: {
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              '--input-placeholder-color': theme.colors.gray[6],
+            },
+          })}
+        />
+      </Group>
+    </Box>
+  );
 }
