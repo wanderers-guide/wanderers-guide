@@ -177,6 +177,7 @@ export function Component() {
                   numPerPage={isPhone ? 3 : 9}
                   numInRow={isPhone ? 1 : 3}
                   gap='xs'
+                  pagSize='md'
                 />
               </Stack>
             </Center>

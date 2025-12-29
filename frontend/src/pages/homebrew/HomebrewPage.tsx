@@ -255,6 +255,7 @@ function BrowseSection(props: { searchQuery: string }) {
                 numPerPage={isPhone ? 4 : 12}
                 numInRow={isPhone ? 1 : 3}
                 gap='xs'
+                pagSize='md'
               />
             </Stack>
           </Center>
@@ -346,6 +347,7 @@ function SubscriptionsSection(props: { searchQuery: string }) {
                 numPerPage={isPhone ? 3 : 12}
                 numInRow={isPhone ? 1 : 3}
                 gap='xs'
+                pagSize='md'
               />
             </Stack>
           </Center>

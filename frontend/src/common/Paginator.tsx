@@ -1,4 +1,4 @@
-import { ScrollArea, Center, Pagination, Text, Box, Stack, Group, MantineSpacing } from '@mantine/core';
+import { ScrollArea, Center, Pagination, Text, Box, Stack, Group, MantineSpacing, MantineSize } from '@mantine/core';
 import { chunk } from 'lodash-es';
 import { useState, useEffect, useRef } from 'react';
 
@@ -8,6 +8,7 @@ export default function Paginator(props: {
   numPerPage?: number;
   numInRow?: number;
   gap?: MantineSpacing;
+  pagSize?: MantineSize;
 }) {
   const NUM_PER_PAGE = props.numPerPage ?? 20;
   const [activePage, setPage] = useState(1);
@@ -62,7 +63,7 @@ export default function Paginator(props: {
       <Center>
         <Pagination
           pt='xs'
-          size='sm'
+          size={props.pagSize ?? 'sm'}
           total={Math.ceil(props.records.length / NUM_PER_PAGE)}
           value={activePage}
           onChange={(value) => {
