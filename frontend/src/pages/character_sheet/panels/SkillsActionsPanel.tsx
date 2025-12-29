@@ -75,8 +75,8 @@ export default function SkillsActionsPanel(props: {
   const [skillsSearch, setSkillsSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const [skillsSearchDebounced] = useDebouncedValue(skillsSearch, 250);
-  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 250);
+  const [skillsSearchDebounced] = useDebouncedValue(skillsSearch, 200);
+  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
