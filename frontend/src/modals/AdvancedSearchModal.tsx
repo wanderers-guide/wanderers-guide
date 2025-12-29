@@ -553,6 +553,13 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                         <RangeSlider
                           value={[filters.level_min ?? 0, filters.level_max ?? 30]}
                           onChange={(value) => {
+                            if (
+                              value[0] < (props.presetFilters?.level_min ?? 0) ||
+                              value[1] > (props.presetFilters?.level_max ?? 30)
+                            ) {
+                              return;
+                            }
+
                             updateFilters([
                               { key: 'level_min', value: value[0] },
                               { key: 'level_max', value: value[1] },
@@ -580,9 +587,6 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                             { value: 25, label: '25' },
                             { value: 30, label: '30' },
                           ]}
-                          disabled={
-                            props.presetFilters?.level_min !== undefined || props.presetFilters?.level_max !== undefined
-                          }
                         />
                       </Stack>
                     )}
@@ -592,6 +596,13 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                       <RangeSlider
                         value={[filters.rank_min ?? 0, filters.rank_max ?? 10]}
                         onChange={(value) => {
+                          if (
+                            value[0] < (props.presetFilters?.rank_min ?? 0) ||
+                            value[1] > (props.presetFilters?.rank_max ?? 10)
+                          ) {
+                            return;
+                          }
+
                           updateFilters([
                             { key: 'rank_min', value: value[0] },
                             { key: 'rank_max', value: value[1] },
@@ -623,9 +634,6 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                           { value: 9, label: '9' },
                           { value: 10, label: '10' },
                         ]}
-                        disabled={
-                          props.presetFilters?.rank_min !== undefined || props.presetFilters?.rank_max !== undefined
-                        }
                       />
                     </Stack>
                   )}
