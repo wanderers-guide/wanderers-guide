@@ -147,7 +147,7 @@ export function Component() {
               </Title>
             </Group>
             <Group gap={15} wrap='nowrap'>
-              <Tooltip label='Create Character' openDelay={750}>
+              <Tooltip label='Create Character' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
                   style={{
@@ -169,7 +169,7 @@ export function Component() {
               </Tooltip>
               <Menu shadow='md' width={240} withArrow withinPortal>
                 <Menu.Target>
-                  <Tooltip label='Import Character' openDelay={750}>
+                  <Tooltip label='Import Character' openDelay={500}>
                     <ActionIcon
                       disabled={reachedCharacterLimit}
                       style={{
@@ -214,7 +214,7 @@ export function Component() {
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
-              <Tooltip label='Random Character' openDelay={750}>
+              <Tooltip label='Random Character' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
                   style={{

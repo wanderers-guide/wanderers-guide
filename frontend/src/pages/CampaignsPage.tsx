@@ -97,7 +97,7 @@ export function Component() {
               </Title>
             </Group>
             <Group gap={5} wrap='nowrap'>
-              <Tooltip label='Create Campaign' openDelay={750}>
+              <Tooltip label='Create Campaign' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCampaignLimit}
                   style={{

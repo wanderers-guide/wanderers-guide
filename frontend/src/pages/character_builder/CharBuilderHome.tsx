@@ -1317,7 +1317,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                   w={isPhone ? undefined : 220}
                   rightSection={
-                    <HoverCard width={280} shadow='md' openDelay={750}>
+                    <HoverCard width={280} shadow='md' openDelay={500}>
                       <HoverCard.Target>
                         <ActionIcon
                           size={22}

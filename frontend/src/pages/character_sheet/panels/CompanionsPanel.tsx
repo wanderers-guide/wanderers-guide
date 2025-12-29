@@ -99,6 +99,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         <Stack gap={12} mih={props.panelHeight - 75}>
           {companions.map((c, index) => (
             <CompanionCard
+              key={index}
               storeId={`COMPANION_${index}`}
               panelWidth={props.panelWidth}
               companion={c}
@@ -302,7 +303,7 @@ function CompanionCard(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [drawer, openDrawer] = useRecoilState(drawerState);
 
   // Health
 
@@ -317,6 +318,30 @@ function CompanionCard(props: {
     }
   }, [props.companion, props.computed]);
 
+  const handleUpdateCreature = (c: Creature) => {
+    props.updateCreature(c);
+
+    // If the drawer is open, do janky refresh
+    if (drawer) {
+      handleOpenDrawer(c);
+    }
+  };
+
+  const handleOpenDrawer = (c: Creature) => {
+    openDrawer(null);
+    setTimeout(() => {
+      openDrawer({
+        type: 'creature',
+        data: {
+          STORE_ID: props.storeId,
+          creature: c,
+          zIndex: CREATURE_DRAWER_ZINDEX,
+          updateCreature: props.updateCreature,
+        },
+      });
+    }, 1);
+  };
+
   const handleHealthSubmit = () => {
     const inputHealth = health ?? '0';
     let result = -1;
@@ -330,7 +355,7 @@ function CompanionCard(props: {
     if (result < 0) result = 0;
     if (props.computed && result > props.computed.maxHp) result = props.computed.maxHp;
 
-    props.updateCreature({
+    handleUpdateCreature({
       ...props.companion,
       hp_current: result,
     });
@@ -363,17 +388,7 @@ function CompanionCard(props: {
           position: 'relative',
         })}
         onClick={() => {
-          openDrawer({
-            type: 'creature',
-            data: {
-              STORE_ID: props.storeId,
-              creature: props.companion,
-              zIndex: CREATURE_DRAWER_ZINDEX,
-              updateCreature: (creature: Creature) => {
-                props.updateCreature(creature);
-              },
-            },
-          });
+          handleOpenDrawer(props.companion);
         }}
       >
         <Group
@@ -476,7 +491,7 @@ function CompanionCard(props: {
             setEntity={(call) => {
               const result = setterOrUpdaterToValue(call, props.companion);
 
-              props.updateCreature({
+              handleUpdateCreature({
                 ...props.companion,
                 details: {
                   ...props.companion.details,
@@ -497,7 +512,7 @@ function CompanionCard(props: {
             onClick={() => {
               selectCondition(props.companion.details?.conditions ?? [], (condition) => {
                 if (!props.companion) return;
-                props.updateCreature({
+                handleUpdateCreature({
                   ...props.companion,
                   details: {
                     ...props.companion.details,
