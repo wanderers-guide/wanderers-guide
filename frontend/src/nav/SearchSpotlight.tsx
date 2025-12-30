@@ -344,7 +344,8 @@ async function queryResults(
       .concat(searchData.languages.map((a: any) => ({ ...a, _type: 'language' })))
       .concat(searchData.spells.map((a: any) => ({ ...a, _type: 'spell' })))
       .concat(searchData.traits.map((a: any) => ({ ...a, _type: 'trait' })))
-      .concat(searchData.versatile_heritages.map((a: any) => ({ ...a, _type: 'versatile-heritage' })));
+      .concat(searchData.versatile_heritages.map((a: any) => ({ ...a, _type: 'versatile-heritage' })))
+      .concat(searchData.class_archetypes.map((a: any) => ({ ...a, _type: 'class-archetype' })));
 
     return result;
     // Filter out results again, just in case

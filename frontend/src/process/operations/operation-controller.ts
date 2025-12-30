@@ -3,6 +3,7 @@ import {
   Ancestry,
   Character,
   Class,
+  ClassArchetype,
   ContentPackage,
   ContentSource,
   Creature,
@@ -43,6 +44,7 @@ import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { setCalculatedStatsInStore } from '@variables/calculated-stats';
+import { abs } from 'mathjs';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -116,27 +118,54 @@ export async function executeCharacterOperations(
 
   const baseClassTrainings = Math.max(class_?.skill_training_base ?? 0, class_2?.skill_training_base ?? 0);
 
-  const classFeatures_1 = content.abilityBlocks
-    .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
-    .sort((a, b) => {
-      if (a.level !== undefined && b.level !== undefined) {
-        if (a.level !== b.level) {
-          return a.level - b.level;
-        }
-      }
-      return a.name.localeCompare(b.name);
-    });
+  // Handles getting class features for a class (injecting class archetype changes if needed)
+  const getClassFeatures = (abs: AbilityBlock[], classTraitId: number | undefined, recordT: '1' | '2') => {
+    const ctId = classTraitId ?? Number.MIN_SAFE_INTEGER;
+    let classAbs = cloneDeep(abs.filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(ctId)));
 
-  const classFeatures_2 = content.abilityBlocks
-    .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_2?.trait_id ?? -1))
-    .sort((a, b) => {
-      if (a.level !== undefined && b.level !== undefined) {
-        if (a.level !== b.level) {
-          return a.level - b.level;
+    // Get the class archetype based on recordT
+    let classArchetype: ClassArchetype | null = null;
+    if (recordT === '1' && character.details?.class_archetype) {
+      classArchetype = character.details.class_archetype;
+    } else if (recordT === '2' && character.details?.class_archetype_2) {
+      classArchetype = character.details.class_archetype_2;
+    }
+
+    if (!classArchetype) {
+      return classAbs;
+    } else {
+      // Apply feature adjustments
+      for (const fa of classArchetype.feature_adjustments ?? []) {
+        if (fa.type === 'ADD' && fa.data) {
+          classAbs.push(fa.data);
+        } else if (fa.type === 'REMOVE' && fa.prev_id) {
+          classAbs = classAbs.filter((ab) => ab.id !== fa.prev_id);
+        } else if (fa.type === 'REPLACE' && fa.prev_id && fa.data) {
+          classAbs = classAbs.filter((ab) => ab.id !== fa.prev_id);
+          classAbs.push(fa.data);
         }
       }
-      return a.name.localeCompare(b.name);
-    });
+      return classAbs;
+    }
+  };
+
+  const classFeatures_1 = getClassFeatures(content.abilityBlocks, class_?.trait_id, '1').sort((a, b) => {
+    if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== b.level) {
+        return a.level - b.level;
+      }
+    }
+    return a.name.localeCompare(b.name);
+  });
+
+  const classFeatures_2 = getClassFeatures(content.abilityBlocks, class_2?.trait_id, '2').sort((a, b) => {
+    if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== b.level) {
+        return a.level - b.level;
+      }
+    }
+    return a.name.localeCompare(b.name);
+  });
 
   // Merge both but only keep one if they both have the same name and level
   let classFeatures = unionWith(
@@ -647,7 +676,7 @@ export async function executeCharacterOperations(
     let characterResults = await executeOperations(
       'CHARACTER',
       'character',
-      character.options?.custom_operations ? character.custom_operations ?? [] : [],
+      character.options?.custom_operations ? (character.custom_operations ?? []) : [],
       options,
       'Custom'
     );
@@ -657,7 +686,7 @@ export async function executeCharacterOperations(
       classResults = await executeOperations(
         'CHARACTER',
         'class',
-        getAdjustedClassOperations('CHARACTER', class_, baseClassTrainings),
+        getAdjustedClassOperations('CHARACTER', class_, character.details?.class_archetype, baseClassTrainings),
         options,
         class_.name
       );
@@ -673,7 +702,7 @@ export async function executeCharacterOperations(
       class2Results = await executeOperations(
         'CHARACTER',
         'class-2',
-        getAdjustedClassOperations('CHARACTER', class_2, null),
+        getAdjustedClassOperations('CHARACTER', class_2, character.details?.class_archetype_2, null),
         options,
         class_2.name
       );
@@ -1108,8 +1137,16 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   return operationResults;
 }
 
-export function getAdjustedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
+export function getAdjustedClassOperations(
+  varId: StoreID,
+  class_: Class,
+  archetype: ClassArchetype | undefined,
+  baseTrainings: number | null
+) {
   let classOperations = cloneDeep(class_.operations ?? []);
+  if (archetype) {
+    classOperations.push(...(archetype.operations ?? []));
+  }
 
   if (baseTrainings !== null) {
     classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));

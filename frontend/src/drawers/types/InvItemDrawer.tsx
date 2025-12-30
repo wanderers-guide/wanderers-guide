@@ -68,6 +68,7 @@ import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { StoreID } from '@typing/variables';
 import { cloneDeep } from 'lodash-es';
+import { titleCase } from 'title-case';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -865,7 +866,8 @@ function InvItemSections(props: {
                 Category
               </Text>
               <Text c='gray.5' span>
-                {toLabel(props.invItem.item.meta_data?.category)}
+                {/* TitleCase it again in cases like 'unarmored defense' */}
+                {titleCase(toLabel(props.invItem.item.meta_data?.category))}
               </Text>
             </Group>
           )}

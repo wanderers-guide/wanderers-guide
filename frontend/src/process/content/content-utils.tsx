@@ -1,5 +1,6 @@
 import {
   IconBackpack,
+  IconBadge,
   IconBook2,
   IconCaretLeftRight,
   IconFlare,
@@ -85,5 +86,6 @@ export function getIconFromContentType(type: ContentType, size: string) {
     'content-source': <IconBook2 size={size} />,
     archetype: <IconMilitaryRank size={size} />,
     'versatile-heritage': <IconCaretLeftRight size={size} />,
+    'class-archetype': <IconBadge size={size} />,
   }[type];
 }

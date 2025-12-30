@@ -29,6 +29,7 @@ import { getCachedCustomization } from '@content/customization-cache';
 import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer';
 import { cloneDeep } from 'lodash-es';
+import { ClassArchetypeDrawerContent } from './types/ClassArchetypeDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
@@ -68,6 +69,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'mode' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'versatile-heritage' && <VersatileHeritageDrawerContent data={drawerData} />}
       {_drawer?.type === 'archetype' && <ArchetypeDrawerContent data={drawerData} />}
+      {_drawer?.type === 'class-archetype' && <ClassArchetypeDrawerContent data={drawerData} />}
 
       {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerContent data={drawerData} />}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={drawerData} />}

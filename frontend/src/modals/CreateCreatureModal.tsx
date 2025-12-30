@@ -797,7 +797,7 @@ export function CreateCreatureModal(props: {
       {openedModal !== null && (
         <CreateAbilityBlockModal
           opened={true}
-          type={'action'}
+          type='action'
           editId={openedModal === -1 ? -1 : undefined}
           editAbilityBlock={openedModal === -1 ? undefined : openedModal}
           onComplete={async (abilityBlock) => {

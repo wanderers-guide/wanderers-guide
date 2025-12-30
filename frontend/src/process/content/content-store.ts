@@ -7,6 +7,7 @@ import {
   Archetype,
   Background,
   Class,
+  ClassArchetype,
   ContentPackage,
   ContentSource,
   ContentType,
@@ -201,6 +202,7 @@ export async function fetchContent<T = Record<string, any>>(
     class: 'find-class',
     archetype: 'find-archetype',
     'versatile-heritage': 'find-versatile-heritage',
+    'class-archetype': 'find-class-archetype',
     'content-source': 'find-content-source',
     creature: 'find-creature',
     item: 'find-item',
@@ -376,6 +378,7 @@ export async function fetchContentPackage(
     options?.fetchCreatures ? fetchContentAll<Creature>('creature', sources) : [],
     fetchContentAll<Archetype>('archetype', sources),
     fetchContentAll<VersatileHeritage>('versatile-heritage', sources),
+    fetchContentAll<ClassArchetype>('class-archetype', sources),
     options?.fetchSources ? fetchContentSources(sources) : null,
   ]);
 
@@ -391,7 +394,8 @@ export async function fetchContentPackage(
     creatures: ((content[8] ?? []) as Creature[]).sort((a, b) => a.name.localeCompare(b.name)),
     archetypes: ((content[9] ?? []) as Archetype[]).sort((a, b) => a.name.localeCompare(b.name)),
     versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => a.name.localeCompare(b.name)),
-    sources: content[11] as ContentSource[],
+    classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => a.name.localeCompare(b.name)),
+    sources: content[12] as ContentSource[],
   } satisfies ContentPackage;
 }
 

@@ -24,7 +24,13 @@ const D20_FACES = [
   'm448.9,396.6l-178.9,19.6l0,57.8c0,5.1 5.3,8.5 10,6.4l170.9,-77c3.4,-1.8 1.9,-7.2 -2,-6.8z',
 ];
 
-export default function D20Loader(props: { size: number; color: string; percentage: number; status: string }) {
+export default function D20Loader(props: {
+  size: number;
+  color: string;
+  percentage: number;
+  status: string;
+  hasStatusBg?: boolean;
+}) {
   const percent = Math.min(Math.max(props.percentage, 0), 100);
   const safePercent = percent > 95 ? 100 : percent;
   const activeFaces = Math.floor((safePercent / 100) * D20_FACES.length);
@@ -63,7 +69,7 @@ export default function D20Loader(props: { size: number; color: string; percenta
         fs='italic'
         c='gray.0'
         style={{
-          backdropFilter: 'blur(6px)',
+          backdropFilter: props.hasStatusBg ? 'blur(6px)' : undefined,
           borderRadius: '25px',
           borderBottom: '1px solid #fff',
         }}

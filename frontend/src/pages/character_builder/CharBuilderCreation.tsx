@@ -6,7 +6,7 @@ import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { fetchContentPackage, fetchContentSources, getDefaultSources } from '@content/content-store';
+import { fetchContent, fetchContentPackage, fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
 import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
@@ -35,7 +35,7 @@ import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@
 import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
+import { AbilityBlock, Ancestry, Background, Character, Class, ClassArchetype, ContentPackage } from '@typing/content';
 import { ImageOption } from '@typing/index';
 import { OperationCharacterResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
@@ -47,7 +47,7 @@ import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -73,8 +73,9 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
   });
 
   // Just load progress manually
-  const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 30);
+  const [_p, setPercentage] = useState(0);
+  const percentage = content && !doneLoading ? Math.max(_p, 50) : _p;
+  const interval = useInterval(() => setPercentage(percentage + 2), 50);
   useEffect(() => {
     interval.start();
     return interval.stop;
@@ -243,6 +244,8 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Class>(
                     'class',
                     (option) => {
+                      handleClassArchetypeSelection(character, setCharacter, option, '1');
+
                       // Wipe old data
                       let selections = removeParentSelections('class_', character?.operation_data?.selections);
                       if (!character?.variants?.dual_class) {
@@ -255,6 +258,7 @@ export function CharBuilderCreationInner(props: {
                           details: {
                             ...prev.details,
                             class: option,
+                            class_archetype: undefined,
                           },
                           operation_data: {
                             ...prev.operation_data,
@@ -273,6 +277,8 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Class>(
                     'class',
                     (option) => {
+                      handleClassArchetypeSelection(character, setCharacter, option, '2');
+
                       // Wipe old data
                       const selections = removeParentSelections('class-2_', character?.operation_data?.selections);
                       setCharacter((prev) => {
@@ -282,6 +288,7 @@ export function CharBuilderCreationInner(props: {
                           details: {
                             ...prev.details,
                             class_2: option,
+                            class_archetype_2: undefined,
                           },
                           operation_data: {
                             ...prev.operation_data,
@@ -406,6 +413,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Class>(
               'class',
               (option) => {
+                handleClassArchetypeSelection(character, setCharacter, option, '1');
+
                 // Wipe old data
                 let selections = removeParentSelections('class_', character?.operation_data?.selections);
                 if (!character?.variants?.dual_class) {
@@ -418,6 +427,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       class: option,
+                      class_archetype: undefined,
                     },
                     operation_data: {
                       ...prev.operation_data,
@@ -436,6 +446,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Class>(
               'class',
               (option) => {
+                handleClassArchetypeSelection(character, setCharacter, option, '2');
+
                 // Wipe old data
                 const selections = removeParentSelections('class-2_', character?.operation_data?.selections);
                 setCharacter((prev) => {
@@ -445,6 +457,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       class_2: option,
+                      class_archetype_2: undefined,
                     },
                     operation_data: {
                       ...prev.operation_data,
@@ -1252,6 +1265,64 @@ function LevelSection(props: {
       </Accordion.Panel>
     </Accordion.Item>
   );
+}
+
+/**
+ * Handle class archetype selection
+ * @param character - current character
+ * @param setCharacter - setter for character state
+ * @param class_ - selected class
+ * @param recordT - '1' for primary class, '2' for second class
+ */
+function handleClassArchetypeSelection(
+  _character: Character | null,
+  setCharacter: SetterOrUpdater<Character | null>,
+  class_: Class,
+  recordT: '1' | '2'
+) {
+  fetchContent<ClassArchetype>('class-archetype', {
+    class_id: class_.id,
+    content_sources: getDefaultSources('PAGE'),
+  }).then((options) => {
+    if (options.length > 0) {
+      selectContent<ClassArchetype>(
+        'class-archetype',
+        (option) => {
+          if (option.id === 0) {
+            return;
+          }
+
+          setCharacter((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              details: {
+                ...(prev.details ?? {}),
+                class_archetype: recordT === '1' ? option : prev.details?.class_archetype,
+                class_archetype_2: recordT === '2' ? option : prev.details?.class_archetype_2,
+              },
+            };
+          });
+        },
+        {
+          selectedId: -1,
+          description: (
+            <Text fz='sm'>
+              This class supports optional class archetypes that reshape its core mechanics. Would you like to select
+              one?
+            </Text>
+          ),
+          overrideOptions: [
+            {
+              id: 0,
+              name: '— Base Class (No Archetype)',
+            },
+            ...options,
+          ],
+        }
+      );
+    }
+  });
 }
 
 function ClassFeatureAccordionItem(props: {

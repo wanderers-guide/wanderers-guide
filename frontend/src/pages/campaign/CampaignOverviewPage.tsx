@@ -83,7 +83,13 @@ export function Component() {
         justifyContent: 'center',
       }}
     >
-      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} status='Loading...' />
+      <D20Loader
+        size={100}
+        color={theme.colors[theme.primaryColor][5]}
+        percentage={percentage}
+        status='Loading...'
+        hasStatusBg
+      />
     </Box>
   );
 

@@ -82,7 +82,7 @@ import {
   prevProficiencyType,
 } from '@variables/variable-utils';
 import * as JsSearch from 'js-search';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   AbilityBlock,
@@ -119,6 +119,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
+    description?: ReactNode;
   };
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -174,6 +175,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         showButton: props.options?.showButton,
         includeOptions: props.options?.includeOptions,
         advancedPresetFilters: props.options?.advancedPresetFilters,
+        description: props.options?.description,
       }
     );
   };
@@ -272,6 +274,7 @@ export function selectContent<T = Record<string, any>>(
     showButton?: boolean;
     includeOptions?: boolean;
     zIndex?: number;
+    description?: ReactNode;
   }
 ) {
   let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
@@ -306,6 +309,7 @@ export default function SelectContentModal({
     showButton?: boolean;
     includeOptions?: boolean;
     zIndex?: number;
+    description?: ReactNode;
   };
 }>) {
   const theme = useMantineTheme();
@@ -501,209 +505,212 @@ export default function SelectContentModal({
   }, [versHeritageData]);
 
   return (
-    <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 490 }}>
-      {isClassFeat && (
-        <Tabs value={classFeatTab} onChange={setClassFeatTab}>
-          <Tabs.List grow mb={10}>
-            <Tabs.Tab value='class-feat'>Class Feats</Tabs.Tab>
-            <Tabs.Tab value='archetype-feat'>Archetype Feats</Tabs.Tab>
-            <Tabs.Tab value='add-dedication'>Add Dedication</Tabs.Tab>
-          </Tabs.List>
+    <Stack>
+      {innerProps.options?.description}
+      <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 490 }}>
+        {isClassFeat && (
+          <Tabs value={classFeatTab} onChange={setClassFeatTab}>
+            <Tabs.List grow mb={10}>
+              <Tabs.Tab value='class-feat'>Class Feats</Tabs.Tab>
+              <Tabs.Tab value='archetype-feat'>Archetype Feats</Tabs.Tab>
+              <Tabs.Tab value='add-dedication'>Add Dedication</Tabs.Tab>
+            </Tabs.List>
 
-          <Tabs.Panel value='class-feat'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type={innerProps.type}
-                  abilityBlockType={innerProps.options?.abilityBlockType}
-                  skillAdjustment={innerProps.options?.skillAdjustment}
-                  selectedId={innerProps.options?.selectedId}
-                  overrideOptions={innerProps.options?.overrideOptions}
-                  searchQuery={searchQueryDebounced}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!(option);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={getMergedFilterFn()}
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='archetype-feat'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type='ability-block'
-                  abilityBlockType='feat'
-                  selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQueryDebounced}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) =>
-                    intersection(
-                      getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
-                      option.traits ?? []
-                    ).length > 0 && option.level <= classFeatSourceLevel
-                  }
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='add-dedication'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type='ability-block'
-                  abilityBlockType='feat'
-                  selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQueryDebounced}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) =>
-                    hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
-                  }
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-        </Tabs>
-      )}
-
-      {isHeritage && (
-        <Tabs value={versHeritageTab} onChange={setVersHeritageTab}>
-          <Tabs.List grow mb={10}>
-            <Tabs.Tab value='ancestry-heritage'>Ancestry Heritages</Tabs.Tab>
-            <Tabs.Tab value='versatile-heritage'>Versatile Heritages</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value='ancestry-heritage'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type={innerProps.type}
-                  abilityBlockType={innerProps.options?.abilityBlockType}
-                  skillAdjustment={innerProps.options?.skillAdjustment}
-                  selectedId={innerProps.options?.selectedId}
-                  overrideOptions={innerProps.options?.overrideOptions}
-                  searchQuery={searchQueryDebounced}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!(option);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) =>
-                    getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
-                  }
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='versatile-heritage'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type='ability-block'
-                  abilityBlockType='heritage'
-                  selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQueryDebounced}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-        </Tabs>
-      )}
-
-      {!(isClassFeat || isHeritage) && (
-        <Box>
-          {getSelectionContents(
-            <SelectionOptions
-              type={innerProps.type}
-              abilityBlockType={innerProps.options?.abilityBlockType}
-              skillAdjustment={innerProps.options?.skillAdjustment}
-              selectedId={innerProps.options?.selectedId}
-              overrideOptions={innerProps.options?.overrideOptions}
-              searchQuery={searchQueryDebounced}
-              onClick={
-                innerProps.onClick
-                  ? (option) => {
-                      innerProps.onClick!(option);
-                      context.closeModal(id);
+            <Tabs.Panel value='class-feat'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type={innerProps.type}
+                    abilityBlockType={innerProps.options?.abilityBlockType}
+                    skillAdjustment={innerProps.options?.skillAdjustment}
+                    selectedId={innerProps.options?.selectedId}
+                    overrideOptions={innerProps.options?.overrideOptions}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!(option);
+                            context.closeModal(id);
+                          }
+                        : undefined
                     }
-                  : undefined
-              }
-              filterFn={getMergedFilterFn()}
-              includeOptions={innerProps.options?.includeOptions}
-              showButton={innerProps.options?.showButton}
-              limitSelectedOptions={!!innerProps.options?.overrideOptions}
-            />
-          )}
-        </Box>
-      )}
-    </Box>
+                    filterFn={getMergedFilterFn()}
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='archetype-feat'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type='ability-block'
+                    abilityBlockType='feat'
+                    selectedId={innerProps.options?.selectedId}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!({
+                              ...option,
+                              // Need this for selection ops to work correctly
+                              // since we're not using the override options
+                              _select_uuid: `${option.id}`,
+                              _content_type: 'ability-block',
+                            } satisfies ObjectWithUUID);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) =>
+                      intersection(
+                        getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
+                        option.traits ?? []
+                      ).length > 0 && option.level <= classFeatSourceLevel
+                    }
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='add-dedication'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type='ability-block'
+                    abilityBlockType='feat'
+                    selectedId={innerProps.options?.selectedId}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!({
+                              ...option,
+                              // Need this for selection ops to work correctly
+                              // since we're not using the override options
+                              _select_uuid: `${option.id}`,
+                              _content_type: 'ability-block',
+                            } satisfies ObjectWithUUID);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) =>
+                      hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
+                    }
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+          </Tabs>
+        )}
+
+        {isHeritage && (
+          <Tabs value={versHeritageTab} onChange={setVersHeritageTab}>
+            <Tabs.List grow mb={10}>
+              <Tabs.Tab value='ancestry-heritage'>Ancestry Heritages</Tabs.Tab>
+              <Tabs.Tab value='versatile-heritage'>Versatile Heritages</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value='ancestry-heritage'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type={innerProps.type}
+                    abilityBlockType={innerProps.options?.abilityBlockType}
+                    skillAdjustment={innerProps.options?.skillAdjustment}
+                    selectedId={innerProps.options?.selectedId}
+                    overrideOptions={innerProps.options?.overrideOptions}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!(option);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) =>
+                      getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
+                    }
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='versatile-heritage'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type='ability-block'
+                    abilityBlockType='heritage'
+                    selectedId={innerProps.options?.selectedId}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!({
+                              ...option,
+                              // Need this for selection ops to work correctly
+                              // since we're not using the override options
+                              _select_uuid: `${option.id}`,
+                              _content_type: 'ability-block',
+                            } satisfies ObjectWithUUID);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+          </Tabs>
+        )}
+
+        {!(isClassFeat || isHeritage) && (
+          <Box>
+            {getSelectionContents(
+              <SelectionOptions
+                type={innerProps.type}
+                abilityBlockType={innerProps.options?.abilityBlockType}
+                skillAdjustment={innerProps.options?.skillAdjustment}
+                selectedId={innerProps.options?.selectedId}
+                overrideOptions={innerProps.options?.overrideOptions}
+                searchQuery={searchQueryDebounced}
+                onClick={
+                  innerProps.onClick
+                    ? (option) => {
+                        innerProps.onClick!(option);
+                        context.closeModal(id);
+                      }
+                    : undefined
+                }
+                filterFn={getMergedFilterFn()}
+                includeOptions={innerProps.options?.includeOptions}
+                showButton={innerProps.options?.showButton}
+                limitSelectedOptions={!!innerProps.options?.overrideOptions}
+              />
+            )}
+          </Box>
+        )}
+      </Box>
+    </Stack>
   );
 }
 

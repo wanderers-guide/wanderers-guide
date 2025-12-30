@@ -29,6 +29,7 @@ import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 import { CreateContentSourceOnlyModal } from './CreateContentSourceModal';
 import { cloneDeep } from 'lodash-es';
+import { CreateClassArchetypeModal } from './CreateClassArchetypeModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -210,6 +211,17 @@ export default function ContentFeedbackModal(props: {
               editId={submitUpdate.id}
               onComplete={async (versHeritage) => {
                 await handleComplete(versHeritage.id, versHeritage.content_source_id, versHeritage);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
+
+          {props.type === 'class-archetype' && (
+            <CreateClassArchetypeModal
+              opened={true}
+              editId={submitUpdate.id}
+              onComplete={async (archetype) => {
+                await handleComplete(archetype.id, archetype.content_source_id, archetype);
               }}
               onCancel={() => handleReset()}
             />

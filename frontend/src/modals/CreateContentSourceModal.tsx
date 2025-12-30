@@ -14,6 +14,7 @@ import {
   upsertCreature,
   upsertArchetype,
   upsertVersatileHeritage,
+  upsertClassArchetype,
 } from '@content/content-creation';
 import { fetchContentPackage, fetchContentSources, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
@@ -51,6 +52,7 @@ import {
   Archetype,
   Background,
   Class,
+  ClassArchetype,
   ContentSource,
   ContentType,
   Creature,
@@ -85,6 +87,7 @@ import useRefresh from '@utils/use-refresh';
 import { defineDefaultSourcesForSource } from '@content/homebrew';
 import OperationsModal from './OperationsModal';
 import { cloneDeep } from 'lodash-es';
+import { CreateClassArchetypeModal } from './CreateClassArchetypeModal';
 
 export function CreateContentSourceOnlyModal(props: {
   opened: boolean;
@@ -706,6 +709,21 @@ export function CreateContentSourceModal(props: {
                 Versatile Heritages
               </Tabs.Tab>
               <Tabs.Tab
+                value='class-archetypes'
+                leftSection={getIconFromContentType('class-archetype', '1rem')}
+                rightSection={
+                  <>
+                    {data?.content.classArchetypes && data?.content.classArchetypes.length > 0 && (
+                      <Badge variant='light' color={theme.primaryColor} size='xs'>
+                        {data?.content.classArchetypes.length}
+                      </Badge>
+                    )}
+                  </>
+                }
+              >
+                Class Archetypes
+              </Tabs.Tab>
+              <Tabs.Tab
                 value='modes'
                 leftSection={getIconFromContentType('ability-block', '1rem')}
                 rightSection={
@@ -869,6 +887,15 @@ export function CreateContentSourceModal(props: {
                 sourceId={props.sourceId}
                 type='versatile-heritage'
                 content={data?.content.versatileHeritages ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value='class-archetypes'>
+              <ContentList<ClassArchetype>
+                sourceId={props.sourceId}
+                type='class-archetype'
+                content={data?.content.classArchetypes ?? []}
                 onUpdate={() => props.onUpdate?.()}
               />
             </Tabs.Panel>
@@ -1279,6 +1306,28 @@ function ContentList<
         />
       )}
 
+      {props.type === 'class-archetype' && openedId && (
+        <CreateClassArchetypeModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (archetype) => {
+            archetype.content_source_id = props.sourceId;
+            const result = await upsertClassArchetype(archetype);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated class archetype.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
       {props.type === 'ancestry' && openedId && (
         <CreateAncestryModal
           opened={!!openedId}
@@ -1397,8 +1446,6 @@ function ContentList<
           editId={openedId}
           onComplete={async (creature) => {
             creature.content_source_id = props.sourceId;
-
-            console.log(creature);
             const result = await upsertCreature(creature);
 
             if (result) {

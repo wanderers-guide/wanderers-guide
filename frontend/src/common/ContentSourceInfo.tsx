@@ -35,6 +35,7 @@ const NOTABILITY_MAP: Record<ContentType | AbilityBlockType, number> = {
   ancestry: 20,
   background: 15,
   language: 3,
+  'class-archetype': 6,
   'content-source': 1,
   'class-feature': 1,
   heritage: 12,

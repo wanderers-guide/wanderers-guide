@@ -60,6 +60,7 @@ import { EllipsisText } from '@common/EllipsisText';
 import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { labelToVariable } from '@variables/variable-utils';
+import { titleCase } from 'title-case';
 
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
@@ -621,7 +622,8 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                 Category
               </Text>
               <Text c='gray.5' span>
-                {toLabel(props.item.meta_data?.category)}
+                {/* TitleCase it again in cases like 'unarmored defense' */}
+                {titleCase(toLabel(props.item.meta_data?.category))}
               </Text>
             </Group>
           )}

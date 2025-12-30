@@ -243,6 +243,8 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
         newData = result.traits ?? [];
       } else if (f.type === 'versatile-heritage') {
         newData = result.versatile_heritages ?? [];
+      } else if (f.type === 'class-archetype') {
+        newData = result.class_archetypes ?? [];
       } else {
         newData = [];
       }
