@@ -7,6 +7,7 @@ import { makeRequest } from '@requests/request-manager';
 import { IconMoon, IconSun } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Character, Creature, LivingEntity } from '@typing/content';
+import { getAnchorStyles } from '@utils/anchor';
 import { getShadesFromColor } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
 import { useState } from 'react';
@@ -99,11 +100,7 @@ export function Component() {
           size='lg'
           radius='xl'
           aria-label='Toggle Light/Dark Mode'
-          style={{
-            position: 'fixed',
-            bottom: 15,
-            right: 15,
-          }}
+          style={getAnchorStyles({ r: 15, b: 15 })}
           onClick={() => {
             toggleLightMode(!isLightMode);
           }}

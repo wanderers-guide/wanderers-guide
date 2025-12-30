@@ -19,6 +19,7 @@ import { IconBrush, IconExternalLink } from '@tabler/icons-react';
 import { DISCORD_URL } from '@constants/data';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { getAnchorStyles } from '@utils/anchor';
 
 export function Component() {
   setPageTitle();
@@ -31,7 +32,7 @@ export function Component() {
     <>
       <Stack mih={'80dvh'} justify='center' align='center'>
         <Box p={30} mb={'15dvh'}>
-          <Title fz={'3em'} c='gray.0' ta='center' fs='italic'>
+          <Title fz={isPhone ? '2em' : '3em'} c='gray.0' ta='center' fs='italic'>
             Journey with Guidance
           </Title>
           <Text c='gray.0' ta='center'>
@@ -104,12 +105,12 @@ export function Component() {
           <Text
             size='xs'
             c='dimmed'
-            style={{
-              position: 'fixed',
-              bottom: 6,
-              right: 10,
-              zIndex: 1,
-            }}
+            style={[
+              getAnchorStyles({ r: 10, b: 6 }),
+              {
+                zIndex: 1,
+              },
+            ]}
           >
             <IconBrush size='0.55rem' /> {background.source}
           </Text>

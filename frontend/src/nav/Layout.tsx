@@ -503,7 +503,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           }
         }}
       >
-        <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>{props.children}</AppShell.Main>
+        <AppShell.Main pt={`calc(${rem(52)} + var(--mantine-spacing-md))`}>{props.children}</AppShell.Main>
       </ScrollArea>
     </AppShell>
   );

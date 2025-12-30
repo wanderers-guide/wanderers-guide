@@ -12,6 +12,7 @@ import useRefresh from '@utils/use-refresh';
 import { modals } from '@mantine/modals';
 import { phoneQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { cloneDeep } from 'lodash-es';
+import { getAnchorStyles } from '@utils/anchor';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -165,6 +166,12 @@ export default function DrawerBase() {
         position='right'
         zIndex={drawerZIndex ?? _drawer?.data.zIndex ?? 1000}
         styles={{
+          content: {
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          },
           title: {
             width: '100%',
           },
@@ -172,6 +179,9 @@ export default function DrawerBase() {
             paddingBottom: 0,
           },
           body: {
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflow: 'hidden',
             paddingRight: 2,
           },
         }}
@@ -180,12 +190,7 @@ export default function DrawerBase() {
           overflow: 'hidden',
         }}
       >
-        <ScrollArea
-          viewportRef={viewport}
-          h={isPhone ? undefined : `calc(100dvh - (${titleHeight || 30}px + 48px))`}
-          pr={16}
-          scrollbars='y'
-        >
+        <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
           <Box
             pt={2}
             style={{
@@ -213,11 +218,7 @@ export default function DrawerBase() {
                   aria-label='Help and Feedback'
                   radius='xl'
                   color='dark.3'
-                  style={{
-                    position: 'absolute',
-                    bottom: 5,
-                    right: 5,
-                  }}
+                  style={getAnchorStyles({ r: 5, b: 5 })}
                   onClick={() => {
                     const type = isAbilityBlockType(_drawer.type)
                       ? _drawer.type

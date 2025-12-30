@@ -4,7 +4,7 @@
   "version": "2.0.5",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc && vite build",
     "predeploy": "tsc && vite build",
     "deploy": "gh-pages -d dist",

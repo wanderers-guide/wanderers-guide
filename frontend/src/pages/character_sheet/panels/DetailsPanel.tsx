@@ -118,7 +118,15 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
         <ScrollArea h={props.panelHeight - 60} scrollbars='y'>
           <Group justify='center'>
             <Box w={SECTION_WIDTH}>
-              <Tabs variant='outline' defaultValue='general'>
+              <Tabs
+                variant='outline'
+                defaultValue='general'
+                styles={(t) => ({
+                  panel: {
+                    paddingTop: 5,
+                  },
+                })}
+              >
                 <Tabs.List>
                   <Tabs.Tab value='general'>General</Tabs.Tab>
                   <Tabs.Tab value='org-play'>Organized Play</Tabs.Tab>

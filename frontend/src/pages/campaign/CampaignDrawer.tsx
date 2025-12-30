@@ -53,7 +53,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
   const getCharacterStatusCard = (character: Character) => {
     return (
       <Group gap={10} px={5}>
-        <Text>›</Text>
+        <Text>➵</Text>
         <Text>{character.name}</Text>
         <ActionIcon
           variant='transparent'

@@ -54,6 +54,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Creature, LivingEntity, Trait } from '@typing/content';
 import { OperationCreatureResultPackage } from '@typing/operations';
+import { getAnchorStyles } from '@utils/anchor';
 import { findCreatureTraits } from '@utils/creature';
 import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -407,20 +408,26 @@ export function CreatureDrawerContent(props: {
                 )}
 
                 <Box
-                  style={{
-                    zIndex: 1000,
-                    position: 'fixed',
-                    bottom: 20,
-                    right: 20,
-                  }}
+                  style={[
+                    getAnchorStyles({ r: 20, b: 20 }),
+                    {
+                      zIndex: 1000,
+                    },
+                  ]}
                 >
                   <Popover
                     position='top'
-                    shadow='md'
                     withArrow
                     opened={openedSelectionPanel}
                     onChange={setOpenedSelectionPanel}
                     zIndex={1000}
+                    styles={(t) => ({
+                      dropdown: {
+                        backgroundColor: 'rgba(20, 21, 23)',
+                        borderRadius: t.radius.lg,
+                        padding: t.spacing.sm,
+                      },
+                    })}
                   >
                     <Popover.Target>
                       <ActionIcon
@@ -442,7 +449,7 @@ export function CreatureDrawerContent(props: {
                         <Stack>
                           <Button
                             leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
-                            variant={activeTab === 'main' ? 'filled' : 'outline'}
+                            variant={activeTab === 'main' ? 'filled' : 'light'}
                             onClick={() => {
                               setActiveTab('main');
                               setOpenedSelectionPanel(false);
@@ -453,7 +460,7 @@ export function CreatureDrawerContent(props: {
                           <SimpleGrid cols={2}>
                             <Button
                               leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
-                              variant={activeTab === 'abilities' ? 'filled' : 'outline'}
+                              variant={activeTab === 'abilities' ? 'filled' : 'light'}
                               onClick={() => {
                                 setActiveTab('abilities');
                                 setOpenedSelectionPanel(false);
@@ -463,7 +470,7 @@ export function CreatureDrawerContent(props: {
                             </Button>
                             <Button
                               leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
-                              variant={activeTab === 'skills-actions' ? 'filled' : 'outline'}
+                              variant={activeTab === 'skills-actions' ? 'filled' : 'light'}
                               onClick={() => {
                                 setActiveTab('skills-actions');
                                 setOpenedSelectionPanel(false);
@@ -475,7 +482,7 @@ export function CreatureDrawerContent(props: {
                           <SimpleGrid cols={2}>
                             <Button
                               leftSection={<IconBackpack size='1.2rem' stroke={2} />}
-                              variant={activeTab === 'inventory' ? 'filled' : 'outline'}
+                              variant={activeTab === 'inventory' ? 'filled' : 'light'}
                               onClick={() => {
                                 setActiveTab('inventory');
                                 setOpenedSelectionPanel(false);
@@ -485,7 +492,7 @@ export function CreatureDrawerContent(props: {
                             </Button>
                             <Button
                               leftSection={<IconFlare size='1.2rem' stroke={2} />}
-                              variant={activeTab === 'spells' ? 'filled' : 'outline'}
+                              variant={activeTab === 'spells' ? 'filled' : 'light'}
                               onClick={() => {
                                 setActiveTab('spells');
                                 setOpenedSelectionPanel(false);
@@ -497,7 +504,7 @@ export function CreatureDrawerContent(props: {
                           <SimpleGrid cols={2}>
                             <Button
                               leftSection={<IconNotebook size='1.2rem' stroke={2} />}
-                              variant={activeTab === 'notes' ? 'filled' : 'outline'}
+                              variant={activeTab === 'notes' ? 'filled' : 'light'}
                               onClick={() => {
                                 setActiveTab('notes');
                                 setOpenedSelectionPanel(false);
@@ -507,7 +514,7 @@ export function CreatureDrawerContent(props: {
                             </Button>
                             <Button
                               leftSection={<IconListDetails size='1.2rem' stroke={2} />}
-                              variant={activeTab === 'details' ? 'filled' : 'outline'}
+                              variant={activeTab === 'details' ? 'filled' : 'light'}
                               onClick={() => {
                                 setActiveTab('details');
                                 setOpenedSelectionPanel(false);

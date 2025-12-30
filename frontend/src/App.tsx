@@ -39,6 +39,7 @@ import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 import GenerateEncounterModal from '@modals/GenerateEncounterModal';
 import { getShadesFromColor } from '@utils/colors';
 import UpdateApiClientModal from '@modals/UpdateApiClientModal';
+import { getAnchorStyles } from '@utils/anchor';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -185,12 +186,12 @@ export default function App() {
             <Text
               size='xs'
               c='dimmed'
-              style={{
-                position: 'fixed',
-                bottom: 6,
-                right: 10,
-                zIndex: 1,
-              }}
+              style={[
+                getAnchorStyles({ r: 10, b: 6 }),
+                {
+                  zIndex: 1,
+                },
+              ]}
             >
               <IconBrush size='0.55rem' /> {background.source}
             </Text>

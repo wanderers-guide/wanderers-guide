@@ -69,6 +69,7 @@ import { DisplayIcon } from '@common/IconDisplay';
 import { StoreID } from '@typing/variables';
 import { cloneDeep } from 'lodash-es';
 import { titleCase } from 'title-case';
+import { getAnchorStyles } from '@utils/anchor';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
   let type = `Item ${props.data.invItem.item.level}`;
@@ -176,7 +177,7 @@ export function InvItemDrawerContent(props: {
   }
 
   return (
-    <Box>
+    <Box pb={20}>
       <DisplayIcon strValue={invItem.item.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
@@ -244,12 +245,12 @@ export function InvItemDrawerContent(props: {
         )}
       </Box>
       <Box
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 5,
-          width: '100%',
-        }}
+        style={[
+          getAnchorStyles({ r: 5, b: 20 }),
+          {
+            width: '100%',
+          },
+        ]}
       >
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={15} ml={0}>

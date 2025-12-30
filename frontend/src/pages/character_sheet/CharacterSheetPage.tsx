@@ -69,6 +69,7 @@ import { convertToSetEntity } from '@utils/type-fixing';
 import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 import useCharacter from '@utils/use-character';
+import { getAnchorStyles } from '@utils/anchor';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -209,13 +210,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
           </Stack>
         </Box>
       </Box>
-      <Box
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          left: 20,
-        }}
-      >
+      <Box style={getAnchorStyles({ l: 20, b: 20 })}>
         <Stack>
           {modes.length > 0 && (
             <Indicator disabled={activeModes.length === 0} label={activeModes.length} size={14} offset={4}>
@@ -425,14 +420,21 @@ function SectionPanels(props: {
           </BlurBox>
         )}
 
-        <Box
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-          }}
-        >
-          <Popover position='top' shadow='md' withArrow opened={openedPhonePanel} onChange={setOpenedPhonePanel}>
+        <Box style={getAnchorStyles({ r: 20, b: 20 })}>
+          <Popover
+            position='top'
+            withArrow
+            opened={openedPhonePanel}
+            onChange={setOpenedPhonePanel}
+            styles={(t) => ({
+              dropdown: {
+                backgroundColor: 'rgba(20, 21, 23)',
+                maxWidth: '100dvw',
+                borderRadius: t.radius.lg,
+                padding: t.spacing.sm,
+              },
+            })}
+          >
             <Popover.Target>
               <ActionIcon
                 size={55}
@@ -444,12 +446,12 @@ function SectionPanels(props: {
                 {openedPhonePanel ? <IconX size='2rem' stroke={2} /> : <IconLayoutGrid size='2rem' stroke={1.5} />}
               </ActionIcon>
             </Popover.Target>
-            <Popover.Dropdown w={'100dvw'}>
+            <Popover.Dropdown>
               <Box>
                 <Stack>
                   <Button
                     leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
-                    variant={!props.hideSections ? 'filled' : 'outline'}
+                    variant={!props.hideSections ? 'filled' : 'light'}
                     onClick={() => {
                       props.onHideSections(false);
                       setOpenedPhonePanel(false);
@@ -460,7 +462,7 @@ function SectionPanels(props: {
                   <SimpleGrid cols={2}>
                     <Button
                       leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'skills-actions' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'skills-actions' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('skills-actions');
                         props.onHideSections(true);
@@ -471,7 +473,7 @@ function SectionPanels(props: {
                     </Button>
                     <Button
                       leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'feats-features' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'feats-features' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('feats-features');
                         props.onHideSections(true);
@@ -484,7 +486,7 @@ function SectionPanels(props: {
                   <SimpleGrid cols={2}>
                     <Button
                       leftSection={<IconBackpack size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'inventory' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'inventory' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('inventory');
                         props.onHideSections(true);
@@ -495,7 +497,7 @@ function SectionPanels(props: {
                     </Button>
                     <Button
                       leftSection={<IconFlare size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'spells' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'spells' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('spells');
                         props.onHideSections(true);
@@ -508,7 +510,7 @@ function SectionPanels(props: {
                   <SimpleGrid cols={2}>
                     <Button
                       leftSection={<IconNotebook size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'notes' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'notes' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('notes');
                         props.onHideSections(true);
@@ -519,7 +521,7 @@ function SectionPanels(props: {
                     </Button>
                     <Button
                       leftSection={<IconListDetails size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'details' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'details' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('details');
                         props.onHideSections(true);
@@ -532,7 +534,7 @@ function SectionPanels(props: {
                   <SimpleGrid cols={2}>
                     <Button
                       leftSection={<IconPaw size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'companions' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'companions' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('companions');
                         props.onHideSections(true);
@@ -543,7 +545,7 @@ function SectionPanels(props: {
                     </Button>
                     <Button
                       leftSection={<IconNotes size='1.2rem' stroke={2} />}
-                      variant={activeTab === 'extras' && props.hideSections ? 'filled' : 'outline'}
+                      variant={activeTab === 'extras' && props.hideSections ? 'filled' : 'light'}
                       onClick={() => {
                         setActiveTab('extras');
                         props.onHideSections(true);
