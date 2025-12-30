@@ -333,6 +333,7 @@ async function handleAdvancedSearch(
     spells?: any[];
     traits?: any[];
     versatile_heritages?: any[];
+    class_archetypes?: any[];
   } = {};
 
   if (filters.type) {
@@ -358,6 +359,8 @@ async function handleAdvancedSearch(
       results.traits = await simpleTableSearch('trait');
     } else if (filters.type === 'versatile-heritage') {
       results.versatile_heritages = await simpleTableSearch('versatile_heritage');
+    } else if (filters.type === 'class-archetype') {
+      results.class_archetypes = await simpleTableSearch('class_archetype');
     }
   }
 
@@ -375,6 +378,7 @@ async function handleAdvancedSearch(
       spells: results.spells ?? [],
       traits: results.traits ?? [],
       versatile_heritages: results.versatile_heritages ?? [],
+      class_archetypes: results.class_archetypes ?? [],
     },
   };
 }
@@ -406,6 +410,7 @@ async function handleSimpleSearch(
         spells: [],
         traits: [],
         versatile_heritages: [],
+        class_archetypes: [],
       },
     };
   }
@@ -439,6 +444,7 @@ async function handleSimpleSearch(
     searchTable('spell', text),
     searchTable('trait', text),
     searchTable('versatile_heritage', text),
+    searchTable('class_archetype', text),
   ]);
 
   return {
@@ -455,6 +461,7 @@ async function handleSimpleSearch(
       spells: results[8],
       traits: results[9],
       versatile_heritages: results[10],
+      class_archetypes: results[11],
     },
   };
 }

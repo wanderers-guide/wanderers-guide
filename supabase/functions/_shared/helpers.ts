@@ -263,6 +263,7 @@ export type TableName =
   | 'content_source'
   | 'content_update'
   | 'versatile_heritage'
+  | 'class_archetype'
   | 'campaign'
   | 'character'
   | 'ancestry'
@@ -311,6 +312,8 @@ export function convertContentTypeToTableName(type: ContentType): TableName | nu
       return 'archetype';
     case 'versatile-heritage':
       return 'versatile_heritage';
+    case 'class-archetype':
+      return 'class_archetype';
     default:
       return null;
   }
@@ -339,6 +342,8 @@ function hasUUID(tableName: TableName): boolean {
     case 'archetype':
       return true;
     case 'versatile_heritage':
+      return true;
+    case 'class_archetype':
       return true;
     case 'content_source':
       return false;
