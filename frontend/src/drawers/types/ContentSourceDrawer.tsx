@@ -7,6 +7,7 @@ import {
   AncestrySelectionOption,
   ArchetypeSelectionOption,
   BackgroundSelectionOption,
+  ClassArchetypeSelectionOption,
   ClassSelectionOption,
   CreatureSelectionOption,
   FeatSelectionOption,
@@ -378,6 +379,39 @@ export function ContentSourceDrawerContent(props: {
                     onClick={(a) => {
                       openDrawer({
                         type: 'class',
+                        data: { id: a.id },
+                        extra: { addToHistory: true },
+                      });
+                    }}
+                  />
+                ))}
+              </Accordion.Panel>
+            </Accordion.Item>
+          )}
+          {content.classArchetypes.length > 0 && (
+            <Accordion.Item value={'class-archetypes'} w='100%'>
+              <Accordion.Control>
+                <Group wrap='nowrap' justify='space-between' gap={0}>
+                  <Text c='white' fz='sm'>
+                    Class Archetypes
+                  </Text>
+                  <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
+                    <Text fz='sm' c='gray.5' span>
+                      {content.classArchetypes.length}
+                    </Text>
+                  </Badge>
+                </Group>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <Divider color='dark.6' />
+                {content.classArchetypes.map((record, index) => (
+                  <ClassArchetypeSelectionOption
+                    key={index}
+                    classArchetype={record}
+                    showButton={false}
+                    onClick={(a) => {
+                      openDrawer({
+                        type: 'class-archetype',
                         data: { id: a.id },
                         extra: { addToHistory: true },
                       });
@@ -803,6 +837,7 @@ export function ContentSourceDrawerContent(props: {
                 { label: 'Background', value: 'background' },
                 { label: 'Class', value: 'class' },
                 { label: 'Class Feature', value: 'class-feature' },
+                { label: 'Class Archetype', value: 'class-archetype' },
                 { label: 'Creature', value: 'creature' },
                 { label: 'Feat', value: 'feat' },
                 { label: 'Heritage', value: 'heritage' },

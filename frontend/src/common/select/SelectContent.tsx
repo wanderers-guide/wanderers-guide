@@ -91,6 +91,7 @@ import {
   Archetype,
   Background,
   Class,
+  ClassArchetype,
   ContentType,
   Creature,
   Item,
@@ -1223,6 +1224,24 @@ function SelectionOptionsRoot(props: {
             trait={trait as Trait}
             onClick={props.onClick}
             selected={props.selectedId === trait.id}
+            showButton={props.showButton}
+            includeOptions={props.includeOptions}
+            onDelete={props.onDelete}
+            onCopy={props.onCopy}
+          />
+        ))}
+      </>
+    );
+  }
+  if (props.type === 'class-archetype') {
+    return (
+      <>
+        {props.options.map((classArchetype, index) => (
+          <ClassArchetypeSelectionOption
+            key={'class-archetype-' + index}
+            classArchetype={classArchetype as ClassArchetype}
+            onClick={props.onClick}
+            selected={props.selectedId === classArchetype.id}
             showButton={props.showButton}
             includeOptions={props.includeOptions}
             onDelete={props.onDelete}
@@ -2956,6 +2975,65 @@ export function LanguageSelectionOption(props: {
       includeOptions={props.includeOptions}
       onOptionsDelete={() => props.onDelete?.(props.language.id)}
       onOptionsCopy={() => props.onCopy?.(props.language.id)}
+    />
+  );
+}
+
+export function ClassArchetypeSelectionOption(props: {
+  classArchetype: ClassArchetype;
+  onClick: (classArchetype: ClassArchetype) => void;
+  selected?: boolean;
+  showButton?: boolean;
+  includeOptions?: boolean;
+  onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.classArchetype.deprecated && !props.selected) return null;
+
+  console.log('Rendering ClassArchetypeSelectionOption for', props.classArchetype);
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.classArchetype.name}</Text>
+          </Box>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.classArchetype.rarity} />}
+      showButton={props.showButton}
+      selected={props.selected}
+      onClick={() => {
+        // If is 'Base Class (No Archetype)' option,
+        if (props.classArchetype.id === -999) {
+          // Just show the normal base class drawer
+          openDrawer({
+            type: 'class',
+            data: {
+              id: props.classArchetype.class_id,
+            },
+            extra: { addToHistory: true },
+          });
+        } else {
+          openDrawer({
+            type: 'class-archetype',
+            data: {
+              id: props.classArchetype.id,
+            },
+            extra: { addToHistory: true },
+          });
+        }
+      }}
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.classArchetype)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.classArchetype.id)}
+      onOptionsCopy={() => props.onCopy?.(props.classArchetype.id)}
     />
   );
 }

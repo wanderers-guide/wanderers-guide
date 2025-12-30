@@ -29,7 +29,7 @@ import { useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function ClassArchetypeDrawerTitle(props: {
-  data: { id?: number; archetype?: ClassArchetype; onSelect?: () => void };
+  data: { id?: number; classArchetype?: ClassArchetype; onSelect?: () => void };
 }) {
   const id = props.data.id;
 
@@ -45,7 +45,7 @@ export function ClassArchetypeDrawerTitle(props: {
     },
     enabled: !!id,
   });
-  const archetype = props.data.archetype ?? _archetype;
+  const archetype = props.data.classArchetype ?? _archetype;
 
   return (
     <>
@@ -78,7 +78,7 @@ export function ClassArchetypeDrawerTitle(props: {
 }
 
 export function ClassArchetypeDrawerContent(props: {
-  data: { id?: number; archetype?: ClassArchetype; showOperations?: boolean };
+  data: { id?: number; classArchetype?: ClassArchetype; showOperations?: boolean };
   onMetadataChange?: (openedDict?: Record<string, string>) => void;
 }) {
   const id = props.data.id;
@@ -92,7 +92,7 @@ export function ClassArchetypeDrawerContent(props: {
       const archetype = await fetchContentById<ClassArchetype>('class-archetype', id);
       const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
       return {
-        archetype: props.data.archetype ?? archetype,
+        archetype: props.data.classArchetype ?? archetype,
         abilityBlocks,
       };
     },

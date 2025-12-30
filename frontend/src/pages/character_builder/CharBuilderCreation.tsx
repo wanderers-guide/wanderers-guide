@@ -1287,7 +1287,7 @@ function handleClassArchetypeSelection(
       selectContent<ClassArchetype>(
         'class-archetype',
         (option) => {
-          if (option.id === 0) {
+          if (option.id === -999) {
             return;
           }
 
@@ -1313,7 +1313,8 @@ function handleClassArchetypeSelection(
           ),
           overrideOptions: [
             {
-              id: 0,
+              id: -999,
+              class_id: class_.id,
               name: '— Base Class (No Archetype)',
             },
             ...options,

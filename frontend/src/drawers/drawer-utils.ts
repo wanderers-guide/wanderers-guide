@@ -57,6 +57,7 @@ export function mapToDrawerData(
     if (drawerType === 'trait') key = 'trait';
     if (drawerType === 'archetype') key = 'archetype';
     if (drawerType === 'versatile-heritage') key = 'versatileHeritage';
+    if (drawerType === 'class-archetype') key = 'classArchetype';
     if (drawerType === 'content-source') key = 'source';
     if (drawerType === 'creature') {
       key = 'creature';
