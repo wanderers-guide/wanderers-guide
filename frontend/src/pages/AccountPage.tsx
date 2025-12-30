@@ -128,7 +128,7 @@ function ProfileSection() {
   const { data: bundles } = useQuery({
     queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
-      resetContentStore(true);
+      resetContentStore();
       return (await fetchContentSources('ALL-HOMEBREW-PUBLIC')).filter(
         (c) => c.user_id && c.user_id === session?.user.id
       );

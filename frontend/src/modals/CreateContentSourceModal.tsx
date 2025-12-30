@@ -390,7 +390,7 @@ export function CreateContentSourceModal(props: {
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
       const source = (await fetchContentSources([props.sourceId])).find((s) => s.id === props.sourceId)!;
-      const sv = await defineDefaultSourcesForSource('INFO', source);
+      const sv = await defineDefaultSourcesForSource('BOTH', source);
 
       // Fill content store with all content (async)
       fetchContentPackage(sv, { fetchSources: true, fetchCreatures: true });
@@ -975,7 +975,7 @@ function ContentList<
   const handleReset = () => {
     const query = searchQuery;
     setSearchQuery('');
-    resetContentStore(true);
+    resetContentStore(false);
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();

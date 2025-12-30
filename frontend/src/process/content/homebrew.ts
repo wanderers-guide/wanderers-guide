@@ -19,7 +19,7 @@ export async function updateSubscriptions(user: PublicUser | undefined | null, s
   return subscriptions;
 }
 
-export async function defineDefaultSourcesForSource(view: SourceKey, source: ContentSource) {
+export async function defineDefaultSourcesForSource(view: SourceKey | 'BOTH', source: ContentSource) {
   const allSources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
   const user = await getPublicUser();
   // TODO: change to only the bundle's required sources

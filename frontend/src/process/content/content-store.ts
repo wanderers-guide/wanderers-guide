@@ -286,7 +286,7 @@ export async function fetchContent<T = Record<string, any>>(
 export function resetContentStore(resetSources = true) {
   console.warn('⚠️ Resetting Content Store ⚠️');
   if (resetSources) {
-    defineDefaultSources('BOTH', 'ALL-OFFICIAL-PUBLIC');
+    defineDefaultSources('BOTH', 'ALL-USER-ACCESSIBLE');
   }
   contentStore.clear();
   idStore = emptyIdStore();
