@@ -320,14 +320,6 @@ const SlotsSection = (props: {
                             return isNormalSpell(spell) && spell.rank <= parseInt(rank) && !isCantrip(spell);
                           }
                         },
-                        advancedPresetFilters: {
-                          type: 'spell',
-                          spell_type: props.source === 'RITUALS' ? 'RITUAL' : 'NORMAL',
-                          traditions: props.filter?.traditions,
-                          rank_min: parseInt(rank),
-                          rank_max: parseInt(rank),
-                          content_sources: getDefaultSources('PAGE'),
-                        },
                       }}
                     />
                   </Box>
