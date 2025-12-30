@@ -292,9 +292,8 @@ export function ClassArchetypeDrawerContent(props: {
           {descHidden ? 'Show more' : 'Show less'}
         </Anchor>
       </Box>
-      <Box>
+      <Group wrap='nowrap' grow>
         <Button
-          fullWidth
           disabled={!data.archetype?.class_id}
           onClick={() => {
             if (!data.archetype?.class_id) return;
@@ -307,7 +306,20 @@ export function ClassArchetypeDrawerContent(props: {
         >
           Open Class
         </Button>
-      </Box>
+        <Button
+          disabled={!data.archetype?.archetype_id}
+          onClick={() => {
+            if (!data.archetype?.archetype_id) return;
+            openDrawer({
+              type: 'archetype',
+              data: { id: data.archetype?.archetype_id },
+              extra: { addToHistory: true },
+            });
+          }}
+        >
+          Open Archetype
+        </Button>
+      </Group>
 
       <Box>
         <Title order={3}>Adjustments</Title>

@@ -602,7 +602,7 @@ export default function DiceRoller(props: {
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
-        lockScroll={false}
+        lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
         withOverlay={!isWideDesktop}
         overlayProps={{ backgroundOpacity: 0.5, blur: 2 }}

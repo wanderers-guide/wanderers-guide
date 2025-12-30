@@ -159,7 +159,7 @@ export default function DrawerBase() {
           </>
         }
         withCloseButton={false}
-        lockScroll={false}
+        lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
         withOverlay={!isWideDesktop}
         position='right'

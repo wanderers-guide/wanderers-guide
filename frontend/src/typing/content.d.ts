@@ -285,6 +285,7 @@ interface ClassArchetype {
   id: number;
   created_at: string;
   class_id: number;
+  archetype_id?: number;
   name: string;
   rarity: Rarity;
   description: string;

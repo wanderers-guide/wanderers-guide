@@ -1,4 +1,3 @@
-import { sleep } from './async';
 import { toLabel } from './strings';
 
 export async function getShapeIcon(content: string) {
@@ -29,6 +28,16 @@ export async function isValidImage(url?: string): Promise<boolean> {
   } else {
     return false;
   }
+}
+
+export async function preloadImage(url?: string): Promise<void> {
+  if (!url || !url.trim()) return;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = url;
+  });
 }
 
 export async function findCreatureImage(name: string): Promise<string | undefined> {

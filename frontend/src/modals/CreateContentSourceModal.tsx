@@ -1061,6 +1061,44 @@ function ContentList<
         newItem.content_source_id = props.sourceId;
         await upsertCreature(newItem);
       }
+    } else if (props.type === 'class-archetype') {
+      const item = (data ??
+        (props.content as unknown as ClassArchetype[]).find((i) => i.id === itemId)) as ClassArchetype | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${newItem.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertClassArchetype(newItem);
+      }
+    } else if (props.type === 'language') {
+      const item = (data ?? (props.content as unknown as Language[]).find((i) => i.id === itemId)) as Language | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertLanguage(newItem);
+      }
+    } else if (props.type === 'versatile-heritage') {
+      const item = (data ??
+        (props.content as unknown as VersatileHeritage[]).find((i) => i.id === itemId)) as VersatileHeritage | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertVersatileHeritage(newItem);
+      }
+    } else if (props.type === 'archetype') {
+      const item = (data ?? (props.content as unknown as Archetype[]).find((i) => i.id === itemId)) as Archetype | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertArchetype(newItem);
+      }
     }
   }
 

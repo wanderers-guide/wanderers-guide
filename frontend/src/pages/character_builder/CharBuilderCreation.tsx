@@ -171,7 +171,6 @@ export function CharBuilderCreationInner(props: {
           }}
           title={<Title order={3}>Character Stats</Title>}
           size='xs'
-          lockScroll={false}
           transitionProps={{ duration: 200 }}
         >
           <CharacterStatSidebar content={props.content} pageHeight={window.innerHeight - 80} />
@@ -1136,7 +1135,7 @@ function LevelSection(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   const saveSelectionChange = (path: string, value: string) => {
     setCharacter((prev) => {
@@ -1351,7 +1350,7 @@ function ClassFeatureAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.results]);
 
   return (
     <Accordion.Item
@@ -1416,7 +1415,7 @@ function AncestrySectionAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.results]);
 
   return (
     <Accordion.Item
@@ -1603,7 +1602,7 @@ function AncestryAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   // Only display the operation results that aren't already displayed in the ancestry overview
   const physicalFeatures = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'physical-feature');
@@ -1723,7 +1722,7 @@ function BackgroundAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   // Only display the operation results that aren't already displayed in the background overview
   let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
@@ -1831,7 +1830,7 @@ function ClassAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   // Only display the operation results that aren't already displayed in the class overview
   let classOperationResults =
@@ -1944,7 +1943,7 @@ function BooksAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   return (
     <Accordion.Item
@@ -2008,7 +2007,7 @@ function ItemsAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   return (
     <Accordion.Item
@@ -2074,7 +2073,7 @@ function CustomAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   const selections = props.operationResults.characterResults.filter((result) => hasOperationSelection(result));
 

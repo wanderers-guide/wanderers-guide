@@ -111,7 +111,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
-        lockScroll={false}
+        lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
         withOverlay={!isWideDesktop}
         styles={{

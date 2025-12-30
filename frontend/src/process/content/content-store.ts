@@ -19,6 +19,7 @@ import {
   VersatileHeritage,
 } from '@typing/content';
 import { RequestType } from '@typing/requests';
+import { preloadImage } from '@utils/images';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';
 import { cloneDeep, isString, uniq, uniqBy } from 'lodash-es';
@@ -382,7 +383,7 @@ export async function fetchContentPackage(
     options?.fetchSources ? fetchContentSources(sources) : null,
   ]);
 
-  return {
+  const p = {
     ancestries: ((content[0] ?? []) as Ancestry[]).sort((a, b) => a.name.localeCompare(b.name)),
     backgrounds: ((content[1] ?? []) as Background[]).sort((a, b) => a.name.localeCompare(b.name)),
     classes: ((content[2] ?? []) as Class[]).sort((a, b) => a.name.localeCompare(b.name)),
@@ -397,6 +398,13 @@ export async function fetchContentPackage(
     classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => a.name.localeCompare(b.name)),
     sources: content[12] as ContentSource[],
   } satisfies ContentPackage;
+
+  // Preload high-need images from package
+  p.ancestries.forEach((a) => preloadImage(a.artwork_url));
+  p.classes.forEach((c) => preloadImage(c.artwork_url));
+  p.backgrounds.forEach((b) => preloadImage(b.artwork_url));
+
+  return p;
 }
 
 export async function findRequiredContentSources(sourceIds?: number[]) {

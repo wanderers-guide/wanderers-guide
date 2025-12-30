@@ -32,7 +32,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconPlus, IconReplace, IconTrash, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, Class, ClassArchetype, Rarity } from '@typing/content';
+import { AbilityBlock, Archetype, Class, ClassArchetype, Rarity } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import { hasTraitType } from '@utils/traits';
@@ -95,6 +95,7 @@ export function CreateClassArchetypeModal(props: {
       rarity: 'COMMON' as Rarity,
       description: '',
       class_id: -1,
+      archetype_id: undefined as number | undefined,
       operations: [] as Operation[] | undefined,
       feature_adjustments: [] as ClassArchetype['feature_adjustments'] | undefined,
       artwork_url: '',
@@ -149,19 +150,56 @@ export function CreateClassArchetypeModal(props: {
         <LoadingOverlay visible={loading || isFetching} />
         <form onSubmit={form.onSubmit(onSubmit)}>
           <Stack gap={10}>
-            <SelectContentButton<Class>
-              type='class'
-              onClick={(c) => {
-                form.setFieldValue('class_id', c.id);
-                form.setFieldValue('feature_adjustments', []);
-                classRef.current = c;
-              }}
-              options={{
-                showButton: false,
-                overrideLabel: 'Select a Class',
-              }}
-              selectedId={form.values.class_id}
-            />
+            <Group gap={10}>
+              <SelectContentButton<Class>
+                type='class'
+                onClick={(c) => {
+                  // Remove class-specific feature adjustment data
+                  const fas =
+                    form.values?.feature_adjustments?.map((fa) => {
+                      const oldClassTraitId = classRef.current?.trait_id;
+
+                      // Update traits to new class trait
+                      const faDataTraits = fa.data?.traits?.map((traitId) => {
+                        if (traitId === oldClassTraitId) {
+                          return c.trait_id;
+                        } else {
+                          return traitId;
+                        }
+                      });
+                      if (fa.data) {
+                        fa.data.traits = faDataTraits;
+                      }
+
+                      return {
+                        ...fa,
+                        // Remove old class feature reference
+                        prev_id: undefined,
+                      };
+                    }) ?? [];
+
+                  form.setFieldValue('class_id', c.id);
+                  form.setFieldValue('feature_adjustments', fas);
+                  classRef.current = c;
+                }}
+                options={{
+                  showButton: false,
+                  overrideLabel: 'Select a Class',
+                }}
+                selectedId={form.values.class_id}
+              />
+              <SelectContentButton<Archetype>
+                type='archetype'
+                onClick={(c) => {
+                  form.setFieldValue('archetype_id', c.id);
+                }}
+                options={{
+                  showButton: false,
+                  overrideLabel: 'Select an Archetype',
+                }}
+                selectedId={form.values.archetype_id}
+              />
+            </Group>
 
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
