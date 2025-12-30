@@ -17,10 +17,11 @@ import {
   Image,
   Loader,
   Stack,
+  Switch,
   Text,
   Title,
 } from '@mantine/core';
-import { IconArrowRight } from '@tabler/icons-react';
+import { IconArrowRight, IconCheck } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, ClassArchetype } from '@typing/content';
 import { toLabel } from '@utils/strings';
@@ -343,6 +344,20 @@ export function ClassArchetypeDrawerContent(props: {
           </Text>
         )}
       </Box>
+
+      <Stack>
+        {data.archetype.override_skill_training_base !== undefined &&
+          data.archetype.override_skill_training_base !== null && (
+            <Badge>Overrides Base Class Skill Trainings: {data.archetype.override_skill_training_base}</Badge>
+          )}
+        {data.archetype.override_class_operations === true && (
+          <Badge>
+            <Group align='center' gap={2}>
+              Overrides Base Class Operations <IconCheck size={14} />
+            </Group>
+          </Badge>
+        )}
+      </Stack>
 
       {props.data.showOperations && (
         <ShowOperationsButton name={data.archetype.name} operations={data.archetype.operations} />

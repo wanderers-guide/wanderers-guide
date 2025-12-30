@@ -221,6 +221,8 @@ interface ClassArchetype {
     prev_id?: number;
     data?: AbilityBlock;
   }[];
+  override_skill_training_base?: number | null;
+  override_class_operations?: boolean;
   content_source_id: number;
   deprecated?: boolean;
   version: string;

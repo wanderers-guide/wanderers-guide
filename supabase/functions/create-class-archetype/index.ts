@@ -15,6 +15,8 @@ serve(async (req: Request) => {
       version,
       operations,
       feature_adjustments,
+      override_skill_training_base,
+      override_class_operations,
       class_id,
       archetype_id,
     } = body as ClassArchetype;
@@ -28,6 +30,8 @@ serve(async (req: Request) => {
       content_source_id,
       version,
       feature_adjustments,
+      override_skill_training_base,
+      override_class_operations,
       class_id,
       archetype_id,
       operations,

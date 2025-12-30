@@ -22,6 +22,7 @@ import {
   ScrollArea,
   Select,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -53,6 +54,7 @@ export function CreateClassArchetypeModal(props: {
 
   const [openedAdjustments, { toggle: toggleAdjustments }] = useDisclosure(false);
   const [openedOperations, { toggle: toggleOperations }] = useDisclosure(false);
+  const [openedAdditional, { toggle: toggleAdditional }] = useDisclosure(false);
 
   const classRef = useRef<Class | null>(null);
   const [openedModalFA, setOpenedModalFA] = useState<string | null>(null);
@@ -98,6 +100,8 @@ export function CreateClassArchetypeModal(props: {
       archetype_id: undefined as number | undefined,
       operations: [] as Operation[] | undefined,
       feature_adjustments: [] as ClassArchetype['feature_adjustments'] | undefined,
+      override_class_operations: false,
+      override_skill_training_base: null as number | null | undefined,
       artwork_url: '',
       content_source_id: -1,
       version: '1.0',
@@ -110,6 +114,13 @@ export function CreateClassArchetypeModal(props: {
   });
 
   const onSubmit = async (values: typeof form.values) => {
+    if (!values.override_skill_training_base && values.override_skill_training_base !== 0) {
+      values.override_skill_training_base = null;
+    }
+    if (!values.override_class_operations) {
+      values.override_class_operations = false;
+    }
+
     props.onComplete({
       ...values,
     });
@@ -219,15 +230,46 @@ export function CreateClassArchetypeModal(props: {
               />
             </Group>
 
-            <TextInput
-              defaultValue={form.values.artwork_url ?? ''}
-              label='Image URL'
-              onBlur={async (e) => {
-                setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
-                form.setFieldValue('artwork_url', e.target?.value);
-              }}
-              error={isValidImageURL ? false : 'Invalid URL'}
+            <Divider
+              my='xs'
+              label={
+                <Group gap={3} wrap='nowrap'>
+                  <Button variant={openedAdditional ? 'light' : 'subtle'} size='compact-sm' color='gray.6'>
+                    Misc. Sections
+                  </Button>
+                </Group>
+              }
+              labelPosition='left'
+              onClick={toggleAdditional}
             />
+            <Collapse in={openedAdditional}>
+              <Stack gap={10}>
+                <TextInput
+                  defaultValue={form.values.artwork_url ?? ''}
+                  label='Image URL'
+                  onBlur={async (e) => {
+                    setIsValidImageURL(!e.target?.value ? true : await isValidImage(e.target?.value));
+                    form.setFieldValue('artwork_url', e.target?.value);
+                  }}
+                  error={isValidImageURL ? false : 'Invalid URL'}
+                />
+                <Switch
+                  label='Override Class Operations'
+                  labelPosition='left'
+                  {...form.getInputProps('override_class_operations', { type: 'checkbox' })}
+                />
+                <Group wrap='nowrap'>
+                  <Text fz='sm'>Override Class Skill Trainings</Text>
+                  <NumberInput
+                    size='xs'
+                    placeholder='#'
+                    max={20}
+                    {...form.getInputProps('override_skill_training_base')}
+                  />
+                </Group>
+                <Divider />
+              </Stack>
+            </Collapse>
 
             {displayDescription && (
               <RichTextInput

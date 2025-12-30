@@ -27,7 +27,11 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { addedClassSkillTrainings } from '@operations/operation-controller';
+import {
+  getClassOperations,
+  getClassSkillTrainings,
+  getClassSkillTrainingsNum,
+} from '@operations/operation-controller';
 import { OperationResult } from '@operations/operation-runner';
 import {
   IconBadgesFilled,
@@ -579,7 +583,15 @@ export function convertClassOperationsIntoUI(
   charState: [Character | null, SetterOrUpdater<Character | null>],
   isClass2?: boolean
 ) {
-  const classOperations = class_.operations ?? [];
+  const classOperations = getClassOperations(
+    class_,
+    isClass2 ? charState[0]?.details?.class_archetype_2 : charState[0]?.details?.class_archetype
+  );
+  const baseTrainings = getClassSkillTrainingsNum(
+    class_,
+    isClass2 ? charState[0]?.details?.class_archetype_2 : charState[0]?.details?.class_archetype
+  );
+
   const MODE = mode;
   const writeDetails =
     MODE === 'READ/WRITE'
@@ -622,17 +634,12 @@ export function convertClassOperationsIntoUI(
     if (MODE === 'READ') {
       additionalSkillTrainings = [
         {
-          ui: (
-            <>
-              Trained in a number of additional skills equal to {class_.skill_training_base} plus your Intelligence
-              modifier
-            </>
-          ),
+          ui: <>Trained in a number of additional skills equal to {baseTrainings} plus your Intelligence modifier</>,
           operation: null,
         },
       ];
     } else if (MODE === 'READ/WRITE') {
-      const skillTrainingOps = addedClassSkillTrainings('CHARACTER', class_.skill_training_base);
+      const skillTrainingOps = getClassSkillTrainings('CHARACTER', baseTrainings);
       for (const op of skillTrainingOps) {
         const result = getDisplay('CHARACTER', { value: 'T', increases: 0 }, op, undefined, 'READ/WRITE', writeDetails);
         additionalSkillTrainings.push({
