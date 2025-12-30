@@ -774,6 +774,7 @@ export function CreateCreatureModal(props: {
                       setDescription(json);
                       form.setFieldValue('details.description', text);
                     }}
+                    maxHeight={500}
                   />
                 )}
               </Tabs.Panel>

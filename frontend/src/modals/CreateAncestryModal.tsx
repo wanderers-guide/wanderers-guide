@@ -166,6 +166,7 @@ export function CreateAncestryModal(props: {
                   setDescription(json);
                   form.setFieldValue('description', text);
                 }}
+                maxHeight={500}
               />
             )}
 

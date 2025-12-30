@@ -81,7 +81,7 @@ export default function NotesPanel(props: {
           onChange={(text, json) => {
             setDebouncedJson({ index: index, json: json });
           }}
-          minHeight={props.panelHeight}
+          height={props.panelHeight}
           hasColorOptions={true}
         />
         {isPhone && (

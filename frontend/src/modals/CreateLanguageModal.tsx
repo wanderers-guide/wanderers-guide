@@ -147,6 +147,7 @@ export function CreateLanguageModal(props: {
                   setDescription(json);
                   form.setFieldValue('description', text);
                 }}
+                maxHeight={500}
               />
             )}
 

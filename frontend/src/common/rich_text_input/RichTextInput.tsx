@@ -1,5 +1,5 @@
 import { RichTextEditor } from '@mantine/tiptap';
-import { JSONContent, useEditor } from '@tiptap/react';
+import { Extension, JSONContent, useEditor } from '@tiptap/react';
 import Highlight from '@tiptap/extension-highlight';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -27,7 +27,8 @@ interface RichTextInputProps {
   value?: string | JSONContent;
   onChange?: (text: string, json: JSONContent) => void;
   placeholder?: string;
-  minHeight?: number;
+  height?: number;
+  maxHeight?: number;
   hasColorOptions?: boolean;
 }
 
@@ -43,12 +44,12 @@ export default function RichTextInput(props: RichTextInputProps) {
       ActionSymbol,
       Superscript,
       SubScript,
-      Highlight.configure({ multicolor: true }),
+      props.hasColorOptions ? Highlight.configure({ multicolor: true }) : undefined,
+      props.hasColorOptions ? Color : undefined,
       TextStyle,
-      Color,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder: props.placeholder }),
-    ],
+    ].filter((e) => e !== undefined) as Extension[],
     content: props.value ?? '',
     onUpdate({ editor }) {
       if (props.onChange) {
@@ -103,7 +104,9 @@ export default function RichTextInput(props: RichTextInputProps) {
             backgroundColor: theme.colors.dark[6],
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
-            minHeight: props.minHeight ? props.minHeight - 50 : undefined,
+            display: 'flex',
+            '--rich-text-editor-max-height': props.maxHeight ? `${props.maxHeight - 50}px` : undefined,
+            '--rich-text-editor-height': props.height ? `${props.height - 50}px` : undefined,
           },
         }}
       >

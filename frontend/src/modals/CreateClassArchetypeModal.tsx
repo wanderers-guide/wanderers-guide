@@ -238,6 +238,7 @@ export function CreateClassArchetypeModal(props: {
                   setDescription(json);
                   form.setFieldValue('description', text);
                 }}
+                maxHeight={500}
               />
             )}
 
