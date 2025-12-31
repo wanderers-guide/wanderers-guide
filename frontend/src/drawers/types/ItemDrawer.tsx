@@ -9,6 +9,7 @@ import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
 import {
   compileTraits,
+  determineItemMetaType,
   getItemHealth,
   isItemArchaic,
   isItemArmor,
@@ -65,8 +66,6 @@ import { titleCase } from 'title-case';
 export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   const id = props.data.id;
 
-  console.log(props.data);
-
   const { data: _item } = useQuery({
     queryKey: [`find-item-${id}`, { id }],
     queryFn: async ({ queryKey }) => {
@@ -87,11 +86,6 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
   });
   const item = props.data.item ?? _item;
 
-  let type = `Item ${item?.level}`;
-  if (item?.meta_data?.unselectable && item.level === 0) {
-    type = '';
-  }
-
   return (
     <>
       {item && (
@@ -104,7 +98,7 @@ export function ItemDrawerTitle(props: { data: { id?: number; item?: Item } }) {
               </Title>
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>{determineItemMetaType(item, true)}</Text>
         </Group>
       )}
     </>

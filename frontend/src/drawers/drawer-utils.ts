@@ -6,10 +6,11 @@ export function convertContentLink(input: { type: ContentType | AbilityBlockType
   type: DrawerType;
   data: any;
 } {
+  const _id = parseInt(input.id);
   return {
     type: input.type,
     data: {
-      id: parseInt(input.id) ? parseInt(input.id) : input.id,
+      id: isNaN(_id) ? input.id : _id,
       readOnly: true,
     },
   };

@@ -1,5 +1,5 @@
 import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
 import { GUIDE_BLUE } from '@constants/data';
@@ -76,6 +76,7 @@ const modals = {
 
 export default function App() {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
   const isPhone = useMediaQuery(phoneQuery());
 
   const [session, setSession] = useRecoilState(sessionState);
@@ -160,11 +161,22 @@ export default function App() {
       const openValue = searchParams.get('open');
       if (openValue) {
         const contentData = getContentDataFromHref(openValue);
-        const drawerData = contentData ? convertContentLink(contentData) : null;
-        if (drawerData) {
+        if (contentData?.type === 'creature') {
           setTimeout(() => {
-            openDrawer(drawerData);
+            openCreatureDrawer({
+              data: {
+                id: parseInt(contentData.id),
+                readOnly: true,
+              },
+            });
           }, 500);
+        } else {
+          const drawerData = contentData ? convertContentLink(contentData) : null;
+          if (drawerData) {
+            setTimeout(() => {
+              openDrawer(drawerData);
+            }, 500);
+          }
         }
         //removeQueryParam('open');
       }

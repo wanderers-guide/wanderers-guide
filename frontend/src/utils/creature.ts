@@ -1,5 +1,5 @@
 import { createDefaultOperation } from '@operations/operation-utils';
-import { ActionCost, ContentSource, Creature } from '@typing/content';
+import { ActionCost, ContentSource, Creature, Trait } from '@typing/content';
 import { OperationAddBonusToValue, OperationAdjValue, OperationGiveTrait, OperationSetValue } from '@typing/operations';
 import { sign } from './numbers';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
@@ -9,15 +9,30 @@ import { cloneDeep } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { parseCreatureStatBlock } from '@ai/open-ai-handler';
 import { convertGranularCreature } from '@upload/creature-import';
-import { fetchContentById } from '@content/content-store';
+import { fetchContentById, fetchTraits, getContentFast } from '@content/content-store';
 import { GranularCreature } from '@typing/index';
 
-export function findCreatureTraits(creature: Creature) {
+export function findCreatureTraits(creature: Creature): number[] {
   return (
     (creature.operations?.filter((op) => op.type === 'giveTrait') as OperationGiveTrait[]).map(
       (op) => op.data.traitId
     ) ?? []
   );
+}
+
+export function determineCompanionType(creature: Creature | null): string {
+  let companionType = 'Creature';
+  if (!creature) {
+    return companionType;
+  }
+
+  const traits = getContentFast<Trait>('trait', creature ? findCreatureTraits(creature) : []);
+  const companionTraits = traits.filter((trait) => trait.meta_data?.companion_type_trait);
+  if (companionTraits.length === 0) {
+    return companionType;
+  }
+
+  return companionTraits[0].name;
 }
 
 export function adjustCreature(input: Creature, adjustment: 'ELITE' | 'WEAK') {

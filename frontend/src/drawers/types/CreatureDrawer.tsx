@@ -1,9 +1,9 @@
-import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
-import { fetchContentById, fetchContentPackage, getDefaultSources } from '@content/content-store';
+import { fetchContentById, fetchContentPackage, fetchTraits, getDefaultSources } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
@@ -55,7 +55,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Creature, Trait } from '@typing/content';
 import { OperationCreatureResultPackage } from '@typing/operations';
 import { getAnchorStyles } from '@utils/anchor';
-import { findCreatureTraits } from '@utils/creature';
+import { determineCompanionType, findCreatureTraits } from '@utils/creature';
 import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
@@ -65,7 +65,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
-  const theme = useMantineTheme();
   const id = props.data.id;
 
   const { data: _creature } = useQuery({
@@ -89,7 +88,9 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
               <Title order={3}>{toLabel(creature.name)}</Title>
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>Creature {getEntityLevel(creature)}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>
+            {determineCompanionType(creature)} {getEntityLevel(creature)}
+          </Text>
         </Group>
       )}
     </>

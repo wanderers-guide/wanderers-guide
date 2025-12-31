@@ -1,4 +1,4 @@
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
@@ -22,6 +22,7 @@ import {
 } from '@mantine/core';
 import { IconArrowBigRightLine, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import { Creature } from '@typing/content';
 import { setPageTitle } from '@utils/document-change';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
@@ -29,13 +30,14 @@ import { useMemo } from 'react';
 import { useLoaderData } from 'react-router-dom';
 import { useRecoilState } from 'recoil';
 
-export function Component(props: {}) {
+export function Component() {
   const { updateId } = useLoaderData() as {
     updateId: string;
   };
   setPageTitle(`Content Update #${updateId}`);
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   const { data } = useQuery({
     queryKey: [`find-content-update-${updateId}`],
@@ -149,13 +151,18 @@ export function Component(props: {}) {
                           fw={500}
                           onClick={() => {
                             if (!data.contentUpdate.ref_id) return;
-                            openDrawer(
-                              mapToDrawerData(
-                                data.contentUpdate.data?.type ?? data.contentUpdate.type,
-                                data.contentUpdate.ref_id,
-                                { showOperations: true }
-                              )
-                            );
+
+                            const type = data.contentUpdate.data?.type ?? data.contentUpdate.type;
+                            if (type === 'creature') {
+                              openCreatureDrawer({
+                                data: {
+                                  id: data.contentUpdate.ref_id,
+                                  showOperations: true,
+                                },
+                              });
+                            } else {
+                              openDrawer(mapToDrawerData(type, data.contentUpdate.ref_id, { showOperations: true }));
+                            }
                           }}
                         >
                           View Original
@@ -193,12 +200,20 @@ export function Component(props: {}) {
                           size='compact-md'
                           fw={500}
                           onClick={() => {
-                            openDrawer(
-                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
-                                noFeedback: true,
-                                showOperations: true,
-                              })
-                            );
+                            if (data.contentUpdate.type === 'creature') {
+                              openCreatureDrawer({
+                                data: {
+                                  creature: data.contentUpdate.data as Creature | undefined,
+                                },
+                              });
+                            } else {
+                              openDrawer(
+                                mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
+                                  noFeedback: true,
+                                  showOperations: true,
+                                })
+                              );
+                            }
                           }}
                         >
                           View Updated
@@ -249,12 +264,20 @@ export function Component(props: {}) {
                           size='compact-md'
                           fw={500}
                           onClick={() => {
-                            openDrawer(
-                              mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
-                                noFeedback: true,
-                                showOperations: true,
-                              })
-                            );
+                            if (data.contentUpdate.type === 'creature') {
+                              openCreatureDrawer({
+                                data: {
+                                  creature: data.contentUpdate.data as Creature | undefined,
+                                },
+                              });
+                            } else {
+                              openDrawer(
+                                mapToDrawerData(data.contentUpdate.type, data.contentUpdate.data ?? {}, {
+                                  noFeedback: true,
+                                  showOperations: true,
+                                })
+                              );
+                            }
                           }}
                         >
                           View {toLabel((data.contentUpdate.data?.type ?? data.contentUpdate.type).replace(/-/g, ' '))}

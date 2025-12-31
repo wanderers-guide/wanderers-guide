@@ -4,6 +4,7 @@ import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
+import { determineItemMetaType } from '@items/inv-utils';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
@@ -24,9 +25,10 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentType, Spell } from '@typing/content';
+import { AbilityBlockType, Character, ContentType, Creature, Item, Spell } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
+import { determineCompanionType } from '@utils/creature';
 import { displayComingSoon } from '@utils/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { setQueryParam } from '@utils/url';
@@ -362,6 +364,8 @@ async function queryResults(
     let description = `${stripMd(`${data.description}`)}`.split('.')[0] + '.';
 
     const abilityBlockType = data._type === 'ability-block' ? (data.type as AbilityBlockType) : null;
+    const companionType = data._type === 'creature' ? determineCompanionType(data as Creature) : null;
+    const itemMetaType = data._type === 'item' ? determineItemMetaType(data as Item, false) : null;
 
     if (data.level && (!abilityBlockType || +data.level > 0)) {
       description = `Lvl. ${data.level} | ` + description;
@@ -398,7 +402,7 @@ async function queryResults(
       leftSection: getIconFromContentType(data._type as ContentType, '1.5rem'),
       highlightColor: theme.colors[theme.primaryColor][2],
       keywords: ['query', `${data._type}`],
-      _type: abilityBlockType ?? data._type,
+      _type: abilityBlockType ?? companionType ?? itemMetaType ?? data._type,
     };
   });
 }

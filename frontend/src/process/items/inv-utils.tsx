@@ -975,6 +975,40 @@ export function isItemShield(item: Item) {
 }
 
 /**
+ * Utility function to determine if an item is an unarmed attack / meta-attack
+ * @param item - Item
+ * @returns - Whether the item is a meta attack
+ */
+export function isItemMetaAttack(item: Item) {
+  return !!item.meta_data?.unselectable && isItemWeapon(item);
+}
+
+/**
+ * Utility function to determine if an item is an unarmed defense / meta-defense
+ * @param item - Item
+ * @returns - Whether the item is a meta defense
+ */
+export function isItemMetaDefense(item: Item) {
+  return !!item.meta_data?.unselectable && (isItemArmor(item) || isItemShield(item));
+}
+
+/**
+ * Utility function to determine the main label for the item
+ * @param item - Item
+ * @param includeLevel - Whether to include the item level in the label
+ * @returns - Item type label
+ */
+export function determineItemMetaType(item: Item, includeLevel?: boolean): string {
+  let type = `Item ${includeLevel ? item.level : ''}`.trim();
+  if (isItemMetaAttack(item)) {
+    type = `Attack`;
+  } else if (isItemMetaDefense(item)) {
+    type = `Defense`;
+  }
+  return type;
+}
+
+/**
  * Utility function to determine if an item is archaic (old weapon from Pathfinder)
  * @param item - Item
  * @returns - Whether the item is archaic
