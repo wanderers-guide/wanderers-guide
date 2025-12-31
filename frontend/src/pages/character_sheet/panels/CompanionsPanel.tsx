@@ -180,8 +180,7 @@ function CompanionCard(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
 
-  const [drawer, openDrawer] = useRecoilState(drawerState);
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   // Health
 
@@ -200,13 +199,13 @@ function CompanionCard(props: {
     props.updateCreature(c);
 
     // If the drawer is open, do janky refresh
-    if (drawer) {
+    if (creatureDrawer) {
       handleOpenDrawer(c);
     }
   };
 
   const handleOpenDrawer = (c: Creature) => {
-    openDrawer(null);
+    openCreatureDrawer(null);
     setTimeout(() => {
       openCreatureDrawer({
         data: {
