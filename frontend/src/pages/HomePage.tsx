@@ -36,7 +36,7 @@ export function Component() {
             Journey with Guidance
           </Title>
           <Text c='gray.0' ta='center'>
-            A character builder and digital toolbox for Pathfinder Second Edition.
+            A character manager for Pathfinder and Starfinder Second Edition.
           </Text>
           <Center>
             <Button
