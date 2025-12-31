@@ -40,6 +40,7 @@ import GenerateEncounterModal from '@modals/GenerateEncounterModal';
 import { getShadesFromColor } from '@utils/colors';
 import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 import { getAnchorStyles } from '@utils/anchor';
+import BuyItemModal from '@modals/BuyItemModal';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -67,6 +68,7 @@ const modals = {
   condition: ConditionModal,
   createDicePreset: CreateDicePresetModal,
   addItems: AddItemsModal,
+  buyItem: BuyItemModal,
 };
 // declare module '@mantine/modals' {
 //   export interface MantineModalsOverride {

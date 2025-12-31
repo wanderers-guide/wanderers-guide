@@ -3,43 +3,27 @@ import { ItemSelectionOption } from '@common/select/SelectContent';
 import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import {
   ActionIcon,
-  Box,
-  Button,
   Center,
-  CloseButton,
-  Divider,
   FocusTrap,
   Group,
-  HoverCard,
-  Indicator,
   Loader,
-  MultiSelect,
   Pagination,
-  Popover,
   ScrollArea,
-  Select,
   Stack,
   Text,
   TextInput,
-  Title,
-  rem,
   useMantineTheme,
 } from '@mantine/core';
-import { getHotkeyHandler, useDidUpdate } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
-import { IconSearch, IconAdjustments, IconFilter, IconX } from '@tabler/icons-react';
+import { IconSearch, IconAdjustments, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Item, ItemGroup, Spell } from '@typing/content';
+import { Item } from '@typing/content';
 import { labelToVariable } from '@variables/variable-utils';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
-import { compileTraits } from '@items/inv-utils';
-import TraitsInput from '@common/TraitsInput';
-import useRefresh from '@utils/use-refresh';
 import { isItemVisible } from '@content/content-hidden';
-import { intersection } from 'lodash-es';
 import { AdvancedSearchModal } from './AdvancedSearchModal';
 
 export default function AddItemsModal({

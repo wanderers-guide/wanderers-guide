@@ -50,7 +50,6 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { modals, openContextModal } from '@mantine/modals';
-import { BuyItemModal } from '@modals/BuyItemModal';
 import { CreateItemModal } from '@modals/CreateItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconCoins, IconMenu2, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
@@ -76,7 +75,6 @@ export default function InventoryPanel(props: {
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
   const [creatingCustomItem, setCreatingCustomItem] = useState(false);
 
   const visibleInvItems =
@@ -130,7 +128,39 @@ export default function InventoryPanel(props: {
         onAddItem: async (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
           if (!props.entity) return;
           if (type === 'BUY') {
-            setConfirmBuyItem({ item });
+            openContextModal({
+              modal: 'buyItem',
+              title: <Title order={3}>Buy {item.name}</Title>,
+              innerProps: {
+                inventory: props.entity?.inventory,
+                item: item,
+                onConfirm: async (coins: { cp: number; sp: number; gp: number; pp: number }) => {
+                  if (!props.entity) return;
+                  await handleAddItem(props.setEntity, item, false);
+
+                  // Update coins
+                  props.setEntity((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      inventory: {
+                        ...(prev?.inventory ?? {
+                          coins: {
+                            cp: 0,
+                            sp: 0,
+                            gp: 0,
+                            pp: 0,
+                          },
+                          items: [],
+                        }),
+                        coins: coins,
+                      },
+                    };
+                  });
+                },
+              },
+              zIndex: 1000,
+            });
           } else {
             await handleAddItem(props.setEntity, item, type === 'FORMULA');
           }
@@ -211,7 +241,15 @@ export default function InventoryPanel(props: {
           {isPhone ? (
             <Menu shadow='md' width={140} zIndex={props.zIndex ?? 499}>
               <Menu.Target>
-                <ActionIcon variant='light' color='gray' size='lg' aria-label='Inventory Options'>
+                <ActionIcon
+                  variant='light'
+                  color='gray.5'
+                  size='lg'
+                  aria-label='Inventory Options'
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  }}
+                >
                   <IconMenu2 style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
               </Menu.Target>
@@ -496,38 +534,6 @@ export default function InventoryPanel(props: {
           </Accordion>
         </ScrollArea>
       </Stack>
-      {confirmBuyItem && (
-        <BuyItemModal
-          open={!!confirmBuyItem}
-          inventory={props.entity?.inventory}
-          item={confirmBuyItem.item}
-          onConfirm={async (coins) => {
-            if (!props.entity) return;
-            await handleAddItem(props.setEntity, confirmBuyItem.item, false);
-
-            // Update coins
-            props.setEntity((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                inventory: {
-                  ...(prev?.inventory ?? {
-                    coins: {
-                      cp: 0,
-                      sp: 0,
-                      gp: 0,
-                      pp: 0,
-                    },
-                    items: [],
-                  }),
-                  coins: coins,
-                },
-              };
-            });
-          }}
-          onClose={() => setConfirmBuyItem(undefined)}
-        />
-      )}
 
       {creatingCustomItem && (
         <CreateItemModal

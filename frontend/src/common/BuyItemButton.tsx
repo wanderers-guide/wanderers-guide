@@ -14,8 +14,8 @@ export function BuyItemButton(props: { onBuy: () => void; onGive: () => void; on
         e.preventDefault();
       }}
     >
-      <Button className={classes.button} onClick={props.onBuy} size='compact-xs'>
-        Buy
+      <Button className={classes.button} onClick={props.onGive} size='compact-xs'>
+        Give
       </Button>
       <Menu transitionProps={{ transition: 'pop' }} position='bottom-end' withinPortal>
         <Menu.Target>
@@ -24,30 +24,8 @@ export function BuyItemButton(props: { onBuy: () => void; onGive: () => void; on
           </ActionIcon>
         </Menu.Target>
         <Menu.Dropdown style={{ zIndex: 10000 }}>
-          <Menu.Item
-            onClick={props.onGive}
-            // leftSection={
-            //   <IconBookmark
-            //     style={{ width: rem(16), height: rem(16) }}
-            //     stroke={1.5}
-            //     color={theme.colors.blue[5]}
-            //   />
-            // }
-          >
-            Give
-          </Menu.Item>
-          <Menu.Item
-            onClick={props.onFormula}
-            // leftSection={
-            //   <IconTrash
-            //     style={{ width: rem(16), height: rem(16) }}
-            //     stroke={1.5}
-            //     color={theme.colors.blue[5]}
-            //   />
-            // }
-          >
-            Formula
-          </Menu.Item>
+          <Menu.Item onClick={props.onBuy}>Buy</Menu.Item>
+          <Menu.Item onClick={props.onFormula}>Formula</Menu.Item>
         </Menu.Dropdown>
       </Menu>
     </Group>
