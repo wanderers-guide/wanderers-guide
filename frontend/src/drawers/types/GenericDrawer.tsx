@@ -1,19 +1,12 @@
 import RichText from '@common/RichText';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Group, Box, Button } from '@mantine/core';
-import { Operation } from '@typing/operations';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { toLabel } from '@utils/strings';
+import { GenericData } from '@typing/index';
 
-export type GenericData = {
-  title: string;
-  description: string;
-  operations?: Operation[];
-  showOperations?: boolean;
-  onSelect?: () => void;
-};
 export function GenericDrawerTitle(props: { data: GenericData }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 

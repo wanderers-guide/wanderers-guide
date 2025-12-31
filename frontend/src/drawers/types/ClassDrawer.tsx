@@ -32,7 +32,7 @@ import {
   getClassSkillTrainings,
   getClassSkillTrainingsNum,
 } from '@operations/operation-controller';
-import { OperationResult } from '@operations/operation-runner';
+import { OperationResult } from '@typing/operations';
 import {
   IconBadgesFilled,
   IconEyeFilled,

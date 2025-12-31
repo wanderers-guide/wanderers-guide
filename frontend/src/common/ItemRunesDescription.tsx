@@ -70,7 +70,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
         <Box pb={10}>
           <Divider mb='sm' label='Property Runes' />
           {propertyRunes.map((rune, index) => (
-            <>
+            <Box key={index}>
               {index > 0 && <Divider my='sm' />}
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
@@ -96,7 +96,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
                 </Button>
               </Group>
               <RichText>{rune.rune?.description}</RichText>
-            </>
+            </Box>
           ))}
         </Box>
       )}
@@ -105,7 +105,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
         <Box>
           <Divider mb='sm' label='Fundamental Runes' />
           {fundamentalRunes.map((rune, index) => (
-            <>
+            <Box key={index}>
               {index > 0 && <Divider my='sm' />}
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
@@ -131,7 +131,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
                 </Button>
               </Group>
               <RichText>{rune?.description}</RichText>
-            </>
+            </Box>
           ))}
         </Box>
       )}
@@ -154,7 +154,7 @@ export function ItemUpgradesDescription(props: { item: Item }) {
     <>
       <Divider mb='sm' />
       {slots.map((slot, index) => (
-        <>
+        <Box key={index}>
           {index > 0 && <Divider my='sm' />}
           <Group align='start' justify='space-between' pb={2}>
             <Box>
@@ -180,7 +180,7 @@ export function ItemUpgradesDescription(props: { item: Item }) {
             </Button>
           </Group>
           <RichText>{slot.upgrade?.description}</RichText>
-        </>
+        </Box>
       ))}
     </>
   );

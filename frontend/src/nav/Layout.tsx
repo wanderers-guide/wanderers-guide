@@ -1,4 +1,3 @@
-import { userIconState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import classes from '@css/Layout.module.css';
 import {
@@ -19,29 +18,26 @@ import {
 import { useDisclosure, useMediaQuery, useViewportSize } from '@mantine/hooks';
 import {
   IconAsset,
-  IconChefHat,
   IconChevronDown,
   IconFlag,
   IconLayersIntersect,
   IconLogout,
   IconSettings,
-  IconSoup,
-  IconSpeakerphone,
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilValue } from 'recoil';
 import { supabase } from '../main';
 import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
-import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
 import { useQueryClient } from '@tanstack/react-query';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();

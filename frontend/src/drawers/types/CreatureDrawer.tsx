@@ -5,7 +5,8 @@ import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
 import { fetchContentById, fetchContentPackage, fetchTraits, getDefaultSources } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
-import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
+import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
+import { applyEquipmentPenalties } from '@items/inv-utils';
 import {
   Title,
   Loader,
@@ -22,10 +23,10 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
-import { executeCreatureOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operation-controller';
 import { convertKeyToBasePrefix } from '@operations/operation-utils';
 import { DisplayOperationResult } from '@pages/character_builder/CharBuilderCreation';
-import { confirmHealth, getEntityLevel, handleRest } from '@pages/character_sheet/living-entity-utils';
+import { confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';
 import CreatureAbilitiesPanel from '@pages/character_sheet/panels/CreatureAbilitiesPanel';
 import CreatureDetailsPanel from '@pages/character_sheet/panels/CreatureDetailsPanel';
 import InventoryPanel from '@pages/character_sheet/panels/InventoryPanel';
@@ -56,11 +57,12 @@ import { Creature, Trait } from '@typing/content';
 import { OperationCreatureResultPackage } from '@typing/operations';
 import { getAnchorStyles } from '@utils/anchor';
 import { determineCompanionType, findCreatureTraits } from '@utils/creature';
+import { getEntityLevel } from '@utils/entity-utils';
 import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
-import { getFinalHealthValue } from '@variables/variable-display';
+import { getFinalHealthValue } from '@variables/variable-helpers';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -181,7 +183,14 @@ export function CreatureDrawerContent(props: {
     setTimeout(() => {
       if (!creature || !content || executingOperations.current) return;
       executingOperations.current = true;
-      executeCreatureOperations(STORE_ID, creature, content).then((results) => {
+      executeOperations<OperationCreatureResultPackage>({
+        type: 'CREATURE',
+        data: {
+          id: STORE_ID,
+          creature,
+          content,
+        },
+      }).then((results) => {
         // Final execution pipeline:
 
         // Add the extra items to the inventory from variables

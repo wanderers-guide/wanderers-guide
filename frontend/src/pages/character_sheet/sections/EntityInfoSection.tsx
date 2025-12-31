@@ -8,13 +8,14 @@ import { StoreID } from '@typing/variables';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
-import { confirmExperience, getEntityLevel, handleRest } from '../living-entity-utils';
+import { confirmExperience, handleRest } from '../entity-handler';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@typing/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
 import { ICON_BG_COLOR } from '@constants/data';
 import { modals } from '@mantine/modals';
+import { getEntityLevel } from '@utils/entity-utils';
 
 export default function EntityInfoSection(props: {
   id: StoreID;

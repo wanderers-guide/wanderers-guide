@@ -5,7 +5,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Anchor, Box, Button, Group, Image, Loader, Paper, Stack, Text, Title, useMantineTheme } from '@mantine/core';
-import { OperationResult } from '@operations/operation-runner';
+import { OperationResult } from '@typing/operations';
 import { useQuery } from '@tanstack/react-query';
 import { Background, Character } from '@typing/content';
 import { DrawerType } from '@typing/index';

@@ -6,7 +6,7 @@ import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-m
 import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
 import { toLabel } from './strings';
 import { cloneDeep } from 'lodash-es';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { parseCreatureStatBlock } from '@ai/open-ai-handler';
 import { convertGranularCreature } from '@upload/creature-import';
 import { fetchContentById, fetchTraits, getContentFast } from '@content/content-store';

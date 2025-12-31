@@ -6,7 +6,6 @@ import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
-import { GenericData } from '@drawers/types/GenericDrawer';
 import { isItemArchaic } from '@items/inv-utils';
 import {
   ActionIcon,
@@ -58,7 +57,7 @@ import {
   IconZoomQuestion,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { DrawerType } from '@typing/index';
+import { DrawerType, GenericData } from '@typing/index';
 import { OperationSelectOptionCustom } from '@typing/operations';
 import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
@@ -66,7 +65,7 @@ import { pluralize, toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
-import { getFinalProfValue } from '@variables/variable-display';
+import { getFinalProfValue } from '@variables/variable-helpers';
 import {
   getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
@@ -102,7 +101,7 @@ import {
 } from '../../typing/content';
 import { adjustCreature } from '@utils/creature';
 import { intersection, isNumber } from 'lodash-es';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {

@@ -28,8 +28,8 @@ import {
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { CreateCombatantModal } from '@modals/CreateCombatantModal';
-import { executeCreatureOperations } from '@operations/operation-controller';
-import { confirmHealth, getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { executeOperations } from '@operations/operation-controller';
+import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { ConditionPills, selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { makeRequest } from '@requests/request-manager';
 import {
@@ -46,12 +46,13 @@ import {
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Campaign, Character, Combatant, Creature, Encounter, LivingEntity } from '@typing/content';
+import { getEntityLevel } from '@utils/entity-utils';
 import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { rollDie } from '@utils/random';
 import { isCharacter, isCreature, setterOrUpdaterToValue } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
-import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-helpers';
 import { cloneDeep, debounce, isEqual, mean, truncate } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1207,7 +1208,14 @@ async function computeCombatants(combatants: PopulatedCombatant[]) {
       // Variable store ID
       const STORE_ID = getCombatantStoreID(combatant);
 
-      await executeCreatureOperations(STORE_ID, creature, content);
+      await executeOperations({
+        type: 'CREATURE',
+        data: {
+          id: STORE_ID,
+          creature,
+          content,
+        },
+      });
       // Apply conditions after everything else
       applyConditions(STORE_ID, creature.details?.conditions ?? []);
 

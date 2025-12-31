@@ -13,7 +13,9 @@ export async function getPublicUser(id?: string) {
 
     if (!id) {
       // Only store if we're fetching the current user
-      localStorage.setItem('user-data', JSON.stringify(user ?? {}));
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('user-data', JSON.stringify(user ?? {}));
+      }
     }
     return user;
   } catch (e) {
@@ -23,10 +25,16 @@ export async function getPublicUser(id?: string) {
 }
 
 export function getCachedPublicUser(): PublicUser | null {
-  const data = localStorage.getItem('user-data');
-  return data ? JSON.parse(data) : null;
+  if (typeof localStorage !== 'undefined') {
+    const data = localStorage.getItem('user-data');
+    return data ? JSON.parse(data) : null;
+  } else {
+    return null;
+  }
 }
 
 export function clearUserData() {
-  localStorage.removeItem('user-data');
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('user-data');
+  }
 }

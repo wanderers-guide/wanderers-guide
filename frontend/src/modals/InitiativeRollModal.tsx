@@ -4,7 +4,7 @@ import { getCombatantStoreID, PopulatedCombatant } from '@pages/campaign/panels/
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
-import { getFinalProfValue } from '@variables/variable-display';
+import { getFinalProfValue } from '@variables/variable-helpers';
 import { getAllSkillVariables } from '@variables/variable-manager';
 import { useEffect, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';

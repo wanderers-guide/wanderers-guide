@@ -3,35 +3,57 @@ import { getCachedPublicUser } from '@auth/user-manager';
 import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
-import { addExtraItems, checkBulkLimit, applyEquipmentPenalties } from '@items/inv-utils';
+import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
-import { executeCharacterOperations } from '@operations/operation-controller';
-import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
+import { executeOperations } from '@operations/operation-controller';
+import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { makeRequest } from '@requests/request-manager';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Character, ContentPackage, Inventory } from '@typing/content';
 import { OperationCharacterResultPackage } from '@typing/operations';
 import { saveCalculatedStats } from '@variables/calculated-stats';
-import { getFinalHealthValue } from '@variables/variable-display';
 import { setVariable } from '@variables/variable-manager';
 import { isEqual, isArray, cloneDeep } from 'lodash-es';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { convertToSetEntity } from './type-fixing';
 import { IconRefresh } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
+import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
+import { getFinalHealthValue } from '@variables/variable-helpers';
+
+interface CharStateOptionsGeneric {
+  type: string;
+  data?: Record<string, any>;
+}
+
+interface CharStateOptionsExecuteOps extends CharStateOptionsGeneric {
+  type: 'EXECUTE_OPS';
+  data: {
+    content: ContentPackage;
+    context: 'CHARACTER-SHEET' | 'CHARACTER-BUILDER';
+    onFinishLoading: () => void;
+  };
+}
+
+interface CharStateOptionsSimple extends CharStateOptionsGeneric {
+  type: 'SIMPLE';
+  data?: {};
+}
+
+type CharStateOptions = CharStateOptionsExecuteOps | CharStateOptionsSimple;
 
 export default function useCharacter(
   characterId: number,
-  content: ContentPackage,
-  onFinishLoading?: () => void
+  options: CharStateOptions
 ): {
   character: Character | null;
   setCharacter: SetterOrUpdater<Character | null>;
   //
-  isLoaded: boolean;
+  isLoading: boolean;
+  results: OperationCharacterResultPackage | null;
 } {
   const [character, setCharacter] = useRecoilState(characterState);
 
@@ -82,11 +104,11 @@ export default function useCharacter(
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
-  const [executingOperations, setExecutingOperations] = useState(false);
+  const executingOperations = useRef(false);
 
-  const [debouncedCharacter] = useDebouncedValue(character, 1000);
+  const [debouncedCharacter] = useDebouncedValue(character, 200);
   const prevDebouncedCharacter = usePrevious(debouncedCharacter);
-  const setCharacterDebounced = useDebouncedCallback(setCharacter, 1000);
+  const setCharacterDebounced = useDebouncedCallback(setCharacter, 200);
 
   const getUpdateHash = (c: Character | null | undefined) => {
     return hashData(
@@ -122,82 +144,89 @@ export default function useCharacter(
   };
 
   useEffect(() => {
+    if (options.type !== 'EXECUTE_OPS') {
+      return;
+    }
     if (
       !debouncedCharacter ||
-      executingOperations ||
+      executingOperations.current ||
       getUpdateHash(prevDebouncedCharacter) === getUpdateHash(debouncedCharacter)
     )
       return;
-    setTimeout(() => {
-      if (
-        !debouncedCharacter ||
-        executingOperations ||
-        getUpdateHash(prevDebouncedCharacter) === getUpdateHash(debouncedCharacter)
-      )
-        return;
 
-      console.log('> Executing ops #', getUpdateHash(debouncedCharacter));
+    console.log('> Executing ops #', getUpdateHash(debouncedCharacter));
+    executingOperations.current = true;
+    executeOperations<OperationCharacterResultPackage>({
+      type: 'CHARACTER',
+      data: {
+        character: debouncedCharacter,
+        content: options.data.content,
+        context: options.data.context,
+      },
+    }).then((results) => {
+      // Final execution pipeline:
+      console.log('... Finished executing ops #', getUpdateHash(debouncedCharacter));
 
-      setExecutingOperations(true);
-      executeCharacterOperations(debouncedCharacter, content, 'CHARACTER-SHEET').then((results) => {
-        // Final execution pipeline:
+      if (debouncedCharacter.variants?.proficiency_without_level) {
+        setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
+      }
 
-        if (debouncedCharacter.variants?.proficiency_without_level) {
-          setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
-        }
+      // Add the extra items to the inventory from variables
+      addExtraItems(
+        'CHARACTER',
+        options.data.content.items,
+        debouncedCharacter,
+        convertToSetEntity(setCharacterDebounced)
+      );
 
-        // Add the extra items to the inventory from variables
-        addExtraItems('CHARACTER', content.items, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+      // Check bulk limits
+      checkBulkLimit(
+        'CHARACTER',
+        debouncedCharacter,
+        convertToSetEntity(setCharacterDebounced),
+        debouncedCharacter.options?.ignore_bulk_limit !== true
+      );
 
-        // Check bulk limits
-        checkBulkLimit(
-          'CHARACTER',
-          debouncedCharacter,
-          convertToSetEntity(setCharacterDebounced),
-          debouncedCharacter.options?.ignore_bulk_limit !== true
-        );
+      // Apply armor/shield penalties
+      applyEquipmentPenalties('CHARACTER', debouncedCharacter);
 
-        // Apply armor/shield penalties
-        applyEquipmentPenalties('CHARACTER', debouncedCharacter);
+      // Apply conditions after everything else
+      applyConditions('CHARACTER', debouncedCharacter.details?.conditions ?? []);
 
-        // Apply conditions after everything else
-        applyConditions('CHARACTER', debouncedCharacter.details?.conditions ?? []);
+      if (debouncedCharacter.meta_data?.reset_hp !== false) {
+        // To reset hp, we need to confirm health
 
-        if (debouncedCharacter.meta_data?.reset_hp !== false) {
-          // To reset hp, we need to confirm health
-
-          const handleRestHP = () => {
-            const maxHealth = getFinalHealthValue('CHARACTER');
-            confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
-          };
-
-          // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
-          handleRestHP();
-          setTimeout(() => {
-            handleRestHP();
-          }, 1500);
-        } else {
-          // Because of the drained condition, let's confirm health
+        const handleRestHP = () => {
           const maxHealth = getFinalHealthValue('CHARACTER');
-          confirmHealth(
-            `${debouncedCharacter.hp_current}`,
-            maxHealth,
-            debouncedCharacter,
-            convertToSetEntity(setCharacterDebounced)
-          );
-        }
+          confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+        };
 
-        // Save calculated stats
-        saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(setCharacterDebounced));
-
-        setOperationResults(results);
-        setExecutingOperations(false);
-
+        // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
+        handleRestHP();
         setTimeout(() => {
-          onFinishLoading?.();
-        }, 100);
-      });
-    }, 1);
+          handleRestHP();
+        }, 1500);
+      } else {
+        // Because of the drained condition, let's confirm health
+        const maxHealth = getFinalHealthValue('CHARACTER');
+        confirmHealth(
+          `${debouncedCharacter.hp_current}`,
+          maxHealth,
+          debouncedCharacter,
+          convertToSetEntity(setCharacterDebounced)
+        );
+      }
+
+      // Save calculated stats
+      saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+
+      setOperationResults(results);
+      executingOperations.current = false;
+
+      setTimeout(() => {
+        options.data.onFinishLoading?.();
+      }, 100);
+    });
   }, [debouncedCharacter]);
 
   // Update character in db when state changed
@@ -271,9 +300,18 @@ export default function useCharacter(
     enabled: false, // notRecentlyUpdated, Fix polling on char item update
   });
 
+  const isFinished =
+    // There must be a character
+    !!character &&
+    // It must be the requested one
+    character.id === characterId &&
+    // There must be some operation results if ops were executed
+    (options.type === 'EXECUTE_OPS' ? !!operationResults : true);
+
   return {
     character,
     setCharacter,
-    isLoaded: !!operationResults,
+    isLoading: !isFinished,
+    results: operationResults ?? null,
   };
 }

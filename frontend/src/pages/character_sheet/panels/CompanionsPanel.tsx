@@ -22,20 +22,21 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { evaluate } from 'mathjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { confirmHealth, getEntityLevel } from '../living-entity-utils';
+import { confirmHealth } from '../entity-handler';
 import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { ConditionPills, selectCondition } from '../sections/ConditionSection';
 import { setterOrUpdaterToValue } from '@utils/type-fixing';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
-import { executeCreatureOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operation-controller';
 import { applyConditions } from '@conditions/condition-handler';
-import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-helpers';
 import { getBestArmor } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 import { selectContent } from '@common/select/SelectContent';
 import { hasTraitType } from '@utils/traits';
+import { getEntityLevel } from '@utils/entity-utils';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -460,7 +461,14 @@ async function computeCompanions(companions: Creature[]) {
     // Variable store ID
     const STORE_ID = `COMPANION_${index}`;
 
-    await executeCreatureOperations(STORE_ID, creature, content);
+    await executeOperations({
+      type: 'CREATURE',
+      data: {
+        id: STORE_ID,
+        creature,
+        content,
+      },
+    });
     // Apply conditions after everything else
     applyConditions(STORE_ID, creature.details?.conditions ?? []);
 

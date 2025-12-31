@@ -22,7 +22,7 @@ import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { isEqual, uniqWith } from 'lodash-es';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 
 /**
  * Modal for creating or editing a creature

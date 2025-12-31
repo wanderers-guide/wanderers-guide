@@ -8,8 +8,8 @@ import {
   getDefaultSources,
 } from '@content/content-store';
 import { isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
-import { executeCharacterOperations } from '@operations/operation-controller';
-import { OperationResult } from '@operations/operation-runner';
+import { executeOperations } from '@operations/operation-controller';
+import { OperationResult } from '@typing/operations';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Character } from '@typing/content';
@@ -237,7 +237,14 @@ export async function importFromFTC(d: FTC) {
   let hasSelections = true;
   let iteration = 0;
   while (hasSelections) {
-    const results = await executeCharacterOperations(cloneDeep(character), content, 'CHARACTER-BUILDER');
+    const results = await executeOperations<OperationCharacterResultPackage>({
+      type: 'CHARACTER',
+      data: {
+        character: cloneDeep(character),
+        content,
+        context: 'CHARACTER-BUILDER',
+      },
+    });
     const found = findFirstSelection(results, checked);
 
     if (found) {

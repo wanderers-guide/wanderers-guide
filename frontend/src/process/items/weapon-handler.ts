@@ -1,7 +1,7 @@
 import { Item } from '@typing/content';
 import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
-import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-display';
+import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, labelToVariable } from '@variables/variable-utils';
 import { compileTraits, getGradeImprovements, isItemRangedWeapon } from './inv-utils';

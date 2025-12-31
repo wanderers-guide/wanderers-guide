@@ -6,7 +6,8 @@ import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { getContentFast } from '@content/content-store';
-import { isItemWeapon, handleUpdateItem, handleDeleteItem, handleMoveItem } from '@items/inv-utils';
+import { handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
+import { isItemWeapon } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   useMantineTheme,

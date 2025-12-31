@@ -8,7 +8,7 @@ import { isActionCost } from '@content/content-utils';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Group, Divider, Box, Button, Paper } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { getSpellStats } from '@spells/spell-handler';
 import { getHeighteningData, getSpellRank, isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';

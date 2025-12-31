@@ -3,7 +3,7 @@ import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-cont
 import { filterByTraitType } from '@items/inv-utils';
 import { LivingEntity } from '@typing/content';
 import { StoreID, VariableAttr, VariableNum, VariableProf } from '@typing/variables';
-import { getFinalHealthValue } from '@variables/variable-display';
+import { getFinalHealthValue } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';
 import { evaluate } from 'mathjs';
@@ -289,12 +289,4 @@ export function handleRest(id: StoreID, entity: LivingEntity, setEntity?: Setter
   // Update the entity
   setEntity?.(newEntity);
   return cloneDeep(newEntity);
-}
-
-export function getEntityLevel(entity: LivingEntity) {
-  if (entity.level === -100) {
-    return getVariable<VariableNum>('CHARACTER', 'LEVEL')?.value ?? 0;
-  } else {
-    return entity.level;
-  }
 }

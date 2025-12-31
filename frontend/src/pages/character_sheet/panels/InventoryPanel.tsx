@@ -15,10 +15,6 @@ import {
   getInvBulk,
   getItemBulk,
   getItemQuantity,
-  handleAddItem,
-  handleDeleteItem,
-  handleMoveItem,
-  handleUpdateItem,
   isItemContainer,
   isItemEquippable,
   isItemImplantable,
@@ -29,6 +25,7 @@ import {
   reachedImplantLimit,
   reachedInvestedLimit,
 } from '@items/inv-utils';
+import { handleAddItem, handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Accordion,

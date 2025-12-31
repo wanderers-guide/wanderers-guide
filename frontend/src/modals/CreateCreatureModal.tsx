@@ -1,6 +1,6 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { DISCORD_URL } from '@constants/data';
+import { DISCORD_URL } from '@constants/urls';
 import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {

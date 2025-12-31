@@ -1,4 +1,3 @@
-import { throwError } from '@utils/notifications';
 import { isBoolean, isNumber, isString } from 'lodash-es';
 import {
   AttributeValue,
@@ -16,11 +15,12 @@ import {
   VariableStr,
   VariableType,
   VariableValue,
-} from 'src/typing/variables';
+} from '@typing/variables';
 import { getVariables } from './variable-manager';
-import { evaluate, to } from 'mathjs/number';
-import { getFinalVariableValue } from './variable-display';
+import { evaluate } from 'mathjs/number';
+import { getFinalVariableValue } from './variable-helpers';
 import { toLabel } from '@utils/strings';
+import { throwError } from '@utils/error-handling';
 
 export function newVariable(type: VariableType, name: string, defaultValue?: VariableValue): Variable {
   if (type === 'attr') {

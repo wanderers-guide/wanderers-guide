@@ -1,6 +1,6 @@
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { fetchContentById } from '@content/content-store';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { Item, LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';

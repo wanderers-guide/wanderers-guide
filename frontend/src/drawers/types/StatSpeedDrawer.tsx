@@ -5,7 +5,7 @@ import { LivingEntity } from '@typing/content';
 import { StoreID, VariableNum } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { getBonusText, getSpeedValue, getVariableBreakdown } from '@variables/variable-display';
+import { getBonusText, getSpeedValue, getVariableBreakdown } from '@variables/variable-helpers';
 import { getAllSpeedVariables, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import { compileProficiencyType, isProficiencyValue, proficiencyTypeToLabel } from '@variables/variable-utils';
 import { useState } from 'react';

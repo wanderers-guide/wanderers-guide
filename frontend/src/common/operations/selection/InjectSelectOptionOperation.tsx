@@ -1,18 +1,14 @@
 import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { OperationWrapper } from '../Operations';
-import { Autocomplete, Group, Select, Stack } from '@mantine/core';
+import { Select, Stack } from '@mantine/core';
 import { useDidUpdate } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, ContentSource, Item } from '@typing/content';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { flatten, uniqWith, isEqual, uniqBy } from 'lodash-es';
-import { Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
+import { InjectedSelectOption, Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
 import { SelectionPredefinedCustomOption } from './SelectionOperation';
 
-export interface InjectedSelectOption {
-  opId: string;
-  option: OperationSelectOptionCustom;
-}
 interface WrappedOperationSelect extends OperationSelect {
   _sourceName: string;
 }

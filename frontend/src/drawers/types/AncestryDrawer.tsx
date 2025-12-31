@@ -28,11 +28,11 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { addedAncestryLanguages, getAdjustedAncestryOperations } from '@operations/operation-controller';
-import { OperationResult } from '@operations/operation-runner';
 import { IconChevronsDown, IconChevronsUp, IconHelpCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Ancestry, Character, Language } from '@typing/content';
 import { DrawerType } from '@typing/index';
+import { OperationResult } from '@typing/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables } from '@variables/variable-manager';
 import { groupBy } from 'lodash-es';

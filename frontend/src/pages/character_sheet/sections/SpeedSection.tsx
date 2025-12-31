@@ -9,10 +9,11 @@ import { useHover } from '@mantine/hooks';
 import { LivingEntity } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { displayPrimaryVisionSense } from '@utils/senses';
-import { displayFinalProfValue, displayFinalSpeedValue, getSpeedValue } from '@variables/variable-display';
+import { displayFinalProfValue, displayFinalSpeedValue } from '@variables/variable-display';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { ConditionSection } from './ConditionSection';
 import { getAllSpeedVariables } from '@variables/variable-manager';
+import { getSpeedValue } from '@variables/variable-helpers';
 
 function PerceptionSection(props: { id: StoreID }) {
   const { hovered: perceptionHovered, ref: perceptionRef } = useHover();

@@ -162,7 +162,14 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
-  const { character, setCharacter, isLoaded } = useCharacter(props.characterId, props.content, props.onFinishLoading);
+  const { character, setCharacter, isLoading } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-SHEET',
+      onFinishLoading: props.onFinishLoading,
+    },
+  });
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -178,7 +185,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     const givenModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
     return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character, isLoaded, props.content]);
+  }, [character, isLoading, props.content]);
 
   return (
     <Center>
@@ -201,7 +208,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               content={props.content}
               entity={character}
               setEntity={convertToSetEntity(setCharacter)}
-              isLoaded={isLoaded}
+              isLoaded={!isLoading}
               panelHeight={panelHeight}
               panelWidth={panelWidth}
               hideSections={hideSections}

@@ -22,14 +22,12 @@ import {
   isListStr,
   isVariableListStr,
   isExtendedProficiencyType,
-  nextProficiencyType,
-  prevProficiencyType,
   isProficiencyValue,
   isExtendedProficiencyValue,
   compileExpressions,
 } from './variable-utils';
-import { throwError } from '@utils/notifications';
 import { cloneDeep, isBoolean, isEqual, isNumber, isString, uniq } from 'lodash-es';
+import { throwError } from '@utils/error-handling';
 
 export const HIDDEN_VARIABLES = [
   'SKILL_LORE____',
@@ -356,7 +354,7 @@ const DEFAULT_VARIABLES: Record<string, Variable> = {
 
 const variableMap = new Map<string, VariableStore>();
 
-export function getVariableStore(id: StoreID) {
+function getVariableStore(id: StoreID) {
   if (!variableMap.has(id)) {
     variableMap.set(id, {
       variables: cloneDeep(DEFAULT_VARIABLES),
@@ -516,6 +514,24 @@ export function resetVariables(id?: StoreID) {
   } else {
     variableMap.clear();
   }
+}
+
+/**
+ * Imports a variable store
+ * @param id - store ID
+ * @param store - VariableStore
+ */
+export function importVariableStore(id: StoreID, store: VariableStore) {
+  variableMap.set(id, cloneDeep(store));
+}
+
+/**
+ * Exports a variable store
+ * @param id - store ID
+ * @returns - VariableStore
+ */
+export function exportVariableStore(id: StoreID): VariableStore {
+  return cloneDeep(getVariableStore(id));
 }
 
 /**

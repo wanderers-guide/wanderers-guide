@@ -78,8 +78,9 @@ import { ImageOption } from '@typing/index';
 import { cloneDeep, isEqual, uniq } from 'lodash-es';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
+import useCharacter from '@utils/use-character';
 
-export default function CharBuilderHome(props: { pageHeight: number }) {
+export default function CharBuilderHome(props: { characterId: number; pageHeight: number }) {
   const theme = useMantineTheme();
 
   const { ref, height } = useElementSize();
@@ -89,7 +90,10 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const [character, setCharacter] = useRecoilState(characterState);
+  const { character, setCharacter } = useCharacter(props.characterId, {
+    type: 'SIMPLE',
+  });
+
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
   const [displayNameInput, refreshNameInput] = useRefresh();
 

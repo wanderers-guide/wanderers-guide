@@ -1,4 +1,4 @@
-import { LEGACY_URL } from '@constants/data';
+import { LEGACY_URL } from '@constants/urls';
 import { Center, Stack, Title, Anchor, Text, Box } from '@mantine/core';
 import { Campaign } from '@typing/content';
 

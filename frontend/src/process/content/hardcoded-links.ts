@@ -1,4 +1,3 @@
-import { buildHrefFromContentData } from '@common/rich_text_input/ContentLinkExtension';
 import { AbilityBlockType, ContentType } from '@typing/content';
 
 const actionMap: Record<string, number> = {
@@ -28,4 +27,8 @@ export function convertToHardcodedLink(type: ContentType | AbilityBlockType, tex
     return `[${displayText ?? text}](${buildHrefFromContentData(type, id)})`;
   }
   return text;
+}
+
+export function buildHrefFromContentData(type: ContentType | AbilityBlockType, id: string | number) {
+  return `link_${type}_${id}`;
 }

@@ -9,7 +9,34 @@ import {
   StoreID,
 } from './variables';
 import { AbilityBlockType, Rarity, Item, AbilityBlock, ContentSource, ContentType } from './content';
-import { OperationResult } from './../process/operations/operation-runner';
+
+export type OperationOptions = {
+  doOnlyValueCreation?: boolean;
+  doConditionals?: boolean;
+  doOnlyConditionals?: boolean;
+  onlyConditionalsWhitelist?: string[];
+};
+
+export type OperationResult = {
+  selection?: {
+    id: string;
+    title?: string;
+    description?: string;
+    options: ObjectWithUUID[];
+    skillAdjustment?: ExtendedProficiencyType;
+  };
+  result?: {
+    source?: ObjectWithUUID;
+    results: OperationResult[];
+  };
+} | null;
+
+export interface InjectedSelectOption {
+  opId: string;
+  option: OperationSelectOptionCustom;
+}
+
+///
 
 export type OperationCharacterResultPackage = {
   contentSourceResults: {

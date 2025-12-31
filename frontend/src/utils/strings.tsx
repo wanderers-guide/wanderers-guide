@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import { titleCase } from 'title-case';
 
 export function pluralize(word: string): string {
@@ -109,39 +108,6 @@ export function toLabel(text?: string | null) {
   return label.trim();
 }
 
-// export function listToLabel(strings: string[], endingWord: string): string {
-//   return strings.length === 0
-//     ? ''
-//     : strings.length === 1
-//     ? strings[0]
-//     : `${strings.slice(0, -1).join(', ')} ${endingWord} ${strings.slice(-1)[0]}`;
-// }
-
-export function listToLabel(nodes: ReactNode[], endingWord: string): ReactNode {
-  if (nodes.length === 0) {
-    return '';
-  } else if (nodes.length === 1) {
-    return nodes[0];
-  } else {
-    const joinedNodes = nodes.slice(0, -1).reduce(
-      (acc, node, index) => (
-        <>
-          {acc}
-          {index > 0 && ', '}
-          {node}
-        </>
-      ),
-      null
-    );
-
-    return (
-      <>
-        {joinedNodes} {endingWord} {nodes.slice(-1)[0]}
-      </>
-    );
-  }
-}
-
 export function parseDiceRoll(dice: string): { dice: number; die: string; bonus: number; suffix: string }[] {
   const results: { dice: number; die: string; bonus: number; suffix: string }[] = [];
 
@@ -165,22 +131,3 @@ export function parseDiceRoll(dice: string): { dice: number; die: string; bonus:
 
   return results;
 }
-
-// export function startCase(text: string) {
-//   text = text
-//     .trim()
-//     .toLowerCase()
-//     .replace(/(^|\s|[^a-zA-Z0-9])([a-zA-Z0-9])/g, (match, prefix, letter) => {
-//       return prefix + letter.toUpperCase();
-//     });
-//   text = text.replace(' And ', ' and ');
-//   text = text.replace(' Or ', ' or ');
-//   text = text.replace(' In ', ' in ');
-//   text = text.replace(' By ', ' by ');
-//   text = text.replace(' Of ', ' of ');
-//   text = text.replace(' The ', ' the ');
-//   text = text.replace(' A ', ' a ');
-//   text = text.replace(' An ', ' an ');
-//   text = text.replace(' On ', ' on ');
-//   return text;
-// }

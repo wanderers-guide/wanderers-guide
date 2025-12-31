@@ -16,7 +16,7 @@ import { getVariable } from '@variables/variable-manager';
 import { compileExpressions } from '@variables/variable-utils';
 import { cloneDeep, isEqual, uniqWith } from 'lodash-es';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 
 export function collectEntityAbilityBlocks(
   id: StoreID,

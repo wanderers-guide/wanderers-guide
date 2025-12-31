@@ -36,7 +36,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
-import { GUIDE_BLUE, PATREON_AUTH_URL } from '@constants/data';
+import { GUIDE_BLUE } from '@constants/data';
 import { IconAdjustments, IconBrandPatreon, IconCirclePlus, IconUpload } from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@typing/content';
 import { useState } from 'react';
@@ -54,6 +54,7 @@ import { resetContentStore, fetchContentSources } from '@content/content-store';
 import { supabase } from '../main';
 import { showNotification } from '@mantine/notifications';
 import { DisplayIcon } from '@common/IconDisplay';
+import { PATREON_AUTH_URL } from '@constants/urls';
 
 export function Component() {
   setPageTitle(`Account`);

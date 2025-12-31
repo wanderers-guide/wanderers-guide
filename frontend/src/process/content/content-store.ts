@@ -152,6 +152,27 @@ export function getDefaultSources(view: SourceKey) {
 }
 
 /**
+ * Import content from a content package into the content store
+ * @param packageData - Content package data to import
+ */
+export function importFromContentPackage(packageData: ContentPackage) {
+  // Import all content
+  packageData.abilityBlocks.forEach((c) => idStore.get('ability-block')?.set(c.id, c));
+  packageData.ancestries.forEach((c) => idStore.get('ancestry')?.set(c.id, c));
+  packageData.archetypes.forEach((c) => idStore.get('archetype')?.set(c.id, c));
+  packageData.backgrounds.forEach((c) => idStore.get('background')?.set(c.id, c));
+  packageData.classArchetypes.forEach((c) => idStore.get('class-archetype')?.set(c.id, c));
+  packageData.classes.forEach((c) => idStore.get('class')?.set(c.id, c));
+  packageData.creatures.forEach((c) => idStore.get('creature')?.set(c.id, c));
+  packageData.items.forEach((c) => idStore.get('item')?.set(c.id, c));
+  packageData.languages.forEach((c) => idStore.get('language')?.set(c.id, c));
+  packageData.spells.forEach((c) => idStore.get('spell')?.set(c.id, c));
+  packageData.traits.forEach((c) => idStore.get('trait')?.set(c.id, c));
+  packageData.versatileHeritages.forEach((c) => idStore.get('versatile-heritage')?.set(c.id, c));
+  packageData.sources?.forEach((c) => idStore.get('content-source')?.set(c.id, c));
+}
+
+/**
  * Get all cached content of a specific type
  * @param type - Content type to get
  * @returns - Array of cached content

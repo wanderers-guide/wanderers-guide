@@ -1,10 +1,10 @@
-import { getBestArmor, getFlatInvItems, isItemEquippable, isItemInvestable } from '@items/inv-utils';
-import { Item, Character, InventoryItem, LivingEntity } from '@typing/content';
-import { ProficiencyType, StoreID, VariableListStr } from '@typing/variables';
+import { getBestArmor } from '@items/inv-utils';
+import { LivingEntity } from '@typing/content';
+import { ProficiencyType, StoreID } from '@typing/variables';
 import { SetterOrUpdater } from 'recoil';
-import { addVariable, getVariable, getVariables, setVariable } from './variable-manager';
-import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-display';
-import { labelToVariable, variableToLabel } from './variable-utils';
+import { addVariable, getVariable, getVariables } from './variable-manager';
+import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-helpers';
+import { labelToVariable } from './variable-utils';
 import { getDeepDiff } from '@utils/objects';
 
 export function saveCalculatedStats(

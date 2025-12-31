@@ -4,10 +4,10 @@ import { getAcParts } from '@items/armor-handler';
 import { getBestArmor } from '@items/inv-utils';
 import { Title, Text, Group, Divider, Box, Accordion, Kbd, HoverCard, List, Button } from '@mantine/core';
 import { IconBlockquote, IconMathSymbols } from '@tabler/icons-react';
-import { Inventory, InventoryItem, LivingEntity } from '@typing/content';
+import { Inventory, InventoryItem } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
-import { getFinalAcValue, getVariableBreakdown } from '@variables/variable-display';
+import { getFinalAcValue, getVariableBreakdown } from '@variables/variable-helpers';
 import { useRecoilValue } from 'recoil';
 
 export function StatAcDrawerTitle(props: {

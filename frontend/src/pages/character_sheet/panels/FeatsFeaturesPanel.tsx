@@ -392,6 +392,16 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
     </>
   );
 
+  const noFeatsOrFeatures =
+    data &&
+    data.ancestryFeats.length === 0 &&
+    data.classFeats.length === 0 &&
+    data.generalAndSkillFeats.length === 0 &&
+    data.otherFeats.length === 0 &&
+    data.classFeatures.length === 0 &&
+    data.heritages.length === 0 &&
+    data.physicalFeatures.length === 0;
+
   return (
     <Box h='100%'>
       <Stack gap={5}>
@@ -438,31 +448,27 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
           )}
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-          {data &&
-            data.ancestryFeats.length === 0 &&
-            data.classFeats.length === 0 &&
-            data.generalAndSkillFeats.length === 0 &&
-            data.otherFeats.length === 0 &&
-            data.classFeatures.length === 0 &&
-            data.heritages.length === 0 &&
-            data.physicalFeatures.length === 0 && (
-              <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
-                No feats or features found.
-              </Text>
-            )}
-          {dualLayout ? (
-            <Group align='flex-start' gap={10} grow>
-              <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-                {featsSection}
-              </ScrollArea>
-              <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-                {featuresSection}
-              </ScrollArea>
-            </Group>
+          {noFeatsOrFeatures ? (
+            <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+              No feats or features found.
+            </Text>
           ) : (
             <>
-              {featsSection}
-              {featuresSection}
+              {dualLayout ? (
+                <Group align='flex-start' gap={10} grow>
+                  <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+                    {featsSection}
+                  </ScrollArea>
+                  <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
+                    {featuresSection}
+                  </ScrollArea>
+                </Group>
+              ) : (
+                <>
+                  {featsSection}
+                  {featuresSection}
+                </>
+              )}
             </>
           )}
         </ScrollArea>

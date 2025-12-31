@@ -29,8 +29,8 @@ import {
 import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
-import { executeCharacterOperations } from '@operations/operation-controller';
-import { OperationResult } from '@operations/operation-runner';
+import { executeOperations } from '@operations/operation-controller';
+import { OperationResult } from '@typing/operations';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
@@ -48,17 +48,17 @@ import { compileProficiencyType, variableToLabel } from '@variables/variable-uti
 import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
+import useCharacter from '@utils/use-character';
 
 // Determines how often to check for choice counts
-const CHOICE_COUNT_INTERVAL = 2500;
+const CHOICE_COUNT_INTERVAL = 1500;
 
-export default function CharBuilderCreation(props: { pageHeight: number }) {
+export default function CharBuilderCreation(props: { characterId: number; pageHeight: number }) {
   const theme = useMantineTheme();
-  const character = useRecoilValue(characterState);
   const [doneLoading, setDoneLoading] = useState(false);
 
   const { data: content, isFetching } = useQuery({
-    queryKey: [`find-content-${character?.id}`],
+    queryKey: [`find-content-${props.characterId}-for-char-builder-creation`, { characterId: props.characterId }],
     queryFn: async () => {
       // Prefetch content sources (to avoid multiple requests)
       await fetchContentSources(getDefaultSources('PAGE'));
@@ -103,6 +103,7 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
         <div style={{ display: doneLoading ? 'none' : undefined }}>{loader}</div>
         <div style={{ display: doneLoading ? undefined : 'none' }}>
           <CharBuilderCreationInner
+            characterId={props.characterId}
             content={content}
             pageHeight={props.pageHeight}
             onFinishLoading={() => {
@@ -117,37 +118,24 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
 }
 
 export function CharBuilderCreationInner(props: {
+  characterId: number;
   content: ContentPackage;
   pageHeight: number;
-  onFinishLoading?: () => void;
+  onFinishLoading: () => void;
 }) {
   const isMobile = isCharacterBuilderMobile();
   const [statPanelOpened, setStatPanelOpened] = useState(false);
 
-  const [character, setCharacter] = useRecoilState(characterState);
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
 
-  // Execute operations
-  const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
-  const executingOperations = useRef(false);
-  const [sDebouncedCharacter] = useDebouncedValue(character, 200);
-  useEffect(() => {
-    if (!sDebouncedCharacter || executingOperations.current) return;
-    setTimeout(() => {
-      if (!sDebouncedCharacter || executingOperations.current) return;
-      executingOperations.current = true;
-      executeCharacterOperations(sDebouncedCharacter, props.content, 'CHARACTER-BUILDER').then((results) => {
-        setOperationResults(results);
-        executingOperations.current = false;
-      });
-    }, 1);
-  }, [sDebouncedCharacter]);
-
-  useEffect(() => {
-    setTimeout(() => {
-      props.onFinishLoading?.();
-    }, CHOICE_COUNT_INTERVAL + 500);
-  }, []);
+  const { character, setCharacter, results } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-BUILDER',
+      onFinishLoading: props.onFinishLoading,
+    },
+  });
 
   const levelItems = Array.from({ length: (character?.level ?? 0) + 1 }, (_, i) => i).map((level) => {
     return (
@@ -156,7 +144,7 @@ export function CharBuilderCreationInner(props: {
         level={level}
         opened={levelItemValue === `${level}`}
         content={props.content}
-        operationResults={operationResults}
+        operationResults={results}
       />
     );
   });
@@ -1109,7 +1097,7 @@ function LevelSection(props: {
   level: number;
   opened: boolean;
   content: ContentPackage;
-  operationResults?: OperationCharacterResultPackage;
+  operationResults: OperationCharacterResultPackage | null;
 }) {
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
@@ -1459,7 +1447,7 @@ function AncestrySectionAccordionItem(props: {
 
 function InitialStatsLevelSection(props: {
   content: ContentPackage;
-  operationResults?: OperationCharacterResultPackage;
+  operationResults: OperationCharacterResultPackage | null;
   onSaveChanges: (path: string, value: string) => void;
 }) {
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
