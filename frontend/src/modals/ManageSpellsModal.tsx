@@ -320,6 +320,16 @@ const SlotsSection = (props: {
                             return isNormalSpell(spell) && spell.rank <= parseInt(rank) && !isCantrip(spell);
                           }
                         },
+                        advancedPresetFilters: props.spells
+                          ? undefined
+                          : {
+                              type: 'spell',
+                              spell_type: 'NORMAL',
+                              traditions: props.filter?.traditions,
+                              rank_min: props.filter?.rank_min,
+                              rank_max: props.filter?.rank_max,
+                              content_sources: getDefaultSources('PAGE'),
+                            },
                       }}
                     />
                   </Box>
@@ -419,8 +429,6 @@ const ListSection = (props: {
             selectContent<Spell>(
               'spell',
               (option) => {
-                console.log('Selected spell to add:', option);
-
                 if (option.rank === 0 || option.rank === 10 || isRitual(option)) {
                   addSpell(option, option.rank);
                 } else {
