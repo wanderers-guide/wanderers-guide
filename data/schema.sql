@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict eLLf8Z0Hw9lxZq0pA8pIaUfBdJEO8QElj9VfPRxe6bzfMB5eeqhdazKJmiXEHVg
+\restrict bNRnkuaWlMZNDBJ1majIQq4mKIVgJ6FK9NhKXtLJFeXNEhaxc4Bh28mzU11kKf6
 
 -- Dumped from database version 15.1 (Ubuntu 15.1-1.pgdg20.04+1)
 -- Dumped by pg_dump version 16.11 (Ubuntu 16.11-1.pgdg24.04+1)
@@ -300,7 +300,9 @@ CREATE TABLE public.class_archetype (
     deprecated boolean,
     version character varying DEFAULT '1.0'::character varying NOT NULL,
     uuid bigint NOT NULL,
-    archetype_id bigint
+    archetype_id bigint,
+    override_skill_training_base integer,
+    override_class_operations boolean
 );
 
 
@@ -2251,5 +2253,5 @@ GRANT ALL ON SEQUENCE public.versatile_heritage_id_seq TO service_role;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict eLLf8Z0Hw9lxZq0pA8pIaUfBdJEO8QElj9VfPRxe6bzfMB5eeqhdazKJmiXEHVg
+\unrestrict bNRnkuaWlMZNDBJ1majIQq4mKIVgJ6FK9NhKXtLJFeXNEhaxc4Bh28mzU11kKf6
 
