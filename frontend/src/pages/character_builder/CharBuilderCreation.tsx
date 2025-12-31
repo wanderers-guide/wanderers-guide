@@ -317,7 +317,7 @@ export function CharBuilderCreationInner(props: {
             <Divider pb={5} />
           </>
         )}
-        <ScrollArea h={props.pageHeight} pr={14} scrollbars='y'>
+        <ScrollArea h={props.pageHeight + (isMobile ? -100 : 0)} pr={14} scrollbars='y'>
           <Accordion
             value={levelItemValue}
             onChange={setLevelItemValue}
