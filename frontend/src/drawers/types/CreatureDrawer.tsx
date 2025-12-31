@@ -654,6 +654,9 @@ export function CreatureDrawerContent(props: {
 function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
   const theme = useMantineTheme();
 
+  const content = <RecallKnowledgeText entity={props.entity} traits={props.traits} />;
+  if (!content) return null;
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -667,7 +670,7 @@ function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
         h='100%'
       >
         <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
-          <RecallKnowledgeText entity={props.entity} traits={props.traits} />
+          {content}
         </Group>
       </Box>
     </BlurBox>

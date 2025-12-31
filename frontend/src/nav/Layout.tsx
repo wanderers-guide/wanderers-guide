@@ -16,7 +16,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDisclosure, useViewportSize } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery, useViewportSize } from '@mantine/hooks';
 import {
   IconAsset,
   IconChefHat,
@@ -41,9 +41,11 @@ import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
 import { useQueryClient } from '@tanstack/react-query';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
+  const isPhone = useMediaQuery(phoneQuery());
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
@@ -494,7 +496,7 @@ export default function Layout(props: { children: React.ReactNode }) {
 
       <ScrollArea
         h={'100dvh'}
-        type='auto'
+        type={isPhone ? 'never' : 'auto'}
         scrollbars='y'
         onScrollPositionChange={(pos) => {
           if (pos.y > SCROLL_PINNED_THRESHOLD) {
