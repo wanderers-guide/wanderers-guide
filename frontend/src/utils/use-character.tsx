@@ -104,11 +104,11 @@ export default function useCharacter(
 
   // Execute operations
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
-  const executingOperations = useRef(false);
+  const executingOperations = useRef<number | null>(null);
 
-  const [debouncedCharacter] = useDebouncedValue(character, 200);
+  const [debouncedCharacter] = useDebouncedValue(character, 1000);
   const prevDebouncedCharacter = usePrevious(debouncedCharacter);
-  const setCharacterDebounced = useDebouncedCallback(setCharacter, 200);
+  const setCharacterDebounced = useDebouncedCallback(setCharacter, 1000);
 
   const getUpdateHash = (c: Character | null | undefined) => {
     return hashData(
@@ -147,15 +147,14 @@ export default function useCharacter(
     if (options.type !== 'EXECUTE_OPS') {
       return;
     }
-    if (
-      !debouncedCharacter ||
-      executingOperations.current ||
-      getUpdateHash(prevDebouncedCharacter) === getUpdateHash(debouncedCharacter)
-    )
-      return;
+    if (!debouncedCharacter) return;
 
-    console.log('> Executing ops #', getUpdateHash(debouncedCharacter));
-    executingOperations.current = true;
+    const prevOpsHash = getUpdateHash(prevDebouncedCharacter);
+    const opsHash = getUpdateHash(debouncedCharacter);
+    if (prevOpsHash === opsHash || executingOperations.current === opsHash) return;
+
+    console.log('> Executing ops #', opsHash);
+    executingOperations.current = opsHash;
     executeOperations<OperationCharacterResultPackage>({
       type: 'CHARACTER',
       data: {
@@ -164,6 +163,12 @@ export default function useCharacter(
         context: options.data.context,
       },
     }).then((results) => {
+      if (executingOperations.current !== getUpdateHash(debouncedCharacter)) {
+        // Old execution, ignore
+        console.log('... Ignoring outdated ops #', getUpdateHash(debouncedCharacter));
+        return;
+      }
+
       // Final execution pipeline:
       console.log('... Finished executing ops #', getUpdateHash(debouncedCharacter));
 
@@ -221,7 +226,7 @@ export default function useCharacter(
       saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(setCharacterDebounced));
 
       setOperationResults(results);
-      executingOperations.current = false;
+      executingOperations.current = null;
 
       setTimeout(() => {
         options.data.onFinishLoading?.();
