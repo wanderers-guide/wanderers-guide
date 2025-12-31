@@ -123,6 +123,38 @@ export default function SkillsActionsPanel(props: {
       : allActions;
   }, [props.content.abilityBlocks, actionTypeFilter, searchQueryDebounced, props.id]);
 
+  const entityAbilityBlocks = useMemo(() => {
+    if (!props.entity) return [];
+
+    const allAbs = flattenDeep(
+      Object.values(collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks))
+    );
+
+    // Filter ability blocks
+    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
+      ? allAbs.filter((action) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQueryDebounced.trim().toLowerCase();
+
+          const checkAbs = (action: AbilityBlock) => {
+            if (actionTypeFilter !== 'ALL' && action.actions !== actionTypeFilter) return false;
+
+            const searchStr = JSON.stringify({
+              _: action.name,
+              ___: getContentFast<Trait>('trait', action.traits ?? []).map((t) => t.name),
+              ____: action.meta_data?.skill,
+              _____: action.rarity,
+            }).toLowerCase();
+
+            return searchStr.includes(query);
+          };
+
+          if (checkAbs(action)) return true;
+          return false;
+        })
+      : allAbs;
+  }, [props.content.abilityBlocks, actionTypeFilter, searchQueryDebounced, props.id, props.entity]);
+
   const weapons = useMemo(() => {
     const weapons =
       props.entity?.inventory?.items
@@ -241,24 +273,22 @@ export default function SkillsActionsPanel(props: {
   const explorationActions = useMemo(() => {
     let explorationFeats: AbilityBlock[] = [];
     if (props.entity) {
-      const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
-      explorationFeats = flattenDeep(Object.values(results)).filter((ab) => hasTraitType('EXPLORATION', ab.traits));
+      explorationFeats = entityAbilityBlocks.filter((ab) => hasTraitType('EXPLORATION', ab.traits));
     }
     return [...actions.filter((a) => hasTraitType('EXPLORATION', a.traits)), ...explorationFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
-  }, [actions, props.content.abilityBlocks, props.entity, props.id]);
+  }, [actions, props.entity, entityAbilityBlocks]);
 
   const downtimeActions = useMemo(() => {
     let downtimeFeats: AbilityBlock[] = [];
     if (props.entity) {
-      const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
-      downtimeFeats = flattenDeep(Object.values(results)).filter((ab) => hasTraitType('DOWNTIME', ab.traits));
+      downtimeFeats = entityAbilityBlocks.filter((ab) => hasTraitType('DOWNTIME', ab.traits));
     }
     return [...actions.filter((a) => hasTraitType('DOWNTIME', a.traits)), ...downtimeFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
-  }, [actions, props.content.abilityBlocks, props.entity, props.id]);
+  }, [actions, props.entity, entityAbilityBlocks]);
 
   const itemsWithActions = useMemo(() => {
     const actionItems =
@@ -299,8 +329,7 @@ export default function SkillsActionsPanel(props: {
 
   const featsWithActions = useMemo(() => {
     if (!props.entity) return [];
-    const results = collectEntityAbilityBlocks(props.id, props.entity, props.content.abilityBlocks);
-    const feats = flattenDeep(Object.values(results)).filter((ab) => ab.actions !== null);
+    const feats = entityAbilityBlocks.filter((ab) => ab.actions !== null);
 
     // Filter feats
     return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
@@ -325,18 +354,10 @@ export default function SkillsActionsPanel(props: {
           return false;
         })
       : feats;
-  }, [props.entity, props.content.abilityBlocks, actionTypeFilter, searchQueryDebounced, props.id]);
+  }, [props.entity, actionTypeFilter, searchQueryDebounced, entityAbilityBlocks]);
 
   const getSkillsSection = () => (
     <Box>
-      {/* <Paper
-          shadow='sm'
-          h='100%'
-          p={10}
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.13)',
-          }}
-        ></Paper> */}
       <Stack gap={5}>
         <TextInput
           style={{ flex: 1 }}
@@ -415,7 +436,7 @@ export default function SkillsActionsPanel(props: {
         <Group>
           <TextInput
             style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
+            leftSection={isPhone ? undefined : <IconSearch size='0.9rem' />}
             placeholder={`Search actions & activities`}
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}

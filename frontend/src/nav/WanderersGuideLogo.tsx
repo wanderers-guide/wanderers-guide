@@ -36,6 +36,7 @@ export default function WanderersGuideLogo(props: { size: number }) {
       <Image
         radius='md'
         h={props.size}
+        w={5.6 * props.size} // Maintain aspect ratio of original logo
         src={Logo}
         alt="Wanderer's Guide"
         style={{

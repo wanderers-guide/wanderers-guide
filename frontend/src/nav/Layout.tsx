@@ -93,7 +93,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >
-        <Group h='100%' px='md'>
+        <Group h='100%' px='md' wrap='nowrap'>
           <Burger opened={opened} onClick={toggle} hiddenFrom='md' size='sm' />
           <Group style={{ flex: 1 }}>
             <WanderersGuideLogo size={30} />

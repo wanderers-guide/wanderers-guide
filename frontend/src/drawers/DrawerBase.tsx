@@ -3,9 +3,9 @@ import { convertToContentType, isAbilityBlockType } from '@content/content-utils
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
-import { AbilityBlockType, ContentType } from '@typing/content';
-import { Suspense, lazy, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { ContentType } from '@typing/content';
+import { Suspense, lazy, useRef } from 'react';
+import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
@@ -171,6 +171,7 @@ export default function DrawerBase() {
             flexDirection: 'column',
             position: 'relative',
             paddingBottom: 'env(safe-area-inset-bottom)',
+            minHeight: '100dvh',
           },
           title: {
             width: '100%',
@@ -191,22 +192,15 @@ export default function DrawerBase() {
         }}
       >
         <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
-          <Box
-            pt={2}
-            style={{
-              overflowX: 'hidden',
-            }}
-          >
-            {opened && (
-              <Suspense fallback={<div></div>}>
-                <DrawerContent
-                  onMetadataChange={(openedDict) => {
-                    saveMetadata(openedDict);
-                  }}
-                />
-              </Suspense>
-            )}
-          </Box>
+          {opened && (
+            <Suspense fallback={<div></div>}>
+              <DrawerContent
+                onMetadataChange={(openedDict) => {
+                  saveMetadata(openedDict);
+                }}
+              />
+            </Suspense>
+          )}
         </ScrollArea>
 
         {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
@@ -230,8 +224,6 @@ export default function DrawerBase() {
                       data.id = data.creature.id;
                       data.content_source_id = data.creature.content_source_id;
                     }
-
-                    console.log('Opening feedback for drawer type:', type, 'data:', data);
 
                     setFeedbackData({
                       type: type,

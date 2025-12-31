@@ -7,6 +7,8 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRecoilState, SetterOrUpdater } from 'recoil';
 import * as JsSearch from 'js-search';
 import { isTruthy } from '@utils/type-fixing';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function CreatureAbilitiesPanel(props: {
   content: ContentPackage;
@@ -15,6 +17,7 @@ export default function CreatureAbilitiesPanel(props: {
   creature: Creature | null;
   setCreature: SetterOrUpdater<Creature | null>;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -68,7 +71,7 @@ export default function CreatureAbilitiesPanel(props: {
         <Group>
           <TextInput
             style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
+            leftSection={isPhone ? undefined : <IconSearch size='0.9rem' />}
             placeholder={`Search abilities`}
             onChange={(event) => setSearchQuery(event.target.value)}
             styles={{

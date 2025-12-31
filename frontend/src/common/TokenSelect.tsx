@@ -10,6 +10,7 @@ export default function TokenSelect(props: {
   value?: number;
   onChange?: (value: number) => void;
   size?: MantineSize;
+  invertedSelect?: boolean;
 }) {
   const [value, setValue] = useState(props.value ?? props.count);
   const isMobileTouch = useMediaQuery(tabletQuery()) && isTouchDevice();
@@ -22,10 +23,12 @@ export default function TokenSelect(props: {
             size='xs'
             w={60}
             data={Array.from({ length: props.count + 1 }, (_, i) => i).map((v) => `${v}`)}
-            value={`${value}`}
-            //onClick={(e) => e.stopPropagation()}
+            value={`${props.invertedSelect ? props.count - value : value}`}
             onChange={(v) => {
-              const val = parseInt(v ?? '');
+              let val = parseInt(v ?? '');
+              // Invert the value if needed
+              val = props.invertedSelect ? props.count - val : val;
+
               setValue(val);
               props.onChange?.(val);
             }}

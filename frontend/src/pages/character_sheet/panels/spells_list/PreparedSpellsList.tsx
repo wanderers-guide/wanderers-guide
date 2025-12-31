@@ -10,6 +10,8 @@ import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { StoreID } from '@typing/variables';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function PreparedSpellsList(props: {
   id: StoreID;
@@ -57,6 +59,8 @@ export default function PreparedSpellsList(props: {
   > | null;
   castSpell: (cast: boolean, spell: Spell) => void;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
+
   const { slots, castSpell } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -144,8 +148,10 @@ export default function PreparedSpellsList(props: {
                     Spell Attack
                   </Text>
                   <Text c='gray.5' fz='sm' span>
-                    {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
-                    {sign(spellStats.spell_attack.total[2])}
+                    {sign(spellStats.spell_attack.total[0])}
+                    {!isPhone &&
+                      ` / ${sign(spellStats.spell_attack.total[1])} /
+                    ${sign(spellStats.spell_attack.total[2])}`}
                   </Text>
                 </Group>
               </StatButton>

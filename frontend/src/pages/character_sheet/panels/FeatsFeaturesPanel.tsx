@@ -27,8 +27,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
+import { phoneQuery } from '@utils/mobile-responsive';
+import { useMediaQuery } from '@mantine/hooks';
 
 export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWidth: number }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const character = useRecoilValue(characterState);
   const [searchQuery, setSearchQuery] = useState('');
@@ -395,7 +398,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
         <Group>
           <TextInput
             style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
+            leftSection={isPhone ? undefined : <IconSearch size='0.9rem' />}
             placeholder={`Search feats & features`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

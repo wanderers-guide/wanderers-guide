@@ -508,7 +508,7 @@ export default function SelectContentModal({
   return (
     <Stack>
       {innerProps.options?.description}
-      <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 490 }}>
+      <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 470 }}>
         {isClassFeat && (
           <Tabs value={classFeatTab} onChange={setClassFeatTab}>
             <Tabs.List grow mb={10}>

@@ -47,6 +47,8 @@ import WandSpellsList from './spells_list/WandSpellsList';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { groupBy } from 'lodash-es';
+import { phoneQuery } from '@utils/mobile-responsive';
+import { useMediaQuery } from '@mantine/hooks';
 
 export default function SpellsPanel(props: {
   id: StoreID;
@@ -56,6 +58,7 @@ export default function SpellsPanel(props: {
   panelWidth: number;
   zIndex?: number;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -123,7 +126,7 @@ export default function SpellsPanel(props: {
         <Group>
           <TextInput
             style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
+            leftSection={isPhone ? undefined : <IconSearch size='0.9rem' />}
             placeholder={`Search spells`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -764,6 +767,7 @@ export function SpellSlotSelect(props: { current: number; max: number; onChange:
               value={props.current}
               onChange={props.onChange}
               size='xs'
+              invertedSelect
               emptySymbol={
                 <ActionIcon
                   variant='transparent'

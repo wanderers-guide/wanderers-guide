@@ -21,6 +21,8 @@ import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { StoreID } from '@typing/variables';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function SpontaneousSpellsList(props: {
   id: StoreID;
@@ -70,6 +72,8 @@ export default function SpontaneousSpellsList(props: {
   castSpell: (cast: boolean, spell: Spell) => void;
   spells: Dictionary<Spell[]>;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
+
   const { slots, castSpell, spells, setEntity } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -153,8 +157,10 @@ export default function SpontaneousSpellsList(props: {
                     Spell Attack
                   </Text>
                   <Text c='gray.5' fz='sm' span>
-                    {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
-                    {sign(spellStats.spell_attack.total[2])}
+                    {sign(spellStats.spell_attack.total[0])}
+                    {!isPhone &&
+                      ` / ${sign(spellStats.spell_attack.total[1])} /
+                    ${sign(spellStats.spell_attack.total[2])}`}
                   </Text>
                 </Group>
               </StatButton>
@@ -184,7 +190,7 @@ export default function SpontaneousSpellsList(props: {
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
                       <Group wrap='nowrap'>
-                        <Text c='gray.5' fw={700} fz='sm' w={70}>
+                        <Text c='gray.5' fw={700} fz='sm' miw={30}>
                           {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                         </Text>
                         {rank !== '0' && (
