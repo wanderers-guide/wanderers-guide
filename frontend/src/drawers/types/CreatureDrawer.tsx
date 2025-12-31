@@ -1,4 +1,4 @@
-import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
@@ -52,7 +52,7 @@ import {
   IconAlignBoxLeftMiddle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, LivingEntity, Trait } from '@typing/content';
+import { Creature, Trait } from '@typing/content';
 import { OperationCreatureResultPackage } from '@typing/operations';
 import { getAnchorStyles } from '@utils/anchor';
 import { findCreatureTraits } from '@utils/creature';
@@ -61,11 +61,8 @@ import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { getFinalHealthValue } from '@variables/variable-display';
-import { isEqual } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
-
-export const CREATURE_DRAWER_ZINDEX = 495;
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const theme = useMantineTheme();
@@ -139,19 +136,16 @@ export function CreatureDrawerContent(props: {
       return content;
     },
   });
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
   const [displayStatBlock, refreshStatBlock] = useRefresh();
   const [loading, setLoading] = useState(true);
   const [creature, setCreature] = useState<Creature | null>(props.data.creature ?? null);
   const [editingCreature, _setEditingCreature] = useState(false);
-  const [drawerZIndex, setDrawerZIndex] = useRecoilState(drawerZIndexState);
   const toggleEditing = () => {
     if (editingCreature) {
       _setEditingCreature(false);
-      setDrawerZIndex(CREATURE_DRAWER_ZINDEX);
     } else {
       _setEditingCreature(true);
-      setDrawerZIndex(100);
     }
   };
 
@@ -348,6 +342,7 @@ export function CreatureDrawerContent(props: {
 
                 {activeTab === 'abilities' && (
                   <CreatureAbilitiesPanel
+                    id={STORE_ID}
                     content={content}
                     panelHeight={panelHeight}
                     panelWidth={panelWidth}
@@ -636,13 +631,12 @@ export function CreatureDrawerContent(props: {
                 toggleEditing();
 
                 // Hacky way to update the drawer data
-                openDrawer({
-                  ..._drawer,
+                openCreatureDrawer({
+                  ..._creatureDrawer,
                   data: {
-                    ...(_drawer?.data ?? {}),
+                    ...(_creatureDrawer?.data ?? {}),
                     creature: result,
                   },
-                  type: 'creature',
                 });
               }
             }}

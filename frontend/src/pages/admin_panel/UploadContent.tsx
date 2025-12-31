@@ -18,7 +18,7 @@ export default function UploadContent() {
   const [sourceId, setSourceId] = useState<number | undefined>(undefined);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-admin`],
     queryFn: async () => {
       return await fetchContentSources(defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC'));
     },

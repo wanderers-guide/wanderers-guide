@@ -44,11 +44,14 @@ export default async function jsonV4(entity: LivingEntity) {
 
 export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: StoreID) {
   // Get all content that the character uses
-  let sv: SourceValue = 'ALL-OFFICIAL-PUBLIC';
+  let sv: SourceValue = 'ALL-USER-ACCESSIBLE';
   if (isCharacter(entity)) {
     sv = defineDefaultSources('PAGE', entity.content_sources?.enabled ?? []);
   } else if (isCreature(entity)) {
-    sv = defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC');
+    // If a store is provided, we assume current variables should be left untouched.
+    if (!inputStoreID) {
+      sv = defineDefaultSources('PAGE', 'ALL-USER-ACCESSIBLE');
+    }
   }
   const content = await fetchContentPackage(sv, { fetchSources: true });
   const STORE_ID = inputStoreID ?? (isCharacter(entity) ? 'CHARACTER' : `CREATURE_${entity.id}`);

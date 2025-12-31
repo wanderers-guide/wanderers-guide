@@ -15,7 +15,7 @@ const ENABLED = true;
 
 export default function BackgroundFixer() {
   const { data, isFetching } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-admin`],
     queryFn: async () => {
       return await fetchContentSources(defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC'));
     },

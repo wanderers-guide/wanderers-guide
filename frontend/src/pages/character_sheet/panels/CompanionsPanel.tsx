@@ -1,13 +1,9 @@
 import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
-import { LEGACY_URL } from '@constants/data';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { fetchContentAll, fetchContentPackage, getDefaultSources } from '@content/content-store';
-import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import {
-  Center,
   Stack,
   Title,
-  Anchor,
   Text,
   Box,
   Group,
@@ -15,12 +11,11 @@ import {
   TextInput,
   ScrollArea,
   ActionIcon,
-  Paper,
   useMantineTheme,
 } from '@mantine/core';
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, LivingEntity, Trait } from '@typing/content';
+import { Creature, Trait } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { findCreatureTraits } from '@utils/creature';
 import { phoneQuery } from '@utils/mobile-responsive';
@@ -32,12 +27,12 @@ import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
 import { ConditionPills, selectCondition } from '../sections/ConditionSection';
 import { setterOrUpdaterToValue } from '@utils/type-fixing';
-import { IconPaw, IconPlus, IconX } from '@tabler/icons-react';
+import { IconPlus, IconX } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { applyConditions } from '@conditions/condition-handler';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
-import { addExtraItems, getBestArmor } from '@items/inv-utils';
+import { getBestArmor } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 import { selectContent } from '@common/select/SelectContent';
 import { hasTraitType } from '@utils/traits';
@@ -186,6 +181,7 @@ function CompanionCard(props: {
   const { hovered, ref } = useHover();
 
   const [drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   // Health
 
@@ -212,12 +208,10 @@ function CompanionCard(props: {
   const handleOpenDrawer = (c: Creature) => {
     openDrawer(null);
     setTimeout(() => {
-      openDrawer({
-        type: 'creature',
+      openCreatureDrawer({
         data: {
           STORE_ID: props.storeId,
           creature: c,
-          zIndex: CREATURE_DRAWER_ZINDEX,
           updateCreature: props.updateCreature,
         },
       });

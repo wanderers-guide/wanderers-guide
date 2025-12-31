@@ -1,4 +1,4 @@
-import { drawerState, feedbackState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState, feedbackState } from '@atoms/navAtoms';
 import { userState } from '@atoms/userAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import RichText from '@common/RichText';
@@ -31,7 +31,6 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { CREATURE_DRAWER_ZINDEX } from './CreatureDrawer';
 import { DrawerType } from '@typing/index';
 import { COMMON_CORE_ID, PATHFINDER_CORE_ID, STARFINDER_CORE_ID } from '@constants/data';
 
@@ -142,6 +141,7 @@ export function ContentSourceDrawerContent(props: {
   const [searchValue, setSearchValue] = useState('');
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
   const [_feedbackData, setFeedbackData] = useRecoilState(feedbackState);
 
   const { data: content } = useQuery({
@@ -509,10 +509,11 @@ export function ContentSourceDrawerContent(props: {
                     creature={record}
                     showButton={false}
                     onClick={(a) => {
-                      openDrawer({
-                        type: 'creature',
-                        data: { id: a.id, readOnly: true, zIndex: CREATURE_DRAWER_ZINDEX },
-                        extra: { addToHistory: true },
+                      openCreatureDrawer({
+                        data: {
+                          id: a.id,
+                          readOnly: true,
+                        },
                       });
                     }}
                   />

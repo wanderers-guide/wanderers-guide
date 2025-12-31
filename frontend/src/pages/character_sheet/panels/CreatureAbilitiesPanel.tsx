@@ -2,15 +2,20 @@ import { drawerState } from '@atoms/navAtoms';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { useMantineTheme, Stack, Group, TextInput, ScrollArea, Accordion, Divider, Box, Text } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-import { ContentPackage, Creature } from '@typing/content';
+import { AbilityBlock, ContentPackage, Creature, Trait } from '@typing/content';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRecoilState, SetterOrUpdater } from 'recoil';
 import * as JsSearch from 'js-search';
 import { isTruthy } from '@utils/type-fixing';
-import { useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { collectEntityAbilityBlocks } from '@content/collect-content';
+import { flattenDeep } from 'lodash-es';
+import { StoreID } from '@typing/variables';
+import { getContentFast } from '@content/content-store';
 
 export default function CreatureAbilitiesPanel(props: {
+  id: StoreID;
   content: ContentPackage;
   panelHeight: number;
   panelWidth: number;
@@ -20,50 +25,59 @@ export default function CreatureAbilitiesPanel(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const rawData = useMemo(() => {
-    const base = props.creature?.abilities_base || [];
-    const added = (props.creature?.abilities_added || [])
-      .map((id) => {
-        const ability = props.content.abilityBlocks.find((block) => block.id === id);
-        return ability;
-      })
-      .filter(isTruthy);
+  const entityAbilityBlocks = useMemo(() => {
+    if (!props.creature) return [];
+
+    const allAbs = flattenDeep(
+      Object.values(collectEntityAbilityBlocks(props.id, props.creature, props.content.abilityBlocks))
+    );
+
+    // Filter ability blocks
+    return searchQueryDebounced.trim()
+      ? allAbs.filter((action) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQueryDebounced.trim().toLowerCase();
+
+          const checkAbs = (action: AbilityBlock) => {
+            const searchStr = JSON.stringify({
+              _: action.name,
+              ___: getContentFast<Trait>('trait', action.traits ?? []).map((t) => t.name),
+              ____: action.meta_data?.skill,
+              _____: action.rarity,
+            }).toLowerCase();
+
+            return searchStr.includes(query);
+          };
+
+          if (checkAbs(action)) return true;
+          return false;
+        })
+      : allAbs;
+  }, [props.content.abilityBlocks, searchQueryDebounced, props.id, props.creature]);
+
+  const data = useMemo(() => {
+    const addedAbilities: AbilityBlock[] = [];
+    const baseAbilities: AbilityBlock[] = [];
+    const otherAbilities: AbilityBlock[] = [];
+    for (const ab of entityAbilityBlocks) {
+      if (props.creature?.abilities_added?.includes(ab.id)) {
+        addedAbilities.push(ab);
+      } else if (props.creature?.abilities_base?.find((b) => b.id === ab.id)) {
+        baseAbilities.push(ab);
+      } else {
+        otherAbilities.push(ab);
+      }
+    }
 
     return {
-      baseAbilities: base,
-      addedAbilities: added,
-    };
-  }, [props]);
-
-  // Filter options based on search query
-  const search = useRef(new JsSearch.Search('id'));
-  useEffect(() => {
-    if (!rawData) return;
-    search.current.addIndex('name');
-    search.current.addIndex('description');
-    search.current.addIndex('_group');
-    search.current.addDocuments([
-      ...rawData.baseAbilities.map((abil) => ({
-        ...abil,
-        _group: 'baseAbilities',
-      })),
-      ...rawData.addedAbilities.map((abil) => ({ ...abil, _group: 'addedAbilities' })),
-    ]);
-  }, [rawData]);
-
-  const constructData = (data: Record<string, any>[]) => {
-    const baseAbilities = data.filter((feat) => feat._group === 'baseAbilities');
-    const addedAbilities = data.filter((feat) => feat._group === 'addedAbilities');
-
-    return {
-      baseAbilities,
       addedAbilities,
-    } as typeof rawData;
-  };
-
-  const data = searchQuery.trim() ? constructData(search.current.search(searchQuery.trim())) : rawData;
+      baseAbilities,
+      otherAbilities,
+    };
+  }, [props.creature, entityAbilityBlocks]);
 
   return (
     <Box h='100%'>
@@ -83,102 +97,137 @@ export default function CreatureAbilitiesPanel(props: {
           />
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
-          {data && data.addedAbilities.length === 0 && data.baseAbilities.length === 0 && (
+          {entityAbilityBlocks.length === 0 && (
             <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
               No abilities found.
             </Text>
           )}
 
-          {data && (
-            <Accordion
-              variant='separated'
-              multiple
-              defaultValue={['base-abilities', 'added-abilities']}
-              styles={{
-                label: {
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                },
-                control: {
-                  paddingLeft: 13,
-                  paddingRight: 13,
-                },
-                item: {
-                  marginTop: 0,
-                  marginBottom: 5,
-                },
-              }}
-            >
-              {data.baseAbilities.length > 0 && (
-                <Accordion.Item value='base-abilities'>
-                  <Accordion.Control>
-                    <Text fw={600}>Base Abilities</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.baseAbilities.map((ability, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={ability}
-                          displayLevel
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'action',
-                              data: {
-                                action: ability,
-                              },
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-              {data.addedAbilities.length > 0 && (
-                <Accordion.Item value='added-abilities'>
-                  <Accordion.Control>
-                    <Text fw={600}>Added Abilities</Text>
-                  </Accordion.Control>
-                  <Accordion.Panel
-                    styles={{
-                      content: {
-                        padding: 0,
-                      },
-                    }}
-                  >
-                    <Stack gap={0}>
-                      <Divider color='dark.6' />
-                      {data.addedAbilities.map((ability, index) => (
-                        <FeatSelectionOption
-                          key={index}
-                          feat={ability}
-                          displayLevel
-                          showButton={false}
-                          onClick={() => {
-                            openDrawer({
-                              type: 'generic',
-                              data: ability,
-                              extra: { addToHistory: true },
-                            });
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Accordion.Panel>
-                </Accordion.Item>
-              )}
-            </Accordion>
-          )}
+          <Accordion
+            variant='separated'
+            multiple
+            defaultValue={['base-abilities', 'added-abilities', 'other-abilities']}
+            styles={{
+              label: {
+                paddingTop: 5,
+                paddingBottom: 5,
+              },
+              control: {
+                paddingLeft: 13,
+                paddingRight: 13,
+              },
+              item: {
+                marginTop: 0,
+                marginBottom: 5,
+              },
+            }}
+          >
+            {data.baseAbilities.length > 0 && (
+              <Accordion.Item value='base-abilities'>
+                <Accordion.Control>
+                  <Text fw={600}>Base Abilities</Text>
+                </Accordion.Control>
+                <Accordion.Panel
+                  styles={{
+                    content: {
+                      padding: 0,
+                    },
+                  }}
+                >
+                  <Stack gap={0}>
+                    <Divider color='dark.6' />
+                    {data.baseAbilities.map((ability, index) => (
+                      <FeatSelectionOption
+                        key={index}
+                        feat={ability}
+                        displayLevel
+                        showButton={false}
+                        onClick={() => {
+                          openDrawer({
+                            type: 'action',
+                            data: {
+                              action: ability,
+                            },
+                            extra: { addToHistory: true },
+                          });
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            )}
+            {data.addedAbilities.length > 0 && (
+              <Accordion.Item value='added-abilities'>
+                <Accordion.Control>
+                  <Text fw={600}>Added Abilities</Text>
+                </Accordion.Control>
+                <Accordion.Panel
+                  styles={{
+                    content: {
+                      padding: 0,
+                    },
+                  }}
+                >
+                  <Stack gap={0}>
+                    <Divider color='dark.6' />
+                    {data.addedAbilities.map((ability, index) => (
+                      <FeatSelectionOption
+                        key={index}
+                        feat={ability}
+                        displayLevel
+                        showButton={false}
+                        onClick={() => {
+                          openDrawer({
+                            type: 'action',
+                            data: {
+                              action: ability,
+                            },
+                            extra: { addToHistory: true },
+                          });
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            )}
+            {data.otherAbilities.length > 0 && (
+              <Accordion.Item value='other-abilities'>
+                <Accordion.Control>
+                  <Text fw={600}>Other Abilities</Text>
+                </Accordion.Control>
+                <Accordion.Panel
+                  styles={{
+                    content: {
+                      padding: 0,
+                    },
+                  }}
+                >
+                  <Stack gap={0}>
+                    <Divider color='dark.6' />
+                    {data.otherAbilities.map((ability, index) => (
+                      <FeatSelectionOption
+                        key={index}
+                        feat={ability}
+                        displayLevel
+                        showButton={false}
+                        onClick={() => {
+                          openDrawer({
+                            type: 'action',
+                            data: {
+                              action: ability,
+                            },
+                            extra: { addToHistory: true },
+                          });
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            )}
+          </Accordion>
         </ScrollArea>
       </Stack>
     </Box>

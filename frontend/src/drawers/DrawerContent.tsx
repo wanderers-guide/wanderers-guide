@@ -23,7 +23,6 @@ import { StatResistWeakDrawerContent } from './types/StatResistWeakDrawer';
 import { ConditionDrawerContent } from './types/ConditionDrawer';
 import { ContentSourceDrawerContent } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerContent } from './types/ManageCoinsDrawer';
-import { CreatureDrawerContent } from './types/CreatureDrawer';
 import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
 import { getCachedCustomization } from '@content/customization-cache';
 import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
@@ -47,9 +46,6 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
       {_drawer?.type === 'generic' && <GenericDrawerContent data={drawerData} />}
       {_drawer?.type === 'condition' && <ConditionDrawerContent data={drawerData} />}
-      {_drawer?.type === 'creature' && (
-        <CreatureDrawerContent data={drawerData} onMetadataChange={props.onMetadataChange} />
-      )}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={drawerData} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={drawerData} />}

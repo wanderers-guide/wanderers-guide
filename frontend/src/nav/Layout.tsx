@@ -84,6 +84,7 @@ export default function Layout(props: { children: React.ReactNode }) {
     >
       <AppShell.Header
         h={50}
+        zIndex={98}
         style={{
           border: `0px solid`,
           borderRadius: 0,

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
@@ -100,7 +100,6 @@ import {
   Trait,
   VersatileHeritage,
 } from '../../typing/content';
-import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { adjustCreature } from '@utils/creature';
 import { intersection, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
@@ -3049,6 +3048,7 @@ export function CreatureSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   // Hide deprecated options
   if (props.creature.deprecated && !props.selected) return null;
@@ -3130,16 +3130,11 @@ export function CreatureSelectionOption(props: {
       selected={props.selected}
       level={getEntityLevel(props.creature)}
       onClick={() =>
-        openDrawer({
-          type: 'creature',
+        openCreatureDrawer({
           data: {
             id: props.creature.id,
             readOnly: true,
-            zIndex: CREATURE_DRAWER_ZINDEX,
-            onSelect:
-              props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,
           },
-          extra: { addToHistory: true },
         })
       }
       buttonOverride={

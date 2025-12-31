@@ -1,4 +1,4 @@
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentType, Creature } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isDefaultValue } from '@utils/type-fixing';
 import { atom, selector } from 'recoil';
@@ -64,11 +64,6 @@ const drawerState = selector({
   },
 });
 
-const drawerZIndexState = atom({
-  key: 'drawer-z-index',
-  default: null as number | null,
-});
-
 const feedbackState = atom({
   key: 'feedback-data',
   default: null as {
@@ -77,4 +72,18 @@ const feedbackState = atom({
   } | null,
 });
 
-export { userIconState, drawerState, drawerZIndexState, feedbackState };
+const creatureDrawerState = atom({
+  key: 'drawer-state-creature',
+  default: null as {
+    data: {
+      id?: number;
+      creature?: Creature;
+      STORE_ID?: string;
+      showOperations?: boolean;
+      updateCreature?: (creature: Creature) => void;
+      readOnly?: boolean;
+    };
+  } | null,
+});
+
+export { userIconState, drawerState, feedbackState, creatureDrawerState };

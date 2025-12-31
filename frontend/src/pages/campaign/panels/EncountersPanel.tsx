@@ -1,4 +1,4 @@
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
@@ -7,7 +7,6 @@ import { selectContent } from '@common/select/SelectContent';
 import { applyConditions } from '@conditions/condition-handler';
 import { GUIDE_BLUE } from '@constants/data';
 import { defineDefaultSources, fetchContentPackage, getDefaultSources } from '@content/content-store';
-import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { getBestArmor } from '@items/inv-utils';
 import {
   Tabs,
@@ -889,7 +888,7 @@ function CombatantCard(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   // Initiative
 
@@ -995,12 +994,10 @@ function CombatantCard(props: {
           if (props.combatant.type === 'CHARACTER') {
             window.open(`/sheet/${props.combatant.character}`, '_blank');
           } else if (props.combatant.type === 'CREATURE') {
-            openDrawer({
-              type: 'creature',
+            openCreatureDrawer({
               data: {
                 STORE_ID: getCombatantStoreID(props.combatant),
                 creature: props.combatant.creature!,
-                zIndex: CREATURE_DRAWER_ZINDEX,
                 updateCreature: (creature: Creature) => {
                   props.updateEntity(creature);
                 },

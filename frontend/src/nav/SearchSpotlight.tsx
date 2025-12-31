@@ -1,11 +1,9 @@
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
-import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem, useMantineTheme } from '@mantine/core';
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
@@ -49,6 +47,7 @@ export default function SearchSpotlight() {
 
   const navigate = useNavigate();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
@@ -59,13 +58,15 @@ export default function SearchSpotlight() {
 
   useEffect(() => {
     if (query) {
-      activateQueryPipeline(defaultActions, query, navigate, openDrawer, theme, session).then((result) => {
-        if (query === currentQuery.current) {
-          setQueryResult(result);
-        } else {
-          setQuery(currentQuery.current);
+      activateQueryPipeline(defaultActions, query, navigate, openDrawer, openCreatureDrawer, theme, session).then(
+        (result) => {
+          if (query === currentQuery.current) {
+            setQueryResult(result);
+          } else {
+            setQuery(currentQuery.current);
+          }
         }
-      });
+      );
     }
   }, [query]);
 
@@ -271,13 +272,14 @@ async function activateQueryPipeline(
   rawQuery: string,
   navigate: NavigateFunction,
   openDrawer: DrawerStateSet,
+  openCreatureDrawer: any,
   theme: MantineTheme,
   session: Session | null
 ): Promise<SpotlightActionGroupData[] | null | false> {
   const query = (rawQuery.length > MAX_QUERY_LENGTH ? rawQuery.slice(0, MAX_QUERY_LENGTH) : rawQuery).trim();
   let actions: SpotlightActionData[] = [];
   if (query && query.length >= 3) {
-    actions = [...actions, ...(await queryResults(query, openDrawer, theme))];
+    actions = [...actions, ...(await queryResults(query, openDrawer, openCreatureDrawer, theme))];
     actions = [...actions, ...(await fetchBooks(query, openDrawer, theme))];
     actions = [...actions, ...(await fetchCharacters(query, navigate, theme, session))];
     // Add more here.
@@ -312,6 +314,7 @@ async function activateQueryPipeline(
 async function queryResults(
   query: string,
   openDrawer: DrawerStateSet,
+  openCreatureDrawer: any,
   theme: MantineTheme
 ): Promise<SpotlightActionData[]> {
   // Vector search
@@ -374,14 +377,23 @@ async function queryResults(
       onClick: () => {
         const type = (abilityBlockType ?? data._type) as DrawerType;
         setQueryParam('open', `link_${type}_${data.id}`);
-        openDrawer({
-          type: type,
-          data: {
-            id: data.id,
-            readOnly: true,
-            zIndex: type === 'creature' ? CREATURE_DRAWER_ZINDEX : undefined,
-          },
-        });
+
+        if (type === 'creature') {
+          openCreatureDrawer({
+            data: {
+              id: data.id,
+              readOnly: true,
+            },
+          });
+        } else {
+          openDrawer({
+            type: type,
+            data: {
+              id: data.id,
+              readOnly: true,
+            },
+          });
+        }
       },
       leftSection: getIconFromContentType(data._type as ContentType, '1.5rem'),
       highlightColor: theme.colors[theme.primaryColor][2],

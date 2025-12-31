@@ -1,18 +1,8 @@
 import { Button, Menu, Group, ActionIcon, rem, useMantineTheme } from '@mantine/core';
-import {
-  IconTrash,
-  IconBookmark,
-  IconCalendar,
-  IconChevronDown,
-  IconCoin,
-} from '@tabler/icons-react';
+import { IconChevronDown } from '@tabler/icons-react';
 import classes from '@css/SplitButton.module.css';
 
-export function BuyItemButton(props: {
-  onBuy: () => void;
-  onGive: () => void;
-  onFormula: () => void;
-}) {
+export function BuyItemButton(props: { onBuy: () => void; onGive: () => void; onFormula: () => void }) {
   const theme = useMantineTheme();
 
   return (
@@ -29,12 +19,7 @@ export function BuyItemButton(props: {
       </Button>
       <Menu transitionProps={{ transition: 'pop' }} position='bottom-end' withinPortal>
         <Menu.Target>
-          <ActionIcon
-            variant='filled'
-            color={theme.primaryColor}
-            size={22}
-            className={classes.menuControl}
-          >
+          <ActionIcon variant='filled' color={theme.primaryColor} size={22} className={classes.menuControl}>
             <IconChevronDown style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
           </ActionIcon>
         </Menu.Target>

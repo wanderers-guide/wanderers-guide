@@ -87,7 +87,6 @@ export function Component() {
       })}
       defaultColorScheme='dark'
     >
-      <DrawerBase />
       <Box
         p='xl'
         style={{
