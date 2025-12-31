@@ -38,6 +38,7 @@ export default function ContentFeedbackModal(props: {
   onCompleteFeedback: () => void;
   type: ContentType | AbilityBlockType;
   data: { id?: number; contentSourceId?: number };
+  zIndex?: number;
 }) {
   const [submitUpdate, setSubmitUpdate] = useState<{ id: number | undefined; content: any } | null>(null);
 
@@ -121,7 +122,7 @@ export default function ContentFeedbackModal(props: {
         }}
         title={<Title order={3}>Content Details</Title>}
         size={'sm'}
-        zIndex={1000}
+        zIndex={props.zIndex ?? 1000}
       >
         <Box style={{ position: 'relative', minHeight: 150 }}>
           <ContentFeedbackSection

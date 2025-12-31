@@ -1,13 +1,16 @@
-import { creatureDrawerState } from '@atoms/navAtoms';
-import { ActionIcon, Box, Divider, Drawer, Group, Loader, ScrollArea, Title } from '@mantine/core';
+import { creatureDrawerState, feedbackState } from '@atoms/navAtoms';
+import { Text, ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Title } from '@mantine/core';
 import { useDidUpdate, useMediaQuery } from '@mantine/hooks';
-import { IconX } from '@tabler/icons-react';
+import { IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { Suspense, useRef } from 'react';
 import { useRecoilState } from 'recoil';
 import useRefresh from '@utils/use-refresh';
 import { wideDesktopQuery } from '@utils/mobile-responsive';
 import { DRAWER_STYLES } from './DrawerBase';
 import { CreatureDrawerContent, CreatureDrawerTitle } from './types/CreatureDrawer';
+import { getAnchorStyles } from '@utils/anchor';
+import ContentFeedbackModal from '@modals/ContentFeedbackModal';
+import { modals } from '@mantine/modals';
 
 export default function DrawerCreatureBase() {
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
@@ -15,6 +18,7 @@ export default function DrawerCreatureBase() {
   const [_drawer, openDrawer] = useRecoilState(creatureDrawerState);
 
   const [displayTitle, refreshTitle] = useRefresh();
+  const [feedbackData, setFeedbackData] = useRecoilState(feedbackState);
 
   const viewport = useRef<HTMLDivElement>(null);
 
@@ -87,7 +91,53 @@ export default function DrawerCreatureBase() {
             </Suspense>
           )}
         </ScrollArea>
+
+        {_drawer && _drawer.data.id && (
+          <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
+            <HoverCard.Target>
+              <ActionIcon
+                variant='subtle'
+                aria-label='Help and Feedback'
+                radius='xl'
+                color='dark.3'
+                style={getAnchorStyles({ r: 5, b: 5 })}
+                onClick={() => {
+                  setFeedbackData({
+                    type: 'creature',
+                    data: {
+                      id: _drawer.data.id,
+                    },
+                  });
+                }}
+              >
+                <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+              </ActionIcon>
+            </HoverCard.Target>
+            <HoverCard.Dropdown py={0} px={10}>
+              <Text size='sm'>Something wrong?</Text>
+            </HoverCard.Dropdown>
+          </HoverCard>
+        )}
       </Drawer>
+      {feedbackData && (
+        <ContentFeedbackModal
+          opened={true}
+          onCancel={() => {
+            setFeedbackData(null);
+          }}
+          onStartFeedback={() => {
+            modals.closeAll();
+            openDrawer(null);
+          }}
+          onCompleteFeedback={() => {
+            handleDrawerClose();
+            setFeedbackData(null);
+          }}
+          type={feedbackData.type}
+          data={feedbackData.data}
+          zIndex={200}
+        />
+      )}
     </>
   );
 }

@@ -293,7 +293,7 @@ export function CreatureDrawerContent(props: {
                 }}
               />
 
-              {operationResults && (
+              {operationResults && !props.data.readOnly && (
                 <CreatureOperationResults
                   creature={creature}
                   operationResults={operationResults}
