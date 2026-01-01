@@ -48,7 +48,7 @@ import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 import { setCalculatedStatsInStore } from '@variables/calculated-stats';
 import { getEntityLevel } from '@utils/entity-utils';
-import { importFromContentPackage } from '@content/content-store';
+import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 
 /**
  * Inits the op selection tree based on an entity's op data
@@ -123,6 +123,8 @@ export async function _executeCharacterOperations(data: {
 
   resetVariables('CHARACTER');
   defineSelectionTree(character);
+  defineDefaultSources('INFO', content.defaultSources.INFO);
+  defineDefaultSources('PAGE', content.defaultSources.PAGE);
   importFromContentPackage(content);
   setVariable('CHARACTER', 'PAGE_CONTEXT', context);
   setVariable('CHARACTER', 'PATHFINDER', playingPathfinder(character));
@@ -944,6 +946,8 @@ export async function _executeCreatureOperations(data: {
 
   resetVariables(id);
   defineSelectionTree(creature);
+  defineDefaultSources('INFO', content.defaultSources.INFO);
+  defineDefaultSources('PAGE', content.defaultSources.PAGE);
   importFromContentPackage(content);
   importVariableStore('CHARACTER', data.charStore);
   setVariable('CHARACTER', 'PAGE_CONTEXT', 'CHARACTER-SHEET');

@@ -14,6 +14,8 @@ import {
   Creature,
   Item,
   Language,
+  SourceKey,
+  SourceValue,
   Spell,
   Trait,
   VersatileHeritage,
@@ -112,15 +114,6 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 ///////////////////////////////////////////////////////
 //                      Fetching                     //
 ///////////////////////////////////////////////////////
-
-export type SourceKey = 'PAGE' | 'INFO';
-export type SourceValue =
-  | number[]
-  | 'ALL-USER-ACCESSIBLE'
-  | 'ALL-OFFICIAL-PUBLIC'
-  | 'ALL-HOMEBREW-PUBLIC'
-  | 'ALL-PUBLIC'
-  | 'ALL-HOMEBREW-ACCESSIBLE';
 
 let DEFAULT_SOURCES: Record<SourceKey, SourceValue> = {
   PAGE: 'ALL-USER-ACCESSIBLE',
@@ -418,6 +411,10 @@ export async function fetchContentPackage(
     versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => a.name.localeCompare(b.name)),
     classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => a.name.localeCompare(b.name)),
     sources: content[12] as ContentSource[],
+    defaultSources: {
+      PAGE: getDefaultSources('PAGE'),
+      INFO: getDefaultSources('INFO'),
+    },
   } satisfies ContentPackage;
 
   // Preload high-need images from package

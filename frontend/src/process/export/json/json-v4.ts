@@ -1,12 +1,12 @@
 import { collectEntityAbilityBlocks, collectEntitySenses, collectEntitySpellcasting } from '@content/collect-content';
-import { defineDefaultSources, fetchContentPackage, SourceValue } from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { downloadObjectAsJson } from '@export/export-to-json';
 import { isItemWeapon, getFlatInvItems, getBestArmor, getBestShield, getInvBulk, labelizeBulk } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { executeOperations } from '@operations/operations.main';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { LivingEntity } from '@typing/content';
+import { LivingEntity, SourceValue } from '@typing/content';
 import { StoreID, VariableListStr, VariableStr } from '@typing/variables';
 import { displayResistWeak } from '@utils/resist-weaks';
 import { toLabel } from '@utils/strings';

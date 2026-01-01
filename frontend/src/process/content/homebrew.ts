@@ -1,5 +1,5 @@
-import { ContentSource, PublicUser } from '@typing/content';
-import { defineDefaultSources, fetchContentSources, SourceKey } from './content-store';
+import { ContentSource, PublicUser, SourceKey } from '@typing/content';
+import { defineDefaultSources, fetchContentSources } from './content-store';
 import { getPublicUser } from '@auth/user-manager';
 import { isEqual, uniqWith } from 'lodash-es';
 

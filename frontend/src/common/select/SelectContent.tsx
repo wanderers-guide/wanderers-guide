@@ -39,7 +39,6 @@ import {
   IconAdjustments,
   IconCheck,
   IconChevronDown,
-  IconCircleDotFilled,
   IconCopy,
   IconDots,
   IconSearch,

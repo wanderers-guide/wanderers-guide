@@ -50,7 +50,7 @@ import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import useCharacter from '@utils/use-character';
 
 // Determines how often to check for choice counts
-const CHOICE_COUNT_INTERVAL = 2000;
+const CHOICE_COUNT_INTERVAL = 1500;
 
 export default function CharBuilderCreation(props: { characterId: number; pageHeight: number }) {
   const theme = useMantineTheme();
