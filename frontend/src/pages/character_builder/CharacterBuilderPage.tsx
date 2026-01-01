@@ -18,10 +18,12 @@ import { Character } from '@typing/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
+import { useRecoilValue } from 'recoil';
+import { characterState } from '@atoms/characterAtoms';
 
 export function Component() {
   setPageTitle(`Builder`);
@@ -51,6 +53,7 @@ export function Component() {
   const stepIconStyle = { width: rem(18), height: rem(18) };
   const pageHeight = 550;
 
+  const globalCharacter = useRecoilValue(characterState);
   const { data, isLoading } = useQuery({
     queryKey: [`get-character-init-builder-${characterId}`, { characterId }],
     queryFn: async () => {
@@ -59,7 +62,13 @@ export function Component() {
       });
     },
   });
-  const character = data ?? null;
+  const character = useMemo(() => {
+    if (globalCharacter && globalCharacter.id === parseInt(characterId)) {
+      return globalCharacter;
+    } else {
+      return data ?? null;
+    }
+  }, [data, globalCharacter]);
 
   return (
     <Center>
