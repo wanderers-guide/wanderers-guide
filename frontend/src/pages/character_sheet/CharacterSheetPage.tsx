@@ -22,7 +22,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBackpack,
@@ -75,7 +75,9 @@ import { getAnchorStyles } from '@utils/anchor';
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
 
 export function Component(props: {}) {
-  setPageTitle(`Sheet`);
+  useEffect(() => {
+    setPageTitle(`Sheet`);
+  }, []);
 
   const { characterId } = useLoaderData() as {
     characterId: string;

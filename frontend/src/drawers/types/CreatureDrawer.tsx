@@ -65,6 +65,7 @@ import useRefresh from '@utils/use-refresh';
 import { getFinalHealthValue } from '@variables/variable-helpers';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
+import { exportVariableStore } from '@variables/variable-manager';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
   const id = props.data.id;
@@ -180,49 +181,56 @@ export function CreatureDrawerContent(props: {
   const executingOperations = useRef(false);
   useEffect(() => {
     if (!creature || !content || executingOperations.current) return;
-    setTimeout(() => {
-      if (!creature || !content || executingOperations.current) return;
-      executingOperations.current = true;
-      executeOperations<OperationCreatureResultPackage>({
-        type: 'CREATURE',
-        data: {
-          id: STORE_ID,
-          creature,
-          content,
-        },
-      }).then((results) => {
-        // Final execution pipeline:
+    executingOperations.current = true;
+    executeOperations<OperationCreatureResultPackage>({
+      type: 'CREATURE',
+      data: {
+        id: STORE_ID,
+        creature,
+        content,
+      },
+    }).then((results) => {
+      // Final execution pipeline:
 
-        // Add the extra items to the inventory from variables
-        addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
+      // Add the extra items to the inventory from variables
+      addExtraItems(STORE_ID, content.items, creature, convertToSetEntity(setCreature));
 
-        // Check bulk limits
-        checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
+      // Check bulk limits
+      checkBulkLimit(STORE_ID, creature, convertToSetEntity(setCreature), true);
 
-        // Apply armor/shield penalties
-        applyEquipmentPenalties(STORE_ID, creature);
+      // Apply armor/shield penalties
+      applyEquipmentPenalties(STORE_ID, creature);
 
-        // Apply conditions after everything else
-        applyConditions(STORE_ID, creature.details?.conditions ?? []);
-        if (creature.meta_data?.reset_hp !== false) {
-          // To reset hp, we need to confirm health
+      // Apply conditions after everything else
+      applyConditions(STORE_ID, creature.details?.conditions ?? []);
+
+      if (creature.meta_data?.reset_hp !== false) {
+        // To reset hp, we need to confirm health
+
+        const handleRestHP = () => {
           const maxHealth = getFinalHealthValue(STORE_ID);
           confirmHealth(`${maxHealth}`, maxHealth, creature, convertToSetEntity(setCreature));
-        } else {
-          // Because of the drained condition, let's confirm health
-          const maxHealth = getFinalHealthValue(STORE_ID);
-          confirmHealth(`${creature.hp_current}`, maxHealth, creature, convertToSetEntity(setCreature));
-        }
+        };
 
-        setOperationResults(results);
-        executingOperations.current = false;
-
+        // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
+        handleRestHP();
         setTimeout(() => {
-          setLoading(false);
-          refreshStatBlock();
-        }, 100);
-      });
-    }, 1);
+          handleRestHP();
+        }, 1000);
+      } else {
+        // Because of the drained condition, let's confirm health
+        const maxHealth = getFinalHealthValue(STORE_ID);
+        confirmHealth(`${creature.hp_current}`, maxHealth, creature, convertToSetEntity(setCreature));
+      }
+
+      setOperationResults(results);
+      executingOperations.current = false;
+
+      setTimeout(() => {
+        setLoading(false);
+        refreshStatBlock();
+      }, 100);
+    });
   }, [creature, content]);
 
   const setCreatureInstant = (call: React.SetStateAction<Creature | null>) => {

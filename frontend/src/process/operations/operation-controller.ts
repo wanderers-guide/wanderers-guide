@@ -27,6 +27,7 @@ import {
   getAllAttributeVariables,
   getAllSkillVariables,
   getVariable,
+  importVariableStore,
   resetVariables,
   setVariable,
 } from '@variables/variable-manager';
@@ -128,7 +129,7 @@ export async function _executeCharacterOperations(data: {
   setVariable('CHARACTER', 'STARFINDER', playingStarfinder(character));
   setVariable('CHARACTER', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
 
-  setVariable('CHARACTER', 'LEVEL', getEntityLevel(character));
+  setVariable('CHARACTER', 'LEVEL', character.level);
 
   setVariable('CHARACTER', 'ACTIVE_MODES', character.meta_data?.active_modes ?? [], 'Loaded');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
@@ -934,6 +935,7 @@ export async function _executeCreatureOperations(data: {
   id: StoreID;
   creature: Creature;
   content: ContentPackage;
+  charStore: VariableStore;
 }): Promise<{
   store: VariableStore;
   ors: OperationCreatureResultPackage;
@@ -943,6 +945,7 @@ export async function _executeCreatureOperations(data: {
   resetVariables(id);
   defineSelectionTree(creature);
   importFromContentPackage(content);
+  importVariableStore('CHARACTER', data.charStore);
   setVariable('CHARACTER', 'PAGE_CONTEXT', 'CHARACTER-SHEET');
 
   setVariable(id, 'LEVEL', getEntityLevel(creature));

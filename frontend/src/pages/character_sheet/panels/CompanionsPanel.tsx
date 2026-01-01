@@ -512,11 +512,23 @@ function AddCompanionSection() {
   });
 
   const selectionTypes = useMemo(() => {
-    return data?.traits?.filter((t) => t.meta_data?.companion_type_trait) ?? [];
+    return (
+      data?.traits
+        ?.filter((t) => t.meta_data?.companion_type_trait)
+        .sort((a, b) => {
+          return a.name.localeCompare(b.name);
+        }) ?? []
+    );
   }, [data]);
 
   const creatureOptions = useMemo(() => {
-    return data?.creatures?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1)) ?? [];
+    return (
+      data?.creatures
+        ?.filter((c) => findCreatureTraits(c).includes(selectedType ?? -1))
+        .sort((a, b) => {
+          return a.name.localeCompare(b.name);
+        }) ?? []
+    );
   }, [data, selectedType]);
 
   return (

@@ -17,7 +17,6 @@ export default function HealthSection(props: {
   entity: LivingEntity | null;
   setEntity: SetterOrUpdater<LivingEntity | null>;
 }) {
-  const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
