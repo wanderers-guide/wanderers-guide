@@ -29,7 +29,7 @@ import { ConditionPills, selectCondition } from '../sections/ConditionSection';
 import { setterOrUpdaterToValue } from '@utils/type-fixing';
 import { IconPlus, IconX } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { applyConditions } from '@conditions/condition-handler';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-helpers';
 import { getBestArmor } from '@items/inv-utils';

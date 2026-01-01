@@ -38,6 +38,38 @@ export interface InjectedSelectOption {
 
 ///
 
+interface OperationExecutionGeneric {
+  type: string;
+  data: Record<string, any>;
+}
+
+interface OperationExecutionCharacter extends OperationExecutionGeneric {
+  type: 'CHARACTER';
+  data: {
+    character: Character;
+    content: ContentPackage;
+    context: string;
+  };
+}
+
+interface OperationExecutionCreature extends OperationExecutionGeneric {
+  type: 'CREATURE';
+  data: {
+    id: StoreID;
+    creature: Creature;
+    content: ContentPackage;
+  };
+}
+
+export type OperationExecution = OperationExecutionCharacter | OperationExecutionCreature;
+
+type OperationResultData = {
+  store: VariableStore;
+  ors: OperationCharacterResultPackage | OperationCreatureResultPackage;
+};
+
+///
+
 export type OperationCharacterResultPackage = {
   contentSourceResults: {
     baseSource: ContentSource;

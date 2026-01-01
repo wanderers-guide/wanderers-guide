@@ -17,7 +17,6 @@ import {
   OperationAdjValue,
   OperationCreateValue,
   OperationDefineCastingSource,
-  OperationGiveItem,
   OperationGiveLanguage,
   OperationGiveSpell,
   OperationGiveSpellSlot,
@@ -28,10 +27,10 @@ import { createDefaultOperation } from '@operations/operation-utils';
 import { compactLabels, labelToVariable } from '@variables/variable-utils';
 import { parseDiceRoll, toLabel } from '@utils/strings';
 import { resetVariables } from '@variables/variable-manager';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-helpers';
-import { getBestArmor, isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
+import { getBestArmor, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { hashData, sign } from '@utils/numbers';
 import { findCreatureImage } from '@utils/images';
 import { getWeaponStats } from '@items/weapon-handler';

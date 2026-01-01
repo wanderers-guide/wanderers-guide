@@ -26,10 +26,9 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
-import { executeOperations } from '@operations/operation-controller';
 import { OperationResult } from '@typing/operations';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { removeParentSelections } from '@operations/selection-tree';
@@ -51,7 +50,7 @@ import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import useCharacter from '@utils/use-character';
 
 // Determines how often to check for choice counts
-const CHOICE_COUNT_INTERVAL = 1500;
+const CHOICE_COUNT_INTERVAL = 2000;
 
 export default function CharBuilderCreation(props: { characterId: number; pageHeight: number }) {
   const theme = useMantineTheme();
@@ -73,8 +72,7 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
   });
 
   // Just load progress manually
-  const [_p, setPercentage] = useState(0);
-  const percentage = content && !doneLoading ? Math.max(_p, 50) : _p;
+  const [percentage, setPercentage] = useState(0);
   const interval = useInterval(() => setPercentage(percentage + 2), 50);
   useEffect(() => {
     interval.start();
@@ -2150,7 +2148,6 @@ function OperationResultSelector(props: {
   level?: number;
   onChange: (path: string, value: string) => void;
 }) {
-  const character = useRecoilValue(characterState);
   return (
     <SelectContentButton
       type={

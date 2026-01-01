@@ -16,7 +16,7 @@ import {
   getItemHealth,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { Character, AbilityBlock, Spell } from '@typing/content';
 import { VariableAttr, VariableListStr, VariableStr, VariableNum, VariableProf } from '@typing/variables';
 import { actionCostToLabel } from '@utils/actions';

@@ -36,12 +36,12 @@ import WanderersGuideLogo from './WanderersGuideLogo';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
 import { useQueryClient } from '@tanstack/react-query';
-import { phoneQuery } from '@utils/mobile-responsive';
+import { isTouchDevice, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
-  const isPhone = useMediaQuery(phoneQuery());
+  const isMobileTouch = useMediaQuery(tabletQuery()) && isTouchDevice();
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
@@ -492,7 +492,7 @@ export default function Layout(props: { children: React.ReactNode }) {
 
       <ScrollArea
         h={'100dvh'}
-        type={isPhone ? 'never' : 'auto'}
+        type={isMobileTouch ? 'never' : 'auto'}
         scrollbars='y'
         onScrollPositionChange={(pos) => {
           if (pos.y > SCROLL_PINNED_THRESHOLD) {

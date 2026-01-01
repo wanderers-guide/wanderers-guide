@@ -52,7 +52,7 @@ export default function EntityInfoSection(props: {
           position: 'relative',
         }}
       >
-        <Group gap={20} wrap='nowrap' align='flex-start'>
+        <Group gap={20} wrap='nowrap' align='flex-start' justify='space-between'>
           {isCharacter(props.entity) && (
             <CharacterInfo
               character={props.entity}
@@ -90,9 +90,9 @@ export default function EntityInfoSection(props: {
           )}
           {isCreature(props.entity) && <CreatureDetailedInfo id={props.id} creature={props.entity} />}
 
-          <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
+          <Stack gap={10} justify='flex-start' pt={3}>
             <Stack gap={5}>
-              <Box>
+              <Box maw={80}>
                 <BlurButton
                   size='compact-xs'
                   bgColor={ICON_BG_COLOR}
@@ -110,7 +110,7 @@ export default function EntityInfoSection(props: {
                   Edit
                 </BlurButton>
               </Box>
-              <Box>
+              <Box maw={80}>
                 <BlurButton
                   size='compact-xs'
                   bgColor={ICON_BG_COLOR}
@@ -143,12 +143,12 @@ export default function EntityInfoSection(props: {
               </Box>
             </Stack>
             <Stack gap={0}>
-              <Box>
+              <Box maw={80}>
                 <Text fz='xs' ta='center' c='gray.3'>
                   Lvl. {props.entity ? getEntityLevel(props.entity) : '?'}
                 </Text>
               </Box>
-              <Box>
+              <Box maw={80}>
                 <TextInput
                   className={tinyInputClasses.input}
                   ref={expRef}

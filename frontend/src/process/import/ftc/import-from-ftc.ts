@@ -8,7 +8,7 @@ import {
   getDefaultSources,
 } from '@content/content-store';
 import { isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { OperationResult } from '@typing/operations';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { makeRequest } from '@requests/request-manager';

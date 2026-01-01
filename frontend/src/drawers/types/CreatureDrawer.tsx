@@ -23,7 +23,7 @@ import {
 } from '@mantine/core';
 import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { convertKeyToBasePrefix } from '@operations/operation-utils';
 import { DisplayOperationResult } from '@pages/character_builder/CharBuilderCreation';
 import { confirmHealth, handleRest } from '@pages/character_sheet/entity-handler';

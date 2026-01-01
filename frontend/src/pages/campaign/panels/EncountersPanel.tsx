@@ -28,7 +28,7 @@ import {
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { CreateCombatantModal } from '@modals/CreateCombatantModal';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { ConditionPills, selectCondition } from '@pages/character_sheet/sections/ConditionSection';
 import { makeRequest } from '@requests/request-manager';

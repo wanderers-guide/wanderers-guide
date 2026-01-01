@@ -154,12 +154,23 @@ export default function InventoryPanel(props: {
                       },
                     };
                   });
+
+                  if (isPhone) {
+                    setTimeout(() => {
+                      modals.closeAll();
+                    }, 100);
+                  }
                 },
               },
               zIndex: 1000,
             });
           } else {
             await handleAddItem(props.setEntity, item, type === 'FORMULA');
+            if (isPhone) {
+              setTimeout(() => {
+                modals.closeAll();
+              }, 100);
+            }
           }
         },
       },

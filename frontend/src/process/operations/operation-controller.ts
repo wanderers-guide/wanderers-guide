@@ -27,7 +27,6 @@ import {
   getAllAttributeVariables,
   getAllSkillVariables,
   getVariable,
-  importVariableStore,
   resetVariables,
   setVariable,
 } from '@variables/variable-manager';
@@ -47,107 +46,8 @@ import { isTruthy } from '@utils/type-fixing';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 import { setCalculatedStatsInStore } from '@variables/calculated-stats';
-import { WorkerRequest, WorkerResponse } from '@typing/worker';
 import { getEntityLevel } from '@utils/entity-utils';
 import { importFromContentPackage } from '@content/content-store';
-
-interface OperationExecutionGeneric {
-  type: string;
-  data: Record<string, any>;
-}
-
-interface OperationExecutionCharacter extends OperationExecutionGeneric {
-  type: 'CHARACTER';
-  data: {
-    character: Character;
-    content: ContentPackage;
-    context: string;
-  };
-}
-
-interface OperationExecutionCreature extends OperationExecutionGeneric {
-  type: 'CREATURE';
-  data: {
-    id: StoreID;
-    creature: Creature;
-    content: ContentPackage;
-  };
-}
-
-export type OperationExecution = OperationExecutionCharacter | OperationExecutionCreature;
-
-type OperationResultData = {
-  store: VariableStore;
-  ors: OperationCharacterResultPackage | OperationCreatureResultPackage;
-};
-
-/**
- * Main function to execute operations for a character or creature
- * @param execution - Operation execution data
- * @returns - Operation results data
- */
-export async function executeOperations<T = OperationCharacterResultPackage | OperationCreatureResultPackage>(
-  execution: OperationExecution
-) {
-  const results = await executeOperationsViaWorker(execution);
-  // If we have a store, import it
-  if (results.store) {
-    if (execution.type === 'CHARACTER') {
-      importVariableStore('CHARACTER', results.store);
-    } else if (execution.type === 'CREATURE') {
-      importVariableStore(execution.data.id, results.store);
-    }
-  }
-  return results.ors as T;
-}
-
-/**
- * Handles executing operations thru the web worker and pipes back the results
- * @param execution - Operation execution data
- * @returns - Operation results data
- */
-async function executeOperationsViaWorker(execution: OperationExecution): Promise<OperationResultData> {
-  return new Promise((resolve, reject) => {
-    // Check for worker support
-    if (!('Worker' in window)) {
-      // fallback (run it in the main thread)
-      if (execution.type === 'CHARACTER') {
-        resolve(_internal_executeCharacterOperations(execution.data));
-      } else if (execution.type === 'CREATURE') {
-        resolve(_internal_executeCreatureOperations(execution.data));
-      }
-
-      return;
-    }
-
-    // Create a new worker
-    const worker = new Worker(new URL('./operations.worker.ts', import.meta.url), { type: 'module' });
-
-    // Handle messages from the worker
-    worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
-      if (e.data.type === 'RESULT') {
-        if (e.data.payload.status === 'success') {
-          resolve(e.data.payload.data as OperationResultData);
-        } else if (e.data.payload.status === 'error') {
-          reject(new Error(e.data.payload.message || 'Unknown error'));
-        } else {
-          reject(new Error(JSON.stringify(e.data.payload.data)));
-        }
-        worker.terminate();
-      }
-    };
-
-    // Send the execution data to the worker
-    const msg: WorkerRequest<OperationExecution> = {
-      type: 'RUN',
-      payload: execution,
-    };
-
-    worker.postMessage(msg);
-  });
-}
-
-/////////////////////////////
 
 /**
  * Inits the op selection tree based on an entity's op data
@@ -210,7 +110,7 @@ async function _executeOps(
         - If, in the future, we add a way to execute a list of operations X times, where
           X is based on a value of a variable, those would also need to be run here.
 */
-export async function _internal_executeCharacterOperations(data: {
+export async function _executeCharacterOperations(data: {
   character: Character;
   content: ContentPackage;
   context: string;
@@ -1030,7 +930,7 @@ export async function _internal_executeCharacterOperations(data: {
   };
 }
 
-export async function _internal_executeCreatureOperations(data: {
+export async function _executeCreatureOperations(data: {
   id: StoreID;
   creature: Creature;
   content: ContentPackage;

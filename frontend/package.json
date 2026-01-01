@@ -73,7 +73,8 @@
     "showdown": "^2.1.0",
     "tinycolor2": "^1.6.0",
     "title-case": "^4.3.2",
-    "turndown": "^7.2.0"
+    "turndown": "^7.2.0",
+    "workerpool": "^10.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",

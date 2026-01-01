@@ -6,11 +6,11 @@ import { saveCustomization } from '@content/customization-cache';
 import { applyEquipmentPenalties } from '@items/inv-utils';
 import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { confirmHealth } from '@pages/character_sheet/entity-handler';
 import { makeRequest } from '@requests/request-manager';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Character, ContentPackage, Inventory } from '@typing/content';
+import { Character, ContentPackage } from '@typing/content';
 import { OperationCharacterResultPackage } from '@typing/operations';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { setVariable } from '@variables/variable-manager';
@@ -106,9 +106,9 @@ export default function useCharacter(
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const executingOperations = useRef<number | null>(null);
 
-  const [debouncedCharacter] = useDebouncedValue(character, 1000);
+  const [debouncedCharacter] = useDebouncedValue(character, 800);
   const prevDebouncedCharacter = usePrevious(debouncedCharacter);
-  const setCharacterDebounced = useDebouncedCallback(setCharacter, 1000);
+  const setCharacterDebounced = useDebouncedCallback(setCharacter, 800);
 
   const getUpdateHash = (c: Character | null | undefined) => {
     return hashData(
@@ -144,9 +144,7 @@ export default function useCharacter(
   };
 
   useEffect(() => {
-    if (options.type !== 'EXECUTE_OPS') {
-      return;
-    }
+    if (options.type !== 'EXECUTE_OPS') return;
     if (!debouncedCharacter) return;
 
     const prevOpsHash = getUpdateHash(prevDebouncedCharacter);
@@ -162,77 +160,81 @@ export default function useCharacter(
         content: options.data.content,
         context: options.data.context,
       },
-    }).then((results) => {
-      if (executingOperations.current !== getUpdateHash(debouncedCharacter)) {
-        // Old execution, ignore
-        console.log('... Ignoring outdated ops #', getUpdateHash(debouncedCharacter));
-        return;
-      }
+    }).then((results) => handleOperationResults(results));
+  }, [debouncedCharacter]);
 
-      // Final execution pipeline:
-      console.log('... Finished executing ops #', getUpdateHash(debouncedCharacter));
+  const handleOperationResults = (results: OperationCharacterResultPackage) => {
+    if (options.type !== 'EXECUTE_OPS') return;
+    if (!debouncedCharacter) return;
+    if (executingOperations.current !== getUpdateHash(debouncedCharacter)) {
+      // Old execution, ignore
+      console.log('... Ignoring outdated ops #', getUpdateHash(debouncedCharacter));
+      return;
+    }
 
-      if (debouncedCharacter.variants?.proficiency_without_level) {
-        setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
-      }
+    // Final execution pipeline:
+    console.log('... Finished executing ops #', getUpdateHash(debouncedCharacter));
 
-      // Add the extra items to the inventory from variables
-      addExtraItems(
-        'CHARACTER',
-        options.data.content.items,
+    if (debouncedCharacter.variants?.proficiency_without_level) {
+      setVariable('CHARACTER', 'PROF_WITHOUT_LEVEL', true);
+    }
+
+    // Add the extra items to the inventory from variables
+    addExtraItems(
+      'CHARACTER',
+      options.data.content.items,
+      debouncedCharacter,
+      convertToSetEntity(setCharacterDebounced)
+    );
+
+    // Check bulk limits
+    checkBulkLimit(
+      'CHARACTER',
+      debouncedCharacter,
+      convertToSetEntity(setCharacterDebounced),
+      debouncedCharacter.options?.ignore_bulk_limit !== true
+    );
+
+    // Apply armor/shield penalties
+    applyEquipmentPenalties('CHARACTER', debouncedCharacter);
+
+    // Apply conditions after everything else
+    applyConditions('CHARACTER', debouncedCharacter.details?.conditions ?? []);
+
+    if (debouncedCharacter.meta_data?.reset_hp !== false) {
+      // To reset hp, we need to confirm health
+
+      const handleRestHP = () => {
+        const maxHealth = getFinalHealthValue('CHARACTER');
+        confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+      };
+
+      // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
+      handleRestHP();
+      setTimeout(() => {
+        handleRestHP();
+      }, 1000);
+    } else {
+      // Because of the drained condition, let's confirm health
+      const maxHealth = getFinalHealthValue('CHARACTER');
+      confirmHealth(
+        `${debouncedCharacter.hp_current}`,
+        maxHealth,
         debouncedCharacter,
         convertToSetEntity(setCharacterDebounced)
       );
+    }
 
-      // Check bulk limits
-      checkBulkLimit(
-        'CHARACTER',
-        debouncedCharacter,
-        convertToSetEntity(setCharacterDebounced),
-        debouncedCharacter.options?.ignore_bulk_limit !== true
-      );
+    // Save calculated stats
+    saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(setCharacterDebounced));
 
-      // Apply armor/shield penalties
-      applyEquipmentPenalties('CHARACTER', debouncedCharacter);
+    setOperationResults(results);
+    executingOperations.current = null;
 
-      // Apply conditions after everything else
-      applyConditions('CHARACTER', debouncedCharacter.details?.conditions ?? []);
-
-      if (debouncedCharacter.meta_data?.reset_hp !== false) {
-        // To reset hp, we need to confirm health
-
-        const handleRestHP = () => {
-          const maxHealth = getFinalHealthValue('CHARACTER');
-          confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
-        };
-
-        // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
-        handleRestHP();
-        setTimeout(() => {
-          handleRestHP();
-        }, 1500);
-      } else {
-        // Because of the drained condition, let's confirm health
-        const maxHealth = getFinalHealthValue('CHARACTER');
-        confirmHealth(
-          `${debouncedCharacter.hp_current}`,
-          maxHealth,
-          debouncedCharacter,
-          convertToSetEntity(setCharacterDebounced)
-        );
-      }
-
-      // Save calculated stats
-      saveCalculatedStats('CHARACTER', debouncedCharacter, convertToSetEntity(setCharacterDebounced));
-
-      setOperationResults(results);
-      executingOperations.current = null;
-
-      setTimeout(() => {
-        options.data.onFinishLoading?.();
-      }, 100);
-    });
-  }, [debouncedCharacter]);
+    setTimeout(() => {
+      options.data.onFinishLoading?.();
+    }, 100);
+  };
 
   // Update character in db when state changed
   useDidUpdate(() => {

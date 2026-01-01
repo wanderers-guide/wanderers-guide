@@ -3,7 +3,7 @@ import { defineDefaultSources, fetchContentPackage, SourceValue } from '@content
 import { downloadObjectAsJson } from '@export/export-to-json';
 import { isItemWeapon, getFlatInvItems, getBestArmor, getBestShield, getInvBulk, labelizeBulk } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
-import { executeOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { getSpellStats } from '@spells/spell-handler';
 import { isCantrip, isRitual } from '@spells/spell-utils';
 import { LivingEntity } from '@typing/content';
@@ -26,7 +26,6 @@ import {
   exportVariableStore,
   getVariables,
 } from '@variables/variable-manager';
-import { cloneDeep } from 'lodash-es';
 
 export default async function jsonV4(entity: LivingEntity) {
   const exportObject = {

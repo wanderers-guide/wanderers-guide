@@ -198,8 +198,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 <>
                   <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <ConditionSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
-                  <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <ArmorSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+                  <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <SpeedSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                 </>
               )}
@@ -572,7 +572,13 @@ function SectionPanels(props: {
   } else {
     return (
       <Box>
-        <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+        <BlurBox
+          blur={10}
+          p='sm'
+          style={{
+            height: props.panelHeight + 65,
+          }}
+        >
           <Tabs
             color='dark.6'
             variant='pills'

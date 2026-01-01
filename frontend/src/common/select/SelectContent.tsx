@@ -31,14 +31,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import {
-  useDebouncedState,
-  useDebouncedValue,
-  useDidUpdate,
-  useElementSize,
-  useHover,
-  useMergedRef,
-} from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useMergedRef } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
@@ -100,7 +93,7 @@ import {
   VersatileHeritage,
 } from '../../typing/content';
 import { adjustCreature } from '@utils/creature';
-import { intersection, isNumber } from 'lodash-es';
+import { intersection, isEqual, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@utils/entity-utils';
 import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
 
@@ -123,14 +116,25 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
+  const [debouncedSelected] = useDebouncedValue(selected, 5000);
 
-  // Fill in selected content
+  // Sync the selected content (only after huge delay)
   useEffect(() => {
     (async () => {
+      // If they're the same, no need to do anything
+      if (props.selectedId === selected?.id) {
+        return;
+      }
+      // If it's been a short time since the selected changed, don't do anything
+      if (!isEqual(debouncedSelected, selected)) {
+        return;
+      }
+
       if (!props.selectedId) {
         setSelected(undefined);
         return;
       }
+
       if (isNumber(props.selectedId)) {
         const content = await fetchContentById<T>(props.type, props.selectedId);
         if (content) {
@@ -138,6 +142,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
           return;
         }
       }
+
       if (props.options?.overrideOptions) {
         const option = props.options.overrideOptions.find(
           // @ts-ignore
@@ -149,7 +154,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         }
       }
     })();
-  }, [props.selectedId, props.type, props.options?.overrideOptions]);
+  }, [debouncedSelected, props.selectedId, props.type, props.options?.overrideOptions]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
@@ -2940,7 +2945,7 @@ export function LanguageSelectionOption(props: {
           {/* @ts-ignore */}
           {props.language._is_core && (
             <ThemeIcon variant='light' size='xs' radius='xl'>
-              <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />
+              <IconCheck style={{ width: '70%', height: '70%' }} />
             </ThemeIcon>
           )}
         </Group>
