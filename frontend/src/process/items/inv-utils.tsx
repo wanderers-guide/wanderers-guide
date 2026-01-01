@@ -844,7 +844,7 @@ export function isItemImplantable(item: Item) {
  * @returns - Whether the item is equippable
  */
 export function isItemEquippable(item: Item) {
-  return isItemWeapon(item) || isItemArmor(item) || isItemShield(item);
+  return isItemWeapon(item) || isItemArmor(item) || isItemShield(item) || isItemStave(item);
 }
 
 /**
@@ -972,6 +972,15 @@ export function isItemArmor(item: Item) {
  */
 export function isItemShield(item: Item) {
   return item.meta_data?.ac_bonus !== undefined && !isItemArmor(item);
+}
+
+/**
+ * Utility function to determine if an item is a stave
+ * @param item - Item
+ * @returns - Whether the item is a stave
+ */
+export function isItemStave(item: Item) {
+  return hasTraitType('STAFF', item.traits);
 }
 
 /**
