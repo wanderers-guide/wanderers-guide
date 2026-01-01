@@ -164,6 +164,7 @@ export function CreateBackgroundModal(props: {
                   setDescription(json);
                   form.setFieldValue('description', text);
                 }}
+                maxHeight={500}
               />
             )}
 

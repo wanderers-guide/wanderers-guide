@@ -5,9 +5,8 @@ import { CharacterInfo } from '@common/CharacterInfo';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
-import { FilterOptions, defaultFeatOptions, prereqFilterOption } from '@common/select/filters';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { fetchContentPackage, fetchContentSources } from '@content/content-store';
+import { fetchContent, fetchContentPackage, fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
 import { AncestryInitialOverview, convertAncestryOperationsIntoUI } from '@drawers/types/AncestryDrawer';
@@ -36,7 +35,7 @@ import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@
 import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Ancestry, Background, Class, ContentPackage } from '@typing/content';
+import { AbilityBlock, Ancestry, Background, Character, Class, ClassArchetype, ContentPackage } from '@typing/content';
 import { ImageOption } from '@typing/index';
 import { OperationCharacterResultPackage, OperationSelect } from '@typing/operations';
 import { VariableListStr, VariableProf } from '@typing/variables';
@@ -48,7 +47,7 @@ import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 2500;
@@ -62,17 +61,21 @@ export default function CharBuilderCreation(props: { pageHeight: number }) {
     queryKey: [`find-content-${character?.id}`],
     queryFn: async () => {
       // Prefetch content sources (to avoid multiple requests)
-      await fetchContentSources({ includeCommonCore: true });
+      await fetchContentSources(getDefaultSources('PAGE'));
 
-      const content = await fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: false });
+      const content = await fetchContentPackage(getDefaultSources('PAGE'), {
+        fetchSources: true,
+        fetchCreatures: false,
+      });
       return content;
     },
     refetchOnWindowFocus: false,
   });
 
   // Just load progress manually
-  const [percentage, setPercentage] = useState(0);
-  const interval = useInterval(() => setPercentage((p) => p + 2), 30);
+  const [_p, setPercentage] = useState(0);
+  const percentage = content && !doneLoading ? Math.max(_p, 50) : _p;
+  const interval = useInterval(() => setPercentage(percentage + 2), 50);
   useEffect(() => {
     interval.start();
     return interval.stop;
@@ -206,7 +209,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.ancestry?.id,
                     }
                   );
@@ -233,7 +235,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.background?.id,
                     }
                   );
@@ -242,6 +243,8 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Class>(
                     'class',
                     (option) => {
+                      handleClassArchetypeSelection(character, setCharacter, option, '1');
+
                       // Wipe old data
                       let selections = removeParentSelections('class_', character?.operation_data?.selections);
                       if (!character?.variants?.dual_class) {
@@ -254,6 +257,7 @@ export function CharBuilderCreationInner(props: {
                           details: {
                             ...prev.details,
                             class: option,
+                            class_archetype: undefined,
                           },
                           operation_data: {
                             ...prev.operation_data,
@@ -263,7 +267,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.class?.id,
                       filterFn: (option) => option.id !== character?.details?.class_2?.id,
                     }
@@ -273,6 +276,8 @@ export function CharBuilderCreationInner(props: {
                   selectContent<Class>(
                     'class',
                     (option) => {
+                      handleClassArchetypeSelection(character, setCharacter, option, '2');
+
                       // Wipe old data
                       const selections = removeParentSelections('class-2_', character?.operation_data?.selections);
                       setCharacter((prev) => {
@@ -282,6 +287,7 @@ export function CharBuilderCreationInner(props: {
                           details: {
                             ...prev.details,
                             class_2: option,
+                            class_archetype_2: undefined,
                           },
                           operation_data: {
                             ...prev.operation_data,
@@ -291,7 +297,6 @@ export function CharBuilderCreationInner(props: {
                       });
                     },
                     {
-                      groupBySource: true,
                       selectedId: character?.details?.class_2?.id,
                       filterFn: (option) => option.id !== character?.details?.class?.id,
                     }
@@ -312,7 +317,7 @@ export function CharBuilderCreationInner(props: {
             <Divider pb={5} />
           </>
         )}
-        <ScrollArea h={props.pageHeight} pr={14} scrollbars='y'>
+        <ScrollArea h={props.pageHeight + (isMobile ? -100 : 0)} pr={14} scrollbars='y'>
           <Accordion
             value={levelItemValue}
             onChange={setLevelItemValue}
@@ -373,7 +378,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.ancestry?.id,
               }
             );
@@ -400,7 +404,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.background?.id,
               }
             );
@@ -409,6 +412,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Class>(
               'class',
               (option) => {
+                handleClassArchetypeSelection(character, setCharacter, option, '1');
+
                 // Wipe old data
                 let selections = removeParentSelections('class_', character?.operation_data?.selections);
                 if (!character?.variants?.dual_class) {
@@ -421,6 +426,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       class: option,
+                      class_archetype: undefined,
                     },
                     operation_data: {
                       ...prev.operation_data,
@@ -430,7 +436,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.class?.id,
                 filterFn: (option) => option.id !== character?.details?.class_2?.id,
               }
@@ -440,6 +445,8 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
             selectContent<Class>(
               'class',
               (option) => {
+                handleClassArchetypeSelection(character, setCharacter, option, '2');
+
                 // Wipe old data
                 const selections = removeParentSelections('class-2_', character?.operation_data?.selections);
                 setCharacter((prev) => {
@@ -449,6 +456,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                     details: {
                       ...prev.details,
                       class_2: option,
+                      class_archetype_2: undefined,
                     },
                     operation_data: {
                       ...prev.operation_data,
@@ -458,7 +466,6 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 });
               },
               {
-                groupBySource: true,
                 selectedId: character?.details?.class_2?.id,
                 filterFn: (option) => option.id !== character?.details?.class?.id,
               }
@@ -1128,7 +1135,7 @@ function LevelSection(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   const saveSelectionChange = (path: string, value: string) => {
     setCharacter((prev) => {
@@ -1259,6 +1266,65 @@ function LevelSection(props: {
   );
 }
 
+/**
+ * Handle class archetype selection
+ * @param character - current character
+ * @param setCharacter - setter for character state
+ * @param class_ - selected class
+ * @param recordT - '1' for primary class, '2' for second class
+ */
+function handleClassArchetypeSelection(
+  _character: Character | null,
+  setCharacter: SetterOrUpdater<Character | null>,
+  class_: Class,
+  recordT: '1' | '2'
+) {
+  fetchContent<ClassArchetype>('class-archetype', {
+    class_id: class_.id,
+    content_sources: getDefaultSources('PAGE'),
+  }).then((options) => {
+    if (options.length > 0) {
+      selectContent<ClassArchetype>(
+        'class-archetype',
+        (option) => {
+          if (option.id === -999) {
+            return;
+          }
+
+          setCharacter((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              details: {
+                ...(prev.details ?? {}),
+                class_archetype: recordT === '1' ? option : prev.details?.class_archetype,
+                class_archetype_2: recordT === '2' ? option : prev.details?.class_archetype_2,
+              },
+            };
+          });
+        },
+        {
+          selectedId: -1,
+          description: (
+            <Text fz='sm'>
+              This class supports optional class archetypes that reshape its core mechanics. Would you like to select
+              one?
+            </Text>
+          ),
+          overrideOptions: [
+            {
+              id: -999,
+              class_id: class_.id,
+              name: '— Base Class (No Archetype)',
+            },
+            ...options,
+          ],
+        }
+      );
+    }
+  });
+}
+
 function ClassFeatureAccordionItem(props: {
   id: string;
   feature: AbilityBlock;
@@ -1285,7 +1351,7 @@ function ClassFeatureAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.results]);
 
   return (
     <Accordion.Item
@@ -1350,7 +1416,7 @@ function AncestrySectionAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.results]);
 
   return (
     <Accordion.Item
@@ -1537,7 +1603,7 @@ function AncestryAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   // Only display the operation results that aren't already displayed in the ancestry overview
   const physicalFeatures = (props.content.abilityBlocks ?? []).filter((block) => block.type === 'physical-feature');
@@ -1657,7 +1723,7 @@ function BackgroundAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   // Only display the operation results that aren't already displayed in the background overview
   let backgroundOperationResults = props.operationResults?.backgroundResults ?? [];
@@ -1765,7 +1831,7 @@ function ClassAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   // Only display the operation results that aren't already displayed in the class overview
   let classOperationResults =
@@ -1878,7 +1944,7 @@ function BooksAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   return (
     <Accordion.Item
@@ -1942,7 +2008,7 @@ function ItemsAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   return (
     <Accordion.Item
@@ -2008,7 +2074,7 @@ function CustomAccordionItem(props: {
       }
     }, CHOICE_COUNT_INTERVAL);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [props.operationResults]);
 
   const selections = props.operationResults.characterResults.filter((result) => hasOperationSelection(result));
 
@@ -2097,28 +2163,11 @@ function OperationResultSelector(props: {
   onChange: (path: string, value: string) => void;
 }) {
   const character = useRecoilValue(characterState);
-  const showPrereqFilter = () => {
-    const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
-    if (!DETECT_PREREQUS) {
-      return false;
-    }
-    if ((props.result?.selection?.options ?? []).length == 0) {
-      return false;
-    }
-    return (
-      props.result?.selection?.options[0]._content_type === 'ability-block' &&
-      props.result?.selection?.options[0].type === 'feat'
-    );
-  };
-  let filterOptions: FilterOptions = { options: defaultFeatOptions };
-  if (showPrereqFilter()) {
-    filterOptions = { options: [prereqFilterOption, ...defaultFeatOptions] };
-  }
   return (
     <SelectContentButton
       type={
         (props.result?.selection?.options ?? []).length > 0
-          ? props.result?.selection?.options[0]._content_type ?? 'ability-block'
+          ? (props.result?.selection?.options[0]._content_type ?? 'ability-block')
           : 'ability-block'
       }
       onClick={(option) => {
@@ -2137,7 +2186,13 @@ function OperationResultSelector(props: {
         abilityBlockType:
           (props.result?.selection?.options ?? []).length > 0 ? props.result?.selection?.options[0].type : undefined,
         skillAdjustment: props.result?.selection?.skillAdjustment,
-        filterOptions,
+        // advancedPresetFilters: {
+        //   type: props.result?.selection?.options[0]._content_type,
+        //   ab_type: props.result?.selection?.options[0].type,
+        //   content_sources: character ? character.content_sources?.enabled : undefined,
+        //   level_max: character ? character.level : undefined,
+        //   level_min: 1,
+        // },
       }}
     />
   );

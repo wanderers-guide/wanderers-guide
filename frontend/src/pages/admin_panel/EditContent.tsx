@@ -9,11 +9,9 @@ export default function EditContent() {
   const [sourceId, setSourceId] = useState<number | undefined>(undefined);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-admin`],
     queryFn: async () => {
-      const sources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
-      defineDefaultSources(sources.map((source) => source.id));
-      return sources;
+      return await fetchContentSources(defineDefaultSources('PAGE', 'ALL-OFFICIAL-PUBLIC'));
     },
     refetchInterval: 1000,
   });

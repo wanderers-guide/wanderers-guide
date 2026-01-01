@@ -1,7 +1,9 @@
 import { Operation } from './operations';
 
+type Availability = 'STANDARD' | 'LIMITED' | 'RESTRICTED';
 type Rarity = 'COMMON' | 'UNCOMMON' | 'RARE' | 'UNIQUE';
 type Size = 'TINY' | 'SMALL' | 'MEDIUM' | 'LARGE' | 'HUGE' | 'GARGANTUAN';
+type ItemGroup = 'GENERAL' | 'WEAPON' | 'ARMOR' | 'SHIELD' | 'RUNE' | 'UPGRADE' | 'MATERIAL';
 type ActionCost =
   | 'ONE-ACTION'
   | 'TWO-ACTIONS'
@@ -27,6 +29,7 @@ type ContentType =
   | 'class'
   | 'archetype'
   | 'versatile-heritage'
+  | 'class-archetype'
   | 'ability-block'
   | 'creature'
   | 'ancestry'
@@ -202,6 +205,29 @@ interface Class {
   version: string;
 }
 
+interface ClassArchetype {
+  id: number;
+  created_at: string;
+  class_id: number;
+  archetype_id?: number;
+  name: string;
+  rarity: Rarity;
+  description: string;
+  artwork_url: string;
+  operations?: Operation[] | undefined;
+  feature_adjustments?: {
+    fa_id: string;
+    type: 'ADD' | 'REPLACE' | 'REMOVE';
+    prev_id?: number;
+    data?: AbilityBlock;
+  }[];
+  override_skill_training_base?: number | null;
+  override_class_operations?: boolean;
+  content_source_id: number;
+  deprecated?: boolean;
+  version: string;
+}
+
 interface Archetype {
   id: number;
   created_at: string;
@@ -356,7 +382,9 @@ interface Character extends LivingEntity {
     ancestry?: Ancestry;
     background?: Background;
     class?: Class;
+    class_archetype?: ClassArchetype;
     class_2?: Class;
+    class_archetype_2?: ClassArchetype;
     info?: {
       appearance?: string;
       personality?: string;

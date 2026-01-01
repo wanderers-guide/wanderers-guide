@@ -70,6 +70,7 @@ export function InjectTextOperation(props: {
             setText(json);
             props.onChange(props.type, props.id, text);
           }}
+          maxHeight={500}
         />
       </Stack>
     </OperationWrapper>

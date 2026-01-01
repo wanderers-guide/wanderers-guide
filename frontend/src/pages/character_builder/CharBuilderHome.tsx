@@ -70,8 +70,7 @@ import OperationsModal from '@modals/OperationsModal';
 import { hasPatreonAccess } from '@utils/patreon';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { drawerState } from '@atoms/navAtoms';
-import { AbilityBlockType, Campaign, ContentType, PublicUser } from '@typing/content';
-import ContentFeedbackModal from '@modals/ContentFeedbackModal';
+import { Campaign, PublicUser } from '@typing/content';
 import { userState } from '@atoms/userAtoms';
 import { makeRequest } from '@requests/request-manager';
 import { updateSubscriptions } from '@content/homebrew';
@@ -89,10 +88,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
   const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [feedbackData, setFeedbackData] = useState<{
-    type: ContentType | AbilityBlockType;
-    data: { id?: number; contentSourceId?: number };
-  } | null>(null);
 
   const [character, setCharacter] = useRecoilState(characterState);
   const [loadingGenerateName, setLoadingGenerateName] = useState(false);
@@ -136,9 +131,9 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
   });
 
   const { data: fetchedBooks, refetch } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-character-settings`, { characterId: character?.id }],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all' })).filter((book) => book.deprecated !== true);
+      return (await fetchContentSources('ALL-OFFICIAL-PUBLIC')).filter((book) => book.deprecated !== true);
     },
   });
   const books = fetchedBooks ?? [];
@@ -210,7 +205,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
       setTimeout(() => {
         // Refresh data to repopulate with new book content
         resetContentStore();
-        defineDefaultSources(character?.content_sources?.enabled ?? []);
+        defineDefaultSources('PAGE', character?.content_sources?.enabled ?? []);
         refetch();
         queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] });
       }, 200);
@@ -239,9 +234,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                           type: 'content-source',
                           data: {
                             id: source.id,
-                            onFeedback: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => {
-                              setFeedbackData({ type, data: { id, contentSourceId } });
-                            },
                           },
                         });
                       }}
@@ -328,9 +320,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconServer}
@@ -349,9 +338,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'starfinder-core').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <Box py={8}>
@@ -375,9 +361,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconBrandSafari}
@@ -396,9 +379,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'standalone-adventure').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <LinksGroup
@@ -419,9 +399,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconArchive}
@@ -440,9 +417,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'legacy').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <LinksGroup
@@ -463,9 +437,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconDots}
@@ -484,9 +455,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                       books.filter((book) => book.group === 'misc').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
               </Stack>
@@ -1158,9 +1126,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
 
             const missingSourceIds = homebrewSources?.filter((id: number) => !subscribedSources.includes(id));
             const missingSources =
-              missingSourceIds && missingSourceIds.length > 0
-                ? await fetchContentSources({ homebrew: true, ids: missingSourceIds })
-                : [];
+              missingSourceIds && missingSourceIds.length > 0 ? await fetchContentSources(missingSourceIds) : [];
 
             const subscribeToMissingSources = async () => {
               if (!user) return;
@@ -1350,7 +1316,7 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
                   }}
                   w={isPhone ? undefined : 220}
                   rightSection={
-                    <HoverCard width={280} shadow='md' openDelay={750}>
+                    <HoverCard width={280} shadow='md' openDelay={500}>
                       <HoverCard.Target>
                         <ActionIcon
                           size={22}
@@ -1491,25 +1457,6 @@ export default function CharBuilderHome(props: { pageHeight: number }) {
             {getSidebarSection()}
           </Box>
         </Group>
-      )}
-
-      {feedbackData && (
-        <ContentFeedbackModal
-          opened={true}
-          onCancel={() => {
-            setFeedbackData(null);
-          }}
-          onStartFeedback={() => {
-            modals.closeAll();
-            openDrawer(null);
-          }}
-          onCompleteFeedback={() => {
-            openDrawer(null);
-            setFeedbackData(null);
-          }}
-          type={feedbackData.type}
-          data={feedbackData.data}
-        />
       )}
     </Stack>
   );

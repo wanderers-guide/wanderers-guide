@@ -52,6 +52,7 @@ export function toLabel(text?: string | null) {
     'Class DC': 'class DC',
     'Class Dc': 'class DC',
     'ability-block': 'option',
+    'class-archetype': 'class archetype',
     unarmed_attack: 'unarmed',
   };
   const REMOVAL_CHANGES = [

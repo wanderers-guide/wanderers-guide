@@ -4,7 +4,7 @@ import { applyConditions } from '@conditions/condition-handler';
 import { defineDefaultSources } from '@content/content-store';
 import { saveCustomization } from '@content/customization-cache';
 import { addExtraItems, checkBulkLimit, applyEquipmentPenalties } from '@items/inv-utils';
-import { useDebouncedCallback, useDebouncedValue, useDidUpdate, useFetch, usePrevious } from '@mantine/hooks';
+import { useDebouncedCallback, useDebouncedValue, useDidUpdate, usePrevious } from '@mantine/hooks';
 import { showNotification } from '@mantine/notifications';
 import { executeCharacterOperations } from '@operations/operation-controller';
 import { confirmHealth } from '@pages/character_sheet/living-entity-utils';
@@ -15,16 +15,13 @@ import { OperationCharacterResultPackage } from '@typing/operations';
 import { saveCalculatedStats } from '@variables/calculated-stats';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { setVariable } from '@variables/variable-manager';
-import { display } from 'colorjs.io/fn';
 import { isEqual, isArray, cloneDeep } from 'lodash-es';
-import { props } from 'node_modules/cypress/types/bluebird';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { convertToSetEntity } from './type-fixing';
 import { IconRefresh } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
-import { use } from 'chai';
 
 export default function useCharacter(
   characterId: number,
@@ -33,9 +30,6 @@ export default function useCharacter(
 ): {
   character: Character | null;
   setCharacter: SetterOrUpdater<Character | null>;
-  //
-  inventory: Inventory;
-  setInventory: SetterOrUpdater<Inventory>;
   //
   isLoaded: boolean;
 } {
@@ -62,7 +56,7 @@ export default function useCharacter(
       setCharacter(resultCharacter);
 
       // Make sure we sync the enabled content sources
-      defineDefaultSources(resultCharacter.content_sources?.enabled ?? []);
+      defineDefaultSources('PAGE', resultCharacter.content_sources?.enabled ?? []);
 
       // Cache character customization for fast loading
       saveCustomization({
@@ -90,9 +84,9 @@ export default function useCharacter(
   const [operationResults, setOperationResults] = useState<OperationCharacterResultPackage>();
   const [executingOperations, setExecutingOperations] = useState(false);
 
-  const [debouncedCharacter] = useDebouncedValue(character, 200);
+  const [debouncedCharacter] = useDebouncedValue(character, 1000);
   const prevDebouncedCharacter = usePrevious(debouncedCharacter);
-  const setCharacterDebounced = useDebouncedCallback(setCharacter, 200);
+  const setCharacterDebounced = useDebouncedCallback(setCharacter, 1000);
 
   const getUpdateHash = (c: Character | null | undefined) => {
     return hashData(
@@ -171,8 +165,17 @@ export default function useCharacter(
 
         if (debouncedCharacter.meta_data?.reset_hp !== false) {
           // To reset hp, we need to confirm health
-          const maxHealth = getFinalHealthValue('CHARACTER');
-          confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+
+          const handleRestHP = () => {
+            const maxHealth = getFinalHealthValue('CHARACTER');
+            confirmHealth(`${maxHealth}`, maxHealth, debouncedCharacter, convertToSetEntity(setCharacterDebounced));
+          };
+
+          // We run it twice for it to break out of the debouncing lock (not a perfect solution, but works)
+          handleRestHP();
+          setTimeout(() => {
+            handleRestHP();
+          }, 1500);
         } else {
           // Because of the drained condition, let's confirm health
           const maxHealth = getFinalHealthValue('CHARACTER');
@@ -233,8 +236,7 @@ export default function useCharacter(
     },
     onSuccess: (c) => {
       if (c) {
-        console.log('> Updated character #', getUpdateHash(debouncedCharacter));
-        handleFetchedCharacter(c);
+        console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(c));
       }
     },
   });
@@ -269,36 +271,9 @@ export default function useCharacter(
     enabled: false, // notRecentlyUpdated, Fix polling on char item update
   });
 
-  // Inventory saving & management
-  const getInventory = (character: Character | null) => {
-    // Default inventory
-    return cloneDeep(
-      character?.inventory ?? {
-        coins: {
-          cp: 0,
-          sp: 0,
-          gp: 0,
-          pp: 0,
-        },
-        items: [],
-      }
-    );
-  };
-  const setInventory: SetterOrUpdater<Inventory> = (u) => {
-    setCharacter((c) => {
-      if (!c) return null;
-      return {
-        ...c,
-        inventory: c?.inventory ? (typeof u === 'function' ? u(c?.inventory) : u) : undefined,
-      };
-    });
-  };
-
   return {
-    character: character,
+    character,
     setCharacter,
-    inventory: getInventory(character),
-    setInventory,
     isLoaded: !!operationResults,
   };
 }

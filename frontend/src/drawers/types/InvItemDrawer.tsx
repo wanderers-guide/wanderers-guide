@@ -5,6 +5,7 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { priceToString } from '@items/currency-handler';
 import {
   compileTraits,
+  determineItemMetaType,
   getItemHealth,
   isItemArchaic,
   isItemArmor,
@@ -68,13 +69,10 @@ import { getIconMap } from '@common/ItemIcon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { StoreID } from '@typing/variables';
 import { cloneDeep } from 'lodash-es';
+import { titleCase } from 'title-case';
+import { getAnchorStyles } from '@utils/anchor';
 
 export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) {
-  let type = `Item ${props.data.invItem.item.level}`;
-  if (props.data.invItem.item?.meta_data?.unselectable && props.data.invItem.item.level === 0) {
-    type = '';
-  }
-
   return (
     <>
       <Group justify='space-between' wrap='nowrap'>
@@ -83,7 +81,7 @@ export function InvItemDrawerTitle(props: { data: { invItem: InventoryItem } }) 
             <Title order={3}>{props.data.invItem.item.name}</Title>
           </Box>
         </Group>
-        <Text style={{ textWrap: 'nowrap' }}>{type}</Text>
+        <Text style={{ textWrap: 'nowrap' }}>{determineItemMetaType(props.data.invItem.item, true)}</Text>
       </Group>
     </>
   );
@@ -98,17 +96,18 @@ export function InvItemDrawerContent(props: {
     onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => void;
   };
 }) {
-  const onItemUpdate = (invItem: InventoryItem) => {
-    props.data.onItemUpdate(invItem);
-    setInvItem(invItem);
+  // InvItem cache (to handle updates while the drawer is still open)
+  const [_cachedInvItem, _setCachedInvItem] = useState<InventoryItem | null>(null);
+  const onItemUpdate = (i: InventoryItem) => {
+    const cloneI = cloneDeep(i);
+    props.data.onItemUpdate(cloneI);
+    _setCachedInvItem(cloneI);
   };
+  const invItem = _cachedInvItem ?? props.data.invItem;
+  //
 
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [invItem, setInvItem] = useState(props.data.invItem);
-  useEffect(() => {
-    setInvItem(props.data.invItem);
-  }, [props.data.invItem]);
 
   const [editingItem, setEditingItem] = useState(false);
 
@@ -174,7 +173,7 @@ export function InvItemDrawerContent(props: {
   }
 
   return (
-    <Box>
+    <Box pb={20}>
       <DisplayIcon strValue={invItem.item.meta_data?.image_url} />
       <Box>
         {/* Note: Can't use a Stack here as it breaks the floating image */}
@@ -210,12 +209,10 @@ export function InvItemDrawerContent(props: {
           {invItem.item.description}
         </RichText>
 
-        {isItemWithPropertyRunes(invItem.item) && (
+        {isItemWithRunes(invItem.item) && (
           <Accordion variant='separated' my={5}>
             <Accordion.Item value='runes'>
-              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>
-                Property Runes
-              </Accordion.Control>
+              <Accordion.Control icon={getIconMap('1.0rem', theme.colors.gray[6])['RUNE']}>Runes</Accordion.Control>
               <Accordion.Panel>
                 <ItemRunesDescription item={invItem.item} />
               </Accordion.Panel>
@@ -244,12 +241,12 @@ export function InvItemDrawerContent(props: {
         )}
       </Box>
       <Box
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 5,
-          width: '100%',
-        }}
+        style={[
+          getAnchorStyles({ r: 5, b: 20 }),
+          {
+            width: '100%',
+          },
+        ]}
       >
         <Group justify='space-between' wrap='nowrap'>
           <Group wrap='nowrap' gap={15} ml={0}>
@@ -673,6 +670,8 @@ function InvItemSections(props: {
       strikingLabel = 'Greater Striking';
     } else if (props.invItem.item.meta_data!.runes!.striking === 3) {
       strikingLabel = 'Major Striking';
+    } else if (props.invItem.item.meta_data!.runes!.striking === 10) {
+      strikingLabel = 'Mythic Striking';
     }
 
     let resilientLabel = '';
@@ -682,18 +681,20 @@ function InvItemSections(props: {
       resilientLabel = 'Greater Resilient';
     } else if (props.invItem.item.meta_data!.runes!.resilient === 3) {
       resilientLabel = 'Major Resilient';
+    } else if (props.invItem.item.meta_data!.runes!.resilient === 10) {
+      resilientLabel = 'Mythic Resilient';
     }
 
     let potencyLabel = '';
     if (props.invItem.item.meta_data!.runes!.potency) {
-      potencyLabel = `+${props.invItem.item.meta_data!.runes!.potency} `;
+      potencyLabel = `+${Math.min(props.invItem.item.meta_data!.runes!.potency, 4)} `;
     }
 
     const rightLabel = strikingLabel || resilientLabel;
 
     runesSection = (
-      <Paper shadow='xs' my={5} py={5} px={10} bg='dark.6' radius='md'>
-        <Group gap={10}>
+      <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
+        <Group gap={5}>
           {potencyLabel && (
             <Text fw={600} c='gray.5' span>
               {potencyLabel}
@@ -862,7 +863,8 @@ function InvItemSections(props: {
                 Category
               </Text>
               <Text c='gray.5' span>
-                {toLabel(props.invItem.item.meta_data?.category)}
+                {/* TitleCase it again in cases like 'unarmored defense' */}
+                {titleCase(toLabel(props.invItem.item.meta_data?.category))}
               </Text>
             </Group>
           )}

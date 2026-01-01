@@ -1,23 +1,15 @@
 import { drawerState } from '@atoms/navAtoms';
-import { ActionSymbol } from '@common/Actions';
-import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
-import TraitsDisplay from '@common/TraitsDisplay';
-import { ActionSelectionOption, FeatSelectionOption } from '@common/select/SelectContent';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { collectEntitySenses } from '@content/collect-content';
-import { fetchAbilityBlockByName, fetchContentAll, fetchContentById } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import {
   Title,
   Text,
-  Image,
-  Loader,
   Group,
   Divider,
   Stack,
   Box,
-  Flex,
   Badge,
   Accordion,
   Kbd,
@@ -29,20 +21,14 @@ import {
 import {
   IconBadgesFilled,
   IconBlockquote,
-  IconCaretLeftRight,
   IconEye,
   IconFrame,
-  IconGitBranch,
-  IconGitCommit,
-  IconGitPullRequest,
   IconMathSymbols,
-  IconMessageDots,
-  IconPlusMinus,
   IconTimeline,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { StoreID, VariableBool, VariableListStr, VariableProf } from '@typing/variables';
+import { StoreID, VariableBool, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displaySense } from '@utils/senses';
 import { toLabel } from '@utils/strings';
@@ -51,7 +37,6 @@ import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/
 import {
   compileProficiencyType,
   getProficiencyTypeValue,
-  isProficiencyType,
   isProficiencyValue,
   proficiencyTypeToLabel,
   variableToLabel,
@@ -87,7 +72,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
   const { data: abilityBlocks } = useQuery({
     queryKey: [`find-ability-blocks`],
     queryFn: async () => {
-      return await fetchContentAll<AbilityBlock>('ability-block');
+      return await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
     },
   });
   const senses = useMemo(() => collectEntitySenses(props.data.id, abilityBlocks ?? []), [abilityBlocks]);

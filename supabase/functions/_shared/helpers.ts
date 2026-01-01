@@ -263,6 +263,7 @@ export type TableName =
   | 'content_source'
   | 'content_update'
   | 'versatile_heritage'
+  | 'class_archetype'
   | 'campaign'
   | 'character'
   | 'ancestry'
@@ -311,6 +312,8 @@ export function convertContentTypeToTableName(type: ContentType): TableName | nu
       return 'archetype';
     case 'versatile-heritage':
       return 'versatile_heritage';
+    case 'class-archetype':
+      return 'class_archetype';
     default:
       return null;
   }
@@ -339,6 +342,8 @@ function hasUUID(tableName: TableName): boolean {
     case 'archetype':
       return true;
     case 'versatile_heritage':
+      return true;
+    case 'class_archetype':
       return true;
     case 'content_source':
       return false;
@@ -500,7 +505,8 @@ export function deleteResponseWrapper(result: 'SUCCESS' | 'ERROR_UNKNOWN'): JSen
 export async function fetchData<T = Record<string, any>>(
   client: SupabaseClient<any, 'public', any>,
   tableName: TableName,
-  filters: SelectFilter[]
+  filters: SelectFilter[],
+  created?: { from?: string; to?: string }
 ) {
   // Check if we're fetching all rows
   const hasNoId = ((fil: SelectFilter[]) => {
@@ -559,6 +565,14 @@ export async function fetchData<T = Record<string, any>>(
           }
         }
       }
+    }
+
+    if (created) {
+      // Default to entire history → now
+      const from = created?.from ?? '1970-01-01T00:00:00Z';
+      const to = created?.to ?? new Date().toISOString();
+
+      query = query.gte('created_at', from).lte('created_at', to);
     }
 
     const { data, error } = await query.range(offset, offset + CHUNK_SIZE - 1);

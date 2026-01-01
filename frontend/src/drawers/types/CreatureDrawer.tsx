@@ -1,9 +1,9 @@
-import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
+import { creatureDrawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
-import { fetchContentById, fetchContentPackage } from '@content/content-store';
+import { fetchContentById, fetchContentPackage, fetchTraits, getDefaultSources } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import { addExtraItems, applyEquipmentPenalties, checkBulkLimit } from '@items/inv-utils';
 import {
@@ -20,7 +20,7 @@ import {
   useMantineTheme,
   HoverCard,
 } from '@mantine/core';
-import { useDebouncedValue, useDidUpdate, useHover, useLocalStorage } from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useLocalStorage } from '@mantine/hooks';
 import { CreateCreatureModal } from '@modals/CreateCreatureModal';
 import { executeCreatureOperations } from '@operations/operation-controller';
 import { convertKeyToBasePrefix } from '@operations/operation-utils';
@@ -52,20 +52,19 @@ import {
   IconAlignBoxLeftMiddle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Inventory, Trait } from '@typing/content';
+import { Creature, Trait } from '@typing/content';
 import { OperationCreatureResultPackage } from '@typing/operations';
-import { findCreatureTraits } from '@utils/creature';
+import { getAnchorStyles } from '@utils/anchor';
+import { determineCompanionType, findCreatureTraits } from '@utils/creature';
 import { getDcForLevel } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type-fixing';
+import useRefresh from '@utils/use-refresh';
 import { getFinalHealthValue } from '@variables/variable-display';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
-export const CREATURE_DRAWER_ZINDEX = 495;
-
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
-  const theme = useMantineTheme();
   const id = props.data.id;
 
   const { data: _creature } = useQuery({
@@ -89,7 +88,9 @@ export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Cre
               <Title order={3}>{toLabel(creature.name)}</Title>
             </Box>
           </Group>
-          <Text style={{ textWrap: 'nowrap' }}>Creature {getEntityLevel(creature)}</Text>
+          <Text style={{ textWrap: 'nowrap' }}>
+            {determineCompanionType(creature)} {getEntityLevel(creature)}
+          </Text>
         </Group>
       )}
     </>
@@ -129,23 +130,23 @@ export function CreatureDrawerContent(props: {
         setCreature(_creature);
       }
 
-      const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+      const content = await fetchContentPackage(getDefaultSources('INFO'), {
+        fetchSources: false,
+        fetchCreatures: false,
+      });
       return content;
     },
   });
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const theme = useMantineTheme();
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [displayStatBlock, refreshStatBlock] = useRefresh();
   const [loading, setLoading] = useState(true);
   const [creature, setCreature] = useState<Creature | null>(props.data.creature ?? null);
   const [editingCreature, _setEditingCreature] = useState(false);
-  const [drawerZIndex, setDrawerZIndex] = useRecoilState(drawerZIndexState);
   const toggleEditing = () => {
     if (editingCreature) {
       _setEditingCreature(false);
-      setDrawerZIndex(CREATURE_DRAWER_ZINDEX);
     } else {
       _setEditingCreature(true);
-      setDrawerZIndex(100);
     }
   };
 
@@ -209,42 +210,11 @@ export function CreatureDrawerContent(props: {
 
         setTimeout(() => {
           setLoading(false);
+          refreshStatBlock();
         }, 100);
       });
     }, 1);
   }, [creature, content]);
-
-  // Inventory saving & management
-  const getInventory = (creature: Creature | null) => {
-    return (
-      creature?.inventory ?? {
-        coins: {
-          cp: 0,
-          sp: 0,
-          gp: 0,
-          pp: 0,
-        },
-        items: [],
-      }
-    );
-  };
-  const setInventory = (call: React.SetStateAction<Inventory>) => {
-    // Update source immediately, needed for some item changes which close the drawer
-    if (creature) {
-      props.data.updateCreature?.({
-        ...creature,
-        inventory: setStateActionToValue(call, getInventory(creature)),
-      });
-    }
-    // Update normal local state, will update source again after delay
-    setCreature((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        inventory: setStateActionToValue(call, getInventory(creature)),
-      };
-    });
-  };
 
   const setCreatureInstant = (call: React.SetStateAction<Creature | null>) => {
     // Update source immediately
@@ -293,261 +263,271 @@ export function CreatureDrawerContent(props: {
 
   return (
     <Stack>
-      {view === 'BLOCK' ? (
-        <Stack gap={10}>
-          <Group gap={15}>
-            <Box style={{ flex: 1 }}>
-              <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-            </Box>
-            {creature.details.image_url && (
-              <BlurBox blur={10} h={111} pr='sm' pt='sm'>
-                <DisplayIcon
-                  strValue={creature.details.image_url}
-                  width={90}
-                  iconStyles={{
-                    height: 90,
+      {displayStatBlock && (
+        <>
+          {view === 'BLOCK' ? (
+            <Stack gap={10}>
+              <Group gap={15}>
+                <Box style={{ flex: 1 }}>
+                  <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+                </Box>
+                {creature.details.image_url && (
+                  <BlurBox blur={10} h={111} pr='sm' pt='sm'>
+                    <DisplayIcon
+                      strValue={creature.details.image_url}
+                      width={90}
+                      iconStyles={{
+                        height: 90,
+                      }}
+                    />
+                  </BlurBox>
+                )}
+              </Group>
+              <StatBlockSection
+                storeId={STORE_ID}
+                entity={creature}
+                options={{
+                  hideName: true,
+                  hideHealth: true,
+                  hideImage: true,
+                }}
+              />
+
+              {operationResults && !props.data.readOnly && (
+                <CreatureOperationResults
+                  creature={creature}
+                  operationResults={operationResults}
+                  onSaveChanges={(path, value) => {
+                    saveSelectionChange(path, value);
                   }}
                 />
-              </BlurBox>
-            )}
-          </Group>
-          <StatBlockSection
-            entity={creature}
-            options={{
-              hideName: true,
-              hideHealth: true,
-              hideImage: true,
-            }}
-          />
+              )}
+            </Stack>
+          ) : (
+            <Stack>
+              <Stack>
+                {activeTab === 'main' && (
+                  <Stack gap={15}>
+                    <Group gap={15}>
+                      <Box style={{ flex: 1 }}>
+                        <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+                      </Box>
+                      {creature.details.image_url && (
+                        <BlurBox blur={10} h={111} pr='sm' pt='sm'>
+                          <DisplayIcon
+                            strValue={creature.details.image_url}
+                            width={90}
+                            iconStyles={{
+                              height: 90,
+                            }}
+                          />
+                        </BlurBox>
+                      )}
+                    </Group>
+                    <RecallKnowledgeSection entity={creature} traits={content.traits} />
+                    <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+                    <ArmorSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+                    <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
 
-          {operationResults && (
-            <CreatureOperationResults
-              creature={creature}
-              operationResults={operationResults}
-              onSaveChanges={(path, value) => {
-                saveSelectionChange(path, value);
-              }}
-            />
-          )}
-        </Stack>
-      ) : (
-        <Stack>
-          <Stack>
-            {activeTab === 'main' && (
-              <Stack gap={15}>
-                <Group gap={15}>
-                  <Box style={{ flex: 1 }}>
-                    <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-                  </Box>
-                  {creature.details.image_url && (
-                    <BlurBox blur={10} h={111} pr='sm' pt='sm'>
-                      <DisplayIcon
-                        strValue={creature.details.image_url}
-                        width={90}
-                        iconStyles={{
-                          height: 90,
+                    {operationResults && (
+                      <CreatureOperationResults
+                        creature={creature}
+                        operationResults={operationResults}
+                        onSaveChanges={(path, value) => {
+                          saveSelectionChange(path, value);
                         }}
                       />
-                    </BlurBox>
-                  )}
-                </Group>
-                <RecallKnowledgeSection entity={creature} traits={content.traits} />
-                <AltSpeedSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
-                <ArmorSection id={STORE_ID} inventory={getInventory(creature)} setInventory={setInventory} />
-                <AttributeSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
+                    )}
+                  </Stack>
+                )}
 
-                {operationResults && (
-                  <CreatureOperationResults
+                {activeTab === 'abilities' && (
+                  <CreatureAbilitiesPanel
+                    id={STORE_ID}
+                    content={content}
+                    panelHeight={panelHeight}
+                    panelWidth={panelWidth}
                     creature={creature}
-                    operationResults={operationResults}
-                    onSaveChanges={(path, value) => {
-                      saveSelectionChange(path, value);
-                    }}
+                    setCreature={setCreature}
                   />
                 )}
-              </Stack>
-            )}
 
-            {activeTab === 'abilities' && (
-              <CreatureAbilitiesPanel
-                content={content}
-                panelHeight={panelHeight}
-                panelWidth={panelWidth}
-                creature={creature}
-                setCreature={setCreature}
-              />
-            )}
+                {activeTab === 'skills-actions' && (
+                  <SkillsActionsPanel
+                    id={STORE_ID}
+                    entity={creature}
+                    setEntity={convertToSetEntity(setCreature)}
+                    content={content}
+                    panelHeight={panelHeight - 55}
+                    panelWidth={panelWidth}
+                  />
+                )}
 
-            {activeTab === 'skills-actions' && (
-              <SkillsActionsPanel
-                id={STORE_ID}
-                entity={creature}
-                content={content}
-                panelHeight={panelHeight - 55}
-                panelWidth={panelWidth}
-                inventory={getInventory(creature)}
-                setInventory={setInventory}
-              />
-            )}
+                {activeTab === 'inventory' && (
+                  <InventoryPanel
+                    id={STORE_ID}
+                    entity={creature}
+                    setEntity={convertToSetEntity(setCreature)}
+                    content={content}
+                    panelHeight={panelHeight}
+                    panelWidth={panelWidth}
+                  />
+                )}
 
-            {activeTab === 'inventory' && (
-              <InventoryPanel
-                id={STORE_ID}
-                entity={creature}
-                content={content}
-                panelHeight={panelHeight}
-                panelWidth={panelWidth}
-                inventory={getInventory(creature)}
-                setInventory={setInventory}
-              />
-            )}
+                {activeTab === 'spells' && (
+                  <SpellsPanel
+                    panelHeight={panelHeight}
+                    panelWidth={panelWidth}
+                    id={STORE_ID}
+                    entity={creature}
+                    setEntity={convertToSetEntity(setCreatureInstant)}
+                  />
+                )}
 
-            {activeTab === 'spells' && (
-              <SpellsPanel
-                panelHeight={panelHeight}
-                panelWidth={panelWidth}
-                id={STORE_ID}
-                entity={creature}
-                setEntity={convertToSetEntity(setCreatureInstant)}
-              />
-            )}
+                {activeTab === 'notes' && (
+                  <NotesPanel
+                    panelHeight={panelHeight}
+                    panelWidth={panelWidth}
+                    entity={creature}
+                    setEntity={convertToSetEntity(setCreature)}
+                  />
+                )}
 
-            {activeTab === 'notes' && (
-              <NotesPanel
-                panelHeight={panelHeight}
-                panelWidth={panelWidth}
-                entity={creature}
-                setEntity={convertToSetEntity(setCreature)}
-              />
-            )}
+                {activeTab === 'details' && (
+                  <CreatureDetailsPanel
+                    id={STORE_ID}
+                    creature={creature}
+                    content={content}
+                    panelHeight={panelHeight}
+                    panelWidth={panelWidth}
+                  />
+                )}
 
-            {activeTab === 'details' && (
-              <CreatureDetailsPanel
-                id={STORE_ID}
-                creature={creature}
-                content={content}
-                panelHeight={panelHeight}
-                panelWidth={panelWidth}
-              />
-            )}
-
-            <Box
-              style={{
-                zIndex: 1000,
-                position: 'fixed',
-                bottom: 20,
-                right: 20,
-              }}
-            >
-              <Popover
-                position='top'
-                shadow='md'
-                withArrow
-                opened={openedSelectionPanel}
-                onChange={setOpenedSelectionPanel}
-                zIndex={1000}
-              >
-                <Popover.Target>
-                  <ActionIcon
-                    size={55}
-                    variant='filled'
-                    radius={100}
-                    aria-label='Panel Grid'
-                    onClick={() => setOpenedSelectionPanel((o) => !o)}
+                <Box
+                  style={[
+                    getAnchorStyles({ r: 20, b: 20 }),
+                    {
+                      zIndex: 1000,
+                    },
+                  ]}
+                >
+                  <Popover
+                    position='top'
+                    withArrow
+                    opened={openedSelectionPanel}
+                    onChange={setOpenedSelectionPanel}
+                    zIndex={1000}
+                    styles={(t) => ({
+                      dropdown: {
+                        backgroundColor: 'rgba(20, 21, 23)',
+                        borderRadius: t.radius.lg,
+                        padding: t.spacing.sm,
+                      },
+                    })}
                   >
-                    {openedSelectionPanel ? (
-                      <IconX size='2rem' stroke={2} />
-                    ) : (
-                      <IconLayoutGrid size='2rem' stroke={1.5} />
-                    )}
-                  </ActionIcon>
-                </Popover.Target>
-                <Popover.Dropdown w={'calc(min(95dvw, 430px))'}>
-                  <Box>
-                    <Stack>
-                      <Button
-                        leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
-                        variant={activeTab === 'main' ? 'filled' : 'outline'}
-                        onClick={() => {
-                          setActiveTab('main');
-                          setOpenedSelectionPanel(false);
-                        }}
+                    <Popover.Target>
+                      <ActionIcon
+                        size={55}
+                        variant='filled'
+                        radius={100}
+                        aria-label='Panel Grid'
+                        onClick={() => setOpenedSelectionPanel((o) => !o)}
                       >
-                        Health, Conditions, Saves
-                      </Button>
-                      <SimpleGrid cols={2}>
-                        <Button
-                          leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
-                          variant={activeTab === 'abilities' ? 'filled' : 'outline'}
-                          onClick={() => {
-                            setActiveTab('abilities');
-                            setOpenedSelectionPanel(false);
-                          }}
-                        >
-                          Abilities
-                        </Button>
-                        <Button
-                          leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
-                          variant={activeTab === 'skills-actions' ? 'filled' : 'outline'}
-                          onClick={() => {
-                            setActiveTab('skills-actions');
-                            setOpenedSelectionPanel(false);
-                          }}
-                        >
-                          Skills
-                        </Button>
-                      </SimpleGrid>
-                      <SimpleGrid cols={2}>
-                        <Button
-                          leftSection={<IconBackpack size='1.2rem' stroke={2} />}
-                          variant={activeTab === 'inventory' ? 'filled' : 'outline'}
-                          onClick={() => {
-                            setActiveTab('inventory');
-                            setOpenedSelectionPanel(false);
-                          }}
-                        >
-                          Inventory
-                        </Button>
-                        <Button
-                          leftSection={<IconFlare size='1.2rem' stroke={2} />}
-                          variant={activeTab === 'spells' ? 'filled' : 'outline'}
-                          onClick={() => {
-                            setActiveTab('spells');
-                            setOpenedSelectionPanel(false);
-                          }}
-                        >
-                          Spells
-                        </Button>
-                      </SimpleGrid>
-                      <SimpleGrid cols={2}>
-                        <Button
-                          leftSection={<IconNotebook size='1.2rem' stroke={2} />}
-                          variant={activeTab === 'notes' ? 'filled' : 'outline'}
-                          onClick={() => {
-                            setActiveTab('notes');
-                            setOpenedSelectionPanel(false);
-                          }}
-                        >
-                          Notes
-                        </Button>
-                        <Button
-                          leftSection={<IconListDetails size='1.2rem' stroke={2} />}
-                          variant={activeTab === 'details' ? 'filled' : 'outline'}
-                          onClick={() => {
-                            setActiveTab('details');
-                            setOpenedSelectionPanel(false);
-                          }}
-                        >
-                          Details
-                        </Button>
-                      </SimpleGrid>
-                    </Stack>
-                  </Box>
-                </Popover.Dropdown>
-              </Popover>
-            </Box>
-          </Stack>
-        </Stack>
+                        {openedSelectionPanel ? (
+                          <IconX size='2rem' stroke={2} />
+                        ) : (
+                          <IconLayoutGrid size='2rem' stroke={1.5} />
+                        )}
+                      </ActionIcon>
+                    </Popover.Target>
+                    <Popover.Dropdown w={'calc(min(95dvw, 430px))'}>
+                      <Box>
+                        <Stack>
+                          <Button
+                            leftSection={<IconLayoutList size='1.2rem' stroke={2} />}
+                            variant={activeTab === 'main' ? 'filled' : 'light'}
+                            onClick={() => {
+                              setActiveTab('main');
+                              setOpenedSelectionPanel(false);
+                            }}
+                          >
+                            Health, Conditions, Saves
+                          </Button>
+                          <SimpleGrid cols={2}>
+                            <Button
+                              leftSection={<IconCaretLeftRight size='1.2rem' stroke={2} />}
+                              variant={activeTab === 'abilities' ? 'filled' : 'light'}
+                              onClick={() => {
+                                setActiveTab('abilities');
+                                setOpenedSelectionPanel(false);
+                              }}
+                            >
+                              Abilities
+                            </Button>
+                            <Button
+                              leftSection={<IconBadgesFilled size='1.2rem' stroke={2} />}
+                              variant={activeTab === 'skills-actions' ? 'filled' : 'light'}
+                              onClick={() => {
+                                setActiveTab('skills-actions');
+                                setOpenedSelectionPanel(false);
+                              }}
+                            >
+                              Skills
+                            </Button>
+                          </SimpleGrid>
+                          <SimpleGrid cols={2}>
+                            <Button
+                              leftSection={<IconBackpack size='1.2rem' stroke={2} />}
+                              variant={activeTab === 'inventory' ? 'filled' : 'light'}
+                              onClick={() => {
+                                setActiveTab('inventory');
+                                setOpenedSelectionPanel(false);
+                              }}
+                            >
+                              Inventory
+                            </Button>
+                            <Button
+                              leftSection={<IconFlare size='1.2rem' stroke={2} />}
+                              variant={activeTab === 'spells' ? 'filled' : 'light'}
+                              onClick={() => {
+                                setActiveTab('spells');
+                                setOpenedSelectionPanel(false);
+                              }}
+                            >
+                              Spells
+                            </Button>
+                          </SimpleGrid>
+                          <SimpleGrid cols={2}>
+                            <Button
+                              leftSection={<IconNotebook size='1.2rem' stroke={2} />}
+                              variant={activeTab === 'notes' ? 'filled' : 'light'}
+                              onClick={() => {
+                                setActiveTab('notes');
+                                setOpenedSelectionPanel(false);
+                              }}
+                            >
+                              Notes
+                            </Button>
+                            <Button
+                              leftSection={<IconListDetails size='1.2rem' stroke={2} />}
+                              variant={activeTab === 'details' ? 'filled' : 'light'}
+                              onClick={() => {
+                                setActiveTab('details');
+                                setOpenedSelectionPanel(false);
+                              }}
+                            >
+                              Details
+                            </Button>
+                          </SimpleGrid>
+                        </Stack>
+                      </Box>
+                    </Popover.Dropdown>
+                  </Popover>
+                </Box>
+              </Stack>
+            </Stack>
+          )}
+        </>
       )}
 
       <Box
@@ -652,13 +632,12 @@ export function CreatureDrawerContent(props: {
                 toggleEditing();
 
                 // Hacky way to update the drawer data
-                openDrawer({
-                  ..._drawer,
+                openCreatureDrawer({
+                  ..._creatureDrawer,
                   data: {
-                    ...(_drawer?.data ?? {}),
+                    ...(_creatureDrawer?.data ?? {}),
                     creature: result,
                   },
-                  type: 'creature',
                 });
               }
             }}
@@ -675,6 +654,9 @@ export function CreatureDrawerContent(props: {
 function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
   const theme = useMantineTheme();
 
+  const content = <RecallKnowledgeText entity={props.entity} traits={props.traits} />;
+  if (!content) return null;
+
   return (
     <BlurBox blur={10}>
       <Box
@@ -688,7 +670,7 @@ function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
         h='100%'
       >
         <Group justify='center' style={{ flexDirection: 'column' }} h='100%'>
-          <RecallKnowledgeText entity={props.entity} traits={props.traits} />
+          {content}
         </Group>
       </Box>
     </BlurBox>

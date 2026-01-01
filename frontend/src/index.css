@@ -25,6 +25,12 @@ strong {
   filter: invert(100%);
 }
 
+.tiptap.ProseMirror {
+  flex: 1;
+  max-height: var(--rich-text-editor-max-height);
+  height: var(--rich-text-editor-height);
+  overflow-y: auto;
+}
 
 /* Undo tab button styling changes from Mantine v8 */
 button.mantine-Tabs-tab:not([data-orientation="vertical"]) {

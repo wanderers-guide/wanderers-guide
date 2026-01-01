@@ -12,6 +12,7 @@ import {
   Language,
   Archetype,
   VersatileHeritage,
+  ClassArchetype,
 } from '@typing/content';
 import { makeRequest } from '@requests/request-manager';
 
@@ -84,6 +85,13 @@ export async function upsertVersatileHeritage(versHeritage: VersatileHeritage) {
     ...versHeritage,
   });
   return result ? (result === true ? versHeritage : result) : null;
+}
+
+export async function upsertClassArchetype(archetype: ClassArchetype) {
+  const result = await makeRequest<ClassArchetype | true>('create-class-archetype', {
+    ...archetype,
+  });
+  return result ? (result === true ? archetype : result) : null;
 }
 
 export async function upsertAncestry(ancestry: Ancestry) {

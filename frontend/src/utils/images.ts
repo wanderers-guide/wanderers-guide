@@ -6,6 +6,7 @@ export async function getShapeIcon(content: string) {
 }
 
 export async function getRingIcon(content: string) {
+  // await sleep(100); // to avoid rate limiting
   const res = await fetch(`https://api.dicebear.com/7.x/rings/svg?seed=${content}`);
   return res.ok ? await res.text() : '';
 }
@@ -27,6 +28,16 @@ export async function isValidImage(url?: string): Promise<boolean> {
   } else {
     return false;
   }
+}
+
+export async function preloadImage(url?: string): Promise<void> {
+  if (!url || !url.trim()) return;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = url;
+  });
 }
 
 export async function findCreatureImage(name: string): Promise<string | undefined> {

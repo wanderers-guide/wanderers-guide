@@ -17,10 +17,34 @@ export async function submitContentUpdate(
   });
 }
 
-export async function findContentUpdates() {
-  const pendingUpdates = (await makeRequest<ContentUpdate[]>('find-content-update', { state: 'PENDING' })) ?? [];
-  const approvedUpdates = (await makeRequest<ContentUpdate[]>('find-content-update', { state: 'APPROVED' })) ?? [];
-  const rejectedUpdates = (await makeRequest<ContentUpdate[]>('find-content-update', { state: 'REJECTED' })) ?? [];
+export async function findContentUpdates(daysAgo: string) {
+  const allTime = daysAgo === 'ALL';
+
+  // Timestamp for X days ago
+  const timestamp = new Date(Date.now() - 86400000 * parseInt(daysAgo)).toISOString();
+
+  const pendingUpdates =
+    (await makeRequest<ContentUpdate[]>('find-content-update', {
+      state: 'PENDING',
+    })) ?? [];
+  const approvedUpdates =
+    (await makeRequest<ContentUpdate[]>('find-content-update', {
+      state: 'APPROVED',
+      created: allTime
+        ? undefined
+        : {
+            from: timestamp,
+          },
+    })) ?? [];
+  const rejectedUpdates =
+    (await makeRequest<ContentUpdate[]>('find-content-update', {
+      state: 'REJECTED',
+      created: allTime
+        ? undefined
+        : {
+            from: timestamp,
+          },
+    })) ?? [];
 
   return [...pendingUpdates, ...approvedUpdates, ...rejectedUpdates];
 }

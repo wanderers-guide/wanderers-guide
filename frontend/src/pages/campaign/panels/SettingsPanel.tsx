@@ -9,7 +9,6 @@ import {
   rem,
   Select,
   Tabs,
-  useMantineTheme,
   Button,
   Divider,
   Paper,
@@ -38,7 +37,7 @@ import {
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   defineDefaultSources,
   fetchContentSources,
@@ -50,8 +49,7 @@ import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { drawerState } from '@atoms/navAtoms';
-import { AbilityBlockType, Campaign, Character, ContentType } from '@typing/content';
-import ContentFeedbackModal from '@modals/ContentFeedbackModal';
+import { Campaign, Character } from '@typing/content';
 import { userState } from '@atoms/userAtoms';
 import { isValidImage } from '@utils/images';
 import { makeRequest } from '@requests/request-manager';
@@ -64,20 +62,13 @@ export default function SettingsPanel(props: {
   players: Character[];
   setCampaign: (campaign: Campaign) => void;
 }) {
-  const theme = useMantineTheme();
-
-  const { ref, height } = useElementSize();
+  const { height } = useElementSize();
   const topGap = 30;
   const isPhone = useMediaQuery(phoneQuery());
 
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
-  const queryClient = useQueryClient();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [feedbackData, setFeedbackData] = useState<{
-    type: ContentType | AbilityBlockType;
-    data: { id?: number; contentSourceId?: number };
-  } | null>(null);
 
   const [openedOperations, setOpenedOperations] = useState(false);
 
@@ -92,9 +83,9 @@ export default function SettingsPanel(props: {
   });
 
   const { data: fetchedBooks, refetch } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-campaign-settings`, { campaignId: props.campaign.id }],
     queryFn: async () => {
-      return await fetchContentSources({ ids: 'all' });
+      return (await fetchContentSources('ALL-OFFICIAL-PUBLIC')).filter((book) => book.deprecated !== true);
     },
   });
   const books = fetchedBooks ?? [];
@@ -130,7 +121,7 @@ export default function SettingsPanel(props: {
       setTimeout(() => {
         // Refresh data to repopulate with new book content
         resetContentStore();
-        defineDefaultSources(props.campaign?.recommended_content_sources?.enabled ?? []);
+        defineDefaultSources('PAGE', props.campaign?.recommended_content_sources?.enabled ?? []);
         refetch();
       }, 200);
     };
@@ -158,9 +149,6 @@ export default function SettingsPanel(props: {
                           type: 'content-source',
                           data: {
                             id: source.id,
-                            onFeedback: (type: ContentType | AbilityBlockType, id: number, contentSourceId: number) => {
-                              setFeedbackData({ type, data: { id, contentSourceId } });
-                            },
                           },
                         });
                       }}
@@ -250,9 +238,6 @@ export default function SettingsPanel(props: {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconServer}
@@ -271,9 +256,6 @@ export default function SettingsPanel(props: {
                       books.filter((book) => book.group === 'starfinder-core').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <Box py={8}>
@@ -297,9 +279,6 @@ export default function SettingsPanel(props: {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconBrandSafari}
@@ -318,9 +297,6 @@ export default function SettingsPanel(props: {
                       books.filter((book) => book.group === 'standalone-adventure').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <LinksGroup
@@ -341,9 +317,6 @@ export default function SettingsPanel(props: {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconArchive}
@@ -362,9 +335,6 @@ export default function SettingsPanel(props: {
                       books.filter((book) => book.group === 'legacy').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
                 <LinksGroup
@@ -385,9 +355,6 @@ export default function SettingsPanel(props: {
                       true
                     );
                   }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
-                  }}
                 />
                 <LinksGroup
                   icon={IconDots}
@@ -406,9 +373,6 @@ export default function SettingsPanel(props: {
                       books.filter((book) => book.group === 'misc').map((book) => book.id),
                       true
                     );
-                  }}
-                  onFeedback={(type, id, contentSourceId) => {
-                    setFeedbackData({ type, data: { id, contentSourceId } });
                   }}
                 />
               </Stack>
@@ -912,25 +876,6 @@ export default function SettingsPanel(props: {
             {getSidebarSection()}
           </Box>
         </Group>
-      )}
-
-      {feedbackData && (
-        <ContentFeedbackModal
-          opened={true}
-          onCancel={() => {
-            setFeedbackData(null);
-          }}
-          onStartFeedback={() => {
-            modals.closeAll();
-            openDrawer(null);
-          }}
-          onCompleteFeedback={() => {
-            openDrawer(null);
-            setFeedbackData(null);
-          }}
-          type={feedbackData.type}
-          data={feedbackData.data}
-        />
       )}
     </Stack>
   );

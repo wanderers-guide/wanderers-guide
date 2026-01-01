@@ -49,7 +49,7 @@ export default function SelectImageModal({
         <Text size='sm'>{option.name}</Text>
         {option.source?.trim() && (
           <Text size='xs' c='dimmed'>
-            <IconBrush size='0.5rem' /> {option.source}
+            <IconBrush size='0.55rem' /> {option.source}
           </Text>
         )}
       </HoverCard.Dropdown>

@@ -52,7 +52,6 @@ export default function ContentLinkControl() {
       },
       {
         abilityBlockType,
-        groupBySource: true,
         showButton: false,
       }
     );

@@ -1,4 +1,4 @@
-import { Group, Text, UnstyledButton, useMantineTheme } from '@mantine/core';
+import { Group, rgba, Text, UnstyledButton, useMantineTheme } from '@mantine/core';
 import { useFocusWithin, useHover, useOs } from '@mantine/hooks';
 import { spotlight } from '@mantine/spotlight';
 import { IconSearch } from '@tabler/icons-react';
@@ -22,7 +22,7 @@ export function SearchBar({ isSmall }: { isSmall?: boolean }) {
         fontWeight: 500,
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        backgroundColor: hovered ? theme.colors.dark[8] + '20' : theme.colors.dark[8] + '00',
+        backgroundColor: hovered ? theme.colors.dark[7] : theme.colors.dark[8],
       }}
     >
       <Group gap='xs' wrap='nowrap' justify='space-between'>

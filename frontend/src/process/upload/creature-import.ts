@@ -29,7 +29,7 @@ import { compactLabels, labelToVariable } from '@variables/variable-utils';
 import { parseDiceRoll, toLabel } from '@utils/strings';
 import { resetVariables } from '@variables/variable-manager';
 import { executeCreatureOperations } from '@operations/operation-controller';
-import { fetchContentPackage } from '@content/content-store';
+import { fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from '@variables/variable-display';
 import { getBestArmor, isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { hashData, sign } from '@utils/numbers';
@@ -127,7 +127,7 @@ export async function convertGranularCreature(source: ContentSource, g: Granular
   // - and add diff of totals to even out stats to og values
   const STORE_ID = `CREATURE_${crypto.randomUUID()}`;
 
-  const content = await fetchContentPackage(undefined, { fetchSources: false, fetchCreatures: false });
+  const content = await fetchContentPackage(getDefaultSources('PAGE'), { fetchSources: false, fetchCreatures: false });
   await executeCreatureOperations(STORE_ID, cloneDeep(creature), content);
 
   // Run thru totals
@@ -566,7 +566,7 @@ async function addSpells(operations: Operation[], g: GranularCreature, varTotals
           castingSource: source,
           rank: spell.rank,
           tradition: g.spellcasting.innate.tradition,
-          casts: spell.castsPerDay === 'AT-WILL' || spell.castsPerDay === 'CONSTANT' ? 0 : spell.castsPerDay ?? 1,
+          casts: spell.castsPerDay === 'AT-WILL' || spell.castsPerDay === 'CONSTANT' ? 0 : (spell.castsPerDay ?? 1),
         },
       } satisfies OperationGiveSpell);
     }

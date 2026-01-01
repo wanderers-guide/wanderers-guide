@@ -3,7 +3,7 @@ import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { isAbilityBlockVisible } from '@content/content-hidden';
-import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { getMetadataOpenedDict } from '@drawers/drawer-utils';
 import {
   Accordion,
@@ -85,7 +85,7 @@ export function ArchetypeDrawerContent(props: {
       // eslint-disable-next-line
       const [_key, { id }] = queryKey;
       const archetype = await fetchContentById<Archetype>('archetype', id);
-      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+      const abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
       return {
         archetype: props.data.archetype ?? archetype,
         abilityBlocks,

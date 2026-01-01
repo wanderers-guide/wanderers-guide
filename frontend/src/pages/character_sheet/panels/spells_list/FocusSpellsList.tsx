@@ -24,6 +24,8 @@ import { useMemo } from 'react';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { uniq } from 'lodash-es';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function FocusSpellsList(props: {
   id: StoreID;
@@ -55,6 +57,8 @@ export default function FocusSpellsList(props: {
   castSpell: (cast: boolean, spell: Spell) => void;
   spells: Dictionary<Spell[]>;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
+
   const { castSpell, spells, entity, setEntity } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -154,8 +158,10 @@ export default function FocusSpellsList(props: {
                     Spell Attack
                   </Text>
                   <Text c='gray.5' fz='sm' span>
-                    {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
-                    {sign(spellStats.spell_attack.total[2])}
+                    {sign(spellStats.spell_attack.total[0])}
+                    {!isPhone &&
+                      ` / ${sign(spellStats.spell_attack.total[1])} /
+                    ${sign(spellStats.spell_attack.total[2])}`}
                   </Text>
                 </Group>
               </StatButton>

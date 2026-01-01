@@ -3,7 +3,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import {
   Accordion,
   ActionIcon,
@@ -19,7 +19,7 @@ import {
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
 import { isCantrip } from '@spells/spell-utils';
-import { IconSearch, IconSquareRounded, IconSquareRoundedFilled } from '@tabler/icons-react';
+import { IconSearch, IconSquareRounded, IconSquareRoundedFilled, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActionCost,
@@ -30,6 +30,7 @@ import {
   SpellListEntry,
   SpellSectionType,
   SpellSlot,
+  Trait,
 } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
@@ -46,6 +47,8 @@ import WandSpellsList from './spells_list/WandSpellsList';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { groupBy } from 'lodash-es';
+import { phoneQuery } from '@utils/mobile-responsive';
+import { useMediaQuery } from '@mantine/hooks';
 
 export default function SpellsPanel(props: {
   id: StoreID;
@@ -55,6 +58,7 @@ export default function SpellsPanel(props: {
   panelWidth: number;
   zIndex?: number;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -64,7 +68,8 @@ export default function SpellsPanel(props: {
         type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY';
         filter?: {
           traditions?: string[];
-          ranks?: string[];
+          rank_min?: number;
+          rank_max?: number;
         };
       }
     | undefined
@@ -75,7 +80,7 @@ export default function SpellsPanel(props: {
     queryFn: async () => {
       if (!props.entity) return null;
 
-      return await fetchContentAll<Spell>('spell');
+      return await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'));
     },
   });
 
@@ -98,13 +103,20 @@ export default function SpellsPanel(props: {
     search.current.addIndex('trigger');
     search.current.addIndex('cost');
     search.current.addIndex('defense');
-    search.current.addDocuments(spells);
+    search.current.addIndex('rarity');
+    search.current.addIndex('_traitsNames');
+    search.current.addDocuments(
+      spells.map((s) => ({
+        ...s,
+        _traitsNames: getContentFast<Trait>('trait', s.traits ?? []).map((t) => t.name),
+      }))
+    );
   }, [spells]);
 
   // Filter spells by action cost
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
 
-  const searchSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : spells ?? [];
+  const searchSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : (spells ?? []);
   const allSpells = searchSpells.filter((spell) => spell.cast === actionTypeFilter || actionTypeFilter === 'ALL');
   const hasFilters = searchQuery.trim().length > 0 || actionTypeFilter !== 'ALL';
 
@@ -114,16 +126,25 @@ export default function SpellsPanel(props: {
         <Group>
           <TextInput
             style={{ flex: 1 }}
-            leftSection={<IconSearch size='0.9rem' />}
+            leftSection={isPhone ? undefined : <IconSearch size='0.9rem' />}
             placeholder={`Search spells`}
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             rightSection={
-              <CloseButton
-                aria-label='Clear input'
-                onClick={() => setSearchQuery('')}
-                style={{ display: searchQuery.trim() ? undefined : 'none' }}
-              />
+              searchQuery.trim() ? (
+                <ActionIcon
+                  variant='subtle'
+                  size='md'
+                  color='gray'
+                  radius='xl'
+                  aria-label='Clear search'
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                >
+                  <IconX size='1.2rem' stroke={2} />
+                </ActionIcon>
+              ) : undefined
             }
             styles={{
               input: {
@@ -464,7 +485,8 @@ function SpellList(props: {
     type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
     filter?: {
       traditions?: string[];
-      ranks?: string[];
+      rank_min?: number;
+      rank_max?: number;
     }
   ) => void;
 }) {
@@ -745,6 +767,7 @@ export function SpellSlotSelect(props: { current: number; max: number; onChange:
               value={props.current}
               onChange={props.onChange}
               size='xs'
+              invertedSelect
               emptySymbol={
                 <ActionIcon
                   variant='transparent'

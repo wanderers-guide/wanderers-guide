@@ -22,7 +22,10 @@ interface RichTextProps extends TextProps {
 export default function RichText(props: RichTextProps) {
   const theme = useMantineTheme();
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+
   const prevProcessedP = useRef<ReactNode | null>(null);
+  const inDoubleTiersChain = useRef(false);
+
   let convertedChildren = props.children as string | undefined | null;
 
   if (Array.isArray(convertedChildren)) {
@@ -74,23 +77,35 @@ export default function RichText(props: RichTextProps) {
           //
           prevProcessedP.current = children;
           if (indented.value) {
-            // If we're intending a success tier and the prev was intended, we need to indent it twice
-            if (indented.reason === 'SUCCESS-TIER' && prevIntended?.value) {
-              return (
-                <IndentedText {...props} indentMod={1} className={className}>
-                  <IndentedText {...props} className={className}>
-                    {children}
-                  </IndentedText>
-                </IndentedText>
-              );
-            } else {
-              return (
-                <IndentedText {...props} className={className}>
-                  {children}
-                </IndentedText>
-              );
+            // We're in a tier chain and we're already indenting, start double chain indenting
+            if (indented.reason === 'SUCCESS-TIER' && prevIntended?.value && prevIntended?.reason !== 'SUCCESS-TIER') {
+              inDoubleTiersChain.current = true;
             }
+
+            if (inDoubleTiersChain.current) {
+              if (indented.reason === 'SUCCESS-TIER') {
+                return (
+                  <IndentedText {...props} indentMod={1} className={className}>
+                    <IndentedText {...props} className={className}>
+                      {children}
+                    </IndentedText>
+                  </IndentedText>
+                );
+              } else {
+                inDoubleTiersChain.current = false;
+              }
+            }
+
+            return (
+              <IndentedText {...props} className={className}>
+                {children}
+              </IndentedText>
+            );
           } else {
+            // If we were in a double tiers chain, but now we're not, end it
+            inDoubleTiersChain.current = false;
+
+            // Normal text
             return (
               <Text {...props} className={className}>
                 {children}

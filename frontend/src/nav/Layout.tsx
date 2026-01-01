@@ -16,7 +16,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDisclosure, useViewportSize } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery, useViewportSize } from '@mantine/hooks';
 import {
   IconAsset,
   IconChefHat,
@@ -41,9 +41,11 @@ import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { PublicUser } from '@typing/content';
 import { useQueryClient } from '@tanstack/react-query';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function Layout(props: { children: React.ReactNode }) {
   const theme = useMantineTheme();
+  const isPhone = useMediaQuery(phoneQuery());
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
   const session = useRecoilValue(sessionState);
@@ -84,6 +86,7 @@ export default function Layout(props: { children: React.ReactNode }) {
     >
       <AppShell.Header
         h={50}
+        zIndex={98}
         style={{
           border: `0px solid`,
           borderRadius: 0,
@@ -93,7 +96,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >
-        <Group h='100%' px='md'>
+        <Group h='100%' px='md' wrap='nowrap'>
           <Burger opened={opened} onClick={toggle} hiddenFrom='md' size='sm' />
           <Group style={{ flex: 1 }}>
             <WanderersGuideLogo size={30} />
@@ -493,7 +496,7 @@ export default function Layout(props: { children: React.ReactNode }) {
 
       <ScrollArea
         h={'100dvh'}
-        type='auto'
+        type={isPhone ? 'never' : 'auto'}
         scrollbars='y'
         onScrollPositionChange={(pos) => {
           if (pos.y > SCROLL_PINNED_THRESHOLD) {
@@ -503,7 +506,7 @@ export default function Layout(props: { children: React.ReactNode }) {
           }
         }}
       >
-        <AppShell.Main pt={`calc(${rem(60)} + var(--mantine-spacing-md))`}>{props.children}</AppShell.Main>
+        <AppShell.Main pt={`calc(${rem(52)} + var(--mantine-spacing-md))`}>{props.children}</AppShell.Main>
       </ScrollArea>
     </AppShell>
   );

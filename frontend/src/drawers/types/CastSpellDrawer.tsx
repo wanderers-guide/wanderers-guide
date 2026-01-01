@@ -4,21 +4,20 @@ import { DisplayIcon } from '@common/IconDisplay';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { TEXT_INDENT_AMOUNT } from '@constants/data';
-import { fetchContentById } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import ShowInjectedText from '@drawers/ShowInjectedText';
-import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex, Button, Paper } from '@mantine/core';
+import { Title, Text, Group, Divider, Box, Button, Paper } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { getSpellStats } from '@spells/spell-handler';
 import { getHeighteningData, getSpellRank, isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, LivingEntity, Spell } from '@typing/content';
+import { LivingEntity, Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
-import { convertCastToActionCost } from '@utils/actions';
+import { phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 export function CastSpellDrawerTitle(props: {
   data: {
@@ -120,6 +119,7 @@ export function CastSpellDrawerContent(props: {
     entity: LivingEntity | null;
   };
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const spell = props.data.spell;
 
   const { data: heighteningData } = useQuery({
@@ -257,8 +257,10 @@ export function CastSpellDrawerContent(props: {
             Attack
           </Text>
           <Text c='gray.5' span>
-            {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
-            {sign(spellStats.spell_attack.total[2])}
+            {sign(spellStats.spell_attack.total[0])}
+            {!isPhone &&
+              ` / ${sign(spellStats.spell_attack.total[1])} /
+                    ${sign(spellStats.spell_attack.total[2])}`}
           </Text>
         </Group>
         <Group wrap='nowrap' gap={10}>

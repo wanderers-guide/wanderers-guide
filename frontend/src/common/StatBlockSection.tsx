@@ -24,14 +24,16 @@ import { actionCostToRichTextInsert } from '@utils/actions';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
 import { RecallKnowledgeText } from '@drawers/types/CreatureDrawer';
-import { getVariable } from '@variables/variable-manager';
+import { getVariable, getVariableBonuses } from '@variables/variable-manager';
 import { DisplayIcon } from './IconDisplay';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { compiledConditions } from '@conditions/condition-handler';
+import { StoreID } from '@typing/variables';
 
 export default function StatBlockSection(props: {
+  storeId?: StoreID;
   entity: LivingEntity;
   options?: {
     hideName?: boolean;
@@ -45,9 +47,9 @@ export default function StatBlockSection(props: {
 
   const { entity } = props;
   const { data, isLoading } = useQuery({
-    queryKey: [`fetch-stat-block-data-content`, { entity }],
+    queryKey: [`fetch-stat-block-data-content`, { entity, storeId: props.storeId }],
     queryFn: async () => {
-      return await getJsonV4Content(entity);
+      return await getJsonV4Content(entity, props.storeId);
     },
   });
 

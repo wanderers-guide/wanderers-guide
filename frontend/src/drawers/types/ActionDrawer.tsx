@@ -247,6 +247,10 @@ export function DisplayOperationSelection(op: OperationSelect) {
     getSelection();
   });
 
+  if (options.length === 0) {
+    return null;
+  }
+
   return (
     <Box key={op.id} pt={5}>
       <Text fz='md' fw={600}>

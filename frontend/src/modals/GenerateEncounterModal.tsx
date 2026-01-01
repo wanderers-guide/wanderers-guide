@@ -32,7 +32,7 @@ import { generateEncounters } from '@ai/open-ai-handler';
 import { showNotification } from '@mantine/notifications';
 import { set } from 'node_modules/cypress/types/lodash';
 import { useRecoilState } from 'recoil';
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
 import { groupBy, map } from 'lodash-es';
@@ -150,7 +150,7 @@ export default function GenerateEncounterModal({
 
 function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   function getCreatureCounts(combatants: Combatant[]) {
     const grouped = groupBy(combatants, (c) => c.creature?.id);
@@ -209,8 +209,7 @@ function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
                 },
               }}
               onClick={() => {
-                openDrawer({
-                  type: 'creature',
+                openCreatureDrawer({
                   data: { id: record.creature?.id },
                 });
               }}

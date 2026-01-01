@@ -1,6 +1,7 @@
+import { AbilityBlockType, ContentType, Creature } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isDefaultValue } from '@utils/type-fixing';
-import { DefaultValue, atom, selector } from 'recoil';
+import { atom, selector } from 'recoil';
 
 const userIconState = atom({
   key: 'user-svg-icon',
@@ -63,9 +64,26 @@ const drawerState = selector({
   },
 });
 
-const drawerZIndexState = atom({
-  key: 'drawer-z-index',
-  default: null as number | null,
+const feedbackState = atom({
+  key: 'feedback-data',
+  default: null as {
+    type: ContentType | AbilityBlockType;
+    data: { id?: number; contentSourceId?: number };
+  } | null,
 });
 
-export { userIconState, drawerState, drawerZIndexState };
+const creatureDrawerState = atom({
+  key: 'drawer-state-creature',
+  default: null as {
+    data: {
+      id?: number;
+      creature?: Creature;
+      STORE_ID?: string;
+      showOperations?: boolean;
+      updateCreature?: (creature: Creature) => void;
+      readOnly?: boolean;
+    };
+  } | null,
+});
+
+export { userIconState, drawerState, feedbackState, creatureDrawerState };

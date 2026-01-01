@@ -4,6 +4,7 @@ import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
+import Paginator from '@common/Paginator';
 import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
 import { resetContentStore } from '@content/content-store';
 import exportToJSON from '@export/export-to-json';
@@ -26,6 +27,7 @@ import {
   Menu,
   Stack,
   Text,
+  TextInput,
   Title,
   Tooltip,
   VisuallyHidden,
@@ -46,10 +48,11 @@ import {
   IconDots,
   IconFileTypePdf,
   IconPlus,
-  IconPrinter,
+  IconSearch,
   IconTrash,
   IconUpload,
-  IconUserPlus,
+  IconUsers,
+  IconX,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character } from '@typing/content';
@@ -58,7 +61,6 @@ import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useEffect, useRef, useState } from 'react';
-import { GiRollingDiceCup } from 'react-icons/gi';
 import { useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 
@@ -66,11 +68,7 @@ export function Component() {
   setPageTitle(`Characters`);
   const session = useRecoilValue(sessionState);
 
-  const {
-    data: characters,
-    isLoading,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
       return await makeRequest<Character[]>('find-character', {
@@ -82,6 +80,10 @@ export function Component() {
 
   const [_character, setCharacter] = useRecoilState(characterState);
   const navigate = useNavigate();
+
+  const isPhone = useMediaQuery(phoneQuery());
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [loadingCreateCharacter, setLoadingCreateCharacter] = useState(false);
   const [loadingImportCharacter, setLoadingImportCharacter] = useState(false);
   const [loadingCreateZeroCharacter, setLoadingCreateZeroCharacter] = useState(false);
@@ -113,28 +115,43 @@ export function Component() {
   };
 
   const reachedCharacterLimit =
-    (characters?.length ?? 0) >= CHARACTER_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);
+    (data?.length ?? 0) >= CHARACTER_SLOT_CAP && !hasPatreonAccess(getCachedPublicUser(), 2);
+
+  const getSearchStr = (character: Character) => {
+    return JSON.stringify({
+      _: character.name,
+      ___: character.details?.ancestry?.name,
+      ____: character.details?.class?.name,
+      _____: character.details?.background?.name,
+      _______: character.details?.info,
+    }).toLowerCase();
+  };
+
+  const characters =
+    data
+      ?.filter((c) => getSearchStr(c).includes(searchQuery.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name)) ?? [];
 
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <Box>
+        <BlurBox bgColor='rgba(20, 21, 23, 0.827)'>
           <Group px='sm' justify='space-between' wrap='nowrap'>
-            <Box>
-              <Title order={1} c='gray.0'>
+            <Group gap={10} py={5} wrap='nowrap'>
+              {!isPhone && <IconUsers size='1.8rem' stroke={1.5} />}
+              <Title size={28} c='gray.0'>
                 Characters
                 <Text pl={10} fz='xl' fw={500} c='gray.2' span>
-                  {characters && reachedCharacterLimit ? `(${characters.length}/${CHARACTER_SLOT_CAP})` : ''}
+                  {data && reachedCharacterLimit ? `(${data.length}/${CHARACTER_SLOT_CAP})` : ''}
                 </Text>
               </Title>
-            </Box>
+            </Group>
             <Group gap={15} wrap='nowrap'>
-              <Tooltip label='Create Character' openDelay={750}>
+              <Tooltip label='Create Character' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
                   style={{
-                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(6px)',
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
                   }}
                   loading={loadingCreateCharacter}
                   variant='outline'
@@ -152,12 +169,11 @@ export function Component() {
               </Tooltip>
               <Menu shadow='md' width={240} withArrow withinPortal>
                 <Menu.Target>
-                  <Tooltip label='Import Character' openDelay={750}>
+                  <Tooltip label='Import Character' openDelay={500}>
                     <ActionIcon
                       disabled={reachedCharacterLimit}
                       style={{
-                        backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
-                        backdropFilter: 'blur(6px)',
+                        backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
                       }}
                       loading={loadingImportCharacter}
                       variant='outline'
@@ -198,12 +214,11 @@ export function Component() {
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
-              <Tooltip label='Random Character' openDelay={750}>
+              <Tooltip label='Random Character' openDelay={500}>
                 <ActionIcon
                   disabled={reachedCharacterLimit}
                   style={{
-                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : undefined,
-                    backdropFilter: 'blur(6px)',
+                    backgroundColor: reachedCharacterLimit ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
                   }}
                   loading={loadingCreateRandomCharacter}
                   variant='outline'
@@ -296,7 +311,38 @@ export function Component() {
             />
           </Group>
           <Divider color='gray.2' />
-        </Box>
+          <Box py={5}>
+            <TextInput
+              style={{ flex: 1 }}
+              leftSection={<IconSearch size='0.9rem' />}
+              placeholder={`Search characters`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              variant='unstyled'
+              rightSection={
+                searchQuery.trim() ? (
+                  <ActionIcon
+                    variant='subtle'
+                    size='md'
+                    color='gray'
+                    radius='xl'
+                    aria-label='Clear search'
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    <IconX size='1.2rem' stroke={2} />
+                  </ActionIcon>
+                ) : undefined
+              }
+              styles={(theme) => ({
+                input: {
+                  '--input-placeholder-color': theme.colors.gray[5],
+                },
+              })}
+            />
+          </Box>
+        </BlurBox>
         <Group pt='sm'>
           {isLoading && (
             <Loader
@@ -310,12 +356,25 @@ export function Component() {
               }}
             />
           )}
-          {(characters ?? [])
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((character, index) => (
-              <CharacterCard key={index} character={character} reachedCharacterLimit={reachedCharacterLimit} />
-            ))}
-          {!isLoading && (characters ?? []).length === 0 && (
+
+          {characters.length > 0 && (
+            <Center w='100%'>
+              <Stack w='100%'>
+                <Paginator
+                  h={480}
+                  records={characters.map((c, i) => (
+                    <CharacterCard key={i} character={c} reachedCharacterLimit={reachedCharacterLimit} />
+                  ))}
+                  numPerPage={isPhone ? 3 : 9}
+                  numInRow={isPhone ? 1 : 3}
+                  gap='xs'
+                  pagSize='md'
+                />
+              </Stack>
+            </Center>
+          )}
+
+          {!isLoading && (data ?? []).length === 0 && (
             <BlurBox w={'100%'} h={200}>
               <Stack mt={50} gap={10}>
                 <Text ta='center' c='gray.5' fs='italic'>
@@ -375,7 +434,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
     });
 
   return (
-    <BlurBox blur={10} w={isPhone ? '90dvw' : undefined}>
+    <BlurBox blur={10}>
       <LoadingOverlay visible={loading} />
       <Box
         w='100%'
@@ -514,7 +573,11 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
 }
 
 async function createCharacter() {
-  const result = await makeRequest<Character>('create-character', {});
+  const result = await makeRequest<Character>('create-character', {
+    meta_data: {
+      reset_hp: true,
+    },
+  });
   return result;
 }
 

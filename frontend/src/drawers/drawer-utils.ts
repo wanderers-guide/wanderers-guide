@@ -1,18 +1,17 @@
 import { DrawerType } from '@typing/index';
 import { ContentType, AbilityBlockType } from '@typing/content';
 import { isAbilityBlockType } from '@content/content-utils';
-import { CREATURE_DRAWER_ZINDEX } from './types/CreatureDrawer';
 
 export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition'; id: string }): {
   type: DrawerType;
   data: any;
 } {
+  const _id = parseInt(input.id);
   return {
     type: input.type,
     data: {
-      id: parseInt(input.id) ? parseInt(input.id) : input.id,
+      id: isNaN(_id) ? input.id : _id,
       readOnly: true,
-      zIndex: input.type === 'creature' ? CREATURE_DRAWER_ZINDEX : undefined,
     },
   };
 }
@@ -40,8 +39,6 @@ export function mapToDrawerData(
     drawerType = data.type;
   }
 
-  console.log('drawerType', drawerType, 'data', data, 'dataInject', dataInject);
-
   let drawerData: Record<string, any> = {};
   if (typeof data === 'number') {
     drawerData = { id: data, ...(dataInject ?? {}) };
@@ -59,14 +56,9 @@ export function mapToDrawerData(
     if (drawerType === 'trait') key = 'trait';
     if (drawerType === 'archetype') key = 'archetype';
     if (drawerType === 'versatile-heritage') key = 'versatileHeritage';
+    if (drawerType === 'class-archetype') key = 'classArchetype';
     if (drawerType === 'content-source') key = 'source';
-    if (drawerType === 'creature') {
-      key = 'creature';
-      dataInject = {
-        ...(dataInject ?? {}),
-        zIndex: CREATURE_DRAWER_ZINDEX,
-      };
-    }
+    if (drawerType === 'creature') key = 'creature';
     drawerData = {
       [key]: data,
       ...(dataInject ?? {}),

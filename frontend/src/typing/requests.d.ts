@@ -27,6 +27,8 @@ export type RequestType =
   | 'find-archetype'
   | 'create-versatile-heritage'
   | 'find-versatile-heritage'
+  | 'create-class-archetype'
+  | 'find-class-archetype'
   | 'create-item'
   | 'find-item'
   | 'create-language'

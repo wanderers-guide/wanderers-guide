@@ -3,6 +3,7 @@ import {
   fetchContentAll,
   fetchContentById,
   fetchTraitByName,
+  getDefaultSources,
 } from '@content/content-store';
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { AbilityBlock, ContentType, Item, Language, LivingEntity, Spell, Trait } from '@typing/content';
@@ -316,7 +317,8 @@ export async function getSelectedOption(
       return null;
     }
     const options: Record<string, any>[] = await fetchContentAll(
-      op.data.optionsFilters?.type.toLowerCase().replace('_', '-') as ContentType
+      op.data.optionsFilters?.type.toLowerCase().replace('_', '-') as ContentType,
+      getDefaultSources('PAGE')
     );
     const key: string = entity!.operation_data!.selections![selectionKey];
     const selectedOption = options.find((option) => String(option.id) === key);
@@ -385,7 +387,7 @@ export async function determineFilteredSelectionList(
 }
 
 async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersAbilityBlock) {
-  let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block');
+  let abilityBlocks = await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('PAGE'));
 
   abilityBlocks = abilityBlocks.filter((ab) => ab.type !== 'feat' || isAbilityBlockVisible(id, ab));
 
@@ -460,7 +462,7 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
 }
 
 async function getSpellList(operationUUID: string, filters: OperationSelectFiltersSpell) {
-  let spells = await fetchContentAll<Spell>('spell');
+  let spells = await fetchContentAll<Spell>('spell', getDefaultSources('PAGE'));
 
   spells = spells.filter((spell) => isSpellVisible('CHARACTER', spell));
 
@@ -512,7 +514,7 @@ async function getSpellList(operationUUID: string, filters: OperationSelectFilte
 }
 
 async function getLanguageList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersLanguage) {
-  let languages = await fetchContentAll<Language>('language');
+  let languages = await fetchContentAll<Language>('language', getDefaultSources('PAGE'));
 
   if (filters.rarity) {
     languages = languages.filter((language) => language.rarity === filters.rarity);
@@ -536,7 +538,7 @@ async function getLanguageList(id: StoreID, operationUUID: string, filters: Oper
 }
 
 async function getTraitList(id: StoreID, operationUUID: string, filters: OperationSelectFiltersTrait) {
-  let traits = await fetchContentAll<Trait>('trait');
+  let traits = await fetchContentAll<Trait>('trait', getDefaultSources('PAGE'));
 
   traits = traits.filter((trait) => isTraitVisible(id, trait));
 
@@ -578,7 +580,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
     variables = getAllArmorGroupVariables(id);
   }
   if (filters.group === 'WEAPON') {
-    const items = await fetchContentAll<Item>('item');
+    const items = await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
     const weapons = items.filter((item) => item.group === 'WEAPON');
     variables = weapons.map((w) => {
       return {
@@ -589,7 +591,7 @@ async function getAdjValueList(id: StoreID, operationUUID: string, filters: Oper
     });
   }
   if (filters.group === 'ARMOR') {
-    const items = await fetchContentAll<Item>('item');
+    const items = await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
     const armor = items.filter((item) => item.group === 'ARMOR');
     variables = armor.map((a) => {
       return {

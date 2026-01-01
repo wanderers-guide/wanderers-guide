@@ -21,6 +21,8 @@ import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { StoreID } from '@typing/variables';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export default function SpontaneousSpellsList(props: {
   id: StoreID;
@@ -53,7 +55,8 @@ export default function SpontaneousSpellsList(props: {
     type: 'SLOTS-ONLY' | 'SLOTS-AND-LIST' | 'LIST-ONLY',
     filter?: {
       traditions?: string[];
-      ranks?: string[];
+      rank_min?: number;
+      rank_max?: number;
     }
   ) => void;
   slots: Dictionary<
@@ -69,6 +72,8 @@ export default function SpontaneousSpellsList(props: {
   castSpell: (cast: boolean, spell: Spell) => void;
   spells: Dictionary<Spell[]>;
 }) {
+  const isPhone = useMediaQuery(phoneQuery());
+
   const { slots, castSpell, spells, setEntity } = props;
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
@@ -97,7 +102,8 @@ export default function SpontaneousSpellsList(props: {
                 e.preventDefault();
                 props.openManageSpells?.(props.source!.name, 'LIST-ONLY', {
                   traditions: [props.source!.tradition.toLowerCase()],
-                  ranks: Array.from({ length: highestRank + 1 }, (_, i) => i.toString()),
+                  rank_min: 0,
+                  rank_max: highestRank,
                 });
               }}
             >
@@ -151,8 +157,10 @@ export default function SpontaneousSpellsList(props: {
                     Spell Attack
                   </Text>
                   <Text c='gray.5' fz='sm' span>
-                    {sign(spellStats.spell_attack.total[0])} / {sign(spellStats.spell_attack.total[1])} /{' '}
-                    {sign(spellStats.spell_attack.total[2])}
+                    {sign(spellStats.spell_attack.total[0])}
+                    {!isPhone &&
+                      ` / ${sign(spellStats.spell_attack.total[1])} /
+                    ${sign(spellStats.spell_attack.total[2])}`}
                   </Text>
                 </Group>
               </StatButton>
@@ -182,7 +190,7 @@ export default function SpontaneousSpellsList(props: {
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
                       <Group wrap='nowrap'>
-                        <Text c='gray.5' fw={700} fz='sm' w={70}>
+                        <Text c='gray.5' fw={700} fz='sm' miw={30}>
                           {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                         </Text>
                         {rank !== '0' && (

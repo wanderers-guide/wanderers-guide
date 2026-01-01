@@ -1,17 +1,19 @@
-import { drawerState, drawerZIndexState } from '@atoms/navAtoms';
+import { drawerState, feedbackState } from '@atoms/navAtoms';
 import { convertToContentType, isAbilityBlockType } from '@content/content-utils';
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
-import { AbilityBlockType, ContentType } from '@typing/content';
-import { Suspense, lazy, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { ContentType } from '@typing/content';
+import { Suspense, lazy, useRef } from 'react';
+import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
 import { modals } from '@mantine/modals';
-import { phoneQuery, wideDesktopQuery } from '@utils/mobile-responsive';
+import { wideDesktopQuery } from '@utils/mobile-responsive';
 import { cloneDeep } from 'lodash-es';
+import { getAnchorStyles } from '@utils/anchor';
+import DrawerCreatureBase from './DrawerCreatureBase';
 
 // Use lazy imports here to prevent a huge amount of js on initial load
 const DrawerContent = lazy(() => import('./DrawerContent'));
@@ -33,8 +35,29 @@ const NO_FEEDBACK_DRAWERS = [
   'stat-weapon',
   'add-spell',
   'inv-item',
-  // 'creature',
 ];
+
+export const DRAWER_STYLES = {
+  content: {
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    paddingBottom: 'env(safe-area-inset-bottom)',
+    minHeight: '100dvh',
+  },
+  title: {
+    width: '100%',
+  },
+  header: {
+    paddingBottom: 0,
+  },
+  body: {
+    flex: '1 1 auto',
+    minHeight: 0,
+    overflow: 'hidden',
+    paddingRight: 2,
+  },
+} as const;
 
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
@@ -43,20 +66,13 @@ export default function DrawerBase() {
     openDrawer({ type: 'feat', data: { id: 1 } });
   */
 
-  const isPhone = useMediaQuery(phoneQuery());
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  // Overrides the zIndex of the drawer
-  const [drawerZIndex, setDrawerZIndex] = useRecoilState(drawerZIndexState);
-
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
-  const [feedbackData, setFeedbackData] = useState<{
-    type: ContentType | AbilityBlockType;
-    data: { id?: number };
-  } | null>(null);
+  const [feedbackData, setFeedbackData] = useRecoilState(feedbackState);
 
   const viewport = useRef<HTMLDivElement>(null);
   const [value, setValue] = useLocalStorage<PrevMetadata>({
@@ -78,7 +94,6 @@ export default function DrawerBase() {
 
   const handleDrawerClose = () => {
     openDrawer(null);
-    setDrawerZIndex(null);
     // Clear metadata
     saveMetadata({});
   };
@@ -95,7 +110,6 @@ export default function DrawerBase() {
         history,
       },
     });
-    setDrawerZIndex(null);
 
     setTimeout(() => {
       if (!viewport.current) return;
@@ -162,48 +176,27 @@ export default function DrawerBase() {
           </>
         }
         withCloseButton={false}
+        lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
         withOverlay={!isWideDesktop}
         position='right'
-        zIndex={drawerZIndex ?? _drawer?.data.zIndex ?? 1000}
-        styles={{
-          title: {
-            width: '100%',
-          },
-          header: {
-            paddingBottom: 0,
-          },
-          body: {
-            paddingRight: 2,
-          },
-        }}
+        zIndex={_drawer?.data.zIndex ?? 1000}
+        styles={DRAWER_STYLES}
         transitionProps={{ duration: 200 }}
         style={{
           overflow: 'hidden',
         }}
       >
-        <ScrollArea
-          viewportRef={viewport}
-          h={isPhone ? undefined : `calc(100dvh - (${titleHeight || 30}px + 48px))`}
-          pr={16}
-          scrollbars='y'
-        >
-          <Box
-            pt={2}
-            style={{
-              overflowX: 'hidden',
-            }}
-          >
-            {opened && (
-              <Suspense fallback={<div></div>}>
-                <DrawerContent
-                  onMetadataChange={(openedDict) => {
-                    saveMetadata(openedDict);
-                  }}
-                />
-              </Suspense>
-            )}
-          </Box>
+        <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
+          {opened && (
+            <Suspense fallback={<div></div>}>
+              <DrawerContent
+                onMetadataChange={(openedDict) => {
+                  saveMetadata(openedDict);
+                }}
+              />
+            </Suspense>
+          )}
         </ScrollArea>
 
         {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
@@ -215,11 +208,7 @@ export default function DrawerBase() {
                   aria-label='Help and Feedback'
                   radius='xl'
                   color='dark.3'
-                  style={{
-                    position: 'absolute',
-                    bottom: 5,
-                    right: 5,
-                  }}
+                  style={getAnchorStyles({ r: 5, b: 5 })}
                   onClick={() => {
                     const type = isAbilityBlockType(_drawer.type)
                       ? _drawer.type
@@ -229,6 +218,7 @@ export default function DrawerBase() {
                     // Use creature id from .creature to allow edited creatures to get content updates on original
                     if (type === 'creature' && data.creature?.id) {
                       data.id = data.creature.id;
+                      data.content_source_id = data.creature.content_source_id;
                     }
 
                     setFeedbackData({
@@ -265,6 +255,7 @@ export default function DrawerBase() {
           data={feedbackData.data}
         />
       )}
+      <DrawerCreatureBase />
     </>
   );
 }

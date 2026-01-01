@@ -1,9 +1,9 @@
 import { ItemIcon } from '@common/ItemIcon';
 import { getConditionByName } from '@conditions/condition-handler';
-import { fetchContentAll, getCachedSources } from '@content/content-store';
+import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import { showNotification } from '@mantine/notifications';
-import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
 import { Operation } from '@typing/operations';
 import { StoreID, VariableListStr } from '@typing/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
@@ -40,9 +40,9 @@ export function getFlatInvItems(inv: Inventory) {
  * @param inv - Inventory
  * @returns - Total bulk as a number
  */
-export function getInvBulk(inv: Inventory) {
+export function getInvBulk(inv: Inventory | undefined) {
   let totalBulk = 0;
-  for (const invItem of inv.items) {
+  for (const invItem of inv?.items ?? []) {
     totalBulk += getItemBulk(invItem);
 
     if (isItemContainer(invItem.item)) {
@@ -77,7 +77,7 @@ export function getItemBulk(invItem: InventoryItem) {
   const armorWornModifier = isItemArmor(invItem.item) && !invItem.is_equipped ? 1 : 0;
 
   const baseItemBulk = invItem.is_equipped
-    ? invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0)
+    ? (invItem.item.meta_data?.bulk?.held_or_stowed ?? (parseFloat(invItem.item.bulk ?? '0') || 0))
     : parseFloat(invItem.item.bulk ?? '0') || 0;
 
   totalBulk = (baseItemBulk + armorWornModifier) * getItemQuantity(invItem.item);
@@ -88,23 +88,25 @@ export function getItemBulk(invItem: InventoryItem) {
 
 /**
  * Utility function to handle adding an item to the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param item - Item to add
  * @param is_formula - Whether the item is a formula
  */
 export const handleAddItem = async (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
+  setEntity: SetterOrUpdater<LivingEntity | null>,
   item: Item,
   is_formula: boolean
 ) => {
   const container_contents = await getDefaultContainerContents(item);
-  setInventory((prev) => {
+  setEntity((prev) => {
+    if (!prev) return prev;
+
     const itemData = cloneDeep(item);
     if (itemData.meta_data) {
       itemData.meta_data.hp = itemData.meta_data.hp_max;
     }
     const newItems = [
-      ...cloneDeep(prev.items),
+      ...cloneDeep(prev.inventory?.items ?? []),
       {
         id: crypto.randomUUID(),
         item: itemData,
@@ -115,9 +117,21 @@ export const handleAddItem = async (
         container_contents,
       },
     ].sort((a, b) => a.item.name.localeCompare(b.item.name));
+
     return {
       ...prev,
-      items: newItems,
+      inventory: {
+        ...(prev?.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items: newItems,
+      },
     };
   });
   showNotification({
@@ -131,7 +145,7 @@ export const handleAddItem = async (
 async function getDefaultContainerContents(item: Item, allItems?: Item[], count = 1): Promise<InventoryItem[]> {
   if (count > 10) return [];
   if ((item.meta_data?.container_default_items ?? []).length === 0) return [];
-  const items = allItems ? allItems : await fetchContentAll<Item>('item');
+  const items = allItems ? allItems : await fetchContentAll<Item>('item', getDefaultSources('PAGE'));
 
   const invItems: InventoryItem[] = [];
   for (const record of item.meta_data?.container_default_items ?? []) {
@@ -390,39 +404,49 @@ export function addExtraItems(
 
 /**
  * Utility function to handle deleting an item from the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to delete
  */
-export const handleDeleteItem = (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
-  invItem: InventoryItem
-) => {
-  setInventory((prev) => {
-    const newItems = cloneDeep(prev.items.filter((item) => item.id !== invItem.id));
+export const handleDeleteItem = (setEntity: SetterOrUpdater<LivingEntity | null>, invItem: InventoryItem) => {
+  setEntity((prev) => {
+    if (!prev) return prev;
+
+    const newItems = cloneDeep(prev.inventory?.items.filter((item) => item.id !== invItem.id) ?? []);
     // Remove from all containers
     newItems.forEach((item) => {
       if (isItemContainer(item.item)) {
         item.container_contents = item.container_contents.filter((containedItem) => containedItem.id !== invItem.id);
       }
     });
+
     return {
       ...prev,
-      items: newItems,
+      inventory: {
+        ...(prev?.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items: newItems,
+      },
     };
   });
 };
 
 /**
  * Utility function to handle updating an item in the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to update
  */
-export const handleUpdateItem = (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
-  invItem: InventoryItem
-) => {
-  setInventory((prev) => {
-    const newItems = cloneDeep(prev.items).map((item) => {
+export const handleUpdateItem = (setEntity: SetterOrUpdater<LivingEntity | null>, invItem: InventoryItem) => {
+  setEntity((prev) => {
+    if (!prev) return prev;
+
+    const newItems = cloneDeep(prev.inventory?.items ?? []).map((item) => {
       if (item.id === invItem.id) {
         return cloneDeep(invItem);
       }
@@ -439,45 +463,71 @@ export const handleUpdateItem = (
         });
       }
     });
+
     return {
       ...prev,
-      items: newItems,
+      inventory: {
+        ...(prev?.inventory ?? {
+          coins: {
+            cp: 0,
+            sp: 0,
+            gp: 0,
+            pp: 0,
+          },
+          items: [],
+        }),
+        items: newItems,
+      },
     };
   });
 };
 
 /**
  * Utility function to handle moving an item in the inventory
- * @param setInventory - Inventory state setter
+ * @param setEntity - LivingEntity state setter
  * @param invItem - Inventory item to move
  * @param containerItem - Container item to move to
  */
 export const handleMoveItem = (
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>,
+  setEntity: SetterOrUpdater<LivingEntity | null>,
   invItem: InventoryItem,
   containerItem: InventoryItem | null
 ) => {
   const movingItem = cloneDeep(invItem);
-  handleDeleteItem(setInventory, invItem);
+  handleDeleteItem(setEntity, invItem);
   setTimeout(() => {
-    setInventory((prev) => {
+    setEntity((prev) => {
+      if (!prev) return prev;
+
       let newItems: InventoryItem[] = [];
       if (containerItem) {
-        const foundContainer = cloneDeep(prev.items.find((item) => item.id === containerItem.id));
+        const foundContainer = cloneDeep(prev.inventory?.items.find((item) => item.id === containerItem.id));
         if (!foundContainer) return prev;
         movingItem.is_equipped = false;
-        newItems = cloneDeep(prev.items).map((item) => {
+        newItems = cloneDeep(prev.inventory?.items ?? []).map((item) => {
           if (item.id === foundContainer.id) {
             item.container_contents.push(movingItem);
           }
           return item;
         });
       } else {
-        newItems = [...cloneDeep(prev.items), movingItem];
+        newItems = [...cloneDeep(prev.inventory?.items ?? []), movingItem];
       }
+
       return {
         ...prev,
-        items: newItems,
+        inventory: {
+          ...(prev?.inventory ?? {
+            coins: {
+              cp: 0,
+              sp: 0,
+              gp: 0,
+              pp: 0,
+            },
+            items: [],
+          }),
+          items: newItems,
+        },
       };
     });
   }, 100);
@@ -579,7 +629,7 @@ export function getItemOperations(item: Item, content: ContentPackage) {
   if (isItemWithRunes(item)) {
     if (isItemArmor(item)) {
       // Armor potency
-      const potency = item.meta_data?.runes?.potency ?? 0;
+      const potency = Math.min(item.meta_data?.runes?.potency ?? 0, 4);
       if (potency > 0) {
         const ops: Operation[] = [
           {
@@ -597,7 +647,7 @@ export function getItemOperations(item: Item, content: ContentPackage) {
       }
 
       // Armor resilient
-      const resilient = item.meta_data?.runes?.resilient ?? 0;
+      const resilient = Math.min(item.meta_data?.runes?.resilient ?? 0, 4);
       if (resilient > 0) {
         const ops: Operation[] = [
           {
@@ -805,7 +855,7 @@ export function isItemEquippable(item: Item) {
 export function isItemWithRunes(item: Item) {
   if (!item.meta_data?.runes) return false;
 
-  return item.meta_data.runes.potency || item.meta_data.runes.striking || item.meta_data.runes.resilient;
+  return !!(item.meta_data.runes.potency || item.meta_data.runes.striking || item.meta_data.runes.resilient);
 }
 
 /**
@@ -821,6 +871,36 @@ export function isItemWithPropertyRunes(item: Item) {
     item.meta_data.runes.property.length > 0 &&
     item.meta_data.runes.property.every((r) => r.id && r.name)
   );
+}
+
+// Fundamental Rune IDs Map
+export const FUNDAMENTAL_RUNES: Record<string, number> = {
+  potency_weapon_1: 7950, // Weapon Potency I
+  potency_weapon_2: 7951, // Weapon Potency II
+  potency_weapon_3: 7952, // Weapon Potency III
+  potency_weapon_4: 19854, // Weapon Potency IV
+  potency_weapon_10: 16927, // Weapon Potency (Mythic)
+  potency_armor_1: 6719, // Armor Potency I
+  potency_armor_2: 6720, // Armor Potency II
+  potency_armor_3: 6721, // Armor Potency III
+  potency_armor_10: 16924, // Armor Potency (Mythic)
+  striking_1: 7862, // Striking
+  striking_2: 7860, // Striking (Greater)
+  striking_3: 7861, // Striking (Major)
+  striking_10: 16926, // Striking (Mythic)
+  resilient_1: 7703, // Resilient
+  resilient_2: 7701, // Resilient (Greater)
+  resilient_3: 7702, // Resilient (Major)
+  resilient_10: 16925, // Resilient (Mythic)
+} as const;
+
+/**
+ * Utility function to detect if an item IS a fundamental rune
+ * @param item - Item
+ * @returns - Whether the item is a fundamental rune
+ */
+export function isItemFundamentalRune(item: Item) {
+  return Object.values(FUNDAMENTAL_RUNES).includes(item.id);
 }
 
 /**
@@ -904,6 +984,40 @@ export function isItemStave(item: Item) {
 }
 
 /**
+ * Utility function to determine if an item is an unarmed attack / meta-attack
+ * @param item - Item
+ * @returns - Whether the item is a meta attack
+ */
+export function isItemMetaAttack(item: Item) {
+  return !!item.meta_data?.unselectable && isItemWeapon(item);
+}
+
+/**
+ * Utility function to determine if an item is an unarmed defense / meta-defense
+ * @param item - Item
+ * @returns - Whether the item is a meta defense
+ */
+export function isItemMetaDefense(item: Item) {
+  return !!item.meta_data?.unselectable && (isItemArmor(item) || isItemShield(item));
+}
+
+/**
+ * Utility function to determine the main label for the item
+ * @param item - Item
+ * @param includeLevel - Whether to include the item level in the label
+ * @returns - Item type label
+ */
+export function determineItemMetaType(item: Item, includeLevel?: boolean): string {
+  let type = `Item ${includeLevel ? item.level : ''}`.trim();
+  if (isItemMetaAttack(item)) {
+    type = `Attack`;
+  } else if (isItemMetaDefense(item)) {
+    type = `Defense`;
+  }
+  return type;
+}
+
+/**
  * Utility function to determine if an item is archaic (old weapon from Pathfinder)
  * @param item - Item
  * @returns - Whether the item is archaic
@@ -916,7 +1030,7 @@ export function isItemArchaic(item: Item) {
     return false;
   }
 
-  const source = getCachedSources().find((source) => source.id === item.content_source_id);
+  const source = getContentFast<ContentSource>('content-source', [item.content_source_id])[0];
   if (!source) {
     return false;
   }

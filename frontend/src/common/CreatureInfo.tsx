@@ -23,7 +23,7 @@ import TraitsDisplay from './TraitsDisplay';
 import { StoreID, VariableStr } from '@typing/variables';
 import { getAllAncestryTraitVariables, getVariable } from '@variables/variable-manager';
 import { useQuery } from '@tanstack/react-query';
-import { fetchContentAll } from '@content/content-store';
+import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { isTruthy } from '@utils/type-fixing';
 import { convertToSize } from '@upload/foundry-utils';
 
@@ -41,7 +41,7 @@ export function CreatureDetailedInfo(props: { id: StoreID; creature: Creature })
   const { data } = useQuery({
     queryKey: [`get-traits`],
     queryFn: async () => {
-      return await fetchContentAll<Trait>('trait');
+      return await fetchContentAll<Trait>('trait', getDefaultSources('INFO'));
     },
   });
   const traits = getAllAncestryTraitVariables(props.id)

@@ -14,9 +14,9 @@ export default function GenerateEmbeddings() {
   const [loading, setLoading] = useState(false);
 
   const { data, isFetching } = useQuery({
-    queryKey: [`get-content-sources`],
+    queryKey: [`get-content-sources-admin`],
     queryFn: async () => {
-      return await fetchContentSources({ homebrew: false, published: true, includeCommonCore: true });
+      return await fetchContentSources('ALL-OFFICIAL-PUBLIC');
     },
   });
 

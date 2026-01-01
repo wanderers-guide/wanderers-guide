@@ -4,7 +4,7 @@ export const DEBOUNCE_DELAY = 200; // ms
 
 export const TEXT_INDENT_AMOUNT = 20; // px
 
-export const EDIT_MODAL_HEIGHT = 550; // px
+export const EDIT_MODAL_HEIGHT = 530; // px
 
 export const CHARACTER_BUILDER_BREAKPOINT = 815; // px
 export const CHARACTER_SHEET_BREAKPOINT = 815; // px

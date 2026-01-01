@@ -12,7 +12,6 @@ import {
   fetchItemByName,
   fetchSpellByName,
   fetchTraitByName,
-  getDefaultSources,
 } from '@content/content-store';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { hideNotification, showNotification } from '@mantine/notifications';
@@ -29,7 +28,8 @@ import { CreateCreatureModal } from './CreateCreatureModal';
 import { CreateArchetypeModal } from './CreateArchetypeModal';
 import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 import { CreateContentSourceOnlyModal } from './CreateContentSourceModal';
-import { cloneDeep, uniq } from 'lodash-es';
+import { cloneDeep } from 'lodash-es';
+import { CreateClassArchetypeModal } from './CreateClassArchetypeModal';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -38,6 +38,7 @@ export default function ContentFeedbackModal(props: {
   onCompleteFeedback: () => void;
   type: ContentType | AbilityBlockType;
   data: { id?: number; contentSourceId?: number };
+  zIndex?: number;
 }) {
   const [submitUpdate, setSubmitUpdate] = useState<{ id: number | undefined; content: any } | null>(null);
 
@@ -46,10 +47,8 @@ export default function ContentFeedbackModal(props: {
       props.onStartFeedback();
       setSubmitUpdate({ id: undefined, content: props.type });
 
-      // Add the content source to make sure we can reference it's content. TODO: Add required sources too
-      if (props.data.contentSourceId && props.data.contentSourceId !== -1) {
-        defineDefaultSources(uniq([...getDefaultSources(), props.data.contentSourceId]));
-      }
+      // Add the content source to make sure we can reference it's content
+      defineDefaultSources('INFO', props.data.contentSourceId ? [props.data.contentSourceId] : 'ALL-USER-ACCESSIBLE');
     }
   }, []);
 
@@ -74,7 +73,7 @@ export default function ContentFeedbackModal(props: {
       convertToContentType(props.type),
       props.data.id === -1 ? 'CREATE' : 'UPDATE',
       data,
-      contentSourceId === -1 ? props.data.contentSourceId ?? -1 : contentSourceId,
+      contentSourceId === -1 ? (props.data.contentSourceId ?? -1) : contentSourceId,
       refId === -1 ? undefined : refId
     );
 
@@ -123,7 +122,7 @@ export default function ContentFeedbackModal(props: {
         }}
         title={<Title order={3}>Content Details</Title>}
         size={'sm'}
-        zIndex={1000}
+        zIndex={props.zIndex ?? 1000}
       >
         <Box style={{ position: 'relative', minHeight: 150 }}>
           <ContentFeedbackSection
@@ -218,6 +217,17 @@ export default function ContentFeedbackModal(props: {
             />
           )}
 
+          {props.type === 'class-archetype' && (
+            <CreateClassArchetypeModal
+              opened={true}
+              editId={submitUpdate.id}
+              onComplete={async (archetype) => {
+                await handleComplete(archetype.id, archetype.content_source_id, archetype);
+              }}
+              onCancel={() => handleReset()}
+            />
+          )}
+
           {props.type === 'ancestry' && (
             <CreateAncestryModal
               opened={true}
@@ -302,6 +312,8 @@ export default function ContentFeedbackModal(props: {
               opened={true}
               editId={submitUpdate.id}
               onComplete={async (creature) => {
+                console.log('WDdwwd', submitUpdate.id, creature.content_source_id);
+
                 await handleComplete(creature.id, creature.content_source_id, creature);
               }}
               onCancel={() => handleReset()}

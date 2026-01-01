@@ -1,5 +1,5 @@
 import { ContentSource, PublicUser } from '@typing/content';
-import { defineDefaultSources, fetchContentSources } from './content-store';
+import { defineDefaultSources, fetchContentSources, SourceKey } from './content-store';
 import { getPublicUser } from '@auth/user-manager';
 import { isEqual, uniqWith } from 'lodash-es';
 
@@ -14,28 +14,19 @@ export async function updateSubscriptions(user: PublicUser | undefined | null, s
     : user.subscribed_content_sources?.filter((src) => src.source_id !== source?.id);
   subscriptions = uniqWith(subscriptions, isEqual);
 
-  const sources = await fetchContentSources({ ids: subscriptions.map((s) => s.source_id) });
+  const sources = await fetchContentSources(subscriptions.map((s) => s.source_id));
   subscriptions = subscriptions.filter((s) => sources.find((src) => src.id === s.source_id));
   return subscriptions;
 }
 
-export async function defineDefaultSourcesForSource(source: ContentSource) {
-  const allSources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
+export async function defineDefaultSourcesForSource(view: SourceKey | 'BOTH', source: ContentSource) {
+  const allSources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');
   const user = await getPublicUser();
   // TODO: change to only the bundle's required sources
-  return defineDefaultSources([
+  return defineDefaultSources(view, [
     ...allSources.map((source) => source.id), // shouldn't be needed
     ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []), // shouldn't be needed
     ...(source.required_content_sources ?? []),
     source.id,
-  ]);
-}
-
-export async function defineDefaultSourcesForUser() {
-  const allSources = await fetchContentSources({ homebrew: false, ids: 'all', includeCommonCore: true });
-  const user = await getPublicUser();
-  return defineDefaultSources([
-    ...allSources.map((source) => source.id),
-    ...(user?.subscribed_content_sources?.map((s) => s.source_id) ?? []),
   ]);
 }

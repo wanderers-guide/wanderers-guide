@@ -2,15 +2,24 @@ import { makeRequest } from '@requests/request-manager';
 import { PublicUser } from '@typing/content';
 
 export async function getPublicUser(id?: string) {
-  const user = await makeRequest<PublicUser>('get-user', {
-    id,
-  });
+  try {
+    const user = await makeRequest<PublicUser>(
+      'get-user',
+      {
+        id,
+      },
+      false
+    );
 
-  if (!id) {
-    // Only store if we're fetching the current user
-    localStorage.setItem('user-data', JSON.stringify(user ?? {}));
+    if (!id) {
+      // Only store if we're fetching the current user
+      localStorage.setItem('user-data', JSON.stringify(user ?? {}));
+    }
+    return user;
+  } catch (e) {
+    console.error('Error fetching public user:', e);
+    return null;
   }
-  return user;
 }
 
 export function getCachedPublicUser(): PublicUser | null {

@@ -39,6 +39,7 @@ serve(async (req: Request) => {
         'encounter',
         'archetype',
         'versatile_heritage',
+        'class_archetype',
       ].includes(tableName)
     ) {
       return {

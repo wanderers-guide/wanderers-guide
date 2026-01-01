@@ -1,23 +1,14 @@
 import { drawerState } from '@atoms/navAtoms';
-import { sessionState } from '@atoms/supabaseAtoms';
 import { userState } from '@atoms/userAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
-import BlurButton from '@common/BlurButton';
-import { CharacterDetailedInfo, CharacterInfo } from '@common/CharacterInfo';
 import { ContentSourceInfo } from '@common/ContentSourceInfo';
-import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
+import Paginator from '@common/Paginator';
+import { ICON_BG_COLOR_HOVER } from '@constants/data';
 import { deleteContent, upsertContentSource } from '@content/content-creation';
 import { fetchContentSources, resetContentStore } from '@content/content-store';
 import { updateSubscriptions } from '@content/homebrew';
-import exportToJSON from '@export/export-to-json';
-import exportToPDF from '@export/export-to-pdf';
 import { importFromCustomPack } from '@homebrew/import/pathbuilder-custom-packs';
-import { importFromFTC } from '@import/ftc/import-from-ftc';
-import importFromGUIDECHAR from '@import/guidechar/import-from-guidechar';
-import importFromJSON from '@import/json/import-from-json';
-import PathbuilderInputModal from '@import/pathbuilder/PathbuilderInputModal';
-import { importFromPathbuilder } from '@import/pathbuilder/import-from-pathbuilder';
 import {
   ActionIcon,
   Box,
@@ -29,130 +20,202 @@ import {
   Loader,
   Text,
   Menu,
-  SimpleGrid,
   Stack,
   Title,
-  Tooltip,
   VisuallyHidden,
   rem,
   useMantineTheme,
-  Tabs,
-  MantineProvider,
   TextInput,
-  Badge,
+  Select,
 } from '@mantine/core';
 import { useMediaQuery, useHover } from '@mantine/hooks';
 import { modals } from '@mantine/modals';
-import { showNotification, hideNotification } from '@mantine/notifications';
 import { CreateContentSourceModal } from '@modals/CreateContentSourceModal';
 import { makeRequest } from '@requests/request-manager';
 import {
-  IconUserPlus,
   IconUpload,
-  IconCodeDots,
-  IconBrandTidal,
-  IconArchive,
-  IconArrowsShuffle,
   IconBookmarks,
   IconListDetails,
   IconHammer,
   IconSearch,
-  IconCopy,
   IconDots,
-  IconFileTypePdf,
   IconTrash,
   IconChevronDown,
+  IconX,
+  IconAsset,
 } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, ContentSource } from '@typing/content';
-import { isPlayable } from '@utils/character';
+import { useQuery } from '@tanstack/react-query';
+import { ContentSource } from '@typing/content';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useRecoilState } from 'recoil';
 
 export function Component() {
   setPageTitle(`Homebrew`);
   const theme = useMantineTheme();
-  const session = useRecoilValue(sessionState);
+  const isPhone = useMediaQuery(phoneQuery());
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [tab, setTab] = useState(0);
 
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <Box>
+        <BlurBox bgColor='rgba(20, 21, 23, 0.827)'>
           <Group px='sm' justify='space-between' wrap='nowrap'>
-            <Box>
-              <Title order={1} c='gray.0'>
+            <Group gap={10} py={5}>
+              {!isPhone && <IconAsset size='1.8rem' stroke={1.5} />}
+              <Title size={28} c='gray.0'>
                 Homebrew
               </Title>
-            </Box>
-            <Group gap={5} wrap='nowrap'>
-              <BlurButton
-                w={160}
-                leftSection={<IconListDetails size='1rem' />}
-                variant='outline'
-                style={
-                  tab === 0 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
-                }
-                onClick={() => setTab(0)}
-              >
-                Browse
-              </BlurButton>
-              <BlurButton
-                w={160}
-                leftSection={<IconBookmarks size='1rem' />}
-                variant='outline'
-                style={
-                  tab === 1 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
-                }
-                onClick={() => setTab(1)}
-              >
-                Subscriptions
-              </BlurButton>
-              <BlurButton
-                w={160}
-                leftSection={<IconHammer size='1rem' />}
-                variant='outline'
-                style={
-                  tab === 2 ? { backgroundColor: '#fff', color: theme.colors.gray[7] } : { color: theme.colors.gray[0] }
-                }
-                onClick={() => {
-                  if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
-                    displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
-                    return;
-                  }
-
-                  setTab(2);
-                }}
-              >
-                My Creations
-              </BlurButton>
             </Group>
+            {isPhone ? (
+              <Select
+                value={`${tab}`}
+                onChange={(v) => {
+                  if (v) {
+                    setTab(parseInt(v));
+                  }
+                }}
+                variant='default'
+                data={[
+                  {
+                    value: '0',
+                    label: 'Browse',
+                  },
+                  {
+                    value: '1',
+                    label: 'Subscriptions',
+                  },
+                  {
+                    value: '2',
+                    label: 'My Creations',
+                  },
+                ]}
+              />
+            ) : (
+              <Group gap={5} wrap='nowrap'>
+                <Button
+                  w={140}
+                  leftSection={<IconListDetails size='1rem' />}
+                  variant='outline'
+                  size='xs'
+                  radius='xl'
+                  style={
+                    tab === 0
+                      ? { backgroundColor: '#fff', color: theme.colors.gray[7], borderColor: '#fff' }
+                      : { color: theme.colors.gray[0], backgroundColor: 'transparent', borderColor: '#fff' }
+                  }
+                  onClick={() => setTab(0)}
+                >
+                  Browse
+                </Button>
+                <Button
+                  w={140}
+                  leftSection={<IconBookmarks size='1rem' />}
+                  variant='outline'
+                  size='xs'
+                  radius='xl'
+                  style={
+                    tab === 1
+                      ? { backgroundColor: '#fff', color: theme.colors.gray[7], borderColor: '#fff' }
+                      : { color: theme.colors.gray[0], backgroundColor: 'transparent', borderColor: '#fff' }
+                  }
+                  onClick={() => setTab(1)}
+                >
+                  Subscriptions
+                </Button>
+                <Button
+                  w={140}
+                  leftSection={<IconHammer size='1rem' />}
+                  variant='outline'
+                  size='xs'
+                  radius='xl'
+                  style={
+                    tab === 2
+                      ? { backgroundColor: '#fff', color: theme.colors.gray[7], borderColor: '#fff' }
+                      : {
+                          backgroundColor: 'transparent',
+                          color: theme.colors.gray[0],
+                          borderColor: '#fff',
+                        }
+                  }
+                  onClick={() => {
+                    if (!hasPatreonAccess(getCachedPublicUser(), 2)) {
+                      displayPatronOnly('This feature is only available to Wanderer-tier patrons!');
+                      return;
+                    }
+
+                    setTab(2);
+                  }}
+                >
+                  My Creations
+                </Button>
+              </Group>
+            )}
           </Group>
           <Divider color='gray.2' />
-        </Box>
+          <Box py={5}>
+            <TextInput
+              style={{ flex: 1 }}
+              leftSection={<IconSearch size='0.9rem' />}
+              placeholder={`Search bundles`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              variant='unstyled'
+              rightSection={
+                searchQuery.trim() ? (
+                  <ActionIcon
+                    variant='subtle'
+                    size='md'
+                    color='gray'
+                    radius='xl'
+                    aria-label='Clear search'
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    <IconX size='1.2rem' stroke={2} />
+                  </ActionIcon>
+                ) : undefined
+              }
+              styles={(theme) => ({
+                input: {
+                  '--input-placeholder-color': theme.colors.gray[5],
+                },
+              })}
+            />
+          </Box>
+        </BlurBox>
         <Box pt='sm'>
-          <Group>{tab === 0 && <BrowseSection />}</Group>
-          <Group>{tab === 1 && <SubscriptionsSection />}</Group>
-          <Group>{tab === 2 && <CreationsSection />}</Group>
+          <Group>{tab === 0 && <BrowseSection searchQuery={searchQuery.trim()} />}</Group>
+          <Group>{tab === 1 && <SubscriptionsSection searchQuery={searchQuery.trim()} />}</Group>
+          <Group>{tab === 2 && <CreationsSection searchQuery={searchQuery.trim()} />}</Group>
         </Box>
       </Box>
     </Center>
   );
 }
 
-function BrowseSection(props: {}) {
-  const theme = useMantineTheme();
-  const [searchQuery, setSearchQuery] = useState('');
+const getSearchStr = (source: ContentSource) => {
+  return JSON.stringify({
+    _: source.name,
+    ___: source.contact_info,
+    ____: source.description,
+    _____: source.url,
+    ______: source.meta_data,
+  }).toLowerCase();
+};
 
+function BrowseSection(props: { searchQuery: string }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const { data, isFetching } = useQuery({
     queryKey: [`get-homebrew-content-sources-public`],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, published: true, includeCommonCore: true }))
+      return (await fetchContentSources('ALL-HOMEBREW-PUBLIC'))
         .filter((c) => c.user_id)
         .sort((a, b) => {
           if (a.require_key && !b.require_key) return 1;
@@ -163,24 +226,10 @@ function BrowseSection(props: {}) {
     refetchOnWindowFocus: false,
   });
 
-  const bundles = data?.filter((source) => source.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const bundles = data?.filter((source) => getSearchStr(source).includes(props.searchQuery.toLowerCase())) ?? [];
 
   return (
     <Stack w='100%' gap={15}>
-      <TextInput
-        style={{ flex: 1 }}
-        leftSection={<IconSearch size='0.9rem' />}
-        placeholder={`Search bundles`}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        styles={{
-          input: {
-            backgroundColor: `rgba(20, 21, 23, 0.827)`,
-            backdropFilter: `blur(10px)`,
-            borderColor: 'transparent',
-          },
-        }}
-      />
-
       <Group>
         {isFetching && (
           <Loader
@@ -194,10 +243,25 @@ function BrowseSection(props: {}) {
             }}
           />
         )}
-        {(bundles ?? []).map((source, index) => (
-          <ContentSourceCard key={index} source={source} />
-        ))}
-        {!isFetching && (bundles ?? []).length === 0 && (
+
+        {bundles.length > 0 && (
+          <Center w='100%'>
+            <Stack w='100%'>
+              <Paginator
+                h={500}
+                records={(bundles ?? []).map((source, index) => (
+                  <ContentSourceCard key={index} source={source} />
+                ))}
+                numPerPage={isPhone ? 4 : 12}
+                numInRow={isPhone ? 1 : 3}
+                gap='xs'
+                pagSize='md'
+              />
+            </Stack>
+          </Center>
+        )}
+
+        {!isFetching && bundles.length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
@@ -211,9 +275,8 @@ function BrowseSection(props: {}) {
   );
 }
 
-function SubscriptionsSection(props: {}) {
-  const theme = useMantineTheme();
-
+function SubscriptionsSection(props: { searchQuery: string }) {
+  const isPhone = useMediaQuery(phoneQuery());
   const [user, setUser] = useRecoilState(userState);
   const { refetch } = useQuery({
     queryKey: [`find-account-self`],
@@ -230,19 +293,24 @@ function SubscriptionsSection(props: {}) {
     isFetching,
     refetch: refetchSources,
   } = useQuery({
-    queryKey: [`get-homebrew-content-sources-subscribed`],
+    queryKey: [`get-homebrew-content-sources-subscribed`, user?.user_id],
     queryFn: async () => {
-      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
+      resetContentStore(false);
+      return (await fetchContentSources('ALL-HOMEBREW-ACCESSIBLE')).filter(
         (c) => c.user_id && user?.subscribed_content_sources?.find((src) => src.source_id === c.id)
       );
     },
+    enabled: !!user,
     refetchOnWindowFocus: false,
   });
 
+  const isLoading = isFetching || !user || !data;
+  const bundles = data?.filter((source) => getSearchStr(source).includes(props.searchQuery.toLowerCase())) ?? [];
+
   return (
-    <Stack w='100%' gap={5}>
+    <Stack w='100%' gap={15}>
       <Group>
-        {isFetching && (
+        {isLoading && (
           <Loader
             size='lg'
             type='bars'
@@ -254,23 +322,38 @@ function SubscriptionsSection(props: {}) {
             }}
           />
         )}
-        {(data ?? []).map((source, index) => (
-          <ContentSourceCard
-            key={index}
-            source={source}
-            onDelete={async () => {
-              const subscriptions = await updateSubscriptions(user, source, false);
-              await makeRequest('update-user', {
-                subscribed_content_sources: subscriptions ?? [],
-              });
-              await refetch();
-              await refetchSources();
-            }}
-            deleteTitle='Unsubscribe'
-            deleteMessage='Are you sure you want to unsubscribe from this bundle? All characters using this bundle will lose their abilities from this source.'
-          />
-        ))}
-        {!isFetching && (data ?? []).length === 0 && (
+
+        {bundles.length > 0 && (
+          <Center w='100%'>
+            <Stack w='100%'>
+              <Paginator
+                h={500}
+                records={bundles.map((source, index) => (
+                  <ContentSourceCard
+                    key={index}
+                    source={source}
+                    onDelete={async () => {
+                      const subscriptions = await updateSubscriptions(user, source, false);
+                      await makeRequest('update-user', {
+                        subscribed_content_sources: subscriptions ?? [],
+                      });
+                      await refetch();
+                      await refetchSources();
+                    }}
+                    deleteTitle='Unsubscribe'
+                    deleteMessage='Are you sure you want to unsubscribe from this bundle? All characters using this bundle will lose their abilities from this source.'
+                  />
+                ))}
+                numPerPage={isPhone ? 3 : 12}
+                numInRow={isPhone ? 1 : 3}
+                gap='xs'
+                pagSize='md'
+              />
+            </Stack>
+          </Center>
+        )}
+
+        {!isLoading && bundles.length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
@@ -284,8 +367,9 @@ function SubscriptionsSection(props: {}) {
   );
 }
 
-function CreationsSection(props: {}) {
+function CreationsSection(props: { searchQuery: string }) {
   const theme = useMantineTheme();
+  const isPhone = useMediaQuery(phoneQuery());
   const [sourceId, setSourceId] = useState<number | undefined>(undefined);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const jsonImportRef = useRef<HTMLButtonElement>(null);
@@ -308,8 +392,8 @@ function CreationsSection(props: {}) {
   } = useQuery({
     queryKey: [`get-homebrew-content-sources-creations`],
     queryFn: async () => {
-      resetContentStore(true);
-      return (await fetchContentSources({ ids: 'all', homebrew: true, includeCommonCore: true })).filter(
+      resetContentStore(false);
+      return (await fetchContentSources('ALL-HOMEBREW-ACCESSIBLE')).filter(
         (c) => c.user_id && c.user_id === user?.user_id
       );
     },
@@ -318,12 +402,15 @@ function CreationsSection(props: {}) {
   });
   const isFetching = isFetchingBundles || !user;
 
+  const bundles =
+    data?.filter((source) => getSearchStr(source).toLowerCase().includes(props.searchQuery.toLowerCase())) ?? [];
+
   return (
     <Stack w='100%' gap={15}>
       <Box
         p='xs'
         style={{
-          backgroundColor: 'rgba(233, 236, 239, 0.1)',
+          backgroundColor: 'rgba(20, 21, 23, 0.827)',
           backdropFilter: 'blur(6px)',
           borderRadius: theme.radius.xl,
           position: 'relative',
@@ -342,6 +429,7 @@ function CreationsSection(props: {}) {
             position: 'absolute',
             top: 15,
             right: 15,
+            display: isPhone ? 'none' : undefined,
           }}
         >
           <Button
@@ -441,7 +529,7 @@ function CreationsSection(props: {}) {
           </Center>
         )}
         {!isFetching &&
-          (data ?? [])
+          bundles
             .filter((c) => !c.is_published)
             .map((source, index) => (
               <ContentSourceCard
@@ -458,7 +546,7 @@ function CreationsSection(props: {}) {
                 deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
               />
             ))}
-        {!isFetching && (data ?? []).filter((c) => !c.is_published).length === 0 && (
+        {!isFetching && bundles.filter((c) => !c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
@@ -472,7 +560,7 @@ function CreationsSection(props: {}) {
       <Box
         p='xs'
         style={{
-          backgroundColor: 'rgba(233, 236, 239, 0.1)',
+          backgroundColor: 'rgba(20, 21, 23, 0.827)',
           backdropFilter: 'blur(6px)',
           borderRadius: theme.radius.xl,
         }}
@@ -501,7 +589,7 @@ function CreationsSection(props: {}) {
           />
         )}
         {!isFetching &&
-          (data ?? [])
+          bundles
             .filter((c) => c.is_published)
             .map((source, index) => (
               <ContentSourceCard
@@ -518,7 +606,7 @@ function CreationsSection(props: {}) {
                 deleteMessage='Are you sure you want to delete this bundle? All characters using this bundle will lose their abilities from this source.'
               />
             ))}
-        {!isFetching && (data ?? []).filter((c) => c.is_published).length === 0 && (
+        {!isFetching && bundles.filter((c) => c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
               <Text ta='center' c='gray.5' fs='italic'>
@@ -570,7 +658,7 @@ function ContentSourceCard(props: {
   const { hovered: hoveredOptions, ref: refOptions } = useHover<HTMLButtonElement>();
 
   return (
-    <BlurBox blur={10} w={isPhone ? '100%' : 280}>
+    <BlurBox blur={10} miw={isPhone ? '100%' : 280}>
       <Box
         w='100%'
         h='100%'

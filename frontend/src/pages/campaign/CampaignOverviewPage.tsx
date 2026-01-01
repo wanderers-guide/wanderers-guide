@@ -56,6 +56,7 @@ import { useRecoilValue } from 'recoil';
 import D20Loader from '@assets/images/D20Loader';
 import BlurButton from '@common/BlurButton';
 import BlurActionIcon from '@common/BlurActionIcon';
+import { getAnchorStyles } from '@utils/anchor';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -83,7 +84,13 @@ export function Component() {
         justifyContent: 'center',
       }}
     >
-      <D20Loader size={100} color={theme.colors[theme.primaryColor][5]} percentage={percentage} status='Loading...' />
+      <D20Loader
+        size={100}
+        color={theme.colors[theme.primaryColor][5]}
+        percentage={percentage}
+        status='Loading...'
+        hasStatusBg
+      />
     </Box>
   );
 
@@ -338,13 +345,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
           </Stack>
         </Box>
       </Box>
-      <Box
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          left: 20,
-        }}
-      >
+      <Box style={getAnchorStyles({ l: 20, b: 20 })}>
         <Stack>
           <ActionIcon
             size={40}
@@ -500,13 +501,7 @@ function SectionPanels(props: {
           </Box>
         )}
 
-        <Box
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-          }}
-        >
+        <Box style={getAnchorStyles({ r: 20, b: 20 })}>
           <Popover position='top' shadow='md' withArrow opened={openedPhonePanel} onChange={setOpenedPhonePanel}>
             <Popover.Target>
               <ActionIcon

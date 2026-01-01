@@ -15,6 +15,7 @@ user_data_tables=(
   "spell"
   "trait"
   "versatile_heritage"
+  "class_archetype"
 )
 
 for table in ${user_data_tables[@]}

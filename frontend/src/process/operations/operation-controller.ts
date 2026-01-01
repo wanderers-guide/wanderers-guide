@@ -3,6 +3,7 @@ import {
   Ancestry,
   Character,
   Class,
+  ClassArchetype,
   ContentPackage,
   ContentSource,
   Creature,
@@ -43,6 +44,7 @@ import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { setCalculatedStatsInStore } from '@variables/calculated-stats';
+import { abs } from 'mathjs';
 
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
@@ -114,29 +116,59 @@ export async function executeCharacterOperations(
   const background = content.backgrounds.find((b) => b.id === character.details?.background?.id);
   const ancestry = content.ancestries.find((a) => a.id === character.details?.ancestry?.id);
 
-  const baseClassTrainings = Math.max(class_?.skill_training_base ?? 0, class_2?.skill_training_base ?? 0);
+  const baseClassTrainings = Math.max(
+    getClassSkillTrainingsNum(class_, character.details?.class_archetype),
+    getClassSkillTrainingsNum(class_2, character.details?.class_archetype_2)
+  );
 
-  const classFeatures_1 = content.abilityBlocks
-    .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_?.trait_id ?? -1))
-    .sort((a, b) => {
-      if (a.level !== undefined && b.level !== undefined) {
-        if (a.level !== b.level) {
-          return a.level - b.level;
+  // Handles getting class features for a class (injecting class archetype changes if needed)
+  const getClassFeatures = (abs: AbilityBlock[], classTraitId: number | undefined, recordT: '1' | '2') => {
+    const ctId = classTraitId ?? Number.MIN_SAFE_INTEGER;
+    let classAbs = cloneDeep(abs.filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(ctId)));
+
+    // Get the class archetype based on recordT
+    let classArchetype: ClassArchetype | null = null;
+    if (recordT === '1' && character.details?.class_archetype) {
+      classArchetype = character.details.class_archetype;
+    } else if (recordT === '2' && character.details?.class_archetype_2) {
+      classArchetype = character.details.class_archetype_2;
+    }
+
+    if (!classArchetype) {
+      return classAbs;
+    } else {
+      // Apply feature adjustments
+      for (const fa of classArchetype.feature_adjustments ?? []) {
+        if (fa.type === 'ADD' && fa.data) {
+          classAbs.push(fa.data);
+        } else if (fa.type === 'REMOVE' && fa.prev_id) {
+          classAbs = classAbs.filter((ab) => ab.id !== fa.prev_id);
+        } else if (fa.type === 'REPLACE' && fa.prev_id && fa.data) {
+          classAbs = classAbs.filter((ab) => ab.id !== fa.prev_id);
+          classAbs.push(fa.data);
         }
       }
-      return a.name.localeCompare(b.name);
-    });
+      return classAbs;
+    }
+  };
 
-  const classFeatures_2 = content.abilityBlocks
-    .filter((ab) => ab.type === 'class-feature' && ab.traits?.includes(class_2?.trait_id ?? -1))
-    .sort((a, b) => {
-      if (a.level !== undefined && b.level !== undefined) {
-        if (a.level !== b.level) {
-          return a.level - b.level;
-        }
+  const classFeatures_1 = getClassFeatures(content.abilityBlocks, class_?.trait_id, '1').sort((a, b) => {
+    if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== b.level) {
+        return a.level - b.level;
       }
-      return a.name.localeCompare(b.name);
-    });
+    }
+    return a.name.localeCompare(b.name);
+  });
+
+  const classFeatures_2 = getClassFeatures(content.abilityBlocks, class_2?.trait_id, '2').sort((a, b) => {
+    if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== b.level) {
+        return a.level - b.level;
+      }
+    }
+    return a.name.localeCompare(b.name);
+  });
 
   // Merge both but only keep one if they both have the same name and level
   let classFeatures = unionWith(
@@ -647,7 +679,7 @@ export async function executeCharacterOperations(
     let characterResults = await executeOperations(
       'CHARACTER',
       'character',
-      character.options?.custom_operations ? character.custom_operations ?? [] : [],
+      character.options?.custom_operations ? (character.custom_operations ?? []) : [],
       options,
       'Custom'
     );
@@ -657,7 +689,7 @@ export async function executeCharacterOperations(
       classResults = await executeOperations(
         'CHARACTER',
         'class',
-        getAdjustedClassOperations('CHARACTER', class_, baseClassTrainings),
+        getTotalClassOperations('CHARACTER', class_, character.details?.class_archetype, baseClassTrainings),
         options,
         class_.name
       );
@@ -673,7 +705,7 @@ export async function executeCharacterOperations(
       class2Results = await executeOperations(
         'CHARACTER',
         'class-2',
-        getAdjustedClassOperations('CHARACTER', class_2, null),
+        getTotalClassOperations('CHARACTER', class_2, character.details?.class_archetype_2, null),
         options,
         class_2.name
       );
@@ -862,7 +894,7 @@ export async function executeCharacterOperations(
   const conditionalResults = await operationsPassthrough({
     doOnlyConditionals: true,
     onlyConditionalsWhitelist: [
-      ...(class_ ? addedClassSkillTrainings('CHARACTER', baseClassTrainings) : []).map((op) => op.id),
+      ...(class_ ? getClassSkillTrainings('CHARACTER', baseClassTrainings) : []).map((op) => op.id),
       ...(ancestry ? addedAncestryLanguages('CHARACTER', ancestry) : []).map((op) => op.id),
     ],
   });
@@ -1108,16 +1140,68 @@ function limitBoostOptions(operations: Operation[], operationResults: OperationR
   return operationResults;
 }
 
-export function getAdjustedClassOperations(varId: StoreID, class_: Class, baseTrainings: number | null) {
-  let classOperations = cloneDeep(class_.operations ?? []);
-
-  if (baseTrainings !== null) {
-    classOperations.push(...addedClassSkillTrainings(varId, baseTrainings));
-  }
+function getTotalClassOperations(
+  varId: StoreID,
+  class_: Class,
+  archetype: ClassArchetype | undefined,
+  baseTrainings: number | null
+) {
+  let classOperations = getClassOperations(class_, archetype);
+  classOperations.push(...getClassSkillTrainings(varId, baseTrainings));
   return classOperations;
 }
 
-export function addedClassSkillTrainings(varId: StoreID, baseTrainings: number): OperationSelect[] {
+/**
+ * Get the total operations for a class, considering archetype overrides
+ * @param class_ - The class to get operations for
+ * @param archetype - The archetype to consider for overrides
+ * @returns - The total operations for the class
+ */
+export function getClassOperations(class_: Class, archetype: ClassArchetype | undefined) {
+  let classOperations = cloneDeep(class_.operations ?? []);
+  if (archetype) {
+    // Override operations if applicable
+    if (archetype.override_class_operations) {
+      classOperations = [];
+    }
+
+    // Add archetype operations
+    classOperations.push(...(archetype.operations ?? []));
+  }
+
+  return classOperations;
+}
+
+/**
+ * Get the number of skill trainings for a class, considering archetype overrides
+ * @param class_ - The class to get skill trainings for
+ * @param archetype - The archetype to consider for overrides
+ * @returns - The number of skill trainings
+ */
+export function getClassSkillTrainingsNum(class_: Class | undefined, archetype: ClassArchetype | undefined): number {
+  let baseTrainings = class_?.skill_training_base ?? 0;
+  if (archetype) {
+    // Override base trainings if applicable
+    if (archetype.override_skill_training_base !== undefined && archetype.override_skill_training_base !== null) {
+      baseTrainings = archetype.override_skill_training_base;
+    }
+  }
+  return baseTrainings;
+}
+
+/**
+ * Generates operations for class skill trainings, adding Int modifier
+ * @param varId - The variable ID for the character
+ * @param baseTrainings - The base number of skill trainings to generate operations for
+ * @returns - An array of OperationSelect for skill trainings
+ */
+export function getClassSkillTrainings(varId: StoreID, baseTrainings: number | null): OperationSelect[] {
+  // If null base trainings, return nothing (don't add Int modifier)
+  // - For things like 2nd class
+  if (baseTrainings === null) {
+    return [];
+  }
+
   let operations: OperationSelect[] = [];
 
   // Operations for adding skill trainings equal to Int attribute modifier

@@ -35,6 +35,7 @@ const NOTABILITY_MAP: Record<ContentType | AbilityBlockType, number> = {
   ancestry: 20,
   background: 15,
   language: 3,
+  'class-archetype': 6,
   'content-source': 1,
   'class-feature': 1,
   heritage: 12,
@@ -87,9 +88,9 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
         <Group gap={0} wrap='nowrap' justify='space-between'>
           <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
             <HoverCard.Target>
-              <Text c='gray.0' fz={props.source.name.length >= 24 ? '0.9rem' : 'lg'} fw={500} className={classes.name}>
+              <Text c='gray.0' fz={props.source.name.length >= 20 ? '0.9rem' : 'lg'} fw={500} className={classes.name}>
                 {truncate(props.source.name, {
-                  length: props.nameCutOff ?? 26,
+                  length: props.nameCutOff ?? 24,
                 })}
                 {props.source.require_key ? (
                   <Text pl={5} span>

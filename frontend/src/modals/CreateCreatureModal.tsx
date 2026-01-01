@@ -1,7 +1,7 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { DISCORD_URL } from '@constants/data';
-import { fetchContentAll, fetchContentById } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
   ActionIcon,
@@ -123,7 +123,7 @@ export function CreateCreatureModal(props: {
   const { data: abilityBlocks } = useQuery({
     queryKey: [`get-all-ability-blocks`],
     queryFn: async () => {
-      return await fetchContentAll<AbilityBlock>('ability-block');
+      return await fetchContentAll<AbilityBlock>('ability-block', getDefaultSources('INFO'));
     },
     refetchOnWindowFocus: false,
   });
@@ -296,6 +296,7 @@ export function CreateCreatureModal(props: {
                                 form.setValues(result.creature);
                                 // @ts-expect-error
                                 form.setFieldValue('level', `${result.creature.level}`);
+                                form.setFieldValue('content_source_id', -1);
                               }
                             } catch (e) {
                               displayError('Failed to extract creature info, please try again later');
@@ -667,7 +668,6 @@ export function CreateCreatureModal(props: {
                             },
                             {
                               showButton: true,
-                              groupBySource: true,
                             }
                           );
                         }}
@@ -774,6 +774,7 @@ export function CreateCreatureModal(props: {
                       setDescription(json);
                       form.setFieldValue('details.description', text);
                     }}
+                    maxHeight={500}
                   />
                 )}
               </Tabs.Panel>
@@ -797,7 +798,7 @@ export function CreateCreatureModal(props: {
       {openedModal !== null && (
         <CreateAbilityBlockModal
           opened={true}
-          type={'action'}
+          type='action'
           editId={openedModal === -1 ? -1 : undefined}
           editAbilityBlock={openedModal === -1 ? undefined : openedModal}
           onComplete={async (abilityBlock) => {

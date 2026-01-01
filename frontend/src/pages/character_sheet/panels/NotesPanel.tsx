@@ -81,7 +81,7 @@ export default function NotesPanel(props: {
           onChange={(text, json) => {
             setDebouncedJson({ index: index, json: json });
           }}
-          minHeight={props.panelHeight}
+          height={props.panelHeight}
           hasColorOptions={true}
         />
         {isPhone && (
@@ -230,7 +230,16 @@ export default function NotesPanel(props: {
     }
   } else {
     return (
-      <Tabs orientation='vertical' value={activeTab} onChange={setActiveTab}>
+      <Tabs
+        orientation='vertical'
+        value={activeTab}
+        onChange={setActiveTab}
+        styles={{
+          list: {
+            '--tab-border-color': 'transparent',
+          },
+        }}
+      >
         <Tabs.List w={190} h={props.panelHeight}>
           {pages.map((page, index) => (
             <Tabs.Tab

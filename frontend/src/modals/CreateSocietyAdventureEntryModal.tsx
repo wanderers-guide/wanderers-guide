@@ -1,14 +1,11 @@
 import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
   Button,
   Group,
-  LoadingOverlay,
   Modal,
   ScrollArea,
   Stack,
-  Select,
   TextInput,
   Title,
   useMantineTheme,
@@ -30,7 +27,7 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
 import { getFlatInvItems } from '@items/inv-utils';
 import { drawerState } from '@atoms/navAtoms';
-import { IconAdjustments, IconCirclePlus, IconPlus, IconX } from '@tabler/icons-react';
+import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { selectContent } from '@common/select/SelectContent';
 import { convertToGp } from '@items/currency-handler';
 import { selectCondition } from '@pages/character_sheet/sections/ConditionSection';
@@ -211,7 +208,6 @@ export function CreateSocietyAdventureEntryModal(props: {
                         },
                         {
                           showButton: true,
-                          groupBySource: true,
                         }
                       );
                     }}
@@ -295,7 +291,6 @@ export function CreateSocietyAdventureEntryModal(props: {
                         },
                         {
                           showButton: true,
-                          groupBySource: true,
                         }
                       );
                     }}

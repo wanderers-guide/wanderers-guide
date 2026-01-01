@@ -14,6 +14,7 @@ import {
   upsertCreature,
   upsertArchetype,
   upsertVersatileHeritage,
+  upsertClassArchetype,
 } from '@content/content-creation';
 import { fetchContentPackage, fetchContentSources, resetContentStore } from '@content/content-store';
 import { getIconFromContentType, toHTML } from '@content/content-utils';
@@ -51,6 +52,7 @@ import {
   Archetype,
   Background,
   Class,
+  ClassArchetype,
   ContentSource,
   ContentType,
   Creature,
@@ -85,6 +87,7 @@ import useRefresh from '@utils/use-refresh';
 import { defineDefaultSourcesForSource } from '@content/homebrew';
 import OperationsModal from './OperationsModal';
 import { cloneDeep } from 'lodash-es';
+import { CreateClassArchetypeModal } from './CreateClassArchetypeModal';
 
 export function CreateContentSourceOnlyModal(props: {
   opened: boolean;
@@ -137,9 +140,7 @@ export function ContentSourceEditor(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-only-${props.sourceId}`],
     queryFn: async () => {
-      const source = (await fetchContentSources({ ids: [props.sourceId], includeCommonCore: true })).find(
-        (s) => s.id === props.sourceId
-      )!;
+      const source = (await fetchContentSources([props.sourceId])).find((s) => s.id === props.sourceId)!;
 
       form.setInitialValues({
         id: source.id,
@@ -231,6 +232,7 @@ export function ContentSourceEditor(props: {
                 setDescription(json);
                 form.setFieldValue('description', text);
               }}
+              maxHeight={500}
             />
           )}
 
@@ -387,13 +389,11 @@ export function CreateContentSourceModal(props: {
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-source-details-${props.sourceId}`],
     queryFn: async () => {
-      const source = (await fetchContentSources({ ids: [props.sourceId], includeCommonCore: true })).find(
-        (s) => s.id === props.sourceId
-      )!;
-      await defineDefaultSourcesForSource(source);
+      const source = (await fetchContentSources([props.sourceId])).find((s) => s.id === props.sourceId)!;
+      const sv = await defineDefaultSourcesForSource('BOTH', source);
 
       // Fill content store with all content (async)
-      fetchContentPackage(undefined, { fetchSources: true, fetchCreatures: true });
+      fetchContentPackage(sv, { fetchSources: true, fetchCreatures: true });
 
       // Fetch the source's content
       const content = await fetchContentPackage([props.sourceId], { fetchSources: true, fetchCreatures: true });
@@ -710,6 +710,21 @@ export function CreateContentSourceModal(props: {
                 Versatile Heritages
               </Tabs.Tab>
               <Tabs.Tab
+                value='class-archetypes'
+                leftSection={getIconFromContentType('class-archetype', '1rem')}
+                rightSection={
+                  <>
+                    {data?.content.classArchetypes && data?.content.classArchetypes.length > 0 && (
+                      <Badge variant='light' color={theme.primaryColor} size='xs'>
+                        {data?.content.classArchetypes.length}
+                      </Badge>
+                    )}
+                  </>
+                }
+              >
+                Class Archetypes
+              </Tabs.Tab>
+              <Tabs.Tab
                 value='modes'
                 leftSection={getIconFromContentType('ability-block', '1rem')}
                 rightSection={
@@ -877,6 +892,15 @@ export function CreateContentSourceModal(props: {
               />
             </Tabs.Panel>
 
+            <Tabs.Panel value='class-archetypes'>
+              <ContentList<ClassArchetype>
+                sourceId={props.sourceId}
+                type='class-archetype'
+                content={data?.content.classArchetypes ?? []}
+                onUpdate={() => props.onUpdate?.()}
+              />
+            </Tabs.Panel>
+
             <Tabs.Panel value='modes'>
               <ContentList<AbilityBlock>
                 sourceId={props.sourceId}
@@ -951,7 +975,7 @@ function ContentList<
   const handleReset = () => {
     const query = searchQuery;
     setSearchQuery('');
-    resetContentStore(true);
+    resetContentStore(false);
     setTimeout(() => {
       setOpenedId(undefined);
       initJsSearch();
@@ -1038,6 +1062,44 @@ function ContentList<
         newItem.content_source_id = props.sourceId;
         await upsertCreature(newItem);
       }
+    } else if (props.type === 'class-archetype') {
+      const item = (data ??
+        (props.content as unknown as ClassArchetype[]).find((i) => i.id === itemId)) as ClassArchetype | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${newItem.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertClassArchetype(newItem);
+      }
+    } else if (props.type === 'language') {
+      const item = (data ?? (props.content as unknown as Language[]).find((i) => i.id === itemId)) as Language | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertLanguage(newItem);
+      }
+    } else if (props.type === 'versatile-heritage') {
+      const item = (data ??
+        (props.content as unknown as VersatileHeritage[]).find((i) => i.id === itemId)) as VersatileHeritage | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertVersatileHeritage(newItem);
+      }
+    } else if (props.type === 'archetype') {
+      const item = (data ?? (props.content as unknown as Archetype[]).find((i) => i.id === itemId)) as Archetype | null;
+      if (item) {
+        const newItem = cloneDeep(item);
+        newItem.id = -1;
+        newItem.name = `(Copy) ${item.name}`;
+        newItem.content_source_id = props.sourceId;
+        await upsertArchetype(newItem);
+      }
     }
   }
 
@@ -1102,7 +1164,6 @@ function ContentList<
                       },
                       {
                         abilityBlockType: props.abilityBlockType,
-                        groupBySource: true,
                       }
                     );
                   }}
@@ -1284,6 +1345,28 @@ function ContentList<
         />
       )}
 
+      {props.type === 'class-archetype' && openedId && (
+        <CreateClassArchetypeModal
+          opened={!!openedId}
+          editId={openedId}
+          onComplete={async (archetype) => {
+            archetype.content_source_id = props.sourceId;
+            const result = await upsertClassArchetype(archetype);
+
+            if (result) {
+              showNotification({
+                title: `Updated ${result.name}`,
+                message: `Successfully updated class archetype.`,
+                autoClose: 3000,
+              });
+            }
+
+            handleReset();
+          }}
+          onCancel={() => handleReset()}
+        />
+      )}
+
       {props.type === 'ancestry' && openedId && (
         <CreateAncestryModal
           opened={!!openedId}
@@ -1402,8 +1485,6 @@ function ContentList<
           editId={openedId}
           onComplete={async (creature) => {
             creature.content_source_id = props.sourceId;
-
-            console.log(creature);
             const result = await upsertCreature(creature);
 
             if (result) {

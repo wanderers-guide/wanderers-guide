@@ -46,6 +46,7 @@ export default function ModesDrawer(props: { opened: boolean; onClose: () => voi
           </Group>
         }
         size={'calc(min(100dvw, 400px))'}
+        lockScroll={!isWideDesktop}
         closeOnClickOutside={!isWideDesktop}
         withOverlay={!isWideDesktop}
         styles={{

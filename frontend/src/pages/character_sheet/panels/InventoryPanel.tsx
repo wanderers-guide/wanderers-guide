@@ -6,6 +6,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { EllipsisText } from '@common/EllipsisText';
 import { ItemIcon } from '@common/ItemIcon';
 import { isItemVisible } from '@content/content-hidden';
+import { getContentFast } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
 import classes from '@css/FaqSimple.module.css';
 import { priceToString } from '@items/currency-handler';
@@ -49,26 +50,24 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { modals, openContextModal } from '@mantine/modals';
-import { BuyItemModal } from '@modals/BuyItemModal';
 import { CreateItemModal } from '@modals/CreateItemModal';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
-import { IconCoins, IconMenu2, IconPlus, IconSearch } from '@tabler/icons-react';
-import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
+import { IconCoins, IconMenu2, IconPlus, IconSearch, IconX } from '@tabler/icons-react';
+import { Character, ContentPackage, Inventory, InventoryItem, Item, LivingEntity, Trait } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';
 import { cloneDeep, truncate } from 'lodash-es';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilState } from 'recoil';
 
 export default function InventoryPanel(props: {
   id: StoreID;
   entity: LivingEntity | null;
+  setEntity: SetterOrUpdater<LivingEntity | null>;
   content: ContentPackage;
   panelHeight: number;
   panelWidth: number;
-  inventory: Inventory;
-  setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
   zIndex?: number;
 }) {
   const theme = useMantineTheme();
@@ -76,22 +75,27 @@ export default function InventoryPanel(props: {
   const [searchQuery, setSearchQuery] = useState('');
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
-  const [confirmBuyItem, setConfirmBuyItem] = useState<{ item: Item }>();
   const [creatingCustomItem, setCreatingCustomItem] = useState(false);
 
-  const visibleInvItems = props.inventory.items.filter(
-    (invItem) => !(!isItemVisible(props.id, invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
-  );
+  const visibleInvItems =
+    props.entity?.inventory?.items.filter(
+      (invItem) => !(!isItemVisible(props.id, invItem.item) && invItem.is_equipped && isItemWeapon(invItem.item))
+    ) ?? [];
   const invItems = searchQuery.trim()
     ? visibleInvItems.filter((invItem) => {
         // Custom search, alt could be to use JsSearch here
         const query = searchQuery.trim().toLowerCase();
 
         const checkInvItem = (invItem: InventoryItem) => {
-          if (invItem.item.name.toLowerCase().includes(query)) return true;
-          if (invItem.item.description.toLowerCase().includes(query)) return true;
-          if (invItem.item.group.toLowerCase().includes(query)) return true;
-          return false;
+          const searchStr = JSON.stringify({
+            _: invItem.item.name,
+            ___: getContentFast<Trait>('trait', invItem.item.traits ?? []).map((t) => t.name),
+            ____: invItem.item.description,
+            _____: invItem.item.group,
+            ______: invItem.item.rarity,
+          }).toLowerCase();
+
+          return searchStr.includes(query);
         };
 
         if (checkInvItem(invItem)) return true;
@@ -124,9 +128,41 @@ export default function InventoryPanel(props: {
         onAddItem: async (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => {
           if (!props.entity) return;
           if (type === 'BUY') {
-            setConfirmBuyItem({ item });
+            openContextModal({
+              modal: 'buyItem',
+              title: <Title order={3}>Buy {item.name}</Title>,
+              innerProps: {
+                inventory: props.entity?.inventory,
+                item: item,
+                onConfirm: async (coins: { cp: number; sp: number; gp: number; pp: number }) => {
+                  if (!props.entity) return;
+                  await handleAddItem(props.setEntity, item, false);
+
+                  // Update coins
+                  props.setEntity((prev) => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      inventory: {
+                        ...(prev?.inventory ?? {
+                          coins: {
+                            cp: 0,
+                            sp: 0,
+                            gp: 0,
+                            pp: 0,
+                          },
+                          items: [],
+                        }),
+                        coins: coins,
+                      },
+                    };
+                  });
+                },
+              },
+              zIndex: 1000,
+            });
           } else {
-            await handleAddItem(props.setInventory, item, type === 'FORMULA');
+            await handleAddItem(props.setEntity, item, type === 'FORMULA');
           }
         },
       },
@@ -145,10 +181,24 @@ export default function InventoryPanel(props: {
       data: {
         coins: props.entity?.inventory?.coins,
         onUpdate: (coins: { cp: number; sp: number; gp: number; pp: number }) => {
-          props.setInventory((prev) => ({
-            ...prev,
-            coins: coins,
-          }));
+          props.setEntity((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              inventory: {
+                ...(prev?.inventory ?? {
+                  coins: {
+                    cp: 0,
+                    sp: 0,
+                    gp: 0,
+                    pp: 0,
+                  },
+                  items: [],
+                }),
+                coins: coins,
+              },
+            };
+          });
         },
       },
       extra: { addToHistory: true },
@@ -162,8 +212,25 @@ export default function InventoryPanel(props: {
           <TextInput
             style={{ flex: 1 }}
             leftSection={<IconSearch size='0.9rem' />}
-            placeholder={`Search items`}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder='Search items'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            rightSection={
+              searchQuery.trim() ? (
+                <ActionIcon
+                  variant='subtle'
+                  size='md'
+                  color='gray'
+                  radius='xl'
+                  aria-label='Clear search'
+                  onClick={() => {
+                    setSearchQuery('');
+                  }}
+                >
+                  <IconX size='1.2rem' stroke={2} />
+                </ActionIcon>
+              ) : undefined
+            }
             styles={{
               input: {
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -174,14 +241,22 @@ export default function InventoryPanel(props: {
           {isPhone ? (
             <Menu shadow='md' width={140} zIndex={props.zIndex ?? 499}>
               <Menu.Target>
-                <ActionIcon variant='light' color='gray' size='lg' aria-label='Inventory Options'>
+                <ActionIcon
+                  variant='light'
+                  color='gray.5'
+                  size='lg'
+                  aria-label='Inventory Options'
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                  }}
+                >
                   <IconMenu2 style={{ width: '70%', height: '70%' }} stroke={1.5} />
                 </ActionIcon>
               </Menu.Target>
 
               <Menu.Dropdown>
                 <Menu.Label>
-                  Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit(props.id)}{' '}
+                  Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory), true)} / {getBulkLimit(props.id)}{' '}
                 </Menu.Label>
                 <Menu.Item
                   leftSection={<IconPlus style={{ width: rem(14), height: rem(14) }} />}
@@ -209,7 +284,7 @@ export default function InventoryPanel(props: {
                   },
                 }}
               >
-                Bulk: {labelizeBulk(getInvBulk(props.inventory), true)} / {getBulkLimit(props.id)}
+                Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory), true)} / {getBulkLimit(props.id)}
               </Badge>
               <CurrencySection entity={props.entity} onClick={() => openManageCoinsDrawer()} />
               <Button
@@ -294,7 +369,7 @@ export default function InventoryPanel(props: {
                             onEquip={(invItem) => {
                               const newInvItem = cloneDeep(invItem);
                               newInvItem.is_equipped = !newInvItem.is_equipped;
-                              handleUpdateItem(props.setInventory, newInvItem);
+                              handleUpdateItem(props.setEntity, newInvItem);
                             }}
                             onInvest={(invItem) => {
                               const newInvItem = cloneDeep(invItem);
@@ -306,7 +381,7 @@ export default function InventoryPanel(props: {
                                 newInvItem.is_implanted = !newInvItem.is_implanted;
                               }
 
-                              handleUpdateItem(props.setInventory, newInvItem);
+                              handleUpdateItem(props.setEntity, newInvItem);
                             }}
                             onViewItem={() => {
                               openDrawer({
@@ -316,14 +391,14 @@ export default function InventoryPanel(props: {
                                   zIndex: 100,
                                   invItem: cloneDeep(invItem),
                                   onItemUpdate: (newInvItem: InventoryItem) => {
-                                    handleUpdateItem(props.setInventory, newInvItem);
+                                    handleUpdateItem(props.setEntity, newInvItem);
                                   },
                                   onItemDelete: (newInvItem: InventoryItem) => {
-                                    handleDeleteItem(props.setInventory, newInvItem);
+                                    handleDeleteItem(props.setEntity, newInvItem);
                                     openDrawer(null);
                                   },
                                   onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                    handleMoveItem(props.setInventory, invItem, containerItem);
+                                    handleMoveItem(props.setEntity, invItem, containerItem);
                                   },
                                 },
                                 extra: { addToHistory: true },
@@ -345,14 +420,14 @@ export default function InventoryPanel(props: {
                                     zIndex: 100,
                                     invItem: cloneDeep(containedItem),
                                     onItemUpdate: (newInvItem: InventoryItem) => {
-                                      handleUpdateItem(props.setInventory, newInvItem);
+                                      handleUpdateItem(props.setEntity, newInvItem);
                                     },
                                     onItemDelete: (newInvItem: InventoryItem) => {
-                                      handleDeleteItem(props.setInventory, newInvItem);
+                                      handleDeleteItem(props.setEntity, newInvItem);
                                       openDrawer(null);
                                     },
                                     onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                      handleMoveItem(props.setInventory, invItem, containerItem);
+                                      handleMoveItem(props.setEntity, invItem, containerItem);
                                     },
                                   },
                                   extra: { addToHistory: true },
@@ -368,7 +443,7 @@ export default function InventoryPanel(props: {
                                 onEquip={(invItem) => {
                                   const newInvItem = cloneDeep(invItem);
                                   newInvItem.is_equipped = !newInvItem.is_equipped;
-                                  handleUpdateItem(props.setInventory, newInvItem);
+                                  handleUpdateItem(props.setEntity, newInvItem);
                                 }}
                                 onInvest={(invItem) => {
                                   const newInvItem = cloneDeep(invItem);
@@ -380,7 +455,7 @@ export default function InventoryPanel(props: {
                                     newInvItem.is_implanted = !newInvItem.is_implanted;
                                   }
 
-                                  handleUpdateItem(props.setInventory, newInvItem);
+                                  handleUpdateItem(props.setEntity, newInvItem);
                                 }}
                               />
                             </StatButton>
@@ -405,14 +480,14 @@ export default function InventoryPanel(props: {
                               zIndex: 100,
                               invItem: cloneDeep(invItem),
                               onItemUpdate: (newInvItem: InventoryItem) => {
-                                handleUpdateItem(props.setInventory, newInvItem);
+                                handleUpdateItem(props.setEntity, newInvItem);
                               },
                               onItemDelete: (newInvItem: InventoryItem) => {
-                                handleDeleteItem(props.setInventory, newInvItem);
+                                handleDeleteItem(props.setEntity, newInvItem);
                                 openDrawer(null);
                               },
                               onItemMove: (invItem: InventoryItem, containerItem: InventoryItem | null) => {
-                                handleMoveItem(props.setInventory, invItem, containerItem);
+                                handleMoveItem(props.setEntity, invItem, containerItem);
                               },
                             },
                             extra: { addToHistory: true },
@@ -427,7 +502,7 @@ export default function InventoryPanel(props: {
                           onEquip={(invItem) => {
                             const newInvItem = cloneDeep(invItem);
                             newInvItem.is_equipped = !newInvItem.is_equipped;
-                            handleUpdateItem(props.setInventory, newInvItem);
+                            handleUpdateItem(props.setEntity, newInvItem);
                           }}
                           onInvest={(invItem) => {
                             const newInvItem = cloneDeep(invItem);
@@ -439,7 +514,7 @@ export default function InventoryPanel(props: {
                               newInvItem.is_implanted = !newInvItem.is_implanted;
                             }
 
-                            handleUpdateItem(props.setInventory, newInvItem);
+                            handleUpdateItem(props.setEntity, newInvItem);
                           }}
                         />
                       </StatButton>
@@ -459,32 +534,12 @@ export default function InventoryPanel(props: {
           </Accordion>
         </ScrollArea>
       </Stack>
-      {confirmBuyItem && (
-        <BuyItemModal
-          open={!!confirmBuyItem}
-          inventory={props.inventory}
-          item={confirmBuyItem.item}
-          onConfirm={async (coins) => {
-            if (!props.entity) return;
-            await handleAddItem(props.setInventory, confirmBuyItem.item, false);
-
-            // Update coins
-            props.setInventory((prev) => {
-              return {
-                ...prev,
-                coins,
-              };
-            });
-          }}
-          onClose={() => setConfirmBuyItem(undefined)}
-        />
-      )}
 
       {creatingCustomItem && (
         <CreateItemModal
           opened={creatingCustomItem}
           onComplete={async (item) => {
-            handleAddItem(props.setInventory, item, false);
+            handleAddItem(props.setEntity, item, false);
             setCreatingCustomItem(false);
           }}
           onCancel={() => {

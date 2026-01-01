@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
+import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { fetchContentAll, fetchContentById, fetchContentSources } from '@content/content-store';
+import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
 import { GenericData } from '@drawers/types/GenericDrawer';
 import { isItemArchaic } from '@items/inv-utils';
@@ -16,19 +16,12 @@ import {
   Button,
   ButtonProps,
   Center,
-  Checkbox,
-  CloseButton,
-  Divider,
   FocusTrap,
   Group,
   Indicator,
   Loader,
   Menu,
-  MultiSelect,
-  MultiSelectProps,
-  Overlay,
   Pagination,
-  Popover,
   ScrollArea,
   Stack,
   Tabs,
@@ -36,22 +29,27 @@ import {
   TextInput,
   ThemeIcon,
   Title,
-  Transition,
-  UnstyledButton,
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedState, useDidUpdate, useElementSize, useHover, useMergedRef } from '@mantine/hooks';
+import {
+  useDebouncedState,
+  useDebouncedValue,
+  useDidUpdate,
+  useElementSize,
+  useHover,
+  useMergedRef,
+} from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
 import {
+  IconAdjustments,
   IconCheck,
   IconChevronDown,
   IconCircleDotFilled,
   IconCopy,
   IconDots,
-  IconFilter,
   IconSearch,
   IconTransform,
   IconTrash,
@@ -84,16 +82,16 @@ import {
   prevProficiencyType,
 } from '@variables/variable-utils';
 import * as JsSearch from 'js-search';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   AbilityBlock,
   AbilityBlockType,
-  ActionCost,
   Ancestry,
   Archetype,
   Background,
   Class,
+  ClassArchetype,
   ContentType,
   Creature,
   Item,
@@ -102,11 +100,10 @@ import {
   Trait,
   VersatileHeritage,
 } from '../../typing/content';
-import { FilterOptions, SelectedFilter } from './filters';
-import { CREATURE_DRAWER_ZINDEX } from '@drawers/types/CreatureDrawer';
 import { adjustCreature } from '@utils/creature';
-import { intersection, isNumber, truncate } from 'lodash-es';
+import { intersection, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -118,11 +115,11 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
-    groupBySource?: boolean;
-    filterOptions?: FilterOptions;
     filterFn?: (option: T) => boolean;
+    advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
+    description?: ReactNode;
   };
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
@@ -157,7 +154,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
-  const label = selected ? selected.name : props.options?.overrideLabel ?? `Select ${typeName}`;
+  const label = selected ? selected.name : (props.options?.overrideLabel ?? `Select ${typeName}`);
 
   const onSelect = () => {
     selectContent<T>(
@@ -170,15 +167,15 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         overrideOptions: props.options?.overrideOptions as Record<string, any>[],
         overrideLabel: props.options?.overrideLabel,
         abilityBlockType: props.options?.abilityBlockType,
-        groupBySource: props.options?.groupBySource,
         skillAdjustment: props.options?.skillAdjustment,
         // @ts-ignore
         selectedId: selected?.id,
         // @ts-ignore
         filterFn: props.options?.filterFn,
-        filterOptions: props.options?.filterOptions,
         showButton: props.options?.showButton,
         includeOptions: props.options?.includeOptions,
+        advancedPresetFilters: props.options?.advancedPresetFilters,
+        description: props.options?.description,
       }
     );
   };
@@ -271,13 +268,13 @@ export function selectContent<T = Record<string, any>>(
     overrideLabel?: string;
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
-    groupBySource?: boolean;
-    filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
+    advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
     zIndex?: number;
+    description?: ReactNode;
   }
 ) {
   let label = `Select ${toLabel(options?.abilityBlockType || type)}`;
@@ -306,108 +303,25 @@ export default function SelectContentModal({
     overrideOptions?: Record<string, any>[];
     abilityBlockType?: AbilityBlockType;
     skillAdjustment?: ExtendedProficiencyType;
-    groupBySource?: boolean;
-    filterOptions?: FilterOptions;
     selectedId?: number;
     filterFn?: (option: Record<string, any>) => boolean;
+    advancedPresetFilters?: Partial<FiltersParams>;
     showButton?: boolean;
     includeOptions?: boolean;
     zIndex?: number;
+    description?: ReactNode;
   };
 }>) {
-  const [openedDrawer, setOpenedDrawer] = useState(false);
-
   const theme = useMantineTheme();
 
-  const [searchQuery, setSearchQuery] = useDebouncedState('', 200);
-  const [selectedSource, setSelectedSource] = useState<number | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
+  // const [_advancedSearch, setAdvancedSearch] = useRecoilState(advancedSearchData);
 
-  let initialFilters = {};
-
-  if (innerProps.options?.filterOptions) {
-    initialFilters = innerProps.options.filterOptions.options.reduce(
-      (acc, option) => {
-        if (option.default) {
-          acc[option.key] = {
-            filter: option,
-            value: option.default,
-          };
-        }
-        return acc;
-      },
-      {} as Record<string, SelectedFilter>
-    );
-  }
-
-  const [filterSelections, setFilterSelections] = useState<Record<string, SelectedFilter>>(initialFilters);
-  const [openedFilters, setOpenedFilters] = useState(false);
-
-  const updateFilterSelection = (key: string, selectedFilter: SelectedFilter) => {
-    const value = selectedFilter.value;
-    if (!value || (Array.isArray(value) && value.length === 0)) {
-      // Remove
-      const newFilterSelections = { ...filterSelections };
-      delete newFilterSelections[key];
-      setFilterSelections(newFilterSelections);
-    } else {
-      // Add
-      setFilterSelections((prev) => ({ ...prev, [key]: selectedFilter }));
-    }
-  };
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
   const getMergedFilterFn = () => {
     const newFilterFn = (option: Record<string, any>) => {
-      for (const key of Object.keys(filterSelections)) {
-        const value = option[key];
-        const selectedFilter = filterSelections[key];
-        if (selectedFilter.filter.filterFn) {
-          return selectedFilter.filter.filterFn(option);
-        }
-        const filterValue = selectedFilter.value;
-        if (Array.isArray(value)) {
-          if (Array.isArray(filterValue)) {
-            if (!value.some((val) => filterValue.includes(val))) {
-              return false;
-            }
-          } else {
-            if (!filterValue.includes(value)) {
-              return false;
-            }
-          }
-        } else if (typeof value === 'number') {
-          if (Array.isArray(filterValue)) {
-            if (!filterValue.find((val) => `${val}` === `${value}`)) {
-              return false;
-            }
-          } else {
-            if (`${value}` !== `${filterValue}`) {
-              return false;
-            }
-          }
-        } else if (typeof value === 'string') {
-          if (Array.isArray(filterValue)) {
-            if (!filterValue.find((val) => value.toLowerCase().includes(val.toLowerCase()))) {
-              return false;
-            }
-          } else {
-            if (!value.toLowerCase().includes(filterValue.toLowerCase())) {
-              return false;
-            }
-          }
-        } else if (typeof value === 'boolean') {
-          if (Array.isArray(filterValue)) {
-            if (!filterValue.find((val) => val === value)) {
-              return false;
-            }
-          } else {
-            if (value !== filterValue) {
-              return false;
-            }
-          }
-        } else if (!value) {
-          return false;
-        }
-      }
       return innerProps.options?.filterFn ? innerProps.options.filterFn(option) : true;
     };
     return newFilterFn;
@@ -415,32 +329,7 @@ export default function SelectContentModal({
 
   const typeName = toLabel(innerProps.options?.abilityBlockType || innerProps.type);
 
-  const { data: contentSources, isFetching } = useQuery({
-    queryKey: [`enabled-content-sources`, {}],
-    queryFn: async ({ queryKey }) => {
-      // @ts-ignore
-      // eslint-disable-next-line
-      const [_key, {}] = queryKey;
-      return await fetchContentSources({ includeCommonCore: true });
-    },
-    enabled: !!innerProps.options?.groupBySource && !innerProps.options?.overrideOptions,
-  });
-
-  const activeSource = contentSources?.find((source) => source.id === selectedSource);
-
-  const totalOptionCount =
-    contentSources?.reduce(
-      (total, source) =>
-        ((source.meta_data?.counts
-          ? source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
-          : undefined) ?? 0) + total,
-      0
-    ) ?? 0;
-
   const getSelectionContents = (selectionOptions: React.ReactNode) => {
-    const renderActionOption: MultiSelectProps['renderOption'] = ({ option }) => (
-      <ActionSymbol gap={10} size='xl' cost={option.value as ActionCost} />
-    );
     return (
       <Stack gap={10}>
         <Group wrap='nowrap'>
@@ -450,7 +339,24 @@ export default function SelectContentModal({
               style={{ flex: 1 }}
               leftSection={<IconSearch size='0.9rem' />}
               placeholder={`Search ${pluralize(typeName.toLowerCase())}`}
+              value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              rightSection={
+                searchQuery.trim() ? (
+                  <ActionIcon
+                    variant='subtle'
+                    size='md'
+                    color='gray'
+                    radius='xl'
+                    aria-label='Clear search'
+                    onClick={() => {
+                      setSearchQuery('');
+                    }}
+                  >
+                    <IconX size='1.2rem' stroke={2} />
+                  </ActionIcon>
+                ) : undefined
+              }
               styles={{
                 input: {
                   borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
@@ -458,101 +364,37 @@ export default function SelectContentModal({
               }}
             />
           </FocusTrap>
-          {innerProps.options?.groupBySource && (
-            <Button
-              size='compact-lg'
-              fz='xs'
-              variant='light'
-              onClick={() => setOpenedDrawer(true)}
-              rightSection={<IconChevronDown size='1.1rem' />}
-              styles={{
-                section: {
-                  marginLeft: 3,
-                },
-              }}
-            >
-              {truncate(activeSource?.name ?? 'All Books', { length: 20 })}
-            </Button>
-          )}
-
-          {innerProps.options?.filterOptions && (
-            <Popover
-              width={200}
-              withinPortal
-              position='bottom'
-              withArrow
-              shadow='md'
-              opened={openedFilters}
-              closeOnClickOutside={false}
-              zIndex={(innerProps.options?.zIndex ?? 499) + 1}
-            >
-              <Popover.Target>
-                <Indicator
-                  inline
-                  label={`${Object.keys(filterSelections).length}`}
-                  size={16}
-                  zIndex={1000}
-                  disabled={Object.keys(filterSelections).length === 0}
-                >
-                  <ActionIcon
-                    size='lg'
-                    variant='light'
-                    radius='md'
-                    aria-label='Filters'
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setOpenedFilters(!openedFilters);
-                    }}
-                  >
-                    <IconFilter size='1rem' />
-                  </ActionIcon>
-                </Indicator>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <Group wrap='nowrap' justify='space-between'>
-                  <Title order={5}>Filters</Title>
-                  <CloseButton
-                    onClick={() => {
-                      setOpenedFilters(false);
-                    }}
-                  />
-                </Group>
-                <Divider mt={5} />
-                <Stack gap={10} pt={5}>
-                  {innerProps.options.filterOptions.options.map((option, index) => (
-                    <Box key={index}>
-                      {option.type === 'MULTI-SELECT' && (
-                        <MultiSelect
-                          label={option.title}
-                          renderOption={option.isActionOption ? renderActionOption : undefined}
-                          data={option.options ?? []}
-                          onChange={(value) => {
-                            updateFilterSelection(option.key, { filter: option, value });
-                          }}
-                          value={filterSelections[option.key]?.value ?? []}
-                          comboboxProps={{
-                            zIndex: (innerProps.options?.zIndex ?? 499) + 2,
-                          }}
-                        />
-                      )}
-                      {option.type === 'CHECKBOX' && (
-                        <Checkbox
-                          label={option.title}
-                          checked={filterSelections[option.key]?.value ?? false}
-                          onChange={(event) => {
-                            updateFilterSelection(option.key, {
-                              filter: option,
-                              value: event.currentTarget.checked,
-                            });
-                          }}
-                        />
-                      )}
-                    </Box>
-                  ))}
-                </Stack>
-              </Popover.Dropdown>
-            </Popover>
+          {innerProps.options?.advancedPresetFilters && (
+            <>
+              <ActionIcon
+                size='lg'
+                variant='light'
+                radius='md'
+                aria-label='Advanced Search'
+                color='gray'
+                onClick={() => {
+                  setAdvancedSearchOpen(true);
+                }}
+              >
+                <IconAdjustments size='1rem' stroke={1.5} />
+              </ActionIcon>
+              <AdvancedSearchModal
+                opened={advancedSearchOpen}
+                presetFilters={innerProps.options?.advancedPresetFilters}
+                onSelect={
+                  innerProps.onClick
+                    ? (option) => {
+                        innerProps.onClick!(option);
+                        context.closeModal(id);
+                      }
+                    : undefined
+                }
+                onClose={() => {
+                  setAdvancedSearchOpen(false);
+                  context.closeModal(id);
+                }}
+              />
+            </>
           )}
         </Group>
 
@@ -643,7 +485,7 @@ export default function SelectContentModal({
       // eslint-disable-next-line
       const [_key, { selectedId }] = queryKey;
       const heritage = await fetchContentById<AbilityBlock>('ability-block', selectedId ?? -1);
-      const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage');
+      const versHeritages = await fetchContentAll<VersatileHeritage>('versatile-heritage', getDefaultSources('PAGE'));
       return {
         heritage,
         versHeritages,
@@ -663,310 +505,212 @@ export default function SelectContentModal({
   }, [versHeritageData]);
 
   return (
-    <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 490 }}>
-      <Transition mounted={openedDrawer} transition='slide-right'>
-        {(styles) => (
-          <Box
-            style={{
-              ...styles,
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              backgroundColor: theme.colors.dark[7],
-              width: 'calc(max(50%, 275px))',
-              height: '100%',
-              zIndex: 100,
+    <Stack>
+      {innerProps.options?.description}
+      <Box style={{ position: 'relative', height: isClassFeat || isHeritage ? 530 : 470 }}>
+        {isClassFeat && (
+          <Tabs value={classFeatTab} onChange={setClassFeatTab}>
+            <Tabs.List grow mb={10}>
+              <Tabs.Tab value='class-feat'>Class Feats</Tabs.Tab>
+              <Tabs.Tab value='archetype-feat'>Archetype Feats</Tabs.Tab>
+              <Tabs.Tab value='add-dedication'>Add Dedication</Tabs.Tab>
+            </Tabs.List>
 
-              borderRightWidth: 2,
-              borderRightStyle: 'solid',
-              borderRightColor: theme.colors.dark[6],
-            }}
-          >
-            <Box
-              style={{
-                position: 'relative',
-                height: '100%',
-                //borderTop: '1px solid ' + theme.colors.dark[6],
-              }}
-            >
-              {/* <CloseButton
-                variant='subtle'
-                size='xs'
-                aria-label='Close Content Sources'
-                style={{
-                  position: 'absolute',
-                  top: -2,
-                  right: -2,
-                }}
-                m={5}
-                onClick={() => setOpenedDrawer(false)}
-              /> */}
-              {isFetching && (
-                <Loader
-                  type='bars'
-                  style={{
-                    position: 'absolute',
-                    top: '35%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                />
-              )}
-              <ContentSourceOption
-                name={'All Books'}
-                description={`${totalOptionCount.toLocaleString()} ${pluralize(
-                  innerProps.options?.abilityBlockType ?? innerProps.type
-                )}`}
-                onClick={() => {
-                  setSelectedSource('all');
-                  setOpenedDrawer(false);
-                }}
-                selected={selectedSource === 'all'}
-              />
-              {contentSources
-                ?.filter(
-                  (source) =>
-                    source.meta_data?.counts &&
-                    source.meta_data.counts[innerProps.options?.abilityBlockType ?? innerProps.type]
-                )
-                .map((source, index) => (
-                  <ContentSourceOption
-                    key={index}
-                    name={source.name}
-                    description={`${source.meta_data!.counts![
-                      innerProps.options?.abilityBlockType ?? innerProps.type
-                    ].toLocaleString()} ${pluralize(innerProps.options?.abilityBlockType ?? innerProps.type)}`}
-                    onClick={() => {
-                      setSelectedSource(source.id);
-                      setOpenedDrawer(false);
-                    }}
-                    selected={source.id === selectedSource}
+            <Tabs.Panel value='class-feat'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type={innerProps.type}
+                    abilityBlockType={innerProps.options?.abilityBlockType}
+                    skillAdjustment={innerProps.options?.skillAdjustment}
+                    selectedId={innerProps.options?.selectedId}
+                    overrideOptions={innerProps.options?.overrideOptions}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!(option);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={getMergedFilterFn()}
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
                   />
-                ))}
-            </Box>
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='archetype-feat'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type='ability-block'
+                    abilityBlockType='feat'
+                    selectedId={innerProps.options?.selectedId}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!({
+                              ...option,
+                              // Need this for selection ops to work correctly
+                              // since we're not using the override options
+                              _select_uuid: `${option.id}`,
+                              _content_type: 'ability-block',
+                            } satisfies ObjectWithUUID);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) =>
+                      intersection(
+                        getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
+                        option.traits ?? []
+                      ).length > 0 && option.level <= classFeatSourceLevel
+                    }
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='add-dedication'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type='ability-block'
+                    abilityBlockType='feat'
+                    selectedId={innerProps.options?.selectedId}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!({
+                              ...option,
+                              // Need this for selection ops to work correctly
+                              // since we're not using the override options
+                              _select_uuid: `${option.id}`,
+                              _content_type: 'ability-block',
+                            } satisfies ObjectWithUUID);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) =>
+                      hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
+                    }
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+          </Tabs>
+        )}
+
+        {isHeritage && (
+          <Tabs value={versHeritageTab} onChange={setVersHeritageTab}>
+            <Tabs.List grow mb={10}>
+              <Tabs.Tab value='ancestry-heritage'>Ancestry Heritages</Tabs.Tab>
+              <Tabs.Tab value='versatile-heritage'>Versatile Heritages</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value='ancestry-heritage'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type={innerProps.type}
+                    abilityBlockType={innerProps.options?.abilityBlockType}
+                    skillAdjustment={innerProps.options?.skillAdjustment}
+                    selectedId={innerProps.options?.selectedId}
+                    overrideOptions={innerProps.options?.overrideOptions}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!(option);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) =>
+                      getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
+                    }
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            <Tabs.Panel value='versatile-heritage'>
+              <Box>
+                {getSelectionContents(
+                  <SelectionOptions
+                    type='ability-block'
+                    abilityBlockType='heritage'
+                    selectedId={innerProps.options?.selectedId}
+                    searchQuery={searchQueryDebounced}
+                    onClick={
+                      innerProps.onClick
+                        ? (option) => {
+                            innerProps.onClick!({
+                              ...option,
+                              // Need this for selection ops to work correctly
+                              // since we're not using the override options
+                              _select_uuid: `${option.id}`,
+                              _content_type: 'ability-block',
+                            } satisfies ObjectWithUUID);
+                            context.closeModal(id);
+                          }
+                        : undefined
+                    }
+                    filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
+                    includeOptions={innerProps.options?.includeOptions}
+                    showButton={innerProps.options?.showButton}
+                    limitSelectedOptions={true}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+          </Tabs>
+        )}
+
+        {!(isClassFeat || isHeritage) && (
+          <Box>
+            {getSelectionContents(
+              <SelectionOptions
+                type={innerProps.type}
+                abilityBlockType={innerProps.options?.abilityBlockType}
+                skillAdjustment={innerProps.options?.skillAdjustment}
+                selectedId={innerProps.options?.selectedId}
+                overrideOptions={innerProps.options?.overrideOptions}
+                searchQuery={searchQueryDebounced}
+                onClick={
+                  innerProps.onClick
+                    ? (option) => {
+                        innerProps.onClick!(option);
+                        context.closeModal(id);
+                      }
+                    : undefined
+                }
+                filterFn={getMergedFilterFn()}
+                includeOptions={innerProps.options?.includeOptions}
+                showButton={innerProps.options?.showButton}
+                limitSelectedOptions={!!innerProps.options?.overrideOptions}
+              />
+            )}
           </Box>
         )}
-      </Transition>
-      {openedDrawer && (
-        <Overlay
-          color={theme.colors.dark[7]}
-          backgroundOpacity={0.35}
-          blur={2}
-          zIndex={99}
-          onClick={() => {
-            setOpenedDrawer(false);
-          }}
-        />
-      )}
-
-      {isClassFeat && (
-        <Tabs value={classFeatTab} onChange={setClassFeatTab}>
-          <Tabs.List grow mb={10}>
-            <Tabs.Tab value='class-feat'>Class Feats</Tabs.Tab>
-            <Tabs.Tab value='archetype-feat'>Archetype Feats</Tabs.Tab>
-            <Tabs.Tab value='add-dedication'>Add Dedication</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value='class-feat'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type={innerProps.type}
-                  abilityBlockType={innerProps.options?.abilityBlockType}
-                  skillAdjustment={innerProps.options?.skillAdjustment}
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-                  selectedId={innerProps.options?.selectedId}
-                  overrideOptions={innerProps.options?.overrideOptions}
-                  searchQuery={searchQuery}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!(option);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={getMergedFilterFn()}
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='archetype-feat'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type='ability-block'
-                  abilityBlockType='feat'
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-                  selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQuery}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) =>
-                    intersection(
-                      getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [],
-                      option.traits ?? []
-                    ).length > 0 && option.level <= classFeatSourceLevel
-                  }
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='add-dedication'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type='ability-block'
-                  abilityBlockType='feat'
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-                  selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQuery}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) =>
-                    hasTraitType('DEDICATION', option.traits) && option.level <= classFeatSourceLevel
-                  }
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-        </Tabs>
-      )}
-
-      {isHeritage && (
-        <Tabs value={versHeritageTab} onChange={setVersHeritageTab}>
-          <Tabs.List grow mb={10}>
-            <Tabs.Tab value='ancestry-heritage'>Ancestry Heritages</Tabs.Tab>
-            <Tabs.Tab value='versatile-heritage'>Versatile Heritages</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value='ancestry-heritage'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type={innerProps.type}
-                  abilityBlockType={innerProps.options?.abilityBlockType}
-                  skillAdjustment={innerProps.options?.skillAdjustment}
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-                  selectedId={innerProps.options?.selectedId}
-                  overrideOptions={innerProps.options?.overrideOptions}
-                  searchQuery={searchQuery}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!(option);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) =>
-                    getMergedFilterFn() && !versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)
-                  }
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-
-          <Tabs.Panel value='versatile-heritage'>
-            <Box>
-              {getSelectionContents(
-                <SelectionOptions
-                  type='ability-block'
-                  abilityBlockType='heritage'
-                  sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-                  selectedId={innerProps.options?.selectedId}
-                  searchQuery={searchQuery}
-                  onClick={
-                    innerProps.onClick
-                      ? (option) => {
-                          innerProps.onClick!({
-                            ...option,
-                            // Need this for selection ops to work correctly
-                            // since we're not using the override options
-                            _select_uuid: `${option.id}`,
-                            _content_type: 'ability-block',
-                          } satisfies ObjectWithUUID);
-                          context.closeModal(id);
-                        }
-                      : undefined
-                  }
-                  filterFn={(option) => !!versHeritageData?.versHeritages.find((v) => v.heritage_id === option.id)}
-                  includeOptions={innerProps.options?.includeOptions}
-                  showButton={innerProps.options?.showButton}
-                  limitSelectedOptions={true}
-                />
-              )}
-            </Box>
-          </Tabs.Panel>
-        </Tabs>
-      )}
-
-      {!(isClassFeat || isHeritage) && (
-        <Box>
-          {getSelectionContents(
-            <SelectionOptions
-              type={innerProps.type}
-              abilityBlockType={innerProps.options?.abilityBlockType}
-              skillAdjustment={innerProps.options?.skillAdjustment}
-              sourceId={innerProps.options?.groupBySource ? selectedSource : undefined}
-              selectedId={innerProps.options?.selectedId}
-              overrideOptions={innerProps.options?.overrideOptions}
-              searchQuery={searchQuery}
-              onClick={
-                innerProps.onClick
-                  ? (option) => {
-                      innerProps.onClick!(option);
-                      context.closeModal(id);
-                    }
-                  : undefined
-              }
-              filterFn={getMergedFilterFn()}
-              includeOptions={innerProps.options?.includeOptions}
-              showButton={innerProps.options?.showButton}
-              limitSelectedOptions={!!innerProps.options?.overrideOptions}
-            />
-          )}
-        </Box>
-      )}
-    </Box>
+      </Box>
+    </Stack>
   );
 }
 
@@ -1018,6 +762,7 @@ function SelectionOptions(props: {
   selectedId?: number;
   overrideOptions?: Record<string, any>[];
   filterFn?: (option: Record<string, any>) => boolean;
+  advancedPresetFilters?: Partial<FiltersParams>;
   includeOptions?: boolean;
   showButton?: boolean;
   limitSelectedOptions: boolean;
@@ -1028,7 +773,10 @@ function SelectionOptions(props: {
       // @ts-ignore
       // eslint-disable-next-line
       const [_key, { sourceId }] = queryKey;
-      return (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? undefined : [sourceId])) ?? null;
+      return (
+        (await fetchContentAll(props.type, sourceId === 'all' || !sourceId ? getDefaultSources('PAGE') : [sourceId])) ??
+        null
+      );
     },
     refetchOnMount: true,
     //enabled: !props.overrideOptions, Run even for override options to update JsSearch
@@ -1484,6 +1232,24 @@ function SelectionOptionsRoot(props: {
       </>
     );
   }
+  if (props.type === 'class-archetype') {
+    return (
+      <>
+        {props.options.map((classArchetype, index) => (
+          <ClassArchetypeSelectionOption
+            key={'class-archetype-' + index}
+            classArchetype={classArchetype as ClassArchetype}
+            onClick={props.onClick}
+            selected={props.selectedId === classArchetype.id}
+            showButton={props.showButton}
+            includeOptions={props.includeOptions}
+            onDelete={props.onDelete}
+            onCopy={props.onCopy}
+          />
+        ))}
+      </>
+    );
+  }
   if (props.type === 'language') {
     return (
       <>
@@ -1846,7 +1612,7 @@ export function BaseSelectionOption(props: {
         width: '100%',
         pointerEvents: props.disabled ? 'none' : undefined,
       }}
-      onClick={displayButton ? props.onClick : props.onButtonClick ?? props.onClick}
+      onClick={displayButton ? props.onClick : (props.onButtonClick ?? props.onClick)}
       justify='space-between'
     >
       {props.level && parseInt(`${props.level}`) !== 0 && !isNaN(parseInt(`${props.level}`)) && (
@@ -2566,7 +2332,7 @@ export function AncestrySelectionOption(props: {
 
   const operations = character
     ? getAdjustedAncestryOperations('CHARACTER', character, props.ancestry.operations ?? [])
-    : props.ancestry.operations ?? [];
+    : (props.ancestry.operations ?? []);
 
   const ancestryHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_ANCESTRY', operations, 'READ');
   const attributes = getStatBlockDisplay(
@@ -3212,6 +2978,65 @@ export function LanguageSelectionOption(props: {
   );
 }
 
+export function ClassArchetypeSelectionOption(props: {
+  classArchetype: ClassArchetype;
+  onClick: (classArchetype: ClassArchetype) => void;
+  selected?: boolean;
+  showButton?: boolean;
+  includeOptions?: boolean;
+  onDelete?: (id: number) => void;
+  onCopy?: (id: number) => void;
+}) {
+  const [_drawer, openDrawer] = useRecoilState(drawerState);
+
+  // Hide deprecated options
+  if (props.classArchetype.deprecated && !props.selected) return null;
+
+  console.log('Rendering ClassArchetypeSelectionOption for', props.classArchetype);
+
+  return (
+    <BaseSelectionOption
+      leftSection={
+        <Group wrap='nowrap' gap={5}>
+          <Box pl={8}>
+            <Text fz='sm'>{props.classArchetype.name}</Text>
+          </Box>
+        </Group>
+      }
+      rightSection={<TraitsDisplay justify='flex-end' size='xs' traitIds={[]} rarity={props.classArchetype.rarity} />}
+      showButton={props.showButton}
+      selected={props.selected}
+      onClick={() => {
+        // If is 'Base Class (No Archetype)' option,
+        if (props.classArchetype.id === -999) {
+          // Just show the normal base class drawer
+          openDrawer({
+            type: 'class',
+            data: {
+              id: props.classArchetype.class_id,
+            },
+            extra: { addToHistory: true },
+          });
+        } else {
+          openDrawer({
+            type: 'class-archetype',
+            data: {
+              id: props.classArchetype.id,
+            },
+            extra: { addToHistory: true },
+          });
+        }
+      }}
+      buttonTitle='Select'
+      disableButton={props.selected}
+      onButtonClick={() => props.onClick(props.classArchetype)}
+      includeOptions={props.includeOptions}
+      onOptionsDelete={() => props.onDelete?.(props.classArchetype.id)}
+      onOptionsCopy={() => props.onCopy?.(props.classArchetype.id)}
+    />
+  );
+}
+
 export function CreatureSelectionOption(props: {
   creature: Creature;
   onClick: (creature: Creature) => void;
@@ -3223,6 +3048,7 @@ export function CreatureSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
 
   // Hide deprecated options
   if (props.creature.deprecated && !props.selected) return null;
@@ -3304,16 +3130,11 @@ export function CreatureSelectionOption(props: {
       selected={props.selected}
       level={getEntityLevel(props.creature)}
       onClick={() =>
-        openDrawer({
-          type: 'creature',
+        openCreatureDrawer({
           data: {
             id: props.creature.id,
             readOnly: true,
-            zIndex: CREATURE_DRAWER_ZINDEX,
-            onSelect:
-              props.showButton || props.showButton === undefined ? () => props.onClick(props.creature) : undefined,
           },
-          extra: { addToHistory: true },
         })
       }
       buttonOverride={

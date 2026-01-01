@@ -23,12 +23,12 @@ import { StatResistWeakDrawerContent } from './types/StatResistWeakDrawer';
 import { ConditionDrawerContent } from './types/ConditionDrawer';
 import { ContentSourceDrawerContent } from './types/ContentSourceDrawer';
 import { ManageCoinsDrawerContent } from './types/ManageCoinsDrawer';
-import { CreatureDrawerContent } from './types/CreatureDrawer';
 import { StatWeaponDrawerContent } from './types/StatWeaponDrawer';
 import { getCachedCustomization } from '@content/customization-cache';
 import { ArchetypeDrawerContent } from './types/ArchetypeDrawer';
 import { VersatileHeritageDrawerContent } from './types/VersatileHeritageDrawer';
 import { cloneDeep } from 'lodash-es';
+import { ClassArchetypeDrawerContent } from './types/ClassArchetypeDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
   const _drawer = useRecoilValue(drawerState);
@@ -46,9 +46,6 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'content-source' && <ContentSourceDrawerContent data={drawerData} />}
       {_drawer?.type === 'generic' && <GenericDrawerContent data={drawerData} />}
       {_drawer?.type === 'condition' && <ConditionDrawerContent data={drawerData} />}
-      {_drawer?.type === 'creature' && (
-        <CreatureDrawerContent data={drawerData} onMetadataChange={props.onMetadataChange} />
-      )}
       {_drawer?.type === 'feat' && <FeatDrawerContent data={drawerData} />}
       {_drawer?.type === 'action' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'spell' && <SpellDrawerContent data={drawerData} />}
@@ -68,6 +65,7 @@ export default function DrawerContent(props: { onMetadataChange?: (openedDict?: 
       {_drawer?.type === 'mode' && <ActionDrawerContent data={drawerData} />}
       {_drawer?.type === 'versatile-heritage' && <VersatileHeritageDrawerContent data={drawerData} />}
       {_drawer?.type === 'archetype' && <ArchetypeDrawerContent data={drawerData} />}
+      {_drawer?.type === 'class-archetype' && <ClassArchetypeDrawerContent data={drawerData} />}
 
       {_drawer?.type === 'manage-coins' && <ManageCoinsDrawerContent data={drawerData} />}
       {_drawer?.type === 'stat-prof' && <StatProfDrawerContent data={drawerData} />}

@@ -77,7 +77,7 @@ export async function pdfV1(character: Character) {
 
 function downloadPDF(pdfBytes: Uint8Array, fileName: string) {
   // Create a Blob from the PDF bytes
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
 
   // Create a link element for the download
   const downloadLink = document.createElement('a');
@@ -96,8 +96,8 @@ async function fillPDF(form: PDFForm, character: Character) {
   // See Field names: https://www.pdfescape.com //
 
   // Get all content that the character uses
-  defineDefaultSources(character.content_sources?.enabled ?? []);
-  const content = await fetchContentPackage(undefined, { fetchSources: true });
+  const sv = defineDefaultSources('PAGE', character.content_sources?.enabled ?? []);
+  const content = await fetchContentPackage(sv, { fetchSources: true });
   const STORE_ID = 'CHARACTER';
 
   // Execute all operations (to update the variables)

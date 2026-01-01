@@ -1,48 +1,23 @@
-import TraitsInput from '@common/TraitsInput';
-import { OperationSection } from '@common/operations/Operations';
-import { AddBonusToValOperation } from '@common/operations/variables/AddBonusToValOperation';
-import { SetValOperation } from '@common/operations/variables/SetValOperation';
-import RichTextInput from '@common/rich_text_input/RichTextInput';
-import { DISCORD_URL } from '@constants/data';
-import { fetchContentById, fetchTraits } from '@content/content-store';
-import { toHTML } from '@content/content-utils';
 import {
-  Anchor,
-  Autocomplete,
-  Badge,
-  Box,
   Button,
   Collapse,
   Divider,
   Group,
-  HoverCard,
-  Input,
-  LoadingOverlay,
   Modal,
   NumberInput,
   ScrollArea,
   SegmentedControl,
   Select,
   Stack,
-  Switch,
-  Text,
   TextInput,
-  Textarea,
   Title,
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { createDefaultOperation } from '@operations/operation-utils';
-import { useQuery } from '@tanstack/react-query';
-import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, Combatant, Creature, Trait } from '@typing/content';
-import { Operation, OperationAddBonusToValue, OperationSetValue } from '@typing/operations';
-import { isValidImage } from '@utils/images';
-import useRefresh from '@utils/use-refresh';
+import { Combatant } from '@typing/content';
+import { Operation } from '@typing/operations';
 import { useState } from 'react';
-import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
-import { ActionSymbol } from '@common/Actions';
 import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';

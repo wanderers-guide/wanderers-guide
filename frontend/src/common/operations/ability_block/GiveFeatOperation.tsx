@@ -1,9 +1,9 @@
 import { characterState } from '@atoms/characterAtoms';
 import { SelectContentButton } from '@common/select/SelectContent';
-import { FilterOptions, defaultFeatOptions, prereqFilterOption } from '@common/select/filters';
 import { AbilityBlock } from '@typing/content';
 import { useRecoilValue } from 'recoil';
 import { OperationWrapper } from '../Operations';
+import { getDefaultSources } from '@content/content-store';
 
 export function GiveFeatOperation(props: {
   selectedId: number;
@@ -11,13 +11,6 @@ export function GiveFeatOperation(props: {
   onRemove: () => void;
 }) {
   const character = useRecoilValue(characterState);
-  const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
-  const filterOptions: FilterOptions = DETECT_PREREQUS ? {
-    options: [
-      prereqFilterOption,
-      ...defaultFeatOptions,
-    ],
-  } : { options: defaultFeatOptions };
   return (
     <OperationWrapper onRemove={props.onRemove} title='Give Feat'>
       <SelectContentButton<AbilityBlock>
@@ -29,7 +22,13 @@ export function GiveFeatOperation(props: {
         options={{
           abilityBlockType: 'feat',
           showButton: false,
-          filterOptions,
+          // advancedPresetFilters: {
+          //   type: 'ability-block',
+          //   ab_type: 'feat',
+          //   content_sources: character ? character.content_sources?.enabled : undefined,
+          //   level_max: character ? character.level : undefined,
+          //   level_min: 1,
+          // },
         }}
       />
     </OperationWrapper>
