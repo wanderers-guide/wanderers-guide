@@ -4,14 +4,8 @@ import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
-import {
-  getBestArmor,
-  getBestShield,
-  handleUpdateItem,
-  handleDeleteItem,
-  handleMoveItem,
-  getItemHealth,
-} from '@items/inv-utils';
+import { handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
+import { getBestArmor, getBestShield, getItemHealth } from '@items/inv-utils';
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { InventoryItem, LivingEntity } from '@typing/content';

@@ -5,10 +5,11 @@ import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
 import { AbilityBlockType, ContentType } from '@typing/content';
-import { buildHrefFromContentData, getContentDataFromHref } from './ContentLinkExtension';
+import { getContentDataFromHref } from './ContentLinkExtension';
 import { toLabel } from '@utils/strings';
 import { convertToContentType } from '@content/content-utils';
 import { fetchContentById } from '@content/content-store';
+import { buildHrefFromContentData } from '@content/hardcoded-links';
 
 export default function ContentLinkControl() {
   const { editor } = useRichTextEditorContext();

@@ -7,31 +7,17 @@ import TraitsDisplay from '@common/TraitsDisplay';
 import { TEXT_INDENT_AMOUNT } from '@constants/data';
 import { fetchAllPrereqs, fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
-import {
-  Title,
-  Text,
-  Image,
-  Loader,
-  Group,
-  Divider,
-  Stack,
-  Box,
-  Flex,
-  Anchor,
-  useMantineTheme,
-  ThemeIcon,
-  Button,
-} from '@mantine/core';
-import { IconCheck, IconZoomCheck, IconX, IconQuestionMark } from '@tabler/icons-react';
+import { Title, Text, Loader, Group, Divider, Box, Anchor, useMantineTheme, Button } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock } from '@typing/content';
-import { listToLabel, toLabel } from '@utils/strings';
+import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { DisplayIcon } from '@common/IconDisplay';
+import { listToLabel } from '@utils/display-strings';
 
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;

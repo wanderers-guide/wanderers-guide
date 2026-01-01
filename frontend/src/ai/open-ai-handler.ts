@@ -3,7 +3,7 @@ import { convertTiptapToMarkdown } from '@common/rich_text_input/utils';
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Campaign, CampaignNPC, CampaignSessionIdea, Character, Creature, Encounter, Trait } from '@typing/content';
 import { GranularCreature } from '@typing/index';

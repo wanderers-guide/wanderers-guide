@@ -22,7 +22,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBackpack,
@@ -75,7 +75,9 @@ import { getAnchorStyles } from '@utils/anchor';
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
 
 export function Component(props: {}) {
-  setPageTitle(`Sheet`);
+  useEffect(() => {
+    setPageTitle(`Sheet`);
+  }, []);
 
   const { characterId } = useLoaderData() as {
     characterId: string;
@@ -162,7 +164,14 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
   const panelHeight = height > 800 ? 555 : 500;
   const [hideSections, setHideSections] = useState(false);
 
-  const { character, setCharacter, isLoaded } = useCharacter(props.characterId, props.content, props.onFinishLoading);
+  const { character, setCharacter, isLoading } = useCharacter(props.characterId, {
+    type: 'EXECUTE_OPS',
+    data: {
+      content: props.content,
+      context: 'CHARACTER-SHEET',
+      onFinishLoading: props.onFinishLoading,
+    },
+  });
 
   setPageTitle(character && character.name.trim() ? character.name : 'Sheet');
 
@@ -178,7 +187,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
     const givenModeIds = getVariable<VariableListStr>('CHARACTER', 'MODE_IDS')?.value || [];
     return props.content.abilityBlocks.filter((block) => block.type === 'mode' && givenModeIds.includes(block.id + ''));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [character, isLoaded, props.content]);
+  }, [character, isLoading, props.content]);
 
   return (
     <Center>
@@ -191,8 +200,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 <>
                   <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <ConditionSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
-                  <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <ArmorSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+                  <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <SpeedSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                 </>
               )}
@@ -201,7 +210,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               content={props.content}
               entity={character}
               setEntity={convertToSetEntity(setCharacter)}
-              isLoaded={isLoaded}
+              isLoaded={!isLoading}
               panelHeight={panelHeight}
               panelWidth={panelWidth}
               hideSections={hideSections}
@@ -565,7 +574,13 @@ function SectionPanels(props: {
   } else {
     return (
       <Box>
-        <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+        <BlurBox
+          blur={10}
+          p='sm'
+          style={{
+            height: props.panelHeight + 65,
+          }}
+        >
           <Tabs
             color='dark.6'
             variant='pills'

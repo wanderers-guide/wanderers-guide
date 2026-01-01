@@ -1,6 +1,15 @@
 import { Operation } from './operations';
 import { ProficiencyType } from './variables';
 
+export type SourceKey = 'PAGE' | 'INFO';
+export type SourceValue =
+  | number[]
+  | 'ALL-USER-ACCESSIBLE'
+  | 'ALL-OFFICIAL-PUBLIC'
+  | 'ALL-HOMEBREW-PUBLIC'
+  | 'ALL-PUBLIC'
+  | 'ALL-HOMEBREW-ACCESSIBLE';
+
 type ContentPackage = {
   ancestries: Ancestry[];
   backgrounds: Background[];
@@ -15,6 +24,7 @@ type ContentPackage = {
   versatileHeritages: VersatileHeritage[];
   classArchetypes: ClassArchetype[];
   sources?: ContentSource[];
+  defaultSources: Record<SourceKey, SourceValue>;
 };
 
 type Availability = 'STANDARD' | 'LIMITED' | 'RESTRICTED';

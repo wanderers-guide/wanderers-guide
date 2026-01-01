@@ -1,7 +1,12 @@
-import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
-import { supabase } from '../main';
+import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, createClient } from '@supabase/supabase-js';
 import { JSendResponse, RequestType } from '@typing/requests';
-import { displayError, throwError } from '@utils/notifications';
+import { logError, throwError } from '@utils/error-handling';
+
+const supabase = createClient(
+  /*<Database>*/
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_KEY
+);
 
 const MAX_ATTEMPTS = 3;
 export async function makeRequest<T = Record<string, any>>(
@@ -36,7 +41,7 @@ export async function makeRequest<T = Record<string, any>>(
     return null;
   } else if (response.status === 'fail') {
     if (notifyFailure) {
-      displayError('Failed to make request');
+      logError('Failed to make request');
     }
     return null;
   } else {

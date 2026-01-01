@@ -5,7 +5,6 @@ import {
   fetchTraitByName,
   getDefaultSources,
 } from '@content/content-store';
-import { GenericData } from '@drawers/types/GenericDrawer';
 import { AbilityBlock, ContentType, Item, Language, LivingEntity, Spell, Trait } from '@typing/content';
 import {
   Operation,
@@ -43,11 +42,12 @@ import {
   OperationInjectText,
   OperationBindValue,
   OperationSendNotification,
+  OperationResult,
+  InjectedSelectOption,
 } from '@typing/operations';
 import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
 import {
-  addVariable,
   getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
   getAllArmorGroupVariables,
@@ -63,12 +63,11 @@ import {
   labelToVariable,
   variableToLabel,
 } from '@variables/variable-utils';
-import { OperationResult } from './operation-runner';
-import { throwError } from '@utils/notifications';
-import { InjectedSelectOption } from '@common/operations/selection/InjectSelectOptionOperation';
 import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
 import { isNumber, intersection } from 'lodash-es';
+import { throwError } from '@utils/error-handling';
+import { GenericData } from '@typing/index';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {

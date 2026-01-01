@@ -506,7 +506,3 @@ export function getContentDataFromHref(href: string) {
   const [link, type, id] = lastPart.split('_');
   return { type: type as ContentType | AbilityBlockType | 'condition', id: id.replace('~', ' ') };
 }
-
-export function buildHrefFromContentData(type: ContentType | AbilityBlockType, id: string | number) {
-  return `link_${type}_${id}`;
-}

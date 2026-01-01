@@ -14,6 +14,8 @@ import {
   Creature,
   Item,
   Language,
+  SourceKey,
+  SourceValue,
   Spell,
   Trait,
   VersatileHeritage,
@@ -113,15 +115,6 @@ function setStoredIds(type: ContentType, data: Record<string, any>, value: any) 
 //                      Fetching                     //
 ///////////////////////////////////////////////////////
 
-export type SourceKey = 'PAGE' | 'INFO';
-export type SourceValue =
-  | number[]
-  | 'ALL-USER-ACCESSIBLE'
-  | 'ALL-OFFICIAL-PUBLIC'
-  | 'ALL-HOMEBREW-PUBLIC'
-  | 'ALL-PUBLIC'
-  | 'ALL-HOMEBREW-ACCESSIBLE';
-
 let DEFAULT_SOURCES: Record<SourceKey, SourceValue> = {
   PAGE: 'ALL-USER-ACCESSIBLE',
   INFO: 'ALL-USER-ACCESSIBLE',
@@ -149,6 +142,27 @@ export function getDefaultSources(view: SourceKey) {
   } else {
     return cloneDeep(DEFAULT_SOURCES[view]);
   }
+}
+
+/**
+ * Import content from a content package into the content store
+ * @param packageData - Content package data to import
+ */
+export function importFromContentPackage(packageData: ContentPackage) {
+  // Import all content
+  packageData.abilityBlocks.forEach((c) => idStore.get('ability-block')?.set(c.id, c));
+  packageData.ancestries.forEach((c) => idStore.get('ancestry')?.set(c.id, c));
+  packageData.archetypes.forEach((c) => idStore.get('archetype')?.set(c.id, c));
+  packageData.backgrounds.forEach((c) => idStore.get('background')?.set(c.id, c));
+  packageData.classArchetypes.forEach((c) => idStore.get('class-archetype')?.set(c.id, c));
+  packageData.classes.forEach((c) => idStore.get('class')?.set(c.id, c));
+  packageData.creatures.forEach((c) => idStore.get('creature')?.set(c.id, c));
+  packageData.items.forEach((c) => idStore.get('item')?.set(c.id, c));
+  packageData.languages.forEach((c) => idStore.get('language')?.set(c.id, c));
+  packageData.spells.forEach((c) => idStore.get('spell')?.set(c.id, c));
+  packageData.traits.forEach((c) => idStore.get('trait')?.set(c.id, c));
+  packageData.versatileHeritages.forEach((c) => idStore.get('versatile-heritage')?.set(c.id, c));
+  packageData.sources?.forEach((c) => idStore.get('content-source')?.set(c.id, c));
 }
 
 /**
@@ -397,6 +411,10 @@ export async function fetchContentPackage(
     versatileHeritages: ((content[10] ?? []) as VersatileHeritage[]).sort((a, b) => a.name.localeCompare(b.name)),
     classArchetypes: ((content[11] ?? []) as ClassArchetype[]).sort((a, b) => a.name.localeCompare(b.name)),
     sources: content[12] as ContentSource[],
+    defaultSources: {
+      PAGE: getDefaultSources('PAGE'),
+      INFO: getDefaultSources('INFO'),
+    },
   } satisfies ContentPackage;
 
   // Preload high-need images from package

@@ -1,7 +1,8 @@
-import { DEBUG_MODE, PATREON_URL } from '@constants/data';
+import { DEBUG_MODE } from '@constants/data';
+import { PATREON_URL } from '@constants/urls';
 import { Anchor, Title } from '@mantine/core';
 import { hideNotification, showNotification, updateNotification } from '@mantine/notifications';
-import { IconBrandPatreon, IconBrandPatreonFilled, IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
+import { IconBrandPatreonFilled, IconCheck, IconCubeSend, IconX } from '@tabler/icons-react';
 
 type NotificationDetails = {
   title: string;
@@ -57,7 +58,7 @@ export default async function displayNotification(
   }
 }
 
-export function throwError(message: string, debugOnly?: boolean) {
+export function displayThrowingError(message: string, debugOnly?: boolean) {
   if (debugOnly && !DEBUG_MODE) return;
 
   displayError(message);

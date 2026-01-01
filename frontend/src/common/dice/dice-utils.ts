@@ -24,10 +24,9 @@ import { Character, Dice } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { DICE_THEMES } from './dice-tray';
-import { getFinalProfValue } from '@variables/variable-display';
+import { getFinalProfValue } from '@variables/variable-helpers';
 import { isItemWeapon } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
-import { getSpellStats } from '@spells/spell-handler';
 import { parseDiceRoll, toLabel } from '@utils/strings';
 
 /**

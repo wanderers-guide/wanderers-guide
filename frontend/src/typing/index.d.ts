@@ -26,6 +26,14 @@ export type DrawerType =
   | 'stat-perception'
   | 'stat-resist-weak';
 
+export type GenericData = {
+  title: string;
+  description: string;
+  operations?: Operation[];
+  showOperations?: boolean;
+  onSelect?: () => void;
+};
+
 export type UploadResult = {
   success: boolean;
   id?: number;

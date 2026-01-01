@@ -2,7 +2,8 @@ import { Title, Text, Group, Divider, Box, Accordion, Kbd, HoverCard, List } fro
 import { IconMathSymbols } from '@tabler/icons-react';
 import { StoreID } from '@typing/variables';
 import { sign } from '@utils/numbers';
-import { displayFinalHealthValue, getHealthValueParts } from '@variables/variable-display';
+import { displayFinalHealthValue } from '@variables/variable-display';
+import { getHealthValueParts } from '@variables/variable-helpers';
 
 export function StatHealthDrawerTitle(props: { data: { id: StoreID } }) {
   return (

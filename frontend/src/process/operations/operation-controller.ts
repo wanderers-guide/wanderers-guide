@@ -15,21 +15,25 @@ import {
   Operation,
   OperationCharacterResultPackage,
   OperationCreatureResultPackage,
+  OperationOptions,
+  OperationResult,
   OperationSelect,
 } from '@typing/operations';
-import { OperationOptions, OperationResult, runOperations } from './operation-runner';
+import { runOperations } from './operation-runner';
 import {
   addVariable,
   adjVariable,
+  exportVariableStore,
   getAllAttributeVariables,
   getAllSkillVariables,
   getVariable,
+  importVariableStore,
   resetVariables,
   setVariable,
 } from '@variables/variable-manager';
 import { isAttributeValue, labelToVariable, variableToLabel } from '@variables/variable-utils';
 import { hashData, rankNumber } from '@utils/numbers';
-import { StoreID, VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr, VariableStore } from '@typing/variables';
 import {
   getFlatInvItems,
   getItemOperations,
@@ -42,10 +46,14 @@ import { isAbilityBlockVisible } from '@content/content-hidden';
 import { isTruthy } from '@utils/type-fixing';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import { cloneDeep, isEqual, mergeWith, unionWith, uniqWith } from 'lodash-es';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
 import { setCalculatedStatsInStore } from '@variables/calculated-stats';
-import { abs } from 'mathjs';
+import { getEntityLevel } from '@utils/entity-utils';
+import { defineDefaultSources, importFromContentPackage } from '@content/content-store';
 
+/**
+ * Inits the op selection tree based on an entity's op data
+ * @param entity - Living entity (character or creature)
+ */
 function defineSelectionTree(entity: LivingEntity) {
   if (entity.operation_data?.selections) {
     setSelections(
@@ -59,7 +67,16 @@ function defineSelectionTree(entity: LivingEntity) {
   }
 }
 
-async function executeOperations(
+/**
+ * Execute a single array of operations for a given source
+ * @param varId - Variable store ID
+ * @param primarySource - Primary source identifier
+ * @param operations - Array of operations to execute
+ * @param options - Operation options
+ * @param sourceLabel - Label for the source (for logging/debugging)
+ * @returns - Array of operation results
+ */
+async function _executeOps(
   varId: StoreID,
   primarySource: string,
   operations: Operation[],
@@ -94,19 +111,27 @@ async function executeOperations(
         - If, in the future, we add a way to execute a list of operations X times, where
           X is based on a value of a variable, those would also need to be run here.
 */
-export async function executeCharacterOperations(
-  character: Character,
-  content: ContentPackage,
-  context: string
-): Promise<OperationCharacterResultPackage> {
+export async function _executeCharacterOperations(data: {
+  character: Character;
+  content: ContentPackage;
+  context: string;
+}): Promise<{
+  store: VariableStore;
+  ors: OperationCharacterResultPackage;
+}> {
+  const { character, content, context } = data;
+
   resetVariables('CHARACTER');
   defineSelectionTree(character);
+  defineDefaultSources('INFO', content.defaultSources.INFO);
+  defineDefaultSources('PAGE', content.defaultSources.PAGE);
+  importFromContentPackage(content);
   setVariable('CHARACTER', 'PAGE_CONTEXT', context);
   setVariable('CHARACTER', 'PATHFINDER', playingPathfinder(character));
   setVariable('CHARACTER', 'STARFINDER', playingStarfinder(character));
   setVariable('CHARACTER', 'ORGANIZED_PLAY', character.options?.organized_play ?? false);
 
-  setVariable('CHARACTER', 'LEVEL', getEntityLevel(character));
+  setVariable('CHARACTER', 'LEVEL', character.level);
 
   setVariable('CHARACTER', 'ACTIVE_MODES', character.meta_data?.active_modes ?? [], 'Loaded');
   const modes = content.abilityBlocks.filter((block) => block.type === 'mode');
@@ -660,7 +685,7 @@ export async function executeCharacterOperations(
       baseResults: OperationResult[];
     }[] = [];
     for (const source of content.sources ?? []) {
-      const results = await executeOperations(
+      const results = await _executeOps(
         'CHARACTER',
         `content-source-${source.id}`,
         source.operations ?? [],
@@ -676,7 +701,7 @@ export async function executeCharacterOperations(
       }
     }
 
-    let characterResults = await executeOperations(
+    let characterResults = await _executeOps(
       'CHARACTER',
       'character',
       character.options?.custom_operations ? (character.custom_operations ?? []) : [],
@@ -686,7 +711,7 @@ export async function executeCharacterOperations(
 
     let classResults: OperationResult[] = [];
     if (class_) {
-      classResults = await executeOperations(
+      classResults = await _executeOps(
         'CHARACTER',
         'class',
         getTotalClassOperations('CHARACTER', class_, character.details?.class_archetype, baseClassTrainings),
@@ -702,7 +727,7 @@ export async function executeCharacterOperations(
 
     let class2Results: OperationResult[] = [];
     if (class_2) {
-      class2Results = await executeOperations(
+      class2Results = await _executeOps(
         'CHARACTER',
         'class-2',
         getTotalClassOperations('CHARACTER', class_2, character.details?.class_archetype_2, null),
@@ -724,7 +749,7 @@ export async function executeCharacterOperations(
 
     let ancestryResults: OperationResult[] = [];
     if (ancestry) {
-      ancestryResults = await executeOperations(
+      ancestryResults = await _executeOps(
         'CHARACTER',
         'ancestry',
         getAdjustedAncestryOperations('CHARACTER', character, getExtendedAncestryOperations('CHARACTER', ancestry)),
@@ -746,7 +771,7 @@ export async function executeCharacterOperations(
 
     let backgroundResults: OperationResult[] = [];
     if (background) {
-      backgroundResults = await executeOperations(
+      backgroundResults = await _executeOps(
         'CHARACTER',
         'background',
         background.operations ?? [],
@@ -767,7 +792,7 @@ export async function executeCharacterOperations(
     if (ancestry) {
       for (const section of getAncestrySections('CHARACTER', ancestry, character.variants?.ancestry_paragon ?? false)) {
         if (section.level === undefined || section.level <= character.level) {
-          const results = await executeOperations(
+          const results = await _executeOps(
             'CHARACTER',
             `ancestry-section-${section.id}`,
             section.operations ?? [],
@@ -789,7 +814,7 @@ export async function executeCharacterOperations(
     }[] = [];
     for (const feature of classFeatures.filter((cf) => isAbilityBlockVisible('CHARACTER', cf))) {
       if (feature.level === undefined || feature.level <= character.level) {
-        const results = await executeOperations(
+        const results = await _executeOps(
           'CHARACTER',
           `class-feature-${feature.id}`,
           feature.operations ?? [],
@@ -823,7 +848,7 @@ export async function executeCharacterOperations(
         continue;
       }
 
-      const results = await executeOperations(
+      const results = await _executeOps(
         'CHARACTER',
         `item-${invItem.item.id}`,
         getItemOperations(invItem.item, content),
@@ -842,7 +867,7 @@ export async function executeCharacterOperations(
     let modeResults: { baseSource: AbilityBlock; baseResults: OperationResult[] }[] = [];
     const activeModes = getVariable<VariableListStr>('CHARACTER', 'ACTIVE_MODES')?.value || [];
     for (const mode of modes.filter((m) => activeModes.includes(labelToVariable(m.name)))) {
-      const results = await executeOperations(
+      const results = await _executeOps(
         'CHARACTER',
         `mode-${mode.id}`,
         mode.operations ?? [],
@@ -902,16 +927,29 @@ export async function executeCharacterOperations(
   // Set calculated stats
   setCalculatedStatsInStore('CHARACTER', character);
 
-  return mergeOperationResults(results, conditionalResults) as typeof results;
+  return {
+    store: exportVariableStore('CHARACTER'),
+    ors: mergeOperationResults(results, conditionalResults) as typeof results,
+  };
 }
 
-export async function executeCreatureOperations(
-  id: StoreID,
-  creature: Creature,
-  content: ContentPackage
-): Promise<OperationCreatureResultPackage> {
+export async function _executeCreatureOperations(data: {
+  id: StoreID;
+  creature: Creature;
+  content: ContentPackage;
+  charStore: VariableStore;
+}): Promise<{
+  store: VariableStore;
+  ors: OperationCreatureResultPackage;
+}> {
+  const { id, creature, content } = data;
+
   resetVariables(id);
   defineSelectionTree(creature);
+  defineDefaultSources('INFO', content.defaultSources.INFO);
+  defineDefaultSources('PAGE', content.defaultSources.PAGE);
+  importFromContentPackage(content);
+  importVariableStore('CHARACTER', data.charStore);
   setVariable('CHARACTER', 'PAGE_CONTEXT', 'CHARACTER-SHEET');
 
   setVariable(id, 'LEVEL', getEntityLevel(creature));
@@ -926,20 +964,14 @@ export async function executeCreatureOperations(
   ];
 
   const operationsPassthrough = async (options?: OperationOptions) => {
-    let creatureResults = await executeOperations(id, 'creature', creature.operations ?? [], options, creature.name);
+    let creatureResults = await _executeOps(id, 'creature', creature.operations ?? [], options, creature.name);
 
     let abilityResults: {
       baseSource: AbilityBlock;
       baseResults: OperationResult[];
     }[] = [];
     for (const ability of abilities) {
-      const results = await executeOperations(
-        id,
-        `ability-${ability.id}`,
-        ability.operations ?? [],
-        options,
-        ability.name
-      );
+      const results = await _executeOps(id, `ability-${ability.id}`, ability.operations ?? [], options, ability.name);
 
       abilityResults.push({
         baseSource: ability,
@@ -966,7 +998,7 @@ export async function executeCreatureOperations(
         continue;
       }
 
-      const results = await executeOperations(
+      const results = await _executeOps(
         id,
         `item-${invItem.item.id}`,
         getItemOperations(invItem.item, content),
@@ -1015,7 +1047,10 @@ export async function executeCreatureOperations(
   // Set calculated stats
   setCalculatedStatsInStore(id, creature);
 
-  return mergeOperationResults(results, conditionalResults) as typeof results;
+  return {
+    store: exportVariableStore(id),
+    ors: mergeOperationResults(results, conditionalResults) as typeof results,
+  };
 }
 
 function mergeOperationResults(normal: Record<string, any[]>, conditional: Record<string, any[]>) {

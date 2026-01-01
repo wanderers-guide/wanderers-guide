@@ -1,34 +1,24 @@
-import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { SelectContentButton } from '@common/select/SelectContent';
-import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
+import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
-  Anchor,
-  Badge,
   Button,
-  Collapse,
-  Divider,
   Group,
-  HoverCard,
   LoadingOverlay,
   Modal,
-  NumberInput,
   ScrollArea,
   Select,
   Stack,
-  Text,
   TextInput,
   Title,
   useMantineTheme,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
 import { AbilityBlock, Archetype, Rarity } from '@typing/content';
-import { Operation } from '@typing/operations';
 import { isValidImage } from '@utils/images';
 import { hasTraitType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';

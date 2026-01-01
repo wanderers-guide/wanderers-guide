@@ -32,7 +32,8 @@ import { StoreID, VariableBool, VariableProf } from '@typing/variables';
 import { sign } from '@utils/numbers';
 import { displaySense } from '@utils/senses';
 import { toLabel } from '@utils/strings';
-import { displayFinalProfValue, getBonusText, getProfValueParts } from '@variables/variable-display';
+import { displayFinalProfValue } from '@variables/variable-display';
+import { getBonusText, getProfValueParts } from '@variables/variable-helpers';
 import { getVariable, getVariableBonuses, getVariableHistory } from '@variables/variable-manager';
 import {
   compileProficiencyType,

@@ -1,7 +1,7 @@
 import { OperationSection } from '@common/operations/Operations';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { SelectContentButton } from '@common/select/SelectContent';
-import { DISCORD_URL, EDIT_MODAL_HEIGHT } from '@constants/data';
+import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import { toHTML } from '@content/content-utils';
 import {
@@ -42,6 +42,7 @@ import { useRef, useState } from 'react';
 import { CreateAbilityBlockModal } from './CreateAbilityBlockModal';
 import { toLabel } from '@utils/strings';
 import { hashData } from '@utils/numbers';
+import { DISCORD_URL } from '@constants/urls';
 
 export function CreateClassArchetypeModal(props: {
   opened: boolean;

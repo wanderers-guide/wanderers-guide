@@ -16,7 +16,7 @@ import { setPageTitle } from '@utils/document-change';
 import BlurBox from '@common/BlurBox';
 import { getHomeBackgroundImage } from '@utils/background-images';
 import { IconBrush, IconExternalLink } from '@tabler/icons-react';
-import { DISCORD_URL } from '@constants/data';
+import { DISCORD_URL } from '@constants/urls';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { getAnchorStyles } from '@utils/anchor';

@@ -26,7 +26,7 @@ import {
   Spoiler,
 } from '@mantine/core';
 import { hideNotification, showNotification } from '@mantine/notifications';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBulbFilled,

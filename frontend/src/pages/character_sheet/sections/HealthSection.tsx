@@ -4,11 +4,11 @@ import BlurBox from '@common/BlurBox';
 import ClickEditText from '@common/ClickEditText';
 import { useMantineTheme, Group, Anchor, Button, Box, Text } from '@mantine/core';
 import { interpolateHealth } from '@utils/colors';
-import { getFinalHealthValue } from '@variables/variable-display';
+import { getFinalHealthValue } from '@variables/variable-helpers';
 import { evaluate } from 'mathjs';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
-import { confirmHealth } from '../living-entity-utils';
+import { confirmHealth } from '../entity-handler';
 import { StoreID } from '@typing/variables';
 import { LivingEntity } from '@typing/content';
 
@@ -17,7 +17,6 @@ export default function HealthSection(props: {
   entity: LivingEntity | null;
   setEntity: SetterOrUpdater<LivingEntity | null>;
 }) {
-  const navigate = useNavigate();
   const theme = useMantineTheme();
 
   const [_drawer, openDrawer] = useRecoilState(drawerState);

@@ -1,8 +1,7 @@
 import { Item } from '@typing/content';
-import { StoreID, VariableNum } from '@typing/variables';
+import { StoreID } from '@typing/variables';
 import { hasTraitType } from '@utils/traits';
-import { getFinalProfValue, getFinalVariableValue, getVariableBreakdown } from '@variables/variable-display';
-import { getVariable } from '@variables/variable-manager';
+import { getFinalProfValue, getFinalVariableValue, getVariableBreakdown } from '@variables/variable-helpers';
 import { labelToVariable } from '@variables/variable-utils';
 
 function getProfTotal(id: StoreID, item: Item) {

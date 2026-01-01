@@ -42,7 +42,7 @@ import PreparedSpellsList from './spells_list/PreparedSpellsList';
 import RitualSpellsList from './spells_list/RitualSpellsList';
 import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 import StaffSpellsList from './spells_list/StaffSpellsList';
-import { filterByTraitType, handleUpdateItemCharges } from '@items/inv-utils';
+import { filterByTraitType } from '@items/inv-utils';
 import WandSpellsList from './spells_list/WandSpellsList';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';

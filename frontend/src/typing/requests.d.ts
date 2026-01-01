@@ -53,18 +53,21 @@ export type RequestType =
   | 'vector-db-query-collection';
 
 // All requests follow JSend specification (https://github.com/omniti-labs/jsend) //
-export type JSendResponse = JSendResponseSuccess | JSendResponseFail | JSendResponseError;
-interface JSendResponseSuccess {
+export type JSendResponse<T = NonNullable<any>> =
+  | JSendResponseSuccess<T>
+  | JSendResponseFail<T>
+  | JSendResponseError<T>;
+interface JSendResponseSuccess<T> {
   status: 'success';
-  data: NonNullable<any>;
+  data: T;
 }
-interface JSendResponseFail {
+interface JSendResponseFail<T> {
   status: 'fail';
-  data: NonNullable<any>;
+  data: T;
 }
-interface JSendResponseError {
+interface JSendResponseError<T> {
   status: 'error';
   message: string;
-  data?: NonNullable<any>;
+  data?: T;
   code?: number;
 }

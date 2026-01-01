@@ -1,8 +1,6 @@
-import { Accordion, Badge, Divider, Group, Paper, Stack, Text, Title } from '@mantine/core';
-import { getSpellStats } from '@spells/spell-handler';
+import { Accordion, Badge, Group, Stack, Text, Title } from '@mantine/core';
 import {
   CastingSource,
-  Character,
   InventoryItem,
   LivingEntity,
   Spell,
@@ -10,18 +8,17 @@ import {
   SpellListEntry,
   SpellSlot,
 } from '@typing/content';
-import { rankNumber, sign } from '@utils/numbers';
-import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { useEffect, useMemo } from 'react';
 import { detectSpells } from '@spells/spell-utils';
-import { handleUpdateItemCharges, isItemBroken } from '@items/inv-utils';
+import { isItemBroken } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import RichText from '@common/RichText';
 import { StoreID } from '@typing/variables';
+import { handleUpdateItemCharges } from '@items/inv-handlers';
 
 const DEFAULT_WAND_HP = 2;
 

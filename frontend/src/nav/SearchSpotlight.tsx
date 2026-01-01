@@ -1,7 +1,7 @@
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
-import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/data';
+import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';
 import { fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import { determineItemMetaType } from '@items/inv-utils';
@@ -9,7 +9,7 @@ import { ActionIcon, Avatar, Center, HoverCard, Loader, MantineTheme, Text, rem,
 import { useDebouncedState } from '@mantine/hooks';
 import { Spotlight, SpotlightActionData, spotlight } from '@mantine/spotlight';
 import { AdvancedSearchModal } from '@modals/AdvancedSearchModal';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { makeRequest } from '@requests/request-manager';
 import { Session } from '@supabase/supabase-js';
 import {
@@ -25,17 +25,15 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentType, Creature, Item, Spell } from '@typing/content';
+import { AbilityBlockType, Character, ContentType, Creature, Item } from '@typing/content';
 import { DrawerType } from '@typing/index';
 import { isPlayable } from '@utils/character';
 import { determineCompanionType } from '@utils/creature';
-import { displayComingSoon } from '@utils/notifications';
 import { pluralize, toLabel } from '@utils/strings';
 import { setQueryParam } from '@utils/url';
 import { labelToVariable } from '@variables/variable-utils';
 import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
-import { set } from 'node_modules/cypress/types/lodash';
 import { useEffect, useRef, useState } from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';

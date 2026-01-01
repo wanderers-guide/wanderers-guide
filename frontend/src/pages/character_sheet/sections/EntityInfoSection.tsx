@@ -8,13 +8,14 @@ import { StoreID } from '@typing/variables';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
-import { confirmExperience, getEntityLevel, handleRest } from '../living-entity-utils';
+import { confirmExperience, handleRest } from '../entity-handler';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@typing/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
 import { ICON_BG_COLOR } from '@constants/data';
 import { modals } from '@mantine/modals';
+import { getEntityLevel } from '@utils/entity-utils';
 
 export default function EntityInfoSection(props: {
   id: StoreID;
@@ -51,7 +52,7 @@ export default function EntityInfoSection(props: {
           position: 'relative',
         }}
       >
-        <Group gap={20} wrap='nowrap' align='flex-start'>
+        <Group gap={20} wrap='nowrap' align='flex-start' justify='space-between'>
           {isCharacter(props.entity) && (
             <CharacterInfo
               character={props.entity}
@@ -89,9 +90,9 @@ export default function EntityInfoSection(props: {
           )}
           {isCreature(props.entity) && <CreatureDetailedInfo id={props.id} creature={props.entity} />}
 
-          <Stack gap={10} justify='flex-start' pt={3} style={{ flex: 1 }}>
+          <Stack gap={10} justify='flex-start' pt={3}>
             <Stack gap={5}>
-              <Box>
+              <Box maw={80}>
                 <BlurButton
                   size='compact-xs'
                   bgColor={ICON_BG_COLOR}
@@ -109,7 +110,7 @@ export default function EntityInfoSection(props: {
                   Edit
                 </BlurButton>
               </Box>
-              <Box>
+              <Box maw={80}>
                 <BlurButton
                   size='compact-xs'
                   bgColor={ICON_BG_COLOR}
@@ -142,12 +143,12 @@ export default function EntityInfoSection(props: {
               </Box>
             </Stack>
             <Stack gap={0}>
-              <Box>
+              <Box maw={80}>
                 <Text fz='xs' ta='center' c='gray.3'>
                   Lvl. {props.entity ? getEntityLevel(props.entity) : '?'}
                 </Text>
               </Box>
-              <Box>
+              <Box maw={80}>
                 <TextInput
                   className={tinyInputClasses.input}
                   ref={expRef}

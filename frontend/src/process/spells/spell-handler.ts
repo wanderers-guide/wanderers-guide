@@ -1,7 +1,7 @@
 import { Spell } from '@typing/content';
 import { StoreID } from '@typing/variables';
 import { toLabel } from '@utils/strings';
-import { getFinalProfValue, getFinalVariableValue, getProfValueParts } from '@variables/variable-display';
+import { getFinalVariableValue, getProfValueParts } from '@variables/variable-helpers';
 
 export function getSpellStats(id: StoreID, spell: Spell | null, tradition: string, attribute: string) {
   return {

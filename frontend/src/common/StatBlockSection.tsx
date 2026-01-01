@@ -28,7 +28,7 @@ import { getVariable, getVariableBonuses } from '@variables/variable-manager';
 import { DisplayIcon } from './IconDisplay';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { getEntityLevel } from '@utils/entity-utils';
 import { compiledConditions } from '@conditions/condition-handler';
 import { StoreID } from '@typing/variables';
 

@@ -15,10 +15,6 @@ import {
   getInvBulk,
   getItemBulk,
   getItemQuantity,
-  handleAddItem,
-  handleDeleteItem,
-  handleMoveItem,
-  handleUpdateItem,
   isItemContainer,
   isItemEquippable,
   isItemImplantable,
@@ -29,6 +25,7 @@ import {
   reachedImplantLimit,
   reachedInvestedLimit,
 } from '@items/inv-utils';
+import { handleAddItem, handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   Accordion,
@@ -157,12 +154,23 @@ export default function InventoryPanel(props: {
                       },
                     };
                   });
+
+                  if (isPhone) {
+                    setTimeout(() => {
+                      modals.closeAll();
+                    }, 100);
+                  }
                 },
               },
               zIndex: 1000,
             });
           } else {
             await handleAddItem(props.setEntity, item, type === 'FORMULA');
+            if (isPhone) {
+              setTimeout(() => {
+                modals.closeAll();
+              }, 100);
+            }
           }
         },
       },

@@ -1,6 +1,6 @@
 import { SelectContentButton } from '@common/select/SelectContent';
 import { Box } from '@mantine/core';
-import { OperationResult } from '@operations/operation-runner';
+import { OperationResult } from '@typing/operations';
 import { Character } from '@typing/content';
 import {
   Operation,
@@ -8,16 +8,9 @@ import {
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
 } from '@typing/operations';
-import {
-  AttributeValue,
-  ExtendedProficiencyValue,
-  ProficiencyValue,
-  StoreID,
-  Variable,
-  VariableType,
-  VariableValue,
-} from '@typing/variables';
-import { listToLabel, toLabel } from '@utils/strings';
+import { AttributeValue, ProficiencyValue, StoreID, Variable, VariableType, VariableValue } from '@typing/variables';
+import { toLabel } from '@utils/strings';
+import { listToLabel } from '@utils/display-strings';
 import { ReactNode } from 'react';
 import { SetterOrUpdater } from 'recoil';
 import { getVariable } from './variable-manager';

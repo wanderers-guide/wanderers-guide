@@ -6,7 +6,6 @@ import { BuyItemButton } from '@common/BuyItemButton';
 import TraitsDisplay from '@common/TraitsDisplay';
 import { fetchContentAll, fetchContentById, getDefaultSources } from '@content/content-store';
 import { isActionCost } from '@content/content-utils';
-import { GenericData } from '@drawers/types/GenericDrawer';
 import { isItemArchaic } from '@items/inv-utils';
 import {
   ActionIcon,
@@ -32,14 +31,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import {
-  useDebouncedState,
-  useDebouncedValue,
-  useDidUpdate,
-  useElementSize,
-  useHover,
-  useMergedRef,
-} from '@mantine/hooks';
+import { useDebouncedValue, useDidUpdate, useElementSize, useHover, useMergedRef } from '@mantine/hooks';
 import { ContextModalProps, modals, openContextModal } from '@mantine/modals';
 import { getAdjustedAncestryOperations } from '@operations/operation-controller';
 import { ObjectWithUUID, getSelectedCustomOption } from '@operations/operation-utils';
@@ -47,7 +39,6 @@ import {
   IconAdjustments,
   IconCheck,
   IconChevronDown,
-  IconCircleDotFilled,
   IconCopy,
   IconDots,
   IconSearch,
@@ -58,7 +49,7 @@ import {
   IconZoomQuestion,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { DrawerType } from '@typing/index';
+import { DrawerType, GenericData } from '@typing/index';
 import { OperationSelectOptionCustom } from '@typing/operations';
 import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@typing/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
@@ -66,7 +57,7 @@ import { pluralize, toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
 import { getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { meetsPrerequisites } from '@variables/prereq-detection';
-import { getFinalProfValue } from '@variables/variable-display';
+import { getFinalProfValue } from '@variables/variable-helpers';
 import {
   getAllAncestryTraitVariables,
   getAllArchetypeTraitVariables,
@@ -101,8 +92,8 @@ import {
   VersatileHeritage,
 } from '../../typing/content';
 import { adjustCreature } from '@utils/creature';
-import { intersection, isNumber } from 'lodash-es';
-import { getEntityLevel } from '@pages/character_sheet/living-entity-utils';
+import { intersection, isEqual, isNumber } from 'lodash-es';
+import { getEntityLevel } from '@utils/entity-utils';
 import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
@@ -124,14 +115,25 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
+  const [debouncedSelected] = useDebouncedValue(selected, 5000);
 
-  // Fill in selected content
+  // Sync the selected content (only after huge delay)
   useEffect(() => {
     (async () => {
+      // If they're the same, no need to do anything
+      if (props.selectedId === selected?.id) {
+        return;
+      }
+      // If it's been a short time since the selected changed, don't do anything
+      if (!isEqual(debouncedSelected, selected)) {
+        return;
+      }
+
       if (!props.selectedId) {
         setSelected(undefined);
         return;
       }
+
       if (isNumber(props.selectedId)) {
         const content = await fetchContentById<T>(props.type, props.selectedId);
         if (content) {
@@ -139,6 +141,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
           return;
         }
       }
+
       if (props.options?.overrideOptions) {
         const option = props.options.overrideOptions.find(
           // @ts-ignore
@@ -150,7 +153,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
         }
       }
     })();
-  }, [props.selectedId, props.type, props.options?.overrideOptions]);
+  }, [debouncedSelected, props.selectedId, props.type, props.options?.overrideOptions]);
 
   const typeName = toLabel(props.options?.abilityBlockType || props.type);
 
@@ -2941,7 +2944,7 @@ export function LanguageSelectionOption(props: {
           {/* @ts-ignore */}
           {props.language._is_core && (
             <ThemeIcon variant='light' size='xs' radius='xl'>
-              <IconCircleDotFilled style={{ width: '70%', height: '70%' }} />
+              <IconCheck style={{ width: '70%', height: '70%' }} />
             </ThemeIcon>
           )}
         </Group>

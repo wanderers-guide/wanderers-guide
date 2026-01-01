@@ -10,7 +10,6 @@ import {
   getTraitIds,
   stripFoundryLinking,
 } from './foundry-utils';
-import { throwError } from '@utils/notifications';
 import {
   upsertAbilityBlock,
   upsertSpell,
@@ -28,6 +27,7 @@ import { performAutoContentLinking } from './auto-content-linking';
 import { convertCastToActionCost } from '@utils/actions';
 import { convertFoundryCreatureToGranularCreature, convertGranularCreature } from './creature-import';
 import { cloneDeep } from 'lodash-es';
+import { displayThrowingError } from '@utils/notifications';
 
 // https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/equipment/adventuring-gear/alchemists-lab.webp
 // systems/pf2e/icons/features/ancestry/aasimar.webp -> https://raw.githubusercontent.com/foundryvtt/pf2e/master/static/icons/features/ancestry/aasimar.webp
@@ -547,9 +547,9 @@ async function uploadCreature(source: ContentSource, json: Record<string, any>):
   } catch (e) {
     console.log(e);
     if (typeof e === 'string') {
-      throwError(e);
+      displayThrowingError(e);
     } else if (e instanceof Error) {
-      throwError(e.message);
+      displayThrowingError(e.message);
     }
     return {
       success: false,

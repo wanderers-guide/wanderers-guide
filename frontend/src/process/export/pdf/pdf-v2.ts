@@ -21,7 +21,7 @@ import {
   getItemHealth,
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
-import { executeCharacterOperations } from '@operations/operation-controller';
+import { executeOperations } from '@operations/operations.main';
 import { Character, AbilityBlock, Spell } from '@typing/content';
 import { VariableAttr, VariableListStr, VariableStr, VariableNum, VariableProf } from '@typing/variables';
 import { actionCostToLabel } from '@utils/actions';
@@ -34,7 +34,7 @@ import {
   getFinalAcValue,
   getFinalProfValue,
   getProfValueParts,
-} from '@variables/variable-display';
+} from '@variables/variable-helpers';
 import {
   getAllAncestryTraitVariables,
   getVariable,
@@ -112,7 +112,14 @@ async function fillPDF(form: PDFForm, character: Character) {
   };
 
   // Execute all operations (to update the variables)
-  await executeCharacterOperations(character, content, 'CHARACTER-BUILDER');
+  await executeOperations({
+    type: 'CHARACTER',
+    data: {
+      character,
+      content,
+      context: 'CHARACTER-BUILDER',
+    },
+  });
 
   const featData = collectEntityAbilityBlocks(STORE_ID, character, content.abilityBlocks, {
     filterBasicClassFeatures: true,

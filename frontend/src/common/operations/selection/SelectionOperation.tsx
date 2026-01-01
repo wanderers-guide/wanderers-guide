@@ -56,7 +56,7 @@ import { useEffect, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import { AdjustValueInput } from '../variables/AdjValOperation';
 import { labelToVariable } from '@variables/variable-utils';
-import { DISCORD_URL } from '@constants/data';
+import { DISCORD_URL } from '@constants/urls';
 import { modals } from '@mantine/modals';
 
 export function SelectionOperation(props: {
@@ -1241,7 +1241,7 @@ function SelectionPredefinedAdjValue(props: {
 }) {
   const [variableType, setVariableType] = useState<VariableType>(
     (props.options ?? []).length > 0
-      ? getVariable('CHARACTER', props.options![0].operation.data.variable)?.type ?? 'prof'
+      ? (getVariable('CHARACTER', props.options![0].operation.data.variable)?.type ?? 'prof')
       : 'prof'
   );
   const [options, setOptions] = useState<OperationSelectOptionAdjValue[]>(props.options ?? []);
