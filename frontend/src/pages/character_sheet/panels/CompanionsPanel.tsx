@@ -67,7 +67,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         }}
       >
         <Stack mt={20} gap={10}>
-          <Text ta='center' c='gray.5' fs='italic'>
+          <Text ta='center' c='gray.5' fs='italic' fz='sm'>
             No companions found, want to add one?
           </Text>
           <Group justify='center'>
