@@ -24,11 +24,14 @@ import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
 import { useRecoilValue } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
+import { useMediaQuery } from '@mantine/hooks';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 export function Component() {
   setPageTitle(`Builder`);
 
   const theme = useMantineTheme();
+  const isPhone = useMediaQuery(phoneQuery());
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
 
@@ -119,13 +122,21 @@ export function Component() {
               </ActionIcon>
             </>
           )}
-          <BlurBox blur={10} p='sm'>
+          <BlurBox blur={10}>
             <Stepper
               active={active}
               onStepClick={setActive}
-              iconSize={isCharacterBuilderMobile() ? undefined : 40}
+              iconSize={isCharacterBuilderMobile() ? 30 : 40}
               size={isCharacterBuilderMobile() ? 'xs' : 'lg'}
               wrap={false}
+              styles={(t) => ({
+                steps: {
+                  padding: isPhone ? t.spacing.xs : t.spacing.md,
+                },
+                content: {
+                  paddingTop: 0,
+                },
+              })}
             >
               <Stepper.Step
                 label='Home'
@@ -133,7 +144,7 @@ export function Component() {
                 icon={<IconHome style={stepIconStyle} />}
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight} scrollbars='y'>
+                <ScrollArea h={pageHeight} scrollbars='y' px='sm'>
                   {active === 0 && character && !isLoading ? (
                     <CharBuilderHome characterId={character.id} pageHeight={pageHeight} />
                   ) : (

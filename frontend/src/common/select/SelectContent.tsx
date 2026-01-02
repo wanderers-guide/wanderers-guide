@@ -115,7 +115,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
 }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
-  const [debouncedSelected] = useDebouncedValue(selected, 5000);
+  const [debouncedSelected] = useDebouncedValue(selected, 3000);
 
   // Sync the selected content (only after huge delay)
   useEffect(() => {

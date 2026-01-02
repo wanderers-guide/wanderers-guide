@@ -49,7 +49,6 @@ const NOTABILITY_MAP: Record<ContentType | AbilityBlockType, number> = {
 
 export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: number }) {
   const theme = useMantineTheme();
-  const isPhone = useMediaQuery(phoneQuery());
 
   const [icon, setIcon] = useState<string>();
   useEffect(() => {

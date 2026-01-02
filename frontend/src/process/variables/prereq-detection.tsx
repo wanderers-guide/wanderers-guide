@@ -1,14 +1,18 @@
-import { StoreID, VariableAttr, VariableProf } from '@typing/variables';
+import { ProficiencyType, StoreID, VariableAttr, VariableProf } from '@typing/variables';
 import {
   compactLabels,
   compileProficiencyType,
   findVariable,
+  getProficiencyTypeValue,
   labelToProficiencyType,
   labelToVariable,
   maxProficiencyType,
+  variableToLabel,
 } from './variable-utils';
 import { getAllAttributeVariables, getAllSkillVariables, getVariable } from './variable-manager';
 import { toLabel } from '@utils/strings';
+import { getCachedContent, getContentFast, getDefaultSources } from '@content/content-store';
+import { AbilityBlock } from '@typing/content';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
 export function meetsPrerequisites(
@@ -61,6 +65,9 @@ function determineFinalResult(meetMap: Map<string, PrereqMet>): PrereqMet {
 
 function meetPreq(id: StoreID, prereq: string): PrereqMet {
   let result: PrereqMet = null;
+
+  result = checkForSpecificText(id, prereq);
+  if (result) return result;
 
   result = checkForProf(id, prereq);
   if (result) return result;
@@ -165,7 +172,12 @@ function checkForProf(id: StoreID, prereq: string): PrereqMet {
     const variable = findVariable<VariableProf>(id, 'prof', prof);
 
     if (!variable) {
-      return 'UNKNOWN';
+      const r = handleDynamicProfCheck(id, profType, prof.trim());
+      if (r) {
+        return r;
+      } else {
+        return 'UNKNOWN';
+      }
     }
 
     return maxProficiencyType(compileProficiencyType(variable.value), profType) ===
@@ -221,4 +233,60 @@ function checkForClassFeature(id: StoreID, prereq: string): PrereqMet {
   return (getVariable(id, 'CLASS_FEATURE_NAMES')!.value as string[]).includes(prereq.toUpperCase())
     ? 'FULLY'
     : 'UNKNOWN';
+}
+
+function checkForSpecificText(id: StoreID, prereq: string): PrereqMet {
+  // TODO, Add more specific text checks as needed
+
+  return null;
+}
+
+function handleDynamicProfCheck(id: StoreID, profType: ProficiencyType, text: string): PrereqMet {
+  // Check for "at least one skill"
+  if (text === 'at least one skill') {
+    for (const skill of getAllSkillVariables(id)) {
+      const skillProf = compileProficiencyType(skill.value);
+
+      const meetsProf = maxProficiencyType(skillProf, profType) === skillProf;
+      if (meetsProf) {
+        return 'FULLY';
+      }
+    }
+    return 'NOT';
+  }
+
+  // Check for "a skill with the Recall Knowledge action"
+  if (text === 'a skill with the Recall Knowledge action') {
+    const recallKnowledge = getCachedContent<AbilityBlock>('ability-block').find(
+      (ab) => ab.type === 'action' && ab.name === 'Recall Knowledge'
+    );
+    if (recallKnowledge && recallKnowledge.meta_data?.skill) {
+      const skills = (
+        Array.isArray(recallKnowledge.meta_data.skill)
+          ? recallKnowledge.meta_data.skill
+          : [recallKnowledge.meta_data.skill]
+      ).map((s) => s.toLowerCase());
+
+      for (const skill of getAllSkillVariables(id)) {
+        if (
+          // Must be a skill listed in the Recall Knowledge action
+          !skills.includes(variableToLabel(skill).toLowerCase()) &&
+          // Or any skill with Lore in the name
+          !skill.name.toLowerCase().includes('lore')
+        ) {
+          continue;
+        }
+
+        const skillProf = compileProficiencyType(skill.value);
+
+        const meetsProf = maxProficiencyType(skillProf, profType) === skillProf;
+        if (meetsProf) {
+          return 'FULLY';
+        }
+      }
+      return 'NOT';
+    }
+  }
+
+  return null;
 }

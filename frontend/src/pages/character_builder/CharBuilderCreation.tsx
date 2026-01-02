@@ -26,7 +26,7 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
-import { useElementSize, useHover, useInterval, useMergedRef } from '@mantine/hooks';
+import { useElementSize, useHover, useInterval, useMediaQuery, useMergedRef } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { getChoiceCounts } from '@operations/choice-count-tracker';
 import { OperationResult } from '@typing/operations';
@@ -48,6 +48,7 @@ import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import useCharacter from '@utils/use-character';
+import { phoneQuery } from '@utils/mobile-responsive';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 1500;
@@ -122,6 +123,7 @@ export function CharBuilderCreationInner(props: {
   onFinishLoading: () => void;
 }) {
   const isMobile = isCharacterBuilderMobile();
+  const isPhone = useMediaQuery(phoneQuery());
   const [statPanelOpened, setStatPanelOpened] = useState(false);
 
   const [levelItemValue, setLevelItemValue] = useState<string | null>(null);
@@ -148,7 +150,7 @@ export function CharBuilderCreationInner(props: {
   });
 
   return (
-    <Group gap={0}>
+    <Group gap={0} px={isMobile ? undefined : 'sm'}>
       {isMobile ? (
         <Drawer
           opened={statPanelOpened}
@@ -166,10 +168,10 @@ export function CharBuilderCreationInner(props: {
           <CharacterStatSidebar content={props.content} pageHeight={props.pageHeight} />
         </Box>
       )}
-      <Box style={{ flexBasis: isMobile ? '100%' : '64%' }}>
+      <Box style={{ flexBasis: isMobile ? '100%' : '65%' }}>
         {isMobile && (
           <>
-            <Group justify='space-between' align='flex-start' wrap='nowrap'>
+            <Group px='sm' justify='space-between' align='flex-start' wrap='nowrap'>
               <CharacterInfo
                 character={character}
                 hideImage
@@ -300,10 +302,10 @@ export function CharBuilderCreationInner(props: {
                 Stats
               </Button>
             </Group>
-            <Divider pb={5} />
+            <Divider mt={5} />
           </>
         )}
-        <ScrollArea h={props.pageHeight + (isMobile ? -100 : 0)} pr={14} scrollbars='y'>
+        <ScrollArea h={props.pageHeight + (isMobile ? -100 : 0)} type={isPhone ? 'never' : undefined} scrollbars='y'>
           <Accordion
             value={levelItemValue}
             onChange={setLevelItemValue}
@@ -320,6 +322,9 @@ export function CharBuilderCreationInner(props: {
               item: {
                 marginTop: 0,
                 marginBottom: 5,
+              },
+              content: {
+                paddingInline: isPhone ? 0 : undefined,
               },
             }}
           >
