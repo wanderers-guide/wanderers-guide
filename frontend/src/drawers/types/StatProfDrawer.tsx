@@ -107,7 +107,7 @@ export function StatProfDrawerContent(props: { data: { id: StoreID; variableName
 
   return (
     <Box>
-      <Accordion variant='separated' defaultValue=''>
+      <Accordion variant='separated' defaultValue='description'>
         <Accordion.Item value='description'>
           <Accordion.Control icon={<IconBlockquote size='1rem' />}>Description</Accordion.Control>
           <Accordion.Panel>

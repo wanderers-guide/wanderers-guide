@@ -90,7 +90,8 @@ export function Component() {
                 // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
                 backgroundColor: theme.colors.dark[8] + 'D3',
                 position: 'absolute',
-                bottom: -80,
+                bottom: -100,
+                marginBottom: 20,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 visibility: active === 2 ? 'hidden' : 'visible',
@@ -167,7 +168,7 @@ export function Component() {
                 icon={<IconHome style={stepIconStyle} />}
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight} scrollbars='y' px='sm'>
+                <ScrollArea h={pageHeight} scrollbars='y' px='sm' overscrollBehavior='auto'>
                   {active === 0 && character && !isLoading ? (
                     <CharBuilderHome characterId={character.id} pageHeight={pageHeight} />
                   ) : (
@@ -186,7 +187,7 @@ export function Component() {
                 icon={<IconHammer style={stepIconStyle} />}
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight} scrollbars='y'>
+                <ScrollArea h={pageHeight} scrollbars='y' overscrollBehavior='auto'>
                   {active === 1 && character && !isLoading ? (
                     <CharBuilderCreation characterId={character.id} pageHeight={pageHeight} />
                   ) : (
