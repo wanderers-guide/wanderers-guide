@@ -24,9 +24,8 @@ export default function PathbuilderInputModal(props: {
         />
 
         <Text fs='italic' fz='sm'>
-          Warning, due to differing file structure, missing export data, and some names being changed because
-          Pathbuilder doesn't follow Paizo's Community Use Policy, your imported character may be missing some
-          selections.
+          Warning: Some selections may be missing after import. This can occur due to incomplete export data and name
+          changes due to Pathbuilder not complying with Paizo’s Community Use Policy.
         </Text>
 
         <Group justify='flex-end'>
