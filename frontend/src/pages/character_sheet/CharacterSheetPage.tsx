@@ -200,8 +200,8 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 <>
                   <HealthSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <ConditionSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
-                  <ArmorSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <AttributeSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
+                  <ArmorSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                   <SpeedSection id='CHARACTER' entity={character} setEntity={convertToSetEntity(setCharacter)} />
                 </>
               )}
