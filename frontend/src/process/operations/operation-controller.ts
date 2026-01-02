@@ -442,7 +442,7 @@ export async function _executeCharacterOperations(data: {
               id: `22879f23-5c21-4845-9af0-ae6d8f577601-${index}`,
               type: 'addBonusToValue',
               data: {
-                variable: 'ATTACK_ROLLS_BONUS',
+                variable: 'NON_SPELL_ATTACK_ROLLS_BONUS',
                 text: '',
                 value: `+${bonus}`,
                 type: 'potency',

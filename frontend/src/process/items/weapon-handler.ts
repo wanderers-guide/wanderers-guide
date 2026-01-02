@@ -191,6 +191,7 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
   const dexAttackBonus = getFinalVariableValue(id, 'DEX_ATTACK_ROLLS_BONUS').total;
   const strAttackBonus = getFinalVariableValue(id, 'STR_ATTACK_ROLLS_BONUS').total;
   const meleeAttackBonus = getFinalVariableValue(id, 'MELEE_ATTACK_ROLLS_BONUS').total;
+  const nonSpellAttackBonus = getFinalVariableValue(id, 'NON_SPELL_ATTACK_ROLLS_BONUS').total;
   const extraItemBonus = item.meta_data?.attack_bonus ?? 0;
 
   const hasFinesse = hasTraitType('FINESSE', itemTraits);
@@ -245,6 +246,10 @@ function getMeleeAttackBonus(id: StoreID, item: Item) {
 
   if (meleeAttackBonus) {
     parts.set('This is a bonus you receive to melee attack rolls.', meleeAttackBonus);
+  }
+
+  if (nonSpellAttackBonus) {
+    parts.set('This is a bonus you receive to non-spell attack rolls.', nonSpellAttackBonus);
   }
 
   if (extraItemBonus) {
@@ -393,6 +398,7 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
   const dexAttackDamage = getFinalVariableValue(id, 'DEX_ATTACK_DAMAGE_BONUS').total;
   const strAttackDamage = getFinalVariableValue(id, 'STR_ATTACK_DAMAGE_BONUS').total;
   const meleeAttackDamage = getFinalVariableValue(id, 'MELEE_ATTACK_DAMAGE_BONUS').total;
+  const nonSpellAttackDamage = getFinalVariableValue(id, 'NON_SPELL_ATTACK_DAMAGE_BONUS').total;
 
   const hasSplash = hasTraitType('SPLASH', itemTraits);
   const hasFinesse = hasTraitType('FINESSE', itemTraits);
@@ -445,6 +451,10 @@ function getMeleeAttackDamage(id: StoreID, item: Item) {
 
   if (meleeAttackDamage) {
     parts.set('This is a bonus you receive to damage for melee attacks.', meleeAttackDamage);
+  }
+
+  if (nonSpellAttackDamage) {
+    parts.set('This is a bonus you receive to damage for non-spell attacks.', nonSpellAttackDamage);
   }
 
   // Weapon Specialization
