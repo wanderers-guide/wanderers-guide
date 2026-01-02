@@ -78,29 +78,34 @@ export function Component() {
       <Box maw={800} w='100%' pb='sm'>
         <Stack style={{ position: 'relative' }}>
           {isCharacterBuilderMobile() ? (
-            <ActionIcon
-              variant='filled'
-              color='gray'
-              aria-label='Next Page'
-              radius={60}
-              size={60}
+            <Box
               style={{
-                backdropFilter: `blur(8px)`,
-                WebkitBackdropFilter: `blur(8px)`,
-                // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-                backgroundColor: theme.colors.dark[8] + 'D3',
                 position: 'absolute',
                 bottom: -100,
-                marginBottom: 20,
+                paddingBottom: 20,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 visibility: active === 2 ? 'hidden' : 'visible',
               }}
-              onClick={() => handleStepChange(active + 1)}
-              disabled={active === 1 && !isPlayable(character)}
             >
-              <IconArrowRight size='1.7rem' stroke={2} />
-            </ActionIcon>
+              <ActionIcon
+                variant='filled'
+                color='gray'
+                aria-label='Next Page'
+                radius={60}
+                size={60}
+                style={{
+                  backdropFilter: `blur(8px)`,
+                  WebkitBackdropFilter: `blur(8px)`,
+                  // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
+                  backgroundColor: theme.colors.dark[8] + 'D3',
+                }}
+                onClick={() => handleStepChange(active + 1)}
+                disabled={active === 1 && !isPlayable(character)}
+              >
+                <IconArrowRight size='1.7rem' stroke={2} />
+              </ActionIcon>
+            </Box>
           ) : (
             <>
               <ActionIcon
