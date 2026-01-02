@@ -4,6 +4,19 @@
   --_text-line-height: 1.75;
 }
 
+@media print {
+  :root {
+    --bg: #fff;
+    --fg: #000;
+  }
+
+  body {
+    background: var(--bg) !important;
+    color: var(--fg) !important;
+    filter: none !important;
+  }
+}
+
 @font-face {
   font-family: 'ActionIcons';
   src: url('./assets/fonts/Pathfinder2eActions.ttf') format('truetype');
