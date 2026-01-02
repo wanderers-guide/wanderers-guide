@@ -677,6 +677,38 @@ export async function _executeCharacterOperations(data: {
     classFeatures = [...classFeatures, ...abpSections];
   }
 
+  // Organized Play
+  if (character.options?.organized_play) {
+    const finderType = playingStarfinder(character) ? 'Starfinder' : 'Pathfinder';
+    classFeatures.push({
+      id: hashData({ name: 'organized-play_society-lore' }),
+      created_at: '',
+      operations: [
+        {
+          id: 'd4b56b75-54d2-48e7-887d-08f0336a1f3f',
+          type: 'createValue',
+          data: {
+            variable: `SKILL_LORE_${finderType.toUpperCase()}_SOCIETY`,
+            value: { value: 'U', attribute: 'ATTRIBUTE_INT', increases: 0 },
+            type: 'prof',
+          },
+        },
+        {
+          id: '1025504f-8f2e-48ce-b338-ceb6d71743w9',
+          type: 'adjValue',
+          data: { variable: `SKILL_LORE_${finderType.toUpperCase()}_SOCIETY`, value: { value: 'T' } },
+        },
+      ],
+      name: `${finderType} Society`,
+      actions: null,
+      level: 1,
+      rarity: 'COMMON',
+      description: `All ${finderType} Society characters get free training in ${finderType} Society Lore (sometimes referred to as ${finderType} Lore).`,
+      type: 'class-feature',
+      content_source_id: -1,
+    } satisfies AbilityBlock);
+  }
+
   //
 
   const operationsPassthrough = async (options?: OperationOptions) => {
