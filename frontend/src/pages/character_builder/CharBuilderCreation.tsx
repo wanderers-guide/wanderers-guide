@@ -293,13 +293,13 @@ export function CharBuilderCreationInner(props: {
               />
               <Button
                 leftSection={<IconId size={14} />}
-                variant='light'
+                variant='subtle'
                 size='xs'
                 onClick={() => {
                   setStatPanelOpened((prev) => !prev);
                 }}
               >
-                Stats
+                Preview
               </Button>
             </Group>
             <Divider mt={5} />
