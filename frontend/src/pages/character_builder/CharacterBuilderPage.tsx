@@ -173,7 +173,7 @@ export function Component() {
                 icon={<IconHome style={stepIconStyle} />}
                 completedIcon={<IconHome style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight} scrollbars='y' px='sm' overscrollBehavior='auto'>
+                <Box mih={pageHeight} px='sm'>
                   {active === 0 && character && !isLoading ? (
                     <CharBuilderHome characterId={character.id} pageHeight={pageHeight} />
                   ) : (
@@ -184,7 +184,7 @@ export function Component() {
                       loaderProps={{ type: 'bars' }}
                     />
                   )}
-                </ScrollArea>
+                </Box>
               </Stepper.Step>
               <Stepper.Step
                 label='Builder'
@@ -192,7 +192,7 @@ export function Component() {
                 icon={<IconHammer style={stepIconStyle} />}
                 completedIcon={<IconHammer style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight} scrollbars='y' overscrollBehavior='auto'>
+                <Box mih={pageHeight}>
                   {active === 1 && character && !isLoading ? (
                     <CharBuilderCreation characterId={character.id} pageHeight={pageHeight} />
                   ) : (
@@ -203,7 +203,7 @@ export function Component() {
                       loaderProps={{ type: 'bars' }}
                     />
                   )}
-                </ScrollArea>
+                </Box>
               </Stepper.Step>
               <Stepper.Step
                 label='Sheet'
@@ -211,9 +211,9 @@ export function Component() {
                 icon={<IconUser style={stepIconStyle} />}
                 completedIcon={<IconUser style={stepIconStyle} />}
               >
-                <ScrollArea h={pageHeight} scrollbars='y'>
+                <Box mih={pageHeight}>
                   <Text ta='center'>Redirecting to sheet...</Text>
-                </ScrollArea>
+                </Box>
               </Stepper.Step>
 
               <Stepper.Completed>
