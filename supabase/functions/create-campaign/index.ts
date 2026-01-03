@@ -50,6 +50,15 @@ serve(async (req: Request) => {
       }
     }
 
+    // Generate join key for new campaigns
+    let join_key: string | undefined = undefined;
+    if (!id || id === -1) {
+      join_key =
+        Math.random().toString(36).substring(2, 8) +
+        '-' +
+        Math.random().toString(36).substring(2, 8);
+    }
+
     const { procedure, result } = await upsertData<Campaign>(client, 'campaign', {
       id,
       user_id: user.user_id,
@@ -61,6 +70,7 @@ serve(async (req: Request) => {
       recommended_variants,
       custom_operations,
       meta_data,
+      join_key,
     });
 
     return upsertResponseWrapper(procedure, result);

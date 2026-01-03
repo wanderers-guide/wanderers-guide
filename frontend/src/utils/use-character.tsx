@@ -260,6 +260,7 @@ export default function useCharacter(
       operation_data: debouncedCharacter.operation_data,
       spells: debouncedCharacter.spells,
       companions: debouncedCharacter.companions,
+      campaign_id: debouncedCharacter.campaign_id,
     });
   }, [debouncedCharacter]);
   const { mutate: mutateCharacter } = useMutation({
