@@ -1,5 +1,3 @@
-import { characterState } from '@atoms/characterAtoms';
-import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import TokenSelect from '@common/TokenSelect';
 import { collectEntitySpellcasting } from '@content/collect-content';
@@ -8,7 +6,6 @@ import {
   Accordion,
   ActionIcon,
   Box,
-  CloseButton,
   Group,
   HoverCard,
   ScrollArea,
@@ -33,9 +30,8 @@ import {
   Trait,
 } from '@typing/content';
 import useRefresh from '@utils/use-refresh';
-import * as JsSearch from 'js-search';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
+import { useEffect, useMemo, useState } from 'react';
+import { SetterOrUpdater } from 'recoil';
 import FocusSpellsList from './spells_list/FocusSpellsList';
 import InnateSpellsList from './spells_list/InnateSpellsList';
 import PreparedSpellsList from './spells_list/PreparedSpellsList';
@@ -48,7 +44,7 @@ import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { groupBy } from 'lodash-es';
 import { phoneQuery } from '@utils/mobile-responsive';
-import { useMediaQuery } from '@mantine/hooks';
+import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
 
 export default function SpellsPanel(props: {
   id: StoreID;
@@ -61,7 +57,7 @@ export default function SpellsPanel(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
   const [searchQuery, setSearchQuery] = useState('');
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
   const [manageSpells, setManageSpells] = useState<
     | {
         source: string;
@@ -89,34 +85,43 @@ export default function SpellsPanel(props: {
     return collectEntitySpellcasting(props.id, props.entity);
   }, [props.entity]);
 
-  // Filter options based on search query
-  const search = useRef(new JsSearch.Search('id'));
-  useEffect(() => {
-    if (!spells) return;
-    search.current.addIndex('name');
-    search.current.addIndex('description');
-    search.current.addIndex('duration');
-    search.current.addIndex('targets');
-    search.current.addIndex('area');
-    search.current.addIndex('range');
-    search.current.addIndex('requirements');
-    search.current.addIndex('trigger');
-    search.current.addIndex('cost');
-    search.current.addIndex('defense');
-    search.current.addIndex('rarity');
-    search.current.addIndex('_traitsNames');
-    search.current.addDocuments(
-      spells.map((s) => ({
-        ...s,
-        _traitsNames: getContentFast<Trait>('trait', s.traits ?? []).map((t) => t.name),
-      }))
-    );
-  }, [spells]);
-
   // Filter spells by action cost
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
 
-  const searchSpells = searchQuery.trim() ? (search.current?.search(searchQuery.trim()) as Spell[]) : (spells ?? []);
+  const searchSpells = useMemo(() => {
+    // Filter spells
+    return searchQueryDebounced.trim() || actionTypeFilter !== 'ALL'
+      ? (spells ?? []).filter((s) => {
+          // Custom search, alt could be to use JsSearch here
+          const query = searchQueryDebounced.trim().toLowerCase();
+
+          const checkSpell = (spell: Spell) => {
+            if (actionTypeFilter !== 'ALL') return false;
+
+            const searchStr = JSON.stringify({
+              _: spell.name,
+              __: spell.duration,
+              ___: spell.targets,
+              ____: spell.area,
+              _____: spell.range,
+              ______: spell.requirements,
+              _______: spell.trigger,
+              ________: spell.cost,
+              _________: spell.defense,
+              __________: spell.cast,
+              ___________: spell.rarity,
+              _____________: getContentFast<Trait>('trait', spell.traits ?? []).map((t) => t.name),
+            }).toLowerCase();
+
+            return searchStr.includes(query);
+          };
+
+          if (checkSpell(s)) return true;
+          return false;
+        })
+      : (spells ?? []);
+  }, [spells, actionTypeFilter, searchQueryDebounced]);
+
   const allSpells = searchSpells.filter((spell) => spell.cast === actionTypeFilter || actionTypeFilter === 'ALL');
   const hasFilters = searchQuery.trim().length > 0 || actionTypeFilter !== 'ALL';
 

@@ -1,12 +1,6 @@
 import D20Loader from '@assets/images/D20Loader';
-import { characterState } from '@atoms/characterAtoms';
 import BlurBox from '@common/BlurBox';
-import {
-  defineDefaultSources,
-  fetchContentPackage,
-  fetchContentSources,
-  getDefaultSources,
-} from '@content/content-store';
+import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 
 import {
   ActionIcon,
@@ -22,7 +16,7 @@ import {
   rem,
   useMantineTheme,
 } from '@mantine/core';
-import { useDebouncedValue, useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
+import { useElementSize, useHover, useInterval, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import {
   IconBackpack,
@@ -40,8 +34,8 @@ import {
   IconShadow,
   IconX,
 } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character, ContentPackage, Inventory, LivingEntity } from '@typing/content';
+import { useQuery } from '@tanstack/react-query';
+import { Character, ContentPackage, LivingEntity } from '@typing/content';
 import { VariableListStr } from '@typing/variables';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
@@ -49,7 +43,7 @@ import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { SetterOrUpdater } from 'recoil';
 import CompanionsPanel from './panels/CompanionsPanel';
 import DetailsPanel from './panels/DetailsPanel';
 import ExtrasPanel from './panels/ExtrasPanel';
@@ -70,6 +64,7 @@ import ModesDrawer from '@common/modes/ModesDrawer';
 import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 import useCharacter from '@utils/use-character';
 import { getAnchorStyles } from '@utils/anchor';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -572,6 +567,16 @@ function SectionPanels(props: {
       </Box>
     );
   } else {
+    const panelMotion = {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 1 },
+      transition: {
+        duration: 0.12,
+        ease: 'easeOut',
+      },
+    };
+
     return (
       <Box>
         <BlurBox
@@ -711,60 +716,92 @@ function SectionPanels(props: {
             </Tabs.List>
 
             <Tabs.Panel value='skills-actions'>
-              <SkillsActionsPanel
-                id='CHARACTER'
-                entity={props.entity}
-                setEntity={props.setEntity}
-                content={props.content}
-                panelHeight={props.panelHeight}
-                panelWidth={props.panelWidth}
-              />
+              <AnimatePresence mode='wait'>
+                <motion.div key='skills-actions' {...panelMotion}>
+                  <SkillsActionsPanel
+                    id='CHARACTER'
+                    entity={props.entity}
+                    setEntity={props.setEntity}
+                    content={props.content}
+                    panelHeight={props.panelHeight}
+                    panelWidth={props.panelWidth}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='inventory'>
-              <InventoryPanel
-                id='CHARACTER'
-                entity={props.entity}
-                setEntity={props.setEntity}
-                content={props.content}
-                panelHeight={props.panelHeight}
-                panelWidth={props.panelWidth}
-              />
+              <AnimatePresence mode='wait'>
+                <motion.div key='inventory' {...panelMotion}>
+                  <InventoryPanel
+                    id='CHARACTER'
+                    entity={props.entity}
+                    setEntity={props.setEntity}
+                    content={props.content}
+                    panelHeight={props.panelHeight}
+                    panelWidth={props.panelWidth}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='spells'>
-              <SpellsPanel
-                panelHeight={props.panelHeight}
-                panelWidth={props.panelWidth}
-                id={'CHARACTER'}
-                entity={props.entity}
-                setEntity={props.setEntity}
-              />
+              <AnimatePresence mode='wait'>
+                <motion.div key='spells' {...panelMotion}>
+                  <SpellsPanel
+                    panelHeight={props.panelHeight}
+                    panelWidth={props.panelWidth}
+                    id={'CHARACTER'}
+                    entity={props.entity}
+                    setEntity={props.setEntity}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='feats-features'>
-              <FeatsFeaturesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+              <AnimatePresence mode='wait'>
+                <motion.div key='feats-features' {...panelMotion}>
+                  <FeatsFeaturesPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='companions'>
-              <CompanionsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+              <AnimatePresence mode='wait'>
+                <motion.div key='companions' {...panelMotion}>
+                  <CompanionsPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='details'>
-              <DetailsPanel content={props.content} panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+              <AnimatePresence mode='wait'>
+                <motion.div key='details' {...panelMotion}>
+                  <DetailsPanel content={props.content} panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='notes'>
-              <NotesPanel
-                panelHeight={props.panelHeight}
-                panelWidth={props.panelWidth}
-                entity={props.entity}
-                setEntity={props.setEntity}
-              />
+              <AnimatePresence mode='wait'>
+                <motion.div key='notes' {...panelMotion}>
+                  <NotesPanel
+                    panelHeight={props.panelHeight}
+                    panelWidth={props.panelWidth}
+                    entity={props.entity}
+                    setEntity={props.setEntity}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
 
             <Tabs.Panel value='extras'>
-              <ExtrasPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+              <AnimatePresence mode='wait'>
+                <motion.div key='extras' {...panelMotion}>
+                  <ExtrasPanel panelHeight={props.panelHeight} panelWidth={props.panelWidth} />
+                </motion.div>
+              </AnimatePresence>
             </Tabs.Panel>
           </Tabs>
         </BlurBox>
