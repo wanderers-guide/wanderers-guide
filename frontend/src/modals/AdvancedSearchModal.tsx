@@ -40,11 +40,11 @@ import {
   Size,
 } from '@typing/content';
 import { DrawerType } from '@typing/index';
-import { Operation } from '@typing/operations';
 import { actionCostToLabel } from '@utils/actions';
 import { displayError } from '@utils/notifications';
 import { hashData } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
+import { uniq } from 'lodash-es';
 import { useEffect, useMemo, useState } from 'react';
 import { useRecoilState } from 'recoil';
 
@@ -994,7 +994,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                       placeholder='Select books'
                       splitChars={[',', ';', '|']}
                       // Store names for easier selection
-                      data={contentSourcesCached.map((source) => source.name)}
+                      data={uniq(contentSourcesCached.map((source) => source.name))}
                       value={
                         // Map IDs to names
                         convertContentSources(filters.content_sources)
