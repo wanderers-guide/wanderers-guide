@@ -81,7 +81,7 @@ const traitMap: Record<number, TraitType> = {
   1504: 'MAGICAL',
   1546: 'STAFF',
   1665: 'WAND',
-  3668: 'ARCHAIC',
+  4667: 'ARCHAIC',
   3677: 'TECH',
   3672: 'ANALOG',
   3673: 'TRACKING-1',
