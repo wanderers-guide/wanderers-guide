@@ -73,6 +73,7 @@ export function Component() {
 
   const changedFields = useMemo(() => {
     if (!data || !data.originalContent) return [];
+    console.log(data);
     const original = data.originalContent;
     const updated = data.contentUpdate.data ?? {};
 
@@ -83,7 +84,9 @@ export function Component() {
 
       if (key === 'meta_data') {
         for (const metaKey of Object.keys(updated.meta_data ?? {})) {
-          if (JSON.stringify(original.meta_data[metaKey] ?? '') !== JSON.stringify(updated.meta_data[metaKey] ?? '')) {
+          if (
+            JSON.stringify(original?.meta_data?.[metaKey] ?? '') !== JSON.stringify(updated?.meta_data?.[metaKey] ?? '')
+          ) {
             changedFields.push(metaKey);
           }
         }
