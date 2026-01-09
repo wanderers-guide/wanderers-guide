@@ -79,7 +79,7 @@ export default function SpontaneousSpellsList(props: {
 
   const highestRank = Object.keys(slots || {}).reduce((acc, rank) => (parseInt(rank) > acc ? parseInt(rank) : acc), 0);
   // If there are no spells to display, and there are filters, return null
-  if (props.hasFilters && slots && Object.keys(slots).filter((rank) => slots[rank].find((s) => s.spell)).length === 0) {
+  if (props.hasFilters && spells && !Object.keys(spells).find((rank) => spells[rank].length > 0)) {
     return null;
   }
 

@@ -38,8 +38,9 @@ import PreparedSpellsList from './spells_list/PreparedSpellsList';
 import RitualSpellsList from './spells_list/RitualSpellsList';
 import SpontaneousSpellsList from './spells_list/SpontaneousSpellsList';
 import StaffSpellsList from './spells_list/StaffSpellsList';
-import { filterByTraitType } from '@items/inv-utils';
 import WandSpellsList from './spells_list/WandSpellsList';
+import SpellheartSpellsList from './spells_list/SpellheartSpellsList';
+import { filterByTraitType } from '@items/inv-utils';
 import { StoreID } from '@typing/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { groupBy } from 'lodash-es';
@@ -309,6 +310,20 @@ export default function SpellsPanel(props: {
                   spellIds={[]}
                   allSpells={allSpells}
                   type='WAND'
+                  hasFilters={hasFilters}
+                  extra={{ charData: charData }}
+                />
+              )}
+              {filterByTraitType(props.entity?.inventory?.items ?? [], 'SPELLHEART').length > 0 && (
+                <SpellList
+                  id={props.id}
+                  entity={props.entity}
+                  setEntity={props.setEntity}
+                  //
+                  index={'spellheart'}
+                  spellIds={[]}
+                  allSpells={allSpells}
+                  type='SPELLHEART'
                   hasFilters={hasFilters}
                   extra={{ charData: charData }}
                 />
@@ -742,6 +757,17 @@ function SpellList(props: {
       <WandSpellsList
         {...props}
         wands={filterByTraitType(props.entity?.inventory?.items ?? [], 'WAND')}
+        entity={props.entity}
+        setEntity={props.setEntity}
+      />
+    );
+  }
+
+  if (props.type === 'SPELLHEART' && props.entity) {
+    return (
+      <SpellheartSpellsList
+        {...props}
+        spellhearts={filterByTraitType(props.entity?.inventory?.items ?? [], 'SPELLHEART')}
         entity={props.entity}
         setEntity={props.setEntity}
       />

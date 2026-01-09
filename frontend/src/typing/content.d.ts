@@ -93,7 +93,7 @@ interface CastingSource {
   attribute: string;
 }
 
-type SpellSectionType = 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF' | 'WAND';
+type SpellSectionType = 'PREPARED' | 'SPONTANEOUS' | 'FOCUS' | 'INNATE' | 'RITUAL' | 'STAFF' | 'WAND' | 'SPELLHEART';
 
 interface Trait {
   id: number;
