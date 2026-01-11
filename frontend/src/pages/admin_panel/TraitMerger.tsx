@@ -1,5 +1,15 @@
 import BlurBox from '@common/BlurBox';
-import { deleteContent, upsertAbilityBlock, upsertCreature, upsertItem, upsertSpell } from '@content/content-creation';
+import {
+  deleteContent,
+  upsertAbilityBlock,
+  upsertAncestry,
+  upsertArchetype,
+  upsertClass,
+  upsertCreature,
+  upsertItem,
+  upsertSpell,
+  upsertVersatileHeritage,
+} from '@content/content-creation';
 import { fetchContentSources, defineDefaultSources, fetchContentPackage } from '@content/content-store';
 import { Center, Group, Title, Select, Button, List, Stack } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
@@ -144,6 +154,53 @@ async function mergeTraits(removeTraitId: number, mergeTraitId: number, content:
       }
       console.log('Updating spell', spell.id, spell.name, spell.traits);
       await upsertSpell(spell);
+    }
+  }
+
+  // If the trait is used in a class, ancestry, archetype, or v heritage, replace it too
+  for (const class_ of content.classes) {
+    if (class_.trait_id === removeTraitId) {
+      class_.trait_id = mergeTraitId;
+      console.log('Updating class', class_.id, class_.name, class_.trait_id);
+      await upsertClass(class_);
+    }
+  }
+  for (const ancestry of content.ancestries) {
+    if (ancestry.trait_id === removeTraitId) {
+      ancestry.trait_id = mergeTraitId;
+      console.log('Updating ancestry', ancestry.id, ancestry.name, ancestry.trait_id);
+      await upsertAncestry(ancestry);
+    }
+  }
+  for (const archetype of content.archetypes) {
+    if (archetype.trait_id === removeTraitId) {
+      archetype.trait_id = mergeTraitId;
+      console.log('Updating archetype', archetype.id, archetype.name, archetype.trait_id);
+      await upsertArchetype(archetype);
+    }
+  }
+  for (const vHeritage of content.versatileHeritages) {
+    if (vHeritage.trait_id === removeTraitId) {
+      vHeritage.trait_id = mergeTraitId;
+      console.log('Updating versatile heritage', vHeritage.id, vHeritage.name, vHeritage.trait_id);
+      await upsertVersatileHeritage(vHeritage);
+    }
+  }
+
+  // Update creatures that give the trait
+  for (const creature of content.creatures) {
+    let updatedTrait = false;
+    for (const op of creature.operations ?? []) {
+      if (op.type === 'giveTrait') {
+        if (op.data.traitId === removeTraitId) {
+          op.data.traitId = mergeTraitId;
+          updatedTrait = true;
+        }
+      }
+    }
+    if (updatedTrait) {
+      console.log('Updating creature', creature.id, creature.name);
+      await upsertCreature(creature);
     }
   }
 
