@@ -11,15 +11,27 @@ import type { Ancestry, Trait } from '../_shared/content';
 
 serve(async (req: Request) => {
   return await connect(req, async (client, body) => {
-    let { id, name, rarity, description, operations, artwork_url, content_source_id, version } =
-      body as Ancestry;
+    let {
+      id,
+      name,
+      rarity,
+      description,
+      operations,
+      artwork_url,
+      trait_id,
+      content_source_id,
+      version,
+    } = body as Ancestry;
 
-    const trait_id = await handleAssociatedTrait(client, id, 'ancestry', name, content_source_id);
-    if (!trait_id) {
-      return {
-        status: 'error',
-        message: 'Trait could not be created.',
-      };
+    let traitId: number | null = trait_id ?? null;
+    if (!traitId) {
+      traitId = await handleAssociatedTrait(client, id, 'ancestry', name, content_source_id);
+      if (!traitId) {
+        return {
+          status: 'error',
+          message: 'Trait could not be created.',
+        };
+      }
     }
 
     const { procedure, result } = await upsertData<Ancestry>(client, 'ancestry', {
@@ -28,7 +40,7 @@ serve(async (req: Request) => {
       rarity,
       description,
       operations,
-      trait_id,
+      trait_id: traitId,
       artwork_url,
       content_source_id,
       version,

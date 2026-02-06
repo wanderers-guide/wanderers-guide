@@ -755,6 +755,17 @@ export async function _executeCharacterOperations(data: {
       // Add class to variables
       adjVariable('CHARACTER', 'CLASS_IDS', `${class_.id}`, undefined);
       adjVariable('CHARACTER', 'CLASS_NAMES', class_.name.toUpperCase(), undefined);
+
+      // Add class archetype to variables
+      if (character.details?.class_archetype) {
+        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_IDS', `${character.details.class_archetype.id}`, undefined);
+        adjVariable(
+          'CHARACTER',
+          'CLASS_ARCHETYPE_NAMES',
+          character.details.class_archetype.name.toUpperCase(),
+          undefined
+        );
+      }
     }
 
     let class2Results: OperationResult[] = [];
@@ -777,6 +788,17 @@ export async function _executeCharacterOperations(data: {
       // Add class to variables
       adjVariable('CHARACTER', 'CLASS_IDS', `${class_2.id}`, undefined);
       adjVariable('CHARACTER', 'CLASS_NAMES', class_2.name.toUpperCase(), undefined);
+
+      // Add class archetype to variables
+      if (character.details?.class_archetype_2) {
+        adjVariable('CHARACTER', 'CLASS_ARCHETYPE_IDS', `${character.details.class_archetype_2.id}`, undefined);
+        adjVariable(
+          'CHARACTER',
+          'CLASS_ARCHETYPE_NAMES',
+          character.details.class_archetype_2.name.toUpperCase(),
+          undefined
+        );
+      }
     }
 
     let ancestryResults: OperationResult[] = [];

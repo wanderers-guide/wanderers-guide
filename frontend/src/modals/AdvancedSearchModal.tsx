@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+import { characterState } from '@atoms/characterAtoms';
 import { drawerState } from '@atoms/navAtoms';
 import ActionsInput from '@common/ActionsInput';
 import { SelectionOptionsInner } from '@common/select/SelectContent';
@@ -24,12 +25,14 @@ import {
   Center,
   ActionIcon,
   Box,
+  SegmentedControl,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { makeRequest } from '@requests/request-manager';
 import { IconBoomFilled, IconLineDotted } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import {
+  AbilityBlock,
   AbilityBlockType,
   ActionCost,
   Availability,
@@ -44,9 +47,10 @@ import { actionCostToLabel } from '@utils/actions';
 import { displayError } from '@utils/notifications';
 import { hashData } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
+import { meetsPrerequisites } from '@variables/prereq-detection';
 import { uniq } from 'lodash-es';
 import { useEffect, useMemo, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue } from 'recoil';
 
 export interface FiltersParams {
   type?: ContentType;
@@ -72,6 +76,7 @@ export interface FiltersParams {
   duration?: string;
   actions?: ActionCost;
   prerequisites?: string[];
+  meets_prerequisites?: string;
   frequency?: string;
   access?: string;
   special?: string;
@@ -118,6 +123,8 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
       (source) => convertContentSources(props.presetFilters?.content_sources)?.includes(source.id) ?? true
     )
   );
+  const character = useRecoilValue(characterState);
+
   const zIndex = props.zIndex ?? 500;
 
   const [accordionValue, setAccordionValue] = useState<string | null>('filters');
@@ -223,6 +230,24 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
     if (result) {
       if (f.type === 'ability-block') {
         newData = result.ability_blocks ?? [];
+
+        // Apply prerequisites filter if searching for feats and character is loaded
+        if (character && f.meets_prerequisites && f.meets_prerequisites !== 'Any') {
+          newData = (newData as AbilityBlock[]).filter((item) => {
+            const prereqMet = meetsPrerequisites('CHARACTER', item.prerequisites);
+            if (f.meets_prerequisites === 'Fully') {
+              return prereqMet.result === 'FULLY';
+            } else if (f.meets_prerequisites === 'Probably') {
+              return prereqMet.result === 'FULLY' || prereqMet.result === 'UNKNOWN';
+            } else if (f.meets_prerequisites === 'Partially') {
+              return prereqMet.result === 'PARTIALLY';
+            } else if (f.meets_prerequisites === 'Not Met') {
+              return prereqMet.result === 'NOT';
+            } else {
+              return true;
+            }
+          });
+        }
       } else if (f.type === 'ancestry') {
         newData = result.ancestries ?? [];
       } else if (f.type === 'archetype') {
@@ -795,6 +820,21 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
                       }}
                       disabled={props.presetFilters?.prerequisites !== undefined}
                     />
+                  )}
+                  {character && filters.type === 'ability-block' && ['feat'].includes(filters.ab_type ?? '<!>') && (
+                    <Box>
+                      <Text fz='sm' fw={500} mb={5}>
+                        Meets Prerequisites
+                      </Text>
+                      <SegmentedControl
+                        value={filters.meets_prerequisites}
+                        onChange={(value) => {
+                          updateFilters([{ key: 'meets_prerequisites', value }]);
+                        }}
+                        data={['Any', 'Fully', 'Probably', 'Partially', 'Not Met']}
+                        disabled={props.presetFilters?.prerequisites !== undefined}
+                      />
+                    </Box>
                   )}
                   {filters.type === 'ability-block' &&
                     ['action', 'feat', 'physical-feature'].includes(filters.ab_type ?? '<!>') && (

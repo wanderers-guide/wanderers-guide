@@ -18,16 +18,20 @@ serve(async (req: Request) => {
       description,
       artwork_url,
       content_source_id,
+      trait_id,
       version,
       dedication_feat_id,
     } = body as Archetype;
 
-    const trait_id = await handleAssociatedTrait(client, id, 'archetype', name, content_source_id);
-    if (!trait_id) {
-      return {
-        status: 'error',
-        message: 'Trait could not be created.',
-      };
+    let traitId: number | null = trait_id ?? null;
+    if (!traitId) {
+      traitId = await handleAssociatedTrait(client, id, 'archetype', name, content_source_id);
+      if (!traitId) {
+        return {
+          status: 'error',
+          message: 'Trait could not be created.',
+        };
+      }
     }
 
     const { procedure, result } = await upsertData<Archetype>(client, 'archetype', {
@@ -35,7 +39,7 @@ serve(async (req: Request) => {
       name,
       rarity,
       description,
-      trait_id,
+      trait_id: traitId,
       artwork_url,
       content_source_id,
       version,
