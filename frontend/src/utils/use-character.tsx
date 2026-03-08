@@ -23,6 +23,7 @@ import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
 import { getFinalHealthValue } from '@variables/variable-helpers';
+import { supabase } from '../main';
 
 interface CharStateOptionsGeneric {
   type: string;
@@ -45,6 +46,12 @@ interface CharStateOptionsSimple extends CharStateOptionsGeneric {
 
 type CharStateOptions = CharStateOptionsExecuteOps | CharStateOptionsSimple;
 
+/**
+ * Custom hook to manage character state, including fetching from the database, executing operations, and auto-saving.
+ * @param characterId - The ID of the character to manage
+ * @param options - Options to control the behavior of the hook, such as whether to execute operations and what content/context to use for those operations
+ * @returns - An object containing the character state, a setter for the character, a loading state, and any results from executed operations
+ */
 export default function useCharacter(
   characterId: number,
   options: CharStateOptions
@@ -56,6 +63,7 @@ export default function useCharacter(
   results: OperationCharacterResultPackage | null;
 } {
   const [character, setCharacter] = useRecoilState(characterState);
+  useAutoSave(character, characterId);
 
   const handleFetchedCharacter = (resultCharacter: Character | null | undefined) => {
     if (resultCharacter) {
@@ -95,9 +103,21 @@ export default function useCharacter(
   // Fetch character from db
   useEffect(() => {
     (async () => {
-      const dbCharacter = await makeRequest<Character>('find-character', {
-        id: characterId,
-      });
+      // Before fetching the character, check if there's an autosaved version in localStorage and save it to the database if it exists
+      const key = `autosave-character-${characterId}`;
+      const pending = localStorage.getItem(key);
+      if (pending) {
+        const { token, body } = JSON.parse(pending);
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-character`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        localStorage.removeItem(key);
+      }
+
+      // Now fetch the character from the database to ensure we have the latest version
+      const dbCharacter = await makeRequest<Character>('find-character', { id: characterId });
       handleFetchedCharacter(dbCharacter);
     })();
   }, []);
@@ -322,4 +342,80 @@ export default function useCharacter(
     isLoading: !isFinished,
     results: operationResults ?? null,
   };
+}
+
+/**
+ * Custom hook to auto-save character data to localStorage when the page is closed or hidden, and to sync the auth token with Supabase session
+ * @param character - The character data to auto-save
+ * @param characterId - The ID of the character, used for namespacing the localStorage key
+ * @returns void
+ */
+function useAutoSave(character: Character | null, characterId: number) {
+  const characterRef = useRef(character);
+  const tokenRef = useRef<string>(import.meta.env.VITE_SUPABASE_KEY);
+
+  useEffect(() => {
+    characterRef.current = character;
+  }, [character]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token) tokenRef.current = session.access_token;
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) tokenRef.current = session.access_token;
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const saveImmediately = () => {
+      const c = characterRef.current;
+      if (!c) return;
+      // localStorage.setItem is synchronous — guaranteed to complete even on tab close
+      localStorage.setItem(
+        `autosave-character-${characterId}`,
+        JSON.stringify({
+          token: tokenRef.current,
+          body: {
+            id: characterId,
+            name: c.name,
+            level: c.level,
+            experience: c.experience,
+            hp_current: c.hp_current,
+            hp_temp: c.hp_temp,
+            hero_points: c.hero_points,
+            stamina_current: c.stamina_current,
+            resolve_current: c.resolve_current,
+            inventory: c.inventory,
+            notes: c.notes,
+            details: c.details,
+            roll_history: c.roll_history,
+            custom_operations: c.custom_operations,
+            meta_data: c.meta_data,
+            options: c.options,
+            variants: c.variants,
+            content_sources: c.content_sources,
+            operation_data: c.operation_data,
+            spells: c.spells,
+            companions: c.companions,
+            campaign_id: c.campaign_id,
+          },
+        })
+      );
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') saveImmediately();
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', saveImmediately);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', saveImmediately);
+    };
+  }, []);
 }

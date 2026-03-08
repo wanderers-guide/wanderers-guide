@@ -196,23 +196,28 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
       // Update character content sources
       setCharacter((prev) => {
         if (!prev) return prev;
+
+        const newEnabled = enabled
+          ? uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
+          : prev.content_sources?.enabled?.filter((id: number) => !bookIds.includes(id));
+
+        // Refresh data to repopulate with new book content
+        resetContentStore();
+        defineDefaultSources('PAGE', newEnabled ?? []);
+        refetch();
+        queryClient.invalidateQueries({
+          queryKey: [`find-content-${character?.id}`, `get-character-init-builder-${character?.id}`],
+        });
+
+        // Save new enabled books to character
         return {
           ...prev,
           content_sources: {
             ...prev.content_sources,
-            enabled: enabled
-              ? uniq([...(prev.content_sources?.enabled ?? []), ...bookIds])
-              : prev.content_sources?.enabled?.filter((id: number) => !bookIds.includes(id)),
+            enabled: newEnabled,
           },
         };
       });
-      setTimeout(() => {
-        // Refresh data to repopulate with new book content
-        resetContentStore();
-        defineDefaultSources('PAGE', character?.content_sources?.enabled ?? []);
-        refetch();
-        queryClient.invalidateQueries({ queryKey: [`find-content-${character?.id}`] });
-      }, 200);
     };
 
     if (enabled) {

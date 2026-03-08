@@ -72,6 +72,8 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
     refetchOnWindowFocus: false,
   });
 
+  console.log('Content for character builder creation:', content, getDefaultSources('PAGE'));
+
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
   const interval = useInterval(() => setPercentage(percentage + 2), 50);
