@@ -76,6 +76,7 @@
     "turndown": "^7.2.0"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@rollup/plugin-babel": "^6.0.4",
