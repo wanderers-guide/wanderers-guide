@@ -2,13 +2,13 @@ import StatBlockSection from '@common/StatBlockSection';
 import { GUIDE_BLUE } from '@constants/data';
 import { fetchContentById } from '@content/content-store';
 import DrawerBase from '@drawers/DrawerBase';
+import { generateColors } from '@mantine/colors-generator';
 import { ActionIcon, Box, Button, createTheme, LoadingOverlay, MantineProvider, Stack, Text } from '@mantine/core';
 import { makeRequest } from '@requests/request-manager';
 import { IconMoon, IconSun } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { Character, Creature, LivingEntity } from '@typing/content';
 import { getAnchorStyles } from '@utils/anchor';
-import { getShadesFromColor } from '@utils/colors';
 import { setPageTitle } from '@utils/document-change';
 import { useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
@@ -64,8 +64,7 @@ export function Component() {
       // Simple copy of main WG theme:
       theme={createTheme({
         colors: {
-          // @ts-ignore
-          guide: getShadesFromColor(GUIDE_BLUE),
+          guide: generateColors(GUIDE_BLUE),
           dark: [
             '#C1C2C5',
             '#A6A7AB',

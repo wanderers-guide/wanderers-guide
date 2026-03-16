@@ -22,6 +22,7 @@
   "dependencies": {
     "@mantine/carousel": "^8.3.10",
     "@mantine/charts": "^8.3.10",
+    "@mantine/colors-generator": "^8.3.17",
     "@mantine/core": "^8.3.10",
     "@mantine/dates": "^8.3.10",
     "@mantine/dropzone": "^8.3.10",

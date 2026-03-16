@@ -62,6 +62,11 @@ export function ItemRunesDescription({ item }: { item: Item }) {
   }
 
   const fundamentalRunes = data || [];
+
+  // For old broken item runes, we just return null to not show anything in order to avoid the page from breaking.
+  if (item.meta_data?.runes?.property?.every((s) => typeof s === 'string')) {
+    return null;
+  }
   const propertyRunes = (item.meta_data?.runes?.property || []).sort((a, b) => a.name.localeCompare(b.name));
 
   return (

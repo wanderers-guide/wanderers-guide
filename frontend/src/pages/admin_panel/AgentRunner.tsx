@@ -1,4 +1,4 @@
-import { runItemAgent } from '@ai/agent/claude';
+// import { runItemAgent } from '@ai/agent/manager';
 import BlurBox from '@common/BlurBox';
 import { Center, Group, Title, Textarea, Button, Stack } from '@mantine/core';
 import { useState } from 'react';
@@ -23,7 +23,7 @@ export default function AgentRunner() {
                 loading={loading}
                 onClick={async () => {
                   setLoading(true);
-                  await runItemAgent(text);
+                  // await runItemAgent(text);
                   setLoading(false);
                 }}
               >

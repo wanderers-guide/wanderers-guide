@@ -1,5 +1,5 @@
 import Color from 'colorjs.io';
-import tinycolor from 'tinycolor2';
+// import tinycolor from 'tinycolor2';
 
 export function interpolateHealth(percentage: number) {
   const green = new Color('p3', [0, 0.9, 0.35]);
@@ -11,22 +11,22 @@ export function interpolateHealth(percentage: number) {
   return redgreen(1 - percentage).toString();
 }
 
-export function getShadesFromColor(color: string) {
-  let lightShades = [];
-  let darkShades = [];
+// export function getShadesFromColor(color: string) {
+//   let lightShades = [];
+//   let darkShades = [];
 
-  for (let i = 0; i < 3; i++) {
-    let shade = tinycolor(color)
-      .lighten(i * 3)
-      .toString();
-    lightShades.push(shade);
-  }
-  for (let i = 0; i < 7; i++) {
-    let shade = tinycolor(color)
-      .darken(i * 3)
-      .toString();
-    darkShades.push(shade);
-  }
+//   for (let i = 0; i < 3; i++) {
+//     let shade = tinycolor(color)
+//       .lighten(i * 3)
+//       .toString();
+//     lightShades.push(shade);
+//   }
+//   for (let i = 0; i < 7; i++) {
+//     let shade = tinycolor(color)
+//       .darken(i * 3)
+//       .toString();
+//     darkShades.push(shade);
+//   }
 
-  return [...lightShades, color, ...darkShades];
-}
+//   return [...lightShades, color, ...darkShades];
+// }

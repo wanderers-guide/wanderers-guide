@@ -210,7 +210,7 @@ export default function RichText(props: RichTextProps) {
                 underline='always'
                 c='dark.0'
                 style={{
-                  textDecorationColor: theme.colors['guide'][9],
+                  textDecorationColor: theme.colors['guide'][7],
                 }}
                 className={className}
                 {...props}
@@ -236,7 +236,6 @@ export default function RichText(props: RichTextProps) {
                 href={drawerData ? undefined : href}
                 target='_blank'
                 underline='hover'
-                c='guide.0'
                 className={className}
                 {...props}
               >

@@ -135,6 +135,13 @@ const router = createBrowserRouter([
         lazy: () => import('@pages/ContentUpdateOverviewPage.tsx'),
       },
       {
+        path: 'content-cleaning/:id',
+        lazy: () => import('@pages/ContentCleaning.tsx'),
+        loader: async ({ params }: { params: any }) => {
+          return { recordId: params.id };
+        },
+      },
+      {
         // Legacy Character Redirect
         path: 'profile/characters/:id',
         lazy: () => import('@pages/LegacyRedirectPage.tsx'),

@@ -1,5 +1,5 @@
 import { Text, Stack, Button, Group, Loader, Avatar, Modal, Title, Box, useMantineTheme, Anchor } from '@mantine/core';
-import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentSource, ContentType, Item } from '@typing/content';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconHash } from '@tabler/icons-react';
@@ -30,6 +30,9 @@ import { CreateVersatileHeritageModal } from './CreateVersatileHeritageModal';
 import { CreateContentSourceOnlyModal } from './CreateContentSourceModal';
 import { cloneDeep } from 'lodash-es';
 import { CreateClassArchetypeModal } from './CreateClassArchetypeModal';
+import { userState } from '@atoms/userAtoms';
+import { useRecoilValue } from 'recoil';
+import { cleanContent, openCleaningPage } from '@ai/cleaning/cleaning-manager';
 
 export default function ContentFeedbackModal(props: {
   opened: boolean;
@@ -356,6 +359,8 @@ function ContentFeedbackSection(props: {
   const theme = useMantineTheme();
   const contentId = props.data.id;
 
+  const user = useRecoilValue(userState);
+
   const { data, isFetching } = useQuery({
     queryKey: [`find-content-${props.type}-${contentId}`],
     queryFn: async () => {
@@ -440,6 +445,22 @@ function ContentFeedbackSection(props: {
           >
             Submit Content Update
           </Button>
+          {user?.is_admin && (
+            <>
+              {props.type === 'item' && (
+                <Button
+                  fullWidth
+                  variant='light'
+                  onClick={async () => {
+                    if (!data.content) return;
+                    openCleaningPage(crypto.randomUUID(), 'item', cloneDeep(data.content));
+                  }}
+                >
+                  Attempt Clean
+                </Button>
+              )}
+            </>
+          )}
         </Group>
       )}
     </Stack>

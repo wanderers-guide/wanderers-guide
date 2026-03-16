@@ -12,8 +12,8 @@ import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import SearchSpotlight from '@nav/SearchSpotlight';
 import { IconBrush } from '@tabler/icons-react';
-import { getBackgroundImageFromURL, getHomeBackgroundImage } from '@utils/background-images';
-import { lazy, useEffect, useState } from 'react';
+import { getBackgroundImageFromURL } from '@utils/background-images';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { supabase } from './main';
@@ -34,13 +34,12 @@ import { isEqual } from 'lodash-es';
 import SelectSpellSlotModal from '@modals/SelectSpellSlotModal';
 import SelectStaffCastingModal from '@modals/SelectStaffCastingModal';
 import InitiativeRollModal from '@modals/InitiativeRollModal';
-import { update } from 'node_modules/cypress/types/lodash';
 import UpdateEncounterModal from '@modals/UpdateEncounterModal';
 import GenerateEncounterModal from '@modals/GenerateEncounterModal';
-import { getShadesFromColor } from '@utils/colors';
 import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 import { getAnchorStyles } from '@utils/anchor';
 import BuyItemModal from '@modals/BuyItemModal';
+import { generateColors } from '@mantine/colors-generator';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));
@@ -122,8 +121,7 @@ export default function App() {
   const generateTheme = (theme?: { color?: string }) => {
     return createTheme({
       colors: {
-        // @ts-ignore
-        guide: getShadesFromColor(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
+        guide: generateColors(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
         dark: [
           '#C1C2C5',
           '#A6A7AB',
