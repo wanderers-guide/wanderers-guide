@@ -142,6 +142,10 @@ const router = createBrowserRouter([
         },
       },
       {
+        path: 'content-cleaning-source',
+        lazy: () => import('@pages/ContentCleaningSourcePage.tsx'),
+      },
+      {
         // Legacy Character Redirect
         path: 'profile/characters/:id',
         lazy: () => import('@pages/LegacyRedirectPage.tsx'),

@@ -193,7 +193,7 @@ All feats, actions, and class features are called "ability blocks" in Wanderers 
 ## Steps To Follow
 
 ### 1. Understand the item
-Read the item's description, meta_data (a JSON string — parse it), traits (array of numeric IDs), and operations.
+Read the item's description, meta_data (a plain JSON object), traits (array of numeric IDs), and operations.
 
 ### 2. Fix the description
 Rewrite the description using rich inline markdown links following the rules above. Additional formatting rules:
@@ -209,12 +209,11 @@ Rewrite the description using rich inline markdown links following the rules abo
 Normalize usage: replace hyphens with spaces (e.g. "held-in-one-hand" → "held in one hand").
 
 ### 4. Fix meta_data
-meta_data is stored as a JSON string. Parse it, fix it, then re-serialize it as a string. Fix these:
-- Add missing default fields: image_url (""), is_shoddy (false), unselectable (false), starfinder ({}), charges ({})
+meta_data is stored as JSON. Fix these:
+- Add missing default fields: image_url (""), is_shoddy (false), unselectable (false), starfinder ({}), charges ({}), bulk ({})
 - damage object should have: { damageType, dice, die, extra: "" }
 - For each entry in runes.property (which has { name, id }), fetch the full rune item by ID and embed it as a "rune" field:
   runes.property = [{ name, id, rune: <full Item object> }, ...]
-- Ensure foundry has: { bonus: 0, items: [], rules: [], bonus_damage: 0, container_id: null, splash_damage: 0 }
 
 ### 5. Fix operations
 Operations model the mechanical effects the item grants while equipped/invested. Look at what the description says the item does — resistances, bonuses, ability grants, etc.
@@ -251,9 +250,13 @@ Pathfinder 2e has two editions — the legacy edition and the remaster (2023+). 
 ## Important Notes
 - Before each tool call (or batch of tool calls), briefly explain in plain text what you're about to do and why. This reasoning will be logged.
 - Never invent IDs. Always fetch content by name to find the correct numeric ID.
-- meta_data must be returned as a JSON string (not an object).
-- Preserve all other fields unchanged (id, created_at, name, level, rarity, bulk, size, content_source_id, version, uuid, price, availability, hands, craft_requirements, group).
-- Only model passive effects (resistances, bonuses, senses) as operations. Active abilities (Activate actions) are described in the description, not operations.`;
+- meta_data must be returned as a plain JSON object (not a serialized string).
+- The top-level "group" field categorizes the item type: GENERAL (misc items, consumables, gear), WEAPON, ARMOR, SHIELD, RUNE (PF2e only — runes applied to weapons/armor), UPGRADE (SF2e only — upgrades applied to weapons/armor). If the group looks wrong, fetch 2–3 items with the same name pattern or from the same content source to confirm the correct group before changing it.
+- Preserve all restricted fields unchanged (id, created_at, content_source_id, version, uuid).
+- Only model passive effects (resistances, bonuses, senses) as operations. Active abilities (Activate actions) are described in the description, not operations.
+- **Unarmed attacks** (e.g. "fist", "claw", "jaws", "tail", "horn") are always level 0, have unselectable: true in meta_data, and have size: "MEDIUM". These are not purchasable items — they exist only as base attack profiles.
+- **Size defaults to MEDIUM.** The vast majority of items in the system are medium-sized. If an item has no size or an unusual size that isn't clearly justified, default it to "MEDIUM".
+- **Data quality note:** Some existing items in the database have incorrect field values (wrong level, size, group, traits, etc.). This cleaning process exists precisely to correct those errors. If something looks wrong, trust these rules over the stored data.`;
 
 export const fixItem = async (item: Item, log: (type: string, data: any) => void): Promise<Item> => {
   const messages: Anthropic.MessageParam[] = [

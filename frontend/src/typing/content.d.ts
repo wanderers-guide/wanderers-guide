@@ -201,7 +201,7 @@ interface Item {
       grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON';
       slots?: { name: string; id: number; upgrade?: Item }[];
     };
-    foundry: {
+    foundry?: {
       rules?: Record<string, any>;
       tags?: Record<string, any>;
       bonus?: number;
