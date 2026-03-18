@@ -241,9 +241,12 @@ Trait IDs in the traits array are numbers (or sometimes strings — leave them a
 **Do NOT add traits for these reasons — they are handled automatically:**
 - Traits that come from the base weapon (via meta_data.base_item) — e.g. agile, free-hand, finesse on a base dagger. These are inherited at render time and must not be duplicated here.
 - The "magical" trait — automatically applied whenever the item has any rune.
-- Damage-type traits (acid, fire, cold, electricity, sonic, etc.) — an item dealing acid damage does not necessarily get the acid trait. Damage type and traits are separate concepts in PF2e.
+- **Damage-type traits (acid, fire, cold, electricity, sonic, poison, etc.) — Don't add these just because the item deals that damage type. Dealing acid damage does NOT always mean an item has the acid trait. Damage type and traits are completely separate concepts in PF2e. This is a common mistake — do not make it.**
 
 The traits array should only contain traits that are **explicitly granted by this specific item itself**, beyond what the base weapon or runes/upgrade already provide. When in doubt, leave the trait array as-is rather than adding.
+
+**Legacy vs. Remaster traits:**
+Pathfinder 2e has two editions — the legacy edition and the remaster (2023+). Some traits exist in both a legacy and a remaster version (e.g. the Monk trait exists as both a legacy ID and a remaster ID). If you notice that an item's traits array contains a legacy-edition trait AND the item's 'content_source_id' corresponds to a remaster-era book, this is probably a bug. When in doubt, prefer the remaster/non-legacy version of a trait.
 
 ## Important Notes
 - Before each tool call (or batch of tool calls), briefly explain in plain text what you're about to do and why. This reasoning will be logged.

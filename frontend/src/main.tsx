@@ -136,7 +136,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'content-cleaning/:id',
-        lazy: () => import('@pages/ContentCleaning.tsx'),
+        lazy: () => import('@pages/ContentCleaningPage.tsx'),
         loader: async ({ params }: { params: any }) => {
           return { recordId: params.id };
         },
