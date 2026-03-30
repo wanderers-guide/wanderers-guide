@@ -1,6 +1,6 @@
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { makeRequest } from '@requests/request-manager';
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 
 export default async function importFromJSON(file: File) {
   showNotification({

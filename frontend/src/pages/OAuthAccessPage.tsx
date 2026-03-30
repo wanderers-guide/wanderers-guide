@@ -18,7 +18,7 @@ import { setPageTitle } from '@utils/document-change';
 import { supabase } from '../main';
 import { useLoaderData, useNavigate, useSearchParams } from 'react-router-dom';
 import { makeRequest } from '@requests/request-manager';
-import { Character, PublicUser } from '@typing/content';
+import { Character, PublicUser } from '@schemas/content';
 import { useQuery } from '@tanstack/react-query';
 import { DisplayIcon } from '@common/IconDisplay';
 import { IconCheck, IconCircleCheck, IconCircleCheckFilled, IconDots } from '@tabler/icons-react';

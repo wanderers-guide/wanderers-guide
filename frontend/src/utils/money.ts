@@ -1,4 +1,4 @@
-import { SocietyAdventureEntry } from '@typing/content';
+import { SocietyAdventureEntry } from '@schemas/content';
 
 /*
  * Helper class for handline money values (immutable)

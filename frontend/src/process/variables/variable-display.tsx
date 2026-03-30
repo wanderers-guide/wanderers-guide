@@ -1,7 +1,7 @@
-import { VariableAttr, StoreID, VariableNum, VariableProf } from '@typing/variables';
+import { VariableAttr, StoreID, VariableNum, VariableProf } from '@schemas/variables';
 import { getVariable } from './variable-manager';
 import { Box, HoverCard, List, Text, TextProps } from '@mantine/core';
-import { Item, LivingEntity } from '@typing/content';
+import { Item, LivingEntity } from '@schemas/content';
 import { getAcParts } from '@items/armor-handler';
 import {
   getProfValueParts,

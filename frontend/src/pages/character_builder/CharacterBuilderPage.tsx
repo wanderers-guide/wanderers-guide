@@ -14,7 +14,7 @@ import {
 import { makeRequest } from '@requests/request-manager';
 import { IconArrowLeft, IconArrowRight, IconHammer, IconHome, IconUser } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { isCharacterBuilderMobile } from '@utils/screen-sizes';

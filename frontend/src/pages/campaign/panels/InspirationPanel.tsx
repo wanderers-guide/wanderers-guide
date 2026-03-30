@@ -37,7 +37,7 @@ import {
   IconUserPlus,
   IconUsers,
 } from '@tabler/icons-react';
-import { Campaign, CampaignSessionIdea, Character, CampaignNPC, Encounter } from '@typing/content';
+import { Campaign, CampaignSessionIdea, Character, CampaignNPC, Encounter } from '@schemas/content';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { mean } from 'lodash-es';
 import { useState } from 'react';

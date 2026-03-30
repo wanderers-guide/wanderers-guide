@@ -15,7 +15,7 @@ import {
 import { useMediaQuery } from '@mantine/hooks';
 import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
 import { IconHeartFilled } from '@tabler/icons-react';
-import { Campaign, Character } from '@typing/content';
+import { Campaign, Character } from '@schemas/content';
 import { useQuery } from '@tanstack/react-query';
 import { makeRequest } from '@requests/request-manager';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';

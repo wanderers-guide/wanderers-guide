@@ -1,5 +1,5 @@
-import { LivingEntity } from '@typing/content';
-import { VariableNum } from '@typing/variables';
+import { LivingEntity } from '@schemas/content';
+import { VariableNum } from '@schemas/variables';
 import { getVariable } from '@variables/variable-manager';
 
 export function getEntityLevel(entity: LivingEntity) {

@@ -1,8 +1,8 @@
 import { getConditionByName } from '@conditions/condition-handler';
 import { collectEntitySpellcasting, getFocusPoints } from '@content/collect-content';
 import { filterByTraitType } from '@items/inv-utils';
-import { LivingEntity } from '@typing/content';
-import { StoreID, VariableAttr, VariableNum, VariableProf } from '@typing/variables';
+import { LivingEntity } from '@schemas/content';
+import { StoreID, VariableAttr, VariableNum, VariableProf } from '@schemas/variables';
 import { getFinalHealthValue } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';

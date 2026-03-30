@@ -6,8 +6,8 @@ import { fetchContentSources, defineDefaultSources, fetchContent } from '@conten
 import { Center, Group, Title, Select } from '@mantine/core';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
-import { Background } from '@typing/content';
-import { Operation } from '@typing/operations';
+import { Background } from '@schemas/content';
+import { Operation } from '@schemas/operations';
 import { labelToVariable } from '@variables/variable-utils';
 import { useState } from 'react';
 

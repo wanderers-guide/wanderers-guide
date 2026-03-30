@@ -14,7 +14,7 @@ import {
 import { ContextModalProps } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import { IconBrush, IconUpload } from '@tabler/icons-react';
-import { ImageOption } from '@typing/index';
+import { ImageOption } from '@schemas/index';
 import { uploadImage } from '@upload/image-upload';
 import { isValidImage } from '@utils/images';
 import { displayPatronOnly } from '@utils/notifications';

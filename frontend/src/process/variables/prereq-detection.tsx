@@ -1,4 +1,4 @@
-import { ProficiencyType, StoreID, VariableAttr, VariableProf } from '@typing/variables';
+import { ProficiencyType, StoreID, VariableAttr, VariableProf } from '@schemas/variables';
 import {
   compactLabels,
   compileProficiencyType,
@@ -12,7 +12,7 @@ import {
 import { getAllAttributeVariables, getAllSkillVariables, getVariable } from './variable-manager';
 import { toLabel } from '@utils/strings';
 import { getCachedContent, getContentFast, getDefaultSources } from '@content/content-store';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock } from '@schemas/content';
 
 type PrereqMet = 'FULLY' | 'PARTIALLY' | 'NOT' | 'UNKNOWN' | null;
 export function meetsPrerequisites(

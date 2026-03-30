@@ -1,5 +1,5 @@
-import { Condition } from '@typing/content';
-import { StoreID, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
+import { Condition } from '@schemas/content';
+import { StoreID, VariableListStr, VariableNum, VariableProf } from '@schemas/variables';
 import {
   addVariableBonus,
   adjVariable,

@@ -18,7 +18,6 @@ import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { supabase } from './main';
 import Layout from './nav/Layout';
-import { ImageOption } from './typing';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { resetContentStore } from '@content/content-store';
@@ -40,6 +39,7 @@ import UpdateApiClientModal from '@modals/UpdateApiClientModal';
 import { getAnchorStyles } from '@utils/anchor';
 import BuyItemModal from '@modals/BuyItemModal';
 import { generateColors } from '@mantine/colors-generator';
+import { ImageOption } from '@schemas/index';
 
 // TODO, it would be great to dynamically import these modals, but it with Mantine v7.6.2 it doesn't work
 // const SelectContentModal = lazy(() => import('@common/select/SelectContent'));

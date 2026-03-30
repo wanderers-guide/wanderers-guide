@@ -20,8 +20,8 @@
 //   return await res.json();
 // }
 
-import { Character, Dice } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { Character, Dice } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { DICE_THEMES } from './dice-tray';
 import { getFinalProfValue } from '@variables/variable-helpers';

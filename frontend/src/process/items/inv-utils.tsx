@@ -1,8 +1,8 @@
 import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import { isPlayingStarfinder } from '@content/system-handler';
-import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity } from '@typing/content';
-import { Operation } from '@typing/operations';
-import { StoreID } from '@typing/variables';
+import { ContentPackage, ContentSource, Inventory, InventoryItem, Item, LivingEntity } from '@schemas/content';
+import { Operation } from '@schemas/operations';
+import { StoreID } from '@schemas/variables';
 import { getTraitIdByType, hasTraitType, TraitType } from '@utils/traits';
 import { getFinalAcValue, getFinalVariableValue } from '@variables/variable-helpers';
 import { addVariableBonus, getAllSkillVariables, getAllSpeedVariables } from '@variables/variable-manager';
@@ -548,6 +548,22 @@ export function isItemWithQuantity(item: Item) {
     }
   }
   return hasTraitType('CONSUMABLE', item.traits) || (item.meta_data?.quantity && item.meta_data.quantity > 0);
+}
+
+/**
+ * Utility function to determine if an item has health to show
+ * @param item - Item
+ * @returns - Whether the item has health to show
+ */
+export function isItemWithHealth(item: Item) {
+  const health = getItemHealth(item);
+
+  // If item has health and it's not a weapon,
+  // or if it is a weapon but also is armor or a shield
+  const hasHealth =
+    !!health.hp_max && (!isItemWeapon(item) || (isItemWeapon(item) && (isItemArmor(item) || isItemShield(item))));
+
+  return hasHealth;
 }
 
 /**

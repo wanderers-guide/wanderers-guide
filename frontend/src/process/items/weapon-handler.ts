@@ -1,5 +1,5 @@
-import { Item } from '@typing/content';
-import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@typing/variables';
+import { Item } from '@schemas/content';
+import { StoreID, VariableBool, VariableListStr, VariableNum, VariableProf } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
 import { getFinalProfValue, getFinalVariableValue } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';

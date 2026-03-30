@@ -25,7 +25,7 @@ import {
 import { ContextModalProps, modals } from '@mantine/modals';
 import { useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
-import { Combatant, Encounter } from '@typing/content';
+import { Combatant, Encounter } from '@schemas/content';
 import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
 import { IconBulbFilled, IconSparkles } from '@tabler/icons-react';
 import { generateEncounters } from '@ai/open-ai-handler';

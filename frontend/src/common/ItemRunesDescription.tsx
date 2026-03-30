@@ -7,7 +7,7 @@ import {
   isItemWithUpgrades,
 } from '@items/inv-utils';
 import { Box, Button, Divider, Group, Text } from '@mantine/core';
-import { Item } from '@typing/content';
+import { Item } from '@schemas/content';
 import RichText from './RichText';
 import { useRecoilState } from 'recoil';
 import { drawerState } from '@atoms/navAtoms';

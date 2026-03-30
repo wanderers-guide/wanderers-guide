@@ -55,7 +55,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 import { isPlayable } from '@utils/character';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';

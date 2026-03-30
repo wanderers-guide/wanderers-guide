@@ -22,8 +22,8 @@ import {
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { LivingEntity, Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { LivingEntity, Spell, SpellSlot, SpellSlotRecord } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { rankNumber } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { isTruthy } from '@utils/type-fixing';

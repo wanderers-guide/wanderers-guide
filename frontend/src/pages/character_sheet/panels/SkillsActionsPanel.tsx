@@ -34,9 +34,9 @@ import {
   InventoryItem,
   LivingEntity,
   Trait,
-} from '@typing/content';
-import { DrawerType } from '@typing/index';
-import { StoreID } from '@typing/variables';
+} from '@schemas/content';
+import { DrawerType } from '@schemas/index';
+import { StoreID } from '@schemas/variables';
 import { findActions } from '@utils/actions';
 import { isPhoneSized, mobileQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';

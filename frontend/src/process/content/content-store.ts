@@ -19,8 +19,8 @@ import {
   Spell,
   Trait,
   VersatileHeritage,
-} from '@typing/content';
-import { RequestType } from '@typing/requests';
+} from '@schemas/content';
+import { RequestType } from '@schemas/requests';
 import { preloadImage } from '@utils/images';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';

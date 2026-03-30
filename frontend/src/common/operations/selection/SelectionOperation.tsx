@@ -28,7 +28,7 @@ import { useDidUpdate, useDisclosure } from '@mantine/hooks';
 import { createDefaultOperation } from '@operations/operation-utils';
 import { IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, AbilityBlockType, Language, Rarity, Spell } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, Language, Rarity, Spell } from '@schemas/content';
 import {
   Operation,
   OperationAdjValue,
@@ -48,8 +48,8 @@ import {
   OperationSelectOptionLanguage,
   OperationSelectOptionSpell,
   OperationSelectOptionType,
-} from '@typing/operations';
-import { ExtendedProficiencyValue, ExtendedVariableValue, VariableType, VariableValue } from '@typing/variables';
+} from '@schemas/operations';
+import { ExtendedProficiencyValue, ExtendedVariableValue, VariableType, VariableValue } from '@schemas/variables';
 import useRefresh from '@utils/use-refresh';
 import { getVariable } from '@variables/variable-manager';
 import { useEffect, useState } from 'react';

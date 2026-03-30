@@ -1,4 +1,4 @@
-import { StoreID, VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr } from '@schemas/variables';
 import { getVariable } from '@variables/variable-manager';
 import { compileExpressions } from '@variables/variable-utils';
 import { toLabel } from './strings';

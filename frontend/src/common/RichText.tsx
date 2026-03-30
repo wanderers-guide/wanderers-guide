@@ -10,7 +10,7 @@ import IndentedText from './IndentedText';
 import { IconQuote } from '@tabler/icons-react';
 import { getAllConditions } from '@conditions/condition-handler';
 import { compileExpressions } from '@variables/variable-utils';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { isString } from 'lodash-es';
 
 interface RichTextProps extends TextProps {

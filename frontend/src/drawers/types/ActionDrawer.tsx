@@ -18,8 +18,8 @@ import {
   sortObjectByName,
 } from '@operations/operation-utils';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
-import { Operation, OperationSelect, OperationSelectFilters, OperationSelectOptionCustom } from '@typing/operations';
+import { AbilityBlock } from '@schemas/content';
+import { Operation, OperationSelect, OperationSelectFilters, OperationSelectOptionCustom } from '@schemas/operations';
 import { toLabel } from '@utils/strings';
 import { instanceOfOperationSelectOptionCustom } from '@utils/type-fixing';
 import { useEffect, useState } from 'react';

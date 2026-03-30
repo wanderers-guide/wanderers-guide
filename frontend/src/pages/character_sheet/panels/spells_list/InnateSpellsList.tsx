@@ -9,13 +9,13 @@ import {
   SpellListEntry,
   SpellSectionType,
   SpellSlot,
-} from '@typing/content';
+} from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 
 export default function InnateSpellsList(props: {
   id: StoreID;

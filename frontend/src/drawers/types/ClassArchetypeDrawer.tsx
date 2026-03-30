@@ -23,7 +23,7 @@ import {
 } from '@mantine/core';
 import { IconArrowRight, IconCheck } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, ClassArchetype } from '@typing/content';
+import { AbilityBlock, ClassArchetype } from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';

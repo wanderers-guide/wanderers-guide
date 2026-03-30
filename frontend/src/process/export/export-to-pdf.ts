@@ -1,4 +1,4 @@
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 import { showNotification } from '@mantine/notifications';
 
 export const EXPORT_PDF_VERSION: number = 2;

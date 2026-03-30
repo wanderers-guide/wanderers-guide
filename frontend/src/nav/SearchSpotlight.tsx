@@ -25,8 +25,8 @@ import {
   IconSwords,
   IconUsers,
 } from '@tabler/icons-react';
-import { AbilityBlockType, Character, ContentType, Creature, Item } from '@typing/content';
-import { DrawerType } from '@typing/index';
+import { AbilityBlockType, Character, ContentType, Creature, Item } from '@schemas/content';
+import { DrawerType } from '@schemas/index';
 import { isPlayable } from '@utils/character';
 import { determineCompanionType } from '@utils/creature';
 import { pluralize, toLabel } from '@utils/strings';

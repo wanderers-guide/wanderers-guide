@@ -1,7 +1,7 @@
 import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { Autocomplete, TagsInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { Item } from '@typing/content';
+import { Item } from '@schemas/content';
 import { isTruthy } from '@utils/type-fixing';
 import { uniq } from 'lodash-es';
 

@@ -3,8 +3,8 @@ import { SpellSelectionOption } from '@common/select/SelectContent';
 import { Text } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { isCantrip, isRitual } from '@spells/spell-utils';
-import { LivingEntity, Spell } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { LivingEntity, Spell } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { useRecoilState } from 'recoil';
 
 export default function SpellListEntrySection(props: {

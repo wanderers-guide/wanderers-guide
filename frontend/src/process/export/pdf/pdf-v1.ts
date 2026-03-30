@@ -17,8 +17,8 @@ import {
 } from '@items/inv-utils';
 import { getWeaponStats } from '@items/weapon-handler';
 import { executeOperations } from '@operations/operations.main';
-import { Character, AbilityBlock, Spell } from '@typing/content';
-import { VariableAttr, VariableListStr, VariableStr, VariableNum, VariableProf } from '@typing/variables';
+import { Character, AbilityBlock, Spell } from '@schemas/content';
+import { VariableAttr, VariableListStr, VariableStr, VariableNum, VariableProf } from '@schemas/variables';
 import { actionCostToLabel } from '@utils/actions';
 import { rankNumber, sign } from '@utils/numbers';
 import { displayResistWeak } from '@utils/resist-weaks';

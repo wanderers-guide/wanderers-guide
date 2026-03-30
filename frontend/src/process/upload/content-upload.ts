@@ -1,5 +1,5 @@
 import { FileWithPath } from '@mantine/dropzone';
-import { AbilityBlock, AbilityBlockType, Background, ContentSource, ContentType, Item, Spell } from '@typing/content';
+import { AbilityBlock, AbilityBlockType, Background, ContentSource, ContentType, Item, Spell } from '@schemas/content';
 import {
   EQUIPMENT_TYPES,
   convertToActionCost,
@@ -19,7 +19,7 @@ import {
 } from '@content/content-creation';
 import { toText, toMarkdown, convertToContentType } from '@content/content-utils';
 import { classifySkillForAction } from '@ai/open-ai-handler';
-import { UploadResult } from '@typing/index';
+import { UploadResult } from '@schemas/index';
 import { populateContent } from '@ai/vector-db/vector-manager';
 import { hideNotification, showNotification } from '@mantine/notifications';
 import { pluralize, toLabel } from '@utils/strings';

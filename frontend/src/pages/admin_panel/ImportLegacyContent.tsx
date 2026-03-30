@@ -1,12 +1,4 @@
-import {
-  Center,
-  Group,
-  Progress,
-  Select,
-  Text,
-  Title,
-  rem,
-} from '@mantine/core';
+import { Center, Group, Progress, Select, Text, Title, rem } from '@mantine/core';
 import { IconUpload, IconPhoto, IconX } from '@tabler/icons-react';
 import { Dropzone, FileWithPath } from '@mantine/dropzone';
 import BlurBox from '@common/BlurBox';
@@ -14,12 +6,11 @@ import { getUploadStats, resetUploadStats, uploadContentList } from '@upload/con
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentType } from '@schemas/content';
 import { importContent } from '@import/legacy/legacy-import-manager';
 import { isAbilityBlockType } from '@content/content-utils';
 
 export default function ImportLegacyContent() {
-
   return (
     <BlurBox p='sm'>
       <Center p='sm'>

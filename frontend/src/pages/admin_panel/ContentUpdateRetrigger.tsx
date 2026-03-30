@@ -3,7 +3,7 @@ import { findContentUpdates, submitContentUpdate } from '@content/content-update
 import { Center, Group, Title, Select, Button, Text, Stack, Anchor } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
-import { ContentUpdate } from '@typing/content';
+import { ContentUpdate } from '@schemas/content';
 import { useState } from 'react';
 
 const ENABLED = true;

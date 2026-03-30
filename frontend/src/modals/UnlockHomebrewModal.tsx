@@ -3,7 +3,7 @@ import { getHotkeyHandler } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
 import { showNotification } from '@mantine/notifications';
 import { IconKey } from '@tabler/icons-react';
-import { ContentSource } from '@typing/content';
+import { ContentSource } from '@schemas/content';
 import { useState } from 'react';
 
 export default function UnlockHomebrewModal(props: {

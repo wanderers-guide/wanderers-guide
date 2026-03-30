@@ -19,7 +19,7 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { JSONContent } from '@tiptap/react';
-import { Item, SocietyAdventureEntry } from '@typing/content';
+import { Item, SocietyAdventureEntry } from '@schemas/content';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
 import { DateInput } from '@mantine/dates';

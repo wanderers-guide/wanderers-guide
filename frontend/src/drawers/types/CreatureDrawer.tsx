@@ -53,8 +53,7 @@ import {
   IconAlignBoxLeftMiddle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Trait } from '@typing/content';
-import { OperationCreatureResultPackage } from '@typing/operations';
+import { Creature, OperationCreatureResultPackage, Trait } from '@schemas/content';
 import { getAnchorStyles } from '@utils/anchor';
 import { determineCompanionType, findCreatureTraits } from '@utils/creature';
 import { getEntityLevel } from '@utils/entity-utils';

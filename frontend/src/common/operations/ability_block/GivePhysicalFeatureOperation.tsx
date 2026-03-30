@@ -1,5 +1,5 @@
 import { SelectContentButton } from '@common/select/SelectContent';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock } from '@schemas/content';
 import { OperationWrapper } from '../Operations';
 
 export function GivePhysicalFeatureOperation(props: {

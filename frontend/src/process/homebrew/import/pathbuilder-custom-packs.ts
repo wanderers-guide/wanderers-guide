@@ -3,7 +3,7 @@ import { defineDefaultSources, fetchContentAll, fetchContentSources } from '@con
 import { toMarkdown } from '@content/content-utils';
 import { getFileContents } from '@import/json/import-from-json';
 import { showNotification, hideNotification } from '@mantine/notifications';
-import { ActionCost, ContentSource, Trait } from '@typing/content';
+import { ActionCost, ContentSource, Trait } from '@schemas/content';
 
 export async function importFromCustomPack(file: File) {
   showNotification({

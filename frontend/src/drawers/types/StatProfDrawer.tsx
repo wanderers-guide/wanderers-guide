@@ -26,8 +26,8 @@ import {
   IconTimeline,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
-import { StoreID, VariableBool, VariableProf } from '@typing/variables';
+import { AbilityBlock } from '@schemas/content';
+import { StoreID, VariableBool, VariableProf } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { displayFinalProfValue } from '@variables/variable-display';

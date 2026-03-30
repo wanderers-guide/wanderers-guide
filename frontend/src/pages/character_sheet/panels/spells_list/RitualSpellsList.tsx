@@ -9,10 +9,10 @@ import {
   SpellListEntry,
   SpellSectionType,
   SpellSlot,
-} from '@typing/content';
+} from '@schemas/content';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { SetterOrUpdater } from 'recoil';
 
 export default function RitualSpellsList(props: {

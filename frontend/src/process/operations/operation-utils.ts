@@ -5,7 +5,7 @@ import {
   fetchTraitByName,
   getDefaultSources,
 } from '@content/content-store';
-import { AbilityBlock, ContentType, Item, Language, LivingEntity, Spell, Trait } from '@typing/content';
+import { AbilityBlock, ContentType, Item, Language, LivingEntity, Spell, Trait } from '@schemas/content';
 import {
   Operation,
   OperationAddBonusToValue,
@@ -44,8 +44,8 @@ import {
   OperationSendNotification,
   OperationResult,
   InjectedSelectOption,
-} from '@typing/operations';
-import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@typing/variables';
+} from '@schemas/operations';
+import { ProficiencyValue, StoreID, Variable, VariableListStr, VariableProf, VariableValue } from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
 import {
   getAllAncestryTraitVariables,
@@ -67,7 +67,7 @@ import { isAbilityBlockVisible, isSpellVisible, isTraitVisible } from '@content/
 import { isTruthy } from '@utils/type-fixing';
 import { isNumber, intersection } from 'lodash-es';
 import { throwError } from '@utils/error-handling';
-import { GenericData } from '@typing/index';
+import { GenericData } from '@schemas/index';
 
 export function createDefaultOperation<T = Operation>(type: OperationType): T {
   if (type === 'giveAbilityBlock') {

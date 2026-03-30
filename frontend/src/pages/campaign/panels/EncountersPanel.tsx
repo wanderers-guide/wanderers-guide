@@ -45,7 +45,7 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Campaign, Character, Combatant, Creature, Encounter, LivingEntity } from '@typing/content';
+import { Campaign, Character, Combatant, Creature, Encounter, LivingEntity } from '@schemas/content';
 import { getEntityLevel } from '@utils/entity-utils';
 import { isPhoneSized, phoneQuery } from '@utils/mobile-responsive';
 import { sign } from '@utils/numbers';

@@ -1,7 +1,7 @@
 import BlurButton from '@common/BlurButton';
 import { Badge, Box, Button, Text } from '@mantine/core';
 import ViewOperationsModal from '@modals/ViewOperationsModal';
-import { Operation } from '@typing/operations';
+import { Operation } from '@schemas/operations';
 import { useState } from 'react';
 
 export default function ShowOperationsButton(props: { name: string; operations?: Operation[] }) {

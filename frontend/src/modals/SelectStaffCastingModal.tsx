@@ -15,7 +15,7 @@ import {
   Group,
 } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
-import { Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
+import { Spell, SpellSlot, SpellSlotRecord } from '@schemas/content';
 import { rankNumber } from '@utils/numbers';
 import { groupBy } from 'lodash-es';
 import { useRecoilState } from 'recoil';

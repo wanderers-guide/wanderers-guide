@@ -32,7 +32,7 @@ import {
   getClassSkillTrainings,
   getClassSkillTrainingsNum,
 } from '@operations/operation-controller';
-import { OperationResult } from '@typing/operations';
+import { OperationResult } from '@schemas/operations';
 import {
   IconBadgesFilled,
   IconEyeFilled,
@@ -44,8 +44,8 @@ import {
   IconVocabulary,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Character, Class } from '@typing/content';
-import { OperationSelect } from '@typing/operations';
+import { AbilityBlock, Character, Class } from '@schemas/content';
+import { OperationSelect } from '@schemas/operations';
 import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables, getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { groupBy } from 'lodash-es';

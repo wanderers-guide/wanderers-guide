@@ -9,7 +9,7 @@ import {
   Variable,
   VariableType,
   VariableValue,
-} from '@typing/variables';
+} from '@schemas/variables';
 import { Box, JsonInput, NumberInput, SegmentedControl, TextInput, Text, Group } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';

@@ -13,7 +13,7 @@ import {
   Title,
   UnstyledButton,
 } from '@mantine/core';
-import { Operation } from '@typing/operations';
+import { Operation } from '@schemas/operations';
 import { OperationSection } from '@common/operations/Operations';
 import { DISCORD_URL } from '@constants/urls';
 import { cloneDeep } from 'lodash-es';

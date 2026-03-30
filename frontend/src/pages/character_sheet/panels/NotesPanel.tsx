@@ -7,7 +7,7 @@ import { useDebouncedState, useDidUpdate } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
-import { LivingEntity } from '@typing/content';
+import { LivingEntity } from '@schemas/content';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { isCharacter } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';

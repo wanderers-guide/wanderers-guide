@@ -12,7 +12,7 @@ import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@m
 import { getEntityLevel } from '@utils/entity-utils';
 import { isCantrip, isFocusSpell, isRitual } from '@spells/spell-utils';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, LivingEntity, Spell } from '@typing/content';
+import { AbilityBlock, LivingEntity, Spell } from '@schemas/content';
 import { convertCastToActionCost } from '@utils/actions';
 import { toLabel } from '@utils/strings';
 import { useRecoilValue } from 'recoil';

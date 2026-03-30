@@ -6,11 +6,11 @@ import { IconShadow } from '@tabler/icons-react';
 import { cloneDeep } from 'lodash-es';
 import { useRecoilState } from 'recoil';
 import { characterState } from '@atoms/characterAtoms';
-import { AbilityBlock, ContentPackage } from '@typing/content';
+import { AbilityBlock, ContentPackage } from '@schemas/content';
 import { ModeSelectionOption } from '@common/select/SelectContent';
 import { drawerState } from '@atoms/navAtoms';
 import { getVariable, setVariable } from '@variables/variable-manager';
-import { VariableListStr } from '@typing/variables';
+import { VariableListStr } from '@schemas/variables';
 import { labelToVariable } from '@variables/variable-utils';
 
 export default function ModesDrawer(props: { opened: boolean; onClose: () => void; content: ContentPackage }) {

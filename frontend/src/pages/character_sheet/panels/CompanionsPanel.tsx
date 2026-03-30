@@ -15,8 +15,8 @@ import {
 } from '@mantine/core';
 import { getHotkeyHandler, useHover, useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
-import { Creature, Trait } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { Creature, Trait } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { findCreatureTraits } from '@utils/creature';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { evaluate } from 'mathjs';

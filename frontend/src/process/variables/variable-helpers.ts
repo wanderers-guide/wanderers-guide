@@ -1,6 +1,6 @@
 import { getAcParts } from '@items/armor-handler';
 import { getBestArmor } from '@items/inv-utils';
-import { CastingSource, Item, LivingEntity } from '@typing/content';
+import { CastingSource, Item, LivingEntity } from '@schemas/content';
 import {
   ProficiencyType,
   StoreID,
@@ -9,7 +9,7 @@ import {
   VariableNum,
   VariableProf,
   VariableStr,
-} from '@typing/variables';
+} from '@schemas/variables';
 import { hasTraitType } from '@utils/traits';
 import { getVariable, getVariableBonuses } from './variable-manager';
 import { compileProficiencyType, compileExpressions, getProficiencyTypeValue } from './variable-utils';

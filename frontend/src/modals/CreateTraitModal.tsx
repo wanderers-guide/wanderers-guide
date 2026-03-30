@@ -19,7 +19,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Trait } from '@typing/content';
+import { Trait } from '@schemas/content';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
 

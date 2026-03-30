@@ -29,7 +29,7 @@ import { useHover, useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import { IconFlag, IconFlagPlus, IconPlus, IconSearch, IconUserPlus, IconX } from '@tabler/icons-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Campaign, Character } from '@typing/content';
+import { Campaign, Character } from '@schemas/content';
 import { getDefaultCampaignBackgroundImage } from '@utils/background-images';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';

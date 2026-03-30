@@ -1,4 +1,4 @@
-import { PublicUser } from '@typing/content';
+import { PublicUser } from '@schemas/content';
 import { atom } from 'recoil';
 
 const userState = atom({

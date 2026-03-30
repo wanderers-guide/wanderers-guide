@@ -45,7 +45,7 @@ import { hasPatreonAccess } from '@utils/patreon';
 import { getCachedPublicUser } from '@auth/user-manager';
 import { displayPatronOnly } from '@utils/notifications';
 import { rollDie } from '@utils/random';
-import { Dice } from '@typing/content';
+import { Dice } from '@schemas/content';
 import { openContextModal } from '@mantine/modals';
 
 const AUTH_KEY = (import.meta.env.VITE_DDDICE_AUTH_KEY ?? '') as string;

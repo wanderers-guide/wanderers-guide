@@ -1,5 +1,5 @@
 import { Group, Text, TextProps } from '@mantine/core';
-import { ActionCost } from '@typing/content';
+import { ActionCost } from '@schemas/content';
 
 interface ActionStructureProps extends TextProps {
   symbol: number;

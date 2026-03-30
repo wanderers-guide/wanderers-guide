@@ -28,10 +28,10 @@ import UnlockHomebrewModal from '@modals/UnlockHomebrewModal';
 import { makeRequest } from '@requests/request-manager';
 import { IconExternalLink } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentSource, ContentType } from '@schemas/content';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
-import { DrawerType } from '@typing/index';
+import { DrawerType } from '@schemas/index';
 import { COMMON_CORE_ID, PATHFINDER_CORE_ID, STARFINDER_CORE_ID } from '@constants/data';
 
 export function ContentSourceDrawerTitle(props: { data: { id?: number; source?: ContentSource } }) {

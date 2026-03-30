@@ -14,14 +14,14 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { Availability, Rarity, Size } from '@typing/content';
+import { Availability, Rarity, Size } from '@schemas/content';
 import { useRecoilState } from 'recoil';
 import RichText from './RichText';
 import { getTraitIdByType } from '@utils/traits';
 import { uniq } from 'lodash-es';
 import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
-import { VariableBool } from '@typing/variables';
+import { VariableBool } from '@schemas/variables';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];

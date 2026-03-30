@@ -14,7 +14,7 @@ import { fetchContentSources, defineDefaultSources, fetchContentPackage } from '
 import { Center, Group, Title, Select, Button, List, Stack } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { useQuery } from '@tanstack/react-query';
-import { ContentPackage, Trait } from '@typing/content';
+import { ContentPackage, Trait } from '@schemas/content';
 import { useMemo, useState } from 'react';
 
 const ENABLED = true;

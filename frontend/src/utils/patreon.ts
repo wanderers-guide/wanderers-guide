@@ -1,4 +1,4 @@
-import { PublicUser } from '@typing/content';
+import { PublicUser } from '@schemas/content';
 
 export function hasPatreonAccess(user: PublicUser | null, accessLevel: 0 | 1 | 2 | 3 | 4): boolean {
   if (!user) return false;

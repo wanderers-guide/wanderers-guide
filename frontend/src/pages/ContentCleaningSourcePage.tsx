@@ -1,5 +1,12 @@
 import { CleaningLogPanel } from '@ai/cleaning/CleaningLogPanel';
-import { cleanContent, getCleaningStatus } from '@ai/cleaning/cleaning-manager';
+import {
+  cleanContent,
+  clearCleaningSession,
+  getCleaningResult,
+  getCleaningStatus,
+} from '@ai/cleaning/cleaning-manager';
+import { upsertContent } from '@content/content-creation';
+import { showNotification } from '@mantine/notifications';
 import BlurBox from '@common/BlurBox';
 import { fetchContentSources, defineDefaultSources } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
@@ -20,12 +27,21 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { ContentType } from '@typing/content';
-import { RequestType } from '@typing/requests';
+import { ContentType } from '@schemas/content';
+import { RequestType } from '@schemas/requests';
 import { setPageTitle } from '@utils/document-change';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { IconAlertCircle, IconCheck, IconPlayerPause, IconPlayerPlay, IconRefresh, IconRotate } from '@tabler/icons-react';
+import {
+  IconAlertCircle,
+  IconCheck,
+  IconPlayerPause,
+  IconPlayerPlay,
+  IconRefresh,
+  IconRotate,
+} from '@tabler/icons-react';
 import { CleaningStatus } from '@ai/cleaning/cleaning-manager';
+
+const AUTO_UPSERT = false;
 
 setPageTitle('Content Cleaning Source');
 
@@ -111,7 +127,7 @@ export function Component() {
     const body: Record<string, any> = { content_sources: [sourceId] };
     // ability-block needs type=undefined to fetch all; pass nothing extra
     const result = await makeRequest<RecordEntry[]>(selectedType.request, body);
-    setRecords(result ?? []);
+    setRecords((result ?? []).reverse());
     setIsFetchingRecords(false);
   }
 
@@ -121,23 +137,53 @@ export function Component() {
     processingRef.current = processing;
   }, [processing]);
 
-  const startCleaningRecord = useCallback((record: RecordEntry, onDone?: (status: CleaningStatus) => void) => {
-    const cleaningRecordId = crypto.randomUUID();
-    setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status: 'running' }));
-    localStorage.setItem(`cleaning-input-${cleaningRecordId}`, JSON.stringify({ type: contentType, content: record }));
-    cleanContent(cleaningRecordId, contentType, record);
+  const startCleaningRecord = useCallback(
+    (record: RecordEntry, onDone?: (status: CleaningStatus) => void, retry = false) => {
+      const cleaningRecordId = `${contentType}_${record.id}`;
+      if (retry) clearCleaningSession(cleaningRecordId);
 
-    const interval = setInterval(() => {
-      const status = getCleaningStatus(cleaningRecordId);
-      if (status !== 'running') {
-        clearInterval(interval);
-        setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status }));
-        onDone?.(status);
+      // If records already exist for this ID, just restore them without re-running
+      const existingStatus = getCleaningStatus(cleaningRecordId);
+      if (!retry && existingStatus !== 'running' && localStorage.getItem(`cleaning-status-${cleaningRecordId}`)) {
+        setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status: existingStatus }));
+        onDone?.(existingStatus);
+        return () => {};
       }
-    }, 800);
 
-    return () => clearInterval(interval);
-  }, [contentType]);
+      setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status: 'running' }));
+      localStorage.setItem(
+        `cleaning-input-${cleaningRecordId}`,
+        JSON.stringify({ type: contentType, content: record })
+      );
+      cleanContent(cleaningRecordId, contentType, record);
+
+      const interval = setInterval(async () => {
+        const status = getCleaningStatus(cleaningRecordId);
+        if (status !== 'running') {
+          clearInterval(interval);
+          setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status }));
+
+          if (status === 'done') {
+            const result = getCleaningResult(cleaningRecordId);
+            if (result && AUTO_UPSERT) {
+              try {
+                await upsertContent(result.type as ContentType, result.content);
+                showNotification({ title: 'Updated', message: record.name, color: 'green', autoClose: 3000 });
+                setUpdatedIds((prev) => new Set(prev).add(record.id));
+              } catch {
+                showNotification({ title: 'Save failed', message: record.name, color: 'red', autoClose: 5000 });
+              }
+            }
+          }
+
+          onDone?.(status);
+        }
+      }, 800);
+
+      return () => clearInterval(interval);
+    },
+    [contentType]
+  );
 
   useEffect(() => {
     if (!processing || currentIdx < 0 || currentIdx >= records.length) return;
@@ -271,7 +317,6 @@ export function Component() {
                     <Table.Tbody>
                       {records.map((record) => {
                         const entry = cleaningMap.get(record.id);
-                        const canOpen = !!entry;
                         const isRunning = entry?.status === 'running';
                         return (
                           <Table.Tr key={record.id}>
@@ -295,27 +340,36 @@ export function Component() {
                             </Table.Td>
                             <Table.Td>
                               <Group gap={4} wrap='nowrap'>
-                                <Tooltip label='View cleaning log' disabled={!canOpen}>
+                                {!entry ? (
                                   <Button
                                     size='compact-xs'
                                     variant='subtle'
-                                    disabled={!canOpen}
-                                    onClick={() => openModal(record)}
-                                  >
-                                    View
-                                  </Button>
-                                </Tooltip>
-                                <Tooltip label='Retry cleaning' disabled={!canOpen || isRunning}>
-                                  <Button
-                                    size='compact-xs'
-                                    variant='subtle'
-                                    color='orange'
-                                    disabled={!canOpen || isRunning}
+                                    color='green'
+                                    disabled={isRunning}
                                     onClick={() => startCleaningRecord(record)}
                                   >
-                                    <IconRotate size='0.75rem' />
+                                    Start
                                   </Button>
-                                </Tooltip>
+                                ) : (
+                                  <>
+                                    <Tooltip label='View cleaning log'>
+                                      <Button size='compact-xs' variant='subtle' onClick={() => openModal(record)}>
+                                        View
+                                      </Button>
+                                    </Tooltip>
+                                    <Tooltip label='Retry cleaning' disabled={isRunning}>
+                                      <Button
+                                        size='compact-xs'
+                                        variant='subtle'
+                                        color='orange'
+                                        disabled={isRunning}
+                                        onClick={() => startCleaningRecord(record, undefined, true)}
+                                      >
+                                        <IconRotate size='0.75rem' />
+                                      </Button>
+                                    </Tooltip>
+                                  </>
+                                )}
                               </Group>
                             </Table.Td>
                           </Table.Tr>

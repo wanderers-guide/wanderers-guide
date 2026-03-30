@@ -9,8 +9,8 @@ import { evaluate } from 'mathjs';
 import { useNavigate } from 'react-router-dom';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { confirmHealth } from '../entity-handler';
-import { StoreID } from '@typing/variables';
-import { LivingEntity } from '@typing/content';
+import { StoreID } from '@schemas/variables';
+import { LivingEntity } from '@schemas/content';
 
 export default function HealthSection(props: {
   id: StoreID;

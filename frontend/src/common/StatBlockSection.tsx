@@ -10,7 +10,7 @@ import {
   LivingEntity,
   SenseWithRange,
   Spell,
-} from '@typing/content';
+} from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { isCharacter, isCreature, isTruthy } from '@utils/type-fixing';
 import TraitsDisplay from './TraitsDisplay';
@@ -30,7 +30,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { getEntityLevel } from '@utils/entity-utils';
 import { compiledConditions } from '@conditions/condition-handler';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 
 export default function StatBlockSection(props: {
   storeId?: StoreID;

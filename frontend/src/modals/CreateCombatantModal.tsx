@@ -15,8 +15,8 @@ import {
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
-import { Combatant } from '@typing/content';
-import { Operation } from '@typing/operations';
+import { Combatant } from '@schemas/content';
+import { Operation } from '@schemas/operations';
 import { useState } from 'react';
 import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';

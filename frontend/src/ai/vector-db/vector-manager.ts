@@ -1,5 +1,5 @@
 import { makeRequest } from '@requests/request-manager';
-import { ContentType } from '@typing/content';
+import { ContentType } from '@schemas/content';
 import { labelToVariable } from '@variables/variable-utils';
 import { chunk } from 'lodash-es';
 

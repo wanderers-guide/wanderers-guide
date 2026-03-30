@@ -13,7 +13,7 @@ import {
   Archetype,
   VersatileHeritage,
   ClassArchetype,
-} from '@typing/content';
+} from '@schemas/content';
 import { makeRequest } from '@requests/request-manager';
 
 export async function deleteContent(type: ContentType, id: number) {
@@ -117,19 +117,33 @@ export async function upsertLanguage(language: Language) {
 
 export async function upsertContent(type: ContentType, content: Record<string, any>) {
   switch (type) {
-    case 'ability-block': return upsertAbilityBlock(content as AbilityBlock);
-    case 'ancestry':      return upsertAncestry(content as Ancestry);
-    case 'archetype':     return upsertArchetype(content as Archetype);
-    case 'background':    return upsertBackground(content as Background);
-    case 'class':         return upsertClass(content as Class);
-    case 'class-archetype': return upsertClassArchetype(content as ClassArchetype);
-    case 'content-source':  return upsertContentSource(content as ContentSource);
-    case 'creature':      return upsertCreature(content as Creature);
-    case 'item':          return upsertItem(content as Item);
-    case 'language':      return upsertLanguage(content as Language);
-    case 'spell':         return upsertSpell(content as Spell);
-    case 'trait':         return upsertTrait(content as Trait);
-    case 'versatile-heritage': return upsertVersatileHeritage(content as VersatileHeritage);
-    default:              throw new Error(`No upsert handler for content type: ${type}`);
+    case 'ability-block':
+      return upsertAbilityBlock(content as AbilityBlock);
+    case 'ancestry':
+      return upsertAncestry(content as Ancestry);
+    case 'archetype':
+      return upsertArchetype(content as Archetype);
+    case 'background':
+      return upsertBackground(content as Background);
+    case 'class':
+      return upsertClass(content as Class);
+    case 'class-archetype':
+      return upsertClassArchetype(content as ClassArchetype);
+    case 'content-source':
+      return upsertContentSource(content as ContentSource);
+    case 'creature':
+      return upsertCreature(content as Creature);
+    case 'item':
+      return upsertItem(content as Item);
+    case 'language':
+      return upsertLanguage(content as Language);
+    case 'spell':
+      return upsertSpell(content as Spell);
+    case 'trait':
+      return upsertTrait(content as Trait);
+    case 'versatile-heritage':
+      return upsertVersatileHeritage(content as VersatileHeritage);
+    default:
+      throw new Error(`No upsert handler for content type: ${type}`);
   }
 }

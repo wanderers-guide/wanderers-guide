@@ -18,7 +18,7 @@ import {
 import { useForm } from '@mantine/form';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { AbilityBlock, Archetype, Rarity } from '@typing/content';
+import { AbilityBlock, Archetype, Rarity } from '@schemas/content';
 import { isValidImage } from '@utils/images';
 import { hasTraitType } from '@utils/traits';
 import useRefresh from '@utils/use-refresh';

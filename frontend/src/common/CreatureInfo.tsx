@@ -14,13 +14,13 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
-import { Creature, Size, Trait } from '@typing/content';
+import { Creature, Size, Trait } from '@schemas/content';
 import { interpolateHealth } from '@utils/colors';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';
 import { DisplayIcon } from './IconDisplay';
 import TraitsDisplay from './TraitsDisplay';
-import { StoreID, VariableStr } from '@typing/variables';
+import { StoreID, VariableStr } from '@schemas/variables';
 import { getAllAncestryTraitVariables, getVariable } from '@variables/variable-manager';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContentAll, getDefaultSources } from '@content/content-store';

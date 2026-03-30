@@ -1,5 +1,5 @@
-import { Spell } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { Spell } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { toLabel } from '@utils/strings';
 import { getFinalVariableValue, getProfValueParts } from '@variables/variable-helpers';
 

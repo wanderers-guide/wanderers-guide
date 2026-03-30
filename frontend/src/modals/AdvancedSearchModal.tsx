@@ -41,8 +41,8 @@ import {
   ItemGroup,
   Rarity,
   Size,
-} from '@typing/content';
-import { DrawerType } from '@typing/index';
+} from '@schemas/content';
+import { DrawerType } from '@schemas/index';
 import { actionCostToLabel } from '@utils/actions';
 import { displayError } from '@utils/notifications';
 import { hashData } from '@utils/numbers';

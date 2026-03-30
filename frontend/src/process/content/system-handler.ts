@@ -1,8 +1,8 @@
 //
 
 import { PATHFINDER_CORE_ID, STARFINDER_CORE_ID } from '@constants/data';
-import { Character } from '@typing/content';
-import { VariableBool } from '@typing/variables';
+import { Character } from '@schemas/content';
+import { VariableBool } from '@schemas/variables';
 import { getVariable } from '@variables/variable-manager';
 
 export function playingPathfinder(character: Character) {

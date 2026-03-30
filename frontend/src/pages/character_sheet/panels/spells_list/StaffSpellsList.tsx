@@ -8,7 +8,7 @@ import {
   SpellListEntry,
   SpellSlot,
   SpellSlotRecord,
-} from '@typing/content';
+} from '@schemas/content';
 import { rankNumber } from '@utils/numbers';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
@@ -19,7 +19,7 @@ import BlurButton from '@common/BlurButton';
 import { openContextModal } from '@mantine/modals';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { handleUpdateItemCharges } from '@items/inv-handlers';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { cloneDeep, groupBy } from 'lodash-es';
 
 export default function StaffSpellsList(props: {

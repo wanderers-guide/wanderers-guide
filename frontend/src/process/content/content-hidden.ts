@@ -1,5 +1,5 @@
-import { AbilityBlock, Item, Spell, Trait } from '@typing/content';
-import { StoreID, VariableListStr } from '@typing/variables';
+import { AbilityBlock, Item, Spell, Trait } from '@schemas/content';
+import { StoreID, VariableListStr } from '@schemas/variables';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 

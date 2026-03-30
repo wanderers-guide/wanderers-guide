@@ -49,9 +49,9 @@ import {
   IconZoomQuestion,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { DrawerType, GenericData } from '@typing/index';
-import { OperationSelectOptionCustom } from '@typing/operations';
-import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@typing/variables';
+import { DrawerType, GenericData } from '@schemas/index';
+import { OperationSelectOptionCustom } from '@schemas/operations';
+import { ExtendedProficiencyType, ProficiencyType, VariableListStr, VariableProf } from '@schemas/variables';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { pluralize, toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';
@@ -90,7 +90,7 @@ import {
   Spell,
   Trait,
   VersatileHeritage,
-} from '../../typing/content';
+} from '@schemas/content';
 import { adjustCreature } from '@utils/creature';
 import { intersection, isEqual, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@utils/entity-utils';

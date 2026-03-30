@@ -1,4 +1,4 @@
-import { ContentType, Item } from '@typing/content';
+import { ContentType, Item } from '@schemas/content';
 import { fixItem } from './item-cleaning';
 
 export type CleaningLogType = 'thought' | 'tool' | 'error' | 'done' | 'info';
@@ -107,6 +107,16 @@ export function getCleaningStatus(cleaningRecordId: string): CleaningStatus {
 export function getCleaningResult(cleaningRecordId: string): { type: ContentType; content: any } | null {
   const raw = localStorage.getItem(`cleaning-result-${cleaningRecordId}`);
   return raw ? JSON.parse(raw) : null;
+}
+
+/**
+ * Clears all cleaning data for a single session (log, status, result, input).
+ */
+export function clearCleaningSession(cleaningRecordId: string) {
+  localStorage.removeItem(`cleaning-log-${cleaningRecordId}`);
+  localStorage.removeItem(`cleaning-status-${cleaningRecordId}`);
+  localStorage.removeItem(`cleaning-result-${cleaningRecordId}`);
+  localStorage.removeItem(`cleaning-input-${cleaningRecordId}`);
 }
 
 /**

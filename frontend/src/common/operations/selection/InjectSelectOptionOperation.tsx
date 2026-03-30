@@ -3,10 +3,10 @@ import { OperationWrapper } from '../Operations';
 import { Select, Stack } from '@mantine/core';
 import { useDidUpdate } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, ContentSource, Item } from '@typing/content';
+import { AbilityBlock, ContentSource, Item } from '@schemas/content';
 import { useState } from 'react';
 import { flatten, uniqWith, isEqual, uniqBy } from 'lodash-es';
-import { InjectedSelectOption, Operation, OperationSelect, OperationSelectOptionCustom } from '@typing/operations';
+import { InjectedSelectOption, Operation, OperationSelect, OperationSelectOptionCustom } from '@schemas/operations';
 import { SelectionPredefinedCustomOption } from './SelectionOperation';
 
 interface WrappedOperationSelect extends OperationSelect {

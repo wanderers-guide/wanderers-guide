@@ -2,7 +2,7 @@ import RichText from '@common/RichText';
 import { ActionIcon, Badge, Group, ScrollArea, Stack } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
 import { IconMinus, IconPlus } from '@tabler/icons-react';
-import { Condition } from '@typing/content';
+import { Condition } from '@schemas/content';
 import { useState } from 'react';
 
 export default function ConditionModal({

@@ -1,4 +1,4 @@
-import { ImageOption } from '@typing/index';
+import { ImageOption } from '@schemas/index';
 import { cloneDeep } from 'lodash-es';
 
 const imageStore: Record<string, ImageOption[]> = {

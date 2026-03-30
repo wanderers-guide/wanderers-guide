@@ -1,5 +1,5 @@
 import { SelectContentButton } from '@common/select/SelectContent';
-import { Item } from '@typing/content';
+import { Item } from '@schemas/content';
 import { OperationWrapper } from '../Operations';
 
 export function GiveItemOperation(props: {

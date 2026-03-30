@@ -1,5 +1,5 @@
 import { Text, Stack, Button, Group, Loader, Avatar, Modal, Title, Box, useMantineTheme, Anchor } from '@mantine/core';
-import { AbilityBlockType, ContentSource, ContentType, Item } from '@typing/content';
+import { AbilityBlockType, ContentSource, ContentType, Item } from '@schemas/content';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { IconBook2, IconHash } from '@tabler/icons-react';

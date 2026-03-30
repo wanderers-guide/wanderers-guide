@@ -9,7 +9,7 @@ import { fetchAllPrereqs, fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Loader, Group, Divider, Box, Anchor, useMantineTheme, Button } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock } from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';

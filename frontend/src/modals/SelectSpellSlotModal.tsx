@@ -3,7 +3,7 @@ import { collectEntitySpellcasting } from '@content/collect-content';
 import classes from '@css/ActionsGrid.module.css';
 import { Text, Card, ScrollArea, SimpleGrid, Stack, UnstyledButton, Divider, Box } from '@mantine/core';
 import { ContextModalProps } from '@mantine/modals';
-import { Spell, SpellSlot, SpellSlotRecord } from '@typing/content';
+import { Spell, SpellSlot, SpellSlotRecord } from '@schemas/content';
 import { rankNumber } from '@utils/numbers';
 import { useRecoilState } from 'recoil';
 

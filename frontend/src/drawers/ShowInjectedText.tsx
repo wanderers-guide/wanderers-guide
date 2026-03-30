@@ -1,7 +1,7 @@
 import RichText from '@common/RichText';
 import { Divider, Stack } from '@mantine/core';
-import { AbilityBlockType, ContentType } from '@typing/content';
-import { StoreID, VariableListStr } from '@typing/variables';
+import { AbilityBlockType, ContentType } from '@schemas/content';
+import { StoreID, VariableListStr } from '@schemas/variables';
 import { getVariable } from '@variables/variable-manager';
 
 type InjectedText = { type: ContentType | AbilityBlockType; id: number; text: string };

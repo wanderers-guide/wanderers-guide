@@ -39,7 +39,16 @@ import { getArmorSpecializations } from '@specializations/armor-specializations'
 import { IconCirclePlus, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Availability, Item, ItemGroup, Trait } from '@typing/content';
+import {
+  Availability,
+  Item,
+  ItemGroup,
+  ItemMetaCategoryArmor,
+  ItemMetaCategoryWeapon,
+  ItemMetaGroupArmor,
+  ItemMetaGroupWeapon,
+  Trait,
+} from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import useRefresh from '@utils/use-refresh';
 import { labelToVariable } from '@variables/variable-utils';
@@ -109,10 +118,10 @@ export function CreateItemModal(props: {
       });
       form.reset();
       setTraits(await fetchTraits(item.traits));
-      setArmorCategory(item.meta_data?.category ?? '');
-      setArmorGroup(item.meta_data?.group ?? '');
-      setWeaponCategory(item.meta_data?.category ?? '');
-      setWeaponGroup(item.meta_data?.group ?? '');
+      setArmorCategory(item.meta_data?.category as ItemMetaCategoryArmor);
+      setArmorGroup(item.meta_data?.group as ItemMetaGroupArmor);
+      setWeaponCategory(item.meta_data?.category as ItemMetaCategoryWeapon);
+      setWeaponGroup(item.meta_data?.group as ItemMetaGroupWeapon);
       setStrikingRune(item.meta_data?.runes?.striking);
       setResilientRune(item.meta_data?.runes?.resilient);
       setPotencyRune(item.meta_data?.runes?.potency);
@@ -132,11 +141,11 @@ export function CreateItemModal(props: {
   const [description, setDescription] = useState<JSONContent>();
   const [traits, setTraits] = useState<Trait[]>([]);
 
-  const [armorCategory, setArmorCategory] = useState('');
-  const [armorGroup, setArmorGroup] = useState('');
+  const [armorCategory, setArmorCategory] = useState<ItemMetaCategoryArmor | undefined>(undefined);
+  const [armorGroup, setArmorGroup] = useState<ItemMetaGroupArmor | undefined>(undefined);
 
-  const [weaponCategory, setWeaponCategory] = useState('');
-  const [weaponGroup, setWeaponGroup] = useState('');
+  const [weaponCategory, setWeaponCategory] = useState<ItemMetaCategoryWeapon | undefined>(undefined);
+  const [weaponGroup, setWeaponGroup] = useState<ItemMetaGroupWeapon | undefined>(undefined);
 
   const [strikingRune, setStrikingRune] = useState<number | undefined>(0);
   const [resilientRune, setResilientRune] = useState<number | undefined>(0);
@@ -175,7 +184,7 @@ export function CreateItemModal(props: {
       meta_data: {
         image_url: '',
         base_item: '',
-        category: '',
+        category: undefined,
         damage: {
           damageType: '',
           dice: 1,
@@ -192,7 +201,7 @@ export function CreateItemModal(props: {
           held_or_stowed: undefined,
           ignored: undefined,
         },
-        group: '',
+        group: undefined,
         hardness: undefined,
         hp: undefined,
         hp_max: undefined,
@@ -283,8 +292,8 @@ export function CreateItemModal(props: {
     (form.values.meta_data?.damage?.die && form.values.meta_data.damage.die.length > 0 ? 1 : 0) +
     (form.values.meta_data?.damage?.damageType && form.values.meta_data.damage.damageType.length > 0 ? 1 : 0) +
     (form.values.meta_data?.damage?.extra && form.values.meta_data.damage.extra.length > 0 ? 1 : 0) +
-    ((weaponCategory || armorCategory) && (weaponCategory.length > 0 || armorCategory.length > 0) ? 1 : 0) +
-    ((weaponGroup || armorGroup) && (weaponGroup.length > 0 || armorGroup.length > 0) ? 1 : 0) +
+    ((weaponCategory || armorCategory) && (weaponCategory || armorCategory) ? 1 : 0) +
+    ((weaponGroup || armorGroup) && (weaponGroup || armorGroup) ? 1 : 0) +
     (form.values.meta_data?.range && form.values.meta_data.range > 0 ? 1 : 0) +
     (form.values.meta_data?.reload && form.values.meta_data.reload.length > 0 ? 1 : 0) +
     (form.values.meta_data?.starfinder?.capacity && form.values.meta_data.starfinder.capacity.length > 0 ? 1 : 0) +
@@ -518,59 +527,63 @@ export function CreateItemModal(props: {
                             <Select
                               label='Category'
                               clearable
-                              data={[
-                                { value: 'simple', label: 'Simple' },
-                                { value: 'martial', label: 'Martial' },
-                                { value: 'advanced', label: 'Advanced' },
-                                { value: 'unarmed_attack', label: 'Unarmed' },
-                              ]}
+                              data={
+                                [
+                                  { value: 'simple', label: 'Simple' },
+                                  { value: 'martial', label: 'Martial' },
+                                  { value: 'advanced', label: 'Advanced' },
+                                  { value: 'unarmed_attack', label: 'Unarmed' },
+                                ] satisfies { value: ItemMetaCategoryWeapon; label: string }[]
+                              }
                               value={weaponCategory}
                               onChange={(value) => {
-                                setWeaponCategory(value ?? '');
-                                setArmorCategory('');
+                                setWeaponCategory((value as ItemMetaCategoryWeapon) || undefined);
+                                setArmorCategory(undefined);
                               }}
                             />
 
                             <Select
                               label='Group'
                               clearable
-                              data={[
-                                { value: 'axe', label: 'Axe' },
-                                { value: 'bomb', label: 'Bomb' },
-                                { value: 'bow', label: 'Bow' },
-                                { value: 'brawling', label: 'Brawling' },
-                                { value: 'club', label: 'Club' },
-                                { value: 'crossbow', label: 'Crossbow' },
-                                { value: 'dart', label: 'Dart' },
-                                { value: 'firearm', label: 'Firearm' },
-                                { value: 'flail', label: 'Flail' },
-                                { value: 'hammer', label: 'Hammer' },
-                                { value: 'knife', label: 'Knife' },
-                                { value: 'pick', label: 'Pick' },
-                                { value: 'polearm', label: 'Polearm' },
-                                { value: 'projectile', label: 'Projectile' },
-                                { value: 'shield', label: 'Shield' },
-                                { value: 'sling', label: 'Sling' },
-                                { value: 'spear', label: 'Spear' },
-                                { value: 'sword', label: 'Sword' },
-                                // Starfinder weapon groups
-                                { value: 'corrosive', label: 'Corrosive' },
-                                { value: 'cryo', label: 'Cryo' },
-                                { value: 'flame', label: 'Flame' },
-                                { value: 'grenade', label: 'Grenade' },
-                                { value: 'laser', label: 'Laser' },
-                                { value: 'mental', label: 'Mental' },
-                                { value: 'missile', label: 'Missile' },
-                                { value: 'plasma', label: 'Plasma' },
-                                { value: 'poison', label: 'Poison' },
-                                { value: 'shock', label: 'Shock' },
-                                { value: 'sniper', label: 'Sniper' },
-                                { value: 'sonic', label: 'Sonic' },
-                              ]}
+                              data={
+                                [
+                                  { value: 'axe', label: 'Axe' },
+                                  { value: 'bomb', label: 'Bomb' },
+                                  { value: 'bow', label: 'Bow' },
+                                  { value: 'brawling', label: 'Brawling' },
+                                  { value: 'club', label: 'Club' },
+                                  { value: 'crossbow', label: 'Crossbow' },
+                                  { value: 'dart', label: 'Dart' },
+                                  { value: 'firearm', label: 'Firearm' },
+                                  { value: 'flail', label: 'Flail' },
+                                  { value: 'hammer', label: 'Hammer' },
+                                  { value: 'knife', label: 'Knife' },
+                                  { value: 'pick', label: 'Pick' },
+                                  { value: 'polearm', label: 'Polearm' },
+                                  { value: 'projectile', label: 'Projectile' },
+                                  { value: 'shield', label: 'Shield' },
+                                  { value: 'sling', label: 'Sling' },
+                                  { value: 'spear', label: 'Spear' },
+                                  { value: 'sword', label: 'Sword' },
+                                  // Starfinder weapon groups
+                                  { value: 'corrosive', label: 'Corrosive' },
+                                  { value: 'cryo', label: 'Cryo' },
+                                  { value: 'flame', label: 'Flame' },
+                                  { value: 'grenade', label: 'Grenade' },
+                                  { value: 'laser', label: 'Laser' },
+                                  { value: 'mental', label: 'Mental' },
+                                  { value: 'missile', label: 'Missile' },
+                                  { value: 'plasma', label: 'Plasma' },
+                                  { value: 'poison', label: 'Poison' },
+                                  { value: 'shock', label: 'Shock' },
+                                  { value: 'sniper', label: 'Sniper' },
+                                  { value: 'sonic', label: 'Sonic' },
+                                ] satisfies { value: ItemMetaGroupWeapon; label: string }[]
+                              }
                               value={weaponGroup}
                               onChange={(value) => {
-                                setWeaponGroup(value ?? '');
-                                setArmorGroup('');
+                                setWeaponGroup((value as ItemMetaGroupWeapon) || undefined);
+                                setArmorGroup(undefined);
                               }}
                             />
                           </Group>
@@ -650,16 +663,18 @@ export function CreateItemModal(props: {
                             <Select
                               label='Category'
                               clearable
-                              data={[
-                                { value: 'light', label: 'Light' },
-                                { value: 'medium', label: 'Medium' },
-                                { value: 'heavy', label: 'Heavy' },
-                                { value: 'unarmored_defense', label: 'Unarmored' },
-                              ]}
+                              data={
+                                [
+                                  { value: 'light', label: 'Light' },
+                                  { value: 'medium', label: 'Medium' },
+                                  { value: 'heavy', label: 'Heavy' },
+                                  { value: 'unarmored_defense', label: 'Unarmored' },
+                                ] satisfies { value: ItemMetaCategoryArmor; label: string }[]
+                              }
                               value={armorCategory}
                               onChange={(value) => {
-                                setArmorCategory(value ?? '');
-                                setWeaponCategory('');
+                                setArmorCategory((value as ItemMetaCategoryArmor) ?? undefined);
+                                setWeaponCategory(undefined);
                               }}
                             />
 
@@ -672,8 +687,8 @@ export function CreateItemModal(props: {
                               }))}
                               value={armorGroup}
                               onChange={(value) => {
-                                setArmorGroup(value ?? '');
-                                setWeaponGroup('');
+                                setArmorGroup((value as ItemMetaGroupArmor) ?? undefined);
+                                setWeaponGroup(undefined);
                               }}
                             />
                           </Group>

@@ -1,6 +1,6 @@
 import { characterState } from '@atoms/characterAtoms';
 import { SelectContentButton } from '@common/select/SelectContent';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock } from '@schemas/content';
 import { useRecoilValue } from 'recoil';
 import { OperationWrapper } from '../Operations';
 import { getDefaultSources } from '@content/content-store';

@@ -45,7 +45,7 @@ import {
   IconAsset,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { ContentSource } from '@typing/content';
+import { ContentSource } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';

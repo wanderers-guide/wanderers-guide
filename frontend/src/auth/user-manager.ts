@@ -1,5 +1,5 @@
 import { makeRequest } from '@requests/request-manager';
-import { PublicUser } from '@typing/content';
+import { PublicUser } from '@schemas/content';
 
 export async function getPublicUser(id?: string) {
   try {

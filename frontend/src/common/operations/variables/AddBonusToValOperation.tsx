@@ -1,7 +1,7 @@
 import VariableSelect from '@common/VariableSelect';
 import { Group, NumberInput, Stack, TextInput, Textarea } from '@mantine/core';
 import { useDidUpdate } from '@mantine/hooks';
-import { Variable } from '@typing/variables';
+import { Variable } from '@schemas/variables';
 import { getVariable } from '@variables/variable-manager';
 import { useState } from 'react';
 import { OperationWrapper } from '../Operations';

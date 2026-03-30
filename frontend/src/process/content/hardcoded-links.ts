@@ -1,4 +1,4 @@
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentType } from '@schemas/content';
 
 const actionMap: Record<string, number> = {
   // Hardcoded action ids:

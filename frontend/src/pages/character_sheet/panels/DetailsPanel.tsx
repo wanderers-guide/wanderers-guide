@@ -26,8 +26,8 @@ import {
 } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
-import { ContentPackage, PublicUser } from '@typing/content';
-import { VariableListStr, VariableProf, VariableStr } from '@typing/variables';
+import { ContentPackage, PublicUser } from '@schemas/content';
+import { VariableListStr, VariableProf, VariableStr } from '@schemas/variables';
 import { displayFinalProfValue } from '@variables/variable-display';
 import {
   getVariable,
@@ -44,7 +44,7 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 import { useDebouncedState, useDebouncedValue, useDidUpdate } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import { useMutation } from '@tanstack/react-query';
-import { JSendResponse } from '@typing/requests';
+import { JSendResponse } from '@schemas/requests';
 import { useState } from 'react';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import { CreateSocietyAdventureEntryModal } from '@modals/CreateSocietyAdventureEntryModal';

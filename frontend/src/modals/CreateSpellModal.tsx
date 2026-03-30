@@ -29,7 +29,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Availability, Spell, Trait } from '@typing/content';
+import { Availability, Spell, Trait } from '@schemas/content';
 import { actionCostToLabel } from '@utils/actions';
 import { isValidImage } from '@utils/images';
 import { toLabel } from '@utils/strings';

@@ -1,4 +1,4 @@
-import { ActionCost } from '@typing/content';
+import { ActionCost } from '@schemas/content';
 
 export function convertCastToActionCost(cast: string): ActionCost | string {
   if (cast === '1') {

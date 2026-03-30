@@ -2,7 +2,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { FeatSelectionOption } from '@common/select/SelectContent';
 import { useMantineTheme, Stack, Group, TextInput, ScrollArea, Accordion, Divider, Box, Text } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
-import { AbilityBlock, ContentPackage, Creature, Trait } from '@typing/content';
+import { AbilityBlock, ContentPackage, Creature, Trait } from '@schemas/content';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRecoilState, SetterOrUpdater } from 'recoil';
 import * as JsSearch from 'js-search';
@@ -11,7 +11,7 @@ import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { flattenDeep } from 'lodash-es';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { getContentFast } from '@content/content-store';
 
 export default function CreatureAbilitiesPanel(props: {

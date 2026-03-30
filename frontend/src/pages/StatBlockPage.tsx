@@ -7,7 +7,7 @@ import { ActionIcon, Box, Button, createTheme, LoadingOverlay, MantineProvider, 
 import { makeRequest } from '@requests/request-manager';
 import { IconMoon, IconSun } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Character, Creature, LivingEntity } from '@typing/content';
+import { Character, Creature, LivingEntity } from '@schemas/content';
 import { getAnchorStyles } from '@utils/anchor';
 import { setPageTitle } from '@utils/document-change';
 import { useState } from 'react';

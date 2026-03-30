@@ -21,7 +21,7 @@ import {
 import { ContextModalProps, modals } from '@mantine/modals';
 import { useRef, useState } from 'react';
 import { SelectIconModalContents } from './SelectIconModal';
-import { Encounter } from '@typing/content';
+import { Encounter } from '@schemas/content';
 import { SelectIcon, stringifyIconValue } from '@common/IconDisplay';
 import { cloneDeep } from 'lodash-es';
 import { IconDownload, IconUpload } from '@tabler/icons-react';

@@ -1,5 +1,5 @@
-import { AbilityBlockType, ContentType, Creature } from '@typing/content';
-import { DrawerType } from '@typing/index';
+import { AbilityBlockType, ContentType, Creature } from '@schemas/content';
+import { DrawerType } from '@schemas/index';
 import { isDefaultValue } from '@utils/type-fixing';
 import { atom, selector } from 'recoil';
 

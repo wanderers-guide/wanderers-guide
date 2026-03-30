@@ -14,13 +14,13 @@ import {
   Divider,
   Tooltip,
 } from '@mantine/core';
-import { Variable, VariableType } from '@typing/variables';
+import { Variable, VariableType } from '@schemas/variables';
 import { useEffect, useState } from 'react';
 import { OperationSection, OperationWrapper } from '../Operations';
 import VariableSelect from '@common/VariableSelect';
 import { cloneDeep } from 'lodash-es';
 import { IconCaretRightFilled, IconCircleMinus, IconCirclePlus } from '@tabler/icons-react';
-import { ConditionCheckData, ConditionOperator, Operation } from '@typing/operations';
+import { ConditionCheckData, ConditionOperator, Operation } from '@schemas/operations';
 
 export default function ConditionalOperation(props: {
   conditions?: ConditionCheckData[];

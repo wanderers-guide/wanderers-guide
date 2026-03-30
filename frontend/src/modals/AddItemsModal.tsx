@@ -17,7 +17,7 @@ import {
 import { ContextModalProps } from '@mantine/modals';
 import { IconSearch, IconAdjustments, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Item } from '@typing/content';
+import { Item } from '@schemas/content';
 import { labelToVariable } from '@variables/variable-utils';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';

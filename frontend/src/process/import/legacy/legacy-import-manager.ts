@@ -1,7 +1,7 @@
 import { fetchTraitByName } from '@content/content-store';
 import { showNotification } from '@mantine/notifications';
 import { makeRequest } from '@requests/request-manager';
-import { AbilityBlockType, ContentType, Trait } from '@typing/content';
+import { AbilityBlockType, ContentType, Trait } from '@schemas/content';
 
 //
 const ENABLED = false;

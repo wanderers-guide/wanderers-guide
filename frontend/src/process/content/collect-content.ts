@@ -6,9 +6,9 @@ import {
   SenseWithRange,
   LivingEntity,
   SpellSlotRecord,
-} from '@typing/content';
-import { GiveSpellData } from '@typing/operations';
-import { StoreID, VariableListStr, VariableNum } from '@typing/variables';
+} from '@schemas/content';
+import { GiveSpellData } from '@schemas/operations';
+import { StoreID, VariableListStr, VariableNum } from '@schemas/variables';
 import { attemptToFindSense, compactSensesWithRange } from '@utils/senses';
 import { toLabel } from '@utils/strings';
 import { hasTraitType } from '@utils/traits';

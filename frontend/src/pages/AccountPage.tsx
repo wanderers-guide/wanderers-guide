@@ -38,7 +38,7 @@ import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE } from '@constants/data';
 import { IconAdjustments, IconBrandPatreon, IconCirclePlus, IconUpload } from '@tabler/icons-react';
-import { Campaign, Character, PublicUser } from '@typing/content';
+import { Campaign, Character, PublicUser } from '@schemas/content';
 import { useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';

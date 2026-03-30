@@ -60,7 +60,7 @@ export default defineConfig({
       '@contexts': path.resolve(__dirname, './src/contexts'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@auth': path.resolve(__dirname, './src/auth'),
-      '@typing': path.resolve(__dirname, './src/typing'),
+      '@schemas': path.resolve(__dirname, './src/schemas'),
       '@operations': path.resolve(__dirname, './src/process/operations'),
       '@variables': path.resolve(__dirname, './src/process/variables'),
       '@requests': path.resolve(__dirname, './src/request'),

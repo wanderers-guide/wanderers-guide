@@ -1,14 +1,14 @@
 import { SelectContentButton } from '@common/select/SelectContent';
 import { Box } from '@mantine/core';
-import { OperationResult } from '@typing/operations';
-import { Character } from '@typing/content';
+import { OperationResult } from '@schemas/operations';
+import { Character } from '@schemas/content';
 import {
   Operation,
   OperationSelect,
   OperationSelectOptionAdjValue,
   OperationSelectOptionCustom,
-} from '@typing/operations';
-import { AttributeValue, ProficiencyValue, StoreID, Variable, VariableType, VariableValue } from '@typing/variables';
+} from '@schemas/operations';
+import { AttributeValue, ProficiencyValue, StoreID, Variable, VariableType, VariableValue } from '@schemas/variables';
 import { toLabel } from '@utils/strings';
 import { listToLabel } from '@utils/display-strings';
 import { ReactNode } from 'react';

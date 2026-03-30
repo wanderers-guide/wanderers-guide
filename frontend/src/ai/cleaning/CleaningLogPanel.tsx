@@ -35,6 +35,7 @@ import {
   IconCheck,
   IconChevronDown,
   IconChevronRight,
+  IconClipboard,
   IconCloudUp,
   IconDatabase,
   IconInfoCircle,
@@ -42,7 +43,7 @@ import {
   IconUpload,
   IconZoomPan,
 } from '@tabler/icons-react';
-import { ContentType } from '@typing/content';
+import { ContentType } from '@schemas/content';
 import { displayError } from '@utils/notifications';
 import { useEffect, useRef, useState } from 'react';
 import { useRecoilState } from 'recoil';
@@ -322,6 +323,13 @@ export function CleaningLogPanel({
         <>
           <Divider color='gray.6' mt='md' mb='sm' label='Fixed Result' labelPosition='center' />
           <Group justify='center'>
+            <BlurButton
+              size='md'
+              leftSection={<IconClipboard size='0.9rem' />}
+              onClick={() => navigator.clipboard.writeText(JSON.stringify(result.content, null, 2))}
+            >
+              Copy JSON
+            </BlurButton>
             <BlurButton
               size='md'
               leftSection={<IconZoomPan size='0.9rem' />}

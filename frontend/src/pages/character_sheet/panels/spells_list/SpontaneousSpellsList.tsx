@@ -11,7 +11,7 @@ import {
   SpellListEntry,
   SpellSectionType,
   SpellSlot,
-} from '@typing/content';
+} from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
@@ -20,7 +20,7 @@ import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 

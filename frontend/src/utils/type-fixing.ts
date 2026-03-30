@@ -1,5 +1,5 @@
-import { Character, Creature, LivingEntity } from '@typing/content';
-import { OperationSelectOptionCustom } from '@typing/operations';
+import { Character, Creature, LivingEntity } from '@schemas/content';
+import { OperationSelectOptionCustom } from '@schemas/operations';
 import { DefaultValue, SetterOrUpdater } from 'recoil';
 
 // Recoil's DefaultValues are annoying to work with, so we just ignore them.

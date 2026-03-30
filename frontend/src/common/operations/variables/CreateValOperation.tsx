@@ -1,5 +1,5 @@
 import { OperationWrapper } from '../Operations';
-import { AttributeValue, ProficiencyType, ProficiencyValue, VariableType, VariableValue } from '@typing/variables';
+import { AttributeValue, ProficiencyType, ProficiencyValue, VariableType, VariableValue } from '@schemas/variables';
 import { Group, JsonInput, NumberInput, SegmentedControl, Select, TextInput } from '@mantine/core';
 import { SetValueInput } from './SetValOperation';
 import { labelToVariable } from '@variables/variable-utils';

@@ -8,6 +8,7 @@ import { isActionCost } from '@content/content-utils';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { priceToString } from '@items/currency-handler';
 import {
+  FUNDAMENTAL_RUNES,
   compileTraits,
   determineItemMetaType,
   getItemHealth,
@@ -16,12 +17,14 @@ import {
   isItemRangedWeapon,
   isItemShield,
   isItemWeapon,
+  isItemMetaAttack,
   isItemWithGradeImprovement,
   isItemWithPropertyRunes,
   isItemWithQuantity,
   isItemWithRunes,
   isItemWithUpgrades,
   labelizeBulk,
+  isItemWithHealth,
 } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
@@ -47,8 +50,8 @@ import {
 import { getHotkeyHandler } from '@mantine/hooks';
 import { IconHelpCircle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Item } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { Item, ItemMetaGroupArmor, ItemMetaGroupWeapon } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getArmorSpecialization } from '@specializations/armor-specializations';
@@ -176,7 +179,12 @@ export function ItemDrawerContent(props: {
       </>
     );
   }
-  if (item.bulk !== undefined && item.bulk !== null && `${item.bulk}`.trim() !== '') {
+  if (
+    item.bulk !== undefined &&
+    item.bulk !== null &&
+    `${item.bulk}`.trim() !== '' &&
+    !(isItemMetaAttack(item) && `${item.bulk}`.trim() === '0')
+  ) {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.5' span>
@@ -200,12 +208,9 @@ export function ItemDrawerContent(props: {
   let craftReq = null;
   if (item.craft_requirements) {
     craftReq = (
-      <>
-        <Text key={1} fw={600} c='gray.5' span>
-          Craft Requirements
-        </Text>{' '}
-        {item.craft_requirements}
-      </>
+      <RichText ta='justify' py={5}>
+        **Craft Requirements** {item.craft_requirements}
+      </RichText>
     );
   }
 
@@ -265,7 +270,7 @@ export function ItemDrawerContent(props: {
         {craftReq && (
           <>
             <Divider />
-            <IndentedText ta='justify'>{craftReq}</IndentedText>
+            {craftReq}
           </>
         )}
       </Box>
@@ -294,7 +299,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   ///
 
   const hasQuantity = isItemWithQuantity(props.item);
-  const hasHealth = !!health.hp_max;
+  const hasHealth = isItemWithHealth(props.item);
   const hasAttackAndDamage = isItemWeapon(props.item);
   const hasArmor = isItemArmor(props.item) || isItemShield(props.item);
 
@@ -449,19 +454,53 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
       <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
         <Group gap={5}>
           {potencyLabel && (
-            <Text fw={600} c='gray.5' span>
-              {potencyLabel}
-            </Text>
+            <Badge
+              size='lg'
+              variant='light'
+              color='gray.5'
+              style={{ cursor: 'pointer' }}
+              styles={{ root: { textTransform: 'initial' } }}
+              onClick={() => {
+                const potencyNum = props.item.meta_data!.runes!.potency;
+                const potencyId = isItemWeapon(props.item)
+                  ? FUNDAMENTAL_RUNES[`potency_weapon_${potencyNum}`]
+                  : FUNDAMENTAL_RUNES[`potency_armor_${potencyNum}`];
+                if (potencyId) {
+                  props.openDrawer({ type: 'item', data: { id: potencyId }, extra: { addToHistory: true } });
+                }
+              }}
+            >
+              {potencyLabel.trim()}
+            </Badge>
           )}
-          <Text fw={600} c='gray.5' span>
-            {rightLabel}
-          </Text>
+          {rightLabel && (
+            <Badge
+              size='lg'
+              variant='light'
+              color='gray.5'
+              style={{ cursor: 'pointer' }}
+              styles={{ root: { textTransform: 'initial' } }}
+              onClick={() => {
+                const strikingNum = props.item.meta_data!.runes!.striking;
+                const resilientNum = props.item.meta_data!.runes!.resilient;
+                const runeId = strikingNum
+                  ? FUNDAMENTAL_RUNES[`striking_${strikingNum}`]
+                  : FUNDAMENTAL_RUNES[`resilient_${resilientNum}`];
+                if (runeId) {
+                  props.openDrawer({ type: 'item', data: { id: runeId }, extra: { addToHistory: true } });
+                }
+              }}
+            >
+              {rightLabel}
+            </Badge>
+          )}
 
           {isItemWithPropertyRunes(props.item) && (
             <>
               {props.item.meta_data!.runes!.property?.map((rune, index) => (
                 <Badge
                   key={index}
+                  size='lg'
                   variant='light'
                   color='gray.5'
                   style={{
@@ -591,8 +630,8 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
   let categoryAndGroupSection = null;
   if (props.item.meta_data?.category || props.item.meta_data?.group) {
     let groupDesc =
-      getWeaponSpecialization(props.item.meta_data?.group ?? '') ??
-      getArmorSpecialization(props.item.meta_data?.group ?? '');
+      getWeaponSpecialization(props.item.meta_data?.group as ItemMetaGroupWeapon) ??
+      getArmorSpecialization(props.item.meta_data?.group as ItemMetaGroupArmor);
     if (groupDesc) {
       if (hasAttackAndDamage) {
         groupDesc = {

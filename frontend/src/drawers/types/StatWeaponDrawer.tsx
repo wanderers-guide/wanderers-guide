@@ -1,8 +1,8 @@
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import { Accordion, Box, Divider, Group, HoverCard, Kbd, Text, Title, useMantineTheme } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
-import { Item } from '@typing/content';
-import { StoreID } from '@typing/variables';
+import { Item } from '@schemas/content';
+import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 
 export function StatWeaponDrawerTitle(props: { data: { id: StoreID; item: Item } }) {

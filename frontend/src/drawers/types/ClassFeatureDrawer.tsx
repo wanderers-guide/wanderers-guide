@@ -7,7 +7,7 @@ import { fetchContentById } from '@content/content-store';
 import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock } from '@schemas/content';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { DisplayIcon } from '@common/IconDisplay';

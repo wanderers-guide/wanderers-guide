@@ -4,7 +4,7 @@ import { useDisclosure, useWindowEvent } from '@mantine/hooks';
 import { IconLink } from '@tabler/icons-react';
 import { RichTextEditor, useRichTextEditorContext } from '@mantine/tiptap';
 import { selectContent } from '@common/select/SelectContent';
-import { AbilityBlockType, ActionCost, ContentType } from '@typing/content';
+import { AbilityBlockType, ActionCost, ContentType } from '@schemas/content';
 import { ActionSymbol } from '@common/Actions';
 
 export default function ActionSymbolControl() {

@@ -6,7 +6,7 @@ import { getUploadStats, resetUploadStats, uploadContentList } from '@upload/con
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { showNotification } from '@mantine/notifications';
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentType } from '@schemas/content';
 import { fetchContentSources, defineDefaultSources } from '@content/content-store';
 import { getSpellByName } from '@upload/foundry-utils';
 

@@ -1,5 +1,5 @@
 import { SelectContentButton } from '@common/select/SelectContent';
-import { Item, Trait } from '@typing/content';
+import { Item, Trait } from '@schemas/content';
 import { OperationWrapper } from '../Operations';
 
 export function GiveTraitOperation(props: {

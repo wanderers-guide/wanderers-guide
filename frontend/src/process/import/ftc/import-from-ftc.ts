@@ -9,11 +9,10 @@ import {
 } from '@content/content-store';
 import { isItemEquippable, isItemImplantable, isItemInvestable } from '@items/inv-utils';
 import { executeOperations } from '@operations/operations.main';
-import { OperationResult } from '@typing/operations';
+import { OperationResult } from '@schemas/operations';
 import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@operations/operation-utils';
 import { makeRequest } from '@requests/request-manager';
-import { Character } from '@typing/content';
-import { OperationCharacterResultPackage } from '@typing/operations';
+import { Character, OperationCharacterResultPackage } from '@schemas/content';
 import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
 import { labelToVariable } from '@variables/variable-utils';

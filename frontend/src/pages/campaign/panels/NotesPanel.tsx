@@ -7,7 +7,7 @@ import { useDebouncedState, useDidUpdate } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
 import { JSONContent } from '@tiptap/react';
-import { Campaign } from '@typing/content';
+import { Campaign } from '@schemas/content';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import useRefresh from '@utils/use-refresh';
 import { cloneDeep, truncate } from 'lodash-es';

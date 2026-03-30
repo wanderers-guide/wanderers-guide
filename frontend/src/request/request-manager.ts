@@ -1,5 +1,5 @@
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError, createClient } from '@supabase/supabase-js';
-import { JSendResponse, RequestType } from '@typing/requests';
+import { JSendResponse, RequestType } from '@schemas/requests';
 import { logError, throwError } from '@utils/error-handling';
 
 const supabase = createClient(

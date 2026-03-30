@@ -18,7 +18,7 @@ import {
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { createDefaultOperation } from '@operations/operation-utils';
-import { AbilityBlockType, Spell } from '@typing/content';
+import { AbilityBlockType, Spell } from '@schemas/content';
 import {
   Operation,
   OperationAddBonusToValue,
@@ -39,7 +39,7 @@ import {
   OperationSendNotification,
   OperationSetValue,
   OperationType,
-} from '@typing/operations';
+} from '@schemas/operations';
 import { cloneDeep } from 'lodash-es';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import ConditionalOperation from './conditional/ConditionalOperation';

@@ -8,8 +8,8 @@ import { handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-h
 import { getBestArmor, getBestShield, getItemHealth } from '@items/inv-utils';
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
-import { InventoryItem, LivingEntity } from '@typing/content';
-import { StoreID, VariableProf } from '@typing/variables';
+import { InventoryItem, LivingEntity } from '@schemas/content';
+import { StoreID, VariableProf } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-display';
 import { getAllSaveVariables } from '@variables/variable-manager';

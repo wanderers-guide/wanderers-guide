@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 export {};
 
-import { OperationExecution } from '@typing/operations';
+import { OperationExecution } from '@schemas/content';
 import { _executeCharacterOperations, _executeCreatureOperations } from '../operations/operation-controller';
-import { VariableStore } from '@typing/variables';
+import { VariableStore } from '@schemas/variables';
 
 type WorkerRequest = {
   id: number;

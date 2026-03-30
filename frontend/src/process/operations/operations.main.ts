@@ -3,8 +3,8 @@ import {
   OperationCreatureResultPackage,
   OperationExecution,
   OperationResultData,
-} from '@typing/operations';
-import { VariableStore } from '@typing/variables';
+} from '@schemas/content';
+import { VariableStore } from '@schemas/variables';
 import { exportVariableStore, importVariableStore } from '@variables/variable-manager';
 import { _executeCharacterOperations, _executeCreatureOperations } from './operation-controller';
 

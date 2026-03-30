@@ -15,7 +15,7 @@ import {
   VariableStr,
   VariableType,
   VariableValue,
-} from '@typing/variables';
+} from '@schemas/variables';
 import { getVariables } from './variable-manager';
 import { evaluate } from 'mathjs/number';
 import { getFinalVariableValue } from './variable-helpers';

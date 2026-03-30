@@ -1,6 +1,6 @@
 import RichText from '@common/RichText';
 import { Title, Text, Group, Box, HoverCard, Table, useMantineTheme } from '@mantine/core';
-import { AttributeValue, StoreID } from '@typing/variables';
+import { AttributeValue, StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getAllAttributeVariables, getVariableHistory } from '@variables/variable-manager';

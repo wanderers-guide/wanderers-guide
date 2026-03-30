@@ -24,8 +24,8 @@ import {
 } from '@mantine/core';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { IconExternalLink } from '@tabler/icons-react';
-import { ContentPackage, Creature, PublicUser } from '@typing/content';
-import { StoreID, VariableListStr, VariableProf, VariableStr } from '@typing/variables';
+import { ContentPackage, Creature, PublicUser } from '@schemas/content';
+import { StoreID, VariableListStr, VariableProf, VariableStr } from '@schemas/variables';
 import { displayFinalProfValue } from '@variables/variable-display';
 import {
   getVariable,

@@ -9,16 +9,16 @@ import {
   Creature,
   Item,
   LivingEntity,
-} from '@typing/content';
+  OperationCharacterResultPackage,
+  OperationCreatureResultPackage,
+} from '@schemas/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
 import {
   Operation,
-  OperationCharacterResultPackage,
-  OperationCreatureResultPackage,
   OperationOptions,
   OperationResult,
   OperationSelect,
-} from '@typing/operations';
+} from '@schemas/operations';
 import { runOperations } from './operation-runner';
 import {
   addVariable,
@@ -33,7 +33,7 @@ import {
 } from '@variables/variable-manager';
 import { isAttributeValue, labelToVariable, variableToLabel } from '@variables/variable-utils';
 import { hashData, rankNumber } from '@utils/numbers';
-import { StoreID, VariableListStr, VariableStore } from '@typing/variables';
+import { StoreID, VariableListStr, VariableStore } from '@schemas/variables';
 import {
   getFlatInvItems,
   getItemOperations,

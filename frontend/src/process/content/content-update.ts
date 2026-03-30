@@ -1,5 +1,5 @@
 import { makeRequest } from '@requests/request-manager';
-import { ContentType, ContentUpdate } from '@typing/content';
+import { ContentType, ContentUpdate } from '@schemas/content';
 
 export async function submitContentUpdate(
   type: ContentType,

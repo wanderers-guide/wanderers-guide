@@ -1,4 +1,4 @@
-import { AbilityBlock, ActionCost, ContentSource, Creature, InventoryItem, Item, Rarity, Size } from '@typing/content';
+import { AbilityBlock, ActionCost, ContentSource, Creature, InventoryItem, Item, Rarity, Size } from '@schemas/content';
 import {
   convertToActionCost,
   convertToRarity,
@@ -22,7 +22,7 @@ import {
   OperationGiveSpellSlot,
   OperationGiveTrait,
   OperationSetValue,
-} from '@typing/operations';
+} from '@schemas/operations';
 import { createDefaultOperation } from '@operations/operation-utils';
 import { compactLabels, labelToVariable } from '@variables/variable-utils';
 import { parseDiceRoll, toLabel } from '@utils/strings';
@@ -34,9 +34,9 @@ import { getBestArmor, isItemImplantable, isItemInvestable } from '@items/inv-ut
 import { hashData, sign } from '@utils/numbers';
 import { findCreatureImage } from '@utils/images';
 import { getWeaponStats } from '@items/weapon-handler';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { cloneDeep, groupBy } from 'lodash-es';
-import { GranularCreature } from '@typing/index';
+import { GranularCreature } from '@schemas/index';
 
 export async function convertGranularCreature(source: ContentSource, g: GranularCreature): Promise<Creature> {
   const creature = {

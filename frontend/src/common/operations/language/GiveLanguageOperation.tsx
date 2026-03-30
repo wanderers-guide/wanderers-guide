@@ -1,5 +1,5 @@
 import { SelectContentButton } from '@common/select/SelectContent';
-import { AbilityBlock, Language } from '@typing/content';
+import { AbilityBlock, Language } from '@schemas/content';
 import { OperationWrapper } from '../Operations';
 
 export function GiveLanguageOperation(props: {

@@ -17,7 +17,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import { IconKey, IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlockType, ContentSource, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentSource, ContentType } from '@schemas/content';
 import { getRingIcon } from '@utils/images';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { pluralize, toLabel } from '@utils/strings';

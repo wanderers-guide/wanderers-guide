@@ -1,6 +1,6 @@
 import RichText from '@common/RichText';
 import { Title, Text, Group, Stack, Box, Badge, Accordion, List } from '@mantine/core';
-import { StoreID, VariableListStr } from '@typing/variables';
+import { StoreID, VariableListStr } from '@schemas/variables';
 import { displayResistWeak, getResistWeaks } from '@utils/resist-weaks';
 import { getVariable } from '@variables/variable-manager';
 

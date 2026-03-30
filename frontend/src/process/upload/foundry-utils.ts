@@ -6,7 +6,7 @@ import {
   fetchTraitByName,
 } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
-import { ActionCost, ContentSource, Item, Language, Rarity, Size, Spell, Trait } from '@typing/content';
+import { ActionCost, ContentSource, Item, Language, Rarity, Size, Spell, Trait } from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { isString } from 'lodash-es';
 import { evaluate } from 'mathjs/number';

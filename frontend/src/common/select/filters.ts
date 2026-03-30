@@ -1,4 +1,4 @@
-import { AbilityBlock } from '@typing/content';
+import { AbilityBlock } from '@schemas/content';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 
 // export interface FilterOption {

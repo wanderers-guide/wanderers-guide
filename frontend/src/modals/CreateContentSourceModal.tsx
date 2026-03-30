@@ -61,8 +61,8 @@ import {
   Spell,
   Trait,
   VersatileHeritage,
-} from '@typing/content';
-import { Operation } from '@typing/operations';
+} from '@schemas/content';
+import { Operation } from '@schemas/operations';
 import { pluralize, toLabel } from '@utils/strings';
 import * as JsSearch from 'js-search';
 import { useEffect, useRef, useState } from 'react';

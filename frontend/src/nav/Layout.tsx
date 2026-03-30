@@ -34,7 +34,7 @@ import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
 import WanderersGuideLogo from './WanderersGuideLogo';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
-import { PublicUser } from '@typing/content';
+import { PublicUser } from '@schemas/content';
 import { useQueryClient } from '@tanstack/react-query';
 import { isTouchDevice, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { DISCORD_URL, LEGACY_URL, PATREON_URL } from '@constants/urls';

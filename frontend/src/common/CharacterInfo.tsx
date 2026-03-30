@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconTree, IconVocabulary, IconWindow } from '@tabler/icons-react';
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 import { interpolateHealth } from '@utils/colors';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';

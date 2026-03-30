@@ -20,7 +20,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Archetype } from '@typing/content';
+import { AbilityBlock, Archetype } from '@schemas/content';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';

@@ -22,7 +22,7 @@ import {
 } from '@mantine/core';
 import { IconArrowBigRightLine, IconThumbUp, IconThumbDown } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Creature } from '@typing/content';
+import { Creature } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';

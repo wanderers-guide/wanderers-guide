@@ -28,7 +28,7 @@ import {
   SpellSectionType,
   SpellSlot,
   Trait,
-} from '@typing/content';
+} from '@schemas/content';
 import useRefresh from '@utils/use-refresh';
 import { useEffect, useMemo, useState } from 'react';
 import { SetterOrUpdater } from 'recoil';
@@ -41,7 +41,7 @@ import StaffSpellsList from './spells_list/StaffSpellsList';
 import WandSpellsList from './spells_list/WandSpellsList';
 import SpellheartSpellsList from './spells_list/SpellheartSpellsList';
 import { filterByTraitType } from '@items/inv-utils';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { groupBy } from 'lodash-es';
 import { phoneQuery } from '@utils/mobile-responsive';

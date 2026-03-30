@@ -3,7 +3,7 @@ import { convertToContentType, isAbilityBlockType } from '@content/content-utils
 import { ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, ScrollArea, Text, Title } from '@mantine/core';
 import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@mantine/hooks';
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
-import { ContentType } from '@typing/content';
+import { ContentType } from '@schemas/content';
 import { Suspense, lazy, useRef } from 'react';
 import { useRecoilState } from 'recoil';
 import { PrevMetadata } from './drawer-utils';

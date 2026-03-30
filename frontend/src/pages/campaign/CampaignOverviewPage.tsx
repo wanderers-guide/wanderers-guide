@@ -36,7 +36,7 @@ import {
   IconCopy,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Campaign, Character, Encounter } from '@typing/content';
+import { Campaign, Character, Encounter } from '@schemas/content';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, tabletQuery } from '@utils/mobile-responsive';
 import { cloneDeep, truncate } from 'lodash-es';

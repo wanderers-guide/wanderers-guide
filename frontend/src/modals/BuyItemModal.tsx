@@ -1,5 +1,5 @@
 import { Text, Stack, Button, Group, Modal, Title, Box } from '@mantine/core';
-import { Inventory, Item } from '@typing/content';
+import { Inventory, Item } from '@schemas/content';
 import { CoinSection } from '@pages/character_sheet/panels/InventoryPanel';
 import { convertToCp, purchase } from '@items/currency-handler';
 import { ContextModalProps } from '@mantine/modals';

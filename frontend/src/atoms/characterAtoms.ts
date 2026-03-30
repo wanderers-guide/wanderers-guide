@@ -1,4 +1,4 @@
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 import { atom, selector } from 'recoil';
 
 const _internal_characterState = atom({

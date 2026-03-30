@@ -1,5 +1,5 @@
 import { Autocomplete } from '@mantine/core';
-import { Variable, VariableType } from '@typing/variables';
+import { Variable, VariableType } from '@schemas/variables';
 import { HIDDEN_VARIABLES, getVariables } from '@variables/variable-manager';
 
 export default function VariableSelect(props: {

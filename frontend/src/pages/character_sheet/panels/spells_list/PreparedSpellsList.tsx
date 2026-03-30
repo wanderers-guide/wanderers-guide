@@ -1,7 +1,7 @@
 import BlurButton from '@common/BlurButton';
 import { Accordion, Badge, Box, Divider, Group, Paper, Stack, Text } from '@mantine/core';
 import { getSpellStats } from '@spells/spell-handler';
-import { CastingSource, LivingEntity, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@typing/content';
+import { CastingSource, LivingEntity, Spell, SpellInnateEntry, SpellListEntry, SpellSlot } from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
@@ -9,7 +9,7 @@ import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
 

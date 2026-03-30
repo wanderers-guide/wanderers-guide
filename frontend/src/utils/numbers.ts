@@ -1,4 +1,4 @@
-import { Rarity } from '@typing/content';
+import { Rarity } from '@schemas/content';
 import { isString } from 'lodash-es';
 
 export function sign(num: number | string): string {

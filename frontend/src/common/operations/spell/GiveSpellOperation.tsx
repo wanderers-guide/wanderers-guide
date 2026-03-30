@@ -1,10 +1,10 @@
 import { SelectContentButton } from '@common/select/SelectContent';
-import { Spell } from '@typing/content';
+import { Spell } from '@schemas/content';
 import { OperationWrapper } from '../Operations';
 import { Group, NumberInput, SegmentedControl, Stack, TextInput, Text } from '@mantine/core';
 import { useState } from 'react';
 import { useDidUpdate } from '@mantine/hooks';
-import { GiveSpellData } from '@typing/operations';
+import { GiveSpellData } from '@schemas/operations';
 import { labelToVariable } from '@variables/variable-utils';
 
 export function GiveSpellOperation(props: {

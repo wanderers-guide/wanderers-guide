@@ -17,7 +17,7 @@ import { useForm } from '@mantine/form';
 import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { JSONContent } from '@tiptap/react';
-import { Availability, Language, Rarity } from '@typing/content';
+import { Availability, Language, Rarity } from '@schemas/content';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
 

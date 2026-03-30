@@ -49,7 +49,7 @@ import BlurButton from '@common/BlurButton';
 import OperationsModal from '@modals/OperationsModal';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { drawerState } from '@atoms/navAtoms';
-import { Campaign, Character } from '@typing/content';
+import { Campaign, Character } from '@schemas/content';
 import { userState } from '@atoms/userAtoms';
 import { isValidImage } from '@utils/images';
 import { makeRequest } from '@requests/request-manager';

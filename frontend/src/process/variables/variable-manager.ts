@@ -8,7 +8,7 @@ import {
   VariableValue,
   VariableNum,
   ExtendedVariableValue,
-} from '@typing/variables';
+} from '@schemas/variables';
 import {
   isAttributeValue,
   isProficiencyType,
@@ -39,7 +39,7 @@ export const HIDDEN_VARIABLES = [
   'INJECT_TEXT',
 ];
 
-const DEFAULT_VARIABLES: Record<string, Variable> = {
+export const DEFAULT_VARIABLES: Record<string, Variable> = {
   ATTRIBUTE_STR: newVariable('attr', 'ATTRIBUTE_STR'),
   ATTRIBUTE_DEX: newVariable('attr', 'ATTRIBUTE_DEX'),
   ATTRIBUTE_CON: newVariable('attr', 'ATTRIBUTE_CON'),

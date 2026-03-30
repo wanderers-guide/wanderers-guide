@@ -2,7 +2,7 @@ import { isTraitVisible } from '@content/content-hidden';
 import { fetchContentAll, getDefaultSources } from '@content/content-store';
 import { TagsInput, TagsInputProps } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { Trait } from '@typing/content';
+import { Trait } from '@schemas/content';
 import { isTruthy } from '@utils/type-fixing';
 import { uniq } from 'lodash-es';
 

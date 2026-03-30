@@ -35,8 +35,8 @@ import {
   IconX,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { Character, ContentPackage, LivingEntity } from '@typing/content';
-import { VariableListStr } from '@typing/variables';
+import { Character, ContentPackage, LivingEntity } from '@schemas/content';
+import { VariableListStr } from '@schemas/variables';
 import { setPageTitle } from '@utils/document-change';
 import { isPhoneSized, phoneQuery, tabletQuery } from '@utils/mobile-responsive';
 import { toLabel } from '@utils/strings';

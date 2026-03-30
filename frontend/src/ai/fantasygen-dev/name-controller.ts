@@ -1,4 +1,4 @@
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 import options from './name-set/options';
 import { generateCompletion } from '@ai/open-ai-handler';
 

@@ -1,8 +1,8 @@
 import RichText from '@common/RichText';
 import { Title, Text, Group, Divider, Box, Accordion, Kbd, Timeline, HoverCard, List } from '@mantine/core';
 import { IconChartDots3, IconFrame, IconMathSymbols, IconTimeline } from '@tabler/icons-react';
-import { LivingEntity } from '@typing/content';
-import { StoreID, VariableNum } from '@typing/variables';
+import { LivingEntity } from '@schemas/content';
+import { StoreID, VariableNum } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getBonusText, getSpeedValue, getVariableBreakdown } from '@variables/variable-helpers';

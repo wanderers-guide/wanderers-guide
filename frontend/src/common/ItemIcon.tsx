@@ -1,5 +1,5 @@
 import { isItemArmor, isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
-import { Item, ItemGroup } from '@typing/content';
+import { Item, ItemGroup } from '@schemas/content';
 import { hasTraitType } from '@utils/traits';
 import {
   GiBolterGun,

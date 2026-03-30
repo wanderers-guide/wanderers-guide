@@ -1,4 +1,4 @@
-import { CampaignNPC, CampaignSessionIdea } from '@typing/content';
+import { CampaignNPC, CampaignSessionIdea } from '@schemas/content';
 import { atom } from 'recoil';
 
 const sessionIdeasState = atom({

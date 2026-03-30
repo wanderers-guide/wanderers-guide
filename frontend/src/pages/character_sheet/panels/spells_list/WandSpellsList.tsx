@@ -7,7 +7,7 @@ import {
   SpellInnateEntry,
   SpellListEntry,
   SpellSlot,
-} from '@typing/content';
+} from '@schemas/content';
 import { SetterOrUpdater } from 'recoil';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
@@ -17,7 +17,7 @@ import { isItemBroken } from '@items/inv-utils';
 import { modals } from '@mantine/modals';
 import { convertToHardcodedLink } from '@content/hardcoded-links';
 import RichText from '@common/RichText';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { handleUpdateItemCharges } from '@items/inv-handlers';
 
 const DEFAULT_WAND_HP = 2;

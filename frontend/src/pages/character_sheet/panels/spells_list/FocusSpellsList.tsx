@@ -10,7 +10,7 @@ import {
   SpellListEntry,
   SpellSectionType,
   SpellSlot,
-} from '@typing/content';
+} from '@schemas/content';
 import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
@@ -21,7 +21,7 @@ import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
 import { drawerState } from '@atoms/navAtoms';
 import { useMemo } from 'react';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { isTruthy } from '@utils/type-fixing';
 import { uniq } from 'lodash-es';
 import { useMediaQuery } from '@mantine/hooks';

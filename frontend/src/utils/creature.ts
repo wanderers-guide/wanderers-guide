@@ -1,6 +1,11 @@
 import { createDefaultOperation } from '@operations/operation-utils';
-import { ActionCost, ContentSource, Creature, Trait } from '@typing/content';
-import { OperationAddBonusToValue, OperationAdjValue, OperationGiveTrait, OperationSetValue } from '@typing/operations';
+import { ActionCost, ContentSource, Creature, Trait } from '@schemas/content';
+import {
+  OperationAddBonusToValue,
+  OperationAdjValue,
+  OperationGiveTrait,
+  OperationSetValue,
+} from '@schemas/operations';
 import { sign } from './numbers';
 import { getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { isAttributeValue, labelToVariable } from '@variables/variable-utils';
@@ -10,7 +15,7 @@ import { getEntityLevel } from '@utils/entity-utils';
 import { parseCreatureStatBlock } from '@ai/open-ai-handler';
 import { convertGranularCreature } from '@upload/creature-import';
 import { fetchContentById, fetchTraits, getContentFast } from '@content/content-store';
-import { GranularCreature } from '@typing/index';
+import { GranularCreature } from '@schemas/index';
 
 export function findCreatureTraits(creature: Creature): number[] {
   return (

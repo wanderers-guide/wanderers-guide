@@ -13,7 +13,7 @@
       "@contexts/*": ["src/contexts/*"],
       "@utils/*": ["src/utils/*"],
       "@auth/*": ["src/auth/*"],
-      "@typing/*": ["src/typing/*"],
+      "@schemas/*": ["src/schemas/*"],
       "@operations/*": ["src/process/operations/*"],
       "@variables/*": ["src/process/variables/*"],
       "@requests/*": ["src/request/*"],
@@ -27,7 +27,7 @@
       "@conditions/*": ["src/process/conditions/*"],
       "@spells/*": ["src/process/spells/*"],
       "@css/*": ["src/css/*"],
-      "@ai/*": ["src/ai/*"],
+      "@ai/*": ["src/ai/*"]
     }
   }
 }

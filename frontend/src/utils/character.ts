@@ -1,4 +1,4 @@
-import { Character } from '@typing/content';
+import { Character } from '@schemas/content';
 
 export function isPlayable(character?: Character | null) {
   if (!character) return false;

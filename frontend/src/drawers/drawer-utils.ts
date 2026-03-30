@@ -1,5 +1,5 @@
-import { DrawerType } from '@typing/index';
-import { ContentType, AbilityBlockType } from '@typing/content';
+import { DrawerType } from '@schemas/index';
+import { ContentType, AbilityBlockType } from '@schemas/content';
 import { isAbilityBlockType } from '@content/content-utils';
 
 export function convertContentLink(input: { type: ContentType | AbilityBlockType | 'condition'; id: string }): {

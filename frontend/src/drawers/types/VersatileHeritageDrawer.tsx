@@ -20,7 +20,7 @@ import {
   Title,
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, VersatileHeritage } from '@typing/content';
+import { AbilityBlock, VersatileHeritage } from '@schemas/content';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';
 import { useRecoilState } from 'recoil';

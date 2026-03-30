@@ -22,7 +22,7 @@ import {
 } from '@mantine/core';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Trait } from '@typing/content';
+import { AbilityBlock, Trait } from '@schemas/content';
 import { useState, useRef, useEffect } from 'react';
 import { useRecoilValue, useRecoilState } from 'recoil';
 import * as JsSearch from 'js-search';

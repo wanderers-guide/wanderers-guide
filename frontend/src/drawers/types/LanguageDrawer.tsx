@@ -6,7 +6,7 @@ import { fetchContentById } from '@content/content-store';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { Title, Text, Image, Loader, Group, Divider, Stack, Box, Flex } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Language } from '@typing/content';
+import { AbilityBlock, Language } from '@schemas/content';
 
 export function LanguageDrawerTitle(props: { data: { id?: number; language?: Language } }) {
   const id = props.data.id;

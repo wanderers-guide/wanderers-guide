@@ -1,5 +1,5 @@
 import { fetchContentById } from '@content/content-store';
-import { AbilityBlock, Item, Language, Spell, Trait } from '@typing/content';
+import { AbilityBlock, Item, Language, Spell, Trait } from '@schemas/content';
 import {
   ConditionCheckData,
   GiveSpellData,
@@ -26,8 +26,8 @@ import {
   OperationSelect,
   OperationSendNotification,
   OperationSetValue,
-} from '@typing/operations';
-import { ProficiencyType, StoreID, VariableNum, VariableProf } from '@typing/variables';
+} from '@schemas/operations';
+import { ProficiencyType, StoreID, VariableNum, VariableProf } from '@schemas/variables';
 import {
   addVariable,
   addVariableBonus,

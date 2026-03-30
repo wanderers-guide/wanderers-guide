@@ -1,6 +1,6 @@
 import { OperationWrapper } from '../Operations';
 import { Group, Select, Stack } from '@mantine/core';
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentType } from '@schemas/content';
 import { useState } from 'react';
 import { SelectContentButton } from '@common/select/SelectContent';
 import RichTextInput from '@common/rich_text_input/RichTextInput';

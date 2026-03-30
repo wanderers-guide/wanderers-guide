@@ -7,7 +7,7 @@ import { Center, Group, Title, Select, Button } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { CreateAbilityBlockModal } from '@modals/CreateAbilityBlockModal';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlockType, ContentType } from '@typing/content';
+import { AbilityBlockType, ContentType } from '@schemas/content';
 import { useState } from 'react';
 
 export default function GenerateEmbeddings() {

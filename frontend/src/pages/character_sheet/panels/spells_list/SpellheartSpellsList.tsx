@@ -7,13 +7,13 @@ import {
   SpellInnateEntry,
   SpellListEntry,
   SpellSlot,
-} from '@typing/content';
+} from '@schemas/content';
 import { SetterOrUpdater } from 'recoil';
 import SpellListEntrySection from './SpellListEntrySection';
 import { useMemo } from 'react';
 import { detectSpells } from '@spells/spell-utils';
 import { isItemBroken } from '@items/inv-utils';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 
 export default function SpellheartSpellsList(props: {
   id: StoreID;

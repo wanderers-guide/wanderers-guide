@@ -10,9 +10,9 @@ import {
   NodeWithPos,
 } from '@tiptap/core';
 import { MarkType } from '@tiptap/pm/model';
-import { ContentType, AbilityBlockType } from '@typing/content';
+import { ContentType, AbilityBlockType } from '@schemas/content';
 import { SetterOrUpdater } from 'recoil';
-import { DrawerType } from '@typing/index';
+import { DrawerType } from '@schemas/index';
 import { convertContentLink } from '@drawers/drawer-utils';
 
 interface LinkProtocolOptions {

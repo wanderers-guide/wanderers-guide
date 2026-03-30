@@ -5,7 +5,7 @@ import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import { drawerState } from '@atoms/navAtoms';
 import { useRecoilState } from 'recoil';
 import { toLabel } from '@utils/strings';
-import { GenericData } from '@typing/index';
+import { GenericData } from '@schemas/index';
 
 export function GenericDrawerTitle(props: { data: GenericData }) {
   const [_drawer, openDrawer] = useRecoilState(drawerState);

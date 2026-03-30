@@ -10,7 +10,7 @@ import {
   Variable,
   VariableType,
   VariableValue,
-} from '@typing/variables';
+} from '@schemas/variables';
 import { Box, NumberInput, SegmentedControl, TextInput, Text } from '@mantine/core';
 import { getVariable } from '@variables/variable-manager';
 import { useDidUpdate } from '@mantine/hooks';

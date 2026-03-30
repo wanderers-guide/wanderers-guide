@@ -1,6 +1,6 @@
 import { Title, Text, Group, Divider, Box, Accordion, Kbd, HoverCard, List } from '@mantine/core';
 import { IconMathSymbols } from '@tabler/icons-react';
-import { StoreID } from '@typing/variables';
+import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { displayFinalHealthValue } from '@variables/variable-display';
 import { getHealthValueParts } from '@variables/variable-helpers';
