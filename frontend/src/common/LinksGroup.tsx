@@ -25,7 +25,7 @@ interface LinksGroupProps {
   icon: React.FC<any>;
   label: string;
   initiallyOpened?: boolean;
-  links?: { label: string; id: number; url: string; enabled?: boolean }[];
+  links?: { label: string; id: number; url: string | null; enabled?: boolean }[];
   onLinkChange?: (id: number, enabled: boolean) => void;
   onEnableAll?: () => void;
 }
@@ -120,7 +120,7 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
 export function GroupLinkSwitch(props: {
   label: string;
   id: number;
-  url: string;
+  url: string | null;
   enabled?: boolean | undefined;
   linkCss?: boolean;
   onLinkChange?: (id: number, enabled: boolean) => void;

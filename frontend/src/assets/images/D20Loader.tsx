@@ -1,3 +1,4 @@
+import { glassStyle } from '@utils/colors';
 import { Text, Group, Stack } from '@mantine/core';
 import { motion } from 'framer-motion';
 
@@ -69,7 +70,7 @@ export default function D20Loader(props: {
         fs='italic'
         c='gray.0'
         style={{
-          backdropFilter: props.hasStatusBg ? 'blur(6px)' : undefined,
+          ...(props.hasStatusBg ? glassStyle() : {}),
           borderRadius: '25px',
           borderBottom: '1px solid #fff',
         }}

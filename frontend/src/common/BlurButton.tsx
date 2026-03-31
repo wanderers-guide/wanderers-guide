@@ -1,9 +1,9 @@
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { Box, BoxComponentProps, Button, ButtonProps, useMantineTheme } from '@mantine/core';
+import { glassStyle, GLASS_BG_COLOR } from '@utils/colors';
+import { Button, ButtonProps } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 
 interface BlurButtonProps extends ButtonProps {
-  blur?: number;
   bgColor?: string;
   bgColorHover?: string;
   children: React.ReactNode;
@@ -13,7 +13,6 @@ interface BlurButtonProps extends ButtonProps {
 }
 
 export default function BlurButton(props: BlurButtonProps) {
-  const theme = useMantineTheme();
 
   const { hovered, ref } = useHover<HTMLAnchorElement>();
 
@@ -29,9 +28,8 @@ export default function BlurButton(props: BlurButtonProps) {
       {...props}
       style={{
         flex: 1,
-        backdropFilter: `blur(${props.blur ?? 6}px)`,
-        WebkitBackdropFilter: `blur(${props.blur ?? 6}px)`,
-        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor,
+        ...glassStyle({ border: true }),
+        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor ?? GLASS_BG_COLOR,
         ...props.style,
       }}
     >

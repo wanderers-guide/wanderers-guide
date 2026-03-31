@@ -2,6 +2,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { userState } from '@atoms/userAtoms';
 import { getCachedPublicUser, getPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
+import { glassStyle } from '@utils/colors';
 import { ContentSourceInfo } from '@common/ContentSourceInfo';
 import Paginator from '@common/Paginator';
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
@@ -410,9 +411,7 @@ function CreationsSection(props: { searchQuery: string }) {
       <Box
         p='xs'
         style={{
-          backgroundColor: 'rgba(20, 21, 23, 0.827)',
-          backdropFilter: 'blur(6px)',
-          borderRadius: theme.radius.xl,
+          ...glassStyle({ bg: true }),
           position: 'relative',
         }}
       >
@@ -560,9 +559,7 @@ function CreationsSection(props: { searchQuery: string }) {
       <Box
         p='xs'
         style={{
-          backgroundColor: 'rgba(20, 21, 23, 0.827)',
-          backdropFilter: 'blur(6px)',
-          borderRadius: theme.radius.xl,
+          ...glassStyle({ bg: true }),
         }}
       >
         <Stack gap={10}>
@@ -658,7 +655,7 @@ function ContentSourceCard(props: {
   const { hovered: hoveredOptions, ref: refOptions } = useHover<HTMLButtonElement>();
 
   return (
-    <BlurBox blur={10} miw={isPhone ? '100%' : 280}>
+    <BlurBox miw={isPhone ? '100%' : 280}>
       <Box
         w='100%'
         h='100%'

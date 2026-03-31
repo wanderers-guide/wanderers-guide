@@ -41,7 +41,7 @@ export default function EntityInfoSection(props: {
   };
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         pt='xs'
         pb={5}

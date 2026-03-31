@@ -1,4 +1,5 @@
 import { characterState } from '@atoms/characterAtoms';
+import { glassStyle } from '@utils/colors';
 import IndentedText from '@common/IndentedText';
 import RichText from '@common/RichText';
 import TraitsDisplay from '@common/TraitsDisplay';
@@ -289,8 +290,7 @@ export function InvItemDrawerContent(props: {
                         size='xs'
                         style={{
                           opacity: 0.7,
-                          backdropFilter: 'blur(12px)',
-                          WebkitBackdropFilter: 'blur(12px)',
+                          ...glassStyle(),
                         }}
                       >
                         <IconSquareRounded size='1rem' />
@@ -304,8 +304,7 @@ export function InvItemDrawerContent(props: {
                         size='xs'
                         style={{
                           opacity: 0.7,
-                          backdropFilter: 'blur(12px)',
-                          WebkitBackdropFilter: 'blur(12px)',
+                          ...glassStyle(),
                         }}
                       >
                         <IconSquareRoundedFilled size='1rem' />
@@ -338,8 +337,7 @@ export function InvItemDrawerContent(props: {
                       },
                     }}
                     style={{
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
+                      ...glassStyle(),
                     }}
                     pr={5}
                   >
@@ -374,8 +372,7 @@ export function InvItemDrawerContent(props: {
               radius='xl'
               aria-label='Edit Item'
               style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
+                ...glassStyle(),
               }}
               onClick={() => {
                 setEditingItem(true);
@@ -390,8 +387,7 @@ export function InvItemDrawerContent(props: {
                 radius='xl'
                 aria-label='Remove Item'
                 style={{
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
+                  ...glassStyle(),
                 }}
                 onClick={() => {
                   props.data.onItemDelete(invItem);

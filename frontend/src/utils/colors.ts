@@ -1,4 +1,15 @@
 import Color from 'colorjs.io';
+
+export const GLASS_BG_COLOR = 'rgba(21, 24, 35, 0.75)';
+
+export function glassStyle(options?: { bg?: boolean; border?: boolean }) {
+  return {
+    backdropFilter: 'blur(16px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+    ...(options?.bg ? { backgroundColor: GLASS_BG_COLOR } : {}),
+    ...(options?.border ? { border: '1px solid rgba(255, 255, 255, 0.125)', borderRadius: '12px' } : {}),
+  };
+}
 // import tinycolor from 'tinycolor2';
 
 export function interpolateHealth(percentage: number) {

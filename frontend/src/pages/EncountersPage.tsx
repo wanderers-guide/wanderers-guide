@@ -38,7 +38,7 @@ export function Component() {
           </Box>
         </BlurBox>
         <Box pt='sm'>
-          <BlurBox blur={10} h={panelHeight + 30} w={panelWidth + 60} p={15}>
+          <BlurBox h={panelHeight + 30} w={panelWidth + 60} p={15}>
             <Box w={panelWidth + 30}>
               <EncountersPanel panelHeight={panelHeight} panelWidth={panelWidth} />
             </Box>

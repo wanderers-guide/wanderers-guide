@@ -167,7 +167,7 @@ export default function MainSpeedSection(props: {
   const theme = useMantineTheme();
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         pt='xs'
         pb={5}
@@ -197,7 +197,7 @@ export function AltSpeedSection(props: {
   const theme = useMantineTheme();
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         pt='xs'
         pb={5}

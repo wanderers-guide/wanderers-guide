@@ -1,5 +1,6 @@
 import { creatureDrawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
+import { glassStyle } from '@utils/colors';
 import { DisplayIcon } from '@common/IconDisplay';
 import StatBlockSection from '@common/StatBlockSection';
 import { applyConditions } from '@conditions/condition-handler';
@@ -288,7 +289,7 @@ export function CreatureDrawerContent(props: {
                   <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
                 </Box>
                 {creature.details.image_url && (
-                  <BlurBox blur={10} h={111} pr='sm' pt='sm'>
+                  <BlurBox h={111} pr='sm' pt='sm'>
                     <DisplayIcon
                       strValue={creature.details.image_url}
                       width={90}
@@ -329,7 +330,7 @@ export function CreatureDrawerContent(props: {
                         <HealthSection id={STORE_ID} entity={creature} setEntity={convertToSetEntity(setCreature)} />
                       </Box>
                       {creature.details.image_url && (
-                        <BlurBox blur={10} h={111} pr='sm' pt='sm'>
+                        <BlurBox h={111} pr='sm' pt='sm'>
                           <DisplayIcon
                             strValue={creature.details.image_url}
                             width={90}
@@ -562,8 +563,7 @@ export function CreatureDrawerContent(props: {
                 radius='xl'
                 aria-label='Edit Creature'
                 style={{
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
+                  ...glassStyle(),
                 }}
                 onClick={toggleEditing}
               >
@@ -577,8 +577,7 @@ export function CreatureDrawerContent(props: {
                     radius='xl'
                     aria-label='Rest Creature'
                     style={{
-                      backdropFilter: 'blur(8px)',
-                      WebkitBackdropFilter: 'blur(8px)',
+                      ...glassStyle(),
                     }}
                     onClick={() => {
                       handleRest(STORE_ID, creature, convertToSetEntity(setCreature));
@@ -602,8 +601,7 @@ export function CreatureDrawerContent(props: {
                       radius='xl'
                       aria-label='Switch View Mode'
                       style={{
-                        backdropFilter: 'blur(8px)',
-                        WebkitBackdropFilter: 'blur(8px)',
+                        ...glassStyle(),
                       }}
                       onClick={() => {
                         setDrawerData({ view: 'SHEET' });
@@ -618,8 +616,7 @@ export function CreatureDrawerContent(props: {
                       radius='xl'
                       aria-label='Switch View Mode'
                       style={{
-                        backdropFilter: 'blur(8px)',
-                        WebkitBackdropFilter: 'blur(8px)',
+                        ...glassStyle(),
                       }}
                       onClick={() => {
                         setDrawerData({ view: 'BLOCK' });
@@ -674,7 +671,7 @@ function RecallKnowledgeSection(props: { entity: Creature; traits: Trait[] }) {
   if (!content) return null;
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         px='xs'
         py={10}

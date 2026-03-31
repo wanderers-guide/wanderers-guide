@@ -2,6 +2,7 @@ import { sessionState } from '@atoms/supabaseAtoms';
 import { getCachedPublicUser } from '@auth/user-manager';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
+import { glassStyle } from '@utils/colors';
 import Paginator from '@common/Paginator';
 import { CAMPAIGN_SLOT_CAP } from '@constants/data';
 import classes from '@css/UserInfoIcons.module.css';
@@ -227,7 +228,7 @@ function CampaignCard(props: { campaign: Campaign }) {
   });
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         w='100%'
         ref={refMain}
@@ -276,9 +277,9 @@ function CampaignCard(props: { campaign: Campaign }) {
               position: 'absolute',
               top: 5,
               right: 5,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
               color: theme.colors.gray[4],
-              backdropFilter: 'blur(6px)',
+              ...glassStyle(),
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
             }}
           >
             {(characters?.length || 0) + ' players'}

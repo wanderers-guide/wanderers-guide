@@ -2,6 +2,7 @@ import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { GUIDE_BLUE } from '@constants/data';
+import { glassStyle } from '@utils/colors';
 import { Tabs, ActionIcon, ScrollArea, Title, Box, Menu, Button } from '@mantine/core';
 import { useDebouncedState, useDidUpdate } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
@@ -95,8 +96,7 @@ export default function NotesPanel(props: {
                   bottom: 10,
                   left: 10,
                   //
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
+                  ...glassStyle(),
                 }}
                 w={130}
                 leftSection={
@@ -169,8 +169,7 @@ export default function NotesPanel(props: {
             left: isPhone ? 150 : undefined,
             right: isPhone ? undefined : 10,
             //
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            ...glassStyle(),
           }}
           onClick={() => {
             openContextModal({

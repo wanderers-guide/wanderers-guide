@@ -35,7 +35,7 @@ export default function AttributeSection(props: {
   };
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         px='xs'
         py={10}

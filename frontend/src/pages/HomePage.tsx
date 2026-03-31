@@ -13,6 +13,7 @@ import {
   ActionIcon,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
+import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
 import { getHomeBackgroundImage } from '@utils/background-images';
 import { IconBrush, IconExternalLink } from '@tabler/icons-react';
@@ -47,9 +48,7 @@ export function Component() {
               radius='lg'
               mt={20}
               style={{
-                backgroundColor: theme.colors.dark[7] + 'D3',
-                backdropFilter: `blur(8px)`,
-                WebkitBackdropFilter: 'blur(8px)',
+                ...glassStyle({ bg: true }),
               }}
             >
               Start your Adventure

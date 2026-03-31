@@ -1,9 +1,9 @@
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { ActionIcon, ActionIconProps, Button, useMantineTheme } from '@mantine/core';
+import { glassStyle, GLASS_BG_COLOR } from '@utils/colors';
+import { ActionIcon, ActionIconProps } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 
 interface BlurActionIconProps extends ActionIconProps {
-  blur?: number;
   bgColor?: string;
   bgColorHover?: string;
   children: React.ReactNode;
@@ -13,8 +13,6 @@ interface BlurActionIconProps extends ActionIconProps {
 }
 
 export default function BlurActionIcon(props: BlurActionIconProps) {
-  const theme = useMantineTheme();
-
   const { hovered, ref } = useHover<HTMLAnchorElement>();
 
   return (
@@ -28,9 +26,8 @@ export default function BlurActionIcon(props: BlurActionIconProps) {
       href={props.href}
       {...props}
       style={{
-        backdropFilter: `blur(${props.blur ?? 6}px)`,
-        WebkitBackdropFilter: `blur(${props.blur ?? 6}px)`,
-        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor,
+        ...glassStyle({ border: true }),
+        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor ?? GLASS_BG_COLOR,
         ...props.style,
       }}
     >

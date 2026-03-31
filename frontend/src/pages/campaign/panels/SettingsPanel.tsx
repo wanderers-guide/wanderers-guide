@@ -732,7 +732,7 @@ export default function SettingsPanel(props: {
             minRows={4}
             maxRows={4}
             autosize
-            value={props.campaign.description}
+            value={props.campaign.description ?? undefined}
             onChange={(e) => {
               props.setCampaign({
                 ...props.campaign,

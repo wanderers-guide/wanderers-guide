@@ -44,7 +44,7 @@ export default function ArmorSection(props: {
   const bestShieldHealth = bestShield ? getItemHealth(bestShield.item) : null;
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         pt='xs'
         pb={5}

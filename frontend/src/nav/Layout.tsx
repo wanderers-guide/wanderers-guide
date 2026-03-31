@@ -1,4 +1,5 @@
 import { sessionState } from '@atoms/supabaseAtoms';
+import { glassStyle } from '@utils/colors';
 import classes from '@css/Layout.module.css';
 import {
   AppShell,
@@ -84,11 +85,8 @@ export default function Layout(props: { children: React.ReactNode }) {
         h={50}
         zIndex={98}
         style={{
-          border: `0px solid`,
+          ...glassStyle(),
           borderRadius: 0,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
           backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >
@@ -313,11 +311,8 @@ export default function Layout(props: { children: React.ReactNode }) {
         py='md'
         px={4}
         style={{
-          border: `0px solid`,
+          ...glassStyle(),
           borderRadius: 0,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
           backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >

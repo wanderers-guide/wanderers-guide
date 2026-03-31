@@ -1,4 +1,5 @@
 import BlurBox from '@common/BlurBox';
+import { glassStyle } from '@utils/colors';
 import {
   ActionIcon,
   Box,
@@ -9,7 +10,6 @@ import {
   Stepper,
   Text,
   rem,
-  useMantineTheme,
 } from '@mantine/core';
 import { makeRequest } from '@requests/request-manager';
 import { IconArrowLeft, IconArrowRight, IconHammer, IconHome, IconUser } from '@tabler/icons-react';
@@ -30,7 +30,6 @@ import { phoneQuery } from '@utils/mobile-responsive';
 export function Component() {
   setPageTitle(`Builder`);
 
-  const theme = useMantineTheme();
   const isPhone = useMediaQuery(phoneQuery());
   const [active, setActive] = useState(0);
   const navigate = useNavigate();
@@ -95,10 +94,7 @@ export function Component() {
                 radius={60}
                 size={60}
                 style={{
-                  backdropFilter: `blur(8px)`,
-                  WebkitBackdropFilter: `blur(8px)`,
-                  // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-                  backgroundColor: theme.colors.dark[8] + 'D3',
+                  ...glassStyle({ bg: true }),
                 }}
                 onClick={() => handleStepChange(active + 1)}
                 disabled={active === 1 && !isPlayable(character)}
@@ -115,10 +111,7 @@ export function Component() {
                 radius={60}
                 size={60}
                 style={{
-                  backdropFilter: `blur(8px)`,
-                  WebkitBackdropFilter: `blur(8px)`,
-                  // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-                  backgroundColor: theme.colors.dark[8] + 'D3',
+                  ...glassStyle({ bg: true }),
                   position: 'absolute',
                   top: '45%',
                   right: -100,
@@ -136,10 +129,7 @@ export function Component() {
                 radius={60}
                 size={60}
                 style={{
-                  backdropFilter: `blur(8px)`,
-                  WebkitBackdropFilter: `blur(8px)`,
-                  // Add alpha channel to hex color (browser support: https://caniuse.com/css-rrggbbaa)
-                  backgroundColor: theme.colors.dark[8] + 'D3',
+                  ...glassStyle({ bg: true }),
                   position: 'absolute',
                   top: '45%',
                   left: -100,
@@ -151,7 +141,7 @@ export function Component() {
               </ActionIcon>
             </>
           )}
-          <BlurBox blur={10}>
+          <BlurBox>
             <Stepper
               active={active}
               onStepClick={setActive}

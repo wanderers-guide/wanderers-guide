@@ -1,4 +1,5 @@
 import D20Loader from '@assets/images/D20Loader';
+import { glassStyle } from '@utils/colors';
 import BlurBox from '@common/BlurBox';
 import { defineDefaultSources, fetchContentPackage, fetchContentSources } from '@content/content-store';
 
@@ -222,8 +223,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
                 size={40}
                 variant='light'
                 style={{
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
+                  ...glassStyle(),
                 }}
                 radius={100}
                 aria-label='Modes'
@@ -240,8 +240,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               size={40}
               variant='light'
               style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
+                ...glassStyle(),
               }}
               radius={100}
               aria-label='Campaigns View'
@@ -257,8 +256,7 @@ function CharacterSheetInner(props: { content: ContentPackage; characterId: numb
               size={40}
               variant='light'
               style={{
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
+                ...glassStyle(),
               }}
               radius={100}
               aria-label='Dice Roller'
@@ -366,7 +364,7 @@ function SectionPanels(props: {
     return (
       <Box>
         {props.hideSections && (
-          <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+          <BlurBox p='sm' mih={props.panelHeight}>
             {activeTab === 'skills-actions' && (
               <SkillsActionsPanel
                 id='CHARACTER'
@@ -580,7 +578,6 @@ function SectionPanels(props: {
     return (
       <Box>
         <BlurBox
-          blur={10}
           p='sm'
           style={{
             height: props.panelHeight + 65,

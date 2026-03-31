@@ -1,5 +1,6 @@
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
+import { glassStyle } from '@utils/colors';
 import { EllipsisText } from '@common/EllipsisText';
 import { Icon } from '@common/Icon';
 import { DisplayIcon } from '@common/IconDisplay';
@@ -210,8 +211,7 @@ export default function EncountersPanel(props: {
                   bottom: 10,
                   left: 10,
                   //
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
+                  ...glassStyle(),
                 }}
                 w={130}
                 leftSection={
@@ -322,8 +322,7 @@ export default function EncountersPanel(props: {
             left: isPhone ? 150 : undefined,
             right: isPhone ? undefined : 10,
             //
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            ...glassStyle(),
           }}
           onClick={() => {
             openContextModal({

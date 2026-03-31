@@ -177,7 +177,7 @@ export function CharBuilderCreationInner(props: {
           <CharacterStatSidebar content={props.content} pageHeight={props.pageHeight} />
         </Box>
       )}
-      <Box style={{ flexBasis: isMobile ? '100%' : '65%' }}>
+      <Box style={{ flexBasis: isMobile ? '100%' : 'calc(65% - 10px)' }}>
         {isMobile && (
           <>
             <Group px='sm' justify='space-between' align='flex-start' wrap='nowrap'>

@@ -1,4 +1,5 @@
 import BlurBox from '@common/BlurBox';
+import { glassStyle } from '@utils/colors';
 import { CharacterDetailedInfo } from '@common/CharacterInfo';
 import DiceRoller from '@common/dice/DiceRoller';
 import {
@@ -213,9 +214,9 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           position: 'absolute',
                           top: 5,
                           right: 5,
-                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
                           color: theme.colors.gray[4],
-                          backdropFilter: 'blur(6px)',
+                          ...glassStyle(),
+                          backgroundColor: 'rgba(0, 0, 0, 0.5)',
                         }}
                       >
                         {(characters?.length || 0) + ' players'}
@@ -310,11 +311,11 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                   </Box>
                 </Grid.Col>
                 <Grid.Col span={isTablet ? 12 : 8}>
-                  <BlurBox blur={10} p='sm'>
+                  <BlurBox p='sm'>
                     <ScrollArea h={210} scrollbars='y'>
                       <Group>
                         {characters?.map((character) => (
-                          <BlurBox blur={10} maw={280} py={3} px='sm'>
+                          <BlurBox maw={280} py={3} px='sm'>
                             <CharacterDetailedInfo character={character} />
                           </BlurBox>
                         ))}
@@ -351,8 +352,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
             size={40}
             variant='light'
             style={{
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
+              ...glassStyle(),
             }}
             radius={100}
             aria-label='Dice Roller'
@@ -440,7 +440,7 @@ function SectionPanels(props: {
     return (
       <Box>
         {props.hideSections ? (
-          <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+          <BlurBox p='sm' mih={props.panelHeight}>
             {activeTab === 'notes' && (
               <NotesPanel
                 campaign={props.campaign}
@@ -585,7 +585,7 @@ function SectionPanels(props: {
   } else {
     return (
       <Box>
-        <BlurBox blur={10} p='sm' mih={props.panelHeight}>
+        <BlurBox p='sm' mih={props.panelHeight}>
           <Tabs
             color='dark.6'
             variant='pills'

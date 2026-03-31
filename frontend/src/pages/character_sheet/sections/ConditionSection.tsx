@@ -224,7 +224,7 @@ export default function MainConditionSection(props: {
   const [_drawer, openDrawer] = useRecoilState(drawerState);
 
   return (
-    <BlurBox blur={10}>
+    <BlurBox>
       <Box
         pt='xs'
         pb={5}

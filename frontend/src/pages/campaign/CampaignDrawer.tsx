@@ -14,6 +14,7 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { tabletQuery, wideDesktopQuery } from '@utils/mobile-responsive';
+import { glassStyle } from '@utils/colors';
 import { IconHeartFilled } from '@tabler/icons-react';
 import { Campaign, Character } from '@schemas/content';
 import { useQuery } from '@tanstack/react-query';
@@ -100,9 +101,9 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
                 size='sm'
                 variant='light'
                 style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
                   color: theme.colors.gray[4],
-                  backdropFilter: 'blur(6px)',
+                  ...glassStyle(),
+                  backgroundColor: 'rgba(0, 0, 0, 0.5)',
                 }}
               >
                 {(characters?.length || 0) + ' players'}

@@ -1,3 +1,4 @@
+import { glassStyle } from '@utils/colors';
 import { Group, rgba, Text, UnstyledButton, useMantineTheme } from '@mantine/core';
 import { useFocusWithin, useHover, useOs } from '@mantine/hooks';
 import { spotlight } from '@mantine/spotlight';
@@ -17,11 +18,9 @@ export function SearchBar({ isSmall }: { isSmall?: boolean }) {
         height: 32,
         paddingLeft: theme.spacing.sm,
         paddingRight: 5,
-        borderRadius: theme.radius.md,
         color: theme.colors.gray[4],
         fontWeight: 500,
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        ...glassStyle(),
         backgroundColor: hovered ? theme.colors.dark[7] : theme.colors.dark[8],
       }}
     >
