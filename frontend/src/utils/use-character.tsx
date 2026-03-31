@@ -17,7 +17,7 @@ import { isEqual, isArray, cloneDeep } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
 import { SetterOrUpdater, useRecoilState } from 'recoil';
 import { convertToSetEntity } from './type-fixing';
-import { IconRefresh } from '@tabler/icons-react';
+import { IconRefresh, IconAlertCircle } from '@tabler/icons-react';
 import { hashData } from './numbers';
 import { getDeepDiff } from './objects';
 import { addExtraItems, checkBulkLimit } from '@items/inv-handlers';
@@ -295,6 +295,15 @@ export default function useCharacter(
         console.log('> Fetched updated character: #', getUpdateHash(character), 'vs.', getUpdateHash(c));
       }
     },
+    onError: () => {
+      showNotification({
+        icon: <IconAlertCircle />,
+        title: 'Failed to save character',
+        message: 'Your changes could not be saved. Please check your connection and try again.',
+        color: 'red',
+        autoClose: 5000,
+      });
+    },
   });
 
   // Poll remote character updates - only if the character hasn't been updated recently
@@ -415,6 +424,8 @@ function useAutoSave(character: Character | null, characterId: number) {
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', saveImmediately);
+      // Also save on SPA navigation (unmount), since pagehide won't fire for in-app routing
+      saveImmediately();
     };
   }, []);
 }
