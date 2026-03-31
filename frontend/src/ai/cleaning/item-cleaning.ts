@@ -1,9 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { fetchContentSources } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
-import { Item } from '@schemas/content';
+import { Item, ItemSchema } from '@schemas/content';
+import { OperationSchema } from '@schemas/operations';
 import { RequestType } from '@schemas/requests';
+import { formatZodError } from '@schemas/shared';
 import { DEFAULT_VARIABLES } from '@variables/variable-manager';
+import { z } from 'zod';
 import { searchAoN } from './alt-sources/aon';
 import { searchDp } from './alt-sources/dp';
 import { CleaningUtils } from './CleaningUtils';
@@ -40,6 +43,7 @@ const FETCH_REQUEST_MAP: Record<FetchableType, RequestType> = {
   spell: 'find-spell',
   trait: 'find-trait',
 };
+
 
 let _officialSourceIds: number[] | null = null;
 async function getOfficialSourceIds(): Promise<number[]> {
@@ -115,6 +119,12 @@ const utilityFunctions = {
 
   returnFixedItem: ({ item }: { item: Item }): Item => {
     return item;
+  },
+
+  getSchemas: (): string => {
+    const itemJsonSchema = z.toJSONSchema(ItemSchema);
+    const operationJsonSchema = z.toJSONSchema(OperationSchema);
+    return JSON.stringify({ Item: itemJsonSchema, Operation: operationJsonSchema }, null, 2);
   },
 
   searchAoN: async ({ query }: { query: string }, log?: (type: string, data: any) => void) => {
@@ -249,6 +259,16 @@ To check how other sources present the same content, use searchAoN or searchDp i
         },
       },
       required: ['url'],
+    },
+  },
+  {
+    name: 'getSchemas',
+    description:
+      'Get the JSON Schema definitions for the Item and Operation types. Use this to understand the exact structure, required fields, and valid enum values when constructing or validating the item.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {},
+      required: [],
     },
   },
   {
@@ -437,8 +457,14 @@ export const fixItem = async (item: Item, log: (type: string, data: any) => void
         try {
           const raw = await (fn as any)(block.input, log);
           if (block.name === 'returnFixedItem') {
-            fixedItem = (block.input as { item: Item }).item;
-            result = 'Done.';
+            const candidate = (block.input as { item: Item }).item;
+            const parsed = ItemSchema.safeParse(candidate);
+            if (!parsed.success) {
+              result = `Schema validation failed — fix these issues and call returnFixedItem again:\n- ${formatZodError(candidate, parsed.error)}`;
+            } else {
+              fixedItem = parsed.data as Item;
+              result = 'Done.';
+            }
           } else {
             result = typeof raw === 'string' ? raw : JSON.stringify(raw);
           }

@@ -34,6 +34,7 @@ import {
   VersatileHeritageSchema,
 } from '@schemas/content';
 import { RequestType } from '@schemas/requests';
+import { formatZodError } from '@schemas/shared';
 import { z } from 'zod';
 import { preloadImage } from '@utils/images';
 import { hashData } from '@utils/numbers';
@@ -578,23 +579,7 @@ export async function fetchCreatureByName(name?: string, sources?: SourceValue, 
 function validateAndWarn<T>(type: ContentType, schema: z.ZodTypeAny, record: unknown): T {
   const parsed = schema.safeParse(record);
   if (!parsed.success) {
-    const summary = parsed.error.issues
-      .map((issue) => {
-        const path = issue.path.length ? issue.path.join('.') : '(root)';
-        const actualValue = issue.path.reduce((obj: any, key) => (obj != null ? obj[key] : undefined), record as any);
-        const gotSuffix = actualValue !== undefined ? ` (got: ${JSON.stringify(actualValue)})` : '';
-        if (issue.code === 'invalid_union') {
-          const best = issue.errors.reduce((a, b) => (a.length <= b.length ? a : b), issue.errors[0] ?? []);
-          const hint = best
-            .slice(0, 3)
-            .map((e) => `${e.path.join('.') || '(root)'}: ${e.message}`)
-            .join(', ');
-          return `${path}${gotSuffix} [union — ${hint}]`;
-        }
-        const got = 'received' in issue ? ` (got: ${JSON.stringify((issue as any).received)})` : gotSuffix;
-        return `${path}: ${issue.message}${got}`;
-      })
-      .join('; ');
+    const summary = formatZodError(record, parsed.error);
     console.warn(
       `[CONTENT-SCHEMA] ${type} id=${(record as any)?.id ?? '?'} "${(record as any)?.name ?? ''}" — ${summary}`
     );
