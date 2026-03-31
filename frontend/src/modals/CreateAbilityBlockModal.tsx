@@ -91,7 +91,7 @@ export function CreateAbilityBlockModal(props: {
         level: `${abilityBlock.level}`,
       });
       form.reset();
-      setTraits(await fetchTraits(abilityBlock.traits));
+      setTraits(await fetchTraits(abilityBlock.traits ?? undefined));
       setMetaData(abilityBlock.meta_data ?? {});
       refreshDisplayDescription();
 
@@ -109,14 +109,14 @@ export function CreateAbilityBlockModal(props: {
     initialValues: {
       id: -1,
       created_at: '',
-      operations: [] as Operation[] | undefined,
+      operations: [] as Operation[] | null,
       name: '',
       actions: null as ActionCost,
-      level: undefined as number | undefined,
+      level: null as number | null,
       rarity: 'COMMON' as Rarity,
       availability: undefined as Availability | undefined,
       prerequisites: [] as string[],
-      frequency: '' as string | undefined,
+      frequency: '' as string | null,
       cost: '',
       trigger: '',
       requirements: '',
@@ -287,7 +287,7 @@ export function CreateAbilityBlockModal(props: {
               labelPosition='left'
               onClick={toggleAdditional}
             />
-            <Collapse in={openedAdditional}>
+            <Collapse expanded={openedAdditional}>
               <Stack gap={10}>
                 <Textarea label='Frequency' minRows={1} maxRows={4} autosize {...form.getInputProps('frequency')} />
 
@@ -413,7 +413,7 @@ export function CreateAbilityBlockModal(props: {
               labelPosition='left'
               onClick={toggleOperations}
             />
-            <Collapse in={openedOperations}>
+            <Collapse expanded={openedOperations}>
               <Stack gap={10}>
                 <OperationSection
                   title={
@@ -442,7 +442,7 @@ export function CreateAbilityBlockModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  operations={form.values.operations}
+                  operations={form.values.operations ?? undefined}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

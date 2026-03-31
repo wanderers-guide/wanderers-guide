@@ -4,7 +4,7 @@ import { Anchor, Blockquote, Code, Divider, List, Table, Text, TextProps, Title,
 import { getContentDataFromHref } from './rich_text_input/ContentLinkExtension';
 import { drawerState } from '@atoms/navAtoms';
 import { convertContentLink } from '@drawers/drawer-utils';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import React, { ReactNode, useRef } from 'react';
 import IndentedText from './IndentedText';
 import { IconQuote } from '@tabler/icons-react';
@@ -21,7 +21,7 @@ interface RichTextProps extends TextProps {
 
 export default function RichText(props: RichTextProps) {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const prevProcessedP = useRef<ReactNode | null>(null);
   const inDoubleTiersChain = useRef(false);
@@ -208,7 +208,7 @@ export default function RichText(props: RichTextProps) {
                 href={drawerData ? undefined : href}
                 target='_blank'
                 underline='always'
-                c='dark.0'
+                c='var(--mantine-text-color)'
                 style={{
                   textDecorationColor: theme.colors['guide'][7],
                 }}

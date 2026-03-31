@@ -15,7 +15,8 @@ import { saveCalculatedStats } from '@variables/calculated-stats';
 import { setVariable } from '@variables/variable-manager';
 import { isEqual, isArray, cloneDeep } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { convertToSetEntity } from './type-fixing';
 import { IconRefresh, IconAlertCircle } from '@tabler/icons-react';
 import { hashData } from './numbers';
@@ -61,7 +62,7 @@ export default function useCharacter(
   isLoading: boolean;
   results: OperationCharacterResultPackage | null;
 } {
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
   useAutoSave(character, characterId);
 
   const handleFetchedCharacter = (resultCharacter: Character | null | undefined) => {
@@ -90,8 +91,8 @@ export default function useCharacter(
       // Cache character customization for fast loading
       saveCustomization({
         background_image_url:
-          resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url,
-        sheet_theme: resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme,
+          (resultCharacter.details?.background_image_url || getCachedPublicUser()?.background_image_url) ?? undefined,
+        sheet_theme: (resultCharacter.details?.sheet_theme || getCachedPublicUser()?.site_theme) ?? undefined,
       });
     } else {
       // Character not found, probably due to unauthorized access

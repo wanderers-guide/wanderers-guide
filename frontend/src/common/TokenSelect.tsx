@@ -1,11 +1,12 @@
+import React from 'react';
 import { MantineSize, Rating, Select } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { isTabletSized, isTouchDevice, tabletQuery } from '@utils/mobile-responsive';
 import { useState } from 'react';
 
 export default function TokenSelect(props: {
-  emptySymbol?: JSX.Element;
-  fullSymbol?: JSX.Element;
+  emptySymbol?: React.JSX.Element;
+  fullSymbol?: React.JSX.Element;
   count: number;
   value?: number;
   onChange?: (value: number) => void;

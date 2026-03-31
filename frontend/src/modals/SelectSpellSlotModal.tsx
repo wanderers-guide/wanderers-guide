@@ -5,7 +5,7 @@ import { Text, Card, ScrollArea, SimpleGrid, Stack, UnstyledButton, Divider, Box
 import { ContextModalProps } from '@mantine/modals';
 import { Spell, SpellSlot, SpellSlotRecord } from '@schemas/content';
 import { rankNumber } from '@utils/numbers';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export default function SelectSpellSlotModal({
   context,
@@ -35,7 +35,7 @@ export function SelectSpellSlotModalContents(props: {
   onSelect: (slot: SpellSlotRecord) => void;
   onClose: () => void;
 }) {
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
   const slots = (character && collectEntitySpellcasting('CHARACTER', character).slots) ?? [];
 
   const items = slots

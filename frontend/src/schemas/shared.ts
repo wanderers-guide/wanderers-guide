@@ -111,16 +111,49 @@ export const ItemMetaCategorySchema = z.union([ItemMetaCategoryWeaponSchema, Ite
 export type ItemMetaCategory = z.infer<typeof ItemMetaCategorySchema>;
 
 export const ItemMetaGroupWeaponSchema = z.enum([
-  'axe', 'bomb', 'bow', 'brawling', 'club', 'crossbow', 'dart', 'firearm', 'flail', 'hammer',
-  'knife', 'pick', 'polearm', 'projectile', 'shield', 'sling', 'spear', 'sword',
-  'corrosive', 'cryo', 'flame', 'grenade', 'laser', 'mental', 'missile', 'plasma', 'poison',
-  'shock', 'sniper', 'sonic',
+  'axe',
+  'bomb',
+  'bow',
+  'brawling',
+  'club',
+  'crossbow',
+  'dart',
+  'firearm',
+  'flail',
+  'hammer',
+  'knife',
+  'pick',
+  'polearm',
+  'projectile',
+  'shield',
+  'sling',
+  'spear',
+  'sword',
+  'corrosive',
+  'cryo',
+  'flame',
+  'grenade',
+  'laser',
+  'mental',
+  'missile',
+  'plasma',
+  'poison',
+  'shock',
+  'sniper',
+  'sonic',
 ]);
 export type ItemMetaGroupWeapon = z.infer<typeof ItemMetaGroupWeaponSchema>;
 
 export const ItemMetaGroupArmorSchema = z.enum([
-  'chain', 'composite', 'leather', 'plate', 'skeletal', 'wood',
-  'cloth', 'ceramic', 'polymer',
+  'chain',
+  'composite',
+  'leather',
+  'plate',
+  'skeletal',
+  'wood',
+  'cloth',
+  'ceramic',
+  'polymer',
 ]);
 export type ItemMetaGroupArmor = z.infer<typeof ItemMetaGroupArmorSchema>;
 
@@ -133,7 +166,7 @@ export function formatZodError(record: unknown, error: z.ZodError): string {
   return error.issues
     .map((issue) => {
       const path = issue.path.length ? issue.path.join('.') : '(root)';
-      const actualValue = issue.path.reduce((obj: any, key) => (obj != null ? obj[key] : undefined), record as any);
+      const actualValue = issue.path.reduce((obj: any, key) => (obj !== null ? obj[key] : undefined), record as any);
       const gotSuffix = actualValue !== undefined ? ` (got: ${JSON.stringify(actualValue)})` : '';
       if (issue.code === 'invalid_union') {
         const best = issue.errors.reduce((a, b) => (a.length <= b.length ? a : b), issue.errors[0] ?? []);

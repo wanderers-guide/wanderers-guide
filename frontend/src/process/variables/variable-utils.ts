@@ -150,8 +150,8 @@ export function maxProficiencyType(profType1: ProficiencyType, profType2: Profic
 export function compileProficiencyType(prof: ProficiencyValue | undefined) {
   if (!prof) return 'U';
   let value = prof.value;
-  const positive = prof.increases > 0;
-  for (let i = 0; i < Math.abs(prof.increases); i++) {
+  const positive = (prof.increases ?? 0) > 0;
+  for (let i = 0; i < Math.abs(prof.increases ?? 0); i++) {
     if (positive) {
       value = nextProficiencyType(value) ?? value;
     } else {

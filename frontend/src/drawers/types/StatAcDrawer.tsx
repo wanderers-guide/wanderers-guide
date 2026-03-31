@@ -8,12 +8,12 @@ import { Inventory, InventoryItem } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { sign } from '@utils/numbers';
 import { getFinalAcValue, getVariableBreakdown } from '@variables/variable-helpers';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 
 export function StatAcDrawerTitle(props: {
   data: { id: StoreID; inventory?: Inventory; onViewItem?: (invItem: InventoryItem) => void };
 }) {
-  const _character = useRecoilValue(characterState);
+  const _character = useAtomValue(characterState);
   const inventory = props.data.inventory ?? _character?.inventory;
 
   const bestArmor = getBestArmor(props.data.id, inventory);
@@ -50,7 +50,7 @@ export function StatAcDrawerTitle(props: {
 }
 
 export function StatAcDrawerContent(props: { data: { id: StoreID; inventory?: Inventory } }) {
-  const _character = useRecoilValue(characterState);
+  const _character = useAtomValue(characterState);
   const inventory = props.data.inventory ?? _character?.inventory;
 
   const bestArmor = getBestArmor(props.data.id, inventory);

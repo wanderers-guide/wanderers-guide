@@ -12,6 +12,7 @@ import {
   TextInput,
   UnstyledButton,
   useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { useInViewport } from '@mantine/hooks';
 import { ContextModalProps } from '@mantine/modals';
@@ -46,6 +47,7 @@ export function SelectIconModalContents(props: {
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
 
   // Infinite scroll
   const { ref, inViewport } = useInViewport();
@@ -90,7 +92,7 @@ export function SelectIconModalContents(props: {
         onChange={(event) => setSearchQuery(event.target.value)}
         styles={{
           input: {
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
             borderColor: isSearching ? theme.colors['guide'][8] : undefined,
           },
         }}
@@ -102,7 +104,7 @@ export function SelectIconModalContents(props: {
         py={15}
         pr={5}
         style={{
-          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
           borderColor: theme.colors['dark'][8],
         }}
       >

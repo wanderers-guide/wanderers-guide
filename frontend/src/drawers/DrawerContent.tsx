@@ -1,5 +1,5 @@
 import { drawerState } from '@atoms/navAtoms';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { ActionDrawerContent } from './types/ActionDrawer';
 import { AncestryDrawerContent } from './types/AncestryDrawer';
 import { BackgroundDrawerContent } from './types/BackgroundDrawer';
@@ -31,7 +31,7 @@ import { cloneDeep } from 'lodash-es';
 import { ClassArchetypeDrawerContent } from './types/ClassArchetypeDrawer';
 
 export default function DrawerContent(props: { onMetadataChange?: (openedDict?: Record<string, string>) => void }) {
-  const _drawer = useRecoilValue(drawerState);
+  const _drawer = useAtomValue(drawerState);
 
   let drawerData = cloneDeep(_drawer?.data ?? {});
   if (_drawer && getCachedCustomization()?.sheet_theme?.view_operations) {

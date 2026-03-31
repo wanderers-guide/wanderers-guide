@@ -53,7 +53,7 @@ import { showNotification } from '@mantine/notifications';
 import EncountersPanel from './panels/EncountersPanel';
 import ShopsPanel from './panels/ShopsPanel';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import D20Loader from '@assets/images/D20Loader';
 import BlurButton from '@common/BlurButton';
 import BlurActionIcon from '@common/BlurActionIcon';
@@ -114,7 +114,7 @@ export function Component() {
 export function CampaignInner(props: { campaignId: number; onFinishLoading: () => void }) {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
 
   const { data, isFetching, refetch } = useQuery({
     queryKey: [`find-campaign-${props.campaignId}`],
@@ -224,17 +224,17 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
 
                       <Card.Section className={classes.section} mb={0} px='md'>
                         <Group justify='apart'>
-                          <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5}>
+                          <BlurBox px='xs' py={5}>
                             <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
                               <HoverCard.Target>
-                                <Title c='gray.3' order={4} className={classes.name}>
+                                <Title c='gray.2' order={4} className={classes.name}>
                                   {truncate(campaign?.name || 'My Campaign', {
                                     length: 30,
                                   })}
                                 </Title>
                               </HoverCard.Target>
                               <HoverCard.Dropdown py={5} px={10}>
-                                <Text c='gray.3' size='md'>
+                                <Text c='gray.2' size='md'>
                                   {campaign?.name || 'My Campaign'}
                                 </Text>
                               </HoverCard.Dropdown>
@@ -242,7 +242,7 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           </BlurBox>
                         </Group>
                         {campaign?.description?.trim() ? (
-                          <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5} mt={10}>
+                          <BlurBox px='xs' py={5} mt={10}>
                             <ScrollArea h={100} my={5}>
                               <Text fz='xs'>{campaign.description.trim()}</Text>
                             </ScrollArea>

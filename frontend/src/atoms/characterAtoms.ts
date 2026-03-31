@@ -1,14 +1,10 @@
 import { Character } from '@schemas/content';
-import { atom, selector } from 'recoil';
+import { atom } from 'jotai';
 
-const _internal_characterState = atom({
-  key: 'character-active-internal',
-  default: loadCharacter() as Character | null,
-});
+const _internal_characterState = atom(loadCharacter() as Character | null);
 
-const characterState = selector({
-  key: 'characterState',
-  get: ({ get }) => {
+const characterState = atom(
+  (get) => {
     const character = get(_internal_characterState);
 
     if (character) {
@@ -22,15 +18,16 @@ const characterState = selector({
     character && saveCharacter(character);
     return character;
   },
-  set: ({ set }, newValue) => {
-    if (newValue) {
-      saveCharacter(newValue as Character);
+  (_get, set, newValue: Character | null | ((prev: Character | null) => Character | null)) => {
+    const resolved = typeof newValue === 'function' ? newValue(_get(_internal_characterState)) : newValue;
+    if (resolved) {
+      saveCharacter(resolved);
     } else {
       deleteCharacter();
     }
-    set(_internal_characterState, newValue);
-  },
-});
+    set(_internal_characterState, resolved);
+  }
+);
 
 function saveCharacter(character: Character) {
   //localStorage.setItem('character', JSON.stringify(character));

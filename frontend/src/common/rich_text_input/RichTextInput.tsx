@@ -7,11 +7,11 @@ import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
 import Color from '@tiptap/extension-color';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import { useMantineTheme, Text, Box } from '@mantine/core';
 import { ContentLink } from './ContentLinkExtension';
 import ContentLinkControl from './ContentLinkControl';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { drawerState } from '@atoms/navAtoms';
 import { toMarkdown } from '@content/content-utils';
 import { ActionSymbol } from './ActionSymbolExtension';
@@ -24,7 +24,7 @@ import { HighlightColorControl } from './HighlightColorControl';
 interface RichTextInputProps {
   label?: string;
   required?: boolean;
-  value?: string | JSONContent;
+  value?: string | JSONContent | null;
   onChange?: (text: string, json: JSONContent) => void;
   placeholder?: string;
   height?: number;
@@ -34,7 +34,7 @@ interface RichTextInputProps {
 
 export default function RichTextInput(props: RichTextInputProps) {
   const theme = useMantineTheme();
-  const _drawerState = useRecoilState(drawerState);
+  const _drawerState = useAtom(drawerState);
 
   const editor = useEditor({
     extensions: [

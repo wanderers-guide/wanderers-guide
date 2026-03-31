@@ -52,7 +52,7 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { displayPatronOnly } from '@utils/notifications';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export function Component() {
   setPageTitle(`Homebrew`);
@@ -265,7 +265,7 @@ function BrowseSection(props: { searchQuery: string }) {
         {!isFetching && bundles.length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
-              <Text ta='center' c='gray.5' fs='italic'>
+              <Text ta='center' c='gray.2' fs='italic'>
                 No homebrew bundles found.
               </Text>
             </Stack>
@@ -278,7 +278,7 @@ function BrowseSection(props: { searchQuery: string }) {
 
 function SubscriptionsSection(props: { searchQuery: string }) {
   const isPhone = useMediaQuery(phoneQuery());
-  const [user, setUser] = useRecoilState(userState);
+  const [user, setUser] = useAtom(userState);
   const { refetch } = useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
@@ -357,7 +357,7 @@ function SubscriptionsSection(props: { searchQuery: string }) {
         {!isLoading && bundles.length === 0 && (
           <BlurBox w={'100%'} h={200}>
             <Stack mt={50} gap={10}>
-              <Text ta='center' c='gray.5' fs='italic'>
+              <Text ta='center' c='gray.2' fs='italic'>
                 No subscribed bundles found. Go add some!
               </Text>
             </Stack>
@@ -375,7 +375,7 @@ function CreationsSection(props: { searchQuery: string }) {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const jsonImportRef = useRef<HTMLButtonElement>(null);
 
-  const [user, setUser] = useRecoilState(userState);
+  const [user, setUser] = useAtom(userState);
   useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
@@ -444,16 +444,17 @@ function CreationsSection(props: { searchQuery: string }) {
                 created_at: '',
                 user_id: '',
                 name: 'New Bundle',
-                foundry_id: undefined,
+                foundry_id: null,
                 url: '',
                 description: '',
                 operations: [],
                 contact_info: '',
                 group: '',
                 require_key: false,
-                keys: undefined,
+                keys: null,
                 is_published: false,
                 artwork_url: '',
+                deprecated: false,
                 required_content_sources: [],
                 meta_data: {},
               });
@@ -548,7 +549,7 @@ function CreationsSection(props: { searchQuery: string }) {
         {!isFetching && bundles.filter((c) => !c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
-              <Text ta='center' c='gray.5' fs='italic'>
+              <Text ta='center' c='gray.2' fs='italic'>
                 No bundles in progress.
               </Text>
             </Stack>
@@ -606,7 +607,7 @@ function CreationsSection(props: { searchQuery: string }) {
         {!isFetching && bundles.filter((c) => c.is_published).length === 0 && (
           <BlurBox w={'100%'} h={100}>
             <Stack mt={30} gap={10}>
-              <Text ta='center' c='gray.5' fs='italic'>
+              <Text ta='center' c='gray.2' fs='italic'>
                 No published bundles.
               </Text>
             </Stack>
@@ -648,7 +649,7 @@ function ContentSourceCard(props: {
 }) {
   const theme = useMantineTheme();
   const isPhone = useMediaQuery(phoneQuery());
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { hovered: hoveredMain, ref: refMain } = useHover();
   const { hovered: hoveredEdit, ref: refEdit } = useHover<HTMLButtonElement>();

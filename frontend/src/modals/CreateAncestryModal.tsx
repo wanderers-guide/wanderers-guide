@@ -77,9 +77,10 @@ export function CreateAncestryModal(props: {
       name: '',
       rarity: 'COMMON' as Rarity,
       description: '',
-      operations: [] as Operation[] | undefined,
+      operations: [] as Operation[] | null,
       trait_id: -1,
       artwork_url: '',
+      deprecated: null as boolean | null,
       content_source_id: -1,
       version: '1.0',
     },
@@ -89,7 +90,7 @@ export function CreateAncestryModal(props: {
     },
   });
 
-  const onSubmit = async (values: typeof form.values) => {
+  const onSubmit = async (values: Ancestry) => {
     props.onComplete({
       ...values,
     });
@@ -128,7 +129,7 @@ export function CreateAncestryModal(props: {
     >
       <ScrollArea h={`calc(min(80dvh, ${EDIT_MODAL_HEIGHT}px))`} pr={14} scrollbars='y'>
         <LoadingOverlay visible={loading || isFetching} />
-        <form onSubmit={form.onSubmit(onSubmit)}>
+        <form onSubmit={form.onSubmit((values) => onSubmit(values))}>
           <Stack gap={10}>
             <Group wrap='nowrap' justify='space-between'>
               <Group wrap='nowrap'>
@@ -188,7 +189,7 @@ export function CreateAncestryModal(props: {
               labelPosition='left'
               onClick={toggleOperations}
             />
-            <Collapse in={openedOperations}>
+            <Collapse expanded={openedOperations}>
               <Stack gap={10}>
                 <OperationSection
                   title={
@@ -217,7 +218,7 @@ export function CreateAncestryModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  operations={form.values.operations}
+                  operations={form.values.operations ?? undefined}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

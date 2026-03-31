@@ -1,11 +1,7 @@
 import { Character, Creature, LivingEntity } from '@schemas/content';
 import { OperationSelectOptionCustom } from '@schemas/operations';
-import { DefaultValue, SetterOrUpdater } from 'recoil';
 
-// Recoil's DefaultValues are annoying to work with, so we just ignore them.
-export function isDefaultValue(value: any): value is DefaultValue {
-  return false;
-}
+export type SetterOrUpdater<T> = (valOrUpdater: T | ((currVal: T) => T)) => void;
 
 export function isCharacter(entity?: LivingEntity | null): entity is Character {
   if (!entity) return false;

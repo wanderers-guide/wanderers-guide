@@ -9,13 +9,13 @@ import {
 import { Box, Button, Divider, Group, Text } from '@mantine/core';
 import { Item } from '@schemas/content';
 import RichText from './RichText';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { drawerState } from '@atoms/navAtoms';
 import { useQuery } from '@tanstack/react-query';
 import { fetchContentById } from '@content/content-store';
 
 export function ItemRunesDescription({ item }: { item: Item }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data, isFetching } = useQuery({
     queryKey: [`get-item-fundamentals-runes`, { itemId: item.id }],
@@ -83,7 +83,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
               {index > 0 && <Divider my='sm' />}
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
-                  <Text fw={600} c='gray.5' span>
+                  <Text fw={600} c='gray.2' span>
                     {rune.name}
                   </Text>
                 </Box>
@@ -118,7 +118,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
               {index > 0 && <Divider my='sm' />}
               <Group align='start' justify='space-between' pb={2}>
                 <Box>
-                  <Text fw={600} c='gray.5' span>
+                  <Text fw={600} c='gray.2' span>
                     {rune.name}
                   </Text>
                 </Box>
@@ -149,7 +149,7 @@ export function ItemRunesDescription({ item }: { item: Item }) {
 }
 
 export function ItemUpgradesDescription(props: { item: Item }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const { item } = props;
 
   if (!isItemWithUpgrades(item)) {
@@ -167,7 +167,7 @@ export function ItemUpgradesDescription(props: { item: Item }) {
           {index > 0 && <Divider my='sm' />}
           <Group align='start' justify='space-between' pb={2}>
             <Box>
-              <Text fw={600} c='gray.5' span>
+              <Text fw={600} c='gray.2' span>
                 {slot.name}
               </Text>
             </Box>

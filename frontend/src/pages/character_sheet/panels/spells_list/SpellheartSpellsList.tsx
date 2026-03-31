@@ -8,7 +8,7 @@ import {
   SpellListEntry,
   SpellSlot,
 } from '@schemas/content';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import SpellListEntrySection from './SpellListEntrySection';
 import { useMemo } from 'react';
 import { detectSpells } from '@spells/spell-utils';
@@ -78,11 +78,11 @@ export default function SpellheartSpellsList(props: {
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Group gap={10}>
-            <Text c='gray.5' fw={700} fz='sm'>
+            <Text c='gray.2' fw={700} fz='sm'>
               Spellhearts
             </Text>
             <Badge variant='outline' color='gray.5' size='xs'>
-              <Text fz='sm' c='gray.5' span>
+              <Text fz='sm' c='gray.2' span>
                 {props.spellhearts.length}
               </Text>
             </Badge>

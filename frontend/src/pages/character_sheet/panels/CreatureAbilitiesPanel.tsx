@@ -1,10 +1,22 @@
 import { drawerState } from '@atoms/navAtoms';
 import { FeatSelectionOption } from '@common/select/SelectContent';
-import { useMantineTheme, Stack, Group, TextInput, ScrollArea, Accordion, Divider, Box, Text } from '@mantine/core';
+import {
+  useMantineTheme,
+  useMantineColorScheme,
+  Stack,
+  Group,
+  TextInput,
+  ScrollArea,
+  Accordion,
+  Divider,
+  Box,
+  Text,
+} from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { AbilityBlock, ContentPackage, Creature, Trait } from '@schemas/content';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useRecoilState, SetterOrUpdater } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import * as JsSearch from 'js-search';
 import { isTruthy } from '@utils/type-fixing';
 import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
@@ -24,9 +36,10 @@ export default function CreatureAbilitiesPanel(props: {
 }) {
   const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const entityAbilityBlocks = useMemo(() => {
     if (!props.creature) return [];
@@ -90,7 +103,7 @@ export default function CreatureAbilitiesPanel(props: {
             onChange={(event) => setSearchQuery(event.target.value)}
             styles={{
               input: {
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
                 borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
@@ -98,7 +111,7 @@ export default function CreatureAbilitiesPanel(props: {
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {entityAbilityBlocks.length === 0 && (
-            <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+            <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
               No abilities found.
             </Text>
           )}

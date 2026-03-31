@@ -15,7 +15,9 @@ import { displayFinalAcValue, displayFinalProfValue } from '@variables/variable-
 import { getAllSaveVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { cloneDeep } from 'lodash-es';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
+import { glassStyle } from '@utils/colors';
 
 export default function ArmorSection(props: {
   id: StoreID;
@@ -24,7 +26,7 @@ export default function ArmorSection(props: {
 }) {
   const theme = useMantineTheme();
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { hovered: armorHovered, ref: armorRef } = useHover();
   const { hovered: shieldHovered, ref: shieldRef } = useHover();
@@ -106,7 +108,7 @@ export default function ArmorSection(props: {
                 <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.1em'>
                   {displayFinalAcValue(props.id, bestArmor?.item)}
                 </Text>
-                <Text ta='center' c='gray.5' fz='xs'>
+                <Text ta='center' c='gray.2' fz='xs'>
                   AC
                 </Text>
               </Stack>
@@ -161,7 +163,7 @@ export default function ArmorSection(props: {
                         sections={[
                           {
                             value: Math.ceil(
-                              ((bestShieldHealth?.hp_current ?? 0) / (bestShieldHealth?.hp_max ?? 1)) * 100
+                              ((bestShieldHealth?.hp_current ?? 0) / (Number(bestShieldHealth?.hp_max) || 1)) * 100
                             ),
                             color: 'guide',
                           },
@@ -181,16 +183,18 @@ export default function ArmorSection(props: {
           <Stack gap={8}>
             {getAllSaveVariables(props.id).map((save, index) => (
               <Button.Group key={index}>
-                <BlurButton size='compact-xs' fw={400} onClick={() => handleSaveOpen(save)}>
+                <BlurButton size='compact-xs' bgColorHover='#ffffff09' fw={400} onClick={() => handleSaveOpen(save)}>
                   {variableToLabel(save)}
                 </BlurButton>
                 <Button
                   radius='xl'
                   variant='light'
-                  color='dark.2'
+                  color='dark.8'
                   size='compact-xs'
                   w={55}
-                  style={{ position: 'relative' }}
+                  style={{
+                    ...glassStyle(),
+                  }}
                   onClick={() => handleSaveOpen(save)}
                 >
                   <Text c='gray.0' fz='xs' pr={15}>
@@ -199,7 +203,7 @@ export default function ArmorSection(props: {
                   <Badge
                     size='xs'
                     variant='light'
-                    color='gray.0'
+                    color='dark.5'
                     w={20}
                     style={{
                       position: 'absolute',
@@ -208,7 +212,9 @@ export default function ArmorSection(props: {
                       transform: 'translate(-50%, -50%)',
                     }}
                   >
-                    {compileProficiencyType(save?.value)}
+                    <Text c='gray.0' fz={8}>
+                      {compileProficiencyType(save?.value)}
+                    </Text>
                   </Badge>
                 </Button>
               </Button.Group>

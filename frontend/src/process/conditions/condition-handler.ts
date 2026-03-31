@@ -496,7 +496,7 @@ function applyCondition(id: StoreID, condition: Condition) {
       'PERCEPTION',
       -2,
       'status',
-      '-2 status penalty to initiative and checks that involve sound but also rely on other senses',
+      'to initiative and checks that involve sound but also rely on other senses',
       'Deafened'
     );
     addVariableBonus(

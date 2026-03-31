@@ -1,30 +1,21 @@
 import { AbilityBlockType, ContentType, Creature } from '@schemas/content';
 import { DrawerType } from '@schemas/index';
-import { isDefaultValue } from '@utils/type-fixing';
-import { atom, selector } from 'recoil';
+import { atom } from 'jotai';
 
-const userIconState = atom({
-  key: 'user-svg-icon',
-  default: null as string | null,
-});
+const userIconState = atom(null as string | null);
 
-const _internal_drawerHistoryState = atom({
-  key: 'drawer-history-internal',
-  default: [] as { type: DrawerType; data: any }[],
-});
+const _internal_drawerHistoryState = atom([] as { type: DrawerType; data: any }[]);
 
-const _internal_drawerState = atom({
-  key: 'drawer-state-internal',
-  default: null as {
-    type: DrawerType;
-    data: any;
-    extra?: { addToHistory?: boolean; history?: { type: DrawerType; data: any }[] };
-  } | null,
-});
+type DrawerStateValue = {
+  type: DrawerType;
+  data: any;
+  extra?: { addToHistory?: boolean; history?: { type: DrawerType; data: any }[] };
+} | null;
 
-const drawerState = selector({
-  key: 'drawer-state',
-  get: ({ get }) => {
+const _internal_drawerState = atom(null as DrawerStateValue);
+
+const drawerState = atom(
+  (get) => {
     const drawer = get(_internal_drawerState);
     const history = get(_internal_drawerHistoryState);
 
@@ -39,7 +30,7 @@ const drawerState = selector({
       return null;
     }
   },
-  set: ({ set, get }, newValue) => {
+  (get, set, newValue: DrawerStateValue) => {
     const drawer = get(_internal_drawerState);
     const history = get(_internal_drawerHistoryState);
 
@@ -51,30 +42,26 @@ const drawerState = selector({
     }
 
     // Add new value to history or replace history
-    if (!isDefaultValue(newValue)) {
-      if (newValue.extra?.addToHistory && drawer) {
-        // Add new value to history
-        set(_internal_drawerHistoryState, [...history, { type: drawer.type, data: drawer.data }]);
-      } else if (newValue.extra?.history) {
-        // Set history to new value's history
-        set(_internal_drawerHistoryState, newValue.extra.history);
-      }
+    if (newValue.extra?.addToHistory && drawer) {
+      // Add new value to history
+      set(_internal_drawerHistoryState, [...history, { type: drawer.type, data: drawer.data }]);
+    } else if (newValue.extra?.history) {
+      // Set history to new value's history
+      set(_internal_drawerHistoryState, newValue.extra.history);
     }
     set(_internal_drawerState, newValue);
-  },
-});
+  }
+);
 
-const feedbackState = atom({
-  key: 'feedback-data',
-  default: null as {
+const feedbackState = atom(
+  null as {
     type: ContentType | AbilityBlockType;
     data: { id?: number; contentSourceId?: number };
-  } | null,
-});
+  } | null
+);
 
-const creatureDrawerState = atom({
-  key: 'drawer-state-creature',
-  default: null as {
+const creatureDrawerState = atom(
+  null as {
     data: {
       id?: number;
       creature?: Creature;
@@ -83,7 +70,7 @@ const creatureDrawerState = atom({
       updateCreature?: (creature: Creature) => void;
       readOnly?: boolean;
     };
-  } | null,
-});
+  } | null
+);
 
 export { userIconState, drawerState, feedbackState, creatureDrawerState };

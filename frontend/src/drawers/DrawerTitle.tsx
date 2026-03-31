@@ -1,6 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { forwardRef, LegacyRef } from 'react';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { ActionDrawerTitle } from './types/ActionDrawer';
 import { AncestryDrawerTitle } from './types/AncestryDrawer';
 import { BackgroundDrawerTitle } from './types/BackgroundDrawer';
@@ -30,7 +30,7 @@ import { VersatileHeritageDrawerTitle } from './types/VersatileHeritageDrawer';
 import { ClassArchetypeDrawerTitle } from './types/ClassArchetypeDrawer';
 
 const DrawerTitle = forwardRef((props: {}, ref: LegacyRef<HTMLDivElement>) => {
-  const _drawer = useRecoilValue(drawerState);
+  const _drawer = useAtomValue(drawerState);
   return (
     <div ref={ref}>
       {_drawer?.type === 'content-source' && <ContentSourceDrawerTitle data={_drawer.data} />}

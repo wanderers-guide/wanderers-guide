@@ -20,7 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Item } from '@schemas/content';
 import { labelToVariable } from '@variables/variable-utils';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import * as JsSearch from 'js-search';
 import { EDIT_MODAL_HEIGHT } from '@constants/data';
 import { isItemVisible } from '@content/content-hidden';
@@ -86,10 +86,10 @@ export default function AddItemsModal({
             ...item.meta_data,
             base_item_content: baseItem,
           }
-        : undefined,
+        : null,
     };
 
-    innerProps.onAddItem(injectedItem, type);
+    innerProps.onAddItem(injectedItem as Item, type);
   };
 
   return (
@@ -208,7 +208,7 @@ function ItemsList(props: {
   onClick: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
   onMetadataChange?: () => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <Stack gap={0}>

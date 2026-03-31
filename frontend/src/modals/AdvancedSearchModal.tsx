@@ -50,7 +50,7 @@ import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { uniq } from 'lodash-es';
 import { useEffect, useMemo, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 
 export interface FiltersParams {
   type?: ContentType;
@@ -123,7 +123,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
       (source) => convertContentSources(props.presetFilters?.content_sources)?.includes(source.id) ?? true
     )
   );
-  const character = useRecoilValue(characterState);
+  const character = useAtomValue(characterState);
 
   const zIndex = props.zIndex ?? 500;
 
@@ -184,7 +184,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
     }
   }, [props.opened]);
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const [_data, _setData] = useState<Record<string, any>[]>([]);
   const isOverMaxResults = _data.length >= MAX_RESULTS_RETURNED;
   const [prevFiltersHash, setPrevFiltersHash] = useState<number>(-1);
@@ -234,7 +234,7 @@ export function AdvancedSearchModal<C = Record<string, any>>(props: {
         // Apply prerequisites filter if searching for feats and character is loaded
         if (character && f.meets_prerequisites && f.meets_prerequisites !== 'Any') {
           newData = (newData as AbilityBlock[]).filter((item) => {
-            const prereqMet = meetsPrerequisites('CHARACTER', item.prerequisites);
+            const prereqMet = meetsPrerequisites('CHARACTER', item.prerequisites ?? undefined);
             if (f.meets_prerequisites === 'Fully') {
               return prereqMet.result === 'FULLY';
             } else if (f.meets_prerequisites === 'Probably') {

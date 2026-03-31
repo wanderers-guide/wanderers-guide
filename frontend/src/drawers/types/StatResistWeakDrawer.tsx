@@ -51,7 +51,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='description'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.5' fw={700} fz='sm'>
+                  <Text c='gray.2' fw={700} fz='sm'>
                     Description
                   </Text>
                 </Group>
@@ -68,11 +68,11 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='options'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.5' fw={700} fz='sm'>
+                  <Text c='gray.2' fw={700} fz='sm'>
                     Active
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                    <Text fz='sm' c='gray.5' span>
+                    <Text fz='sm' c='gray.2' span>
                       {resists.length}
                     </Text>
                   </Badge>
@@ -82,7 +82,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
                 <List>
                   {resists.map((opt, index) => (
                     <List.Item key={index}>
-                      <Text c='gray.5' size='md' span>
+                      <Text c='gray.2' size='md' span>
                         {opt}
                       </Text>
                     </List.Item>
@@ -120,7 +120,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='description'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.5' fw={700} fz='sm'>
+                  <Text c='gray.2' fw={700} fz='sm'>
                     Description
                   </Text>
                 </Group>
@@ -139,11 +139,11 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='options'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.5' fw={700} fz='sm'>
+                  <Text c='gray.2' fw={700} fz='sm'>
                     Active
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                    <Text fz='sm' c='gray.5' span>
+                    <Text fz='sm' c='gray.2' span>
                       {weaks.length}
                     </Text>
                   </Badge>
@@ -153,7 +153,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
                 <List>
                   {weaks.map((opt, index) => (
                     <List.Item key={index}>
-                      <Text c='gray.5' size='md' span>
+                      <Text c='gray.2' size='md' span>
                         {opt}
                       </Text>
                     </List.Item>
@@ -191,7 +191,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='description'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.5' fw={700} fz='sm'>
+                  <Text c='gray.2' fw={700} fz='sm'>
                     Description
                   </Text>
                 </Group>
@@ -214,11 +214,11 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
             <Accordion.Item value='options'>
               <Accordion.Control>
                 <Group wrap='nowrap' justify='space-between' gap={0}>
-                  <Text c='gray.5' fw={700} fz='sm'>
+                  <Text c='gray.2' fw={700} fz='sm'>
                     Active
                   </Text>
                   <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                    <Text fz='sm' c='gray.5' span>
+                    <Text fz='sm' c='gray.2' span>
                       {immuneVar?.value.length}
                     </Text>
                   </Badge>
@@ -228,7 +228,7 @@ export function StatResistWeakDrawerContent(props: { data: { id: StoreID } }) {
                 <List>
                   {immuneVar?.value.map((opt, index) => (
                     <List.Item key={index}>
-                      <Text c='gray.5' size='md' span>
+                      <Text c='gray.2' size='md' span>
                         {displayResistWeak(props.data.id, opt)}
                       </Text>
                     </List.Item>

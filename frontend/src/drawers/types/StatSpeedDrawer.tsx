@@ -125,7 +125,7 @@ function StatSpeedSection(props: {
     <Accordion.Item value={variable.name}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='sm'>
+          <Text c='gray.2' fw={700} fz='sm'>
             {variable.name === 'SPEED' ? `Normal` : `${toLabel(variable.name)}`}
           </Text>
           <Box mr='sm'>

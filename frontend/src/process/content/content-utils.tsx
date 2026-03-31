@@ -19,27 +19,27 @@ import * as showdown from 'showdown';
 import Turndown from 'turndown';
 
 export function toMarkdown(html: any) {
-  if (!isString(html)) return undefined;
+  if (!isString(html)) return null;
   const td = new Turndown({
     // Why was hr removed?
     //hr: '',
   });
   td.keep(['abbr']);
-  return td.turndown(html) || undefined;
+  return td.turndown(html) || null;
 }
 
 export function toHTML(markdown: any) {
-  if (!isString(markdown)) return undefined;
+  if (!isString(markdown)) return null;
   const sd = new showdown.Converter();
-  return sd.makeHtml(markdown) || undefined;
+  return sd.makeHtml(markdown) || null;
 }
 
 export function toText(html: any) {
-  if (!isString(html)) return undefined;
+  if (!isString(html)) return null;
   let tmp = document.createElement('div');
   tmp.innerHTML = html;
-  const text = tmp.textContent || tmp.innerText || undefined;
-  if (!text) return undefined;
+  const text = tmp.textContent || tmp.innerText || null;
+  if (!text) return null;
 
   return text.replace(/’/g, "'").trim();
 }

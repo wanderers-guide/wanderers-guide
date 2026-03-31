@@ -36,7 +36,7 @@ const ProfilePic = (props: { src?: string }) => {
       mr={10}
       variant='transparent'
       color='dark.3'
-      bg={theme.colors.dark[6]}
+      bg='var(--avatar-placeholder-bg)'
     />
   );
 };
@@ -87,7 +87,6 @@ export const CharacterInfo = forwardRef(
             <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
               <HoverCard.Target>
                 <Text
-                  c='gray.0'
                   fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
                   className={classes.name}
@@ -98,9 +97,7 @@ export const CharacterInfo = forwardRef(
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  {props.character?.name}
-                </Text>
+                <Text size='sm'>{props.character?.name}</Text>
               </HoverCard.Dropdown>
             </HoverCard>
 
@@ -122,7 +119,7 @@ export const CharacterInfo = forwardRef(
                 ) : (
                   <Group wrap='nowrap' gap={10}>
                     <IconTree stroke={1.5} size='1rem' className={classes.icon} />
-                    <Text fz='xs' c='gray.3'>
+                    <Text fz='xs' c='dimmed'>
                       {props.character?.details?.ancestry?.name ? (
                         <>
                           {/* {props.character?.details?.heritage?.name ?? ''}{' '} */}
@@ -152,7 +149,7 @@ export const CharacterInfo = forwardRef(
                 ) : (
                   <Group wrap='nowrap' gap={10}>
                     <IconWindow stroke={1.5} size='1rem' className={classes.icon} />
-                    <Text fz='xs' c='gray.3'>
+                    <Text fz='xs' c='dimmed'>
                       {props.character?.details?.background?.name ?? 'Missing Background'}
                     </Text>
                   </Group>
@@ -173,7 +170,7 @@ export const CharacterInfo = forwardRef(
                     </Button>
                     {props.character?.variants?.dual_class && props.onClickClass2 && (
                       <>
-                        <Text fz='xs' c='gray.5'>
+                        <Text fz='xs' c='gray.2'>
                           /
                         </Text>
                         <Button
@@ -191,7 +188,7 @@ export const CharacterInfo = forwardRef(
                 ) : (
                   <Group wrap='nowrap' gap={10}>
                     <IconVocabulary stroke={1.5} size='1rem' className={classes.icon} />
-                    <Text fz='xs' c='gray.3'>
+                    <Text fz='xs' c='dimmed'>
                       {props.character?.details?.class?.name ?? 'Missing Class'}
                       {props.character?.variants?.dual_class && (
                         <> / {props.character?.details?.class_2?.name ?? 'Missing Class'}</>
@@ -264,7 +261,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
               radius={75}
               variant='transparent'
               color='dark.3'
-              bg={theme.colors.dark[6]}
+              bg='var(--avatar-placeholder-bg)'
               mt={10}
             />
 
@@ -297,7 +294,6 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
             <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
               <HoverCard.Target>
                 <Text
-                  c='gray.0'
                   fz={props.character && props.character.name.length >= 16 ? '0.9rem' : 'lg'}
                   fw={500}
                   className={classes.name}
@@ -308,9 +304,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
                 </Text>
               </HoverCard.Target>
               <HoverCard.Dropdown py={5} px={10}>
-                <Text c='gray.0' size='sm'>
-                  {props.character?.name}
-                </Text>
+                <Text size='sm'>{props.character?.name}</Text>
               </HoverCard.Dropdown>
             </HoverCard>
 
@@ -318,7 +312,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
               <Box>
                 <Group wrap='nowrap' gap={10}>
                   <IconTree stroke={1.5} size='1rem' className={classes.icon} />
-                  <Text fz='xs' c='gray.3'>
+                  <Text fz='xs' c='dimmed'>
                     {props.character?.details?.ancestry?.name ? (
                       <>
                         {/* {props.character?.details?.heritage?.name ?? ''}{' '} */}
@@ -333,7 +327,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
               <Box>
                 <Group wrap='nowrap' gap={10}>
                   <IconWindow stroke={1.5} size='1rem' className={classes.icon} />
-                  <Text fz='xs' c='gray.3'>
+                  <Text fz='xs' c='dimmed'>
                     {props.character?.details?.background?.name ?? 'Missing Background'}
                   </Text>
                 </Group>
@@ -341,7 +335,7 @@ export function CharacterDetailedInfo(props: { character: Character | null; name
               <Box>
                 <Group wrap='nowrap' gap={10}>
                   <IconVocabulary stroke={1.5} size='1rem' className={classes.icon} />
-                  <Text fz='xs' c='gray.3'>
+                  <Text fz='xs' c='dimmed'>
                     {props.character?.details?.class?.name ?? 'Missing Class'}
                     {props.character?.variants?.dual_class && (
                       <> / {props.character?.details?.class_2?.name ?? 'Missing Class'}</>

@@ -64,20 +64,22 @@ export function CreateCombatantModal(props: {
         stamina_current: 0,
         resolve_current: 0,
         rarity: 'COMMON',
-        inventory: undefined,
-        notes: undefined,
+        inventory: null,
+        notes: null,
         details: {
           image_url: undefined,
           background_image_url: undefined,
           conditions: undefined,
           description: '',
         },
-        roll_history: undefined,
+        roll_history: null,
         operations: [],
+        operation_data: null,
         abilities_base: [],
         abilities_added: [],
-        spells: undefined,
-        meta_data: undefined,
+        spells: null,
+        meta_data: null,
+        deprecated: false,
         content_source_id: -1,
         version: '1.0',
       },
@@ -304,7 +306,7 @@ export function CreateCombatantModal(props: {
               labelPosition='left'
               onClick={toggleAdditional}
             />
-            <Collapse in={openedAdditional}>
+            <Collapse expanded={openedAdditional}>
               <Stack gap={10}>
                 <SelectIcon
                   strValue={form.values.creature?.details.image_url ?? ''}

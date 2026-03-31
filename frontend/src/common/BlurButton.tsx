@@ -1,7 +1,8 @@
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { glassStyle, GLASS_BG_COLOR } from '@utils/colors';
+import { glassStyle } from '@utils/colors';
 import { Button, ButtonProps } from '@mantine/core';
-import { useHover } from '@mantine/hooks';
+import { useHover, useMergedRef } from '@mantine/hooks';
+import { forwardRef } from 'react';
 
 interface BlurButtonProps extends ButtonProps {
   bgColor?: string;
@@ -12,9 +13,11 @@ interface BlurButtonProps extends ButtonProps {
   selected?: boolean;
 }
 
-export default function BlurButton(props: BlurButtonProps) {
+const BlurButton = forwardRef<HTMLButtonElement, BlurButtonProps>((props, forwardedRef) => {
+  const { hovered, ref: hoverRef } = useHover();
+  const ref = useMergedRef(hoverRef, forwardedRef);
 
-  const { hovered, ref } = useHover<HTMLAnchorElement>();
+  const componentProps = props.href ? { component: 'a' as const, href: props.href } : {};
 
   return (
     <Button
@@ -23,17 +26,19 @@ export default function BlurButton(props: BlurButtonProps) {
       radius='xl'
       ref={ref}
       onClick={props.onClick}
-      component='a'
-      href={props.href}
+      {...componentProps}
       {...props}
       style={{
         flex: 1,
-        ...glassStyle({ border: true }),
-        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor ?? GLASS_BG_COLOR,
+        ...glassStyle(),
+        borderRadius: undefined,
+        backgroundColor: hovered ? (props.bgColorHover ?? ICON_BG_COLOR_HOVER) : (props.bgColor ?? '#00000000'),
         ...props.style,
       }}
     >
       {props.children}
     </Button>
   );
-}
+});
+
+export default BlurButton;

@@ -14,7 +14,7 @@ import { isCharacter } from '@utils/type-fixing';
 import useRefresh from '@utils/use-refresh';
 import { cloneDeep, truncate } from 'lodash-es';
 import { useEffect, useState } from 'react';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 export default function NotesPanel(props: {
   panelHeight: number;

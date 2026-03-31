@@ -8,7 +8,7 @@ import {
   SpellListEntry,
   SpellSlot,
 } from '@schemas/content';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { useEffect, useMemo } from 'react';
@@ -98,11 +98,11 @@ export default function WandSpellsList(props: {
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Group gap={10}>
-            <Text c='gray.5' fw={700} fz='sm'>
+            <Text c='gray.2' fw={700} fz='sm'>
               Wands
             </Text>
             <Badge variant='outline' color='gray.5' size='xs'>
-              <Text fz='sm' c='gray.5' span>
+              <Text fz='sm' c='gray.2' span>
                 {props.wands.length}
               </Text>
             </Badge>
@@ -192,8 +192,10 @@ export default function WandSpellsList(props: {
                                         },
                                         // Make sure wand is broken
                                         hp_max: i.item.meta_data?.hp_max || DEFAULT_WAND_HP,
-                                        hp: Math.floor((i.item.meta_data?.hp_max || DEFAULT_WAND_HP) / 2),
-                                        broken_threshold: Math.floor((i.item.meta_data?.hp_max || DEFAULT_WAND_HP) / 2),
+                                        hp: Math.floor((Number(i.item.meta_data?.hp_max) || DEFAULT_WAND_HP) / 2),
+                                        broken_threshold: Math.floor(
+                                          (Number(i.item.meta_data?.hp_max) || DEFAULT_WAND_HP) / 2
+                                        ),
                                       },
                                     },
                                   };
@@ -234,7 +236,9 @@ export default function WandSpellsList(props: {
                                   // Make sure wand is broken
                                   hp_max: i.item.meta_data?.hp_max || DEFAULT_WAND_HP,
                                   hp: i.item.meta_data?.hp_max || DEFAULT_WAND_HP,
-                                  broken_threshold: Math.floor((i.item.meta_data?.hp_max || DEFAULT_WAND_HP) / 2),
+                                  broken_threshold: Math.floor(
+                                    (Number(i.item.meta_data?.hp_max) || DEFAULT_WAND_HP) / 2
+                                  ),
                                 },
                               },
                             };

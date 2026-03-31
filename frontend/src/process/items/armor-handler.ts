@@ -8,7 +8,7 @@ function getProfTotal(id: StoreID, item: Item) {
   const category = item.meta_data?.category ?? 'light';
   let categoryProfTotal = 0;
   if (category === 'light') {
-    if (hasTraitType('COMPANION', item.traits)) {
+    if (hasTraitType('COMPANION', item.traits ?? undefined)) {
       categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_BARDING`));
     } else {
       categoryProfTotal = parseInt(getFinalProfValue(id, `LIGHT_ARMOR`));
@@ -16,7 +16,7 @@ function getProfTotal(id: StoreID, item: Item) {
   } else if (category === 'medium') {
     categoryProfTotal = parseInt(getFinalProfValue(id, `MEDIUM_ARMOR`));
   } else if (category === 'heavy') {
-    if (hasTraitType('COMPANION', item.traits)) {
+    if (hasTraitType('COMPANION', item.traits ?? undefined)) {
       categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_BARDING`));
     } else {
       categoryProfTotal = parseInt(getFinalProfValue(id, `HEAVY_ARMOR`));
@@ -75,8 +75,8 @@ export function getAcParts(id: StoreID, item?: Item) {
   const armorBonus = item.meta_data?.ac_bonus ?? 0;
   const dexCap = item.meta_data?.dex_cap ?? 0;
   const strengthReq = item.meta_data?.strength ?? 0;
-  let checkPenalty = -1 * Math.abs(item.meta_data?.check_penalty ?? 0);
-  let speedPenalty = -1 * Math.abs(item.meta_data?.speed_penalty ?? 0);
+  let checkPenalty = -1 * Math.abs(Number(item.meta_data?.check_penalty ?? 0));
+  let speedPenalty = -1 * Math.abs(Number(item.meta_data?.speed_penalty ?? 0));
 
   if (strMod >= strengthReq) {
     checkPenalty = 0;

@@ -67,7 +67,8 @@ export function CreateLanguageModal(props: {
       script: '',
       description: '',
       rarity: 'COMMON' as Rarity,
-      availability: undefined as Availability | undefined,
+      availability: null as Availability | null,
+      deprecated: false,
       content_source_id: -1,
     },
   });

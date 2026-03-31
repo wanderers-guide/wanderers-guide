@@ -13,7 +13,7 @@ import { AbilityBlock } from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { meetsPrerequisites } from '@variables/prereq-detection';
 import { ReactNode } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import ShowInjectedText from '@drawers/ShowInjectedText';
 import { DisplayIcon } from '@common/IconDisplay';
@@ -22,7 +22,7 @@ import { listToLabel } from '@utils/display-strings';
 export function FeatDrawerTitle(props: { data: { id?: number; feat?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: _feat } = useQuery({
     queryKey: [`find-feat-${id}`, { id }],
@@ -83,7 +83,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
   const id = props.data.id;
   const theme = useMantineTheme();
 
-  const character = useRecoilValue(characterState);
+  const character = useAtomValue(characterState);
   const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
 
   const { data: _feat } = useQuery({
@@ -112,7 +112,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
     );
   }
 
-  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', feat.prerequisites);
+  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', feat.prerequisites ?? undefined);
   const prereqUI: ReactNode[] = [];
   if (prereqMet && prereqMet.meetMap.size > 0) {
     for (const [prereq, met] of prereqMet.meetMap.entries()) {
@@ -197,13 +197,13 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
           <TraitsDisplay
             traitIds={feat.traits ?? []}
             rarity={feat.rarity}
-            availability={feat.availability}
+            availability={feat.availability ?? undefined}
             interactable
           />
         </Box>
         {prereqUI && prereqUI.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Prerequisites
             </Text>{' '}
             {prereqUI.flatMap((node, index) => (index < prereqUI.length - 1 ? [node, '; '] : [node]))}
@@ -211,7 +211,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.frequency && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Frequency
             </Text>{' '}
             {feat.frequency}
@@ -219,7 +219,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.trigger && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Trigger
             </Text>{' '}
             {feat.trigger}
@@ -227,7 +227,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.cost && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Cost
             </Text>{' '}
             {feat.cost}
@@ -235,7 +235,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.requirements && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Requirements
             </Text>{' '}
             {feat.requirements}
@@ -243,7 +243,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         )}
         {feat.access && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Access
             </Text>{' '}
             {feat.access}
@@ -253,7 +253,7 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         <RichText ta='justify'>{feat.description}</RichText>
         {feat.special && (
           <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Special
             </Text>{' '}
             <RichText span>{feat.special}</RichText>
@@ -263,8 +263,8 @@ export function FeatDrawerContent(props: { data: { id?: number; feat?: AbilityBl
         {<PrerequisiteForSection name={feat.name} />}
       </Box>
       <ShowInjectedText varId='CHARACTER' type='feat' id={feat.id} />
-      <DisplayOperationSelectionOptions operations={feat.operations} />
-      {props.data.showOperations && <ShowOperationsButton name={feat.name} operations={feat.operations} />}
+      <DisplayOperationSelectionOptions operations={feat.operations ?? undefined} />
+      {props.data.showOperations && <ShowOperationsButton name={feat.name} operations={feat.operations ?? undefined} />}
     </Box>
   );
 }
@@ -280,7 +280,7 @@ export function PrerequisiteForSection(props: { name: string }) {
     },
   });
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   if (!data || data.length === 0) {
     return null;
@@ -290,14 +290,14 @@ export function PrerequisiteForSection(props: { name: string }) {
     if (a.level === undefined || b.level === undefined) {
       return a.name.localeCompare(b.name);
     }
-    return a.level - b.level;
+    return (a.level ?? 0) - (b.level ?? 0);
   });
 
   return (
     <Box pt='sm'>
       <Divider />
       <IndentedText>
-        <Text fw={600} c='gray.5' span>
+        <Text fw={600} c='gray.2' span>
           Prerequisite for
         </Text>{' '}
         {listToLabel(

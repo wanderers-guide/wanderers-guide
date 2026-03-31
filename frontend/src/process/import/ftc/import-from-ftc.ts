@@ -153,7 +153,7 @@ export async function importFromFTC(d: FTC) {
             },
           ],
         }
-      : undefined,
+      : null,
     options: {
       is_public: data.options?.public ?? false,
       auto_detect_prerequisites: data.options?.auto_detect_prerequisites ?? false,
@@ -179,7 +179,7 @@ export async function importFromFTC(d: FTC) {
     operation_data: {
       selections: {},
     },
-  } satisfies Character as Character;
+  } as unknown as Character;
 
   // Get the content sources
   const sources = await fetchContentSources('ALL-OFFICIAL-PUBLIC');

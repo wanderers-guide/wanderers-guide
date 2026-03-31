@@ -13,7 +13,7 @@ import {
 import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StoreID } from '@schemas/variables';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 export default function RitualSpellsList(props: {
   id: StoreID;
@@ -57,11 +57,11 @@ export default function RitualSpellsList(props: {
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
           <Group gap={10}>
-            <Text c='gray.5' fw={700} fz='sm'>
+            <Text c='gray.2' fw={700} fz='sm'>
               Rituals
             </Text>
             <Badge variant='outline' color='gray.5' size='xs'>
-              <Text fz='sm' c='gray.5' span>
+              <Text fz='sm' c='gray.2' span>
                 {props.spellIds.length}
               </Text>
             </Badge>

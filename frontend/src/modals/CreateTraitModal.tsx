@@ -190,7 +190,7 @@ export function CreateTraitModal(props: {
               labelPosition='left'
               onClick={toggleAdditional}
             />
-            <Collapse in={openedAdditional}>
+            <Collapse expanded={openedAdditional}>
               <Stack gap={10}>
                 <Switch
                   label='Important'

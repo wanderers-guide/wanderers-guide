@@ -36,7 +36,7 @@ import {
   getAllAncestryTraitVariables,
 } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import classes from '@css/FaqSimple.module.css';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { useDebouncedValue, useDidUpdate } from '@mantine/hooks';
@@ -64,7 +64,7 @@ export default function CreatureDetailsPanel(props: {
 }) {
   const theme = useMantineTheme();
   const isPhone = isPhoneSized(props.panelWidth);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const languages = (getVariable<VariableListStr>(props.id, 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
     const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
@@ -158,7 +158,7 @@ export default function CreatureDetailsPanel(props: {
                   </Pill>
                 ))}
                 {languages.length === 0 && (
-                  <Text ta='center' c='gray.5' fs='italic'>
+                  <Text ta='center' c='gray.2' fs='italic'>
                     No languages found
                   </Text>
                 )}
@@ -197,7 +197,7 @@ export default function CreatureDetailsPanel(props: {
                   </Pill>
                 ))}
                 {traits.length === 0 && (
-                  <Text ta='center' c='gray.5' fs='italic'>
+                  <Text ta='center' c='gray.2' fs='italic'>
                     No traits found
                   </Text>
                 )}

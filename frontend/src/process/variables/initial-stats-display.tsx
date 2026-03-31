@@ -12,7 +12,7 @@ import { AttributeValue, ProficiencyValue, StoreID, Variable, VariableType, Vari
 import { toLabel } from '@utils/strings';
 import { listToLabel } from '@utils/display-strings';
 import { ReactNode } from 'react';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { getVariable } from './variable-manager';
 import {
   compactLabels,

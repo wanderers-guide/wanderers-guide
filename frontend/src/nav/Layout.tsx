@@ -29,7 +29,7 @@ import {
 } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { supabase } from '../main';
 import { LoginButton } from './LoginButton';
 import { SearchBar } from './Searchbar';
@@ -45,11 +45,11 @@ export default function Layout(props: { children: React.ReactNode }) {
   const isMobileTouch = useMediaQuery(tabletQuery()) && isTouchDevice();
   const [opened, { toggle, close }] = useDisclosure();
   const navigate = useNavigate();
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
   const queryClient = useQueryClient();
 
   const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());
-  //const [userIcon, setUserIcon] = useRecoilState(userIconState);
+  //const [userIcon, setUserIcon] = useAtom(userIconState);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
 
   const { width } = useViewportSize();
@@ -85,9 +85,8 @@ export default function Layout(props: { children: React.ReactNode }) {
         h={50}
         zIndex={98}
         style={{
-          ...glassStyle(),
+          ...glassStyle({ bg: true }),
           borderRadius: 0,
-          backgroundColor: theme.colors.dark[8] + 'CC',
         }}
       >
         <Group h='100%' px='md' wrap='nowrap'>
@@ -159,7 +158,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                           borderBottomLeftRadius: theme.radius.xl,
                           borderTopRightRadius: theme.radius.md,
                           borderBottomRightRadius: theme.radius.md,
-                          backgroundColor: userMenuOpened ? '#14151750' : undefined,
+                          backgroundColor: userMenuOpened ? 'var(--mantine-color-default-hover)' : undefined,
                         }}
                       >
                         <Group gap={7} wrap='nowrap' justify='space-between'>
@@ -178,7 +177,7 @@ export default function Layout(props: { children: React.ReactNode }) {
                               radius='xl'
                               size={30}
                             />
-                            <Text fw={500} size='sm' c='gray.4' lh={1} mr={3} truncate>
+                            <Text fw={500} size='sm' c='dimmed' lh={1} mr={3} truncate>
                               {user?.display_name || 'Account'}
                             </Text>
                           </Group>
@@ -313,7 +312,7 @@ export default function Layout(props: { children: React.ReactNode }) {
         style={{
           ...glassStyle(),
           borderRadius: 0,
-          backgroundColor: theme.colors.dark[8] + 'CC',
+          backgroundColor: 'color-mix(in srgb, var(--mantine-color-body) 80%, transparent)',
         }}
       >
         {session ? (

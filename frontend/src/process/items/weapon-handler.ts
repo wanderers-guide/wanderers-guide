@@ -24,8 +24,8 @@ export function getWeaponStats(id: StoreID, item: Item) {
 
   // Get the number of dice for the weapon
   let dice =
-    (item.meta_data?.damage?.dice ?? 1) +
-    Math.min(item.meta_data?.runes?.striking ?? 0, 4) +
+    (Number(item.meta_data?.damage?.dice ?? 1)) +
+    Math.min(Number(item.meta_data?.runes?.striking ?? 0), 4) +
     (gradeImprovements.damage_dice - 1);
   const minDice = getVariable<VariableNum>(id, 'MINIMUM_WEAPON_DAMAGE_DICE')?.value ?? 1;
   if (dice < minDice) dice = minDice;
@@ -65,8 +65,8 @@ export function getWeaponStats(id: StoreID, item: Item) {
   const damageRunes = (item.meta_data?.runes?.property ?? []).filter((r) => !!r.rune?.meta_data?.damage?.die);
   for (const rune of damageRunes) {
     other.push({
-      dice: rune.rune!.meta_data!.damage!.dice,
-      die: rune.rune!.meta_data!.damage!.die,
+      dice: Number(rune.rune!.meta_data!.damage!.dice),
+      die: rune.rune!.meta_data!.damage!.die ?? '',
       damageType: convertDamageType(rune.rune?.meta_data?.damage?.damageType ?? ''),
       bonus: 0,
       source: rune.rune ? `<${rune.name}> ${stripMd(rune.rune.description)}` : rune.name,
@@ -330,7 +330,7 @@ function getRangedAttackDamage(id: StoreID, item: Item) {
   } else if (hasPropulsive) {
     if (strMod >= 0) {
       let halfStr = Math.floor(strMod / 2);
-      if (halfStr != 0) {
+      if (halfStr !== 0) {
         parts.set(
           'This is half of your Strength modifier. Because this weapon has the propulsive trait and you have a positive Strength modifier, you add half of your Strength modifier (rounded down) to the damage.',
           halfStr

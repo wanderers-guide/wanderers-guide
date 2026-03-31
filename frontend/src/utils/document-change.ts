@@ -6,8 +6,8 @@ export function setPageTitle(title?: string) {
   // This is a hack to make it so the builder and sheets user character customization
   if (!title?.includes('Builder') && !title?.includes('Sheet')) {
     saveCustomization({
-      background_image_url: getCachedPublicUser()?.background_image_url,
-      sheet_theme: getCachedPublicUser()?.site_theme,
+      background_image_url: getCachedPublicUser()?.background_image_url ?? undefined,
+      sheet_theme: getCachedPublicUser()?.site_theme ?? undefined,
     });
   }
 

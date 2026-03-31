@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 export const renderToHtml = (Component: React.ElementType): string => {
   const tempDiv = document.createElement('div');
-  ReactDOM.render(<Component />, tempDiv);
+  const root = createRoot(tempDiv);
+  root.render(<Component />);
   return tempDiv.innerHTML;
 };
 

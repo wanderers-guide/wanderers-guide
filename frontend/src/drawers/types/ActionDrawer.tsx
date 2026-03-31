@@ -23,14 +23,14 @@ import { Operation, OperationSelect, OperationSelectFilters, OperationSelectOpti
 import { toLabel } from '@utils/strings';
 import { instanceOfOperationSelectOptionCustom } from '@utils/type-fixing';
 import { useEffect, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 
 const SELECTION_DISPLAY_LIMIT = 25;
 
 export function ActionDrawerTitle(props: { data: { id?: number; action?: AbilityBlock; onSelect?: () => void } }) {
   const id = props.data.id;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: _action } = useQuery({
     queryKey: [`find-action-${id}`, { id }],
@@ -124,14 +124,14 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
           <TraitsDisplay
             traitIds={action.traits ?? []}
             rarity={action.rarity}
-            availability={action.availability}
+            availability={action.availability ?? undefined}
             skill={action.meta_data?.skill}
             interactable
           />
         </Box>
         {action.prerequisites && action.prerequisites.length > 0 && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Prerequisites
             </Text>{' '}
             {action.prerequisites.join(', ')}
@@ -139,7 +139,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.frequency && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Frequency
             </Text>{' '}
             {action.frequency}
@@ -147,7 +147,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.trigger && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Trigger
             </Text>{' '}
             {action.trigger}
@@ -155,7 +155,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.cost && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Cost
             </Text>{' '}
             {action.cost}
@@ -163,7 +163,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.requirements && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Requirements
             </Text>{' '}
             {action.requirements}
@@ -171,7 +171,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
         {action.access && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Access
             </Text>{' '}
             {action.access}
@@ -181,7 +181,7 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         <RichText ta='justify'>{action.description}</RichText>
         {action.special && (
           <Text ta='justify' style={{ textIndent: TEXT_INDENT_AMOUNT }}>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Special
             </Text>{' '}
             <RichText span>{action.special}</RichText>
@@ -189,8 +189,10 @@ export function ActionDrawerContent(props: { data: { id?: number; action?: Abili
         )}
       </Box>
       <ShowInjectedText varId='CHARACTER' type='action' id={action.id} />
-      <DisplayOperationSelectionOptions operations={action.operations} />
-      {props.data.showOperations && <ShowOperationsButton name={action.name} operations={action.operations} />}
+      <DisplayOperationSelectionOptions operations={action.operations ?? undefined} />
+      {props.data.showOperations && (
+        <ShowOperationsButton name={action.name} operations={action.operations ?? undefined} />
+      )}
     </Box>
   );
 }
@@ -210,8 +212,8 @@ export function DisplayOperationSelectionOptions(props: { operations?: Operation
 }
 
 export function DisplayOperationSelection(op: OperationSelect) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilValue(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const character = useAtomValue(characterState);
 
   const [options, setOptions] = useState([] as OperationSelectOptionCustom[] | ObjectWithUUID[]);
   const [more, setMore] = useState(null as string | null);

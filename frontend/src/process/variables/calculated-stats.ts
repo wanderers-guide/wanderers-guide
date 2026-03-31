@@ -1,7 +1,7 @@
 import { getBestArmor } from '@items/inv-utils';
 import { LivingEntity } from '@schemas/content';
 import { ProficiencyType, StoreID } from '@schemas/variables';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { addVariable, getVariable, getVariables } from './variable-manager';
 import { getFinalAcValue, getFinalHealthValue, getFinalProfValue } from './variable-helpers';
 import { labelToVariable } from './variable-utils';

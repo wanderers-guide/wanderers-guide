@@ -23,12 +23,12 @@ import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Archetype } from '@schemas/content';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export function ArchetypeDrawerTitle(props: { data: { id?: number; archetype?: Archetype; onSelect?: () => void } }) {
   const id = props.data.id;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: _archetype } = useQuery({
     queryKey: [`find-archetype-${id}`, { id }],
@@ -94,7 +94,7 @@ export function ArchetypeDrawerContent(props: {
   });
 
   const [descHidden, setDescHidden] = useState(true);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const feats = groupBy(
     (data?.abilityBlocks ?? []).filter(
@@ -107,11 +107,11 @@ export function ArchetypeDrawerContent(props: {
     <Accordion.Item key={level} value={level}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='md'>
+          <Text c='gray.2' fw={700} fz='md'>
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-            <Text fz='sm' c='gray.5' span>
+            <Text fz='sm' c='gray.2' span>
               {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>
@@ -241,7 +241,7 @@ export function ArchetypeDrawerContent(props: {
         </Accordion>
 
         {featSections.length === 0 && (
-          <Text c='gray.5' fz='sm' ta='center' fs='italic' py={10}>
+          <Text c='gray.2' fz='sm' ta='center' fs='italic' py={10}>
             No feats found.
           </Text>
         )}

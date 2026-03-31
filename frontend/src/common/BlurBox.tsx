@@ -7,7 +7,6 @@ interface BlurBoxProps extends BoxComponentProps {
 }
 
 export default function BlurBox(props: BlurBoxProps) {
-
   return (
     <Box
       {...props}

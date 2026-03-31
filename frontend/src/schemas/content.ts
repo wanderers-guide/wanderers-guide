@@ -921,6 +921,7 @@ export const PublicUserSchema = z.object({
       dyslexia_font: z.boolean().optional(),
       view_operations: z.boolean().optional(),
       zoom: z.number().optional(),
+      light_mode: z.boolean().optional(),
     })
     .nullable(),
   is_admin: z.boolean(),

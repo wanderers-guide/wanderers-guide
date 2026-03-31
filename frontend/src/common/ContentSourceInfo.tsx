@@ -136,10 +136,10 @@ export function ContentSourceInfo(props: { source: ContentSource; nameCutOff?: n
                 <Box>
                   <Group wrap='nowrap' gap={10}>
                     {getIconFromContentType(stat.type, '1rem')}
-                    <Text fz='xs' c='gray.3'>
+                    <Text fz='xs' c='gray.2'>
                       {stat.label}
                     </Text>
-                    <Text fz='xs' fw={700} c='gray.3'>
+                    <Text fz='xs' fw={700} c='gray.2'>
                       {stat.value}
                     </Text>
                   </Group>

@@ -4,9 +4,9 @@
   border-radius: var(--mantine-radius-md);
   font-weight: 500;
   font-size: var(--mantine-font-size-sm);
-  color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-text);
 
   &:hover {
-    background-color: #14151750;
+    background-color: var(--mantine-color-default-hover);
   }
 }

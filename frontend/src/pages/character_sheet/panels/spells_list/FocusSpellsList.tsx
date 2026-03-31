@@ -15,7 +15,8 @@ import { rankNumber, sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { getTraitIdByType } from '@utils/traits';
 import { Dictionary } from 'node_modules/cypress/types/lodash';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { SpellSlotSelect } from '../SpellsPanel';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StatButton } from '@pages/character_builder/CharBuilderCreation';
@@ -60,7 +61,7 @@ export default function FocusSpellsList(props: {
   const isPhone = useMediaQuery(phoneQuery());
 
   const { castSpell, spells, entity, setEntity } = props;
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Finds all the character's focus spells, regardless of source
   const allFocusSpells = useMemo(() => {
@@ -83,7 +84,7 @@ export default function FocusSpellsList(props: {
     <Accordion.Item value={props.index}>
       <Accordion.Control h={40}>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='sm'>
+          <Text c='gray.2' fw={700} fz='sm'>
             {toLabel(props.source!.name)} Focus Spells
           </Text>
 
@@ -154,10 +155,10 @@ export default function FocusSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.5' fz='sm' span>
+                  <Text fw={600} c='gray.2' fz='sm' span>
                     Spell Attack
                   </Text>
-                  <Text c='gray.5' fz='sm' span>
+                  <Text c='gray.2' fz='sm' span>
                     {sign(spellStats.spell_attack.total[0])}
                     {!isPhone &&
                       ` / ${sign(spellStats.spell_attack.total[1])} /
@@ -175,10 +176,10 @@ export default function FocusSpellsList(props: {
                 }}
               >
                 <Group wrap='nowrap' gap={10}>
-                  <Text fw={600} c='gray.5' fz='sm' span>
+                  <Text fw={600} c='gray.2' fz='sm' span>
                     Spell DC
                   </Text>
-                  <Text c='gray.5' fz='sm' span>
+                  <Text c='gray.2' fz='sm' span>
                     {spellStats.spell_dc.total}
                   </Text>
                 </Group>
@@ -190,11 +191,11 @@ export default function FocusSpellsList(props: {
                 .map((rank, index) => (
                   <div key={index} data-wg-name={`rank-group-${index}`}>
                     <Group wrap='nowrap' justify='space-between' gap={0}>
-                      <Text c='gray.5' fw={700} fz='sm'>
+                      <Text c='gray.2' fw={700} fz='sm'>
                         {rank === '0' ? 'Cantrips' : `${rankNumber(parseInt(rank))}`}
                       </Text>
                       <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                        <Text fz='sm' c='gray.5' span>
+                        <Text fz='sm' c='gray.2' span>
                           {spells[rank].length}
                         </Text>
                       </Badge>

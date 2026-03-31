@@ -445,7 +445,7 @@ async function fillPDF(form: PDFForm, character: Character) {
   form.getTextField('ANCESTRY FEAT').setText(featData.ancestryFeats.find((f) => f.level === 1)?.name ?? '');
   form
     .getTextField('BACKGROUND SKILL FEAT')
-    .setText(featData.generalAndSkillFeats.find((f) => f.level === 1 && hasTraitType('SKILL', f.traits))?.name ?? '');
+    .setText(featData.generalAndSkillFeats.find((f) => f.level === 1 && hasTraitType('SKILL', f.traits ?? undefined))?.name ?? '');
   form.getTextField('CLASS FEATS & FEATURES').setText(
     featData.classFeatures
       .filter((f) => f.level === 1)
@@ -494,17 +494,17 @@ async function fillPDF(form: PDFForm, character: Character) {
   let wornIndex = 0;
   for (const invItem of items) {
     try {
-      if (hasTraitType('CONSUMABLE', invItem.item.traits)) {
+      if (hasTraitType('CONSUMABLE', invItem.item.traits ?? undefined)) {
         consumableIndex++;
         form
           .getTextField(`CONSUMABLES ${consumableIndex}`)
           .setText(`${invItem.item.name} x${invItem.item.meta_data?.quantity ?? 1}`);
-        form.getTextField(`CONSUMABLES BULK ${consumableIndex}`).setText(labelizeBulk(invItem.item.bulk, false));
+        form.getTextField(`CONSUMABLES BULK ${consumableIndex}`).setText(labelizeBulk(invItem.item.bulk ?? undefined, false));
       } else if ((invItem.is_equipped && !isItemWeapon(invItem.item)) || invItem.is_invested) {
         wornIndex++;
         form.getTextField(`WORN ${wornIndex}`).setText(invItem.item.name);
         form.getTextField(`INVESTED ${wornIndex}`).setText(invItem.is_invested ? 'Yes' : '');
-        form.getTextField(`WORN BULK ${wornIndex}`).setText(labelizeBulk(invItem.item.bulk, false));
+        form.getTextField(`WORN BULK ${wornIndex}`).setText(labelizeBulk(invItem.item.bulk ?? undefined, false));
       } else {
         heldIndex++;
         if (heldIndex === 1) {
@@ -512,7 +512,7 @@ async function fillPDF(form: PDFForm, character: Character) {
         } else {
           form.getTextField(`HELD ${heldIndex}`).setText(invItem.item.name);
         }
-        form.getTextField(`HELD BULK ${heldIndex}`).setText(labelizeBulk(invItem.item.bulk, false));
+        form.getTextField(`HELD BULK ${heldIndex}`).setText(labelizeBulk(invItem.item.bulk ?? undefined, false));
       }
     } catch (e) {
       console.warn(e);
@@ -773,7 +773,7 @@ async function fillPDF(form: PDFForm, character: Character) {
       const spell = ritualSpells[i];
       form.getTextField(`RITUAL SPELL ${i + 1}`).setText(spell.name);
       form.getTextField(`RITUAL RANK ${i + 1}`).setText(rankNumber(spell.rank));
-      form.getTextField(`RITUAL COST ${i + 1}`).setText(spell.cost);
+      form.getTextField(`RITUAL COST ${i + 1}`).setText(spell.cost ?? undefined);
     } catch (e) {
       console.warn(e);
     }

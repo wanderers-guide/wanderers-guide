@@ -20,7 +20,6 @@ export const GUIDE_BLUE = '#359fdf';
 export const ICON_BG_COLOR = '#dee2e625'; // E9ECEF19
 export const ICON_BG_COLOR_HOVER = '#C1C2C51A';
 
-
 export const COMMON_CORE_ID = 3;
 export const PATHFINDER_CORE_ID = 1;
 export const STARFINDER_CORE_ID = 579;

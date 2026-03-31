@@ -143,7 +143,7 @@ export default function CampaignDrawer(props: { opened: boolean; onClose: () => 
               />
               <Box></Box>
               {campaign?.description?.trim() && (
-                <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5} m={10}>
+                <BlurBox px='xs' py={5} m={10}>
                   <ScrollArea h={55} my={5}>
                     <Text fz='xs'>{campaign.description.trim()}</Text>
                   </ScrollArea>

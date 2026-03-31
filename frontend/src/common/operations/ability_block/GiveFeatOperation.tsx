@@ -1,7 +1,7 @@
 import { characterState } from '@atoms/characterAtoms';
 import { SelectContentButton } from '@common/select/SelectContent';
 import { AbilityBlock } from '@schemas/content';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { OperationWrapper } from '../Operations';
 import { getDefaultSources } from '@content/content-store';
 
@@ -10,7 +10,7 @@ export function GiveFeatOperation(props: {
   onSelect: (option: AbilityBlock) => void;
   onRemove: () => void;
 }) {
-  const character = useRecoilValue(characterState);
+  const character = useAtomValue(characterState);
   return (
     <OperationWrapper onRemove={props.onRemove} title='Give Feat'>
       <SelectContentButton<AbilityBlock>

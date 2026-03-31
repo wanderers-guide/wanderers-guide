@@ -7,7 +7,7 @@ import { isCharacter } from '@utils/type-fixing';
 import { getVariable } from '@variables/variable-manager';
 import { labelToVariable } from '@variables/variable-utils';
 import { cloneDeep, uniq, uniqBy } from 'lodash-es';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import {
   getBulkLimit,
   getDefaultContainerContents,
@@ -333,7 +333,7 @@ export function addExtraItems(
                   ...item.meta_data,
                   base_item_content: baseItem,
                 }
-              : undefined,
+              : null,
           },
           is_formula: false,
           is_equipped: isItemEquippable(item),

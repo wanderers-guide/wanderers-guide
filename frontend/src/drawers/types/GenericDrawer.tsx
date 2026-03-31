@@ -3,12 +3,12 @@ import ShowOperationsButton from '@drawers/ShowOperationsButton';
 import { Title, Group, Box, Button } from '@mantine/core';
 import { DisplayOperationSelectionOptions } from './ActionDrawer';
 import { drawerState } from '@atoms/navAtoms';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { toLabel } from '@utils/strings';
 import { GenericData } from '@schemas/index';
 
 export function GenericDrawerTitle(props: { data: GenericData }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <>

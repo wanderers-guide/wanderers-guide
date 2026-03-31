@@ -12,6 +12,7 @@ import {
   Stack,
   Text,
   TextInput,
+  useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
 import ManageSpellsModal from '@modals/ManageSpellsModal';
@@ -31,7 +32,7 @@ import {
 } from '@schemas/content';
 import useRefresh from '@utils/use-refresh';
 import { useEffect, useMemo, useState } from 'react';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import FocusSpellsList from './spells_list/FocusSpellsList';
 import InnateSpellsList from './spells_list/InnateSpellsList';
 import PreparedSpellsList from './spells_list/PreparedSpellsList';
@@ -57,6 +58,7 @@ export default function SpellsPanel(props: {
 }) {
   const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
   const [manageSpells, setManageSpells] = useState<
@@ -154,7 +156,7 @@ export default function SpellsPanel(props: {
             }
             styles={{
               input: {
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
                 borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
@@ -388,7 +390,7 @@ function ActionFilter(props: {
           setActionTypeFilter('ALL');
         }}
       >
-        <Text c='gray.3'>All</Text>
+        <Text c='gray.2'>All</Text>
       </ActionIcon>
       <ActionIcon
         variant='subtle'
@@ -527,7 +529,7 @@ function SpellList(props: {
             slot.spell_id === spell.id &&
             slot.rank === spell.rank &&
             slot.source === props.source!.name &&
-            !!slot.exhausted == !cast
+            !!slot.exhausted === !cast
         );
         if (slotIndex === -1) return c; // Shouldn't happen
         const newSlots = [...slots];

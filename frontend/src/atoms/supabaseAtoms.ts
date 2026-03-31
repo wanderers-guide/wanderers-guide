@@ -1,9 +1,6 @@
 import { Session } from "@supabase/supabase-js";
-import { atom } from "recoil";
+import { atom } from "jotai";
 
-const sessionState = atom({
-  key: "supabase-session",
-  default: null as Session | null,
-});
+const sessionState = atom(null as Session | null);
 
 export { sessionState };

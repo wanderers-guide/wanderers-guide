@@ -3,7 +3,7 @@ import { defineDefaultSources, fetchContentAll, fetchContentSources } from '@con
 import { toMarkdown } from '@content/content-utils';
 import { getFileContents } from '@import/json/import-from-json';
 import { showNotification, hideNotification } from '@mantine/notifications';
-import { ActionCost, ContentSource, Trait } from '@schemas/content';
+import { AbilityBlock, ActionCost, Class, ContentSource, Spell, Trait } from '@schemas/content';
 
 export async function importFromCustomPack(file: File) {
   showNotification({
@@ -46,19 +46,20 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
     created_at: '',
     user_id: '',
     name: data.customPackName,
-    foundry_id: undefined,
+    foundry_id: null,
     url: '',
     description: '',
     operations: [],
     contact_info: '',
     group: '',
     require_key: false,
-    keys: undefined,
+    keys: null,
     is_published: false,
+    deprecated: false,
     artwork_url: '',
     required_content_sources: [],
     meta_data: {},
-  });
+  } satisfies ContentSource);
   if (!source) return null;
 
   // Define default sources
@@ -79,9 +80,10 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
       skill_training_base: _class.numSkills,
       trait_id: -1,
       artwork_url: '',
+      deprecated: false,
       content_source_id: source.id,
       version: '1.0',
-    });
+    } satisfies Class);
     if (!resultClass) continue;
 
     // Add to trait map
@@ -123,8 +125,16 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
         description: `You gain a ${resultClass.name.toLowerCase()} class feat.`,
         type: 'class-feature',
         traits: [resultClass.trait_id],
+        frequency: null,
+        cost: null,
+        trigger: null,
+        requirements: null,
+        access: null,
+        special: null,
+        meta_data: null,
+        version: '1.0',
         content_source_id: source.id,
-      });
+      } satisfies AbilityBlock);
     }
 
     // Add skill feats
@@ -161,8 +171,16 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
         description: `You gain a skill feat. You must be trained or better in the corresponding skill to select a skill feat.`,
         type: 'class-feature',
         traits: [resultClass.trait_id],
+        frequency: null,
+        cost: null,
+        trigger: null,
+        requirements: null,
+        access: null,
+        special: null,
+        meta_data: null,
+        version: '1.0',
         content_source_id: source.id,
-      });
+      } satisfies AbilityBlock);
     }
 
     // Add general feats
@@ -199,8 +217,16 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
         description: `You gain a general feat.`,
         type: 'class-feature',
         traits: [resultClass.trait_id],
+        frequency: null,
+        cost: null,
+        trigger: null,
+        requirements: null,
+        access: null,
+        special: null,
+        meta_data: null,
+        version: '1.0',
         content_source_id: source.id,
-      });
+      } satisfies AbilityBlock);
     }
 
     // Add skill increases
@@ -236,8 +262,16 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
         description: `You gain a skill increase.`,
         type: 'class-feature',
         traits: [resultClass.trait_id],
+        frequency: null,
+        cost: null,
+        trigger: null,
+        requirements: null,
+        access: null,
+        special: null,
+        meta_data: null,
+        version: '1.0',
         content_source_id: source.id,
-      });
+      } satisfies AbilityBlock);
     }
 
     // Add other class features
@@ -254,8 +288,16 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
         description: toMarkdown(other.description) ?? '',
         type: 'class-feature',
         traits: [resultClass.trait_id, ...(await findTraits(other.traits, traitMap))],
+        frequency: null,
+        cost: null,
+        trigger: null,
+        requirements: null,
+        access: null,
+        special: null,
+        meta_data: null,
+        version: '1.0',
         content_source_id: source.id,
-      });
+      } satisfies AbilityBlock);
     }
   }
 
@@ -279,8 +321,10 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
       special: descValues.special,
       type: 'feat',
       traits: await findTraits(feat.traits, traitMap),
+      meta_data: null,
+      version: '1.0',
       content_source_id: source.id,
-    });
+    } satisfies AbilityBlock);
   }
 
   for (const spell of data.listCustomSpells ?? []) {
@@ -303,13 +347,14 @@ async function processCustomPack(data: Record<string, any>): Promise<ContentSour
       targets: descValues.targets,
       duration: descValues.duration,
       description: descValues.description,
-      heightened: undefined,
+      heightened: null,
+      availability: null,
       meta_data: {
         focus: spell.type === 'Focus',
       },
       content_source_id: source.id,
       version: '1.0',
-    });
+    } satisfies Spell);
   }
 
   return source;

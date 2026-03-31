@@ -59,27 +59,27 @@ export async function convertGranularCreature(source: ContentSource, g: Granular
       },
       items: [],
     },
-    notes: undefined,
+    notes: null,
     details: {
       image_url: await findCreatureImage(g.name ?? ''),
       background_image_url: undefined,
       conditions: undefined,
       description: g.description ?? '',
     },
-    roll_history: undefined,
-    operations: undefined,
-    abilities_base: undefined,
-    abilities_added: undefined,
+    roll_history: null,
+    operations: null,
+    abilities_base: null,
+    abilities_added: null,
     spells: {
       slots: [],
       list: [],
       focus_point_current: 0,
       innate_casts: [],
     },
-    meta_data: undefined,
+    meta_data: null,
     content_source_id: source.id,
     version: '1.0',
-  } satisfies Creature as Creature;
+  } as unknown as Creature;
 
   let operations: Operation[] = [];
 
@@ -455,7 +455,6 @@ function addSkills(operations: Operation[], g: GranularCreature, varTotals: Map<
           type: 'prof',
           value: {
             value: 'T',
-            increases: 0,
             attribute: 'ATTRIBUTE_INT',
           },
         },
@@ -773,9 +772,14 @@ async function addAttacks(
         foundry: {},
       },
       operations: [],
+      price: null,
+      bulk: null,
+      hands: null,
+      craft_requirements: null,
+      usage: null,
       content_source_id: source.id,
       version: '',
-    };
+    } satisfies Item;
 
     // Add adjustments to the attack and damage to properly calculate
     const weaponStats = getWeaponStats(id, item);
@@ -863,16 +867,20 @@ async function getAbilities(g: GranularCreature, source: ContentSource): Promise
       actions: ability.action ?? null,
       level: g.level ?? 1,
       rarity: 'COMMON',
-      frequency: ability.frequency,
-      trigger: ability.trigger,
-      requirements: ability.requirements,
+      frequency: ability.frequency ?? null,
+      trigger: ability.trigger ?? null,
+      requirements: ability.requirements ?? null,
       // cost: ability.cost,
       // access: ability.access,
       description: ability.description,
-      special: ability.special,
-      prerequisites: undefined,
+      special: ability.special ?? null,
+      prerequisites: null,
       type: 'action',
       traits: await getTraitIds(ability.traits ?? [], source, false),
+      operations: null,
+      cost: null,
+      access: null,
+      meta_data: null,
       content_source_id: source.id,
       version: '1.0',
     } satisfies AbilityBlock);
@@ -889,15 +897,15 @@ export function convertFoundryCreatureToGranularCreature(json: Record<string, an
 
   interface GranularCreatureAbility {
     name: string;
-    action?: ActionCost;
+    action: ActionCost;
     traits: string[];
     description: string;
-    frequency?: string;
-    cost?: string;
-    trigger?: string;
-    requirements?: string;
-    access?: string;
-    special?: string;
+    frequency: string | null;
+    cost: string | null;
+    trigger: string | null;
+    requirements: string | null;
+    access: string | null;
+    special: string | null;
   }
 
   interface GranularCreatureAttack {
@@ -999,7 +1007,7 @@ export function convertFoundryCreatureToGranularCreature(json: Record<string, an
         trigger: descValues?.trigger || toText(ability.system?.trigger?.value),
         requirements: toText(descValues?.requirements),
         cost: toText(descValues?.cost),
-        access: undefined,
+        access: null,
         description: description,
         special: toMarkdown(descValues.special),
         traits: ability.system?.traits?.value ?? [],

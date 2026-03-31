@@ -64,7 +64,7 @@ import { convertToSetEntity, isTruthy, setStateActionToValue } from '@utils/type
 import useRefresh from '@utils/use-refresh';
 import { getFinalHealthValue } from '@variables/variable-helpers';
 import { useEffect, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { exportVariableStore } from '@variables/variable-manager';
 
 export function CreatureDrawerTitle(props: { data: { id?: number; creature?: Creature } }) {
@@ -140,7 +140,7 @@ export function CreatureDrawerContent(props: {
       return content;
     },
   });
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
   const [displayStatBlock, refreshStatBlock] = useRefresh();
   const [loading, setLoading] = useState(true);
   const [creature, setCreature] = useState<Creature | null>(props.data.creature ?? null);
@@ -763,7 +763,7 @@ function CreatureOperationResults(props: {
             _select_uuid: `${s.baseSource.id}`,
             _content_type: 'ability-block',
           }}
-          level={s.baseSource.level}
+          level={s.baseSource.level ?? undefined}
           results={s.baseResults}
           onChange={(path, value) => {
             props.onSaveChanges(`${convertKeyToBasePrefix('abilityResults', s.baseSource.id)}_${path}`, value);

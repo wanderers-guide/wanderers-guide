@@ -3,7 +3,7 @@ import { Text, ActionIcon, Box, Divider, Drawer, Group, HoverCard, Loader, Scrol
 import { useDidUpdate, useMediaQuery } from '@mantine/hooks';
 import { IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { Suspense, useRef } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import useRefresh from '@utils/use-refresh';
 import { wideDesktopQuery } from '@utils/mobile-responsive';
 import { DRAWER_STYLES } from './DrawerBase';
@@ -15,10 +15,10 @@ import { modals } from '@mantine/modals';
 export default function DrawerCreatureBase() {
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
-  const [_drawer, openDrawer] = useRecoilState(creatureDrawerState);
+  const [_drawer, openDrawer] = useAtom(creatureDrawerState);
 
   const [displayTitle, refreshTitle] = useRefresh();
-  const [feedbackData, setFeedbackData] = useRecoilState(feedbackState);
+  const [feedbackData, setFeedbackData] = useAtom(feedbackState);
 
   const viewport = useRef<HTMLDivElement>(null);
 

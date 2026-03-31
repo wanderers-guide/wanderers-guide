@@ -28,7 +28,7 @@ import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { useMemo } from 'react';
 import { useLoaderData } from 'react-router-dom';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export function Component() {
   const { updateId } = useLoaderData() as {
@@ -36,8 +36,8 @@ export function Component() {
   };
   setPageTitle(`Content Update #${updateId}`);
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
 
   const { data } = useQuery({
     queryKey: [`find-content-update-${updateId}`],

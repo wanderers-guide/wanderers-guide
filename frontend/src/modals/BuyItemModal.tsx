@@ -13,28 +13,29 @@ export default function BuyItemModal({
   item: Item;
   onConfirm: (coins: { cp: number; sp: number; gp: number; pp: number }) => void;
 }>) {
+  const _buyPrice = innerProps.item.price ? { cp: Number(innerProps.item.price.cp) || undefined, sp: Number(innerProps.item.price.sp) || undefined, gp: Number(innerProps.item.price.gp) || undefined, pp: Number(innerProps.item.price.pp) || undefined } : undefined;
   const resultingCoins = innerProps.inventory
-    ? purchase(innerProps.item.price ?? {}, innerProps.inventory.coins)
+    ? purchase(_buyPrice ?? {}, innerProps.inventory.coins)
     : null;
 
   return (
     <Stack style={{ position: 'relative' }} gap={10}>
       <Stack gap={0}>
-        {convertToCp(innerProps.item.price) > 0 && (
+        {convertToCp(_buyPrice) > 0 && (
           <Group wrap='nowrap' gap={10}>
             <Text>This item costs: </Text>
             <CoinSection
-              cp={innerProps.item.price?.cp}
-              sp={innerProps.item.price?.sp}
-              gp={innerProps.item.price?.gp}
-              pp={innerProps.item.price?.pp}
+              cp={_buyPrice?.cp}
+              sp={_buyPrice?.sp}
+              gp={_buyPrice?.gp}
+              pp={_buyPrice?.pp}
               justify='center'
             />
           </Group>
         )}
         {resultingCoins ? (
           <>
-            {convertToCp(innerProps.item.price) > 0 && (
+            {convertToCp(_buyPrice) > 0 && (
               <Group gap={10}>
                 <Text>Your balance will be: </Text>
                 <Box>

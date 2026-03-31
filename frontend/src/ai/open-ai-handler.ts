@@ -497,7 +497,7 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
       name: data.name,
       icon: selectRandom(getAllIcons()),
       color: hexColor,
-      campaign_id: undefined,
+      campaign_id: null,
       combatants: {
         list: creatures.map((creature) => ({
           _id: crypto.randomUUID(),
@@ -514,7 +514,7 @@ export async function generateEncounters(partyLevel: number, partySize: number, 
         party_level: partyLevel,
         party_size: partySize,
       },
-    } satisfies Encounter;
+    } as any as Encounter;
   });
 
   // Auto scale the encounters

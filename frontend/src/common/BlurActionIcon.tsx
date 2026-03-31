@@ -1,5 +1,5 @@
 import { ICON_BG_COLOR_HOVER } from '@constants/data';
-import { glassStyle, GLASS_BG_COLOR } from '@utils/colors';
+import { glassStyle } from '@utils/colors';
 import { ActionIcon, ActionIconProps } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 
@@ -27,7 +27,7 @@ export default function BlurActionIcon(props: BlurActionIconProps) {
       {...props}
       style={{
         ...glassStyle({ border: true }),
-        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor ?? GLASS_BG_COLOR,
+        backgroundColor: hovered ? props.bgColorHover ?? ICON_BG_COLOR_HOVER : props.bgColor ?? 'var(--glass-bg-color)',
         ...props.style,
       }}
     >

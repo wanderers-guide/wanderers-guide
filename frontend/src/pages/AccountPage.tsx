@@ -7,7 +7,6 @@ import {
   Box,
   Center,
   Avatar,
-  Card,
   Loader,
   Divider,
   Badge,
@@ -29,6 +28,9 @@ import {
   Switch,
   Slider,
   PasswordInput,
+  Accordion,
+  SegmentedControl,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { setPageTitle } from '@utils/document-change';
 import BlurBox from '@common/BlurBox';
@@ -37,14 +39,14 @@ import { getPublicUser } from '@auth/user-manager';
 import { getDefaultBackgroundImage } from '@utils/background-images';
 import { toLabel } from '@utils/strings';
 import { GUIDE_BLUE } from '@constants/data';
-import { IconAdjustments, IconBrandPatreon, IconCirclePlus, IconUpload } from '@tabler/icons-react';
+import { IconBrandPatreon, IconCirclePlus, IconUpload, IconPalette, IconCode, IconShield } from '@tabler/icons-react';
 import { Campaign, Character, PublicUser } from '@schemas/content';
 import { useState } from 'react';
 import { getHotkeyHandler, useDebouncedValue, useDidUpdate, useHover } from '@mantine/hooks';
 import { makeRequest } from '@requests/request-manager';
 import { uploadImage } from '@upload/image-upload';
 import { displayPatronOnly } from '@utils/notifications';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { modals, openContextModal } from '@mantine/modals';
 import { hasPatreonAccess } from '@utils/patreon';
@@ -59,7 +61,7 @@ import { PATREON_AUTH_URL } from '@constants/urls';
 export function Component() {
   setPageTitle(`Account`);
 
-  const [user, setUser] = useRecoilState(userState);
+  const [user, setUser] = useAtom(userState);
 
   const { data } = useQuery({
     queryKey: [`find-account-self`],
@@ -87,10 +89,40 @@ export function Component() {
   return <ProfileSection />;
 }
 
+function SettingRow({
+  label,
+  description,
+  children,
+  last,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <>
+      <Group justify='space-between' align='center' wrap='nowrap' py={6}>
+        <Box style={{ flex: 1 }}>
+          <Text size='sm'>{label}</Text>
+          {description && (
+            <Text size='xs' c='dimmed' lh={1.3}>
+              {description}
+            </Text>
+          )}
+        </Box>
+        <Box>{children}</Box>
+      </Group>
+      {!last && <Divider />}
+    </>
+  );
+}
+
 function ProfileSection() {
   const theme = useMantineTheme();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [loading, setLoading] = useState(false);
-  const [_user, setUser] = useRecoilState(userState);
+  const [_user, setUser] = useAtom(userState);
   const queryClient = useQueryClient();
 
   // User should always be defined here
@@ -105,7 +137,7 @@ function ProfileSection() {
   const [editingName, setEditingName] = useState(false);
 
   // Get character count
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
   const { data: characters } = useQuery({
     queryKey: [`find-character`],
     queryFn: async () => {
@@ -232,684 +264,603 @@ function ProfileSection() {
   }, [debouncedUser]);
 
   return (
-    <Center>
-      <Box maw={400} w='100%'>
-        <BlurBox w={'100%'}>
-          <LoadingOverlay visible={loading} />
-          <Card pt={0} pb={'md'} radius='md' style={{ backgroundColor: 'transparent' }}>
+    <Box p='md' pos='relative'>
+      <LoadingOverlay visible={loading} />
+      <BlurBox maw={450} mx='auto' style={{ overflow: 'hidden' }}>
+        {/* ── Full-width background banner ── */}
+        <FileButton
+          onChange={async (file) => {
+            if (!hasPatreonAccess(user, 1)) {
+              displayPatronOnly();
+              return;
+            }
+            let path = '';
+            if (file) {
+              setLoading(true);
+              path = await uploadImage(file, 'backgrounds');
+            }
+            setUser((prev) => {
+              if (!prev) return prev;
+              return { ...prev, background_image_url: path };
+            });
+            setLoading(false);
+          }}
+          accept='image/png,image/jpeg,image/jpg,image/webp'
+        >
+          {(subProps) => (
+            <Box
+              {...subProps}
+              h={140}
+              ref={refBck}
+              style={{
+                backgroundImage: `url(${user.background_image_url ?? getDefaultBackgroundImage().url})`,
+                backgroundSize: 'cover',
+                cursor: 'pointer',
+                position: 'relative',
+              }}
+            >
+              <ActionIcon
+                variant='transparent'
+                color='gray.1'
+                aria-label='Upload Background Image'
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  visibility: hoveredBck ? 'visible' : 'hidden',
+                }}
+                size={36}
+              >
+                <IconUpload size='1.1rem' stroke={1.5} />
+              </ActionIcon>
+            </Box>
+          )}
+        </FileButton>
+
+        <Stack px='md' pb='md' gap='sm'>
+          {/* Avatar */}
+          <Center>
             <FileButton
               onChange={async (file) => {
                 if (!hasPatreonAccess(user, 1)) {
                   displayPatronOnly();
                   return;
                 }
-
-                // Upload file to server
                 let path = '';
                 if (file) {
                   setLoading(true);
-                  path = await uploadImage(file, 'backgrounds');
+                  path = await uploadImage(file, 'portraits');
                 }
                 setUser((prev) => {
                   if (!prev) return prev;
-                  return { ...prev, background_image_url: path };
+                  return { ...prev, image_url: path };
                 });
-
                 setLoading(false);
               }}
               accept='image/png,image/jpeg,image/jpg,image/webp'
             >
               {(subProps) => (
-                <Box {...subProps}>
-                  <Card.Section
-                    h={140}
-                    ref={refBck}
+                <Box {...subProps} style={{ position: 'relative' }}>
+                  <Avatar
+                    ref={refPfp}
+                    src={user.image_url}
+                    size={80}
+                    radius={80}
+                    mt={-30}
                     style={{
-                      backgroundImage: `url(${user.background_image_url ?? getDefaultBackgroundImage().url})`,
-                      backgroundSize: 'cover',
+                      backgroundColor: theme.colors.dark[7],
+                      border: `2px solid ${theme.colors.dark[7] + 'D3'}`,
                       cursor: 'pointer',
                     }}
                   />
                   <ActionIcon
                     variant='transparent'
                     color='gray.1'
-                    aria-label='Upload Background Image'
+                    aria-label='Upload Profile Picture'
                     style={{
                       position: 'absolute',
-                      top: 0,
-                      left: 0,
-
-                      visibility: hoveredBck ? 'visible' : 'hidden',
+                      top: '25%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      visibility: hoveredPfp ? 'visible' : 'hidden',
                     }}
                     size={40}
                   >
-                    <IconUpload size='1.2rem' stroke={1.5} />
+                    <IconUpload size='2.2rem' stroke={1.5} />
                   </ActionIcon>
                 </Box>
               )}
             </FileButton>
+          </Center>
 
-            {/* <Box
-              style={{
-                position: 'absolute',
-                top: 142,
-                left: 2,
-              }}
+          {/* Display name */}
+          <Box>
+            {editingName ? (
+              <Center>
+                <FocusTrap active={true}>
+                  <TextInput
+                    size='sm'
+                    w={180}
+                    styles={{ input: { textAlign: 'center' } }}
+                    spellCheck={false}
+                    placeholder='Display Name'
+                    value={user.display_name}
+                    onChange={(e) => {
+                      setUser((prev) => {
+                        if (!prev) return prev;
+                        return { ...prev, display_name: e.target.value };
+                      });
+                    }}
+                    onKeyDown={getHotkeyHandler([
+                      ['mod+Enter', () => setEditingName(false)],
+                      ['Enter', () => setEditingName(false)],
+                    ])}
+                    onBlur={() => setEditingName(false)}
+                  />
+                </FocusTrap>
+              </Center>
+            ) : (
+              <Text ta='center' fz='lg' fw={500} onClick={() => setEditingName(true)} style={{ cursor: 'pointer' }}>
+                {user.display_name ?? 'Unknown User'}
+              </Text>
+            )}
+          </Box>
+
+          {user.summary && (
+            <Text ta='center' fz='xs' c='dimmed' fs='italic' mb='md'>
+              {user.summary}
+            </Text>
+          )}
+
+          {/* Stats */}
+          <Group justify='center' gap={40} mb='md' wrap='nowrap'>
+            <Box>
+              <Text ta='center' fz='xl' fw={600}>
+                {characters ? characters.length : '...'}
+              </Text>
+              <Text ta='center' fz='xs' c='dimmed' lh={1}>
+                Characters
+              </Text>
+            </Box>
+            <Box>
+              <Text ta='center' fz='xl' fw={600}>
+                {bundles ? bundles.length : '...'}
+              </Text>
+              <Text ta='center' fz='xs' c='dimmed' lh={1}>
+                Bundles
+              </Text>
+            </Box>
+            <Box>
+              <Text ta='center' fz='xl' fw={600}>
+                {campaigns ? campaigns.length : '...'}
+              </Text>
+              <Text ta='center' fz='xs' c='dimmed' lh={1}>
+                Campaigns
+              </Text>
+            </Box>
+          </Group>
+
+          <Divider />
+
+          {/* Badges */}
+          <Group align='center' justify='center' py='sm' gap={6} px='xs'>
+            {user.deactivated && (
+              <Badge variant='light' size='sm' color='red' styles={{ root: { textTransform: 'initial' } }}>
+                Deactivated
+              </Badge>
+            )}
+            {user.is_admin && (
+              <Badge variant='light' size='sm' color='cyan' styles={{ root: { textTransform: 'initial' } }}>
+                Admin
+              </Badge>
+            )}
+            {user.is_mod && (
+              <Badge variant='light' size='sm' color='green' styles={{ root: { textTransform: 'initial' } }}>
+                Mod
+              </Badge>
+            )}
+            {user.is_developer && (
+              <Badge variant='light' size='sm' color='grape' styles={{ root: { textTransform: 'initial' } }}>
+                Developer
+              </Badge>
+            )}
+            <Badge variant='light' size='sm' color={patronColor} styles={{ root: { textTransform: 'initial' } }}>
+              {patronTier}
+            </Badge>
+            {contentTier ? (
+              <Badge variant='light' size='sm' color={contentColor} styles={{ root: { textTransform: 'initial' } }}>
+                {contentTier} {approvedContentUpdates ? `(${approvedContentUpdates.length})` : ''}
+              </Badge>
+            ) : (
+              <Badge variant='light' size='sm' color='yellow' styles={{ root: { textTransform: 'initial' } }}>
+                New User
+              </Badge>
+            )}
+          </Group>
+
+          <Divider />
+
+          {/* Patreon */}
+          <Box pt='sm'>
+            <Button
+              size='sm'
+              variant={user.patreon?.tier ? 'outline' : 'gradient'}
+              leftSection={<IconBrandPatreon size={18} />}
+              fullWidth
+              component='a'
+              href={PATREON_AUTH_URL}
             >
-              <ActionIcon
-                size='xs'
-                color='gray.5'
-                variant='transparent'
-                aria-label='Reload Webpage'
-                onClick={() => {
-                  window.location.reload();
-                }}
-              >
-                <IconReload size='1rem' stroke={1.5} />
-              </ActionIcon>
-            </Box> */}
+              {user.patreon?.tier ? `Patreon Connected` : 'Connect to Patreon'}
+            </Button>
+          </Box>
 
-            <Box
-              style={{
-                position: 'absolute',
-                top: 135,
-                right: 5,
-              }}
-            >
-              <Stack gap={3}>
-                <Center>
-                  <Popover position='bottom' withArrow shadow='md'>
-                    <Popover.Target>
-                      <ColorSwatch
-                        style={{ cursor: 'pointer' }}
-                        color={user.site_theme?.color || GUIDE_BLUE}
-                        size={15}
-                      />
-                    </Popover.Target>
-                    <Popover.Dropdown p={5}>
-                      <ColorPicker
-                        format='hex'
-                        value={user.site_theme?.color || GUIDE_BLUE}
-                        onChange={(value) => {
-                          if (!hasPatreonAccess(user, 1)) {
-                            displayPatronOnly();
-                            return;
-                          }
-
-                          setUser((prev) => {
-                            if (!prev) return prev;
-                            return { ...prev, site_theme: { ...prev.site_theme, color: value } };
+          {/* GM section */}
+          {user.patreon?.tier === 'GAME-MASTER' && (
+            <Box pt='md'>
+              <Text ta='center' fw={500} mb='xs'>
+                <Text fs='italic' pr={8} span>
+                  Users in your Group
+                </Text>
+                <Text fz='sm' span>
+                  ({benefitingUsers?.length ?? '...'} / 99)
+                </Text>
+              </Text>
+              <Paper style={{ backgroundColor: 'transparent' }} withBorder>
+                <ScrollArea.Autosize mah={200} py={5}>
+                  {benefitingUsers?.map((benefitingUser, index) => (
+                    <Group key={index} wrap='nowrap' justify='space-between' px={20}>
+                      <Text fz='sm' fw={500}>
+                        {benefitingUser.display_name}
+                      </Text>
+                      <CloseButton
+                        onClick={() => {
+                          modals.openConfirmModal({
+                            id: 'remove-benefiting-user',
+                            title: <Title order={4}>Remove User</Title>,
+                            children: (
+                              <Text size='sm'>
+                                Are you sure you want to remove this user from benefiting from your tier? They will lose
+                                their virtual Wanderer tier.
+                              </Text>
+                            ),
+                            labels: { confirm: 'Remove', cancel: 'Cancel' },
+                            onCancel: () => {},
+                            onConfirm: async () => {
+                              await removeFromGroup(benefitingUser.user_id);
+                            },
                           });
                         }}
-                        swatches={[
-                          '#25262b',
-                          '#868e96',
-                          '#fa5252',
-                          '#e64980',
-                          '#be4bdb',
-                          '#8d69f5',
-                          '#577deb',
-                          GUIDE_BLUE,
-                          '#15aabf',
-                          '#12b886',
-                          '#40c057',
-                          '#82c91e',
-                          '#fab005',
-                          '#fd7e14',
-                        ]}
-                        swatchesPerRow={7}
                       />
-                    </Popover.Dropdown>
-                  </Popover>
-                </Center>
-
-                <Center>
-                  <Popover position='bottom' withArrow shadow='md'>
-                    <Popover.Target>
-                      <ActionIcon variant='subtle' radius='xl' aria-label='Settings' color='default'>
-                        <IconAdjustments style={{ width: '70%', height: '70%' }} stroke={1.5} />
-                      </ActionIcon>
-                    </Popover.Target>
-
-                    <Popover.Dropdown>
-                      <Stack>
-                        <Switch
-                          size='sm'
-                          onLabel='On'
-                          offLabel='Off'
-                          label='See Operations'
-                          checked={user.site_theme?.view_operations ?? false}
-                          onChange={(e) => {
-                            setUser((prev) => {
-                              if (!prev) return prev;
-                              return {
-                                ...prev,
-                                site_theme: { ...prev.site_theme, view_operations: e.currentTarget.checked },
-                              };
-                            });
-                          }}
-                        />
-                        <Switch
-                          size='sm'
-                          onLabel='On'
-                          offLabel='Off'
-                          label='Dyslexia Font'
-                          checked={user.site_theme?.dyslexia_font ?? false}
-                          onChange={(e) => {
-                            setUser((prev) => {
-                              if (!prev) return prev;
-                              return {
-                                ...prev,
-                                site_theme: { ...prev.site_theme, dyslexia_font: e.currentTarget.checked },
-                              };
-                            });
-                          }}
-                        />
-
-                        <Stack gap={5}>
-                          <Text fz='sm'>UI Size</Text>
-                          <Slider
-                            min={0.75}
-                            max={1.5}
-                            step={0.01}
-                            value={user.site_theme?.zoom ?? 1}
-                            onChange={(value) => {
-                              setUser((prev) => {
-                                if (!prev) return prev;
-                                return { ...prev, site_theme: { ...prev.site_theme, zoom: value } };
-                              });
-                            }}
-                          />
-                        </Stack>
-                      </Stack>
-                    </Popover.Dropdown>
-                  </Popover>
-                </Center>
-              </Stack>
+                    </Group>
+                  ))}
+                  {benefitingUsers?.length === 0 && (
+                    <Text ta='center' fz='sm' c='dimmed' py='xs'>
+                      No one yet, share your link!
+                    </Text>
+                  )}
+                  {(benefitingUsers === undefined || benefitingUsers === null) && (
+                    <Center py='xs'>
+                      <Loader size='sm' type='dots' />
+                    </Center>
+                  )}
+                </ScrollArea.Autosize>
+              </Paper>
+              <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p='md'>
+                <Group wrap='nowrap' justify='space-between' mb={6}>
+                  <Text fz='sm'>Send them this link:</Text>
+                  <Group wrap='nowrap' gap='xs'>
+                    <CopyButton value={gmShareURL}>
+                      {({ copied, copy }) => (
+                        <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
+                          {copied ? 'Copied' : 'Copy'}
+                        </Button>
+                      )}
+                    </CopyButton>
+                    <Button color='teal' size='compact-xs' onClick={regenerateCode}>
+                      Regenerate
+                    </Button>
+                  </Group>
+                </Group>
+                <Anchor fz='xs' fs='italic' style={{ wordBreak: 'break-all', overflowWrap: 'break-word' }}>
+                  {gmShareURL}
+                </Anchor>
+              </Paper>
             </Box>
+          )}
+          <Accordion defaultValue='' variant='contained' styles={{ control: { backgroundColor: 'var(--mantine-color-default-hover)', '&:hover': { backgroundColor: 'var(--mantine-color-default-hover)' } } }}>
+            {/* Appearance */}
+            <Accordion.Item value='appearance'>
+              <Accordion.Control icon={<IconPalette size='0.9rem' />}>Appearance</Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={0}>
+                  <SettingRow label='Theme Color' description='Primary accent color for the site'>
+                    <Popover position='bottom-end' withArrow shadow='md'>
+                      <Popover.Target>
+                        <ColorSwatch
+                          style={{ cursor: 'pointer' }}
+                          color={user.site_theme?.color || GUIDE_BLUE}
+                          size={22}
+                        />
+                      </Popover.Target>
+                      <Popover.Dropdown p={5}>
+                        <ColorPicker
+                          format='hex'
+                          value={user.site_theme?.color || GUIDE_BLUE}
+                          onChange={(value) => {
+                            if (!hasPatreonAccess(user, 1)) {
+                              displayPatronOnly();
+                              return;
+                            }
+                            setUser((prev) => {
+                              if (!prev) return prev;
+                              return { ...prev, site_theme: { ...prev.site_theme, color: value } };
+                            });
+                          }}
+                          swatches={[
+                            '#25262b',
+                            '#868e96',
+                            '#fa5252',
+                            '#e64980',
+                            '#be4bdb',
+                            '#8d69f5',
+                            '#577deb',
+                            GUIDE_BLUE,
+                            '#15aabf',
+                            '#12b886',
+                            '#40c057',
+                            '#82c91e',
+                            '#fab005',
+                            '#fd7e14',
+                          ]}
+                          swatchesPerRow={7}
+                        />
+                      </Popover.Dropdown>
+                    </Popover>
+                  </SettingRow>
 
-            <Center>
-              <FileButton
-                onChange={async (file) => {
-                  if (!hasPatreonAccess(user, 1)) {
-                    displayPatronOnly();
-                    return;
-                  }
-
-                  // Upload file to server
-                  let path = '';
-                  if (file) {
-                    setLoading(true);
-                    path = await uploadImage(file, 'portraits');
-                  }
-                  setUser((prev) => {
-                    if (!prev) return prev;
-                    return { ...prev, image_url: path };
-                  });
-
-                  setLoading(false);
-                }}
-                accept='image/png,image/jpeg,image/jpg,image/webp'
-              >
-                {(subProps) => (
-                  <Box {...subProps} style={{ position: 'relative' }}>
-                    <Avatar
-                      ref={refPfp}
-                      src={user.image_url}
-                      size={80}
-                      radius={80}
-                      mt={-30}
-                      style={{
-                        backgroundColor: theme.colors.dark[7],
-                        border: `2px solid ${theme.colors.dark[7] + 'D3'}`,
-                        cursor: 'pointer',
+                  <SettingRow label='Color Scheme' description='Switch between dark and light mode'>
+                    <SegmentedControl
+                      size='xs'
+                      value={colorScheme === 'light' ? 'light' : 'dark'}
+                      onChange={(value) => {
+                        setColorScheme(value as 'light' | 'dark');
+                        setUser((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            site_theme: { ...prev.site_theme, light_mode: value === 'light' },
+                          };
+                        });
                       }}
+                      data={[
+                        { label: 'Dark', value: 'dark' },
+                        { label: 'Light', value: 'light' },
+                      ]}
                     />
+                  </SettingRow>
 
-                    <ActionIcon
-                      variant='transparent'
-                      color='gray.1'
-                      aria-label='Upload Profile Picture'
-                      style={{
-                        position: 'absolute',
-                        top: '25%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-
-                        visibility: hoveredPfp ? 'visible' : 'hidden',
-                      }}
-                      size={40}
-                    >
-                      <IconUpload size='2.2rem' stroke={1.5} />
-                    </ActionIcon>
-                  </Box>
-                )}
-              </FileButton>
-            </Center>
-
-            <Box mt={5}>
-              {editingName ? (
-                <Center>
-                  <FocusTrap active={true}>
-                    <TextInput
+                  <SettingRow label='Dyslexia Font' description='Use OpenDyslexic for improved readability'>
+                    <Switch
                       size='sm'
-                      w={160}
-                      styles={{
-                        input: {
-                          textAlign: 'center',
-                        },
-                      }}
-                      spellCheck={false}
-                      placeholder='Display Name'
-                      value={user.display_name}
+                      checked={user.site_theme?.dyslexia_font ?? false}
                       onChange={(e) => {
                         setUser((prev) => {
                           if (!prev) return prev;
-                          return { ...prev, display_name: e.target.value };
+                          return {
+                            ...prev,
+                            site_theme: { ...prev.site_theme, dyslexia_font: e.currentTarget.checked },
+                          };
                         });
                       }}
-                      onKeyDown={getHotkeyHandler([
-                        ['mod+Enter', () => setEditingName(false)],
-                        ['Enter', () => setEditingName(false)],
-                      ])}
-                      onBlur={() => {
-                        setEditingName(false);
+                    />
+                  </SettingRow>
+
+                  <Box pt={6} pb={8}>
+                    <Text size='sm' mb={12}>
+                      UI Size
+                    </Text>
+                    <Slider
+                      min={0.75}
+                      max={1.5}
+                      step={0.01}
+                      value={user.site_theme?.zoom ?? 1}
+                      marks={[
+                        { value: 0.75, label: 'Small' },
+                        { value: 1, label: 'Default' },
+                        { value: 1.5, label: 'Large' },
+                      ]}
+                      mb='xl'
+                      onChange={(value) => {
+                        setUser((prev) => {
+                          if (!prev) return prev;
+                          return { ...prev, site_theme: { ...prev.site_theme, zoom: value } };
+                        });
                       }}
                     />
-                  </FocusTrap>
-                </Center>
-              ) : (
-                <Text
-                  ta='center'
-                  fz='lg'
-                  fw={500}
-                  onClick={() => {
-                    setEditingName(true);
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                  }}
-                >
-                  {user.display_name ?? 'Unknown User'}
-                </Text>
-              )}
-            </Box>
+                  </Box>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
 
-            <Text ta='center' fz='xs' c='dimmed' fs='italic'>
-              {user.summary}
-            </Text>
-            <Group mt='md' justify='center' gap={30}>
-              <Box>
-                <Text ta='center' fz='lg' fw={500}>
-                  {characters ? characters.length : '...'}
-                </Text>
-                <Text ta='center' fz='sm' c='dimmed' lh={1}>
-                  Characters
-                </Text>
-              </Box>
-              <Box>
-                <Text ta='center' fz='lg' fw={500}>
-                  {bundles ? bundles.length : '...'}
-                </Text>
-                <Text ta='center' fz='sm' c='dimmed' lh={1}>
-                  Bundles
-                </Text>
-              </Box>
-              <Box>
-                <Text ta='center' fz='lg' fw={500}>
-                  {campaigns ? campaigns.length : '...'}
-                </Text>
-                <Text ta='center' fz='sm' c='dimmed' lh={1}>
-                  Campaigns
-                </Text>
-              </Box>
-            </Group>
-            <Divider mt='md' />
-            <Group align='center' justify='center' p='xs'>
-              {user.deactivated && (
-                <Badge
-                  variant='light'
-                  size='md'
-                  color='red'
-                  styles={{
-                    root: {
-                      textTransform: 'initial',
-                    },
-                  }}
-                >
-                  Deactivated
-                </Badge>
-              )}
-              {user.is_admin && (
-                <Badge
-                  variant='light'
-                  size='md'
-                  color='cyan'
-                  styles={{
-                    root: {
-                      textTransform: 'initial',
-                    },
-                  }}
-                >
-                  Admin
-                </Badge>
-              )}
-              {user.is_mod && (
-                <Badge
-                  variant='light'
-                  size='md'
-                  color='green'
-                  styles={{
-                    root: {
-                      textTransform: 'initial',
-                    },
-                  }}
-                >
-                  Mod
-                </Badge>
-              )}
-              {user.is_developer && (
-                <Badge
-                  variant='light'
-                  size='md'
-                  color='grape'
-                  styles={{
-                    root: {
-                      textTransform: 'initial',
-                    },
-                  }}
-                >
-                  Developer
-                </Badge>
-              )}
+            {/* Developer Tools */}
+            <Accordion.Item value='developer'>
+              <Accordion.Control icon={<IconCode size='0.9rem' />}>Developer Tools</Accordion.Control>
+              <Accordion.Panel>
+                <Stack gap={0}>
+                  <SettingRow label='View Operations' description='Show operation data on content entries'>
+                    <Switch
+                      size='sm'
+                      checked={user.site_theme?.view_operations ?? false}
+                      onChange={(e) => {
+                        setUser((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            site_theme: { ...prev.site_theme, view_operations: e.currentTarget.checked },
+                          };
+                        });
+                      }}
+                    />
+                  </SettingRow>
 
-              <Badge
-                variant='light'
-                size='md'
-                color={patronColor}
-                styles={{
-                  root: {
-                    textTransform: 'initial',
-                  },
-                }}
-              >
-                {patronTier}
-              </Badge>
-
-              {contentTier ? (
-                <Badge
-                  variant='light'
-                  size='md'
-                  color={contentColor}
-                  styles={{
-                    root: {
-                      textTransform: 'initial',
-                    },
-                  }}
-                >
-                  {contentTier} {approvedContentUpdates ? `(${approvedContentUpdates.length})` : ''}
-                </Badge>
-              ) : (
-                <Badge
-                  variant='light'
-                  size='md'
-                  color='yellow'
-                  styles={{
-                    root: {
-                      textTransform: 'initial',
-                    },
-                  }}
-                >
-                  New User
-                </Badge>
-              )}
-            </Group>
-
-            <Divider />
-
-            <Group align='center' justify='center' pt={10}>
-              <Button
-                size='sm'
-                variant={user.patreon?.tier ? 'outline' : 'light'}
-                leftSection={<IconBrandPatreon size={18} />}
-                fullWidth
-                component='a'
-                href={PATREON_AUTH_URL}
-              >
-                {user.patreon?.tier ? `Patreon Connected` : 'Connect to Patreon'}
-              </Button>
-            </Group>
-
-            {user.patreon?.tier === 'GAME-MASTER' && (
-              <Box pt={15}>
-                <Text ta='center' fw={500}>
-                  <Text fs='italic' pr={8} span>
-                    Users in your Group
-                  </Text>
-                  <Text fz='sm' span>
-                    ({benefitingUsers?.length ?? '...'} / 99)
-                  </Text>
-                </Text>
-                <Paper style={{ backgroundColor: 'transparent' }} withBorder>
-                  <ScrollArea.Autosize mah={200} py={5}>
-                    {benefitingUsers?.map((benefitingUser, index) => (
-                      <Group key={index} wrap='nowrap' justify='space-between' px={20}>
-                        <Text ta='center' fz='lg' fw={500}>
-                          {benefitingUser.display_name}
-                        </Text>
-                        <CloseButton
-                          onClick={() => {
-                            modals.openConfirmModal({
-                              id: 'remove-benefiting-user',
-                              title: <Title order={4}>Remove User</Title>,
-                              children: (
-                                <Text size='sm'>
-                                  Are you sure you want to remove this user from benefiting from your tier? They will
-                                  lose their virtual Wanderer tier.
-                                </Text>
-                              ),
-                              labels: { confirm: 'Remove', cancel: 'Cancel' },
-                              onCancel: () => {},
-                              onConfirm: async () => {
-                                await removeFromGroup(benefitingUser.user_id);
+                  <Box pt={6}>
+                    <Group justify='space-between' align='center' mb='xs'>
+                      <Text size='sm'>API Clients</Text>
+                      <ActionIcon
+                        size='sm'
+                        radius='xl'
+                        variant='subtle'
+                        color='gray'
+                        onClick={() => {
+                          setUser((prev) => {
+                            if (!prev) return prev;
+                            return {
+                              ...prev,
+                              api: {
+                                ...prev.api,
+                                clients: [
+                                  ...(prev.api?.clients || []),
+                                  {
+                                    name: 'New Client',
+                                    id: crypto.randomUUID().split('-')[0],
+                                    api_key: crypto.randomUUID(),
+                                    image_url: 'icon|||abstract064|||#359fdf',
+                                  },
+                                ],
                               },
-                            });
-                          }}
-                        />
-                      </Group>
-                    ))}
-                    {benefitingUsers?.length === 0 && (
-                      <Text ta='center' fz='sm' c='dimmed'>
-                        No one yet, share your link!
-                      </Text>
-                    )}
-                    {(benefitingUsers === undefined || benefitingUsers === null) && (
-                      <Center>
-                        <Loader size='lg' type='dots' />
-                      </Center>
-                    )}
-                  </ScrollArea.Autosize>
-                </Paper>
-                <Paper style={{ backgroundColor: 'transparent' }} withBorder mt={10} p={20}>
-                  <Group wrap='nowrap' justify='space-between'>
-                    <Text fz='sm'>Send them this link:</Text>
-                    <Group wrap='nowrap'>
-                      <CopyButton value={gmShareURL}>
-                        {({ copied, copy }) => (
-                          <Button color={copied ? 'teal' : 'blue'} size='compact-xs' onClick={copy}>
-                            {copied ? 'Copied' : 'Copy'}
-                          </Button>
-                        )}
-                      </CopyButton>
-                      <Button color='teal' size='compact-xs' onClick={regenerateCode}>
-                        Regenerate
-                      </Button>
+                            };
+                          });
+                        }}
+                      >
+                        <IconCirclePlus size='0.9rem' />
+                      </ActionIcon>
                     </Group>
-                  </Group>
-                  <Anchor
-                    fz='xs'
-                    fs='italic'
-                    style={{
-                      wordBreak: 'break-all',
-                      overflowWrap: 'break-word',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {gmShareURL}
-                  </Anchor>
-                </Paper>
-              </Box>
-            )}
+                    <Stack gap='sm'>
+                      {user.api?.clients?.map((client, index) => (
+                        <BlurBox key={index} p='sm'>
+                          <Stack gap={5}>
+                            <Group justify='space-between' align='center'>
+                              <Group gap='xs'>
+                                <DisplayIcon width={25} strValue={client.image_url} />
+                                <Text size='sm' fw={500}>
+                                  {client.name}
+                                </Text>
+                              </Group>
+                              <Button
+                                variant='light'
+                                size='xs'
+                                onClick={() => {
+                                  openContextModal({
+                                    modal: 'updateApiClient',
+                                    title: <Title order={3}>API Client</Title>,
+                                    innerProps: {
+                                      client: client,
+                                      onUpdate: (
+                                        id: string,
+                                        name: string,
+                                        description: string,
+                                        image_url: string,
+                                        api_key: string
+                                      ) => {
+                                        setUser((prev) => {
+                                          if (!prev) return prev;
+                                          const newClients = prev.api?.clients?.map((c) => {
+                                            if (c.id === id) {
+                                              return { ...c, name, description, image_url, api_key };
+                                            }
+                                            return c;
+                                          });
+                                          return { ...prev, api: { ...prev.api, clients: newClients } };
+                                        });
+                                      },
+                                      onDelete: () => {
+                                        setUser((prev) => {
+                                          if (!prev) return prev;
+                                          const newClients = prev.api?.clients?.filter((c) => c.id !== client.id);
+                                          return { ...prev, api: { ...prev.api, clients: newClients } };
+                                        });
+                                      },
+                                    },
+                                  });
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </Group>
+                            <PasswordInput
+                              size='sm'
+                              label='API Key'
+                              description='Your private key to access the API.'
+                              value={client.api_key}
+                              readOnly
+                            />
+                            <TextInput
+                              size='sm'
+                              label='Character Authorization URL'
+                              description='Set <ID> to the character ID you want access to.'
+                              value={`${window.location.origin}/oauth/access?user_id=${user.id}&client_id=${client.id}&character_id=<ID>`}
+                              readOnly
+                            />
+                          </Stack>
+                        </BlurBox>
+                      ))}
+                      {(!user.api?.clients || user.api.clients.length === 0) && (
+                        <Text size='sm' c='dimmed' ta='center' py='xs'>
+                          No API clients yet. Click + to add one.
+                        </Text>
+                      )}
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
 
-            <Divider my={10} />
-
-            <Stack gap={5}>
-              <Group justify='center' align='center' gap={5}>
-                <Text fz='sm' ta='center' c='gray'>
-                  API Clients
-                </Text>
-                <ActionIcon
-                  size='sm'
-                  radius='xl'
-                  variant='subtle'
-                  color='gray'
+            {/* Account */}
+            <Accordion.Item value='account'>
+              <Accordion.Control icon={<IconShield size='0.9rem' />}>Account</Accordion.Control>
+              <Accordion.Panel>
+                <Anchor
+                  underline='always'
                   onClick={() => {
-                    setUser((prev) => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        api: {
-                          ...prev.api,
-                          clients: [
-                            ...(prev.api?.clients || []),
-                            {
-                              name: 'New Client',
-                              id: crypto.randomUUID().split('-')[0],
-                              api_key: crypto.randomUUID(),
-                              image_url: 'icon|||abstract064|||#359fdf',
-                            },
-                          ],
-                        },
-                      };
+                    modals.openConfirmModal({
+                      id: 'delete-account',
+                      title: <Title order={4}>{`Delete Account`}</Title>,
+                      children: (
+                        <Stack>
+                          <Text>Are you absolutely, positively sure you want to delete your account?</Text>
+                          <Text>
+                            All your characters, homebrew, campaigns, and encounters will be deleted forever! 😱
+                          </Text>
+                        </Stack>
+                      ),
+                      labels: { confirm: 'Delete It.', cancel: 'Cancel' },
+                      onCancel: () => {},
+                      onConfirm: async () => {
+                        const result = await makeRequest('delete-user', {});
+                        if (result) {
+                          supabase.auth.signOut();
+                          localStorage.clear();
+                          queryClient.clear();
+                        } else {
+                          showNotification({
+                            title: `Failed to Delete Account`,
+                            message: `There was an error deleting your account. Please get support on our Discord.`,
+                            color: 'red',
+                          });
+                        }
+                      },
                     });
                   }}
+                  c='red.5'
+                  size='sm'
                 >
-                  <IconCirclePlus size='0.9rem' />
-                </ActionIcon>
-              </Group>
-              <Stack gap={10}>
-                {user.api?.clients?.map((client, index) => (
-                  <BlurBox key={index} p='sm'>
-                    <Stack gap={5}>
-                      <Group justify='space-between' align='center'>
-                        <Group>
-                          <DisplayIcon width={25} strValue={client.image_url} />
-                          <Text size='md'>{client.name}</Text>
-                        </Group>
-                        <Button
-                          variant='light'
-                          size='xs'
-                          onClick={() => {
-                            openContextModal({
-                              modal: 'updateApiClient',
-                              title: <Title order={3}>API Client</Title>,
-                              innerProps: {
-                                client: client,
-                                onUpdate: (
-                                  id: string,
-                                  name: string,
-                                  description: string,
-                                  image_url: string,
-                                  api_key: string
-                                ) => {
-                                  setUser((prev) => {
-                                    if (!prev) return prev;
-                                    const newClients = prev.api?.clients?.map((c) => {
-                                      if (c.id === id) {
-                                        return { ...c, name, description, image_url, api_key };
-                                      }
-                                      return c;
-                                    });
-                                    return { ...prev, api: { ...prev.api, clients: newClients } };
-                                  });
-                                },
-                                onDelete: () => {
-                                  setUser((prev) => {
-                                    if (!prev) return prev;
-                                    const newClients = prev.api?.clients?.filter((c) => c.id !== client.id);
-                                    return { ...prev, api: { ...prev.api, clients: newClients } };
-                                  });
-                                },
-                              },
-                            });
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      </Group>
-                      <PasswordInput
-                        size='sm'
-                        label='API Key'
-                        description='Your private key to access the API.'
-                        value={client.api_key}
-                        readOnly
-                      />
-                      <TextInput
-                        size='sm'
-                        label='Character Authorization URL'
-                        description='Set <ID> to the character ID you want access to.'
-                        value={`${window.location.origin}/oauth/access?user_id=${user.id}&client_id=${client.id}&character_id=<ID>`}
-                        readOnly
-                      />
-                    </Stack>
-                  </BlurBox>
-                ))}
-              </Stack>
-            </Stack>
-
-            <Divider mt={10} />
-
-            <Anchor
-              underline='always'
-              onClick={() => {
-                modals.openConfirmModal({
-                  id: 'delete-account',
-                  title: <Title order={4}>{`Delete Account`}</Title>,
-                  children: (
-                    <Stack>
-                      <Text>Are you absolutely, positively sure you want to delete your account?</Text>
-                      <Text>All your characters, homebrew, campaigns, and encounters will be deleted forever! 😱</Text>
-                    </Stack>
-                  ),
-                  labels: { confirm: 'Delete It.', cancel: 'Cancel' },
-                  onCancel: () => {},
-                  onConfirm: async () => {
-                    const result = await makeRequest('delete-user', {});
-
-                    if (result) {
-                      supabase.auth.signOut();
-                      localStorage.clear();
-                      queryClient.clear();
-                    } else {
-                      showNotification({
-                        title: `Failed to Delete Account`,
-                        message: `There was an error deleting your account. Please get support on our Discord.`,
-                        color: 'red',
-                      });
-                    }
-                  },
-                });
-              }}
-              c='gray.6'
-              ta='center'
-              size='xs'
-              pt={10}
-            >
-              Delete Account
-            </Anchor>
-          </Card>
-        </BlurBox>
-      </Box>
-    </Center>
+                  Delete Account
+                </Anchor>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
+        </Stack>
+      </BlurBox>
+    </Box>
   );
 }

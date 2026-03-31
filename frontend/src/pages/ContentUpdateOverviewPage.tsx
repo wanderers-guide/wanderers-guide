@@ -14,6 +14,7 @@ import {
   SegmentedControl,
   TextInput,
   useMantineTheme,
+  useMantineColorScheme,
   Button,
   LoadingOverlay,
   Select,
@@ -75,6 +76,7 @@ export function Component(props: {}) {
   });
 
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchState, setSearchState] = useState('PENDING');
 
@@ -168,7 +170,7 @@ export function Component(props: {}) {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 styles={{
                   input: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                    backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
                     borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
                   },
                 }}

@@ -41,7 +41,7 @@ import { Campaign, CampaignSessionIdea, Character, CampaignNPC, Encounter } from
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { mean } from 'lodash-es';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export default function InspirationPanel(props: {
   panelHeight: number;
@@ -63,8 +63,8 @@ export default function InspirationPanel(props: {
     onGenerate: (usePlayers: boolean, usePages: number[], context: string) => void;
   } | null>(null);
 
-  const [sessionIdeas, setSessionIdeas] = useRecoilState(sessionIdeasState);
-  const [npcs, setNPCs] = useRecoilState(npcsState);
+  const [sessionIdeas, setSessionIdeas] = useAtom(sessionIdeasState);
+  const [npcs, setNPCs] = useAtom(npcsState);
 
   const generateSessions = async (usePlayers: boolean, usePages: number[], context: string) => {
     const session = await generateSessionIdea(props.campaign, usePlayers ? props.players : [], usePages, context);

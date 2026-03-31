@@ -36,18 +36,18 @@ import { groupBy, isArray, truncate } from 'lodash-es';
 import { SpotlightActionGroupData } from 'node_modules/@mantine/spotlight/lib/Spotlight';
 import { useEffect, useRef, useState } from 'react';
 import { NavigateFunction, useNavigate } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import stripMd from 'remove-markdown';
 
 const MAX_QUERY_LENGTH = 100;
 
 export default function SearchSpotlight() {
   const theme = useMantineTheme();
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
 
   const navigate = useNavigate();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
 
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 

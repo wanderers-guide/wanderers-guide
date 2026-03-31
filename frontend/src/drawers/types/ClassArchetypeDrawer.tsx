@@ -27,14 +27,14 @@ import { AbilityBlock, ClassArchetype } from '@schemas/content';
 import { toLabel } from '@utils/strings';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export function ClassArchetypeDrawerTitle(props: {
   data: { id?: number; classArchetype?: ClassArchetype; onSelect?: () => void };
 }) {
   const id = props.data.id;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: _archetype } = useQuery({
     queryKey: [`find-class-archetype-${id}`, { id }],
@@ -100,7 +100,7 @@ export function ClassArchetypeDrawerContent(props: {
   });
 
   const [descHidden, setDescHidden] = useState(true);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const adjustments = groupBy(
     data?.archetype?.feature_adjustments?.map((fa) => {
@@ -128,11 +128,11 @@ export function ClassArchetypeDrawerContent(props: {
     <Accordion.Item key={level} value={level}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='md'>
+          <Text c='gray.2' fw={700} fz='md'>
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-            <Text fz='sm' c='gray.5' span>
+            <Text fz='sm' c='gray.2' span>
               {adjustments[level].length}
             </Text>
           </Badge>
@@ -339,7 +339,7 @@ export function ClassArchetypeDrawerContent(props: {
         </Accordion>
 
         {adjSections.length === 0 && (
-          <Text c='gray.5' fz='sm' ta='center' fs='italic' py={10}>
+          <Text c='gray.2' fz='sm' ta='center' fs='italic' py={10}>
             No adjustments found.
           </Text>
         )}
@@ -360,7 +360,7 @@ export function ClassArchetypeDrawerContent(props: {
       </Stack>
 
       {props.data.showOperations && (
-        <ShowOperationsButton name={data.archetype.name} operations={data.archetype.operations} />
+        <ShowOperationsButton name={data.archetype.name} operations={data.archetype.operations ?? undefined} />
       )}
     </Stack>
   );

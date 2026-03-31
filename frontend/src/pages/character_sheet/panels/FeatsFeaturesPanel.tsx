@@ -9,6 +9,7 @@ import {
 import { fetchContentAll, getContentFast, getDefaultSources } from '@content/content-store';
 import {
   useMantineTheme,
+  useMantineColorScheme,
   Stack,
   Group,
   TextInput,
@@ -24,7 +25,7 @@ import { IconSearch, IconX } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { AbilityBlock, Trait } from '@schemas/content';
 import { useState, useRef, useEffect } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
+import { useAtomValue, useAtom } from 'jotai';
 import * as JsSearch from 'js-search';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { phoneQuery } from '@utils/mobile-responsive';
@@ -33,9 +34,10 @@ import { useMediaQuery } from '@mantine/hooks';
 export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWidth: number }) {
   const isPhone = useMediaQuery(phoneQuery());
   const theme = useMantineTheme();
-  const character = useRecoilValue(characterState);
+  const { colorScheme } = useMantineColorScheme();
+  const character = useAtomValue(characterState);
   const [searchQuery, setSearchQuery] = useState('');
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const [section, setSection] = useState('FEATS');
 
   const { data: rawData } = useQuery({
@@ -128,7 +130,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             },
             item: {
               marginTop: 0,
-              marginBottom: 5,
+              marginBottom: 10,
             },
           }}
         >
@@ -287,7 +289,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             },
             item: {
               marginTop: 0,
-              marginBottom: 5,
+              marginBottom: 10,
             },
           }}
         >
@@ -404,7 +406,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
 
   return (
     <Box h='100%'>
-      <Stack gap={5}>
+      <Stack gap={10}>
         <Group>
           <TextInput
             style={{ flex: 1 }}
@@ -430,7 +432,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             }
             styles={{
               input: {
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
                 borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
@@ -449,7 +451,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {noFeatsOrFeatures ? (
-            <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+            <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
               No feats or features found.
             </Text>
           ) : (

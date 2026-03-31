@@ -6,7 +6,16 @@ import { GUIDE_BLUE } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
-import { Anchor, BackgroundImage, Box, Button, MantineProvider, Text, createTheme } from '@mantine/core';
+import {
+  Anchor,
+  BackgroundImage,
+  Box,
+  Button,
+  MantineProvider,
+  Text,
+  createTheme,
+  v8CssVariablesResolver,
+} from '@mantine/core';
 import { useMediaQuery, usePrevious } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
@@ -15,7 +24,7 @@ import { IconBrush } from '@tabler/icons-react';
 import { getBackgroundImageFromURL } from '@utils/background-images';
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useSearchParams } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import { supabase } from './main';
 import Layout from './nav/Layout';
 import AddNewLoreModal from '@modals/AddNewLoreModal';
@@ -76,11 +85,11 @@ const modals = {
 // }
 
 export default function App() {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
   const isPhone = useMediaQuery(phoneQuery());
 
-  const [session, setSession] = useRecoilState(sessionState);
+  const [session, setSession] = useAtom(sessionState);
   useEffect(() => {
     resetContentStore();
 
@@ -97,7 +106,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const activeCharacer = useRecoilValue(characterState);
+  const activeCharacer = useAtomValue(characterState);
   const prevCharacer = usePrevious(activeCharacer);
 
   // Update background image when background_image_url changes
@@ -122,17 +131,33 @@ export default function App() {
     return createTheme({
       colors: {
         guide: generateColors(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
+        // Dark scale: near-opaque at [0] → nearly transparent at [9]
         dark: [
-          '#C1C2C5',
-          '#A6A7AB',
-          '#909296',
-          '#5c5f66',
-          '#373A40',
-          '#2C2E33',
-          '#25262b',
-          '#1A1B1E',
-          '#141517',
-          '#101113',
+          'rgba(193, 194, 197, 0.82)', // [0] lightest text / icons
+          'rgba(166, 167, 171, 0.78)', // [1]
+          'rgba(144, 146, 150, 0.73)', // [2]
+          'rgba(92,  95,  102, 0.68)', // [3]
+          'rgba(55,  58,  64,  0.75)', // [4] ← glass surfaces
+          'rgba(44,  46,  51,  0.70)', // [5]
+          'rgba(37,  38,  43,  0.65)', // [6] ← card bg
+          'rgba(26,  27,  30,  0.60)', // [7] ← page bg
+          'rgba(20,  21,  23,  0.55)', // [8]
+          'rgba(16,  17,  19,  0.50)', // [9] darkest / most transparent
+        ],
+
+        // Gray scale for light mode: near-opaque at [0] → nearly transparent at [9]
+        // Mirrors the dark scale's opacity curve on a neutral-light palette.
+        gray: [
+          'rgba(248, 249, 250, 0.82)', // [0] near-white surfaces
+          'rgba(241, 243, 245, 0.78)', // [1]
+          'rgba(233, 236, 239, 0.73)', // [2]
+          'rgba(222, 226, 230, 0.68)', // [3]
+          'rgba(206, 212, 218, 0.75)', // [4] ← glass surfaces
+          'rgba(173, 181, 189, 0.70)', // [5]
+          'rgba(134, 142, 150, 0.65)', // [6] ← borders / muted text
+          'rgba(73,  80,  87,  0.60)', // [7] ← body text
+          'rgba(52,  58,  64,  0.55)', // [8]
+          'rgba(33,  37,  41,  0.50)', // [9] darkest text
         ],
       },
       cursorType: 'pointer',
@@ -142,6 +167,15 @@ export default function App() {
         ? 'OpenDyslexicRegular'
         : 'Montserrat, sans-serif',
       fontFamilyMonospace: 'Ubuntu Mono, monospace',
+      components: {
+        Popover: {
+          vars: () => ({
+            dropdown: {
+              '--popover-bg': 'rgba(26, 27, 30, 1)',
+            },
+          }),
+        },
+      },
     });
   };
 
@@ -184,7 +218,29 @@ export default function App() {
   }, [location]);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme='dark'>
+    <MantineProvider
+      theme={theme}
+      defaultColorScheme='dark'
+      cssVariablesResolver={(theme) => {
+        const v8 = v8CssVariablesResolver(theme);
+        return {
+          variables: { ...v8.variables },
+          light: {
+            ...v8.light,
+            '--mantine-color-text': 'rgb(33, 37, 41)',
+            '--mantine-color-dimmed': 'rgb(35, 36, 37)',
+            '--mantine-color-body': 'rgba(255, 255, 255, 1)',
+          },
+          dark: {
+            ...v8.dark,
+            '--mantine-color-text': 'rgb(195, 195, 195)',
+            '--mantine-color-dimmed': 'rgb(173, 174, 175)',
+            '--mantine-color-body': 'rgba(26,  27,  30,  1)',
+            '--popover-bg': 'rgba(26,  27,  30,  1)',
+          },
+        };
+      }}
+    >
       <ModalsProvider modals={modals}>
         <BackgroundImage
           src={background?.url ?? ''}

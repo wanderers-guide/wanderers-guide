@@ -36,7 +36,7 @@ export function Component() {
             You found a secret place.
           </Title>
           <Text
-            c='gray.5'
+            c='gray.2'
             size='xs'
             ta='center'
             my='lg'

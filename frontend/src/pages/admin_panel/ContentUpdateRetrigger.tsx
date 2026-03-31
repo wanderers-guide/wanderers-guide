@@ -68,7 +68,7 @@ async function retriggerUpdate(update: ContentUpdate) {
     update.action,
     update.data,
     update.content_source_id,
-    update.ref_id
+    update.ref_id ?? undefined
   );
 
   console.log(result);

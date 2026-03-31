@@ -1,5 +1,5 @@
 import { glassStyle } from '@utils/colors';
-import { Group, rgba, Text, UnstyledButton, useMantineTheme } from '@mantine/core';
+import { Group, rgba, Text, UnstyledButton, useMantineColorScheme, useMantineTheme } from '@mantine/core';
 import { useFocusWithin, useHover, useOs } from '@mantine/hooks';
 import { spotlight } from '@mantine/spotlight';
 import { IconSearch } from '@tabler/icons-react';
@@ -7,7 +7,13 @@ import { IconSearch } from '@tabler/icons-react';
 export function SearchBar({ isSmall }: { isSmall?: boolean }) {
   const os = useOs();
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const { hovered, ref } = useHover<HTMLButtonElement>();
+
+  const isDark = colorScheme === 'dark';
+  const textColor = isDark ? theme.colors.gray[4] : theme.colors.gray[6];
+  const kbdBg = isDark ? theme.colors.dark[7] + '80' : theme.colors.gray[3] + '80';
+  const kbdColor = isDark ? theme.colors.dark[0] : theme.colors.dark[9];
 
   return (
     <UnstyledButton
@@ -18,10 +24,10 @@ export function SearchBar({ isSmall }: { isSmall?: boolean }) {
         height: 32,
         paddingLeft: theme.spacing.sm,
         paddingRight: 5,
-        color: theme.colors.gray[4],
+        color: textColor,
         fontWeight: 500,
+        borderRadius: theme.radius.lg,
         ...glassStyle(),
-        backgroundColor: hovered ? theme.colors.dark[7] : theme.colors.dark[8],
       }}
     >
       <Group gap='xs' wrap='nowrap' justify='space-between'>
@@ -39,8 +45,8 @@ export function SearchBar({ isSmall }: { isSmall?: boolean }) {
               lineHeight: 1,
               padding: 6,
               borderRadius: theme.radius.sm,
-              color: theme.colors.dark[0],
-              backgroundColor: theme.colors.dark[7] + '80',
+              color: kbdColor,
+              backgroundColor: kbdBg,
             }}
           >
             {os === 'undetermined' || os === 'macos' ? '⌘' : 'Ctrl'} + K

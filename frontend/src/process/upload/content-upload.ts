@@ -240,6 +240,10 @@ async function uploadAction(source: ContentSource, json: Record<string, any>): P
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     content_source_id: source.id,
+    prerequisites: null,
+    cost: null,
+    operations: null,
+    level: null,
     version: '1.0',
   } satisfies AbilityBlock;
 
@@ -294,6 +298,8 @@ async function uploadFeat(source: ContentSource, json: Record<string, any>): Pro
       },
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
+    operations: null,
+    cost: null,
     content_source_id: source.id,
     version: '1.0',
   } satisfies AbilityBlock;
@@ -344,6 +350,9 @@ async function uploadClassFeature(source: ContentSource, json: Record<string, an
       },
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
+    operations: null,
+    prerequisites: null,
+    cost: null,
     content_source_id: source.id,
     version: '1.0',
   } satisfies AbilityBlock;
@@ -415,6 +424,7 @@ async function uploadSpell(source: ContentSource, json: Record<string, any>): Pr
         custom_tradition: json.system?.traditions?.custom,
       },
     },
+    availability: null,
     content_source_id: source.id,
     version: '1.0',
   } satisfies Spell;
@@ -455,10 +465,10 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
     bulk: json.system?.bulk?.value,
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
     group: ((json.system?.group || json.system?.category || json.type) ?? '').toUpperCase(),
-    hands: undefined,
+    hands: null,
     size: convertToSize(json.system?.size?.value),
-    craft_requirements: toText(descValues?.craft_requirements),
-    usage: json.system?.usage?.value,
+    craft_requirements: toText(descValues?.craft_requirements) ?? null,
+    usage: json.system?.usage?.value ?? null,
     description: toMarkdown(description) ?? '',
     meta_data: {
       base_item: json.system?.baseItem,
@@ -503,6 +513,7 @@ async function uploadItem(source: ContentSource, json: Record<string, any>): Pro
         items: Object.values(json.system?.items ?? {}),
       },
     },
+    operations: null,
     content_source_id: source.id,
     version: '1.0',
   } satisfies Item;
@@ -589,13 +600,18 @@ async function uploadHeritage(source: ContentSource, json: Record<string, any>):
       },
     },
     traits: await getTraitIds(json.system?.traits?.value ?? [], source),
+    operations: null,
+    prerequisites: null,
+    cost: null,
+    frequency: null,
+    trigger: null,
     content_source_id: source.id,
     version: '1.0',
   } satisfies AbilityBlock;
 
   // Add ancestry trait
   if (json.system?.ancestry?.name) {
-    heritage.traits = heritage.traits.concat(await getTraitIds([json.system.ancestry.name], source));
+    heritage.traits = (heritage.traits ?? []).concat(await getTraitIds([json.system.ancestry.name], source));
   }
 
   const createdHeritage = await upsertAbilityBlock(heritage);
@@ -636,6 +652,7 @@ async function uploadBackground(source: ContentSource, json: Record<string, any>
     description: description,
     artwork_url: '',
     operations: [],
+    deprecated: false,
     content_source_id: source.id,
     version: '1.0',
   } satisfies Background;

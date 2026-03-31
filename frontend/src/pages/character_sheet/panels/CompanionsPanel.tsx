@@ -21,7 +21,7 @@ import { findCreatureTraits } from '@utils/creature';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { evaluate } from 'mathjs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { confirmHealth } from '../entity-handler';
 import { DisplayIcon } from '@common/IconDisplay';
 import { sign } from '@utils/numbers';
@@ -40,7 +40,7 @@ import { getEntityLevel } from '@utils/entity-utils';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
 
   // Calculated data for the companions
   const companions = character?.companions?.list ?? [];
@@ -67,7 +67,7 @@ export default function CompanionsPanel(props: { panelHeight: number; panelWidth
         }}
       >
         <Stack mt={20} gap={10}>
-          <Text ta='center' c='gray.5' fs='italic' fz='sm'>
+          <Text ta='center' c='gray.2' fs='italic' fz='sm'>
             No companions found, want to add one?
           </Text>
           <Group justify='center'>
@@ -181,7 +181,7 @@ function CompanionCard(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
 
-  const [creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
 
   // Health
 
@@ -494,7 +494,7 @@ async function computeCompanions(companions: Creature[]) {
 }
 
 function AddCompanionSection() {
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
   const [selectedType, setSelectedType] = useState<number | null>(null);
   const isPhone = useMediaQuery(phoneQuery());
 
@@ -540,7 +540,7 @@ function AddCompanionSection() {
       })}
     >
       <Group gap={0} align='center' justify='center'>
-        <Text c='gray.5' mx={10}>
+        <Text c='gray.2' mx={10}>
           Add
         </Text>
         <Select

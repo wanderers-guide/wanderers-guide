@@ -18,7 +18,7 @@ import { ContextModalProps } from '@mantine/modals';
 import { Spell, SpellSlot, SpellSlotRecord } from '@schemas/content';
 import { rankNumber } from '@utils/numbers';
 import { groupBy } from 'lodash-es';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 /**
  * This modal is used for selecting the casting option when casting a spell from a staff and you're a spontaneous caster.
@@ -48,7 +48,7 @@ export function SelectStaffCastingModalContents(props: {
   onSelect: (option: 'NORMAL' | 'SLOT-CONSUME', slotRank?: number) => void;
   onClose: () => void;
 }) {
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
   const slots = (character && collectEntitySpellcasting('CHARACTER', character).slots) ?? [];
   const groupedSlots = groupBy(slots, 'rank');
 

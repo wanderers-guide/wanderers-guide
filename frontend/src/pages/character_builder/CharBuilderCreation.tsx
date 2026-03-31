@@ -55,7 +55,8 @@ import { getAllSkillVariables, getVariable } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { isEqual, truncate } from 'lodash-es';
 import { useEffect, useRef, useState } from 'react';
-import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import useCharacter from '@utils/use-character';
 import { phoneQuery } from '@utils/mobile-responsive';
 
@@ -347,8 +348,8 @@ export function CharBuilderCreationInner(props: {
 
 function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: number }) {
   const { ref, height } = useElementSize();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const [character, setCharacter] = useAtom(characterState);
 
   return (
     <Stack gap={5}>
@@ -1114,7 +1115,7 @@ function LevelSection(props: {
   const theme = useMantineTheme();
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
   const { hovered, ref } = useHover();
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const mergedRef = useMergedRef(ref, choiceCountRef);
 
@@ -1162,7 +1163,7 @@ function LevelSection(props: {
   ) {
     if (props.level === 0) {
       return (
-        <Text fz='sm' mt={10} ta='center' c='gray.5' fs='italic'>
+        <Text fz='sm' mt={10} ta='center' c='gray.2' fs='italic'>
           Select an ancestry, background, and class to get started.
         </Text>
       );
@@ -1182,7 +1183,7 @@ function LevelSection(props: {
     >
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='sm'>
+          <Text c='gray.2' fw={700} fz='sm'>
             {props.level === 0 ? (
               <>
                 Initial Stats{' '}
@@ -1204,7 +1205,7 @@ function LevelSection(props: {
               >
                 {choiceCounts.current}
               </Text>
-              <Text fz='sm' c='gray.5' span>
+              <Text fz='sm' c='gray.2' span>
                 /{choiceCounts.max}
               </Text>
             </Badge>
@@ -1463,8 +1464,8 @@ function InitialStatsLevelSection(props: {
   onSaveChanges: (path: string, value: string) => void;
 }) {
   const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
-  const [character, setCharacter] = useRecoilState(characterState);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useAtom(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const class_ = props.content.classes.find((class_) => class_.id === character?.details?.class?.id);
   const class_2 = props.content.classes.find((class_) => class_.id === character?.details?.class_2?.id);
@@ -1582,8 +1583,8 @@ function AncestryAccordionItem(props: {
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
-  const [character, setCharacter] = useRecoilState(characterState);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useAtom(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const { hovered, ref } = useHover();
 
   const choiceCountRef = useRef<HTMLDivElement>(null);
@@ -1702,8 +1703,8 @@ function BackgroundAccordionItem(props: {
   onSaveChanges: (path: string, value: string) => void;
   opened: boolean;
 }) {
-  const [character, setCharacter] = useRecoilState(characterState);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useAtom(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const { hovered, ref } = useHover();
 
   const choiceCountRef = useRef<HTMLDivElement>(null);
@@ -1810,8 +1811,8 @@ function ClassAccordionItem(props: {
   opened: boolean;
   isClass2?: boolean;
 }) {
-  const [character, setCharacter] = useRecoilState(characterState);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [character, setCharacter] = useAtom(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const { hovered, ref } = useHover();
 
   const choiceCountRef = useRef<HTMLDivElement>(null);
@@ -1925,7 +1926,7 @@ function BooksAccordionItem(props: {
 }) {
   const { hovered, ref } = useHover();
 
-  const character = useRecoilValue(characterState);
+  const character = useAtomValue(characterState);
 
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const [choiceCounts, setChoiceCounts] = useState<{
@@ -2055,7 +2056,7 @@ function CustomAccordionItem(props: {
 }) {
   const { hovered, ref } = useHover();
 
-  const character = useRecoilValue(characterState);
+  const character = useAtomValue(characterState);
 
   const choiceCountRef = useRef<HTMLDivElement>(null);
   const [choiceCounts, setChoiceCounts] = useState<{

@@ -38,7 +38,7 @@ import {
   getAllAncestryTraitVariables,
 } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import classes from '@css/FaqSimple.module.css';
 import { isPhoneSized } from '@utils/mobile-responsive';
 import { useDebouncedState, useDebouncedValue, useDidUpdate } from '@mantine/hooks';
@@ -59,9 +59,9 @@ const SECTION_WIDTH = 280;
 export default function DetailsPanel(props: { content: ContentPackage; panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
   const isPhone = isPhoneSized(props.panelWidth);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
 
   const languages = (getVariable<VariableListStr>('CHARACTER', 'LANGUAGE_IDS')?.value ?? []).map((langId) => {
     const lang = props.content.languages.find((lang) => `${lang.id}` === langId);
@@ -852,7 +852,7 @@ export default function DetailsPanel(props: { content: ContentPackage; panelHeig
 }
 
 function OrgPlaySection(props: { setDebouncedInfo: (info: any) => void }) {
-  const character = useRecoilValue(characterState);
+  const character = useAtomValue(characterState);
 
   const [openedAdventureId, setOpenedAdventureId] = useState<string | null>(null);
   const [user, setUser] = useState<PublicUser | null>(getCachedPublicUser());

@@ -46,17 +46,17 @@ export function Component() {
           >
             This character sheet is private. To view it, you need one of the following:
             <p>
-              <Text fs='italic' c='gray.5'>
+              <Text fs='italic' c='gray.2'>
                 • Have the sheet be publicly accessible •
               </Text>
             </p>
             <p>
-              <Text fs='italic' c='gray.5'>
+              <Text fs='italic' c='gray.2'>
                 • Be the owner of a campaign the character is in •
               </Text>
             </p>
             <p>
-              <Text fs='italic' c='gray.5'>
+              <Text fs='italic' c='gray.2'>
                 • Be the owner of the character •
               </Text>
             </p>

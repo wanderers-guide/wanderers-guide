@@ -74,7 +74,7 @@ import {
 } from '@variables/variable-utils';
 import * as JsSearch from 'js-search';
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import {
   AbilityBlock,
   AbilityBlockType,
@@ -113,7 +113,7 @@ export function SelectContentButton<T extends Record<string, any> = Record<strin
     description?: ReactNode;
   };
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const [selected, setSelected] = useState<T | undefined>();
   const [debouncedSelected] = useDebouncedValue(selected, 3000);
 
@@ -319,7 +319,7 @@ export default function SelectContentModal({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
-  // const [_advancedSearch, setAdvancedSearch] = useRecoilState(advancedSearchData);
+  // const [_advancedSearch, setAdvancedSearch] = useAtom(advancedSearchData);
 
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
 
@@ -445,7 +445,7 @@ export default function SelectContentModal({
   useEffect(() => {
     if (!selectedClassFeat) return;
 
-    if (hasTraitType('DEDICATION', selectedClassFeat.traits)) {
+    if (hasTraitType('DEDICATION', selectedClassFeat.traits ?? undefined)) {
       setClassFeatTab('add-dedication');
     } else if (
       intersection(getAllArchetypeTraitVariables('CHARACTER').map((v) => v.value) ?? [], selectedClassFeat.traits ?? [])
@@ -1391,7 +1391,7 @@ export function GenericSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   if (props.option._content_type === 'language') {
     // Route to language option
@@ -1541,7 +1541,7 @@ export function GenericSelectionOption(props: {
           )}
           <Text fz='sm'>{props.option.name}</Text>
           {props.selected || (hovered && !disabled) ? (
-            <Text c='gray.5' fw={600} fz='sm'>
+            <Text c='gray.2' fw={600} fz='sm'>
               {nextTotal}
             </Text>
           ) : (
@@ -1746,11 +1746,11 @@ export function FeatSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilValue(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const character = useAtomValue(characterState);
   const DETECT_PREREQUS = character?.options?.auto_detect_prerequisites ?? false;
 
-  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', props.feat.prerequisites);
+  const prereqMet = DETECT_PREREQUS && meetsPrerequisites('CHARACTER', props.feat.prerequisites ?? undefined);
 
   // Hide deprecated options
   if (props.feat.meta_data?.deprecated && !props.selected) return null;
@@ -1797,11 +1797,13 @@ export function FeatSelectionOption(props: {
           size='xs'
           traitIds={props.feat.traits ?? []}
           rarity={props.feat.rarity}
-          availability={props.feat.availability}
+          availability={props.feat.availability ?? undefined}
         />
       }
       showButton={props.showButton}
-      level={props.displayLevel && props.feat.meta_data?.unselectable !== true ? props.feat.level : undefined}
+      level={
+        props.displayLevel && props.feat.meta_data?.unselectable !== true ? (props.feat.level ?? undefined) : undefined
+      }
       selected={props.selected}
       onClick={() =>
         openDrawer({
@@ -1832,7 +1834,7 @@ export function ActionSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.action.meta_data?.deprecated && !props.selected) return null;
@@ -1855,7 +1857,7 @@ export function ActionSelectionOption(props: {
           size='xs'
           traitIds={props.action.traits ?? []}
           rarity={props.action.rarity}
-          availability={props.action.availability}
+          availability={props.action.availability ?? undefined}
           skill={props.action.meta_data?.skill}
         />
       }
@@ -1891,8 +1893,8 @@ export function ClassFeatureSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilValue(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const character = useAtomValue(characterState);
 
   // Find first selected option
   let selectedOption: OperationSelectOptionCustom | null = null;
@@ -1928,11 +1930,11 @@ export function ClassFeatureSelectionOption(props: {
           size='xs'
           traitIds={props.classFeature.traits ?? []}
           rarity={props.classFeature.rarity}
-          availability={props.classFeature.availability}
+          availability={props.classFeature.availability ?? undefined}
           skill={props.classFeature.meta_data?.skill}
         />
       }
-      level={props.classFeature.level}
+      level={props.classFeature.level ?? undefined}
       showButton={props.showButton}
       selected={props.selected}
       onClick={() =>
@@ -1965,7 +1967,7 @@ export function HeritageSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.heritage.meta_data?.deprecated && !props.selected) return null;
@@ -1988,7 +1990,7 @@ export function HeritageSelectionOption(props: {
           size='xs'
           traitIds={props.heritage.traits ?? []}
           rarity={props.heritage.rarity}
-          availability={props.heritage.availability}
+          availability={props.heritage.availability ?? undefined}
           skill={props.heritage.meta_data?.skill}
         />
       }
@@ -2024,7 +2026,7 @@ export function PhysicalFeatureSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.physicalFeature.meta_data?.deprecated && !props.selected) return null;
@@ -2047,7 +2049,7 @@ export function PhysicalFeatureSelectionOption(props: {
           size='xs'
           traitIds={props.physicalFeature.traits ?? []}
           rarity={props.physicalFeature.rarity}
-          availability={props.physicalFeature.availability}
+          availability={props.physicalFeature.availability ?? undefined}
           skill={props.physicalFeature.meta_data?.skill}
         />
       }
@@ -2087,7 +2089,7 @@ export function ModeSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.mode.meta_data?.deprecated && !props.selected) return null;
@@ -2107,7 +2109,7 @@ export function ModeSelectionOption(props: {
           size='xs'
           traitIds={props.mode.traits ?? []}
           rarity={props.mode.rarity}
-          availability={props.mode.availability}
+          availability={props.mode.availability ?? undefined}
           skill={props.mode.meta_data?.skill}
         />
       }
@@ -2143,7 +2145,7 @@ export function SenseSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.sense.meta_data?.deprecated && !props.selected) return null;
@@ -2166,7 +2168,7 @@ export function SenseSelectionOption(props: {
           size='xs'
           traitIds={props.sense.traits ?? []}
           rarity={props.sense.rarity}
-          availability={props.sense.availability}
+          availability={props.sense.availability ?? undefined}
           skill={props.sense.meta_data?.skill}
         />
       }
@@ -2202,7 +2204,7 @@ export function ClassSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const classHp = getStatDisplay('CHARACTER', 'MAX_HEALTH_CLASS_PER_LEVEL', props.class_.operations ?? [], 'READ');
   const attributes = getStatBlockDisplay(
@@ -2330,8 +2332,8 @@ export function AncestrySelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const character = useRecoilValue(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const character = useAtomValue(characterState);
 
   const operations = character
     ? getAdjustedAncestryOperations('CHARACTER', character, props.ancestry.operations ?? [])
@@ -2488,7 +2490,7 @@ export function BackgroundSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -2590,7 +2592,7 @@ export function ArchetypeSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.archetype.deprecated && !props.selected) return null;
@@ -2650,7 +2652,7 @@ export function VersatileHeritageSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.versatileHeritage.deprecated && !props.selected) return null;
@@ -2715,7 +2717,7 @@ export function ItemSelectionOption(props: {
   includeAdd?: boolean;
   onAdd?: (item: Item, type: 'GIVE' | 'BUY' | 'FORMULA') => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.item.meta_data?.deprecated && !props.selected) return null;
@@ -2735,7 +2737,7 @@ export function ItemSelectionOption(props: {
           size='xs'
           traitIds={props.item.traits ?? []}
           rarity={props.item.rarity}
-          availability={props.item.availability}
+          availability={props.item.availability ?? undefined}
           pfSize={props.item.size}
           archaic={isItemArchaic(props.item)}
         />
@@ -2800,7 +2802,7 @@ export function SpellSelectionOption(props: {
   px?: number;
   prefix?: React.ReactNode;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.spell.meta_data?.deprecated && !props.selected) return null;
@@ -2830,7 +2832,7 @@ export function SpellSelectionOption(props: {
             size='xs'
             traitIds={props.spell.traits ?? []}
             rarity={props.spell.rarity}
-            availability={props.spell.availability}
+            availability={props.spell.availability ?? undefined}
           />
         )
       }
@@ -2874,7 +2876,7 @@ export function TraitSelectionOption(props: {
   onCopy?: (id: number) => void;
 }) {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.trait.meta_data?.deprecated && !props.selected) return null;
@@ -2929,7 +2931,7 @@ export function LanguageSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.language.deprecated && !props.selected) return null;
@@ -2955,7 +2957,7 @@ export function LanguageSelectionOption(props: {
           size='xs'
           traitIds={[]}
           rarity={props.language.rarity}
-          availability={props.language.availability}
+          availability={props.language.availability ?? undefined}
         />
       }
       showButton={props.showButton}
@@ -2990,7 +2992,7 @@ export function ClassArchetypeSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Hide deprecated options
   if (props.classArchetype.deprecated && !props.selected) return null;
@@ -3050,8 +3052,8 @@ export function CreatureSelectionOption(props: {
   onDelete?: (id: number) => void;
   onCopy?: (id: number) => void;
 }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
 
   // Hide deprecated options
   if (props.creature.deprecated && !props.selected) return null;

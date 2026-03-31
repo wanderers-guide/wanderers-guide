@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import Logo from '../assets/images/logo.png';
-import { Group, Image } from '@mantine/core';
+import { Group, Image, useMantineColorScheme } from '@mantine/core';
 import LogoIcon from '@assets/images/LogoIcon';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { characterState } from '@atoms/characterAtoms';
 import { GUIDE_BLUE } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
@@ -11,8 +11,9 @@ import { renderToString } from 'react-dom/server';
 
 export default function WanderersGuideLogo(props: { size: number }) {
   const navigate = useNavigate();
+  const { colorScheme } = useMantineColorScheme();
 
-  const activeCharacer = useRecoilValue(characterState);
+  const activeCharacer = useAtomValue(characterState);
   const color =
     activeCharacer?.details?.sheet_theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE;
 
@@ -43,6 +44,7 @@ export default function WanderersGuideLogo(props: { size: number }) {
           objectFit: 'contain',
           objectPosition: 'center',
           cursor: 'pointer',
+          filter: colorScheme === 'light' ? 'brightness(0)' : undefined,
         }}
         onClick={() => navigate('/')}
       />

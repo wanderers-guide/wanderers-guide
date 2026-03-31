@@ -429,7 +429,7 @@ function SelectionFilteredSpell(props: {
               min={0}
               max={10}
               w={70}
-              value={rank}
+              value={rank ?? undefined}
               onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -468,7 +468,7 @@ function SelectionFilteredSpell(props: {
               min={0}
               max={10}
               w={70}
-              value={rank}
+              value={rank ?? undefined}
               onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -479,7 +479,7 @@ function SelectionFilteredSpell(props: {
               min={0}
               max={10}
               w={90}
-              value={casts}
+              value={casts ?? undefined}
               onChange={(val) => setCasts(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -966,7 +966,7 @@ function SelectionPredefinedSpell(props: {
               min={0}
               max={10}
               w={70}
-              value={rank}
+              value={rank ?? undefined}
               onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -1005,7 +1005,7 @@ function SelectionPredefinedSpell(props: {
               min={0}
               max={10}
               w={70}
-              value={rank}
+              value={rank ?? undefined}
               onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -1016,7 +1016,7 @@ function SelectionPredefinedSpell(props: {
               min={0}
               max={10}
               w={90}
-              value={casts}
+              value={casts ?? undefined}
               onChange={(val) => setCasts(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -1588,7 +1588,7 @@ export function SelectionPredefinedCustomOption(props: {
         labelPosition='left'
         onClick={toggleOperations}
       />
-      <Collapse in={openedOperations}>
+      <Collapse expanded={openedOperations}>
         <Stack gap={10}>
           <OperationSection
             title={

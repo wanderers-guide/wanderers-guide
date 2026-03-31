@@ -76,8 +76,9 @@ export function CreateBackgroundModal(props: {
       name: '',
       rarity: 'COMMON' as Rarity,
       description: '',
-      operations: [] as Operation[] | undefined,
+      operations: [] as Operation[] | null,
       artwork_url: '',
+      deprecated: false,
       content_source_id: -1,
       version: '1.0',
     },
@@ -186,7 +187,7 @@ export function CreateBackgroundModal(props: {
               labelPosition='left'
               onClick={toggleOperations}
             />
-            <Collapse in={openedOperations}>
+            <Collapse expanded={openedOperations}>
               <Stack gap={10}>
                 <OperationSection
                   title={
@@ -215,7 +216,7 @@ export function CreateBackgroundModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  operations={form.values.operations}
+                  operations={form.values.operations ?? undefined}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

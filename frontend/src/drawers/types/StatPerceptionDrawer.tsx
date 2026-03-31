@@ -43,7 +43,7 @@ import {
   variableToLabel,
 } from '@variables/variable-utils';
 import { useMemo } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 
 export function StatPerceptionDrawerTitle(props: { data: { id: StoreID } }) {
   const variable = getVariable<VariableProf>(props.data.id, 'PERCEPTION');
@@ -67,7 +67,7 @@ export function StatPerceptionDrawerTitle(props: { data: { id: StoreID } }) {
 }
 
 export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Collect senses info
   const { data: abilityBlocks } = useQuery({
@@ -147,7 +147,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='description'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.5' fw={700} fz='sm'>
+                        <Text c='gray.2' fw={700} fz='sm'>
                           Description
                         </Text>
                       </Group>
@@ -165,11 +165,11 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='options'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.5' fw={700} fz='sm'>
+                        <Text c='gray.2' fw={700} fz='sm'>
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                          <Text fz='sm' c='gray.5' span>
+                          <Text fz='sm' c='gray.2' span>
                             {senses.precise.length}
                           </Text>
                         </Badge>
@@ -194,7 +194,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                                 {displaySense(sense)}
                               </Anchor>
                             ) : (
-                              <Text c='gray.5' size='md' span>
+                              <Text c='gray.2' size='md' span>
                                 {displaySense(sense)}
                               </Text>
                             )}
@@ -233,7 +233,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='description'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.5' fw={700} fz='sm'>
+                        <Text c='gray.2' fw={700} fz='sm'>
                           Description
                         </Text>
                       </Group>
@@ -253,11 +253,11 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='options'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.5' fw={700} fz='sm'>
+                        <Text c='gray.2' fw={700} fz='sm'>
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                          <Text fz='sm' c='gray.5' span>
+                          <Text fz='sm' c='gray.2' span>
                             {senses.imprecise.length}
                           </Text>
                         </Badge>
@@ -282,7 +282,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                                 {displaySense(sense)}
                               </Anchor>
                             ) : (
-                              <Text c='gray.5' size='md' span>
+                              <Text c='gray.2' size='md' span>
                                 {displaySense(sense)}
                               </Text>
                             )}
@@ -321,7 +321,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='description'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.5' fw={700} fz='sm'>
+                        <Text c='gray.2' fw={700} fz='sm'>
                           Description
                         </Text>
                       </Group>
@@ -338,11 +338,11 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                   <Accordion.Item value='options'>
                     <Accordion.Control>
                       <Group wrap='nowrap' justify='space-between' gap={0}>
-                        <Text c='gray.5' fw={700} fz='sm'>
+                        <Text c='gray.2' fw={700} fz='sm'>
                           Active
                         </Text>
                         <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-                          <Text fz='sm' c='gray.5' span>
+                          <Text fz='sm' c='gray.2' span>
                             {senses.vague.length}
                           </Text>
                         </Badge>
@@ -367,7 +367,7 @@ export function StatPerceptionDrawerContent(props: { data: { id: StoreID } }) {
                                 {displaySense(sense)}
                               </Anchor>
                             ) : (
-                              <Text c='gray.5' size='md' span>
+                              <Text c='gray.2' size='md' span>
                                 {displaySense(sense)}
                               </Text>
                             )}

@@ -132,13 +132,13 @@ export const GranularCreatureSchema = z.object({
     .array(
       z.object({
         name: z.string(),
-        action: ActionCostSchema.optional(),
-        traits: z.array(z.string()).optional(),
+        action: ActionCostSchema.nullish(),
+        traits: z.array(z.string()).nullish(),
         description: z.string(),
-        frequency: z.string().optional(),
-        trigger: z.string().optional(),
-        requirements: z.string().optional(),
-        special: z.string().optional(),
+        frequency: z.string().nullish(),
+        trigger: z.string().nullish(),
+        requirements: z.string().nullish(),
+        special: z.string().nullish(),
       })
     )
     .optional(),

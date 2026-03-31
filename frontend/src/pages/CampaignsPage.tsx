@@ -38,11 +38,11 @@ import { hasPatreonAccess } from '@utils/patreon';
 import { truncate } from 'lodash-es';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 
 export function Component() {
   setPageTitle(`Campaigns`);
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
   const navigate = useNavigate();
 
   const isPhone = useMediaQuery(phoneQuery());
@@ -86,7 +86,7 @@ export function Component() {
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <BlurBox bgColor='rgba(20, 21, 23, 0.827)'>
+        <BlurBox>
           <Group px='sm' justify='space-between' wrap='nowrap'>
             <Group gap={10} py={5}>
               {!isPhone && <IconFlag size='1.8rem' stroke={1.5} />}
@@ -187,7 +187,7 @@ export function Component() {
           {!isLoading && (data ?? []).length === 0 && (
             <BlurBox w={'100%'} h={200}>
               <Stack mt={50} gap={10}>
-                <Text ta='center' c='gray.5' fs='italic'>
+                <Text ta='center' c='gray.2' fs='italic'>
                   No campaigns found, want to create one?
                 </Text>
                 <Center>
@@ -287,17 +287,17 @@ function CampaignCard(props: { campaign: Campaign }) {
 
           <Card.Section className={classes.section} mb={0} px='md'>
             <Group justify='apart'>
-              <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5}>
+              <BlurBox px='xs' py={5}>
                 <HoverCard shadow='md' openDelay={1000} position='top' withinPortal>
                   <HoverCard.Target>
-                    <Title c='gray.3' order={4} className={classes.name}>
+                    <Title c='gray.2' order={4} className={classes.name}>
                       {truncate(props.campaign?.name || 'My Campaign', {
                         length: 30,
                       })}
                     </Title>
                   </HoverCard.Target>
                   <HoverCard.Dropdown py={5} px={10}>
-                    <Text c='gray.3' size='sm'>
+                    <Text c='gray.2' size='sm'>
                       {props.campaign?.name || 'My Campaign'}
                     </Text>
                   </HoverCard.Dropdown>
@@ -305,7 +305,7 @@ function CampaignCard(props: { campaign: Campaign }) {
               </BlurBox>
             </Group>
             {props.campaign?.description?.trim() ? (
-              <BlurBox bgColor='rgba(0, 0, 0, 0.5)' px='xs' py={5} mt={10}>
+              <BlurBox px='xs' py={5} mt={10}>
                 <ScrollArea h={60} my={5}>
                   <Text fz='xs'>{props.campaign.description.trim()}</Text>
                 </ScrollArea>

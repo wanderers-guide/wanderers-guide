@@ -5,7 +5,7 @@ import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
 import { CharacterInfo } from '@common/CharacterInfo';
 import Paginator from '@common/Paginator';
-import { CHARACTER_SLOT_CAP, ICON_BG_COLOR_HOVER } from '@constants/data';
+import { CHARACTER_SLOT_CAP } from '@constants/data';
 import { resetContentStore } from '@content/content-store';
 import exportToJSON from '@export/export-to-json';
 import exportToPDF from '@export/export-to-pdf';
@@ -32,6 +32,7 @@ import {
   Tooltip,
   VisuallyHidden,
   rem,
+  useMantineColorScheme,
   useMantineTheme,
 } from '@mantine/core';
 import { useForceUpdate, useHover, useMediaQuery } from '@mantine/hooks';
@@ -62,11 +63,11 @@ import { phoneQuery } from '@utils/mobile-responsive';
 import { hasPatreonAccess } from '@utils/patreon';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 
 export function Component() {
   setPageTitle(`Characters`);
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: [`find-character`],
@@ -78,7 +79,7 @@ export function Component() {
     enabled: !!session,
   });
 
-  const [_character, setCharacter] = useRecoilState(characterState);
+  const [_character, setCharacter] = useAtom(characterState);
   const navigate = useNavigate();
 
   const isPhone = useMediaQuery(phoneQuery());
@@ -135,13 +136,13 @@ export function Component() {
   return (
     <Center>
       <Box maw={875} w='100%'>
-        <BlurBox bgColor='rgba(20, 21, 23, 0.827)'>
+        <BlurBox>
           <Group px='sm' justify='space-between' wrap='nowrap'>
             <Group gap={10} py={5} wrap='nowrap'>
               {!isPhone && <IconUsers size='1.8rem' stroke={1.5} />}
-              <Title size={28} c='gray.0'>
+              <Title size={28}>
                 Characters
-                <Text pl={10} fz='xl' fw={500} c='gray.2' span>
+                <Text pl={10} fz='xl' fw={500} c='dimmed' span>
                   {data && reachedCharacterLimit ? `(${data.length}/${CHARACTER_SLOT_CAP})` : ''}
                 </Text>
               </Title>
@@ -155,7 +156,7 @@ export function Component() {
                   }}
                   loading={loadingCreateCharacter}
                   variant='outline'
-                  color='gray.0'
+                  color='gray'
                   size='lg'
                   radius='lg'
                   aria-label='Create Character'
@@ -177,7 +178,7 @@ export function Component() {
                       }}
                       loading={loadingImportCharacter}
                       variant='outline'
-                      color='gray.0'
+                      color='gray'
                       size='lg'
                       radius='lg'
                       aria-label='Import Character'
@@ -222,7 +223,7 @@ export function Component() {
                   }}
                   loading={loadingCreateRandomCharacter}
                   variant='outline'
-                  color='gray.0'
+                  color='gray'
                   size='lg'
                   radius='lg'
                   aria-label='Create Character'
@@ -310,7 +311,7 @@ export function Component() {
               onClose={() => setOpenedPathbuilderModal(false)}
             />
           </Group>
-          <Divider color='gray.2' />
+          <Divider />
           <Box py={5}>
             <TextInput
               style={{ flex: 1 }}
@@ -377,7 +378,7 @@ export function Component() {
           {!isLoading && (data ?? []).length === 0 && (
             <BlurBox w={'100%'} h={200}>
               <Stack mt={50} gap={10}>
-                <Text ta='center' c='gray.5' fs='italic'>
+                <Text ta='center' c='dimmed' fs='italic'>
                   No characters found, want to create one?
                 </Text>
                 <Center>
@@ -404,6 +405,7 @@ export function Component() {
 
 function CharacterCard(props: { character: Character; reachedCharacterLimit: boolean }) {
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const navigate = useNavigate();
   const isPhone = useMediaQuery(phoneQuery());
   const queryClient = useQueryClient();
@@ -411,8 +413,8 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
   const [loading, setLoading] = useState(false);
 
   const { hovered: hoveredMain, ref: refMain } = useHover();
-  const { hovered: hoveredEdit, ref: refEdit } = useHover<HTMLAnchorElement>();
-  const { hovered: hoveredOptions, ref: refOptions } = useHover<HTMLButtonElement>();
+  const { ref: refEdit } = useHover<HTMLAnchorElement>();
+  const { ref: refOptions } = useHover<HTMLButtonElement>();
 
   const openConfirmDeleteModal = (character: Character) =>
     modals.openConfirmModal({
@@ -446,7 +448,12 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
           cursor: isPlayable(props.character) ? 'pointer' : undefined,
           borderTopLeftRadius: theme.radius.md,
           borderTopRightRadius: theme.radius.md,
-          backgroundColor: hoveredMain && isPlayable(props.character) ? 'rgba(0, 0, 0, 0.15)' : undefined,
+          backgroundColor:
+            hoveredMain && isPlayable(props.character)
+              ? colorScheme === 'light'
+                ? 'rgba(255, 255, 255, 0.2)'
+                : 'rgba(0, 0, 0, 0.15)'
+              : undefined,
           position: 'relative',
         }}
         onClick={(e) => {
@@ -476,10 +483,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
           color='gray'
           radius='xl'
           ref={refEdit}
-          style={{
-            flex: 1,
-            backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
-          }}
+          style={{ flex: 1 }}
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -492,17 +496,7 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
         </Button>
         <Menu shadow='md' width={200} withArrow withinPortal>
           <Menu.Target>
-            <ActionIcon
-              size='lg'
-              variant='light'
-              color='gray'
-              radius='xl'
-              aria-label='Options'
-              ref={refOptions}
-              style={{
-                backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
-              }}
-            >
+            <ActionIcon size={30} variant='light' color='gray' radius='xl' aria-label='Options' ref={refOptions}>
               <IconDots style={{ width: '60%', height: '60%' }} stroke={1.5} />
             </ActionIcon>
           </Menu.Target>

@@ -84,7 +84,7 @@ export function CreateSpellModal(props: {
         traditions: spell.traditions ?? [],
       });
       form.reset();
-      setTraits(await fetchTraits(spell.traits));
+      setTraits(await fetchTraits(spell.traits ?? undefined));
       setMetaData(spell.meta_data ?? {});
       refreshDisplayDescription();
 
@@ -106,7 +106,7 @@ export function CreateSpellModal(props: {
       rank: 0,
       traditions: [],
       rarity: 'COMMON',
-      availability: undefined as Availability | undefined,
+      availability: null as Availability | null,
       cast: null,
       defense: '',
       cost: '',
@@ -318,7 +318,7 @@ export function CreateSpellModal(props: {
               labelPosition='left'
               onClick={toggleAdditional}
             />
-            <Collapse in={openedAdditional}>
+            <Collapse expanded={openedAdditional}>
               <Stack gap={10}>
                 <Textarea label='Cost' minRows={1} maxRows={4} autosize {...form.getInputProps('cost')} />
 
@@ -427,7 +427,7 @@ export function CreateSpellModal(props: {
               labelPosition='left'
               onClick={toggleHeightened}
             />
-            <Collapse in={openedHeightened}>
+            <Collapse expanded={openedHeightened}>
               <Stack gap={10}>
                 {(form.values.heightened?.text ?? []).map((option, index) => (
                   <Stack key={index}>

@@ -32,7 +32,7 @@ export function LanguageDrawerTitle(props: { data: { id?: number; language?: Lan
               <Title order={3}>{language.name}</Title>
             </Box>
             <Box>
-              <TraitsDisplay traitIds={[]} rarity={language.rarity} availability={language.availability} />
+              <TraitsDisplay traitIds={[]} rarity={language.rarity} availability={language.availability ?? undefined} />
             </Box>
           </Group>
         </Group>
@@ -75,7 +75,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
       <Box>
         {language.speakers && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Speakers
             </Text>{' '}
             {language.speakers}
@@ -83,7 +83,7 @@ export function LanguageDrawerContent(props: { data: { id?: number; language?: L
         )}
         {language.script && (
           <IndentedText ta='justify'>
-            <Text fw={600} c='gray.5' span>
+            <Text fw={600} c='gray.2' span>
               Script
             </Text>{' '}
             {language.script}

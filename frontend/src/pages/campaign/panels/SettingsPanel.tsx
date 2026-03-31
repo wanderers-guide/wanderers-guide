@@ -36,7 +36,7 @@ import {
   IconHexagonalPrism,
 } from '@tabler/icons-react';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { useQuery } from '@tanstack/react-query';
 import {
   defineDefaultSources,
@@ -68,11 +68,11 @@ export default function SettingsPanel(props: {
 
   const [isValidImageURL, setIsValidImageURL] = useState(true);
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const [openedOperations, setOpenedOperations] = useState(false);
 
-  const [user, setUser] = useRecoilState(userState);
+  const [user, setUser] = useAtom(userState);
   useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
@@ -391,7 +391,7 @@ export default function SettingsPanel(props: {
                   />
                 ))}
                 {(!user?.subscribed_content_sources || user?.subscribed_content_sources?.length === 0) && (
-                  <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+                  <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
                     No subscribed bundles found.{' '}
                     <Anchor fz='sm' href='/homebrew'>
                       Go add some!

@@ -21,6 +21,7 @@ import {
   Title,
   UnstyledButton,
   useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { ContextModalProps, modals } from '@mantine/modals';
 import { useState } from 'react';
@@ -31,7 +32,7 @@ import { IconBulbFilled, IconSparkles } from '@tabler/icons-react';
 import { generateEncounters } from '@ai/open-ai-handler';
 import { showNotification } from '@mantine/notifications';
 import { set } from 'node_modules/cypress/types/lodash';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import RichText from '@common/RichText';
 import { calculateDifficulty } from '@pages/campaign/panels/EncountersPanel';
@@ -47,6 +48,7 @@ export default function GenerateEncounterModal({
   onComplete: (encounter: Encounter) => void;
 }>) {
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const [partySize, setPartySize] = useState(innerProps.partySize);
   const [partyLevel, setPartyLevel] = useState(innerProps.partyLevel);
   const [description, setDescription] = useState('');
@@ -124,7 +126,7 @@ export default function GenerateEncounterModal({
           py={15}
           pr={5}
           style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
             borderColor: theme.colors['dark'][8],
           }}
         >
@@ -150,7 +152,7 @@ export default function GenerateEncounterModal({
 
 function EncounterCard(props: { encounter: Encounter; onClick: () => void }) {
   const theme = useMantineTheme();
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
 
   function getCreatureCounts(combatants: Combatant[]) {
     const grouped = groupBy(combatants, (c) => c.creature?.id);

@@ -78,9 +78,10 @@ export function CreateClassModal(props: {
       rarity: 'COMMON' as Rarity,
       description: '',
       skill_training_base: 0,
-      operations: [] as Operation[] | undefined,
+      operations: [] as Operation[] | null,
       trait_id: -1,
       artwork_url: '',
+      deprecated: false,
       content_source_id: -1,
       version: '1.0',
     },
@@ -196,7 +197,7 @@ export function CreateClassModal(props: {
               labelPosition='left'
               onClick={toggleOperations}
             />
-            <Collapse in={openedOperations}>
+            <Collapse expanded={openedOperations}>
               <Stack gap={10}>
                 <OperationSection
                   title={
@@ -225,7 +226,7 @@ export function CreateClassModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  operations={form.values.operations}
+                  operations={form.values.operations ?? undefined}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

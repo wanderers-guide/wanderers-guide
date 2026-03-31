@@ -24,7 +24,7 @@ export function LoginButton(props: { onClick: () => void }) {
       }}
     >
       <Group gap={2} wrap='nowrap'>
-        <Text fz='sm' c='gray.3' fw={500} style={{ textWrap: 'nowrap' }}>
+        <Text fz='sm' c='gray.2' fw={500} style={{ textWrap: 'nowrap' }}>
           Sign in{' '}
           <Text fz='sm' c='dimmed' span>
             |

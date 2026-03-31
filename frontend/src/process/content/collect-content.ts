@@ -30,7 +30,7 @@ export function collectEntityAbilityBlocks(
   const feats = blocks
     .filter((block) => block.type === 'feat' && featIds.includes(`${block.id}`))
     .sort((a, b) => {
-      if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== null && b.level !== null) {
         if (a.level !== b.level) {
           return a.level - b.level;
         }
@@ -39,7 +39,7 @@ export function collectEntityAbilityBlocks(
     });
 
   const generalAndSkillFeats = feats.filter((feat) => {
-    return hasTraitType('GENERAL', feat.traits) || hasTraitType('SKILL', feat.traits);
+    return hasTraitType('GENERAL', feat.traits ?? undefined) || hasTraitType('SKILL', feat.traits ?? undefined);
   });
 
   const classFeats = feats.filter((feat) => {
@@ -93,7 +93,7 @@ export function collectEntityAbilityBlocks(
     otherFeats,
 
     classFeatures: classFeatures.sort((a, b) => {
-      if (a.level !== undefined && b.level !== undefined) {
+      if (a.level !== null && b.level !== null) {
         if (a.level !== b.level) {
           return a.level - b.level;
         }
@@ -196,7 +196,7 @@ export function collectEntitySpellcasting(id: StoreID, entity: LivingEntity) {
       focus.push({
         spell_id: spellData.spellId,
         source: spellData.castingSource ?? '',
-        rank: spellData.rank,
+        rank: spellData.rank ?? 0,
       });
     } else if (spellData.type === 'INNATE') {
       innate.push({

@@ -41,7 +41,7 @@ import {
   proficiencyTypeToLabel,
   variableToLabel,
 } from '@variables/variable-utils';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { titleCase } from 'title-case';
 
 export function StatProfDrawerTitle(props: { data: { id: StoreID; variableName: string; isDC?: boolean } }) {
@@ -415,7 +415,7 @@ function getProfDescription(variableName: string) {
 }
 
 function SkillActionsSection(props: { variableName: string }) {
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: actions } = useQuery({
     queryKey: [`find-skill-actions-${props.variableName}`, { variableName: props.variableName }],

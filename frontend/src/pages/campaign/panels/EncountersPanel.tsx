@@ -58,7 +58,7 @@ import { cloneDeep, debounce, isEqual, mean, truncate } from 'lodash-es';
 import { evaluate } from 'mathjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 
 export default function EncountersPanel(props: {
   panelHeight: number;
@@ -69,7 +69,7 @@ export default function EncountersPanel(props: {
   };
   zIndex?: number;
 }) {
-  const session = useRecoilValue(sessionState);
+  const session = useAtomValue(sessionState);
   const [_loading, setLoading] = useState(false);
 
   const {
@@ -161,7 +161,7 @@ export default function EncountersPanel(props: {
     name: 'Combat',
     icon: 'combat',
     color: GUIDE_BLUE,
-    campaign_id: props.campaign?.data.id,
+    campaign_id: props.campaign?.data.id ?? null,
     combatants: {
       list: [],
     },
@@ -888,7 +888,7 @@ function CombatantCard(props: {
   const isPhone = useMediaQuery(phoneQuery());
   const { hovered, ref } = useHover();
 
-  const [_creatureDrawer, openCreatureDrawer] = useRecoilState(creatureDrawerState);
+  const [_creatureDrawer, openCreatureDrawer] = useAtom(creatureDrawerState);
 
   // Initiative
 

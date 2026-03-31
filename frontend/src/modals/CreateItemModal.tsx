@@ -117,7 +117,7 @@ export function CreateItemModal(props: {
         },
       });
       form.reset();
-      setTraits(await fetchTraits(item.traits));
+      setTraits(await fetchTraits(item.traits ?? undefined));
       setArmorCategory(item.meta_data?.category as ItemMetaCategoryArmor);
       setArmorGroup(item.meta_data?.group as ItemMetaGroupArmor);
       setWeaponCategory(item.meta_data?.category as ItemMetaCategoryWeapon);
@@ -127,9 +127,9 @@ export function CreateItemModal(props: {
       setPotencyRune(item.meta_data?.runes?.potency);
       setPropertyRunes(item.meta_data?.runes?.property);
       setUpgradeSlots(item.meta_data?.starfinder?.slots);
-      setBaseItem(item.meta_data?.base_item);
+      setBaseItem(item.meta_data?.base_item ?? undefined);
       setBaseItemContent(item.meta_data?.base_item_content);
-      setMaterialType(item.meta_data?.material?.type);
+      setMaterialType(item.meta_data?.material?.type ?? undefined);
       refreshDisplayDescription();
 
       return item;
@@ -170,14 +170,14 @@ export function CreateItemModal(props: {
         gp: undefined,
         pp: undefined,
       },
-      bulk: undefined,
+      bulk: null,
       level: 0,
       rarity: 'COMMON',
       availability: undefined as Availability | undefined,
       traits: [],
       description: '',
       group: 'GENERAL',
-      hands: undefined,
+      hands: null,
       size: 'MEDIUM',
       craft_requirements: '',
       usage: '',
@@ -294,30 +294,30 @@ export function CreateItemModal(props: {
     (form.values.meta_data?.damage?.extra && form.values.meta_data.damage.extra.length > 0 ? 1 : 0) +
     ((weaponCategory || armorCategory) && (weaponCategory || armorCategory) ? 1 : 0) +
     ((weaponGroup || armorGroup) && (weaponGroup || armorGroup) ? 1 : 0) +
-    (form.values.meta_data?.range && form.values.meta_data.range > 0 ? 1 : 0) +
+    (form.values.meta_data?.range && Number(form.values.meta_data.range) > 0 ? 1 : 0) +
     (form.values.meta_data?.reload && form.values.meta_data.reload.length > 0 ? 1 : 0) +
     (form.values.meta_data?.starfinder?.capacity && form.values.meta_data.starfinder.capacity.length > 0 ? 1 : 0) +
-    (form.values.meta_data?.starfinder?.usage && form.values.meta_data.starfinder.usage > 0 ? 1 : 0) +
-    (form.values.meta_data?.damage?.dice && form.values.meta_data.damage?.dice > 0 ? 1 : 0) +
+    (form.values.meta_data?.starfinder?.usage && Number(form.values.meta_data.starfinder.usage) > 0 ? 1 : 0) +
+    (form.values.meta_data?.damage?.dice && Number(form.values.meta_data.damage?.dice) > 0 ? 1 : 0) +
     (form.values.meta_data?.starfinder?.slots?.length && form.values.meta_data.starfinder.slots.length > 0 ? 1 : 0) +
     (form.values.meta_data?.attack_bonus && form.values.meta_data.attack_bonus !== 0 ? 1 : 0) +
-    (form.values.meta_data?.ac_bonus && form.values.meta_data.ac_bonus > 0 ? 1 : 0) +
-    (form.values.meta_data?.check_penalty && form.values.meta_data.check_penalty < 0 ? 1 : 0) +
-    (form.values.meta_data?.speed_penalty && form.values.meta_data.speed_penalty < 0 ? 1 : 0) +
-    (form.values.meta_data?.dex_cap && form.values.meta_data.dex_cap > 0 ? 1 : 0) +
-    (form.values.meta_data?.strength && form.values.meta_data.strength > 0 ? 1 : 0) +
-    (form.values.meta_data?.bulk?.capacity && form.values.meta_data.bulk.capacity > 0 ? 1 : 0) +
-    (form.values.meta_data?.bulk?.held_or_stowed && form.values.meta_data.bulk.held_or_stowed > 0 ? 1 : 0) +
-    (form.values.meta_data?.bulk?.ignored && form.values.meta_data.bulk.ignored > 0 ? 1 : 0) +
+    (form.values.meta_data?.ac_bonus && Number(form.values.meta_data.ac_bonus) > 0 ? 1 : 0) +
+    (form.values.meta_data?.check_penalty && Number(form.values.meta_data.check_penalty) < 0 ? 1 : 0) +
+    (form.values.meta_data?.speed_penalty && Number(form.values.meta_data.speed_penalty) < 0 ? 1 : 0) +
+    (form.values.meta_data?.dex_cap && Number(form.values.meta_data.dex_cap) > 0 ? 1 : 0) +
+    (form.values.meta_data?.strength && Number(form.values.meta_data.strength) > 0 ? 1 : 0) +
+    (form.values.meta_data?.bulk?.capacity && Number(form.values.meta_data.bulk.capacity) > 0 ? 1 : 0) +
+    (form.values.meta_data?.bulk?.held_or_stowed && Number(form.values.meta_data.bulk.held_or_stowed) > 0 ? 1 : 0) +
+    (form.values.meta_data?.bulk?.ignored && Number(form.values.meta_data.bulk.ignored) > 0 ? 1 : 0) +
     (strikingRune && strikingRune > 0 ? 1 : 0) +
     (resilientRune && resilientRune > 0 ? 1 : 0) +
     (potencyRune && potencyRune > 0 ? 1 : 0) +
     (propertyRunes && propertyRunes.length > 0 ? 1 : 0) +
     (materialType && materialType.length > 0 ? 1 : 0) +
     (form.values.meta_data?.material?.grade && form.values.meta_data.material.grade.length > 0 ? 1 : 0) +
-    (form.values.meta_data?.hardness && form.values.meta_data.hardness > 0 ? 1 : 0) +
-    (form.values.meta_data?.hp_max && form.values.meta_data.hp_max > 0 ? 1 : 0) +
-    (form.values.meta_data?.broken_threshold && form.values.meta_data.broken_threshold > 0 ? 1 : 0) +
+    (form.values.meta_data?.hardness && Number(form.values.meta_data.hardness) > 0 ? 1 : 0) +
+    (form.values.meta_data?.hp_max && Number(form.values.meta_data.hp_max) > 0 ? 1 : 0) +
+    (form.values.meta_data?.broken_threshold && Number(form.values.meta_data.broken_threshold) > 0 ? 1 : 0) +
     (form.values.meta_data?.is_shoddy ? 1 : 0) +
     (form.values.meta_data?.unselectable ? 1 : 0) +
     ((form.values.meta_data?.container_default_items ?? []).length > 0 ? 1 : 0) +
@@ -467,7 +467,7 @@ export function CreateItemModal(props: {
                 labelPosition='left'
                 onClick={toggleAdditional}
               />
-              <Collapse in={openedAdditional}>
+              <Collapse expanded={openedAdditional}>
                 <Stack gap={10}>
                   <Box pb={5}>
                     <ItemSelect
@@ -1109,7 +1109,7 @@ export function CreateItemModal(props: {
               labelPosition='left'
               onClick={toggleOperations}
             />
-            <Collapse in={openedOperations}>
+            <Collapse expanded={openedOperations}>
               <Stack gap={10}>
                 <OperationSection
                   title={
@@ -1138,7 +1138,7 @@ export function CreateItemModal(props: {
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
-                  operations={form.values.operations}
+                  operations={form.values.operations ?? undefined}
                   onChange={(operations) => form.setValues({ ...form.values, operations })}
                 />
                 <Divider />

@@ -1,3 +1,4 @@
+import React from 'react';
 import { isItemArmor, isItemRangedWeapon, isItemWeapon } from '@items/inv-utils';
 import { Item, ItemGroup } from '@schemas/content';
 import { hasTraitType } from '@utils/traits';
@@ -46,7 +47,7 @@ type ItemIconType =
   | 'HEAVY_BARDING'
   | 'HIGH_TECH_GUN';
 
-export const getIconMap = (size: string, color: string): Record<ItemIconType, JSX.Element> => ({
+export const getIconMap = (size: string, color: string): Record<ItemIconType, React.JSX.Element> => ({
   GENERAL: <GiSwapBag color={color} size={size} />,
   ARMOR: <GiChestArmor color={color} size={size} />,
   WEAPON: <GiBroadsword color={color} size={size} />,
@@ -74,15 +75,15 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
     type = 'UNARMED';
   }
 
-  if (hasTraitType('BOMB', props.item.traits)) {
+  if (hasTraitType('BOMB', props.item.traits ?? undefined)) {
     type = 'BOMB';
   }
 
-  if (hasTraitType('STAFF', props.item.traits)) {
+  if (hasTraitType('STAFF', props.item.traits ?? undefined)) {
     type = 'STAFF';
   }
 
-  if (hasTraitType('WAND', props.item.traits)) {
+  if (hasTraitType('WAND', props.item.traits ?? undefined)) {
     type = 'WAND';
   }
 
@@ -96,7 +97,7 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
   }
 
   if (isItemArmor(props.item)) {
-    if (hasTraitType('COMPANION', props.item.traits)) {
+    if (hasTraitType('COMPANION', props.item.traits ?? undefined)) {
       if (props.item.meta_data?.category === 'light') {
         type = 'LIGHT_BARDING';
       } else if (props.item.meta_data?.category === 'heavy') {
@@ -121,9 +122,9 @@ export function ItemIcon(props: { item: Item; size: string; color: string; useDe
 
   if (
     isItemWeapon(props.item) &&
-    hasTraitType('TECH', props.item.traits) &&
+    hasTraitType('TECH', props.item.traits ?? undefined) &&
     props.item.meta_data?.range &&
-    props.item.meta_data.range > 0
+    Number(props.item.meta_data.range) > 0
   ) {
     type = 'HIGH_TECH_GUN';
   }

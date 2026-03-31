@@ -54,7 +54,7 @@ import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
 import useRefresh from '@utils/use-refresh';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import FantasyGen_dev from '@assets/images/fantasygen_dev.png';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -88,7 +88,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
   const isPhone = useMediaQuery(phoneQuery());
 
   const queryClient = useQueryClient();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { character, setCharacter } = useCharacter(props.characterId, {
     type: 'SIMPLE',
@@ -99,7 +99,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
 
   const [openedOperations, setOpenedOperations] = useState(false);
 
-  const [user, setUser] = useRecoilState(userState);
+  const [user, setUser] = useAtom(userState);
   useQuery({
     queryKey: [`find-account-self`],
     queryFn: async () => {
@@ -482,7 +482,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                   />
                 ))}
                 {(!user?.subscribed_content_sources || user?.subscribed_content_sources?.length === 0) && (
-                  <Text c='gray.5' fz='sm' ta='center' fs='italic' py={20}>
+                  <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
                     No subscribed bundles found.{' '}
                     <Anchor fz='sm' href='/homebrew'>
                       Go add some!
@@ -998,7 +998,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
               <ScrollArea h={150} scrollbars='y'>
                 <Stack gap={5}>
                   {apiClients?.map((client, index) => (
-                    <BlurBox key={index} p='sm' bgColor={theme.colors.dark[6]}>
+                    <BlurBox key={index} p='sm'>
                       <Stack gap={5}>
                         <Group>
                           <DisplayIcon width={25} strValue={client?.image_url} />

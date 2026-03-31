@@ -396,8 +396,8 @@ export function getVariableBonuses(
   id: StoreID,
   name: string
 ): {
-  value?: number | undefined;
-  type?: string | undefined;
+  value?: number | null;
+  type?: string | null;
   text: string;
   source: string;
   timestamp: number;
@@ -414,7 +414,7 @@ export function getVariableBonuses(
     }
     return {
       ...bonus,
-      value: bonus.value,
+      value: bonus.value ?? undefined,
     };
   });
 }

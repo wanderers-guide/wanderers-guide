@@ -12,14 +12,16 @@ import { DrawerType } from '@schemas/index';
 import { getStatBlockDisplay } from '@variables/initial-stats-display';
 import { getAllAttributeVariables } from '@variables/variable-manager';
 import { useState } from 'react';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
+import { DrawerStateSet } from '@common/rich_text_input/ContentLinkExtension';
 
 export function BackgroundDrawerTitle(props: {
   data: { id?: number; background?: Background; onSelect?: () => void };
 }) {
   const id = props.data.id;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: _background } = useQuery({
     queryKey: [`find-background-${id}`, { id }],
@@ -82,7 +84,7 @@ export function BackgroundDrawerContent(props: {
     },
   });
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   if (!data || !data.background) {
     return (
@@ -102,7 +104,7 @@ export function BackgroundDrawerContent(props: {
     <Stack>
       <BackgroundInitialOverview background={data.background} mode='READ' />
       {props.data.showOperations && (
-        <ShowOperationsButton name={data.background.name} operations={data.background.operations} />
+        <ShowOperationsButton name={data.background.name} operations={data.background.operations ?? undefined} />
       )}
     </Stack>
   );
@@ -115,8 +117,8 @@ export function BackgroundInitialOverview(props: {
 }) {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
-  const charState = useRecoilState(characterState);
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const charState = useAtom(characterState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Reading thru operations to get display UI
   const MODE = props.mode;
@@ -202,7 +204,7 @@ export function BackgroundInitialOverview(props: {
                   position: 'relative',
                 }}
               >
-                <Text c='gray.5' ta='center'>
+                <Text c='gray.2' ta='center'>
                   Attribute Boost
                 </Text>
                 <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
@@ -222,11 +224,7 @@ export function convertBackgroundOperationsIntoUI(
   mode: 'READ' | 'READ/WRITE',
   operationResults: OperationResult[],
   charState: [Character | null, SetterOrUpdater<Character | null>],
-  openDrawer: SetterOrUpdater<{
-    type: DrawerType;
-    data: any;
-    extra?: any;
-  } | null>
+  openDrawer: DrawerStateSet
 ) {
   const backgroundOperations = background.operations ?? [];
   const MODE = mode;

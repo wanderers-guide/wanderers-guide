@@ -15,7 +15,8 @@ import { StoreID } from '@schemas/variables';
 import { isCharacter } from '@utils/type-fixing';
 import { cloneDeep } from 'lodash-es';
 import { useNavigate } from 'react-router-dom';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 export function selectCondition(currentConditions: Condition[], addCondition: (condition: Condition) => void) {
   selectContent(
@@ -134,7 +135,7 @@ export function ConditionPills(props: {
                   ) : (
                     <Button
                       variant='light'
-                      color='gray'
+                      color='dark.4'
                       size='compact-xs'
                       mr={15}
                       onClick={() => {
@@ -221,7 +222,7 @@ export default function MainConditionSection(props: {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <BlurBox>

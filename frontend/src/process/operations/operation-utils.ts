@@ -395,10 +395,10 @@ async function getAbilityBlockList(id: StoreID, operationUUID: string, filters: 
   }
 
   if (filters.level.min !== undefined) {
-    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== undefined && ab.level >= filters.level.min!);
+    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== null && ab.level >= filters.level.min!);
   }
   if (filters.level.max !== undefined) {
-    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== undefined && ab.level <= filters.level.max!);
+    abilityBlocks = abilityBlocks.filter((ab) => ab.level !== null && ab.level <= filters.level.max!);
   }
 
   if (filters.isFromAncestry) {

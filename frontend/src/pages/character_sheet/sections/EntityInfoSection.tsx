@@ -7,7 +7,8 @@ import { getHotkeyHandler } from '@mantine/hooks';
 import { StoreID } from '@schemas/variables';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { confirmExperience, handleRest } from '../entity-handler';
 import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@schemas/content';
@@ -25,7 +26,7 @@ export default function EntityInfoSection(props: {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const expRef = useRef<HTMLInputElement>(null);
   const [exp, setExp] = useState<string | undefined>();
@@ -144,7 +145,7 @@ export default function EntityInfoSection(props: {
             </Stack>
             <Stack gap={0}>
               <Box maw={80}>
-                <Text fz='xs' ta='center' c='gray.3'>
+                <Text fz='xs' ta='center' c='gray.2'>
                   Lvl. {props.entity ? getEntityLevel(props.entity) : '?'}
                 </Text>
               </Box>

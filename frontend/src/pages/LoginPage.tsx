@@ -18,7 +18,7 @@ import DicordIcon from '../assets/images/discord-icon.png';
 import GitHubIcon from '../assets/images/github-icon.png';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { sessionState } from '@atoms/supabaseAtoms';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { useAtom, useAtomValue } from 'jotai';
 import { useEffect, useState } from 'react';
 import { setPageTitle } from '@utils/document-change';
 import { clearUserData } from '@auth/user-manager';
@@ -31,7 +31,7 @@ export function Component() {
 
   const theme = useMantineTheme();
   const navigate = useNavigate();
-  const [session, setSession] = useRecoilState(sessionState);
+  const [session, setSession] = useAtom(sessionState);
 
   const [searchParams] = useSearchParams();
   useEffect(() => {

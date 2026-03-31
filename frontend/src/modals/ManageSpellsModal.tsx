@@ -18,6 +18,7 @@ import {
   TextInput,
   Title,
   useMantineTheme,
+  useMantineColorScheme,
 } from '@mantine/core';
 import { isCantrip, isNormalSpell, isRitual } from '@spells/spell-utils';
 import { IconPlus, IconSearch } from '@tabler/icons-react';
@@ -31,7 +32,8 @@ import useRefresh from '@utils/use-refresh';
 import * as JsSearch from 'js-search';
 import { groupBy } from 'lodash-es';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 export default function ManageSpellsModal(props: {
   id: StoreID;
@@ -52,7 +54,7 @@ export default function ManageSpellsModal(props: {
   const isRituals = props.source === 'RITUALS';
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: allRawSpells, isFetching } = useQuery({
     queryKey: [`find-spells-in-manage-spells-modal`, { entityId: props.entity?.id, source: props.source }],
@@ -212,7 +214,7 @@ const SlotsSection = (props: {
   };
 }) => {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const [displaySlots, refreshSlots] = useRefresh();
 
   const { slots } = props;
@@ -362,7 +364,8 @@ const ListSection = (props: {
   const isRituals = props.source === 'RITUALS';
 
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const { colorScheme } = useMantineColorScheme();
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const [rankSelectSpell, setRankSelectSpell] = useState<Spell | null>(null);
 
@@ -414,7 +417,7 @@ const ListSection = (props: {
           onChange={(e) => props.setSearchQuery(e.target.value)}
           styles={{
             input: {
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
               borderColor: props.searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
             },
           }}

@@ -11,6 +11,7 @@ import { isItemWeapon } from '@items/inv-utils';
 import { getWeaponStats, parseOtherDamage } from '@items/weapon-handler';
 import {
   useMantineTheme,
+  useMantineColorScheme,
   Group,
   Stack,
   TextInput,
@@ -48,7 +49,8 @@ import { getAllSkillVariables } from '@variables/variable-manager';
 import { compileProficiencyType, variableToLabel } from '@variables/variable-utils';
 import { cloneDeep, flattenDeep } from 'lodash-es';
 import { useState, useMemo, useEffect } from 'react';
-import { useRecoilValue, useRecoilState, SetterOrUpdater } from 'recoil';
+import { useAtomValue, useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 interface ActionItem {
   id: number;
@@ -73,13 +75,14 @@ export default function SkillsActionsPanel(props: {
   const isPhone = isPhoneSized(props.panelWidth);
 
   const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const [skillsSearch, setSkillsSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [skillsSearchDebounced] = useDebouncedValue(skillsSearch, 200);
   const [searchQueryDebounced] = useDebouncedValue(searchQuery, 200);
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const [actionTypeFilter, setActionTypeFilter] = useState<ActionCost | 'ALL'>('ALL');
   const [actionSectionValue, setActionSectionValue] = useState<string>('weapon-attacks');
@@ -225,8 +228,8 @@ export default function SkillsActionsPanel(props: {
       (a) =>
         !a.meta_data?.skill &&
         (!a.requirements || a.requirements.trim().length === 0) &&
-        !hasTraitType('EXPLORATION', a.traits) &&
-        !hasTraitType('DOWNTIME', a.traits)
+        !hasTraitType('EXPLORATION', a.traits ?? undefined) &&
+        !hasTraitType('DOWNTIME', a.traits ?? undefined)
     );
   }, [actions]);
 
@@ -274,19 +277,19 @@ export default function SkillsActionsPanel(props: {
   const explorationActions = useMemo(() => {
     let explorationFeats: AbilityBlock[] = [];
     if (props.entity) {
-      explorationFeats = entityAbilityBlocks.filter((ab) => hasTraitType('EXPLORATION', ab.traits));
+      explorationFeats = entityAbilityBlocks.filter((ab) => hasTraitType('EXPLORATION', ab.traits ?? undefined));
     }
-    return [...actions.filter((a) => hasTraitType('EXPLORATION', a.traits)), ...explorationFeats].sort((a, b) =>
-      a.name.localeCompare(b.name)
+    return [...actions.filter((a) => hasTraitType('EXPLORATION', a.traits ?? undefined)), ...explorationFeats].sort(
+      (a, b) => a.name.localeCompare(b.name)
     );
   }, [actions, props.entity, entityAbilityBlocks]);
 
   const downtimeActions = useMemo(() => {
     let downtimeFeats: AbilityBlock[] = [];
     if (props.entity) {
-      downtimeFeats = entityAbilityBlocks.filter((ab) => hasTraitType('DOWNTIME', ab.traits));
+      downtimeFeats = entityAbilityBlocks.filter((ab) => hasTraitType('DOWNTIME', ab.traits ?? undefined));
     }
-    return [...actions.filter((a) => hasTraitType('DOWNTIME', a.traits)), ...downtimeFeats].sort((a, b) =>
+    return [...actions.filter((a) => hasTraitType('DOWNTIME', a.traits ?? undefined)), ...downtimeFeats].sort((a, b) =>
       a.name.localeCompare(b.name)
     );
   }, [actions, props.entity, entityAbilityBlocks]);
@@ -384,7 +387,7 @@ export default function SkillsActionsPanel(props: {
           }
           styles={{
             input: {
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
               borderColor: skillsSearch.trim().length > 0 ? theme.colors['guide'][8] : undefined,
             },
           }}
@@ -459,7 +462,7 @@ export default function SkillsActionsPanel(props: {
             }
             styles={{
               input: {
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
                 borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
               },
             }}
@@ -479,7 +482,7 @@ export default function SkillsActionsPanel(props: {
                 setActionTypeFilter('ALL');
               }}
             >
-              <Text c='gray.3'>All</Text>
+              <Text c='gray.2'>All</Text>
             </ActionIcon>
             <ActionIcon
               variant='subtle'
@@ -609,7 +612,7 @@ export default function SkillsActionsPanel(props: {
                     },
                   },
                   cost: null,
-                  traits: weapon.invItem.item.traits,
+                  traits: weapon.invItem.item.traits ?? undefined,
                   rarity: weapon.invItem.item.rarity,
                   leftSection: weapon.leftSection,
                 };
@@ -627,7 +630,7 @@ export default function SkillsActionsPanel(props: {
                   drawerType: feat.type,
                   drawerData: { id: feat.id },
                   cost: feat.actions,
-                  traits: feat.traits,
+                  traits: feat.traits ?? undefined,
                   rarity: feat.rarity,
                   skill: feat.meta_data?.skill,
                 };
@@ -668,7 +671,7 @@ export default function SkillsActionsPanel(props: {
                       },
                     },
                     cost: action,
-                    traits: invItem.item.traits,
+                    traits: invItem.item.traits ?? undefined,
                     rarity: invItem.item.rarity,
                   } satisfies ActionItem;
                 })
@@ -686,7 +689,7 @@ export default function SkillsActionsPanel(props: {
                   drawerType: 'action',
                   drawerData: { id: action.id },
                   cost: action.actions,
-                  traits: action.traits,
+                  traits: action.traits ?? undefined,
                   rarity: action.rarity,
                   skill: action.meta_data?.skill,
                 };
@@ -704,7 +707,7 @@ export default function SkillsActionsPanel(props: {
                   drawerType: 'action',
                   drawerData: { id: action.id },
                   cost: action.actions,
-                  traits: action.traits,
+                  traits: action.traits ?? undefined,
                   rarity: action.rarity,
                   skill: action.meta_data?.skill,
                 };
@@ -722,7 +725,7 @@ export default function SkillsActionsPanel(props: {
                   drawerType: 'action',
                   drawerData: { id: action.id },
                   cost: action.actions,
-                  traits: action.traits,
+                  traits: action.traits ?? undefined,
                   rarity: action.rarity,
                   skill: action.meta_data?.skill,
                 };
@@ -740,7 +743,7 @@ export default function SkillsActionsPanel(props: {
                   drawerType: 'action',
                   drawerData: { id: action.id },
                   cost: action.actions,
-                  traits: action.traits,
+                  traits: action.traits ?? undefined,
                   rarity: action.rarity,
                   skill: action.meta_data?.skill,
                 };
@@ -758,7 +761,7 @@ export default function SkillsActionsPanel(props: {
                   drawerType: 'action',
                   drawerData: { id: action.id },
                   cost: action.actions,
-                  traits: action.traits,
+                  traits: action.traits ?? undefined,
                   rarity: action.rarity,
                   skill: action.meta_data?.skill,
                 };
@@ -819,16 +822,16 @@ function ActionAccordionItem(props: {
       ref={ref}
       value={props.id}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? theme.colors.dark[6] : undefined,
       }}
     >
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='sm'>
+          <Text c='gray.2' fw={700} fz='sm'>
             {props.title}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-            <Text fz='sm' c='gray.5' span>
+            <Text fz='sm' c='gray.2' span>
               {props.actions.length}
             </Text>
           </Badge>
@@ -852,7 +855,7 @@ function ActionSelectionOption(props: {
 }) {
   const theme = useMantineTheme();
   const { hovered, ref } = useHover();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <StatButton

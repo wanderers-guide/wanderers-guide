@@ -41,7 +41,7 @@ import { toLabel } from '@utils/strings';
 import { SelectIcon } from '@common/IconDisplay';
 import { isTruthy } from '@utils/type-fixing';
 import { drawerState } from '@atoms/navAtoms';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { selectContent } from '@common/select/SelectContent';
 import { IconBracketsAngle, IconCirclePlus, IconCornerUpRight, IconTransform, IconX } from '@tabler/icons-react';
 import StatBlockSection from '@common/StatBlockSection';
@@ -76,7 +76,7 @@ export function CreateCreatureModal(props: {
   const theme = useMantineTheme();
   const editing = (props.editId !== undefined && props.editId !== -1) || props.editCreature !== undefined;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
   const [displayDescription, refreshDisplayDescription] = useRefresh();
 
   const [openedBaseAbilities, { toggle: toggleBaseAbilities }] = useDisclosure(false);
@@ -147,20 +147,22 @@ export function CreateCreatureModal(props: {
       stamina_current: 0,
       resolve_current: 0,
       rarity: 'COMMON',
-      inventory: undefined,
-      notes: undefined,
+      inventory: null,
+      notes: null,
       details: {
         image_url: undefined,
         background_image_url: undefined,
         conditions: undefined,
         description: '',
       },
-      roll_history: undefined,
+      roll_history: null,
       operations: [],
+      operation_data: null,
       abilities_base: [],
       abilities_added: [],
-      spells: undefined,
-      meta_data: undefined,
+      spells: null,
+      meta_data: null,
+      deprecated: false,
       content_source_id: -1,
       version: '1.0',
     },
@@ -400,7 +402,7 @@ export function CreateCreatureModal(props: {
                   labelPosition='left'
                   onClick={toggleBaseAbilities}
                 />
-                <Collapse in={openedBaseAbilities}>
+                <Collapse expanded={openedBaseAbilities}>
                   <Stack gap={10}>
                     <Button
                       size='sm'
@@ -478,7 +480,7 @@ export function CreateCreatureModal(props: {
                   labelPosition='left'
                   onClick={toggleAddedAbilities}
                 />
-                <Collapse in={openedAddedAbilities}>
+                <Collapse expanded={openedAddedAbilities}>
                   <Stack gap={10}>
                     <Button
                       size='sm'
@@ -572,7 +574,7 @@ export function CreateCreatureModal(props: {
                   labelPosition='left'
                   onClick={toggleOperations}
                 />
-                <Collapse in={openedOperations}>
+                <Collapse expanded={openedOperations}>
                   <Stack gap={10}>
                     <OperationSection
                       title={
@@ -601,7 +603,7 @@ export function CreateCreatureModal(props: {
                           </HoverCard.Dropdown>
                         </HoverCard>
                       }
-                      operations={form.values.operations}
+                      operations={form.values.operations ?? undefined}
                       onChange={(operations) => form.setValues({ ...form.values, operations })}
                     />
                     <Divider />
@@ -625,7 +627,7 @@ export function CreateCreatureModal(props: {
                   labelPosition='left'
                   onClick={toggleInventory}
                 />
-                <Collapse in={openedInventory}>
+                <Collapse expanded={openedInventory}>
                   <Box>
                     <Paper
                       withBorder
@@ -753,7 +755,7 @@ export function CreateCreatureModal(props: {
                   labelPosition='left'
                   onClick={toggleAdditional}
                 />
-                <Collapse in={openedAdditional}>
+                <Collapse expanded={openedAdditional}>
                   <Stack gap={10}>
                     <SelectIcon
                       strValue={form.values.details.image_url ?? ''}
@@ -769,7 +771,7 @@ export function CreateCreatureModal(props: {
                 {displayDescription && (
                   <RichTextInput
                     label='Description'
-                    value={description ?? toHTML(form.values.details.description)}
+                    value={description ?? toHTML(form.values.details.description) ?? undefined}
                     onChange={(text, json) => {
                       setDescription(json);
                       form.setFieldValue('details.description', text);

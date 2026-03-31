@@ -70,6 +70,7 @@ import { BindValOperation } from './variables/BindValOperation';
 import { IconCopy, IconFileUpload } from '@tabler/icons-react';
 import { showNotification } from '@mantine/notifications';
 import { SendNotificationOperation } from './variables/SendNotificationOperation';
+import { ProficiencyType } from '@schemas/variables';
 
 export function OperationWrapper(props: { children: React.ReactNode; title: string; onRemove: () => void }) {
   const theme = useMantineTheme();
@@ -157,9 +158,9 @@ export function OperationSection(props: {
     // Make sure all the variables are created
     for (let op of props.operations ?? []) {
       if (op.type === 'createValue') {
-        addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value);
+        addVariable('CHARACTER', op.data.type, op.data.variable, op.data.value as ProficiencyType);
       } else if (op.type === 'conditional') {
-        for (const check of op.data.conditions) {
+        for (const check of op.data.conditions ?? []) {
           if (check.operator && check.value && !getVariable('CHARACTER', check.name)) {
             addVariable('CHARACTER', 'prof', check.name);
           }
@@ -473,7 +474,7 @@ export function OperationDisplay(props: {
       return (
         <GiveSpellSlotOperation
           castingSource={opGiveSpellSlot.data.castingSource}
-          slots={opGiveSpellSlot.data.slots}
+          slots={opGiveSpellSlot.data.slots?.map((s) => ({ ...s, amt: s.amt ?? 0 }))}
           onSelect={(source, slots) => {
             opGiveSpellSlot.data.castingSource = source;
             opGiveSpellSlot.data.slots = slots;
@@ -671,7 +672,7 @@ export function OperationDisplay(props: {
             opCreateValue.data.type = variableType;
             props.onChange(cloneDeep(opCreateValue));
           }}
-          value={opCreateValue.data.value}
+          value={opCreateValue.data.value as ProficiencyType}
           onValueChange={(value) => {
             opCreateValue.data.value = value;
             props.onChange(cloneDeep(opCreateValue));
@@ -684,7 +685,7 @@ export function OperationDisplay(props: {
       return (
         <AddBonusToValOperation
           variable={opAddBonusToValue.data.variable}
-          bonusValue={opAddBonusToValue.data.value}
+          bonusValue={opAddBonusToValue.data.value ?? undefined}
           bonusType={opAddBonusToValue.data.type}
           text={opAddBonusToValue.data.text}
           onSelect={(variable) => {

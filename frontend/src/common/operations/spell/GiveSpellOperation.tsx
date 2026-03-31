@@ -75,7 +75,7 @@ export function GiveSpellOperation(props: {
               min={0}
               max={10}
               w={70}
-              value={rank}
+              value={rank ?? undefined}
               onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -114,7 +114,7 @@ export function GiveSpellOperation(props: {
               min={0}
               max={10}
               w={70}
-              value={rank}
+              value={rank ?? undefined}
               onChange={(val) => setRank(parseInt(`${val}`))}
               allowDecimal={false}
             />
@@ -125,7 +125,7 @@ export function GiveSpellOperation(props: {
               min={0}
               max={10}
               w={90}
-              value={casts}
+              value={casts ?? undefined}
               onChange={(val) => setCasts(parseInt(`${val}`))}
               allowDecimal={false}
             />

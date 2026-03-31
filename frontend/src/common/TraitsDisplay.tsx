@@ -15,7 +15,7 @@ import {
 } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { Availability, Rarity, Size } from '@schemas/content';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import RichText from './RichText';
 import { getTraitIdByType } from '@utils/traits';
 import { uniq } from 'lodash-es';
@@ -39,7 +39,7 @@ export default function TraitsDisplay(props: {
   justify?: 'flex-start' | 'flex-end';
 }) {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: traits } = useQuery({
     queryKey: [
@@ -189,7 +189,7 @@ export function SkillDisplay(props: { skill: string | string[]; interactable?: b
 
 export function FormulaDisplay(props: { interactable?: boolean; size?: MantineSize }) {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <>
@@ -229,7 +229,7 @@ export function FormulaDisplay(props: { interactable?: boolean; size?: MantineSi
 
 export function BrokenDisplay(props: { interactable?: boolean; size?: MantineSize }) {
   const theme = useMantineTheme();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const broken = getConditionByName('Broken')!;
 

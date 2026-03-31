@@ -10,14 +10,15 @@ import { LivingEntity } from '@schemas/content';
 import { StoreID } from '@schemas/variables';
 import { displayPrimaryVisionSense } from '@utils/senses';
 import { displayFinalProfValue, displayFinalSpeedValue } from '@variables/variable-display';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import { ConditionSection } from './ConditionSection';
 import { getAllSpeedVariables } from '@variables/variable-manager';
 import { getSpeedValue } from '@variables/variable-helpers';
 
 function PerceptionSection(props: { id: StoreID }) {
   const { hovered: perceptionHovered, ref: perceptionRef } = useHover();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <Box
@@ -48,7 +49,7 @@ function PerceptionSection(props: { id: StoreID }) {
         <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em'>
           {displayFinalProfValue(props.id, 'PERCEPTION')}
         </Text>
-        <Text fz={10} c='gray.5' ta='center' truncate>
+        <Text fz={10} c='gray.2' ta='center' truncate>
           {displayPrimaryVisionSense(props.id)}
         </Text>
       </Stack>
@@ -58,7 +59,7 @@ function PerceptionSection(props: { id: StoreID }) {
 
 function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
   const { hovered: speedHovered, ref: speedRef } = useHover();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const allSpeeds = getAllSpeedVariables(props.id).map((speed) => {
     const speedData = getSpeedValue(props.id, speed, props.entity);
@@ -104,13 +105,13 @@ function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
         </Text>
         <Text ta='center' fz='lg' c='gray.0' fw={500} lh='1.5em' pl={15}>
           {displayFinalSpeedValue(props.id, displaySpeed?.name || 'SPEED', props.entity)}
-          <Text fz='xs' c='gray.3' span>
+          <Text fz='xs' c='gray.2' span>
             {' '}
             ft.
           </Text>
         </Text>
         {hasOthers.length > 1 ? (
-          <Text fz={10} c='gray.5' ta='center'>
+          <Text fz={10} c='gray.2' ta='center'>
             And Others
           </Text>
         ) : (
@@ -123,7 +124,7 @@ function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
 
 function ClassDcSection(props: { id: StoreID }) {
   const { hovered: classDcHovered, ref: classDcRef } = useHover();
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   return (
     <Box

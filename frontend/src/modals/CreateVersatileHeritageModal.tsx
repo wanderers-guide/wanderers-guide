@@ -70,6 +70,7 @@ export function CreateVersatileHeritageModal(props: {
       heritage_id: -1,
       artwork_url: '',
       content_source_id: -1,
+      deprecated: null as boolean | null,
       version: '1.0',
     },
 

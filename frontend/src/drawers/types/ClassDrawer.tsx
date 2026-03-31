@@ -50,12 +50,13 @@ import { getDisplay, getStatBlockDisplay, getStatDisplay } from '@variables/init
 import { getAllAttributeVariables, getAllSaveVariables, getAllSkillVariables } from '@variables/variable-manager';
 import { groupBy } from 'lodash-es';
 import { useState } from 'react';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 export function ClassDrawerTitle(props: { data: { id?: number; class_?: Class; onSelect?: () => void } }) {
   const id = props.data.id;
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { data: _class_ } = useQuery({
     queryKey: [`find-class-${id}`, { id }],
@@ -120,7 +121,7 @@ export function ClassDrawerContent(props: {
     },
   });
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const classFeatures = groupBy(
     (data?.abilityBlocks ?? []).filter(
@@ -139,11 +140,11 @@ export function ClassDrawerContent(props: {
     <Accordion.Item key={level} value={level}>
       <Accordion.Control>
         <Group wrap='nowrap' justify='space-between' gap={0}>
-          <Text c='gray.5' fw={700} fz='md'>
+          <Text c='gray.2' fw={700} fz='md'>
             Level {level}
           </Text>
           <Badge mr='sm' variant='outline' color='gray.5' size='xs'>
-            <Text fz='sm' c='gray.5' span>
+            <Text fz='sm' c='gray.2' span>
               {feats[level].filter((feat) => isAbilityBlockVisible('CHARACTER', feat)).length}
             </Text>
           </Badge>
@@ -277,7 +278,7 @@ export function ClassDrawerContent(props: {
         </Accordion>
       </Box>
       {props.data.showOperations && (
-        <ShowOperationsButton name={data.class_.name} operations={data.class_.operations} />
+        <ShowOperationsButton name={data.class_.name} operations={data.class_.operations ?? undefined} />
       )}
     </Stack>
   );
@@ -291,7 +292,7 @@ export function ClassInitialOverview(props: {
 }) {
   const theme = useMantineTheme();
   const [descHidden, setDescHidden] = useState(true);
-  const charState = useRecoilState(characterState);
+  const charState = useAtom(characterState);
 
   // Reading thru operations to get display UI
   const MODE = props.mode;
@@ -375,7 +376,7 @@ export function ClassInitialOverview(props: {
               <Text fz='xs'>At 1st level, your class gives you an attribute boost in the key attribute.</Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c='gray.5' ta='center'>
+          <Text c='gray.2' ta='center'>
             Key Attribute
           </Text>
           <Text c='gray.4' fw={700} ta='center' style={{ display: 'flex', justifyContent: 'center' }}>
@@ -413,7 +414,7 @@ export function ClassInitialOverview(props: {
               </Text>
             </HoverCard.Dropdown>
           </HoverCard>
-          <Text c='gray.5' ta='center'>
+          <Text c='gray.2' ta='center'>
             Hit Points
           </Text>
           <Text c='gray.4' fw={700} ta='center'>
@@ -434,7 +435,7 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.perception.ui}
         </IndentedText>
       </Box>
@@ -452,12 +453,12 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         {display.skills.map((skill, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
             {skill.ui}
           </IndentedText>
         ))}
         {display.additionalSkillTrainings.map((record, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
             {record.ui}
           </IndentedText>
         ))}
@@ -476,7 +477,7 @@ export function ClassInitialOverview(props: {
           labelPosition='left'
         />
         {display.saves.map((save, index) => (
-          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText key={index} disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
             {save.ui}
           </IndentedText>
         ))}
@@ -494,16 +495,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.simpleWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.martialWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.advancedWeapons.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.unarmedAttacks.ui}
         </IndentedText>
       </Box>
@@ -520,16 +521,16 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.lightArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.mediumArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.heavyArmor.ui}
         </IndentedText>
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.unarmoredDefense.ui}
         </IndentedText>
       </Box>
@@ -547,10 +548,10 @@ export function ClassInitialOverview(props: {
             }
             labelPosition='left'
           />
-          <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
             {display.spellAttack.ui}
           </IndentedText>
-          <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+          <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
             {display.spellDC.ui}
           </IndentedText>
         </Box>
@@ -568,7 +569,7 @@ export function ClassInitialOverview(props: {
           }
           labelPosition='left'
         />
-        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.5' fz='sm'>
+        <IndentedText disabled={MODE !== 'READ'} px='xs' c='gray.2' fz='sm'>
           {display.classDC.ui}
         </IndentedText>
       </Box>

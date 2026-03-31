@@ -5,7 +5,7 @@ import { useDidUpdate, useElementSize, useLocalStorage, useMediaQuery } from '@m
 import { IconArrowLeft, IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { ContentType } from '@schemas/content';
 import { Suspense, lazy, useRef } from 'react';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
@@ -62,17 +62,17 @@ export const DRAWER_STYLES = {
 export default function DrawerBase() {
   /* Use this syntax as the standard API for opening drawers:
 
-    const [_drawer, openDrawer] = useRecoilState(drawerState);
+    const [_drawer, openDrawer] = useAtom(drawerState);
     openDrawer({ type: 'feat', data: { id: 1 } });
   */
 
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   const { ref, height: titleHeight } = useElementSize();
   const [displayTitle, refreshTitle] = useRefresh();
-  const [feedbackData, setFeedbackData] = useRecoilState(feedbackState);
+  const [feedbackData, setFeedbackData] = useAtom(feedbackState);
 
   const viewport = useRef<HTMLDivElement>(null);
   const [value, setValue] = useLocalStorage<PrevMetadata>({
@@ -150,7 +150,7 @@ export default function DrawerBase() {
                   {!!_drawer?.extra?.history?.length ? (
                     <ActionIcon
                       variant='light'
-                      color='gray.4'
+                      color='gray'
                       radius='xl'
                       size='md'
                       onClick={handleDrawerGoBack}
@@ -161,7 +161,7 @@ export default function DrawerBase() {
                   ) : (
                     <ActionIcon
                       variant='light'
-                      color='gray.4'
+                      color='gray'
                       radius='xl'
                       size='md'
                       onClick={handleDrawerClose}

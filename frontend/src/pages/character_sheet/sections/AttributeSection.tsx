@@ -8,7 +8,9 @@ import { StoreID } from '@schemas/variables';
 import { toLabel } from '@utils/strings';
 import { displayAttributeValue } from '@variables/variable-display';
 import { useNavigate } from 'react-router-dom';
-import { SetterOrUpdater, useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
+import { SetterOrUpdater } from '@utils/type-fixing';
+import { glassStyle } from '@utils/colors';
 
 export default function AttributeSection(props: {
   id: StoreID;
@@ -18,7 +20,7 @@ export default function AttributeSection(props: {
   const navigate = useNavigate();
   const theme = useMantineTheme();
 
-  const [_drawer, openDrawer] = useRecoilState(drawerState);
+  const [_drawer, openDrawer] = useAtom(drawerState);
 
   // Ordered this way so it's in two columns of physical & mental
   const attributes = [
@@ -52,6 +54,7 @@ export default function AttributeSection(props: {
               <Button.Group key={index}>
                 <BlurButton
                   size='compact-xs'
+                  bgColorHover='#ffffff09'
                   fw={400}
                   onClick={() => {
                     handleAttributeOpen(attribute);
@@ -62,9 +65,12 @@ export default function AttributeSection(props: {
                 <Button
                   radius='xl'
                   variant='light'
-                  color='dark.2'
+                  color='dark.8'
                   size='compact-xs'
                   w={35}
+                  style={{
+                    ...glassStyle(),
+                  }}
                   onClick={() => {
                     handleAttributeOpen(attribute);
                   }}

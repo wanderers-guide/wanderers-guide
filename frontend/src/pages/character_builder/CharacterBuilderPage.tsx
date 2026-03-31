@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import CharBuilderCreation from './CharBuilderCreation';
 import CharBuilderHome from './CharBuilderHome';
-import { useRecoilValue } from 'recoil';
+import { useAtomValue } from 'jotai';
 import { characterState } from '@atoms/characterAtoms';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
@@ -55,7 +55,7 @@ export function Component() {
   const stepIconStyle = { width: rem(18), height: rem(18) };
   const pageHeight = 550;
 
-  const globalCharacter = useRecoilValue(characterState);
+  const globalCharacter = useAtomValue(characterState);
   const { data, isLoading } = useQuery({
     queryKey: [`get-character-init-builder-${characterId}`, { characterId }],
     queryFn: async () => {

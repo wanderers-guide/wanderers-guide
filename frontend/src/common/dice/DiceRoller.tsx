@@ -39,7 +39,7 @@ import { sign } from '@utils/numbers';
 import { DICE_THEMES, fetchDiceThemes, findDiceTheme } from './dice-tray';
 import { Carousel } from '@mantine/carousel';
 import { cloneDeep, groupBy, uniqWith, isEqual } from 'lodash-es';
-import { useRecoilState } from 'recoil';
+import { useAtom } from 'jotai';
 import { characterState } from '@atoms/characterAtoms';
 import { hasPatreonAccess } from '@utils/patreon';
 import { getCachedPublicUser } from '@auth/user-manager';
@@ -69,7 +69,7 @@ export default function DiceRoller(props: {
   const theme = useMantineTheme();
   const isTablet = useMediaQuery(tabletQuery());
   const isWideDesktop = useMediaQuery(wideDesktopQuery());
-  const [character, setCharacter] = useRecoilState(characterState);
+  const [character, setCharacter] = useAtom(characterState);
   const [useFallback, setUseFallback] = useState(false);
 
   const [diceOverlay, setDiceOverlay] = useState(false);
@@ -78,7 +78,7 @@ export default function DiceRoller(props: {
 
   const [loaded, setLoaded] = useState(false);
   const roomId = useRef<string | null>(null);
-  const dddice = useRef<ThreeDDice>();
+  const dddice = useRef<ThreeDDice | undefined>(undefined);
 
   const [dice, setDice] = useState<Dice[]>([]);
   const [activeDie, setActiveDie] = useState<string | null>(null);
@@ -261,7 +261,7 @@ export default function DiceRoller(props: {
                       <Text fz={8} c='gray.6' fs='italic' ta='end' style={{ whiteSpace: 'nowrap' }}>
                         {new Date(groupedRolls[group][0].timestamp).toLocaleTimeString()}
                       </Text>
-                      <Text fz={10} c='gray.5' ta='end'>
+                      <Text fz={10} c='gray.2' ta='end'>
                         {groupedRolls[group][0].label}
                       </Text>
                     </Stack>
@@ -385,7 +385,7 @@ export default function DiceRoller(props: {
           labelPosition='left'
           onClick={toggleDefaultPresets}
         />
-        <Collapse in={openedDefaultPresets}>
+        <Collapse expanded={openedDefaultPresets}>
           {openedDefaultPresets && (
             <Stack gap={5}>
               {defaultPresets

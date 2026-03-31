@@ -420,11 +420,7 @@ function isTrainedInAdjValue(varId: StoreID, operation: OperationAdjValue): bool
   // If the adj is not a training, don't give another skill selection
   if (
     operation?.data?.value !== 'T' &&
-    !(
-      typeof operation.data.value === 'object' &&
-      'value' in operation.data.value &&
-      (operation.data.value as any).value === 'T'
-    )
+    !(typeof operation.data.value === 'object' && 'value' in operation.data.value && operation.data.value.value === 'T')
   ) {
     return false;
   }
@@ -504,7 +500,13 @@ async function runCreateValue(
   operation: OperationCreateValue,
   sourceLabel?: string
 ): Promise<OperationResult> {
-  addVariable(varId, operation.data.type, operation.data.variable, operation.data.value, sourceLabel);
+  addVariable(
+    varId,
+    operation.data.type,
+    operation.data.variable,
+    operation.data.value as ProficiencyType,
+    sourceLabel
+  );
   return null;
 }
 
@@ -516,7 +518,7 @@ async function runAddBonusToValue(
   addVariableBonus(
     varId,
     operation.data.variable,
-    operation.data.value,
+    operation.data.value ?? undefined,
     operation.data.type,
     operation.data.text,
     sourceLabel ?? 'Unknown'
@@ -561,7 +563,7 @@ async function runGiveAbilityBlock(
   }
 
   let results: OperationResult[] = [];
-  const subOperations = await extendOperations(abilityBlock, abilityBlock.operations);
+  const subOperations = await extendOperations(abilityBlock, abilityBlock.operations ?? undefined);
   if (subOperations.length > 0 && operation.data.type !== 'mode') {
     const subNode = selectionTrack.node?.children[operation.id];
     results = await runOperations(
@@ -959,7 +961,7 @@ async function runConditional(
     }
 
     if (variable.type === 'attr') {
-      const value = parseInt(check.value);
+      const value = parseInt(`${check.value}`);
       if (check.operator === 'EQUALS') {
         return variable.value.value === value;
       } else if (check.operator === 'GREATER_THAN') {
@@ -974,7 +976,7 @@ async function runConditional(
         return variable.value.value <= value;
       }
     } else if (variable.type === 'num') {
-      const value = parseInt(check.value);
+      const value = parseInt(`${check.value}`);
       if (check.operator === 'EQUALS') {
         return variable.value === value;
       } else if (check.operator === 'GREATER_THAN') {
@@ -990,13 +992,13 @@ async function runConditional(
       }
     } else if (variable.type === 'str') {
       if (check.operator === 'EQUALS') {
-        return labelToVariable(variable.value) === labelToVariable(check.value);
+        return labelToVariable(variable.value) === labelToVariable(`${check.value}`);
       } else if (check.operator === 'NOT_EQUALS') {
-        return labelToVariable(variable.value) !== labelToVariable(check.value);
+        return labelToVariable(variable.value) !== labelToVariable(`${check.value}`);
       } else if (check.operator === 'INCLUDES') {
-        return labelToVariable(variable.value).includes(labelToVariable(check.value));
+        return labelToVariable(variable.value).includes(labelToVariable(`${check.value}`));
       } else if (check.operator === 'NOT_INCLUDES') {
-        return !labelToVariable(variable.value).includes(labelToVariable(check.value));
+        return !labelToVariable(variable.value).includes(labelToVariable(`${check.value}`));
       }
     } else if (variable.type === 'bool') {
       if (check.operator === 'EQUALS') {
@@ -1025,9 +1027,9 @@ async function runConditional(
       } else if (check.operator === 'NOT_EQUALS') {
         return !isEqual(varValue, checkValue);
       } else if (check.operator === 'INCLUDES') {
-        return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
+        return varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
       } else if (check.operator === 'NOT_INCLUDES') {
-        return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(check.value));
+        return !varValue.map((v) => labelToVariable(v)).includes(labelToVariable(`${check.value}`));
       }
     } else if (variable.type === 'prof') {
       const profType = compileProficiencyType(variable.value);
@@ -1053,7 +1055,7 @@ async function runConditional(
   };
 
   let isTrue = true;
-  for (const check of operation.data.conditions) {
+  for (const check of operation.data.conditions ?? []) {
     if (!makeCheck(check)) {
       isTrue = false;
     }

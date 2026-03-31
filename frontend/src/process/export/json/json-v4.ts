@@ -180,9 +180,9 @@ export async function getJsonV4Content(entity: LivingEntity, inputStoreID?: Stor
 
   const size = toLabel(getVariable<VariableStr>(STORE_ID, 'SIZE')?.value);
   const maxHP = getFinalHealthValue(STORE_ID);
-  const ac = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, entity.inventory)?.item);
-  const shield = getBestShield(STORE_ID, entity.inventory);
-  const armor = getBestArmor(STORE_ID, entity.inventory);
+  const ac = getFinalAcValue(STORE_ID, getBestArmor(STORE_ID, entity.inventory ?? undefined)?.item);
+  const shield = getBestShield(STORE_ID, entity.inventory ?? undefined);
+  const armor = getBestArmor(STORE_ID, entity.inventory ?? undefined);
 
   const speeds = getAllSpeedVariables(STORE_ID).map((v) => {
     return {

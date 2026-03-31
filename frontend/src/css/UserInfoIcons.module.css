@@ -3,6 +3,8 @@
 }
 
 .name {
-  font-family: Greycliff CF, var(--mantine-font-family);
+  font-family:
+    Greycliff CF,
+    var(--mantine-font-family);
   text-wrap: nowrap;
 }

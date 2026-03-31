@@ -13,12 +13,7 @@ import {
   OperationCreatureResultPackage,
 } from '@schemas/content';
 import { getRootSelection, resetSelections, setSelections } from './selection-tree';
-import {
-  Operation,
-  OperationOptions,
-  OperationResult,
-  OperationSelect,
-} from '@schemas/operations';
+import { Operation, OperationOptions, OperationResult, OperationSelect } from '@schemas/operations';
 import { runOperations } from './operation-runner';
 import {
   addVariable,
@@ -178,7 +173,7 @@ export async function _executeCharacterOperations(data: {
   };
 
   const classFeatures_1 = getClassFeatures(content.abilityBlocks, class_?.trait_id, '1').sort((a, b) => {
-    if (a.level !== undefined && b.level !== undefined) {
+    if (a.level !== null && b.level !== null) {
       if (a.level !== b.level) {
         return a.level - b.level;
       }
@@ -187,7 +182,7 @@ export async function _executeCharacterOperations(data: {
   });
 
   const classFeatures_2 = getClassFeatures(content.abilityBlocks, class_2?.trait_id, '2').sort((a, b) => {
-    if (a.level !== undefined && b.level !== undefined) {
+    if (a.level !== null && b.level !== null) {
       if (a.level !== b.level) {
         return a.level - b.level;
       }
@@ -283,6 +278,16 @@ export async function _executeCharacterOperations(data: {
         description: `You gain a class feat that you can only use for archetypes.`,
         type: 'class-feature',
         content_source_id: -1,
+        prerequisites: null,
+        frequency: null,
+        cost: null,
+        trigger: null,
+        requirements: null,
+        access: null,
+        special: null,
+        meta_data: null,
+        traits: null,
+        version: '1.0',
       } satisfies AbilityBlock);
     }
   }
@@ -345,7 +350,7 @@ export async function _executeCharacterOperations(data: {
         | 'PERCEPTION-POTENCY'
         | 'ABILITY-APEX',
       bonus: number
-    ): AbilityBlock | null => {
+    ): any => {
       if (type === 'ABILITY-APEX') {
         return {
           id: hashData({ name: `class-ability-apex-${index}` }),
@@ -689,7 +694,7 @@ export async function _executeCharacterOperations(data: {
           type: 'createValue',
           data: {
             variable: `SKILL_LORE_${finderType.toUpperCase()}_SOCIETY`,
-            value: { value: 'U', attribute: 'ATTRIBUTE_INT', increases: 0 },
+            value: { value: 'U', attribute: 'ATTRIBUTE_INT' },
             type: 'prof',
           },
         },
@@ -705,6 +710,16 @@ export async function _executeCharacterOperations(data: {
       rarity: 'COMMON',
       description: `All ${finderType} Society characters get free training in ${finderType} Society Lore (sometimes referred to as ${finderType} Lore).`,
       type: 'class-feature',
+      prerequisites: null,
+      frequency: null,
+      cost: null,
+      trigger: null,
+      requirements: null,
+      access: null,
+      special: null,
+      meta_data: null,
+      traits: null,
+      version: '1.0',
       content_source_id: -1,
     } satisfies AbilityBlock);
   }
@@ -845,7 +860,7 @@ export async function _executeCharacterOperations(data: {
     }[] = [];
     if (ancestry) {
       for (const section of getAncestrySections('CHARACTER', ancestry, character.variants?.ancestry_paragon ?? false)) {
-        if (section.level === undefined || section.level <= character.level) {
+        if (section.level === null || section.level <= character.level) {
           const results = await _executeOps(
             'CHARACTER',
             `ancestry-section-${section.id}`,
@@ -867,7 +882,7 @@ export async function _executeCharacterOperations(data: {
       baseResults: OperationResult[];
     }[] = [];
     for (const feature of classFeatures.filter((cf) => isAbilityBlockVisible('CHARACTER', cf))) {
-      if (feature.level === undefined || feature.level <= character.level) {
+      if (feature.level === null || feature.level <= character.level) {
         const results = await _executeOps(
           'CHARACTER',
           `class-feature-${feature.id}`,
@@ -1432,7 +1447,7 @@ export function addedAncestryLanguages(varId: StoreID, ancestry: Ancestry): Oper
 }
 
 export function getAncestrySections(varId: StoreID, ancestry: Ancestry, ancestryParagon: boolean): AbilityBlock[] {
-  const heritage: AbilityBlock = {
+  const heritage = {
     id: hashData({ name: 'heritage' }),
     created_at: '',
     operations: [
@@ -1462,10 +1477,20 @@ export function getAncestrySections(varId: StoreID, ancestry: Ancestry, ancestry
     description: `You select a heritage to reflect abilities passed down to you from your ancestors or
     common among those of your ancestry in the environment where you were raised.`,
     type: 'heritage',
+    prerequisites: null,
+    frequency: null,
+    cost: null,
+    trigger: null,
+    requirements: null,
+    access: null,
+    special: null,
+    meta_data: null,
+    traits: null,
+    version: '1.0',
     content_source_id: -1,
-  };
+  } satisfies AbilityBlock;
 
-  const getAncestryFeat = (index: number, level: number): AbilityBlock => {
+  const getAncestryFeat = (index: number, level: number): any => {
     return {
       id: hashData({ name: `ancestry-feat-${index}` }),
       created_at: '',

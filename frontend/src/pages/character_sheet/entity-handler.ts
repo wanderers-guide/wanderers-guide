@@ -7,7 +7,7 @@ import { getFinalHealthValue } from '@variables/variable-helpers';
 import { getVariable } from '@variables/variable-manager';
 import { cloneDeep } from 'lodash-es';
 import { evaluate } from 'mathjs';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 
 export function confirmHealth(
   hp: string,

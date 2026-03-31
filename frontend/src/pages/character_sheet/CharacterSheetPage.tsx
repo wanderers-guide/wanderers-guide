@@ -44,7 +44,7 @@ import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useLoaderData } from 'react-router-dom';
-import { SetterOrUpdater } from 'recoil';
+import { SetterOrUpdater } from '@utils/type-fixing';
 import CompanionsPanel from './panels/CompanionsPanel';
 import DetailsPanel from './panels/DetailsPanel';
 import ExtrasPanel from './panels/ExtrasPanel';

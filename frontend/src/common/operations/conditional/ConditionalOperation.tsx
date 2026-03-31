@@ -61,7 +61,7 @@ export default function ConditionalOperation(props: {
               defaultData={check.data}
               defaultType={check.type}
               defaultOperator={check.operator}
-              defaultValue={check.value}
+              defaultValue={String(check.value ?? '')}
               onChange={(data) => {
                 let newChecks = cloneDeep(checks);
                 newChecks[index] = data;
