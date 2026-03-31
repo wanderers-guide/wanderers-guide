@@ -10,26 +10,26 @@ export type ExtendedProficiencyType = z.infer<typeof ExtendedProficiencyTypeSche
 
 export const CompiledProficiencyValueSchema = z.object({
   value: ProficiencyTypeSchema,
-  attribute: z.string().optional(),
+  attribute: z.string().nullish(),
 });
 export type CompiledProficiencyValue = z.infer<typeof CompiledProficiencyValueSchema>;
 
 export const ProficiencyValueSchema = z.object({
   value: ProficiencyTypeSchema,
-  increases: z.number(),
+  increases: z.number().optional(),
   attribute: z.string().optional(),
 });
 export type ProficiencyValue = z.infer<typeof ProficiencyValueSchema>;
 
 export const ExtendedProficiencyValueSchema = z.object({
   value: ExtendedProficiencyTypeSchema,
-  attribute: z.string().optional(),
+  attribute: z.string().nullish(),
 });
 export type ExtendedProficiencyValue = z.infer<typeof ExtendedProficiencyValueSchema>;
 
 export const AttributeValueSchema = z.object({
   value: z.number(),
-  partial: z.boolean().optional(),
+  partial: z.boolean().nullish(),
 });
 export type AttributeValue = z.infer<typeof AttributeValueSchema>;
 
@@ -126,8 +126,8 @@ export const VariableStoreSchema = z.object({
     z.string(),
     z.array(
       z.object({
-        value: z.union([z.number(), z.string()]).optional(),
-        type: z.string().optional(),
+        value: z.union([z.number(), z.string()]).nullish(),
+        type: z.string().nullish(),
         text: z.string(),
         source: z.string(),
         timestamp: z.number(),

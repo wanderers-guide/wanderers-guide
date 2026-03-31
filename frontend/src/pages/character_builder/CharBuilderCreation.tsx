@@ -34,7 +34,16 @@ import { ObjectWithUUID, convertKeyToBasePrefix, hasOperationSelection } from '@
 import { removeParentSelections } from '@operations/selection-tree';
 import { IconId, IconPuzzle } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
-import { AbilityBlock, Ancestry, Background, Character, Class, ClassArchetype, ContentPackage, OperationCharacterResultPackage } from '@schemas/content';
+import {
+  AbilityBlock,
+  Ancestry,
+  Background,
+  Character,
+  Class,
+  ClassArchetype,
+  ContentPackage,
+  OperationCharacterResultPackage,
+} from '@schemas/content';
 import { ImageOption } from '@schemas/index';
 import { OperationSelect } from '@schemas/operations';
 import { VariableListStr, VariableProf } from '@schemas/variables';
@@ -71,8 +80,6 @@ export default function CharBuilderCreation(props: { characterId: number; pageHe
     },
     refetchOnWindowFocus: false,
   });
-
-  console.log('Content for character builder creation:', content, getDefaultSources('PAGE'));
 
   // Just load progress manually
   const [percentage, setPercentage] = useState(0);
@@ -1371,7 +1378,7 @@ function ClassFeatureAccordionItem(props: {
           </RichText>
           <DisplayOperationResult
             source={undefined}
-            level={props.feature.level}
+            level={props.feature.level ?? 0}
             results={props.results}
             onChange={(path, value) => {
               props.onSaveChanges(`${convertKeyToBasePrefix('classFeatureResults', props.feature.id)}_${path}`, value);
@@ -1435,7 +1442,7 @@ function AncestrySectionAccordionItem(props: {
           </RichText>
           <DisplayOperationResult
             source={undefined}
-            level={props.section.level}
+            level={props.section.level ?? 0}
             results={props.results}
             onChange={(path, value) => {
               props.onSaveChanges(

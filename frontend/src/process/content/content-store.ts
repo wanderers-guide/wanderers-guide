@@ -3,24 +3,38 @@ import { COMMON_CORE_ID } from '@constants/data';
 import { makeRequest } from '@requests/request-manager';
 import {
   AbilityBlock,
+  AbilityBlockSchema,
   Ancestry,
+  AncestrySchema,
   Archetype,
+  ArchetypeSchema,
   Background,
+  BackgroundSchema,
   Class,
   ClassArchetype,
+  ClassArchetypeSchema,
+  ClassSchema,
   ContentPackage,
   ContentSource,
+  ContentSourceSchema,
   ContentType,
   Creature,
+  CreatureSchema,
   Item,
+  ItemSchema,
   Language,
+  LanguageSchema,
   SourceKey,
   SourceValue,
   Spell,
+  SpellSchema,
   Trait,
+  TraitSchema,
   VersatileHeritage,
+  VersatileHeritageSchema,
 } from '@schemas/content';
 import { RequestType } from '@schemas/requests';
+import { z } from 'zod';
 import { preloadImage } from '@utils/images';
 import { hashData } from '@utils/numbers';
 import { isTruthy } from '@utils/type-fixing';
@@ -210,6 +224,22 @@ export async function fetchContent<T = Record<string, any>>(
   data: Record<string, any>,
   dontStore?: boolean
 ) {
+  const CONTENT_SCHEMA_MAP: Record<ContentType, z.ZodTypeAny> = {
+    'ability-block': AbilityBlockSchema,
+    ancestry: AncestrySchema,
+    background: BackgroundSchema,
+    class: ClassSchema,
+    archetype: ArchetypeSchema,
+    'versatile-heritage': VersatileHeritageSchema,
+    'class-archetype': ClassArchetypeSchema,
+    'content-source': ContentSourceSchema,
+    creature: CreatureSchema,
+    item: ItemSchema,
+    language: LanguageSchema,
+    spell: SpellSchema,
+    trait: TraitSchema,
+  };
+
   const FETCH_REQUEST_MAP: Record<ContentType, RequestType> = {
     'ability-block': 'find-ability-block',
     ancestry: 'find-ancestry',
@@ -282,7 +312,11 @@ export async function fetchContent<T = Record<string, any>>(
       newData.content_sources = uniq(svN);
     }
 
-    const result = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
+    const rawResult = await makeRequest<T>(FETCH_REQUEST_MAP[type], newData);
+    const schema = CONTENT_SCHEMA_MAP[type];
+    const result = rawResult
+      ? (Array.isArray(rawResult) ? rawResult : [rawResult]).map((record) => validateAndWarn<T>(type, schema, record))
+      : rawResult;
     if (result && !dontStore) {
       setStoredFetch(type, data, result);
       const added = setStoredIds(type, data, result);
@@ -532,4 +566,38 @@ export async function fetchCreatureByName(name?: string, sources?: SourceValue, 
     content_sources: sources,
   });
   return results.length > 0 ? results[0] : null;
+}
+
+/**
+ * Validate content against schema and log any warnings, then return the content (either parsed or original if parsing failed)
+ * @param type - Content type for logging purposes
+ * @param schema - Zod schema to validate against
+ * @param item - Content item to validate
+ * @returns - Validated content record, or original record if validation failed
+ */
+function validateAndWarn<T>(type: ContentType, schema: z.ZodTypeAny, record: unknown): T {
+  const parsed = schema.safeParse(record);
+  if (!parsed.success) {
+    const summary = parsed.error.issues
+      .map((issue) => {
+        const path = issue.path.length ? issue.path.join('.') : '(root)';
+        const actualValue = issue.path.reduce((obj: any, key) => (obj != null ? obj[key] : undefined), record as any);
+        const gotSuffix = actualValue !== undefined ? ` (got: ${JSON.stringify(actualValue)})` : '';
+        if (issue.code === 'invalid_union') {
+          const best = issue.errors.reduce((a, b) => (a.length <= b.length ? a : b), issue.errors[0] ?? []);
+          const hint = best
+            .slice(0, 3)
+            .map((e) => `${e.path.join('.') || '(root)'}: ${e.message}`)
+            .join(', ');
+          return `${path}${gotSuffix} [union — ${hint}]`;
+        }
+        const got = 'received' in issue ? ` (got: ${JSON.stringify((issue as any).received)})` : gotSuffix;
+        return `${path}: ${issue.message}${got}`;
+      })
+      .join('; ');
+    console.warn(
+      `[CONTENT-SCHEMA] ${type} id=${(record as any)?.id ?? '?'} "${(record as any)?.name ?? ''}" — ${summary}`
+    );
+  }
+  return parsed.success ? (parsed.data as T) : (record as T);
 }

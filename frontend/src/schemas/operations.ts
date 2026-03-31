@@ -76,9 +76,9 @@ export type OperationSelectOptionType = z.infer<typeof OperationSelectOptionType
 export const SpellMetadataSchema = z.object({
   type: z.enum(['NORMAL', 'FOCUS', 'INNATE']),
   castingSource: z.string().optional(),
-  rank: z.number().optional(),
+  rank: z.number().nullable().optional(),
   tradition: z.enum(['ARCANE', 'OCCULT', 'PRIMAL', 'DIVINE']).optional(),
-  casts: z.number().optional(),
+  casts: z.number().nullable().optional(),
 });
 export type SpellMetadata = z.infer<typeof SpellMetadataSchema>;
 
@@ -93,7 +93,7 @@ export const ConditionCheckDataSchema = z.object({
   data: VariableSchema.optional(),
   type: VariableTypeSchema.optional(),
   operator: ConditionOperatorSchema,
-  value: z.string(),
+  value: z.union([z.string(), z.number()]),
 });
 export type ConditionCheckData = z.infer<typeof ConditionCheckDataSchema>;
 
@@ -121,7 +121,7 @@ export const OperationAddBonusToValueSchema = z.object({
   type: z.literal('addBonusToValue'),
   data: z.object({
     variable: z.string(),
-    value: z.union([z.number(), z.string()]).optional(),
+    value: z.union([z.number(), z.string()]).nullable().optional(),
     type: z.string().optional(),
     text: z.string(),
   }),
@@ -138,7 +138,7 @@ export type OperationSetValue = z.infer<typeof OperationSetValueSchema>;
 export const OperationCreateValueSchema = z.object({
   id: z.string(),
   type: z.literal('createValue'),
-  data: z.object({ variable: z.string(), type: VariableTypeSchema, value: VariableValueSchema }),
+  data: z.object({ variable: z.string(), type: VariableTypeSchema, value: ExtendedVariableValueSchema }),
 });
 export type OperationCreateValue = z.infer<typeof OperationCreateValueSchema>;
 
@@ -199,7 +199,7 @@ export const OperationGiveSpellSlotSchema = z.object({
   type: z.literal('giveSpellSlot'),
   data: z.object({
     castingSource: z.string(),
-    slots: z.array(z.object({ lvl: z.number(), rank: z.number(), amt: z.number() })),
+    slots: z.array(z.object({ lvl: z.number(), rank: z.number(), amt: z.number().nullable() })),
   }),
 });
 export type OperationGiveSpellSlot = z.infer<typeof OperationGiveSpellSlotSchema>;
@@ -255,7 +255,7 @@ export type OperationInjectSelectOption = z.infer<typeof OperationInjectSelectOp
 export const OperationSelectFiltersAbilityBlockSchema = z.object({
   id: z.string(),
   type: z.literal('ABILITY_BLOCK'),
-  level: z.object({ min: z.number().optional(), max: z.number().optional() }),
+  level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
   traits: z.array(z.union([z.string(), z.number()])).optional(),
   abilityBlockType: AbilityBlockTypeSchema.optional(),
   isFromClass: z.boolean().optional(),
@@ -267,7 +267,7 @@ export type OperationSelectFiltersAbilityBlock = z.infer<typeof OperationSelectF
 export const OperationSelectFiltersSpellSchema = z.object({
   id: z.string(),
   type: z.literal('SPELL'),
-  level: z.object({ min: z.number().optional(), max: z.number().optional() }),
+  level: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }),
   traits: z.array(z.string()).optional(),
   traditions: z.array(z.string()).optional(),
   spellData: SpellMetadataSchema.optional(),
@@ -361,7 +361,7 @@ export type OperationConditional = {
   id: string;
   type: 'conditional';
   data: {
-    conditions: ConditionCheckData[];
+    conditions?: ConditionCheckData[];
     trueOperations?: Operation[];
     falseOperations?: Operation[];
   };
@@ -431,7 +431,7 @@ export const OperationSchema: z.ZodType<Operation> = z.lazy(() =>
       id: z.string(),
       type: z.literal('conditional'),
       data: z.object({
-        conditions: z.array(ConditionCheckDataSchema),
+        conditions: z.array(ConditionCheckDataSchema).optional(),
         trueOperations: z.array(z.lazy(() => OperationSchema)).optional(),
         falseOperations: z.array(z.lazy(() => OperationSchema)).optional(),
       }),

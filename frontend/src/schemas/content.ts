@@ -74,7 +74,7 @@ export const TraitSchema = z.object({
       versatile_heritage_trait: z.boolean().optional(),
       companion_type_trait: z.boolean().optional(),
     })
-    .optional(),
+    .nullable(),
   content_source_id: z.number(),
 });
 export type Trait = z.infer<typeof TraitSchema>;
@@ -137,45 +137,45 @@ export interface Item {
   id: number;
   created_at: string;
   name: string;
-  price?: { cp?: number; sp?: number; gp?: number; pp?: number };
-  bulk?: string;
+  price: { cp?: number | string; sp?: number | string; gp?: number | string; pp?: number | string } | null;
+  bulk: string | null;
   level: number;
   rarity: z.infer<typeof RaritySchema>;
-  availability?: z.infer<typeof AvailabilitySchema>;
-  traits?: number[];
+  availability?: z.infer<typeof AvailabilitySchema> | null;
+  traits: number[] | null;
   description: string;
   group: z.infer<typeof ItemGroupSchema>;
-  hands?: string;
+  hands: string | null;
   size: z.infer<typeof SizeSchema>;
-  craft_requirements?: string;
-  usage?: string;
-  meta_data?: {
+  craft_requirements: string | null;
+  usage: string | null;
+  meta_data: {
     deprecated?: boolean;
     image_url?: string;
-    base_item?: string;
+    base_item?: string | null;
     base_item_content?: Item;
-    category?: z.infer<typeof ItemMetaCategorySchema>;
-    group?: z.infer<typeof ItemMetaGroupSchema>;
-    damage?: { damageType: string; dice: number; die: string; extra?: string };
+    category?: z.infer<typeof ItemMetaCategorySchema> | '';
+    group?: z.infer<typeof ItemMetaGroupSchema> | '';
+    damage?: { damageType?: string; dice?: number | string; die?: string | null; extra?: string } | null;
     attack_bonus?: number;
     ac_bonus?: number;
-    check_penalty?: number;
-    speed_penalty?: number;
+    check_penalty?: number | string;
+    speed_penalty?: number | string;
     dex_cap?: number;
-    strength?: number;
-    bulk: { capacity?: number; held_or_stowed?: number; ignored?: number };
+    strength?: number | null;
+    bulk: { capacity?: number | string; held_or_stowed?: number | string; ignored?: number | string };
     charges?: { current?: number; max?: number };
     container_default_items?: { id: number; name: string; quantity: number }[];
-    hardness?: number;
-    hp?: number;
-    hp_max?: number;
-    broken_threshold?: number;
+    hardness?: number | string;
+    hp?: number | string;
+    hp_max?: number | string;
+    broken_threshold?: number | string;
     is_shoddy?: boolean;
     unselectable?: boolean;
     quantity?: number;
-    material?: { grade?: string; type?: string };
-    range?: number;
-    reload?: string;
+    material?: { grade?: string | null; type?: string | null };
+    range?: number | string | null;
+    reload?: string | null;
     runes?: {
       striking?: number;
       resilient?: number;
@@ -185,21 +185,21 @@ export interface Item {
     starfinder?: {
       capacity?: string;
       usage?: number;
-      grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON';
+      grade?: 'COMMERCIAL' | 'TACTICAL' | 'ADVANCED' | 'SUPERIOR' | 'ELITE' | 'ULTIMATE' | 'PARAGON' | null;
       slots?: { name: string; id: number; upgrade?: Item }[];
     };
     foundry?: {
-      rules?: Record<string, any>;
+      rules?: Record<string, any> | any[];
       tags?: Record<string, any>;
       bonus?: number;
       bonus_damage?: number;
-      container_id?: string;
+      container_id?: string | null;
       splash_damage?: number;
       stack_group?: string;
       items?: Record<string, any>[];
     };
-  };
-  operations?: Operation[];
+  } | null;
+  operations: Operation[] | null;
   content_source_id: number;
   version: string;
 }
@@ -211,49 +211,50 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
     name: z.string(),
     price: z
       .object({
-        cp: z.number().optional(),
-        sp: z.number().optional(),
-        gp: z.number().optional(),
-        pp: z.number().optional(),
+        cp: z.union([z.number(), z.string()]).optional(),
+        sp: z.union([z.number(), z.string()]).optional(),
+        gp: z.union([z.number(), z.string()]).optional(),
+        pp: z.union([z.number(), z.string()]).optional(),
       })
-      .optional(),
-    bulk: z.string().optional(),
+      .nullable(),
+    bulk: z.string().nullable(),
     level: z.number(),
     rarity: RaritySchema,
-    availability: AvailabilitySchema.optional(),
-    traits: z.array(z.number()).optional(),
+    availability: AvailabilitySchema.nullable().optional(),
+    traits: z.array(z.number()).nullable(),
     description: z.string(),
     group: ItemGroupSchema,
-    hands: z.string().optional(),
+    hands: z.string().nullable(),
     size: SizeSchema,
-    craft_requirements: z.string().optional(),
-    usage: z.string().optional(),
+    craft_requirements: z.string().nullable(),
+    usage: z.string().nullable(),
     meta_data: z
       .object({
         deprecated: z.boolean().optional(),
         image_url: z.string().optional(),
-        base_item: z.string().optional(),
+        base_item: z.string().nullable().optional(),
         base_item_content: z.lazy(() => ItemSchema).optional(),
-        category: ItemMetaCategorySchema.optional(),
-        group: ItemMetaGroupSchema.optional(),
+        category: ItemMetaCategorySchema.optional().or(z.literal('')),
+        group: ItemMetaGroupSchema.optional().or(z.literal('')),
         damage: z
           .object({
-            damageType: z.string(),
-            dice: z.number(),
-            die: z.string(),
+            damageType: z.string().optional(),
+            dice: z.union([z.number(), z.string()]).optional(),
+            die: z.string().nullable().optional(),
             extra: z.string().optional(),
           })
+          .nullable()
           .optional(),
         attack_bonus: z.number().optional(),
         ac_bonus: z.number().optional(),
-        check_penalty: z.number().optional(),
-        speed_penalty: z.number().optional(),
+        check_penalty: z.union([z.number(), z.string()]).optional(),
+        speed_penalty: z.union([z.number(), z.string()]).optional(),
         dex_cap: z.number().optional(),
-        strength: z.number().optional(),
+        strength: z.number().nullable().optional(),
         bulk: z.object({
-          capacity: z.number().optional(),
-          held_or_stowed: z.number().optional(),
-          ignored: z.number().optional(),
+          capacity: z.union([z.number(), z.string()]).optional(),
+          held_or_stowed: z.union([z.number(), z.string()]).optional(),
+          ignored: z.union([z.number(), z.string()]).optional(),
         }),
         charges: z
           .object({
@@ -264,16 +265,18 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
         container_default_items: z
           .array(z.object({ id: z.number(), name: z.string(), quantity: z.number() }))
           .optional(),
-        hardness: z.number().optional(),
-        hp: z.number().optional(),
-        hp_max: z.number().optional(),
-        broken_threshold: z.number().optional(),
+        hardness: z.union([z.number(), z.string()]).optional(),
+        hp: z.union([z.number(), z.string()]).optional(),
+        hp_max: z.union([z.number(), z.string()]).optional(),
+        broken_threshold: z.union([z.number(), z.string()]).optional(),
         is_shoddy: z.boolean().optional(),
         unselectable: z.boolean().optional(),
         quantity: z.number().optional(),
-        material: z.object({ grade: z.string().optional(), type: z.string().optional() }).optional(),
-        range: z.number().optional(),
-        reload: z.string().optional(),
+        material: z
+          .object({ grade: z.string().nullable().optional(), type: z.string().nullable().optional() })
+          .optional(),
+        range: z.union([z.number(), z.string()]).nullable().optional(),
+        reload: z.string().nullable().optional(),
         runes: z
           .object({
             striking: z.number().optional(),
@@ -296,7 +299,8 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
             usage: z.number().optional(),
             grade: z
               .enum(['COMMERCIAL', 'TACTICAL', 'ADVANCED', 'SUPERIOR', 'ELITE', 'ULTIMATE', 'PARAGON'])
-              .optional(),
+              .optional()
+              .nullable(),
             slots: z
               .array(
                 z.object({
@@ -310,19 +314,19 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
           .optional(),
         foundry: z
           .object({
-            rules: z.record(z.string(), z.any()).optional(),
+            rules: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
             tags: z.record(z.string(), z.any()).optional(),
             bonus: z.number().optional(),
             bonus_damage: z.number().optional(),
-            container_id: z.string().optional(),
+            container_id: z.string().nullable().optional(),
             splash_damage: z.number().optional(),
             stack_group: z.string().optional(),
             items: z.array(z.record(z.string(), z.any())).optional(),
           })
           .optional(),
       })
-      .optional(),
-    operations: z.array(OperationSchema).optional(),
+      .nullable(),
+    operations: z.array(OperationSchema).nullable(),
     content_source_id: z.number(),
     version: z.string(),
   })
@@ -372,30 +376,30 @@ export const SpellSchema = z.object({
   rank: z.number(),
   traditions: z.array(z.string()),
   rarity: RaritySchema,
-  availability: AvailabilitySchema.optional(),
+  availability: AvailabilitySchema.nullable(),
   cast: z.union([ActionCostSchema, z.string()]),
-  traits: z.array(z.number()).optional(),
-  defense: z.string().optional(),
-  cost: z.string().optional(),
-  trigger: z.string().optional(),
-  requirements: z.string().optional(),
-  range: z.string().optional(),
-  area: z.string().optional(),
-  targets: z.string().optional(),
-  duration: z.string().optional(),
+  traits: z.array(z.number()).nullable(),
+  defense: z.string().nullable(),
+  cost: z.string().nullable(),
+  trigger: z.string().nullable(),
+  requirements: z.string().nullable(),
+  range: z.string().nullable(),
+  area: z.string().nullable(),
+  targets: z.string().nullable(),
+  duration: z.string().nullable(),
   description: z.string(),
   heightened: z
     .object({
-      text: z.array(z.object({ amount: z.string(), text: z.string() })),
+      text: z.array(z.object({ amount: z.string(), text: z.string() })).optional(),
       // Foundry system.heightening — opaque passthrough, shape varies by type ('interval' / 'fixed')
-      data: z.record(z.string(), z.any()),
+      data: z.record(z.string(), z.any()).optional(),
     })
-    .optional(),
+    .nullable(),
   meta_data: z.object({
     focus: z.boolean().optional(),
-    damage: z.record(z.string(), z.any()).optional(),
+    damage: z.array(z.object({})).optional(),
     type: z.string().optional(),
-    ritual: z.record(z.string(), z.any()).optional(),
+    ritual: z.record(z.string(), z.any()).or(z.boolean()).optional(),
     foundry: z.record(z.string(), z.any()).optional(),
     unselectable: z.boolean().optional(),
     deprecated: z.boolean().optional(),
@@ -411,20 +415,20 @@ export type Spell = z.infer<typeof SpellSchema>;
 export const AbilityBlockSchema = z.object({
   id: z.number(),
   created_at: z.string(),
-  operations: z.array(OperationSchema).optional(),
+  operations: z.array(OperationSchema).nullable(),
   name: z.string(),
   actions: ActionCostSchema,
-  level: z.number().optional(),
+  level: z.number().nullable(),
   rarity: RaritySchema,
-  availability: AvailabilitySchema.optional(),
-  prerequisites: z.array(z.string()).optional(),
-  frequency: z.string().optional(),
-  cost: z.string().optional(),
-  trigger: z.string().optional(),
-  requirements: z.string().optional(),
-  access: z.string().optional(),
+  availability: AvailabilitySchema.nullable().optional(),
+  prerequisites: z.array(z.string()).nullable(),
+  frequency: z.string().nullable(),
+  cost: z.string().nullable(),
+  trigger: z.string().nullable(),
+  requirements: z.string().nullable(),
+  access: z.string().nullable(),
   description: z.string(),
-  special: z.string().optional(),
+  special: z.string().nullable(),
   type: AbilityBlockTypeSchema,
   meta_data: z
     .object({
@@ -435,10 +439,10 @@ export const AbilityBlockSchema = z.object({
       image_url: z.string().optional(),
       foundry: z.record(z.string(), z.any()).optional(),
     })
-    .optional(),
-  traits: z.array(z.number()).optional(),
+    .nullable(),
+  traits: z.array(z.number()).nullable(),
   content_source_id: z.number(),
-  version: z.string().optional(),
+  version: z.string().nullable(),
 });
 export type AbilityBlock = z.infer<typeof AbilityBlockSchema>;
 
@@ -450,11 +454,11 @@ export const ClassSchema = z.object({
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
-  operations: z.array(OperationSchema).optional(),
+  operations: z.array(OperationSchema).nullable(),
   skill_training_base: z.number(),
   trait_id: z.number(),
-  artwork_url: z.string(),
-  deprecated: z.boolean().optional(),
+  artwork_url: z.string().nullable(),
+  deprecated: z.boolean().nullable(),
   content_source_id: z.number(),
   version: z.string(),
 });
@@ -466,12 +470,12 @@ export const ClassArchetypeSchema = z.object({
   id: z.number(),
   created_at: z.string(),
   class_id: z.number(),
-  archetype_id: z.number().optional(),
+  archetype_id: z.number().nullable(),
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
-  artwork_url: z.string(),
-  operations: z.array(OperationSchema).optional(),
+  artwork_url: z.string().nullable(),
+  operations: z.array(OperationSchema).nullable(),
   feature_adjustments: z
     .array(
       z.object({
@@ -481,11 +485,11 @@ export const ClassArchetypeSchema = z.object({
         data: AbilityBlockSchema.optional(),
       })
     )
-    .optional(),
-  override_skill_training_base: z.number().nullable().optional(),
-  override_class_operations: z.boolean().optional(),
+    .nullable(),
+  override_skill_training_base: z.number().nullable(),
+  override_class_operations: z.boolean().nullable(),
   content_source_id: z.number(),
-  deprecated: z.boolean().optional(),
+  deprecated: z.boolean().nullable(),
   version: z.string(),
 });
 export type ClassArchetype = z.infer<typeof ClassArchetypeSchema>;
@@ -499,11 +503,11 @@ export const ArchetypeSchema = z.object({
   rarity: RaritySchema,
   description: z.string(),
   trait_id: z.number(),
-  artwork_url: z.string(),
+  artwork_url: z.string().nullable(),
   content_source_id: z.number(),
-  deprecated: z.boolean().optional(),
+  deprecated: z.boolean().nullable(),
   version: z.string(),
-  dedication_feat_id: z.number().optional(),
+  dedication_feat_id: z.number().nullable(),
 });
 export type Archetype = z.infer<typeof ArchetypeSchema>;
 
@@ -516,9 +520,9 @@ export const VersatileHeritageSchema = z.object({
   rarity: RaritySchema,
   description: z.string(),
   trait_id: z.number(),
-  artwork_url: z.string(),
+  artwork_url: z.string().nullable(),
   content_source_id: z.number(),
-  deprecated: z.boolean().optional(),
+  deprecated: z.boolean().nullable(),
   version: z.string(),
   heritage_id: z.number(),
 });
@@ -533,11 +537,11 @@ export const AncestrySchema = z.object({
   rarity: RaritySchema,
   description: z.string(),
   trait_id: z.number(),
-  artwork_url: z.string(),
+  artwork_url: z.string().nullable(),
   content_source_id: z.number(),
-  deprecated: z.boolean().optional(),
+  deprecated: z.boolean().nullable(),
   version: z.string(),
-  operations: z.array(OperationSchema).optional(),
+  operations: z.array(OperationSchema).nullable(),
 });
 export type Ancestry = z.infer<typeof AncestrySchema>;
 
@@ -549,9 +553,9 @@ export const BackgroundSchema = z.object({
   name: z.string(),
   rarity: RaritySchema,
   description: z.string(),
-  artwork_url: z.string(),
-  operations: z.array(OperationSchema).optional(),
-  deprecated: z.boolean().optional(),
+  artwork_url: z.string().nullable(),
+  operations: z.array(OperationSchema).nullable(),
+  deprecated: z.boolean().nullable(),
   content_source_id: z.number(),
   version: z.string(),
 });
@@ -563,13 +567,13 @@ export const LanguageSchema = z.object({
   id: z.number(),
   created_at: z.string(),
   name: z.string(),
-  speakers: z.string(),
-  script: z.string(),
+  speakers: z.string().nullable(),
+  script: z.string().nullable(),
   description: z.string(),
   content_source_id: z.number(),
-  deprecated: z.boolean().optional(),
+  deprecated: z.boolean().nullable(),
   rarity: RaritySchema,
-  availability: AvailabilitySchema.optional(),
+  availability: AvailabilitySchema.nullable(),
 });
 export type Language = z.infer<typeof LanguageSchema>;
 
@@ -685,7 +689,7 @@ export const LivingEntitySchema = z.object({
   name: z.string(),
   level: z.number(),
   experience: z.number(),
-  inventory: InventorySchema.optional(),
+  inventory: InventorySchema.nullable(),
   hp_current: z.number(),
   hp_temp: z.number(),
   stamina_current: z.number(),
@@ -696,9 +700,9 @@ export const LivingEntitySchema = z.object({
       background_image_url: z.string().optional(),
       conditions: z.array(ConditionSchema).optional(),
     })
-    .optional(),
-  notes: NotesSchema.optional(),
-  roll_history: RollHistorySchema.optional(),
+    .nullable(),
+  notes: NotesSchema.nullable(),
+  roll_history: RollHistorySchema.nullable(),
   spells: z
     .object({
       slots: z.array(SpellSlotSchema),
@@ -706,13 +710,13 @@ export const LivingEntitySchema = z.object({
       focus_point_current: z.number(),
       innate_casts: z.array(SpellInnateEntrySchema),
     })
-    .optional(),
+    .nullable(),
   operation_data: z
     .object({
       selections: z.record(z.string(), z.string()).optional(),
       notes: z.record(z.string(), z.string()).optional(),
     })
-    .optional(),
+    .nullable(),
   meta_data: z
     .object({
       active_modes: z.array(z.string()).optional(),
@@ -728,7 +732,7 @@ export const LivingEntitySchema = z.object({
         })
         .optional(),
     })
-    .optional(),
+    .nullable(),
 });
 export type LivingEntity = z.infer<typeof LivingEntitySchema>;
 
@@ -745,11 +749,11 @@ export const CreatureSchema = LivingEntitySchema.extend({
     description: z.string(),
     adjustment: z.enum(['ELITE', 'WEAK']).optional(),
   }),
-  operations: z.array(OperationSchema).optional(),
-  abilities_base: z.array(AbilityBlockSchema).optional(),
-  abilities_added: z.array(z.number()).optional(),
+  operations: z.array(OperationSchema).nullable(),
+  abilities_base: z.array(AbilityBlockSchema).nullable(),
+  abilities_added: z.array(z.number()).nullable(),
   content_source_id: z.number(),
-  deprecated: z.boolean().optional(),
+  deprecated: z.boolean().nullable(),
   version: z.string(),
 });
 export type Creature = z.infer<typeof CreatureSchema>;
@@ -759,7 +763,7 @@ export type Creature = z.infer<typeof CreatureSchema>;
 export const CharacterSchema = LivingEntitySchema.extend({
   id: z.number(),
   created_at: z.string(),
-  campaign_id: z.number().nullable().optional(),
+  campaign_id: z.number().nullable(),
   user_id: z.string(),
   hero_points: z.number(),
   details: z
@@ -807,12 +811,12 @@ export const CharacterSchema = LivingEntitySchema.extend({
         })
         .optional(),
     })
-    .optional(),
-  custom_operations: z.array(OperationSchema).optional(),
-  options: CharacterOptionsSchema.optional(),
-  variants: CharacterVariantsSchema.optional(),
-  content_sources: z.object({ enabled: z.array(z.number()).optional() }).optional(),
-  companions: z.object({ list: z.array(CreatureSchema).optional() }).optional(),
+    .nullable(),
+  custom_operations: z.array(OperationSchema).nullable(),
+  options: CharacterOptionsSchema.nullable(),
+  variants: CharacterVariantsSchema.nullable(),
+  content_sources: z.object({ enabled: z.array(z.number()).optional() }).nullable(),
+  companions: z.object({ list: z.array(CreatureSchema).optional() }).nullable(),
 });
 export type Character = z.infer<typeof CharacterSchema>;
 
@@ -823,13 +827,13 @@ export const CampaignSchema = z.object({
   created_at: z.string(),
   user_id: z.string(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable(),
   join_key: z.string(),
-  notes: NotesSchema.optional(),
-  recommended_options: CharacterOptionsSchema.optional(),
-  recommended_variants: CharacterVariantsSchema.optional(),
-  recommended_content_sources: z.object({ enabled: z.array(z.number()).optional() }).optional(),
-  custom_operations: z.array(OperationSchema).optional(),
+  notes: NotesSchema.nullable(),
+  recommended_options: CharacterOptionsSchema.nullable(),
+  recommended_variants: CharacterVariantsSchema.nullable(),
+  recommended_content_sources: z.object({ enabled: z.array(z.number()).optional() }).nullable(),
+  custom_operations: z.array(OperationSchema).nullable(),
   meta_data: z
     .object({
       settings: z
@@ -841,7 +845,7 @@ export const CampaignSchema = z.object({
       dice: DicePresetsSchema.optional(),
       roll_history: RollHistorySchema.optional(),
     })
-    .optional(),
+    .nullable(),
 });
 export type Campaign = z.infer<typeof CampaignSchema>;
 
@@ -892,7 +896,7 @@ export const EncounterSchema = z.object({
   name: z.string(),
   icon: z.string(),
   color: z.string(),
-  campaign_id: z.number().optional(),
+  campaign_id: z.number().nullable(),
   combatants: z.object({ list: z.array(CombatantSchema) }),
   meta_data: z.object({
     description: z.string().optional(),
@@ -909,8 +913,8 @@ export const PublicUserSchema = z.object({
   user_id: z.string(),
   created_at: z.string(),
   display_name: z.string(),
-  image_url: z.string().optional(),
-  background_image_url: z.string().optional(),
+  image_url: z.string().nullable(),
+  background_image_url: z.string().nullable(),
   site_theme: z
     .object({
       color: z.string().optional(),
@@ -918,11 +922,11 @@ export const PublicUserSchema = z.object({
       view_operations: z.boolean().optional(),
       zoom: z.number().optional(),
     })
-    .optional(),
+    .nullable(),
   is_admin: z.boolean(),
   is_mod: z.boolean(),
-  is_developer: z.boolean().optional(),
-  is_community_paragon: z.boolean().optional(),
+  is_developer: z.boolean().nullable(),
+  is_community_paragon: z.boolean().nullable(),
   patreon: z
     .object({
       patreon_user_id: z.string().optional(),
@@ -944,7 +948,7 @@ export const PublicUserSchema = z.object({
         })
         .optional(),
     })
-    .optional(),
+    .nullable(),
   api: z
     .object({
       clients: z
@@ -959,10 +963,10 @@ export const PublicUserSchema = z.object({
         )
         .optional(),
     })
-    .optional(),
+    .nullable(),
   deactivated: z.boolean(),
-  summary: z.string().optional(),
-  organized_play_id: z.string().optional(),
+  summary: z.string().nullable(),
+  organized_play_id: z.string().nullable(),
   subscribed_content_sources: z
     .array(
       z.object({
@@ -971,7 +975,7 @@ export const PublicUserSchema = z.object({
         added_at: z.string(),
       })
     )
-    .optional(),
+    .nullable(),
 });
 export type PublicUser = z.infer<typeof PublicUserSchema>;
 
@@ -981,20 +985,20 @@ export const ContentSourceSchema = z.object({
   id: z.number(),
   created_at: z.string(),
   name: z.string(),
-  foundry_id: z.string().optional(),
-  url: z.string(),
+  foundry_id: z.string().nullable(),
+  url: z.string().nullable(),
   description: z.string(),
-  operations: z.array(OperationSchema).optional(),
-  user_id: z.string(),
-  contact_info: z.string(),
+  operations: z.array(OperationSchema).nullable(),
+  user_id: z.string().nullable(),
+  contact_info: z.string().nullable(),
   require_key: z.boolean(),
-  keys: z.object({ access_key: z.string().optional() }).optional(),
+  keys: z.object({ access_key: z.string().optional() }).nullable(),
   is_published: z.boolean(),
-  deprecated: z.boolean().optional(),
-  required_content_sources: z.array(z.number()).optional(),
-  group: z.string(),
-  artwork_url: z.string().optional(),
-  meta_data: z.object({ counts: z.record(z.string(), z.number()).optional() }).optional(),
+  deprecated: z.boolean().nullable(),
+  required_content_sources: z.array(z.number()).nullable(),
+  group: z.string().nullable(),
+  artwork_url: z.string().nullable(),
+  meta_data: z.object({ counts: z.record(z.string(), z.number()).optional() }).nullable(),
 });
 export type ContentSource = z.infer<typeof ContentSourceSchema>;
 
@@ -1005,7 +1009,7 @@ export const ContentUpdateSchema = z.object({
   created_at: z.string(),
   user_id: z.string(),
   type: ContentTypeSchema,
-  ref_id: z.number().optional(),
+  ref_id: z.number().nullable(),
   action: z.enum(['UPDATE', 'CREATE', 'DELETE']),
   data: z.record(z.string(), z.any()),
   content_source_id: z.number(),
@@ -1016,7 +1020,7 @@ export const ContentUpdateSchema = z.object({
   }),
   upvotes: z.array(z.object({ discord_user_id: z.string() })),
   downvotes: z.array(z.object({ discord_user_id: z.string() })),
-  discord_msg_id: z.string().optional(),
+  discord_msg_id: z.string().nullable(),
 });
 export type ContentUpdate = z.infer<typeof ContentUpdateSchema>;
 
