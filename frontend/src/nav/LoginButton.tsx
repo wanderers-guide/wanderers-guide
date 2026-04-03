@@ -19,8 +19,8 @@ export function LoginButton(props: { onClick: () => void }) {
         paddingRight: theme.spacing.sm,
         color: theme.colors.gray[4],
         fontWeight: 500,
+        borderRadius: theme.radius.md,
         ...glassStyle(),
-        backgroundColor: hovered ? theme.colors.dark[8] + '20' : theme.colors.dark[8] + '00',
       }}
     >
       <Group gap={2} wrap='nowrap'>

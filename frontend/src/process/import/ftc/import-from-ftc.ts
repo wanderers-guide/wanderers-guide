@@ -17,6 +17,7 @@ import { selectRandom } from '@utils/random';
 import { isTruthy } from '@utils/type-fixing';
 import { labelToVariable } from '@variables/variable-utils';
 import { cloneDeep } from 'lodash-es';
+import { getAllBackgroundImages } from '@utils/background-images';
 
 /**
  * FTC - Finder 2e Character - A universal file structure for Pathfinder 2e and Starfinder 2e characters.
@@ -356,6 +357,14 @@ export async function importFromFTC(d: FTC) {
       const charWithInfo = await randomCharacterInfo(character);
       character.details = charWithInfo.details;
     }
+  }
+
+  // Random background image
+  const images = getAllBackgroundImages();
+  const randomImageUrl = images[Math.floor(Math.random() * images.length)]?.url;
+  if (randomImageUrl) {
+    if (!character.details) character.details = {};
+    character.details.background_image_url = randomImageUrl;
   }
 
   // Create the character

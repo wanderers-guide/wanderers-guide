@@ -20,6 +20,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { useAtom } from 'jotai';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 
 interface LinksGroupProps {
   icon: React.FC<any>;
@@ -66,10 +67,10 @@ export function LinksGroup({ icon: Icon, label, initiallyOpened, links, onLinkCh
             </ThemeIcon>
             <Box ml='md'>{label}</Box>
             <Badge ml='md' variant='default'>
-              <Text fz='sm' c='gray.2' span>
+              <Text fz='xs' c='gray.2' span>
                 {links?.filter((link) => link.enabled).length}
               </Text>
-              <Text fz='sm' c='gray.2' span>
+              <Text fz='xs' c='gray.2' span>
                 /{links?.length}
               </Text>
             </Badge>

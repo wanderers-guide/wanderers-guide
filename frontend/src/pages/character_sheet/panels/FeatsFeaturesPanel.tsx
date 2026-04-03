@@ -30,6 +30,7 @@ import * as JsSearch from 'js-search';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { useMediaQuery } from '@mantine/hooks';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 
 export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWidth: number }) {
   const isPhone = useMediaQuery(phoneQuery());
@@ -432,8 +433,8 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
             }
             styles={{
               input: {
-                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+                backgroundColor: IMPRINT_BG_COLOR,
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : 'transparent',
               },
             }}
           />

@@ -66,6 +66,7 @@ import CampaignDrawer from '@pages/campaign/CampaignDrawer';
 import useCharacter from '@utils/use-character';
 import { getAnchorStyles } from '@utils/anchor';
 import { AnimatePresence, motion } from 'framer-motion';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 // Use lazy imports here to prevent a huge amount of js on initial load (3d dice smh)
 const DiceRoller = lazy(() => import('@common/dice/DiceRoller'));
@@ -598,7 +599,7 @@ function SectionPanels(props: {
                   value='skills-actions'
                   style={{
                     border:
-                      activeTab === 'skills-actions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                      activeTab === 'skills-actions' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('skills-actions')}
                 >
@@ -609,7 +610,7 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='inventory'
                   style={{
-                    border: activeTab === 'inventory' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border: activeTab === 'inventory' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('inventory')}
                 >
@@ -620,7 +621,7 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='spells'
                   style={{
-                    border: activeTab === 'spells' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border: activeTab === 'spells' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('spells')}
                 >
@@ -632,7 +633,7 @@ function SectionPanels(props: {
                   value='feats-features'
                   style={{
                     border:
-                      activeTab === 'feats-features' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                      activeTab === 'feats-features' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('feats-features')}
                 >
@@ -643,7 +644,7 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='companions'
                   style={{
-                    border: activeTab === 'companions' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border: activeTab === 'companions' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('companions')}
                 >
@@ -654,7 +655,7 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='details'
                   style={{
-                    border: activeTab === 'details' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border: activeTab === 'details' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('details')}
                 >
@@ -665,7 +666,7 @@ function SectionPanels(props: {
                 <Tabs.Tab
                   value='notes'
                   style={{
-                    border: activeTab === 'notes' ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                    border: activeTab === 'notes' ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                   }}
                   leftSection={getTabIcon('notes')}
                 >
@@ -682,9 +683,9 @@ function SectionPanels(props: {
                     aria-label='Tab Options'
                     ref={tabOptionsRef}
                     style={{
-                      backgroundColor: hoveredTabOptions || openedTabOption ? theme.colors.dark[6] : 'transparent',
+                      backgroundColor: hoveredTabOptions || openedTabOption ? IMPRINT_BG_COLOR : 'transparent',
                       color: openedTabOption ? theme.colors.gray[0] : undefined,
-                      border: openedTabOption ? `1px solid ` + theme.colors.dark[4] : `1px solid transparent`,
+                      border: openedTabOption ? `1px solid ` + IMPRINT_BORDER_COLOR : `1px solid transparent`,
                     }}
                   >
                     <IconDots style={{ width: '70%', height: '70%' }} stroke={1.5} />
@@ -701,7 +702,7 @@ function SectionPanels(props: {
                         setActiveTab(tab);
                       }}
                       style={{
-                        backgroundColor: activeTab === tab ? theme.colors.dark[4] : undefined,
+                        backgroundColor: activeTab === tab ? IMPRINT_BG_COLOR : undefined,
                         color: activeTab === tab ? theme.colors.gray[0] : undefined,
                       }}
                     >

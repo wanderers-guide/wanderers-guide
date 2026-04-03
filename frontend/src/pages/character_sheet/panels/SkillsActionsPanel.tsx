@@ -2,7 +2,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { ActionSymbol } from '@common/Actions';
 import { EllipsisText } from '@common/EllipsisText';
 import TraitsDisplay from '@common/TraitsDisplay';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { isAbilityBlockVisible } from '@content/content-hidden';
 import { getContentFast } from '@content/content-store';
@@ -387,8 +387,8 @@ export default function SkillsActionsPanel(props: {
           }
           styles={{
             input: {
-              backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
-              borderColor: skillsSearch.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+              backgroundColor: IMPRINT_BG_COLOR,
+              borderColor: skillsSearch.trim().length > 0 ? theme.colors['guide'][8] : 'transparent',
             },
           }}
         />
@@ -462,8 +462,8 @@ export default function SkillsActionsPanel(props: {
             }
             styles={{
               input: {
-                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+                backgroundColor: IMPRINT_BG_COLOR,
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : 'transparent',
               },
             }}
           />
@@ -475,8 +475,8 @@ export default function SkillsActionsPanel(props: {
               size='lg'
               aria-label='Filter One Action'
               style={{
-                backgroundColor: actionTypeFilter === 'ALL' ? theme.colors.dark[6] : undefined,
-                borderColor: actionTypeFilter === 'ALL' ? theme.colors.dark[4] : undefined,
+                backgroundColor: actionTypeFilter === 'ALL' ? IMPRINT_BG_COLOR : undefined,
+                borderColor: actionTypeFilter === 'ALL' ? IMPRINT_BORDER_COLOR : undefined,
               }}
               onClick={() => {
                 setActionTypeFilter('ALL');
@@ -491,7 +491,7 @@ export default function SkillsActionsPanel(props: {
               size='lg'
               aria-label='Filter One Action'
               style={{
-                backgroundColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors.dark[6] : undefined,
+                backgroundColor: actionTypeFilter === 'ONE-ACTION' ? IMPRINT_BG_COLOR : undefined,
                 borderColor: actionTypeFilter === 'ONE-ACTION' ? theme.colors['guide'][8] : undefined,
               }}
               onClick={() => {
@@ -507,7 +507,7 @@ export default function SkillsActionsPanel(props: {
               size='lg'
               aria-label='Filter Two Actions'
               style={{
-                backgroundColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors.dark[6] : undefined,
+                backgroundColor: actionTypeFilter === 'TWO-ACTIONS' ? IMPRINT_BG_COLOR : undefined,
                 borderColor: actionTypeFilter === 'TWO-ACTIONS' ? theme.colors['guide'][8] : undefined,
               }}
               onClick={() => {
@@ -523,7 +523,7 @@ export default function SkillsActionsPanel(props: {
               size='lg'
               aria-label='Filter Three Actions'
               style={{
-                backgroundColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors.dark[6] : undefined,
+                backgroundColor: actionTypeFilter === 'THREE-ACTIONS' ? IMPRINT_BG_COLOR : undefined,
                 borderColor: actionTypeFilter === 'THREE-ACTIONS' ? theme.colors['guide'][8] : undefined,
               }}
               onClick={() => {
@@ -539,7 +539,7 @@ export default function SkillsActionsPanel(props: {
               size='lg'
               aria-label='Filter Free Action'
               style={{
-                backgroundColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors.dark[6] : undefined,
+                backgroundColor: actionTypeFilter === 'FREE-ACTION' ? IMPRINT_BG_COLOR : undefined,
                 borderColor: actionTypeFilter === 'FREE-ACTION' ? theme.colors['guide'][8] : undefined,
               }}
               onClick={() => {
@@ -555,7 +555,7 @@ export default function SkillsActionsPanel(props: {
               size='lg'
               aria-label='Filter Reaction'
               style={{
-                backgroundColor: actionTypeFilter === 'REACTION' ? theme.colors.dark[6] : undefined,
+                backgroundColor: actionTypeFilter === 'REACTION' ? IMPRINT_BG_COLOR : undefined,
                 borderColor: actionTypeFilter === 'REACTION' ? theme.colors['guide'][8] : undefined,
               }}
               onClick={() => {
@@ -812,7 +812,6 @@ function ActionAccordionItem(props: {
   isPhone?: boolean;
 }) {
   const theme = useMantineTheme();
-  const [subSectionValue, setSubSectionValue] = useState<string | null>(null);
   const { hovered, ref } = useHover();
 
   if (props.actions.length === 0) return null;
@@ -822,7 +821,7 @@ function ActionAccordionItem(props: {
       ref={ref}
       value={props.id}
       style={{
-        backgroundColor: hovered && !props.opened ? theme.colors.dark[6] : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
     >
       <Accordion.Control>

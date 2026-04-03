@@ -17,11 +17,13 @@
   height: rem(13px);
   left: rem(-2px);
   cursor: pointer;
-  background-color: var(--mantine-color-dark-4);
-  border-color: var(--mantine-color-dark-4);
-  transition: background-color 100ms ease, left 100ms ease;
+  background-color: var(--mantine-color-dark-3);
+  border-color: var(--mantine-color-dark-3);
+  transition:
+    background-color 100ms ease,
+    left 100ms ease;
 
-  input:checked+*>& {
+  input:checked + * > & {
     /*background-color: var(--mantine-color-blue-4);*/
     left: calc(100% - rem(12px));
   }

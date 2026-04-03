@@ -58,6 +58,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Character } from '@schemas/content';
 import { isPlayable } from '@utils/character';
+import { getAllBackgroundImages } from '@utils/background-images';
 import { setPageTitle } from '@utils/document-change';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { hasPatreonAccess } from '@utils/patreon';
@@ -567,10 +568,16 @@ function CharacterCard(props: { character: Character; reachedCharacterLimit: boo
 }
 
 async function createCharacter() {
+  // Select random background image
+  const images = getAllBackgroundImages();
+  const randomImageUrl = images[Math.floor(Math.random() * images.length)]?.url;
+
+  // Create character
   const result = await makeRequest<Character>('create-character', {
     meta_data: {
       reset_hp: true,
     },
+    details: { background_image_url: randomImageUrl },
   });
   return result;
 }

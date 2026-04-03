@@ -1,7 +1,6 @@
 import { generateNames } from '@ai/fantasygen-dev/name-controller';
-import { characterState } from '@atoms/characterAtoms';
 import { GroupLinkSwitch, LinkSwitch, LinksGroup } from '@common/LinksGroup';
-import { GUIDE_BLUE } from '@constants/data';
+import { GUIDE_BLUE, IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BORDER_COLOR } from '@constants/data';
 import {
   Stack,
   Group,
@@ -906,6 +905,12 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                   <IconPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                 </ActionIcon>
               }
+              styles={{
+                input: {
+                  backgroundColor: IMPRINT_BG_COLOR,
+                  borderColor: IMPRINT_BORDER_COLOR,
+                },
+              }}
             />
           )}
           <ColorInput
@@ -950,6 +955,12 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                 };
               });
             }}
+            styles={{
+              input: {
+                backgroundColor: IMPRINT_BG_COLOR,
+                borderColor: IMPRINT_BORDER_COLOR,
+              },
+            }}
           />
           <Box>
             <Text fz='sm'>Background Artwork</Text>
@@ -962,10 +973,6 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                   innerProps: {
                     options: getAllBackgroundImages(),
                     onSelect: (option: ImageOption) => {
-                      if (!hasPatreonAccess(getCachedPublicUser(), 1)) {
-                        displayPatronOnly();
-                        return;
-                      }
                       setCharacter((prev) => {
                         if (!prev) return prev;
                         return {
@@ -1297,14 +1304,14 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                 <Avatar
                   src={character?.details?.image_url}
                   alt='Character Portrait'
-                  size='40'
+                  size='38'
                   radius='xl'
                   variant='transparent'
-                  color='dark.3'
+                  color={IMPRINT_BORDER_COLOR}
                   style={{
-                    border: `1px solid ${theme.colors.dark[4]}`,
+                    border: `1px solid ${IMPRINT_BORDER_COLOR}`,
                   }}
-                  bg={theme.colors.dark[6]}
+                  bg={IMPRINT_BG_COLOR}
                 >
                   <IconUserCircle size='1.5rem' stroke={1.5} />
                 </Avatar>
@@ -1420,6 +1427,12 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                       </HoverCard.Dropdown>
                     </HoverCard>
                   }
+                  styles={{
+                    input: {
+                      backgroundColor: IMPRINT_BG_COLOR,
+                      borderColor: IMPRINT_BORDER_COLOR,
+                    },
+                  }}
                 />
               )}
               <Select
@@ -1446,6 +1459,12 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                       };
                     });
                   }
+                }}
+                styles={{
+                  input: {
+                    backgroundColor: IMPRINT_BG_COLOR,
+                    borderColor: IMPRINT_BORDER_COLOR,
+                  },
                 }}
               />
             </Group>

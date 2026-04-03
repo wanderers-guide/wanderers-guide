@@ -5,7 +5,7 @@ import ConditionPill from '@common/ConditionPill';
 import TokenSelect from '@common/TokenSelect';
 import { selectContent } from '@common/select/SelectContent';
 import { getConditionByName, getAllConditions, compiledConditions } from '@conditions/condition-handler';
-import { ICON_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 import { getInvBulk, getBulkLimit } from '@items/inv-utils';
 import { useMantineTheme, Group, ActionIcon, ScrollArea, Title, Button, Box, Text, GroupProps } from '@mantine/core';
 import { openContextModal, modals } from '@mantine/modals';
@@ -248,7 +248,7 @@ export default function MainConditionSection(props: {
                 transform: 'translate(-50%, 0px)',
               }}
             >
-              <HeroPointIcon size={75} color={ICON_BG_COLOR} />
+              <HeroPointIcon size={75} color={IMPRINT_BG_COLOR} />
             </Box>
             <Group justify='flex-start' style={{ flexDirection: 'column' }} h={100} gap={15}>
               <Text ta='center' fz='md' fw={500} c='gray.0' style={{ whiteSpace: 'nowrap' }}>

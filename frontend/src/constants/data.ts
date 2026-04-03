@@ -17,8 +17,9 @@ export const SITE_NAME = "Wanderer's Guide";
 
 export const GUIDE_BLUE = '#359fdf';
 
-export const ICON_BG_COLOR = '#dee2e625'; // E9ECEF19
-export const ICON_BG_COLOR_HOVER = '#C1C2C51A';
+export const IMPRINT_BG_COLOR = 'var(--imprint-bg-color)';
+export const IMPRINT_BG_COLOR_HOVER = 'var(--imprint-bg-color-hover)';
+export const IMPRINT_BORDER_COLOR = 'var(--imprint-border-color)';
 
 export const COMMON_CORE_ID = 3;
 export const PATHFINDER_CORE_ID = 1;

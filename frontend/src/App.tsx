@@ -2,7 +2,7 @@ import { characterState } from '@atoms/characterAtoms';
 import { creatureDrawerState, drawerState } from '@atoms/navAtoms';
 import { sessionState } from '@atoms/supabaseAtoms';
 import { getContentDataFromHref } from '@common/rich_text_input/ContentLinkExtension';
-import { GUIDE_BLUE } from '@constants/data';
+import { GUIDE_BLUE, IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { getCachedCustomization } from '@content/customization-cache';
 import DrawerBase from '@drawers/DrawerBase';
 import { convertContentLink } from '@drawers/drawer-utils';
@@ -133,31 +133,31 @@ export default function App() {
         guide: generateColors(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
         // Dark scale: near-opaque at [0] → nearly transparent at [9]
         dark: [
-          'rgba(193, 194, 197, 0.82)', // [0] lightest text / icons
-          'rgba(166, 167, 171, 0.78)', // [1]
-          'rgba(144, 146, 150, 0.73)', // [2]
-          'rgba(92,  95,  102, 0.68)', // [3]
-          'rgba(55,  58,  64,  0.75)', // [4] ← glass surfaces
-          'rgba(44,  46,  51,  0.70)', // [5]
-          'rgba(37,  38,  43,  0.65)', // [6] ← card bg
-          'rgba(26,  27,  30,  0.60)', // [7] ← page bg
-          'rgba(20,  21,  23,  0.55)', // [8]
-          'rgba(16,  17,  19,  0.50)', // [9] darkest / most transparent
+          'rgba(193, 194, 197, 0.88)', // [0] lightest text / icons
+          'rgba(166, 167, 171, 0.84)', // [1]
+          'rgba(144, 146, 150, 0.79)', // [2]
+          'rgba(92,  95,  102, 0.74)', // [3]
+          'rgba(55,  58,  64,  0.81)', // [4] ← glass surfaces
+          'rgba(44,  46,  51,  0.76)', // [5]
+          'rgba(37,  38,  43,  0.71)', // [6] ← card bg
+          'rgba(26,  27,  30,  0.66)', // [7] ← page bg
+          'rgba(20,  21,  23,  0.61)', // [8]
+          'rgba(16,  17,  19,  0.56)', // [9] darkest / most transparent
         ],
 
         // Gray scale for light mode: near-opaque at [0] → nearly transparent at [9]
         // Mirrors the dark scale's opacity curve on a neutral-light palette.
         gray: [
-          'rgba(248, 249, 250, 0.82)', // [0] near-white surfaces
-          'rgba(241, 243, 245, 0.78)', // [1]
-          'rgba(233, 236, 239, 0.73)', // [2]
-          'rgba(222, 226, 230, 0.68)', // [3]
-          'rgba(206, 212, 218, 0.75)', // [4] ← glass surfaces
-          'rgba(173, 181, 189, 0.70)', // [5]
-          'rgba(134, 142, 150, 0.65)', // [6] ← borders / muted text
-          'rgba(73,  80,  87,  0.60)', // [7] ← body text
-          'rgba(52,  58,  64,  0.55)', // [8]
-          'rgba(33,  37,  41,  0.50)', // [9] darkest text
+          'rgba(248, 249, 250, 0.88)', // [0] near-white surfaces
+          'rgba(241, 243, 245, 0.84)', // [1]
+          'rgba(233, 236, 239, 0.79)', // [2]
+          'rgba(222, 226, 230, 0.74)', // [3]
+          'rgba(206, 212, 218, 0.81)', // [4] ← glass surfaces
+          'rgba(173, 181, 189, 0.76)', // [5]
+          'rgba(134, 142, 150, 0.71)', // [6] ← borders / muted text
+          'rgba(73,  80,  87,  0.66)', // [7] ← body text
+          'rgba(52,  58,  64,  0.61)', // [8]
+          'rgba(33,  37,  41,  0.56)', // [9] darkest text
         ],
       },
       cursorType: 'pointer',
@@ -171,7 +171,53 @@ export default function App() {
         Popover: {
           vars: () => ({
             dropdown: {
-              '--popover-bg': 'rgba(26, 27, 30, 1)',
+              '--mantine-color-dark-6': 'rgba(37,  38,  43,  1)',
+            },
+          }),
+        },
+        Menu: {
+          vars: () => ({
+            dropdown: {
+              '--mantine-color-dark-6': 'rgba(37,  38,  43,  1)',
+            },
+          }),
+        },
+        HoverCard: {
+          vars: () => ({
+            dropdown: {
+              '--mantine-color-dark-6': 'rgba(37,  38,  43,  1)',
+            },
+          }),
+        },
+        Accordion: {
+          vars: () => ({
+            item: {
+              '--item-filled-color': IMPRINT_BG_COLOR,
+            },
+          }),
+          styles: {
+            item: {
+              borderColor: IMPRINT_BORDER_COLOR,
+            },
+          },
+        },
+        Badge: {
+          styles: {
+            label: { overflow: 'visible' },
+          },
+        },
+        Tabs: {
+          vars: () => ({
+            tab: {
+              '--tab-hover-color': IMPRINT_BG_COLOR,
+              '--tab-border-color': IMPRINT_BG_COLOR,
+            },
+          }),
+        },
+        Stepper: {
+          vars: () => ({
+            root: {
+              '--stepper-outline-color': IMPRINT_BG_COLOR,
             },
           }),
         },
@@ -233,10 +279,9 @@ export default function App() {
           },
           dark: {
             ...v8.dark,
-            '--mantine-color-text': 'rgb(195, 195, 195)',
-            '--mantine-color-dimmed': 'rgb(173, 174, 175)',
+            '--mantine-color-text': 'rgb(202, 202, 202)',
+            '--mantine-color-dimmed': 'rgb(180, 180, 180)',
             '--mantine-color-body': 'rgba(26,  27,  30,  1)',
-            '--popover-bg': 'rgba(26,  27,  30,  1)',
           },
         };
       }}

@@ -5,7 +5,7 @@ import { CharacterInfo } from '@common/CharacterInfo';
 import RichText from '@common/RichText';
 import ResultWrapper from '@common/operations/results/ResultWrapper';
 import { SelectContentButton, selectContent } from '@common/select/SelectContent';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { fetchContent, fetchContentPackage, fetchContentSources, getDefaultSources } from '@content/content-store';
 import { getIconFromContentType } from '@content/content-utils';
 import classes from '@css/FaqSimple.module.css';
@@ -59,6 +59,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import useCharacter from '@utils/use-character';
 import { phoneQuery } from '@utils/mobile-responsive';
+import ImprintButton from '@common/ImprintButton';
 
 // Determines how often to check for choice counts
 const CHOICE_COUNT_INTERVAL = 1500;
@@ -499,8 +500,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
       <ScrollArea h={props.pageHeight - height - 20} pr={14} scrollbars='y'>
         <Stack gap={5}>
           <Box>
-            <Button
-              variant='default'
+            <ImprintButton
               size='lg'
               fullWidth
               onClick={() => {
@@ -516,7 +516,7 @@ function CharacterStatSidebar(props: { content: ContentPackage; pageHeight: numb
                 <AttributeModPart attribute='Wis' variableName='ATTRIBUTE_WIS' />
                 <AttributeModPart attribute='Cha' variableName='ATTRIBUTE_CHA' />
               </Group>
-            </Button>
+            </ImprintButton>
           </Box>
           <StatButton
             onClick={() => {
@@ -1074,19 +1074,14 @@ export function StatButton(props: {
   disabled?: boolean;
   darkVersion?: boolean;
 }) {
-  const theme = useMantineTheme();
-  const { hovered, ref } = useHover<HTMLButtonElement>();
-
   return (
     <Box>
-      <Button
-        ref={ref}
+      <ImprintButton
         disabled={props.disabled}
-        variant='default'
         size='compact-lg'
         styles={{
           root: {
-            backgroundColor: props.darkVersion ? (hovered ? `#28292e` : `#212226`) : undefined,
+            border: `1px solid ${IMPRINT_BORDER_COLOR}`,
           },
           inner: {
             width: '100%',
@@ -1101,7 +1096,7 @@ export function StatButton(props: {
         <Group w='100%' justify='space-between' wrap='nowrap'>
           {props.children}
         </Group>
-      </Button>
+      </ImprintButton>
     </Box>
   );
 }
@@ -1178,7 +1173,7 @@ function LevelSection(props: {
       ref={mergedRef}
       value={`${props.level}`}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
     >
       <Accordion.Control>
@@ -1360,7 +1355,7 @@ function ClassFeatureAccordionItem(props: {
       value={props.id}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1424,7 +1419,7 @@ function AncestrySectionAccordionItem(props: {
       value={props.id}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1653,7 +1648,7 @@ function AncestryAccordionItem(props: {
       value='ancestry'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1764,7 +1759,7 @@ function BackgroundAccordionItem(props: {
       value='background'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1873,7 +1868,7 @@ function ClassAccordionItem(props: {
       value={props.isClass2 ? 'class_2' : 'class'}
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -1952,7 +1947,7 @@ function BooksAccordionItem(props: {
       value='books'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -2016,7 +2011,7 @@ function ItemsAccordionItem(props: {
       value='items'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >
@@ -2084,7 +2079,7 @@ function CustomAccordionItem(props: {
       value='custom'
       ref={ref}
       style={{
-        backgroundColor: hovered && !props.opened ? ICON_BG_COLOR_HOVER : undefined,
+        backgroundColor: hovered && !props.opened ? IMPRINT_BG_COLOR_HOVER : undefined,
       }}
       mt={3}
     >

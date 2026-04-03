@@ -59,6 +59,7 @@ import { cloneDeep, truncate } from 'lodash-es';
 import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 
 export default function InventoryPanel(props: {
   id: StoreID;
@@ -243,8 +244,8 @@ export default function InventoryPanel(props: {
             }
             styles={{
               input: {
-                backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
-                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
+                backgroundColor: IMPRINT_BG_COLOR,
+                borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : 'transparent',
               },
             }}
           />

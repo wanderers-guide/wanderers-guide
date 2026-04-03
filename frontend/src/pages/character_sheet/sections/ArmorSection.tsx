@@ -3,7 +3,7 @@ import ShieldIcon from '@assets/images/ShieldIcon';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
 import BlurButton from '@common/BlurButton';
-import { ICON_BG_COLOR_HOVER, ICON_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR_HOVER, IMPRINT_BG_COLOR } from '@constants/data';
 import { handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
 import { getBestArmor, getBestShield, getItemHealth } from '@items/inv-utils';
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
@@ -18,6 +18,7 @@ import { cloneDeep } from 'lodash-es';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { glassStyle } from '@utils/colors';
+import ImprintButton from '@common/ImprintButton';
 
 export default function ArmorSection(props: {
   id: StoreID;
@@ -95,7 +96,7 @@ export default function ArmorSection(props: {
                 });
               }}
             >
-              <ArmorIcon size={85} color={armorHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
+              <ArmorIcon size={85} color={armorHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
               <Stack
                 gap={0}
                 style={{
@@ -140,7 +141,7 @@ export default function ArmorSection(props: {
                     });
                   }}
                 >
-                  <ShieldIcon size={85} color={shieldHovered ? ICON_BG_COLOR_HOVER : ICON_BG_COLOR} />
+                  <ShieldIcon size={85} color={shieldHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
                   <Stack
                     gap={0}
                     style={{
@@ -183,18 +184,25 @@ export default function ArmorSection(props: {
           <Stack gap={8}>
             {getAllSaveVariables(props.id).map((save, index) => (
               <Button.Group key={index}>
-                <BlurButton size='compact-xs' bgColorHover='#ffffff09' fw={400} onClick={() => handleSaveOpen(save)}>
-                  {variableToLabel(save)}
-                </BlurButton>
-                <Button
+                <ImprintButton
                   radius='xl'
-                  variant='light'
-                  color='dark.8'
                   size='compact-xs'
-                  w={55}
+                  fw={400}
+                  c='gray.0'
+                  noBorder
                   style={{
-                    ...glassStyle(),
+                    flex: 1,
                   }}
+                  onClick={() => handleSaveOpen(save)}
+                >
+                  {variableToLabel(save)}
+                </ImprintButton>
+                <ImprintButton
+                  radius='xl'
+                  size='compact-xs'
+                  multiplier={2}
+                  w={55}
+                  noBorder
                   onClick={() => handleSaveOpen(save)}
                 >
                   <Text c='gray.0' fz='xs' pr={15}>
@@ -203,7 +211,7 @@ export default function ArmorSection(props: {
                   <Badge
                     size='xs'
                     variant='light'
-                    color='dark.5'
+                    bg='rgba(0, 0, 0, 0.15)'
                     w={20}
                     style={{
                       position: 'absolute',
@@ -216,7 +224,7 @@ export default function ArmorSection(props: {
                       {compileProficiencyType(save?.value)}
                     </Text>
                   </Badge>
-                </Button>
+                </ImprintButton>
               </Button.Group>
             ))}
           </Stack>

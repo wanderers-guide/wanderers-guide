@@ -1,8 +1,6 @@
 import { RichTextEditor } from '@mantine/tiptap';
 import { Extension, JSONContent, useEditor } from '@tiptap/react';
 import Highlight from '@tiptap/extension-highlight';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Superscript from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
@@ -20,6 +18,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useElementSize } from '@mantine/hooks';
 import AutoContentLinkControl from './AutoContentLinkControl';
 import { HighlightColorControl } from './HighlightColorControl';
+import StarterKit from '@tiptap/starter-kit';
+import { Link } from '@mantine/tiptap';
 
 interface RichTextInputProps {
   label?: string;
@@ -37,9 +37,10 @@ export default function RichTextInput(props: RichTextInputProps) {
   const _drawerState = useAtom(drawerState);
 
   const editor = useEditor({
+    shouldRerenderOnTransaction: true,
     extensions: [
-      StarterKit,
-      Underline,
+      StarterKit.configure({ link: false }),
+      Link,
       ContentLink(_drawerState),
       ActionSymbol,
       Superscript,

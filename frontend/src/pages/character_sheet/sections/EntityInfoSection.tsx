@@ -14,7 +14,7 @@ import tinyInputClasses from '@css/TinyBlurInput.module.css';
 import { Character, LivingEntity } from '@schemas/content';
 import { isCharacter, isCreature } from '@utils/type-fixing';
 import { CreatureDetailedInfo } from '@common/CreatureInfo';
-import { ICON_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 import { modals } from '@mantine/modals';
 import { getEntityLevel } from '@utils/entity-utils';
 
@@ -96,7 +96,7 @@ export default function EntityInfoSection(props: {
               <Box maw={80}>
                 <BlurButton
                   size='compact-xs'
-                  bgColor={ICON_BG_COLOR}
+                  bgColor={IMPRINT_BG_COLOR}
                   fw={500}
                   fullWidth
                   onClick={(e) => {
@@ -114,7 +114,7 @@ export default function EntityInfoSection(props: {
               <Box maw={80}>
                 <BlurButton
                   size='compact-xs'
-                  bgColor={ICON_BG_COLOR}
+                  bgColor={IMPRINT_BG_COLOR}
                   fw={500}
                   fullWidth
                   onClick={() => {

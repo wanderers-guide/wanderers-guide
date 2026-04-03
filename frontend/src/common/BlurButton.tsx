@@ -1,4 +1,4 @@
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { IMPRINT_BG_COLOR_HOVER } from '@constants/data';
 import { glassStyle } from '@utils/colors';
 import { Button, ButtonProps } from '@mantine/core';
 import { useHover, useMergedRef } from '@mantine/hooks';
@@ -32,7 +32,7 @@ const BlurButton = forwardRef<HTMLButtonElement, BlurButtonProps>((props, forwar
         flex: 1,
         ...glassStyle(),
         borderRadius: undefined,
-        backgroundColor: hovered ? (props.bgColorHover ?? ICON_BG_COLOR_HOVER) : (props.bgColor ?? '#00000000'),
+        backgroundColor: hovered ? (props.bgColorHover ?? IMPRINT_BG_COLOR_HOVER) : (props.bgColor ?? '#00000000'),
         ...props.style,
       }}
     >

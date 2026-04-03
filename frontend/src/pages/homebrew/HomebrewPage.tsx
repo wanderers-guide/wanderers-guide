@@ -5,7 +5,7 @@ import BlurBox from '@common/BlurBox';
 import { glassStyle } from '@utils/colors';
 import { ContentSourceInfo } from '@common/ContentSourceInfo';
 import Paginator from '@common/Paginator';
-import { ICON_BG_COLOR_HOVER } from '@constants/data';
+import { IMPRINT_BG_COLOR_HOVER } from '@constants/data';
 import { deleteContent, upsertContentSource } from '@content/content-creation';
 import { fetchContentSources, resetContentStore } from '@content/content-store';
 import { updateSubscriptions } from '@content/homebrew';
@@ -694,7 +694,7 @@ function ContentSourceCard(props: {
               ref={refEdit}
               style={{
                 flex: 1,
-                backgroundColor: hoveredEdit ? ICON_BG_COLOR_HOVER : undefined,
+                backgroundColor: hoveredEdit ? IMPRINT_BG_COLOR_HOVER : undefined,
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -718,7 +718,7 @@ function ContentSourceCard(props: {
                   aria-label='Options'
                   ref={refOptions}
                   style={{
-                    backgroundColor: hoveredOptions ? ICON_BG_COLOR_HOVER : undefined,
+                    backgroundColor: hoveredOptions ? IMPRINT_BG_COLOR_HOVER : undefined,
                   }}
                 >
                   <IconDots style={{ width: '60%', height: '60%' }} stroke={1.5} />

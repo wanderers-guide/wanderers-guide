@@ -21,6 +21,7 @@ import { interpolateHealth } from '@utils/colors';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { truncate } from 'lodash-es';
 import { LegacyRef, forwardRef } from 'react';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 const ProfilePic = (props: { src?: string }) => {
   const theme = useMantineTheme();
@@ -35,8 +36,11 @@ const ProfilePic = (props: { src?: string }) => {
       ml={5}
       mr={10}
       variant='transparent'
-      color='dark.3'
-      bg='var(--avatar-placeholder-bg)'
+      color={IMPRINT_BORDER_COLOR}
+      style={{
+        border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+      }}
+      bg={IMPRINT_BG_COLOR}
     />
   );
 };
