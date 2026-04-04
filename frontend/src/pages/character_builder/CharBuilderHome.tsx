@@ -48,6 +48,7 @@ import {
   IconFlag,
   IconX,
   IconExternalLink,
+  IconArrowRight,
 } from '@tabler/icons-react';
 import { getAllBackgroundImages } from '@utils/background-images';
 import { getAllPortraitImages } from '@utils/portrait-images';
@@ -876,7 +877,7 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
               }
             />
           ) : (
-            <PasswordInput
+            <TextInput
               radius='xl'
               size='xs'
               label={<Text fz='sm'>Campaign</Text>}
@@ -890,19 +891,21 @@ export default function CharBuilderHome(props: { characterId: number; pageHeight
                 ['Enter', joinCampaign],
               ])}
               rightSectionWidth={28}
-              leftSection={<IconKey style={{ width: rem(12), height: rem(12) }} stroke={1.5} />}
+              leftSection={<IconKey style={{ width: rem(14), height: rem(14) }} stroke={1.5} />}
               rightSection={
                 <ActionIcon
                   size={22}
                   radius='xl'
-                  disabled={!campaignKey}
                   color={theme.primaryColor}
                   variant='filled'
+                  style={{
+                    visibility: campaignKey ? 'visible' : 'hidden',
+                  }}
                   onClick={async () => {
                     await joinCampaign();
                   }}
                 >
-                  <IconPlus style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
+                  <IconArrowRight style={{ width: rem(18), height: rem(18) }} stroke={1.5} />
                 </ActionIcon>
               }
               styles={{

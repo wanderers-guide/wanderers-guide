@@ -125,9 +125,19 @@ export function StatAttrDrawerContent(props: { data: { id: StoreID; attributeNam
         </Table.Tfoot>
       </Table>
 
-      {props.data.attributeName && (
+      {props.data.attributeName ? (
         <RichText ta='justify' store={props.data.id} pt={10}>
           {getAttributeDescription(props.data.attributeName)}
+        </RichText>
+      ) : (
+        <RichText ta='justify' store={props.data.id} pt={10}>
+          {`One of the most important aspects of your character is their attribute modifiers. These numbers represent your
+          character's raw potential, and they influence nearly every other statistic.
+\n\n
+Attribute modifiers are split into two main groups: physical and mental. Strength, Dexterity, and Constitution
+          are physical attribute modifiers, measuring your character's physical power, agility, and stamina. In
+          contrast, Intelligence, Wisdom, and Charisma are mental attribute modifiers and measure your character's
+          learned prowess, awareness, and force of personality.`.trim()}
         </RichText>
       )}
     </Box>

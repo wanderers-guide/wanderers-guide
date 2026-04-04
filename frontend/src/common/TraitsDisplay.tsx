@@ -22,6 +22,7 @@ import { uniq } from 'lodash-es';
 import { toLabel } from '@utils/strings';
 import { getVariable } from '@variables/variable-manager';
 import { VariableBool } from '@schemas/variables';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 export default function TraitsDisplay(props: {
   traitIds: number[];
@@ -417,8 +418,8 @@ export function SizeDisplay(props: { pfSize: Size; interactable?: boolean; size?
                   cursor: 'pointer',
                 },
                 root: {
-                  border: `1px solid ${theme.colors.dark[4]}`,
-                  backgroundColor: theme.colors.dark[6],
+                  border: `1px solid ${IMPRINT_BORDER_COLOR}`,
+                  backgroundColor: IMPRINT_BG_COLOR,
                   cursor: props.interactable ? 'pointer' : undefined,
                 },
               }}
@@ -443,7 +444,7 @@ export function TraitOverview(props: { name: string; description: string; import
       <Badge
         variant='dot'
         color='gray.0'
-        size={'xl'}
+        size='lg'
         styles={{
           root: {
             // @ts-ignore

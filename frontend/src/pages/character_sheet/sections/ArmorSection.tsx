@@ -2,8 +2,7 @@ import ArmorIcon from '@assets/images/ArmorIcon';
 import ShieldIcon from '@assets/images/ShieldIcon';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
-import BlurButton from '@common/BlurButton';
-import { IMPRINT_BG_COLOR_HOVER, IMPRINT_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR_HOVER_2, IMPRINT_BG_COLOR_2 } from '@constants/data';
 import { handleDeleteItem, handleMoveItem, handleUpdateItem } from '@items/inv-handlers';
 import { getBestArmor, getBestShield, getItemHealth } from '@items/inv-utils';
 import { useMantineTheme, Group, Stack, Center, RingProgress, Button, Badge, Text, Box } from '@mantine/core';
@@ -96,7 +95,7 @@ export default function ArmorSection(props: {
                 });
               }}
             >
-              <ArmorIcon size={85} color={armorHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
+              <ArmorIcon size={85} color={armorHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
               <Stack
                 gap={0}
                 style={{
@@ -141,7 +140,7 @@ export default function ArmorSection(props: {
                     });
                   }}
                 >
-                  <ShieldIcon size={85} color={shieldHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
+                  <ShieldIcon size={85} color={shieldHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
                   <Stack
                     gap={0}
                     style={{

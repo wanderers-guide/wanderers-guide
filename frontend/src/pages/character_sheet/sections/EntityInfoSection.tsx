@@ -17,6 +17,7 @@ import { CreatureDetailedInfo } from '@common/CreatureInfo';
 import { IMPRINT_BG_COLOR } from '@constants/data';
 import { modals } from '@mantine/modals';
 import { getEntityLevel } from '@utils/entity-utils';
+import ImprintButton from '@common/ImprintButton';
 
 export default function EntityInfoSection(props: {
   id: StoreID;
@@ -94,11 +95,12 @@ export default function EntityInfoSection(props: {
           <Stack gap={10} justify='flex-start' pt={3}>
             <Stack gap={5}>
               <Box maw={80}>
-                <BlurButton
+                <ImprintButton
                   size='compact-xs'
-                  bgColor={IMPRINT_BG_COLOR}
                   fw={500}
                   fullWidth
+                  radius='xl'
+                  noBorder
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -109,14 +111,15 @@ export default function EntityInfoSection(props: {
                   href={isCharacter(props.entity) ? `/builder/${props.entity?.id}` : undefined}
                 >
                   Edit
-                </BlurButton>
+                </ImprintButton>
               </Box>
               <Box maw={80}>
-                <BlurButton
+                <ImprintButton
                   size='compact-xs'
-                  bgColor={IMPRINT_BG_COLOR}
                   fw={500}
                   fullWidth
+                  radius='xl'
+                  noBorder
                   onClick={() => {
                     modals.openConfirmModal({
                       id: 'click-rest',
@@ -140,7 +143,7 @@ export default function EntityInfoSection(props: {
                   }}
                 >
                   Rest
-                </BlurButton>
+                </ImprintButton>
               </Box>
             </Stack>
             <Stack gap={0}>

@@ -2,31 +2,31 @@ import { Button, ButtonProps } from '@mantine/core';
 import { useHover, useMergedRef } from '@mantine/hooks';
 import { forwardRef } from 'react';
 
-function applyMultiplier(rgba: string, multiplier: number): string {
-  return rgba.replace(/[\d.]+\)$/, `${(parseFloat(rgba.match(/[\d.]+(?=\))/)![0]) * multiplier).toFixed(2)})`);
-}
-
 interface ImprintButtonProps extends ButtonProps {
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  multiplier?: number;
+  href?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement & HTMLAnchorElement>;
+  multiplier?: 1 | 2;
   noBorder?: boolean;
 }
 
 const ImprintButton = forwardRef<HTMLButtonElement, ImprintButtonProps>((props, forwardedRef) => {
-  const { multiplier = 1, ...rest } = props;
+  const { multiplier = 1, href, ...rest } = props;
   const { hovered, ref: hoverRef } = useHover();
   const ref = useMergedRef(hoverRef, forwardedRef);
 
-  const bgColor = applyMultiplier(hovered ? 'rgba(128, 128, 130, 0.05)' : 'rgba(222, 226, 230, 0.06)', multiplier);
+  const normalBg = multiplier === 2 ? 'var(--imprint-bg-color-2)' : 'var(--imprint-bg-color)';
+  const hoverBg = multiplier === 2 ? 'var(--imprint-bg-color-hover-2)' : 'var(--imprint-bg-color-hover)';
+  const bgColor = hovered ? hoverBg : normalBg;
 
   return (
     <Button
       ref={ref}
+      {...(href ? { component: 'a' as const, href } : {})}
       onClick={rest.onClick}
       {...rest}
       bg={bgColor}
       style={{
-        border: props.noBorder ? 'none' : `1px solid ${applyMultiplier('rgba(209, 213, 219, 0.2)', multiplier)}`,
+        border: props.noBorder ? 'none' : `1px solid var(--imprint-border-color)`,
         ...rest.style,
       }}
     >

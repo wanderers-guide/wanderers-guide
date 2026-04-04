@@ -30,7 +30,7 @@ import * as JsSearch from 'js-search';
 import { collectEntityAbilityBlocks } from '@content/collect-content';
 import { phoneQuery } from '@utils/mobile-responsive';
 import { useMediaQuery } from '@mantine/hooks';
-import { IMPRINT_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER } from '@constants/data';
 
 export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWidth: number }) {
   const isPhone = useMediaQuery(phoneQuery());
@@ -148,7 +148,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.classFeats.map((feat, index) => (
                     <FeatSelectionOption
                       key={index}
@@ -181,7 +181,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.ancestryFeats.map((feat, index) => (
                     <FeatSelectionOption
                       key={index}
@@ -214,7 +214,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.generalAndSkillFeats.map((feat, index) => (
                     <FeatSelectionOption
                       key={index}
@@ -247,7 +247,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.otherFeats.map((feat, index) => (
                     <FeatSelectionOption
                       key={index}
@@ -307,7 +307,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.classFeatures.map((feature, index) => (
                     <ClassFeatureSelectionOption
                       key={index}
@@ -339,7 +339,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.heritages.map((heritage, index) => (
                     <HeritageSelectionOption
                       key={index}
@@ -371,7 +371,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
                 }}
               >
                 <Stack gap={0}>
-                  <Divider color='dark.6' />
+                  <Divider />
                   {data.physicalFeatures.map((feature, index) => (
                     <PhysicalFeatureSelectionOption
                       key={index}

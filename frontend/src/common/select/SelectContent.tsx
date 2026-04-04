@@ -95,6 +95,12 @@ import { adjustCreature } from '@utils/creature';
 import { intersection, isEqual, isNumber } from 'lodash-es';
 import { getEntityLevel } from '@utils/entity-utils';
 import { AdvancedSearchModal, FiltersParams } from '@modals/AdvancedSearchModal';
+import {
+  IMPRINT_BG_COLOR,
+  IMPRINT_BG_COLOR_HOVER,
+  IMPRINT_BG_COLOR_HOVER_2,
+  IMPRINT_BORDER_COLOR,
+} from '@constants/data';
 
 export function SelectContentButton<T extends Record<string, any> = Record<string, any>>(props: {
   type: ContentType;
@@ -1608,8 +1614,8 @@ export function BaseSelectionOption(props: {
       px={props.px ?? 'sm'}
       style={{
         cursor: 'pointer',
-        borderBottom: '1px solid ' + theme.colors.dark[6],
-        backgroundColor: (hovered || props.selected) && !props.noBackground ? theme.colors.dark[6] : 'transparent',
+        borderBottom: '1px solid ' + IMPRINT_BORDER_COLOR,
+        backgroundColor: (hovered || props.selected) && !props.noBackground ? 'rgba(0,0,0,0.1)' : 'transparent',
         position: 'relative',
         opacity: props.disabled ? 0.4 : 1,
         width: '100%',

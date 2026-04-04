@@ -21,6 +21,7 @@ import { collectEntitySpellcasting } from '@content/collect-content';
 import { handleUpdateItemCharges } from '@items/inv-handlers';
 import { StoreID } from '@schemas/variables';
 import { cloneDeep, groupBy } from 'lodash-es';
+import ImprintButton from '@common/ImprintButton';
 
 export default function StaffSpellsList(props: {
   id: StoreID;
@@ -87,7 +88,8 @@ export default function StaffSpellsList(props: {
           <Box mr={10}>
             <Group wrap='nowrap' gap={10}>
               {canAddPreparedExtraCharges && (
-                <BlurButton
+                <ImprintButton
+                  radius='xl'
                   size='compact-xs'
                   fw={500}
                   fz={10}
@@ -145,7 +147,7 @@ export default function StaffSpellsList(props: {
                   }}
                 >
                   Add Charges
-                </BlurButton>
+                </ImprintButton>
               )}
               <SpellSlotSelect
                 text='Staff Charges'

@@ -13,6 +13,7 @@ import { SetterOrUpdater } from '@utils/type-fixing';
 import { StoreID } from '@schemas/variables';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import ImprintButton from '@common/ImprintButton';
 
 export default function PreparedSpellsList(props: {
   id: StoreID;
@@ -82,7 +83,8 @@ export default function PreparedSpellsList(props: {
           </Text>
 
           <Box mr={10}>
-            <BlurButton
+            <ImprintButton
+              radius='xl'
               size='xs'
               fw={500}
               onClick={(e) => {
@@ -100,7 +102,7 @@ export default function PreparedSpellsList(props: {
               }}
             >
               Manage
-            </BlurButton>
+            </ImprintButton>
           </Box>
         </Group>
       </Accordion.Control>

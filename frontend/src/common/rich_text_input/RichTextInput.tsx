@@ -20,6 +20,7 @@ import AutoContentLinkControl from './AutoContentLinkControl';
 import { HighlightColorControl } from './HighlightColorControl';
 import StarterKit from '@tiptap/starter-kit';
 import { Link } from '@mantine/tiptap';
+import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BG_COLOR_HOVER_2 } from '@constants/data';
 
 interface RichTextInputProps {
   label?: string;
@@ -99,10 +100,10 @@ export default function RichTextInput(props: RichTextInputProps) {
         fz='sm'
         styles={{
           toolbar: {
-            backgroundColor: theme.colors.dark[7],
+            backgroundColor: IMPRINT_BG_COLOR_HOVER,
           },
           content: {
-            backgroundColor: theme.colors.dark[6],
+            backgroundColor: IMPRINT_BG_COLOR,
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
             display: 'flex',
@@ -152,11 +153,11 @@ export default function RichTextInput(props: RichTextInputProps) {
             </RichTextEditor.ControlsGroup>
           )}
 
-          {!isVerySmall && (
+          {/* {!isVerySmall && (
             <RichTextEditor.ControlsGroup>
               <AutoContentLinkControl />
             </RichTextEditor.ControlsGroup>
-          )}
+          )} */}
         </RichTextEditor.Toolbar>
 
         <RichTextEditor.Content />

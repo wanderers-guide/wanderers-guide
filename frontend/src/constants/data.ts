@@ -19,6 +19,10 @@ export const GUIDE_BLUE = '#359fdf';
 
 export const IMPRINT_BG_COLOR = 'var(--imprint-bg-color)';
 export const IMPRINT_BG_COLOR_HOVER = 'var(--imprint-bg-color-hover)';
+
+export const IMPRINT_BG_COLOR_2 = 'var(--imprint-bg-color-2)';
+export const IMPRINT_BG_COLOR_HOVER_2 = 'var(--imprint-bg-color-hover-2)';
+
 export const IMPRINT_BORDER_COLOR = 'var(--imprint-border-color)';
 
 export const COMMON_CORE_ID = 3;

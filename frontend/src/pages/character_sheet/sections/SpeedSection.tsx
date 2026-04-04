@@ -3,7 +3,7 @@ import PerceptionIcon from '@assets/images/PerceptionIcon';
 import SpeedIcon from '@assets/images/SpeedIcon';
 import { drawerState } from '@atoms/navAtoms';
 import BlurBox from '@common/BlurBox';
-import { IMPRINT_BG_COLOR_HOVER, IMPRINT_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR_HOVER_2, IMPRINT_BG_COLOR_2 } from '@constants/data';
 import { useMantineTheme, Group, Stack, Box, Text } from '@mantine/core';
 import { useHover } from '@mantine/hooks';
 import { LivingEntity } from '@schemas/content';
@@ -40,7 +40,7 @@ function PerceptionSection(props: { id: StoreID }) {
           transform: 'translate(-50%, -50%)',
         }}
       >
-        <PerceptionIcon size={80} color={perceptionHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
+        <PerceptionIcon size={80} color={perceptionHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
       </Box>
       <Stack gap={10}>
         <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -97,7 +97,7 @@ function SpeedSection(props: { id: StoreID; entity: LivingEntity | null }) {
           transform: 'translate(-50%, -50%)',
         }}
       >
-        <SpeedIcon size={75} color={speedHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
+        <SpeedIcon size={75} color={speedHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
       </Box>
       <Stack gap={10}>
         <Text ta='center' fz='sm' fw={500} c='gray.0'>
@@ -146,7 +146,7 @@ function ClassDcSection(props: { id: StoreID }) {
           transform: 'translate(-50%, -50%)',
         }}
       >
-        <BoxIcon size={50} color={classDcHovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR} />
+        <BoxIcon size={50} color={classDcHovered ? IMPRINT_BG_COLOR_HOVER_2 : IMPRINT_BG_COLOR_2} />
       </Box>
       <Stack gap={10}>
         <Text ta='center' fz='sm' fw={500} c='gray.0'>

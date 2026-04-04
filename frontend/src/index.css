@@ -11,7 +11,9 @@ html[data-mantine-color-scheme='light'] {
   --glass-border-color: rgba(255, 255, 255, 0.125);
   --avatar-placeholder-bg: var(--mantine-color-dark-6);
   --imprint-bg-color: rgba(222, 226, 230, 0.06);
+  --imprint-bg-color-2: rgba(222, 226, 230, 0.12);
   --imprint-bg-color-hover: rgba(128, 128, 130, 0.05);
+  --imprint-bg-color-hover-2: rgba(222, 226, 230, 0.08);
   --imprint-border-color: rgba(209, 213, 219, 0.2);
 }
 
@@ -20,7 +22,9 @@ html[data-mantine-color-scheme='light'] {
   --glass-border-color: var(--mantine-color-gray-3);
   --avatar-placeholder-bg: var(--mantine-color-gray-2);
   --imprint-bg-color: rgba(222, 226, 230, 0.06);
+  --imprint-bg-color-2: rgba(222, 226, 230, 0.12);
   --imprint-bg-color-hover: rgba(128, 128, 130, 0.05);
+  --imprint-bg-color-hover-2: rgba(222, 226, 230, 0.08);
   --imprint-border-color: rgba(209, 213, 219, 0.2);
 }
 
@@ -59,7 +63,7 @@ strong {
 }
 
 ::placeholder {
-  color: color-mix(in srgb, var(--mantine-color-dimmed) 40%, transparent) !important;
+  color: color-mix(in srgb, var(--mantine-color-dimmed) 50%, transparent) !important;
   opacity: 1;
 }
 
@@ -88,6 +92,15 @@ strong {
 :where([data-mantine-color-scheme='dark']) .mantine-Accordion-item[data-active] {
   background-color: var(--imprint-bg-color);
   border-color: var(--imprint-border-color);
+}
+
+:where([data-mantine-color-scheme='dark']) .mantine-RichTextEditor-control[data-variant='default'] {
+  background-color: var(--imprint-bg-color);
+  border-color: var(--imprint-border-color);
+}
+
+:where([data-mantine-color-scheme='dark']) .mantine-RichTextEditor-controlsGroup[data-variant='default'] {
+  background-color: transparent;
 }
 
 /* Undo tab button styling changes from Mantine v8 */

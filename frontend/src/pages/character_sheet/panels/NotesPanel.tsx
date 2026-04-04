@@ -171,8 +171,6 @@ export default function NotesPanel(props: {
             bottom: isPhone ? 10 : undefined,
             left: isPhone ? 150 : undefined,
             right: isPhone ? undefined : 10,
-            //
-            ...glassStyle(),
           }}
           onClick={() => {
             openContextModal({

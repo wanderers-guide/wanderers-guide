@@ -60,6 +60,7 @@ import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { IMPRINT_BG_COLOR } from '@constants/data';
+import ImprintButton from '@common/ImprintButton';
 
 export default function InventoryPanel(props: {
   id: StoreID;
@@ -299,9 +300,7 @@ export default function InventoryPanel(props: {
                 Bulk: {labelizeBulk(getInvBulk(props.entity?.inventory ?? undefined), true)} / {getBulkLimit(props.id)}
               </Badge>
               <CurrencySection entity={props.entity} onClick={() => openManageCoinsDrawer()} />
-              <Button
-                color='dark.5'
-                style={{ borderColor: theme.colors.dark[4] }}
+              <ImprintButton
                 radius='xl'
                 size='sm'
                 fw={500}
@@ -309,7 +308,7 @@ export default function InventoryPanel(props: {
                 onClick={() => openAddItemDrawer()}
               >
                 Add Item
-              </Button>
+              </ImprintButton>
             </Group>
           )}
         </Group>
@@ -473,7 +472,7 @@ export default function InventoryPanel(props: {
                             </StatButton>
                           ))}
                           {invItem?.container_contents.length === 0 && (
-                            <Text c='gray.7' fz='sm' ta='center' fs='italic'>
+                            <Text fz='sm' ta='center' fs='italic'>
                               Container is empty
                             </Text>
                           )}
@@ -670,8 +669,7 @@ function InvItemOption(props: {
             {props.invItem.item.name}
           </Text>
           {isItemContainer(props.invItem.item) && props.hideSections && (
-            <Button
-              variant='light'
+            <ImprintButton
               size='compact-xs'
               radius='xl'
               onClick={(e) => {
@@ -681,7 +679,7 @@ function InvItemOption(props: {
               }}
             >
               View Item
-            </Button>
+            </ImprintButton>
           )}
 
           {isItemWeapon(props.invItem.item) && weaponStats && (

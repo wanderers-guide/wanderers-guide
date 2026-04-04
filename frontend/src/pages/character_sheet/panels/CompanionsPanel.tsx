@@ -37,6 +37,7 @@ import { modals } from '@mantine/modals';
 import { selectContent } from '@common/select/SelectContent';
 import { hasTraitType } from '@utils/traits';
 import { getEntityLevel } from '@utils/entity-utils';
+import { IMPRINT_BG_COLOR, IMPRINT_BG_COLOR_HOVER, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 export default function CompanionsPanel(props: { panelHeight: number; panelWidth: number }) {
   const theme = useMantineTheme();
@@ -259,7 +260,7 @@ function CompanionCard(props: {
         w={`min(60dvw, 320px)`}
         p={5}
         style={(t) => ({
-          backgroundColor: hovered ? t.colors.dark[5] : t.colors.dark[6],
+          backgroundColor: hovered ? IMPRINT_BG_COLOR_HOVER : IMPRINT_BG_COLOR,
           borderRadius: t.radius.md,
           cursor: 'pointer',
           position: 'relative',
@@ -329,7 +330,7 @@ function CompanionCard(props: {
               height: '100%',
             },
             input: {
-              backgroundColor: t.colors.dark[6],
+              backgroundColor: IMPRINT_BG_COLOR,
               borderRadius: t.radius.md,
               height: '100%',
             },
@@ -535,7 +536,7 @@ function AddCompanionSection() {
     <Box
       p='xs'
       style={(t) => ({
-        backgroundColor: t.colors.dark[6],
+        backgroundColor: IMPRINT_BG_COLOR,
         borderRadius: t.radius.xl,
       })}
     >
@@ -588,6 +589,8 @@ function AddCompanionSection() {
               borderTopRightRadius: 0,
               borderBottomRightRadius: 0,
               '--input-placeholder-color': theme.colors.gray[6],
+              backgroundColor: IMPRINT_BG_COLOR,
+              borderColor: IMPRINT_BORDER_COLOR,
             },
           })}
         />
@@ -621,6 +624,8 @@ function AddCompanionSection() {
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
               '--input-placeholder-color': theme.colors.gray[6],
+              backgroundColor: IMPRINT_BG_COLOR,
+              borderColor: IMPRINT_BORDER_COLOR,
             },
           })}
         />

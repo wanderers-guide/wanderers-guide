@@ -14,6 +14,7 @@ import { Dictionary } from 'node_modules/cypress/types/lodash';
 import SpellListEntrySection from './SpellListEntrySection';
 import { StoreID } from '@schemas/variables';
 import { SetterOrUpdater } from '@utils/type-fixing';
+import ImprintButton from '@common/ImprintButton';
 
 export default function RitualSpellsList(props: {
   id: StoreID;
@@ -68,7 +69,8 @@ export default function RitualSpellsList(props: {
           </Group>
 
           <Box mr={10}>
-            <BlurButton
+            <ImprintButton
+              radius='xl'
               size='xs'
               fw={500}
               onClick={(e) => {
@@ -79,7 +81,7 @@ export default function RitualSpellsList(props: {
               }}
             >
               Manage
-            </BlurButton>
+            </ImprintButton>
           </Box>
         </Group>
       </Accordion.Control>

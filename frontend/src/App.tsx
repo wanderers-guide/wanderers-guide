@@ -221,6 +221,13 @@ export default function App() {
             },
           }),
         },
+        Divider: {
+          vars: () => ({
+            root: {
+              '--divider-color': IMPRINT_BORDER_COLOR,
+            },
+          }),
+        },
       },
     });
   };

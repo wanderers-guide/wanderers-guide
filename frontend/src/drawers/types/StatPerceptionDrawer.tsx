@@ -58,7 +58,9 @@ export function StatPerceptionDrawerTitle(props: { data: { id: StoreID } }) {
             </Box>
           </Group>
           <Box>
-            <Badge>{proficiencyTypeToLabel(compileProficiencyType(variable.value))}</Badge>
+            <Badge color='gray' tt='none' size='lg'>
+              {proficiencyTypeToLabel(compileProficiencyType(variable.value))}
+            </Badge>
           </Box>
         </Group>
       )}

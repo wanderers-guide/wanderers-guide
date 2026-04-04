@@ -24,6 +24,7 @@ import { drawerState } from '@atoms/navAtoms';
 import { StoreID } from '@schemas/variables';
 import { useMediaQuery } from '@mantine/hooks';
 import { phoneQuery } from '@utils/mobile-responsive';
+import ImprintButton from '@common/ImprintButton';
 
 export default function SpontaneousSpellsList(props: {
   id: StoreID;
@@ -95,7 +96,8 @@ export default function SpontaneousSpellsList(props: {
           </Text>
 
           <Box mr={10}>
-            <BlurButton
+            <ImprintButton
+              radius='xl'
               size='xs'
               fw={500}
               onClick={(e) => {
@@ -109,7 +111,7 @@ export default function SpontaneousSpellsList(props: {
               }}
             >
               Manage
-            </BlurButton>
+            </ImprintButton>
           </Box>
         </Group>
       </Accordion.Control>
