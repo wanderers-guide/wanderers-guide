@@ -360,6 +360,38 @@ export default function SkillsActionsPanel(props: {
       : feats;
   }, [props.entity, actionTypeFilter, searchQueryDebounced, entityAbilityBlocks]);
 
+  // Auto-open the single visible section when searching/filtering
+  useEffect(() => {
+    if (!searchQueryDebounced.trim() && actionTypeFilter === 'ALL') return;
+
+    const sections = [
+      { id: 'weapon-attacks', data: weaponAttacks },
+      { id: 'feats', data: featsWithActions },
+      { id: 'items', data: itemsWithActions },
+      { id: 'basic-actions', data: basicActions },
+      { id: 'skill-actions', data: skillActions },
+      { id: 'speciality-basic-actions', data: basicSpecialityActions },
+      { id: 'exploration-activities', data: explorationActions },
+      { id: 'downtime-activities', data: downtimeActions },
+    ];
+
+    const nonEmptySections = sections.filter((s) => s.data.length > 0);
+    if (nonEmptySections.length === 1) {
+      setActionSectionValue(nonEmptySections[0].id);
+    }
+  }, [
+    searchQueryDebounced,
+    actionTypeFilter,
+    weaponAttacks,
+    featsWithActions,
+    itemsWithActions,
+    basicActions,
+    skillActions,
+    basicSpecialityActions,
+    explorationActions,
+    downtimeActions,
+  ]);
+
   const getSkillsSection = () => (
     <Box>
       <Stack gap={5}>

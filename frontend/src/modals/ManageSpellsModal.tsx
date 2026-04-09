@@ -506,7 +506,7 @@ const ListSection = (props: {
             />
           ))}
           {props.spells.length === 0 && (
-            <Text c='gray.6' fz='sm' fs='italic' ta='center' pt={20}>
+            <Text c='gray.3' fz='sm' fs='italic' ta='center' pt={20}>
               No {isRituals ? 'rituals' : 'spells'} found
             </Text>
           )}

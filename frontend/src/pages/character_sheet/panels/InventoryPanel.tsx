@@ -59,7 +59,7 @@ import { cloneDeep, truncate } from 'lodash-es';
 import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
-import { IMPRINT_BG_COLOR } from '@constants/data';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import ImprintButton from '@common/ImprintButton';
 
 export default function InventoryPanel(props: {
@@ -259,7 +259,8 @@ export default function InventoryPanel(props: {
                   size='lg'
                   aria-label='Inventory Options'
                   style={{
-                    backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
+                    backgroundColor: IMPRINT_BG_COLOR,
+                    borderColor: IMPRINT_BORDER_COLOR,
                   }}
                 >
                   <IconMenu2 style={{ width: '70%', height: '70%' }} stroke={1.5} />

@@ -452,7 +452,7 @@ export default function FeatsFeaturesPanel(props: { panelHeight: number; panelWi
         </Group>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           {noFeatsOrFeatures ? (
-            <Text c='gray.2' fz='sm' ta='center' fs='italic' py={20}>
+            <Text c='gray.3' fz='sm' ta='center' fs='italic' py={20}>
               No feats or features found.
             </Text>
           ) : (

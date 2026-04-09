@@ -121,7 +121,7 @@ export default function RitualSpellsList(props: {
               ))}
 
           {props.spellIds.length === 0 && (
-            <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
+            <Text c='gray.3' fz='sm' fs='italic' ta='center' py={5}>
               No rituals known
             </Text>
           )}

@@ -68,7 +68,7 @@ export function SelectSpellSlotModalContents(props: {
             {slot.spell_id ? (
               <Text fw={600}>{props.allSpells.find((s) => s.id === slot.spell_id)!.name}</Text>
             ) : (
-              <Text c='gray.6' fs='italic' fz='sm'>
+              <Text c='gray.3' fs='italic' fz='sm'>
                 {'No Spell Prepared'}
               </Text>
             )}

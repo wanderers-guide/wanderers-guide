@@ -133,31 +133,31 @@ export default function App() {
         guide: generateColors(theme?.color || getCachedCustomization()?.sheet_theme?.color || GUIDE_BLUE),
         // Dark scale: near-opaque at [0] → nearly transparent at [9]
         dark: [
-          'rgba(193, 194, 197, 0.88)', // [0] lightest text / icons
-          'rgba(166, 167, 171, 0.84)', // [1]
-          'rgba(144, 146, 150, 0.79)', // [2]
-          'rgba(92,  95,  102, 0.74)', // [3]
-          'rgba(55,  58,  64,  0.81)', // [4] ← glass surfaces
-          'rgba(44,  46,  51,  0.76)', // [5]
-          'rgba(37,  38,  43,  0.71)', // [6] ← card bg
-          'rgba(26,  27,  30,  0.66)', // [7] ← page bg
-          'rgba(20,  21,  23,  0.61)', // [8]
-          'rgba(16,  17,  19,  0.56)', // [9] darkest / most transparent
+          'rgba(193, 194, 197, 0.89)', // [0] lightest text / icons
+          'rgba(166, 167, 171, 0.85)', // [1]
+          'rgba(144, 146, 150, 0.80)', // [2]
+          'rgba(92,  95,  102, 0.75)', // [3]
+          'rgba(55,  58,  64,  0.82)', // [4] ← glass surfaces
+          'rgba(44,  46,  51,  0.77)', // [5]
+          'rgba(37,  38,  43,  0.72)', // [6] ← card bg
+          'rgba(26,  27,  30,  0.67)', // [7] ← page bg
+          'rgba(20,  21,  23,  0.62)', // [8]
+          'rgba(16,  17,  19,  0.57)', // [9] darkest / most transparent
         ],
 
         // Gray scale for light mode: near-opaque at [0] → nearly transparent at [9]
         // Mirrors the dark scale's opacity curve on a neutral-light palette.
         gray: [
-          'rgba(248, 249, 250, 0.88)', // [0] near-white surfaces
-          'rgba(241, 243, 245, 0.84)', // [1]
-          'rgba(233, 236, 239, 0.79)', // [2]
-          'rgba(222, 226, 230, 0.74)', // [3]
-          'rgba(206, 212, 218, 0.81)', // [4] ← glass surfaces
-          'rgba(173, 181, 189, 0.76)', // [5]
-          'rgba(134, 142, 150, 0.71)', // [6] ← borders / muted text
-          'rgba(73,  80,  87,  0.66)', // [7] ← body text
-          'rgba(52,  58,  64,  0.61)', // [8]
-          'rgba(33,  37,  41,  0.56)', // [9] darkest text
+          'rgba(248, 249, 250, 0.89)', // [0] near-white surfaces
+          'rgba(241, 243, 245, 0.85)', // [1]
+          'rgba(233, 236, 239, 0.80)', // [2]
+          'rgba(222, 226, 230, 0.75)', // [3]
+          'rgba(206, 212, 218, 0.82)', // [4] ← glass surfaces
+          'rgba(173, 181, 189, 0.77)', // [5]
+          'rgba(134, 142, 150, 0.72)', // [6] ← borders / muted text
+          'rgba(73,  80,  87,  0.67)', // [7] ← body text
+          'rgba(52,  58,  64,  0.62)', // [8]
+          'rgba(33,  37,  41,  0.57)', // [9] darkest text
         ],
       },
       cursorType: 'pointer',
@@ -210,6 +210,8 @@ export default function App() {
           vars: () => ({
             tab: {
               '--tab-hover-color': IMPRINT_BG_COLOR,
+            },
+            list: {
               '--tab-border-color': IMPRINT_BG_COLOR,
             },
           }),
@@ -225,6 +227,23 @@ export default function App() {
           vars: () => ({
             root: {
               '--divider-color': IMPRINT_BORDER_COLOR,
+            },
+          }),
+        },
+        RichTextEditor: {
+          vars: () => ({
+            root: {
+              borderColor: IMPRINT_BORDER_COLOR,
+            },
+            toolbar: {
+              borderColor: IMPRINT_BORDER_COLOR,
+            },
+          }),
+        },
+        Notification: {
+          vars: () => ({
+            root: {
+              backgroundColor: 'rgba(37,  38,  43,  1)',
             },
           }),
         },

@@ -264,7 +264,7 @@ export default function SpontaneousSpellsList(props: {
                         />
                       ))}
                       {(!spells[rank] || spells[rank].length === 0) && (
-                        <Text c='gray.6' fz='sm' fs='italic' ta='center' py={5}>
+                        <Text c='gray.3' fz='sm' fs='italic' ta='center' py={5}>
                           No spells known
                         </Text>
                       )}

@@ -1,8 +1,9 @@
 import React from 'react';
-import { MantineSize, Rating, Select } from '@mantine/core';
+import { MantineSize, NativeSelect, Rating, Select } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { isTabletSized, isTouchDevice, tabletQuery } from '@utils/mobile-responsive';
 import { useState } from 'react';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 
 export default function TokenSelect(props: {
   emptySymbol?: React.JSX.Element;
@@ -20,18 +21,25 @@ export default function TokenSelect(props: {
     <>
       {isMobileTouch ? (
         <>
-          <Select
+          <NativeSelect
             size='xs'
             w={60}
             data={Array.from({ length: props.count + 1 }, (_, i) => i).map((v) => `${v}`)}
             value={`${props.invertedSelect ? props.count - value : value}`}
-            onChange={(v) => {
-              let val = parseInt(v ?? '');
+            onChange={(e) => {
+              let val = parseInt(e.target.value ?? '');
               // Invert the value if needed
               val = props.invertedSelect ? props.count - val : val;
 
               setValue(val);
               props.onChange?.(val);
+            }}
+            styles={{
+              input: {
+                backgroundColor: IMPRINT_BG_COLOR,
+                borderColor: IMPRINT_BORDER_COLOR,
+                textAlign: 'center',
+              },
             }}
           />
         </>
