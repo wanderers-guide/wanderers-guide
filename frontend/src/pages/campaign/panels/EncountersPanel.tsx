@@ -6,7 +6,7 @@ import { Icon } from '@common/Icon';
 import { DisplayIcon } from '@common/IconDisplay';
 import { selectContent } from '@common/select/SelectContent';
 import { applyConditions } from '@conditions/condition-handler';
-import { GUIDE_BLUE } from '@constants/data';
+import { GUIDE_BLUE, IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import { defineDefaultSources, fetchContentPackage, getDefaultSources } from '@content/content-store';
 import { getBestArmor } from '@items/inv-utils';
 import {
@@ -59,6 +59,8 @@ import { evaluate } from 'mathjs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GiDiceTwentyFacesTwenty } from 'react-icons/gi';
 import { useAtom, useAtomValue } from 'jotai';
+import BlurBox from '@common/BlurBox';
+import ImprintButton from '@common/ImprintButton';
 
 export default function EncountersPanel(props: {
   panelHeight: number;
@@ -354,7 +356,12 @@ export default function EncountersPanel(props: {
   if (loading) {
     return (
       <Box h={props.panelHeight}>
-        <LoadingOverlay visible={true} />
+        <LoadingOverlay
+          visible={true}
+          overlayProps={{
+            bg: 'rgba(0, 0, 0, 0.15)',
+          }}
+        />
       </Box>
     );
   }
@@ -601,19 +608,12 @@ function EncounterView(props: {
   return (
     <Box style={{}}>
       <Stack gap={0}>
-        <Box
-          p={8}
-          style={{
-            backgroundColor: `rgb(26, 27, 30)`,
-            borderTopLeftRadius: 10,
-            borderTopRightRadius: 10,
-            border: '1px solid #373A40',
-          }}
-        >
+        <Box p={8}>
           <Group justify='space-between' mr={40} wrap='nowrap' align='flex-start'>
             <Group gap={10}>
               <Button
-                variant='light'
+                variant='gradient'
+                gradient={{ from: props.encounter.color, to: props.encounter.color, deg: 90 }}
                 size='compact-sm'
                 rightSection={<GiDiceTwentyFacesTwenty size={16} />}
                 style={{
@@ -657,15 +657,15 @@ function EncounterView(props: {
               {props.players && (
                 <Menu shadow='md' width={160}>
                   <Menu.Target>
-                    <Button
+                    <ImprintButton
+                      noBorder
                       disabled={playersToAdd.length === 0}
-                      variant='subtle'
                       size='xs'
                       rightSection={<IconUser size={14} />}
                       color={props.encounter.color}
                     >
                       Add Player
-                    </Button>
+                    </ImprintButton>
                   </Menu.Target>
 
                   <Menu.Dropdown>
@@ -688,11 +688,10 @@ function EncounterView(props: {
                 </Menu>
               )}
 
-              <Button
-                variant='subtle'
+              <ImprintButton
+                noBorder
                 size='xs'
                 rightSection={<IconBat size={14} />}
-                color={props.encounter.color}
                 onClick={() => {
                   selectContent<Creature>(
                     'creature',
@@ -713,9 +712,9 @@ function EncounterView(props: {
                 }}
               >
                 Add Creature
-              </Button>
-              <Button
-                variant='subtle'
+              </ImprintButton>
+              <ImprintButton
+                noBorder
                 size='xs'
                 rightSection={<IconCylinder size={14} />}
                 color={props.encounter.color}
@@ -724,7 +723,7 @@ function EncounterView(props: {
                 }}
               >
                 Add Custom
-              </Button>
+              </ImprintButton>
             </Group>
             <Box>
               {displayDifficulty(combatants) && (
@@ -748,11 +747,6 @@ function EncounterView(props: {
         <ScrollArea
           p={8}
           style={{
-            backgroundColor: `rgb(37, 38, 43)`,
-            borderBottomLeftRadius: 10,
-            borderBottomRightRadius: 10,
-            border: '1px solid #373A40',
-            borderTop: 'none',
             height: props.panelHeight - 50,
           }}
         >
@@ -978,6 +972,12 @@ function CombatantCard(props: {
         style={{
           opacity: 0.65,
         }}
+        styles={{
+          input: {
+            backgroundColor: IMPRINT_BG_COLOR,
+            borderColor: IMPRINT_BORDER_COLOR,
+          },
+        }}
       />
       <Group
         ref={ref}
@@ -985,7 +985,7 @@ function CombatantCard(props: {
         w={`min(60dvw, 320px)`}
         p={5}
         style={(t) => ({
-          backgroundColor: hovered ? t.colors.dark[5] : 'transparent',
+          backgroundColor: hovered ? 'var(--imprint-bg-color)' : 'transparent',
           borderRadius: t.radius.md,
           cursor: 'pointer',
           position: 'relative',
@@ -1017,14 +1017,14 @@ function CombatantCard(props: {
           <Text size={'10px'} fw={400} c='dimmed' fs='italic'>
             Lvl. {getEntityLevel(props.combatant.data)}
           </Text>
-          <ActionIcon size='sm' variant='transparent' radius={100} color='dark.3' onClick={() => {}}>
+          <ActionIcon size='sm' variant='transparent' radius={100} color='dark.2' onClick={() => {}}>
             {props.combatant.ally ? <></> : <IconSword size='1.0rem' stroke={2} />}
           </ActionIcon>
         </Group>
 
         <Box w={40}>
           <DisplayIcon
-            strValue={props.combatant.data.details?.image_url ?? 'icon|||avatar|||#373A40'}
+            strValue={props.combatant.data.details?.image_url ?? 'icon|||avatar|||#5d5e61'}
             width={40}
             iconStyles={{
               objectFit: 'contain',
@@ -1098,6 +1098,12 @@ function CombatantCard(props: {
             </Group>
           }
           rightSectionWidth={60}
+          styles={{
+            input: {
+              backgroundColor: IMPRINT_BG_COLOR,
+              borderColor: IMPRINT_BORDER_COLOR,
+            },
+          }}
         />
       )}
       {!isPhone && (

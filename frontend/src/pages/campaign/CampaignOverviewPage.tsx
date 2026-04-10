@@ -58,6 +58,7 @@ import D20Loader from '@assets/images/D20Loader';
 import BlurButton from '@common/BlurButton';
 import BlurActionIcon from '@common/BlurActionIcon';
 import { getAnchorStyles } from '@utils/anchor';
+import ImprintButton from '@common/ImprintButton';
 
 export function Component() {
   const theme = useMantineTheme();
@@ -257,8 +258,8 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           radius='md'
                           size='xs'
                           variant='light'
-                          bgColor='rgba(0, 0, 0, 0.5)'
-                          bgColorHover='rgba(0, 0, 0, 0.7)'
+                          bgColor='rgba(0, 0, 0, 0.25)'
+                          bgColorHover='rgba(0, 0, 0, 0.35)'
                           color='gray.4'
                           onClick={() => {
                             setTimeout(() => setRevealedKey(false), 5000);
@@ -284,8 +285,8 @@ export function CampaignInner(props: { campaignId: number; onFinishLoading: () =
                           color='gray.4'
                           radius='md'
                           size={30}
-                          bgColor='rgba(0, 0, 0, 0.5)'
-                          bgColorHover='rgba(0, 0, 0, 0.7)'
+                          bgColor='rgba(0, 0, 0, 0.25)'
+                          bgColorHover='rgba(0, 0, 0, 0.35)'
                           onClick={async () => {
                             if (!campaign) return;
 

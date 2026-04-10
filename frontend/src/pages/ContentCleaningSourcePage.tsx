@@ -41,7 +41,7 @@ import {
 } from '@tabler/icons-react';
 import { CleaningStatus } from '@ai/cleaning/cleaning-manager';
 
-const AUTO_UPSERT = false;
+const AUTO_UPSERT = true;
 
 setPageTitle('Content Cleaning Source');
 

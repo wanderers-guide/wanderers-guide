@@ -127,7 +127,7 @@ export default function EntityInfoSection(props: {
                       children: (
                         <Box>
                           <Text size='sm'>
-                            You will regain some HP (Con. mod × level), reset spell slots / focus points, and you might
+                            You will regain some HP (Con. mod × level), reset spell slots & focus points, and you may
                             recover from or improve certain conditions.
                           </Text>
                         </Box>

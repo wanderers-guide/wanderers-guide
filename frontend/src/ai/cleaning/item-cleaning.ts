@@ -1,18 +1,38 @@
+/**
+ * item-cleaning.ts
+ *
+ * AI agent that cleans and enriches a single Item record from the Wanderers Guide database.
+ *
+ * High-level flow:
+ *   fixItem(item) → agentic tool-call loop → returnFixedItem → Zod schema validation → Item
+ *
+ * The agent (DeepSeek reasoner or Claude) is given the raw item JSON, a detailed system prompt
+ * describing PF2e conventions and WG data rules, and a set of tools it can call to look up
+ * external sources (AoN, Demiplane) and the WG database itself. It iterates until it calls
+ * returnFixedItem with a schema-valid result, or the caller throws on end_turn.
+ *
+ * Provider toggle: set PROVIDER to 'anthropic' or 'deepseek'.
+ * DeepSeek uses an OpenAI-compatible API so messages/tools must be translated — see
+ * toOpenAIMessages / toOpenAITools / fromOpenAIResponse below.
+ */
+
 import Anthropic from '@anthropic-ai/sdk';
 import { fetchContentSources } from '@content/content-store';
 import { makeRequest } from '@requests/request-manager';
 import { Item, ItemSchema } from '@schemas/content';
-import { OperationSchema } from '@schemas/operations';
 import { RequestType } from '@schemas/requests';
 import { formatZodError } from '@schemas/shared';
 import { DEFAULT_VARIABLES } from '@variables/variable-manager';
-import { z } from 'zod';
 import { searchAoN } from './alt-sources/aon';
 import { searchDp } from './alt-sources/dp';
 import { CleaningUtils } from './CleaningUtils';
 
 const client = new Anthropic({ apiKey: import.meta.env.VITE_CLAUDE_KEY ?? '', dangerouslyAllowBrowser: true });
 
+// Toggle between Anthropic and DeepSeek as the underlying model provider.
+const PROVIDER = 'deepseek' as 'anthropic' | 'deepseek';
+
+// All content types that can be fetched from the WG database via fetchContent.
 type FetchableType =
   | 'trait'
   | 'item'
@@ -28,6 +48,7 @@ type FetchableType =
   | 'creature'
   | 'content-source';
 
+// Maps each fetchable type to the corresponding WG API request type.
 const FETCH_REQUEST_MAP: Record<FetchableType, RequestType> = {
   'ability-block': 'find-ability-block',
   ancestry: 'find-ancestry',
@@ -44,7 +65,8 @@ const FETCH_REQUEST_MAP: Record<FetchableType, RequestType> = {
   trait: 'find-trait',
 };
 
-
+// Cached list of official public source IDs — used to scope all non-ID lookups so the agent
+// only sees published content, not homebrew or unpublished drafts.
 let _officialSourceIds: number[] | null = null;
 async function getOfficialSourceIds(): Promise<number[]> {
   if (_officialSourceIds) return _officialSourceIds;
@@ -53,28 +75,46 @@ async function getOfficialSourceIds(): Promise<number[]> {
   return _officialSourceIds;
 }
 
+/**
+ * The concrete implementations of every tool the agent can call.
+ * These are invoked in the tool-call loop inside fixItem — the agent receives the tool name
+ * and input JSON, we look up the matching function here and run it.
+ *
+ * Each function accepts a `log` callback so it can emit size/diagnostics without coupling to
+ * the outer logging mechanism.
+ */
 const utilityFunctions = {
-  fetchContent: async ({
-    type,
-    id,
-    name,
-    level,
-    group,
-    rarity,
-    ability_block_type,
-    description,
-    operations_text,
-  }: {
-    type: FetchableType;
-    id?: number | number[];
-    name?: string;
-    level?: number;
-    group?: string;
-    rarity?: string;
-    ability_block_type?: string;
-    description?: string;
-    operations_text?: string;
-  }) => {
+  /**
+   * Fetch WG database content by type and optional filters.
+   * - If `id` is provided: fetch that specific record (or records) directly.
+   * - If `description` is provided: use the full-text search-data endpoint.
+   * - Otherwise: use the type-specific find-* endpoint with field filters.
+   * Results are capped at 5 and large string fields are trimmed to prevent context overflow.
+   */
+  fetchContent: async (
+    {
+      type,
+      id,
+      name,
+      level,
+      group,
+      rarity,
+      ability_block_type,
+      description,
+      operations_text,
+    }: {
+      type: FetchableType;
+      id?: number | number[];
+      name?: string;
+      level?: number;
+      group?: string;
+      rarity?: string;
+      ability_block_type?: string;
+      description?: string;
+      operations_text?: string;
+    },
+    log?: (type: string, data: any) => void
+  ) => {
     const body: Record<string, any> = {};
     if (id !== undefined) body.id = id;
     if (name !== undefined) body.name = name.replace(/-/g, ' ');
@@ -88,20 +128,62 @@ const utilityFunctions = {
       body.content_sources = await getOfficialSourceIds();
     }
 
-    let results: any[];
+    let rawResults: any;
 
-    if (description) {
-      // Use search-data for description text filtering
+    if (description || (name && !id)) {
+      // Use search-data for partial/substring matching on name or description.
+      // The find-* endpoints do exact name matching, so any name search without an explicit id
+      // must go through search-data which supports substring matching.
       body.is_advanced = true;
       body.type = type;
-      body.description = description;
-      results = (await makeRequest<any[]>('search-data', body)) ?? [];
+      if (description) body.description = description;
+      if (name) body.name = name.replace(/-/g, ' ');
+      rawResults = (await makeRequest<any>('search-data', body)) ?? [];
     } else {
-      results = (await makeRequest<any[]>(FETCH_REQUEST_MAP[type], body)) ?? [];
+      rawResults = (await makeRequest<any>(FETCH_REQUEST_MAP[type], body)) ?? [];
+    }
+
+    // Normalise to a flat array — endpoints return either an array or a single record object.
+    let results: any[];
+    if (Array.isArray(rawResults)) {
+      results = rawResults;
+    } else if (rawResults && typeof rawResults === 'object' && 'id' in rawResults) {
+      // Single record returned (common when id is a scalar, or name matches exactly one row)
+      log?.('warn', { source: 'fetchContent', message: 'endpoint returned single object, wrapping in array', rawChars: JSON.stringify(rawResults).length });
+      results = [rawResults];
+    } else if (rawResults && typeof rawResults === 'object') {
+      // search-data returns a multi-type aggregator: { items: [...], traits: [...], spells: [...], ... }
+      // Map the requested type to its plural key in that response.
+      const TYPE_TO_KEY: Record<string, string> = {
+        'item': 'items', 'trait': 'traits', 'spell': 'spells',
+        'ability-block': 'ability_blocks', 'language': 'languages',
+        'ancestry': 'ancestries', 'background': 'backgrounds', 'class': 'classes',
+        'archetype': 'archetypes', 'versatile-heritage': 'versatile_heritages',
+        'class-archetype': 'class_archetypes', 'creature': 'creatures',
+        'content-source': 'content_sources',
+      };
+      const key = TYPE_TO_KEY[type];
+      if (key && Array.isArray(rawResults[key])) {
+        results = rawResults[key];
+      } else {
+        // Still unknown — log every key+size for diagnosis
+        const shapeDiag: Record<string, number> = {};
+        for (const [k, v] of Object.entries(rawResults)) shapeDiag[k] = JSON.stringify(v).length;
+        log?.('warn', { source: 'fetchContent', message: 'search-data response had no matching key for type', type, key, shapeDiag });
+        results = [];
+      }
+    } else {
+      results = [];
+    }
+
+    // Client-side partial name filter — the API does exact matching, so filter here for substring
+    if (name) {
+      const lower = name.toLowerCase();
+      results = results.filter((r) => (r.name ?? '').toLowerCase().includes(lower));
     }
 
     // Client-side filter by operations text if requested
-    if (operations_text && Array.isArray(results)) {
+    if (operations_text) {
       const lower = operations_text.toLowerCase();
       results = results.filter((r) =>
         JSON.stringify(r.operations ?? '')
@@ -110,21 +192,26 @@ const utilityFunctions = {
       );
     }
 
-    return Array.isArray(results) ? results.slice(0, 5) : results;
+    const sliced = results.slice(0, 5);
+
+    sliced.forEach((r) => {
+      const allSizes = Object.entries(r).map<[string, number]>(([k, v]) => [k, JSON.stringify(v).length]);
+      // Only keep the 5 heaviest fields to avoid bloating the log
+      const topFields = Object.fromEntries(allSizes.sort(([, a], [, b]) => b - a).slice(0, 5));
+      log?.('size', { source: 'fetchContent', id: r.id, name: r.name, chars: JSON.stringify(r).length, topFields });
+    });
+
+    return sliced;
   },
 
   generateUUID: (): string => {
     return crypto.randomUUID();
   },
 
+  // Placeholder — the real validation and extraction happens in the tool-call loop below,
+  // not here. This stub exists so the function map has an entry for the tool name.
   returnFixedItem: ({ item }: { item: Item }): Item => {
     return item;
-  },
-
-  getSchemas: (): string => {
-    const itemJsonSchema = z.toJSONSchema(ItemSchema);
-    const operationJsonSchema = z.toJSONSchema(OperationSchema);
-    return JSON.stringify({ Item: itemJsonSchema, Operation: operationJsonSchema }, null, 2);
   },
 
   searchAoN: async ({ query }: { query: string }, log?: (type: string, data: any) => void) => {
@@ -140,13 +227,21 @@ const utilityFunctions = {
     return result;
   },
 
-  fetchPageText: async ({ url, prompt }: { url: string; prompt?: string }, log?: (type: string, data: any) => void) => {
-    const result = await CleaningUtils.fetchPageText(url, prompt);
+  fetchPageText: async ({ url }: { url: string; prompt?: string }, log?: (type: string, data: any) => void) => {
+    // Fetch raw markdown — Firecrawl's onlyMainContent already strips nav/sidebars/footers.
+    // We intentionally don't pass the prompt to Firecrawl's AI extraction because that returns
+    // JSON instead of markdown, which is harder for the model to read and may drop exact values.
+    // The agent's prompt is noted in the log for context but doesn't change what we fetch.
+    const result = await CleaningUtils.fetchPageText(url);
     log?.('size', { source: 'fetchPageText', url, chars: result.length });
     return result;
   },
 };
 
+/**
+ * Tool definitions passed to the model. Descriptions are written for the model, not developers —
+ * they explain *when* to call each tool and what to expect back.
+ */
 const tools: Anthropic.Tool[] = [
   {
     name: 'fetchContent',
@@ -248,7 +343,7 @@ To check how other sources present the same content, use searchAoN or searchDp i
   },
   {
     name: 'fetchPageText',
-    description: `Fetch the content of any URL as markdown. Optionally provide a prompt to have Firecrawl use AI to extract only the relevant content — useful for large pages. Omit the prompt to get raw markdown, which is more reliable when you need exact numbers, tables, or structured data (e.g. price, damage, bulk).`,
+    description: `Fetch the content of any URL, with AI noise removal applied automatically. Optionally provide a prompt describing what you are looking for — this focuses the extraction on the relevant content (e.g. "usage, bulk, traits, and activation for this item"). If omitted, all item content on the page is returned with navigation and site chrome stripped out.`,
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -259,16 +354,6 @@ To check how other sources present the same content, use searchAoN or searchDp i
         },
       },
       required: ['url'],
-    },
-  },
-  {
-    name: 'getSchemas',
-    description:
-      'Get the JSON Schema definitions for the Item and Operation types. Use this to understand the exact structure, required fields, and valid enum values when constructing or validating the item.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {},
-      required: [],
     },
   },
   {
@@ -287,6 +372,8 @@ To check how other sources present the same content, use searchAoN or searchDp i
   },
 ];
 
+// Build a human-readable list of all known WG variables with their types so the agent knows
+// exactly what variable names to reference in operations (e.g. "RESISTANCES", "AC_BONUS").
 const VARIABLE_REFERENCE = Object.entries(DEFAULT_VARIABLES)
   .map(([name, v]) => `${name} (${v.type})`)
   .join(', ');
@@ -300,12 +387,12 @@ Produce a corrected Item object that is fully enriched and mechanically complete
 
 In Pathfinder 2e, different content types have distinct capitalization conventions. Use these to identify what needs linking:
 
-- **Items** — lowercase (e.g. "longsword", "ring of protection"). Link as [name](link_item_{id}).
-- **Spells** — lowercase and italicised in print. Link as *[name](link_spell_{id})*.
+- **Items** — always written in lowercase (e.g. "longsword", "ring of protection"). Link as [name](link_item_{id}). Never capitalise the link text even if the source does.
+- **Spells** — always written in lowercase and italicised. Link as *[name](link_spell_{id})*. Never capitalise the link text even if the source does.
 - **Feats** — Title Case (e.g. "Power Attack", "Quick Draw"). In Wanderers Guide, feats are ability-blocks with type "feat". Link as [Name](link_action_{id}).
 - **Actions** — Title Case (e.g. "Strike", "Raise a Shield"). In Wanderers Guide, actions are ability-blocks with type "action". Link as [Name](link_action_{id}).
-- **Class features** — lowercase (e.g. "rage", "ki strike"). Also ability-blocks. Link as [name](link_action_{id}).
-- **Traits** — lowercase (e.g. "magical", "electricity", "disease"). Often followed by the word "effect" (e.g. "disease effect", "poison effect") — that's a strong signal it's a trait. Link as [name](link_trait_{id}).
+- **Class features** — always written in lowercase (e.g. "rage", "ki strike"). Also ability-blocks. Link as [name](link_action_{id}). Never capitalise the link text even if the source does.
+- **Traits** — always written in lowercase (e.g. "magical", "electricity", "disease"). Often followed by the word "effect" (e.g. "disease effect", "poison effect") — that's a strong signal it's a trait. Link as [name](link_trait_{id}). Never capitalise the link text even if the source does.
 - **Conditions** — DO NOT link. Conditions (unconscious, dying, frightened, slowed, etc.) are plain lowercase text only. The system auto-links them. Never wrap a condition in a markdown link.
 
 All feats, actions, and class features are called "ability blocks" in Wanderers Guide. Use fetchContent with type "ability-block" and the appropriate ability_block_type ("feat", "action", "class-feature", etc.) to find their IDs.
@@ -411,6 +498,185 @@ Pathfinder 2e has two editions — the legacy edition and the remaster (2023+). 
 - **Size defaults to MEDIUM.** The vast majority of items in the system are medium-sized. If an item has no size or an unusual size that isn't clearly justified, default it to "MEDIUM".
 - **Data quality note:** Some existing items in the database have incorrect field values (wrong level, size, group, traits, etc.). This cleaning process exists precisely to correct those errors. If something looks wrong, trust these rules over the stored data.`;
 
+// Unified content block type used internally throughout the agent loop.
+// Anthropic's SDK uses this natively; we map DeepSeek responses into the same shape.
+type AgentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'thinking'; thinking: string }
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, any> };
+
+/**
+ * Translates the internal Anthropic-style message history into the OpenAI chat format
+ * required by the DeepSeek API. Key differences:
+ * - Tool results become role:"tool" messages (not user messages with tool_result blocks).
+ * - reasoning_content (DeepSeek's chain-of-thought) must be round-tripped on assistant turns
+ *   for multi-turn tool loops to work correctly.
+ * - Tool calls become tool_calls on the assistant message.
+ */
+function toOpenAIMessages(messages: Anthropic.MessageParam[], system: string): any[] {
+  const result: any[] = [{ role: 'system', content: system }];
+  for (const msg of messages) {
+    if (msg.role === 'user') {
+      if (typeof msg.content === 'string') {
+        result.push({ role: 'user', content: msg.content });
+      } else if (Array.isArray(msg.content)) {
+        const toolResults = (msg.content as any[]).filter((b) => b.type === 'tool_result');
+        const textBlocks = (msg.content as any[]).filter((b) => b.type === 'text');
+        for (const tr of toolResults) {
+          result.push({
+            role: 'tool',
+            tool_call_id: tr.tool_use_id,
+            content: typeof tr.content === 'string' ? tr.content : JSON.stringify(tr.content),
+          });
+        }
+        if (textBlocks.length > 0) {
+          result.push({ role: 'user', content: textBlocks.map((b: any) => b.text).join('\n') });
+        }
+      }
+    } else if (msg.role === 'assistant') {
+      if (typeof msg.content === 'string') {
+        result.push({ role: 'assistant', content: msg.content });
+      } else if (Array.isArray(msg.content)) {
+        const textBlocks = (msg.content as any[]).filter((b) => b.type === 'text');
+        const thinkingBlocks = (msg.content as any[]).filter((b) => b.type === 'thinking');
+        const toolUseBlocks = (msg.content as any[]).filter((b) => b.type === 'tool_use');
+        const assistantMsg: any = {
+          role: 'assistant',
+          content: textBlocks.map((b: any) => b.text).join('\n') || null,
+        };
+        // Required for deepseek-reasoner multi-turn tool loops
+        if (thinkingBlocks.length > 0) {
+          assistantMsg.reasoning_content = thinkingBlocks.map((b: any) => b.thinking).join('\n');
+        }
+        if (toolUseBlocks.length > 0) {
+          assistantMsg.tool_calls = toolUseBlocks.map((b: any) => ({
+            id: b.id,
+            type: 'function',
+            function: { name: b.name, arguments: JSON.stringify(b.input) },
+          }));
+        }
+        result.push(assistantMsg);
+      }
+    }
+  }
+  return result;
+}
+
+// Translates Anthropic-style tool definitions into the OpenAI function-calling format.
+function toOpenAITools(anthropicTools: Anthropic.Tool[]): any[] {
+  return anthropicTools.map((tool) => ({
+    type: 'function',
+    function: { name: tool.name, description: tool.description, parameters: tool.input_schema },
+  }));
+}
+
+// Translates a single DeepSeek response choice back into the internal AgentBlock[] format.
+// reasoning_content → thinking block, tool_calls → tool_use blocks.
+function fromOpenAIResponse(choice: any): { stopReason: 'end_turn' | 'tool_use'; content: AgentBlock[] } {
+  const message = choice.message;
+  const content: AgentBlock[] = [];
+  if (message.reasoning_content) content.push({ type: 'thinking', thinking: message.reasoning_content });
+  if (message.content) content.push({ type: 'text', text: message.content });
+  if (message.tool_calls) {
+    for (const tc of message.tool_calls) {
+      content.push({ type: 'tool_use', id: tc.id, name: tc.function.name, input: JSON.parse(tc.function.arguments) });
+    }
+  }
+  return { stopReason: choice.finish_reason === 'tool_calls' ? 'tool_use' : 'end_turn', content };
+}
+
+/**
+ * Single entry point for a model call — abstracts over the provider.
+ * Returns a normalised { stopReason, content } regardless of whether we hit Anthropic or DeepSeek.
+ */
+async function callModel(
+  messages: Anthropic.MessageParam[],
+  system: string
+): Promise<{ stopReason: 'end_turn' | 'tool_use'; content: AgentBlock[] }> {
+  if (PROVIDER === 'anthropic') {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6', // 'claude-opus-4-6', // 'claude-haiku-4-5',
+      max_tokens: 16384,
+      tools,
+      messages,
+      system,
+    });
+    return {
+      stopReason: response.stop_reason === 'tool_use' ? 'tool_use' : 'end_turn',
+      content: response.content as AgentBlock[],
+    };
+  }
+
+  // DeepSeek (OpenAI-compatible)
+  const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_DEEPSEEK_KEY ?? ''}` },
+    body: JSON.stringify({
+      model: 'deepseek-reasoner',
+      max_tokens: 16384,
+      tools: toOpenAITools(tools),
+      messages: toOpenAIMessages(messages, system),
+    }),
+  });
+  const data = await res.json();
+  // Surface API errors (e.g. context-length exceeded) as a proper thrown Error
+  // rather than crashing on data.choices[0] being undefined.
+  if (!res.ok || !data.choices?.[0]) {
+    throw new Error(data.error?.message ?? JSON.stringify(data));
+  }
+  return fromOpenAIResponse(data.choices[0]);
+}
+
+/**
+ * If the serialised message history exceeds `thresholdChars`, compresses old tool results
+ * down to short stubs so the next model call doesn't hit the context limit.
+ *
+ * Strategy:
+ * - Always preserve message[0] (the original item) and the last two messages (the current round).
+ * - Walk oldest-to-newest through everything in between, replacing large tool result content
+ *   with "[omitted — was N chars]". Stop as soon as we're back under the threshold.
+ * - Returns a deep copy — the real `messages` array is never mutated, so full history is
+ *   preserved for logging and future rounds.
+ */
+function compressOldToolResults(
+  messages: Anthropic.MessageParam[],
+  thresholdChars = 250_000
+): Anthropic.MessageParam[] {
+  if (JSON.stringify(messages).length <= thresholdChars) return messages;
+
+  const trimmed: Anthropic.MessageParam[] = JSON.parse(JSON.stringify(messages));
+
+  // i=0 is the original item — never touch it.
+  // Last 2 entries are the current assistant turn + its tool results — preserve those too.
+  for (let i = 1; i < trimmed.length - 2; i++) {
+    const msg = trimmed[i];
+    if (msg.role !== 'user' || !Array.isArray(msg.content)) continue;
+    for (const block of msg.content as any[]) {
+      if (block.type === 'tool_result' && typeof block.content === 'string' && block.content.length > 500) {
+        block.content = `[omitted — was ${block.content.length} chars]`;
+      }
+    }
+    if (JSON.stringify(trimmed).length <= thresholdChars) break;
+  }
+
+  return trimmed;
+}
+
+/**
+ * Main entry point. Runs the agentic tool-call loop until the model calls returnFixedItem
+ * with a schema-valid item, then returns that item.
+ *
+ * Loop structure:
+ *   1. Call the model with current message history.
+ *   2. If stop_reason is end_turn without a returnFixedItem call → throw (agent gave up).
+ *   3. For each tool_use block:
+ *      a. Execute the matching utility function.
+ *      b. For returnFixedItem: validate against ItemSchema. If invalid, send the Zod error
+ *         back as the tool result so the model can self-correct and retry.
+ *      c. Log the call for the UI to display.
+ *      d. Append the tool result to the next user message.
+ *   4. If returnFixedItem succeeded, return the validated item. Otherwise loop.
+ */
 export const fixItem = async (item: Item, log: (type: string, data: any) => void): Promise<Item> => {
   const messages: Anthropic.MessageParam[] = [
     {
@@ -420,35 +686,35 @@ export const fixItem = async (item: Item, log: (type: string, data: any) => void
   ];
 
   while (true) {
-    log('size', { source: 'messages', chars: JSON.stringify(messages).length });
-    console.log('Current messages:', messages);
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6', // 'claude-opus-4-6', // 'claude-haiku-4-5',
-      max_tokens: 16384,
-      tools,
-      messages,
-      system: SYSTEM_PROMPT,
-    });
+    const callMessages = compressOldToolResults(messages);
+    log('size', { source: 'messages', chars: JSON.stringify(callMessages).length });
+    console.log('Current messages:', callMessages);
+    const { stopReason, content } = await callModel(callMessages, SYSTEM_PROMPT);
 
-    messages.push({ role: 'assistant', content: response.content });
+    messages.push({ role: 'assistant', content: content as any });
 
-    if (response.stop_reason === 'end_turn') {
-      const text = response.content.find((b) => b.type === 'text');
-      throw new Error(`Agent ended without returning a fixed item. Last message: ${text?.text}`);
+    if (stopReason === 'end_turn') {
+      const text = content.find((b) => b.type === 'text') as (AgentBlock & { type: 'text' }) | undefined;
+      const blocks = content.map((b) => b.type).join(', ') || 'no blocks';
+      throw new Error(`Agent ended without returning a fixed item. Blocks: [${blocks}]. Last message: ${text?.text ?? '(none)'}`);
     }
 
-    if (response.stop_reason === 'tool_use') {
+    if (stopReason === 'tool_use') {
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       let fixedItem: Item | null = null;
 
-      // Log any reasoning the model shared before its tool calls
-      for (const block of response.content) {
-        if (block.type === 'text' && block.text.trim()) {
+      // Log any reasoning the model shared before its tool calls.
+      // thinking blocks = DeepSeek's chain-of-thought (reasoning_content).
+      // text blocks = any explanation the model wrote before calling tools.
+      for (const block of content) {
+        if (block.type === 'thinking' && (block as any).thinking?.trim()) {
+          log('thought', (block as any).thinking);
+        } else if (block.type === 'text' && block.text.trim()) {
           log('thought', block.text);
         }
       }
 
-      for (const block of response.content) {
+      for (const block of content) {
         if (block.type !== 'tool_use') continue;
 
         const fn = utilityFunctions[block.name as keyof typeof utilityFunctions];
@@ -457,6 +723,8 @@ export const fixItem = async (item: Item, log: (type: string, data: any) => void
         try {
           const raw = await (fn as any)(block.input, log);
           if (block.name === 'returnFixedItem') {
+            // Validate the candidate against the Zod schema. If it fails, send the error
+            // back to the model so it can correct and call returnFixedItem again.
             const candidate = (block.input as { item: Item }).item;
             const parsed = ItemSchema.safeParse(candidate);
             if (!parsed.success) {
@@ -473,12 +741,16 @@ export const fixItem = async (item: Item, log: (type: string, data: any) => void
           result = `Error: ${e.message}`;
         }
 
-        // Log tool call + result as a single combined entry
+        // Emit a structured log entry for each tool call so the UI can render it.
+        // Different tools get different log shapes — fetchContent shows result count,
+        // search tools show a snippet, fetchPageText shows the URL.
         if (block.name === 'fetchContent') {
           log('size', { source: 'fetchContent', type: (block.input as any).type, chars: result.length });
           try {
             const parsed = JSON.parse(result);
-            const records: { id: number; name: string }[] = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+            const raw: any[] = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+            // Only store id+name — full objects would blow localStorage quota
+            const records: { id: number; name: string }[] = raw.map((r) => ({ id: r.id, name: r.name }));
             log('tool', { name: block.name, input: block.input, records, contentType: (block.input as any).type });
           } catch {
             log('tool', { name: block.name, input: block.input, resultText: result?.slice(0, 400) });

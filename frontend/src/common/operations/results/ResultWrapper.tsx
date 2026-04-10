@@ -22,8 +22,10 @@ export default function ResultWrapper(props: { label: string; disabled?: boolean
           px={5}
           style={{
             position: 'absolute',
-            top: -11,
-            backgroundColor: theme.colors.dark[7],
+            top: -9,
+            backgroundColor: 'rgba(255, 255, 255, 0.01)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: 999,
           }}
         >
           {props.label}

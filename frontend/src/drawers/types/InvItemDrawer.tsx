@@ -168,7 +168,7 @@ export function InvItemDrawerContent(props: {
       </>
     );
   }
-  if (invItem.item.hands) {
+  if (invItem.item.hands && !invItem.item.usage?.trim()) {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.2' span>

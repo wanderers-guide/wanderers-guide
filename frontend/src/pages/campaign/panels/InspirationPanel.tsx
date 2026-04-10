@@ -1,6 +1,5 @@
 import { generateNPC, generateSessionIdea, extractCharacterInfo, generateEncounters } from '@ai/open-ai-handler';
 import { npcsState, sessionIdeasState } from '@atoms/campaignAtoms';
-import BlurBox from '@common/BlurBox';
 import { convertMarkdownToTiptap } from '@common/rich_text_input/utils';
 import RichText from '@common/RichText';
 import { importFromFTC } from '@import/ftc/import-from-ftc';
@@ -42,6 +41,7 @@ import { isPhoneSized } from '@utils/mobile-responsive';
 import { mean } from 'lodash-es';
 import { useState } from 'react';
 import { useAtom } from 'jotai';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 
 export default function InspirationPanel(props: {
   panelHeight: number;
@@ -109,23 +109,21 @@ export default function InspirationPanel(props: {
   const getIdeasSection = () => (
     <Box>
       <Stack gap={10}>
-        <Stack gap={10}>
-          <Button
-            variant='gradient'
-            gradient={{ from: 'guide', to: 'teal' }}
-            rightSection={<IconBulbFilled size='0.9rem' />}
-            fullWidth
-            onClick={() => {
-              setGenDetails({
-                type: 'generate-sessions',
-                title: 'Generate Session Ideas',
-                onGenerate: (usePlayers, usePages, context) => generateSessions(usePlayers, usePages, context),
-              });
-            }}
-          >
-            Generate Session Ideas
-          </Button>
-        </Stack>
+        <Button
+          variant='gradient'
+          gradient={{ from: 'guide', to: 'teal' }}
+          rightSection={<IconBulbFilled size='0.9rem' />}
+          fullWidth
+          onClick={() => {
+            setGenDetails({
+              type: 'generate-sessions',
+              title: 'Generate Session Ideas',
+              onGenerate: (usePlayers, usePages, context) => generateSessions(usePlayers, usePages, context),
+            });
+          }}
+        >
+          Generate Session Ideas
+        </Button>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           <Stack>
             {sessionIdeas.map((idea, index) => (
@@ -178,11 +176,11 @@ export default function InspirationPanel(props: {
               />
             ))}
             {sessionIdeas.length === 0 && (
-              <BlurBox px='sm' pb='sm' h={props.panelHeight - 50}>
-                <Text w='100%' pt='xl' fz='sm' c='gray.7' ta='center' fs='italic'>
+              <Box bg={IMPRINT_BG_COLOR} bdrs='md' px='sm' pb='sm' h={props.panelHeight - 50}>
+                <Text w='100%' pt='xl' fz='sm' c='gray.3' ta='center' fs='italic'>
                   No session ideas found, try generating some!
                 </Text>
-              </BlurBox>
+              </Box>
             )}
             {generatingMoreSessions && (
               <Center>
@@ -198,34 +196,32 @@ export default function InspirationPanel(props: {
   const getNPCsSection = () => (
     <Box>
       <Stack gap={10}>
-        <Stack gap={10}>
-          <Button
-            variant='gradient'
-            gradient={{ from: 'teal', to: 'guide' }}
-            rightSection={<IconUsers size='0.9rem' />}
-            fullWidth
-            onClick={() => {
-              setGenDetails({
-                type: 'generate-npcs',
-                title: 'Generate NPCs',
-                onGenerate: (usePlayers, usePages, context) => generateNPCs(usePlayers, usePages, context),
-              });
-            }}
-          >
-            Generate NPCs
-          </Button>
-        </Stack>
+        <Button
+          variant='gradient'
+          gradient={{ from: 'teal', to: 'guide' }}
+          rightSection={<IconUsers size='0.9rem' />}
+          fullWidth
+          onClick={() => {
+            setGenDetails({
+              type: 'generate-npcs',
+              title: 'Generate NPCs',
+              onGenerate: (usePlayers, usePages, context) => generateNPCs(usePlayers, usePages, context),
+            });
+          }}
+        >
+          Generate NPCs
+        </Button>
         <ScrollArea h={props.panelHeight - 50} scrollbars='y'>
           <Stack>
             {npcs.map((npc, index) => (
               <NPCCard key={index} npc={npc} />
             ))}
             {npcs.length === 0 && (
-              <BlurBox px='sm' pb='sm' h={props.panelHeight - 50}>
-                <Text w='100%' pt='xl' fz='sm' c='gray.7' ta='center' fs='italic'>
+              <Box bg={IMPRINT_BG_COLOR} bdrs='md' px='sm' pb='sm' h={props.panelHeight - 50}>
+                <Text w='100%' pt='xl' fz='sm' c='gray.3' ta='center' fs='italic'>
                   No NPCs found, try generating some!
                 </Text>
-              </BlurBox>
+              </Box>
             )}
             {generatingMoreNPCs && (
               <Center>
@@ -313,26 +309,28 @@ function GenModal(props: {
       }}
     >
       <Stack gap={15}>
-        <Stack gap={5}>
-          <Text size='sm'>Use Note Pages</Text>
-          <Group gap={10}>
-            {props.campaign.notes?.pages.map((page, index) => (
-              <Chip
-                size='xs'
-                checked={pages.includes(index)}
-                onChange={() => {
-                  if (pages.includes(index)) {
-                    setPages(pages.filter((i) => i !== index));
-                  } else {
-                    setPages([...pages, index]);
-                  }
-                }}
-              >
-                {page.name}
-              </Chip>
-            ))}
-          </Group>
-        </Stack>
+        {props.campaign.notes?.pages.length && (
+          <Stack gap={5}>
+            <Text size='sm'>Use Note Pages</Text>
+            <Group gap={10}>
+              {props.campaign.notes?.pages.map((page, index) => (
+                <Chip
+                  size='xs'
+                  checked={pages.includes(index)}
+                  onChange={() => {
+                    if (pages.includes(index)) {
+                      setPages(pages.filter((i) => i !== index));
+                    } else {
+                      setPages([...pages, index]);
+                    }
+                  }}
+                >
+                  {page.name}
+                </Chip>
+              ))}
+            </Group>
+          </Stack>
+        )}
         <Checkbox
           checked={usePlayers}
           onChange={(e) => setUsePlayers(e.currentTarget.checked)}
@@ -366,7 +364,7 @@ function SessionIdeaCard(props: {
   const [loading, setLoading] = useState(false);
 
   return (
-    <BlurBox px='sm' pb='sm'>
+    <Box bg={IMPRINT_BG_COLOR} bdrs='md' p='sm'>
       <Stack>
         <Box>
           <Title order={3}>{props.idea.name}</Title>
@@ -449,7 +447,7 @@ function SessionIdeaCard(props: {
           </Button>
         </Group>
       </Stack>
-    </BlurBox>
+    </Box>
   );
 }
 
@@ -457,7 +455,7 @@ function NPCCard(props: { npc: CampaignNPC }) {
   const [loading, setLoading] = useState(false);
 
   return (
-    <BlurBox px='sm' pb='sm'>
+    <Box bg={IMPRINT_BG_COLOR} bdrs='md' p='sm'>
       <Stack>
         <Box>
           <Title order={3}>
@@ -524,6 +522,6 @@ function NPCCard(props: { npc: CampaignNPC }) {
           </Button>
         </Group>
       </Stack>
-    </BlurBox>
+    </Box>
   );
 }

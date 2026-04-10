@@ -203,7 +203,7 @@ export function ItemDrawerContent(props: {
       </>
     );
   }
-  if (item.hands) {
+  if (item.hands && !item.usage?.trim()) {
     UBH.push(
       <>
         <Text key={1} fw={600} c='gray.2' span>

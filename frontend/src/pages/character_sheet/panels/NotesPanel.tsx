@@ -237,7 +237,7 @@ export default function NotesPanel(props: {
           },
         }}
       >
-        <Tabs.List w={190} h={props.panelHeight}>
+        <Tabs.List miw={190} h={props.panelHeight}>
           {pages.map((page, index) => (
             <Tabs.Tab
               key={index}

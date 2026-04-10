@@ -100,10 +100,10 @@ export default function RichTextInput(props: RichTextInputProps) {
         fz='sm'
         styles={{
           toolbar: {
-            backgroundColor: IMPRINT_BG_COLOR_HOVER,
+            backgroundColor: 'rgba(0,0,0,0.05)',
           },
           content: {
-            backgroundColor: IMPRINT_BG_COLOR,
+            backgroundColor: IMPRINT_BG_COLOR_HOVER,
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
             display: 'flex',

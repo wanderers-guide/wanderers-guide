@@ -84,7 +84,17 @@ export function addCleaningLog(cleaningRecordId: string, logType: string, data: 
   };
 
   logs.push(entry);
-  localStorage.setItem(`cleaning-log-${cleaningRecordId}`, JSON.stringify(logs));
+  try {
+    localStorage.setItem(`cleaning-log-${cleaningRecordId}`, JSON.stringify(logs));
+  } catch {
+    // localStorage quota exceeded — prune all 'size' and 'warn' entries older than the last 10 and retry
+    const pruned = logs.filter((l, i) => i >= logs.length - 10 || (l.type !== 'size' && l.type !== 'warn'));
+    try {
+      localStorage.setItem(`cleaning-log-${cleaningRecordId}`, JSON.stringify(pruned));
+    } catch {
+      // Still too large — give up storing this log; don't crash the run
+    }
+  }
 }
 
 /**
