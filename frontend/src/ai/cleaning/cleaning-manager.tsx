@@ -88,7 +88,7 @@ export function addCleaningLog(cleaningRecordId: string, logType: string, data: 
     localStorage.setItem(`cleaning-log-${cleaningRecordId}`, JSON.stringify(logs));
   } catch {
     // localStorage quota exceeded — prune all 'size' and 'warn' entries older than the last 10 and retry
-    const pruned = logs.filter((l, i) => i >= logs.length - 10 || (l.type !== 'size' && l.type !== 'warn'));
+    const pruned = logs.filter((l, i) => i >= logs.length - 10 || (l.type !== 'info' && l.type !== 'thought'));
     try {
       localStorage.setItem(`cleaning-log-${cleaningRecordId}`, JSON.stringify(pruned));
     } catch {

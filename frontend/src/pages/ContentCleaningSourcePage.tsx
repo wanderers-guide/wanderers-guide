@@ -127,7 +127,7 @@ export function Component() {
     const body: Record<string, any> = { content_sources: [sourceId] };
     // ability-block needs type=undefined to fetch all; pass nothing extra
     const result = await makeRequest<RecordEntry[]>(selectedType.request, body);
-    setRecords((result ?? []).reverse());
+    setRecords(result ?? []); // .reverse()
     setIsFetchingRecords(false);
   }
 
