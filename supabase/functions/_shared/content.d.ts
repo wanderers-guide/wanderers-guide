@@ -301,6 +301,7 @@ interface LivingEntity {
       name: string;
       icon: string;
       color: string;
+      shared?: boolean;
       contents: JSONContent;
     }[];
   };
@@ -451,6 +452,7 @@ interface Campaign {
       name: string;
       icon: string;
       color: string;
+      shared?: boolean;
       contents: JSONContent;
     }[];
     sessions: {

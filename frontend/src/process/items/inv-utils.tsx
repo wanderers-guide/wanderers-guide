@@ -489,6 +489,11 @@ export function isItemWithPropertyRunes(item: Item) {
   );
 }
 
+export function isItemWithMaterial(item: Item) {
+  if (!item.meta_data?.material) return false;
+  return !!(item.meta_data.material.type || item.meta_data.material.grade);
+}
+
 // Fundamental Rune IDs Map
 export const FUNDAMENTAL_RUNES: Record<string, number> = {
   potency_weapon_1: 7950, // Weapon Potency I

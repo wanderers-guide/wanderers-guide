@@ -198,6 +198,9 @@ export interface Item {
       stack_group?: string;
       items?: Record<string, any>[];
     };
+    cleaning?: {
+      updatedAt: string;
+    };
   } | null;
   operations: Operation[] | null;
   content_source_id: number;
@@ -322,6 +325,11 @@ export const ItemSchema: z.ZodType<Item> = z.lazy(() =>
             splash_damage: z.number().optional(),
             stack_group: z.string().optional(),
             items: z.array(z.record(z.string(), z.any())).optional(),
+          })
+          .optional(),
+        cleaning: z
+          .object({
+            updatedAt: z.string(),
           })
           .optional(),
       })
@@ -635,6 +643,7 @@ const NotesSchema = z.object({
       name: z.string(),
       icon: z.string(),
       color: z.string(),
+      shared: z.boolean().optional(),
       contents: JSONContentSchema,
     })
   ),

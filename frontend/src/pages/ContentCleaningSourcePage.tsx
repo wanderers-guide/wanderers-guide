@@ -127,7 +127,17 @@ export function Component() {
     const body: Record<string, any> = { content_sources: [sourceId] };
     // ability-block needs type=undefined to fetch all; pass nothing extra
     const result = await makeRequest<RecordEntry[]>(selectedType.request, body);
-    setRecords(result ?? []); // .reverse()
+    setRecords(result ?? []);
+
+    // Pre-populate cleaningMap for records that already have a cleaning.updatedAt stamp
+    const preCleaned = new Map<number, CleaningEntry>();
+    for (const r of result ?? []) {
+      if (r.meta_data?.cleaning?.updatedAt) {
+        preCleaned.set(r.id, { cleaningRecordId: `${contentType}_${r.id}`, status: 'done' });
+      }
+    }
+    setCleaningMap(preCleaned);
+
     setIsFetchingRecords(false);
   }
 
@@ -142,11 +152,10 @@ export function Component() {
       const cleaningRecordId = `${contentType}_${record.id}`;
       if (retry) clearCleaningSession(cleaningRecordId);
 
-      // If records already exist for this ID, just restore them without re-running
-      const existingStatus = getCleaningStatus(cleaningRecordId);
-      if (!retry && existingStatus !== 'running' && localStorage.getItem(`cleaning-status-${cleaningRecordId}`)) {
-        setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status: existingStatus }));
-        onDone?.(existingStatus);
+      // If the record already has a cleaning.updatedAt stamp, treat it as done without re-running
+      if (!retry && record.meta_data?.cleaning?.updatedAt) {
+        setCleaningMap((prev) => new Map(prev).set(record.id, { cleaningRecordId, status: 'done' }));
+        onDone?.('done');
         return () => {};
       }
 

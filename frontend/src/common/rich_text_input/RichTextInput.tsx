@@ -31,6 +31,7 @@ interface RichTextInputProps {
   height?: number;
   maxHeight?: number;
   hasColorOptions?: boolean;
+  readOnly?: boolean;
 }
 
 export default function RichTextInput(props: RichTextInputProps) {
@@ -39,6 +40,7 @@ export default function RichTextInput(props: RichTextInputProps) {
 
   const editor = useEditor({
     shouldRerenderOnTransaction: true,
+    editable: !props.readOnly,
     extensions: [
       StarterKit.configure({ link: false }),
       Link,
@@ -107,58 +109,60 @@ export default function RichTextInput(props: RichTextInputProps) {
             borderTopLeftRadius: 0,
             borderTopRightRadius: 0,
             display: 'flex',
-            '--rich-text-editor-max-height': props.maxHeight ? `${props.maxHeight - 50}px` : undefined,
-            '--rich-text-editor-height': props.height ? `${props.height - 50}px` : undefined,
+            '--rich-text-editor-max-height': props.maxHeight ? `${props.maxHeight - (props.readOnly ? 0 : 50)}px` : undefined,
+            '--rich-text-editor-height': props.height ? `${props.height - (props.readOnly ? 0 : 50)}px` : undefined,
           },
         }}
       >
-        <RichTextEditor.Toolbar
-          style={isSmall ? { gap: 0, justifyContent: 'space-between' } : { gap: 5, flexWrap: 'nowrap' }}
-        >
-          <RichTextEditor.ControlsGroup>
-            <ActionSymbolControl />
-          </RichTextEditor.ControlsGroup>
-
-          <RichTextEditor.ControlsGroup>
-            <ContentLinkControl />
-            <RichTextEditor.Unlink />
-          </RichTextEditor.ControlsGroup>
-
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.Bold />
-            <RichTextEditor.Italic />
-            <RichTextEditor.Underline />
-          </RichTextEditor.ControlsGroup>
-
-          <RichTextEditor.ControlsGroup>
-            <RichTextEditor.Blockquote />
-            <RichTextEditor.Hr />
-            <RichTextEditor.BulletList />
-            <RichTextEditor.OrderedList />
-          </RichTextEditor.ControlsGroup>
-
-          {!isVerySmall && (
+        {!props.readOnly && (
+          <RichTextEditor.Toolbar
+            style={isSmall ? { gap: 0, justifyContent: 'space-between' } : { gap: 5, flexWrap: 'nowrap' }}
+          >
             <RichTextEditor.ControlsGroup>
-              {/* <RichTextEditor.H1 /> */}
-              <RichTextEditor.H2 />
-              <RichTextEditor.H3 />
-              <RichTextEditor.H4 />
+              <ActionSymbolControl />
             </RichTextEditor.ControlsGroup>
-          )}
 
-          {!isPrettySmall && props.hasColorOptions && (
             <RichTextEditor.ControlsGroup>
-              <HighlightColorControl colors={defaultColors} />
-              <RichTextEditor.ColorPicker colors={defaultColors} />
+              <ContentLinkControl />
+              <RichTextEditor.Unlink />
             </RichTextEditor.ControlsGroup>
-          )}
 
-          {/* {!isVerySmall && (
             <RichTextEditor.ControlsGroup>
-              <AutoContentLinkControl />
+              <RichTextEditor.Bold />
+              <RichTextEditor.Italic />
+              <RichTextEditor.Underline />
             </RichTextEditor.ControlsGroup>
-          )} */}
-        </RichTextEditor.Toolbar>
+
+            <RichTextEditor.ControlsGroup>
+              <RichTextEditor.Blockquote />
+              <RichTextEditor.Hr />
+              <RichTextEditor.BulletList />
+              <RichTextEditor.OrderedList />
+            </RichTextEditor.ControlsGroup>
+
+            {!isVerySmall && (
+              <RichTextEditor.ControlsGroup>
+                {/* <RichTextEditor.H1 /> */}
+                <RichTextEditor.H2 />
+                <RichTextEditor.H3 />
+                <RichTextEditor.H4 />
+              </RichTextEditor.ControlsGroup>
+            )}
+
+            {!isPrettySmall && props.hasColorOptions && (
+              <RichTextEditor.ControlsGroup>
+                <HighlightColorControl colors={defaultColors} />
+                <RichTextEditor.ColorPicker colors={defaultColors} />
+              </RichTextEditor.ControlsGroup>
+            )}
+
+            {/* {!isVerySmall && (
+              <RichTextEditor.ControlsGroup>
+                <AutoContentLinkControl />
+              </RichTextEditor.ControlsGroup>
+            )} */}
+          </RichTextEditor.Toolbar>
+        )}
 
         <RichTextEditor.Content />
       </RichTextEditor>

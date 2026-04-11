@@ -114,7 +114,7 @@ export default function InventoryPanel(props: {
           <Title order={3}>Add Items</Title>
           <Button
             variant='light'
-            color={theme.colors['gray'][6]}
+            color='gray'
             size='compact-xs'
             mr={5}
             onClick={() => {

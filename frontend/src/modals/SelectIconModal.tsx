@@ -1,4 +1,5 @@
 import { Icon, getAllIcons } from '@common/Icon';
+import { IMPRINT_BG_COLOR, IMPRINT_BORDER_COLOR } from '@constants/data';
 import classes from '@css/ActionsGrid.module.css';
 import {
   ActionIcon,
@@ -92,7 +93,7 @@ export function SelectIconModalContents(props: {
         onChange={(event) => setSearchQuery(event.target.value)}
         styles={{
           input: {
-            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
+            backgroundColor: IMPRINT_BG_COLOR,
             borderColor: isSearching ? theme.colors['guide'][8] : undefined,
           },
         }}
@@ -104,8 +105,8 @@ export function SelectIconModalContents(props: {
         py={15}
         pr={5}
         style={{
-          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
-          borderColor: theme.colors['dark'][8],
+          backgroundColor: IMPRINT_BG_COLOR,
+          borderColor: IMPRINT_BORDER_COLOR,
         }}
       >
         <ScrollArea h={315} scrollbars='y'>

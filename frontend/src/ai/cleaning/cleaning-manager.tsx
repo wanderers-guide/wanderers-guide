@@ -32,7 +32,11 @@ export async function cleanContent(cleaningRecordId: string, type: ContentType, 
     addCleaningLog(cleaningRecordId, 'done', 'Cleaned successfully');
 
     localStorage.setItem(`cleaning-status-${cleaningRecordId}`, 'done' satisfies CleaningStatus);
-    localStorage.setItem(`cleaning-result-${cleaningRecordId}`, JSON.stringify({ type, content: fixedContent }));
+
+    const stampedContent = fixedContent
+      ? { ...fixedContent, meta_data: { ...fixedContent.meta_data, cleaning: { updatedAt: new Date().toISOString() } } }
+      : fixedContent;
+    localStorage.setItem(`cleaning-result-${cleaningRecordId}`, JSON.stringify({ type, content: stampedContent }));
   } catch (e: any) {
     addCleaningLog(cleaningRecordId, 'error', e?.message ?? 'An unknown error occurred');
     localStorage.setItem(`cleaning-status-${cleaningRecordId}`, 'error' satisfies CleaningStatus);

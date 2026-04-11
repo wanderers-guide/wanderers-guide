@@ -26,6 +26,7 @@ import { useState } from 'react';
 import { DonutChart } from '@mantine/charts';
 import Paginator from '@common/Paginator';
 import { groupBy, map, orderBy } from 'lodash-es';
+import { IMPRINT_BG_COLOR } from '@constants/data';
 
 export function Component(props: {}) {
   setPageTitle(`Content Updates Overview`);
@@ -170,7 +171,7 @@ export function Component(props: {}) {
                 onChange={(event) => setSearchQuery(event.target.value)}
                 styles={{
                   input: {
-                    backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
+                    backgroundColor: IMPRINT_BG_COLOR,
                     borderColor: searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
                   },
                 }}

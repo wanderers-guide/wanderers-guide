@@ -1,6 +1,6 @@
 import { drawerState } from '@atoms/navAtoms';
 import { SelectContentButton, SpellSelectionOption, selectContent } from '@common/select/SelectContent';
-import { EDIT_MODAL_HEIGHT } from '@constants/data';
+import { EDIT_MODAL_HEIGHT, IMPRINT_BG_COLOR } from '@constants/data';
 import { collectEntitySpellcasting } from '@content/collect-content';
 import { isSpellVisible } from '@content/content-hidden';
 import { fetchContentAll, getDefaultSources } from '@content/content-store';
@@ -417,7 +417,7 @@ const ListSection = (props: {
           onChange={(e) => props.setSearchQuery(e.target.value)}
           styles={{
             input: {
-              backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[1],
+              backgroundColor: IMPRINT_BG_COLOR,
               borderColor: props.searchQuery.trim().length > 0 ? theme.colors['guide'][8] : undefined,
             },
           }}

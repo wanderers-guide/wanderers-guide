@@ -5,6 +5,7 @@ import { IconHelpTriangleFilled, IconX } from '@tabler/icons-react';
 import { Suspense, useRef } from 'react';
 import { useAtom } from 'jotai';
 import useRefresh from '@utils/use-refresh';
+import { useSwipeGesture } from '@utils/use-swipe-gesture';
 import { wideDesktopQuery } from '@utils/mobile-responsive';
 import { DRAWER_STYLES } from './DrawerBase';
 import { CreatureDrawerContent, CreatureDrawerTitle } from './types/CreatureDrawer';
@@ -29,6 +30,8 @@ export default function DrawerCreatureBase() {
   useDidUpdate(() => {
     refreshTitle();
   }, [_drawer]);
+
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: handleDrawerClose });
 
   const opened = !!_drawer;
   return (
@@ -84,40 +87,42 @@ export default function DrawerCreatureBase() {
           overflow: 'hidden',
         }}
       >
-        <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
-          {opened && (
-            <Suspense fallback={<div></div>}>
-              <CreatureDrawerContent data={_drawer.data} />
-            </Suspense>
-          )}
-        </ScrollArea>
+        <Box onTouchStart={swipeHandlers.onTouchStart} onTouchEnd={swipeHandlers.onTouchEnd} style={{ height: '100%' }}>
+          <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
+            {opened && (
+              <Suspense fallback={<div></div>}>
+                <CreatureDrawerContent data={_drawer.data} />
+              </Suspense>
+            )}
+          </ScrollArea>
 
-        {_drawer && _drawer.data.id && (
-          <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
-            <HoverCard.Target>
-              <ActionIcon
-                variant='subtle'
-                aria-label='Help and Feedback'
-                radius='xl'
-                color='dark.3'
-                style={getAnchorStyles({ r: 5, b: 5 })}
-                onClick={() => {
-                  setFeedbackData({
-                    type: 'creature',
-                    data: {
-                      id: _drawer.data.id,
-                    },
-                  });
-                }}
-              >
-                <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
-              </ActionIcon>
-            </HoverCard.Target>
-            <HoverCard.Dropdown py={0} px={10}>
-              <Text size='sm'>Something wrong?</Text>
-            </HoverCard.Dropdown>
-          </HoverCard>
-        )}
+          {_drawer && _drawer.data.id && (
+            <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
+              <HoverCard.Target>
+                <ActionIcon
+                  variant='subtle'
+                  aria-label='Help and Feedback'
+                  radius='xl'
+                  color='dark.3'
+                  style={getAnchorStyles({ r: 5, b: 5 })}
+                  onClick={() => {
+                    setFeedbackData({
+                      type: 'creature',
+                      data: {
+                        id: _drawer.data.id,
+                      },
+                    });
+                  }}
+                >
+                  <IconHelpTriangleFilled style={{ width: '70%', height: '70%' }} stroke={1.5} />
+                </ActionIcon>
+              </HoverCard.Target>
+              <HoverCard.Dropdown py={0} px={10}>
+                <Text size='sm'>Something wrong?</Text>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          )}
+        </Box>
       </Drawer>
       {feedbackData && (
         <ContentFeedbackModal

@@ -19,6 +19,7 @@ import {
   isItemWeapon,
   isItemMetaAttack,
   isItemWithGradeImprovement,
+  isItemWithMaterial,
   isItemWithPropertyRunes,
   isItemWithQuantity,
   isItemWithRunes,
@@ -290,6 +291,18 @@ export function ItemDrawerContent(props: {
 }
 
 function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: SetterOrUpdater<any> }) {
+  const materialType = props.item.meta_data?.material?.type;
+  const materialGrade = props.item.meta_data?.material?.grade;
+
+  const { data: materialItem } = useQuery({
+    queryKey: [`find-material-item-${materialType}`],
+    queryFn: async () => {
+      if (!materialType) return null;
+      return await fetchItemByName(materialType);
+    },
+    enabled: !!materialType,
+  });
+
   const ac = props.item.meta_data?.ac_bonus;
   let dexCap = props.item.meta_data?.dex_cap;
   let strength = props.item.meta_data?.strength;
@@ -466,7 +479,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
             <Badge
               size='lg'
               variant='light'
-              color='gray.5'
+              color='gray'
               style={{ cursor: 'pointer' }}
               styles={{ root: { textTransform: 'initial' } }}
               onClick={() => {
@@ -486,7 +499,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
             <Badge
               size='lg'
               variant='light'
-              color='gray.5'
+              color='gray'
               style={{ cursor: 'pointer' }}
               styles={{ root: { textTransform: 'initial' } }}
               onClick={() => {
@@ -511,7 +524,7 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                   key={index}
                   size='lg'
                   variant='light'
-                  color='gray.5'
+                  color='gray'
                   style={{
                     cursor: 'pointer',
                   }}
@@ -532,6 +545,32 @@ function MiscItemSections(props: { item: Item; store: StoreID; openDrawer: Sette
                 </Badge>
               ))}
             </>
+          )}
+        </Group>
+      </Paper>
+    );
+  }
+
+  let materialSection = null;
+  if (isItemWithMaterial(props.item)) {
+    materialSection = (
+      <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
+        <Group gap={5}>
+          {materialType && (
+            <Badge
+              size='lg'
+              variant='light'
+              color='gray'
+              style={{ cursor: materialItem ? 'pointer' : undefined }}
+              styles={{ root: { textTransform: 'initial' } }}
+              onClick={() => {
+                if (materialItem) {
+                  props.openDrawer({ type: 'item', data: { id: materialItem.id }, extra: { addToHistory: true } });
+                }
+              }}
+            >
+              {toLabel(materialType)} {materialGrade ? `– ${toLabel(materialGrade)}-grade` : ''}
+            </Badge>
           )}
         </Group>
       </Paper>

@@ -3,7 +3,7 @@ import { Icon } from '@common/Icon';
 import RichTextInput from '@common/rich_text_input/RichTextInput';
 import { GUIDE_BLUE } from '@constants/data';
 import { glassStyle } from '@utils/colors';
-import { Tabs, ActionIcon, ScrollArea, Title, Box, Menu, Button } from '@mantine/core';
+import { Tabs, ActionIcon, Badge, Group, ScrollArea, Title, Box, Menu, Button } from '@mantine/core';
 import { useDebouncedState, useDidUpdate } from '@mantine/hooks';
 import { openContextModal } from '@mantine/modals';
 import { IconCheck, IconPlus, IconSettings } from '@tabler/icons-react';
@@ -25,6 +25,7 @@ export default function NotesPanel(props: {
 }) {
   const [activeTab, setActiveTab] = useState<string | null>('0');
   const isPhone = isPhoneSized(props.panelWidth);
+  const isInCampaign = isCharacter(props.entity) && !!props.entity?.campaign_id;
   const [displayNotes, refreshNotes] = useRefresh();
 
   const [debouncedJson, setDebouncedJson] = useDebouncedState<{
@@ -73,7 +74,10 @@ export default function NotesPanel(props: {
     setActiveTab(`${newPages.length - 1}`);
   };
 
-  const getPage = (page: { name: string; icon: string; color: string; contents: JSONContent }, index: number) => {
+  const getPage = (
+    page: { name: string; icon: string; color: string; shared?: boolean; contents: JSONContent | null },
+    index: number
+  ) => {
     return (
       <ScrollArea h={props.panelHeight} scrollbars='y'>
         <RichTextInput
@@ -89,10 +93,14 @@ export default function NotesPanel(props: {
           <Menu shadow='md' width={160} zIndex={props.zIndex ?? 499}>
             <Menu.Target>
               <Button
-                variant='light'
+                variant='gradient'
                 aria-label={`Page Settings`}
                 size='xs'
                 radius='xl'
+                gradient={{
+                  from: page.color || 'gray.5',
+                  to: page.color || 'gray.5',
+                }}
                 color={isPhone ? page.color || 'gray.5' : 'gray.5'}
                 style={{
                   position: 'absolute',
@@ -103,7 +111,7 @@ export default function NotesPanel(props: {
                 }}
                 w={130}
                 leftSection={
-                  <ActionIcon variant='transparent' size='xs' color={page.color}>
+                  <ActionIcon variant='transparent' size='xs' color={isPhone ? 'white' : page.color}>
                     <Icon name={page.icon} size='1rem' />
                   </ActionIcon>
                 }
@@ -129,7 +137,6 @@ export default function NotesPanel(props: {
                       </ActionIcon>
                     ) : undefined
                   }
-                  color={page.color}
                   onClick={() => {
                     setActiveTab(`${index}`);
                   }}
@@ -159,62 +166,79 @@ export default function NotesPanel(props: {
             </Menu.Dropdown>
           </Menu>
         )}
-        <ActionIcon
-          variant={isPhone ? 'light' : 'subtle'}
-          aria-label={`Page Settings`}
-          size='md'
-          radius='xl'
-          color={isPhone ? page.color || 'gray.5' : 'gray.5'}
+        <Group
+          gap={4}
+          align='center'
           style={{
             position: 'absolute',
             top: isPhone ? undefined : 10,
             bottom: isPhone ? 10 : undefined,
             left: isPhone ? 150 : undefined,
             right: isPhone ? undefined : 10,
-          }}
-          onClick={() => {
-            openContextModal({
-              modal: 'updateNotePage',
-              title: <Title order={3}>Update Page</Title>,
-              innerProps: {
-                page: page,
-                onUpdate: (name: string, icon: string, color: string) => {
-                  if (!props.entity) return;
-                  const newPages = cloneDeep(pages);
-                  newPages[index] = {
-                    ...newPages[index],
-                    name: name,
-                    icon: icon,
-                    color: color,
-                  };
-                  props.setEntity({
-                    ...props.entity,
-                    notes: {
-                      ...props.entity.notes,
-                      pages: newPages,
-                    },
-                  });
-                },
-                onDelete: () => {
-                  if (!props.entity) return;
-                  const newPages = cloneDeep(pages);
-                  newPages.splice(index, 1);
-                  props.setEntity({
-                    ...props.entity,
-                    notes: {
-                      ...props.entity.notes,
-                      pages: newPages,
-                    },
-                  });
-                  setActiveTab(`0`);
-                },
-              },
-              zIndex: props.zIndex,
-            });
+            flexDirection: isPhone ? 'row-reverse' : 'row',
           }}
         >
-          <IconSettings size='1.2rem' />
-        </ActionIcon>
+          {page.shared && (
+            <Badge size='md' variant='light' color='guide'>
+              Shared
+            </Badge>
+          )}
+          <ActionIcon
+            variant={isPhone ? 'gradient' : 'subtle'}
+            aria-label={`Page Settings`}
+            size='md'
+            radius='xl'
+            gradient={{
+              from: page.color || 'gray.5',
+              to: page.color || 'gray.5',
+            }}
+            color={isPhone ? page.color || 'gray.5' : 'gray.5'}
+            onClick={() => {
+              openContextModal({
+                modal: 'updateNotePage',
+                title: <Title order={3}>Update Page</Title>,
+                innerProps: {
+                  page: page,
+                  isInCampaign: isInCampaign,
+                  onUpdate: (name: string, icon: string, color: string, shared: boolean) => {
+                    if (!props.entity) return;
+                    const newPages = cloneDeep(pages);
+                    newPages[index] = {
+                      ...newPages[index],
+                      name: name,
+                      icon: icon,
+                      color: color,
+                      shared: shared,
+                    };
+                    props.setEntity({
+                      ...props.entity,
+                      notes: {
+                        ...props.entity.notes,
+                        pages: newPages,
+                      },
+                    });
+                  },
+                  onDelete: () => {
+                    if (!props.entity) return;
+                    const newPages = cloneDeep(pages);
+                    newPages.splice(index, 1);
+                    props.setEntity({
+                      ...props.entity,
+                      notes: {
+                        ...props.entity.notes,
+                        pages: newPages,
+                      },
+                    });
+                    setActiveTab(`0`);
+                  },
+                },
+                zIndex: props.zIndex,
+              });
+            }}
+          >
+            <IconSettings size='1.2rem' />
+          </ActionIcon>
+        </Group>
       </ScrollArea>
     );
   };

@@ -67,6 +67,10 @@ strong {
   opacity: 1;
 }
 
+.tiptap p.is-empty.is-editor-empty::before {
+  color: color-mix(in srgb, var(--mantine-color-dimmed) 50%, transparent) !important;
+}
+
 .tiptap.ProseMirror {
   flex: 1;
   max-height: var(--rich-text-editor-max-height);

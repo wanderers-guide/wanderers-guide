@@ -8,6 +8,7 @@ import {
   Group,
   Modal,
   Stack,
+  Switch,
   Text,
   TextInput,
   Title,
@@ -23,13 +24,15 @@ export default function UpdateNotePageModal({
   id,
   innerProps,
 }: ContextModalProps<{
-  page: { name: string; icon: string; color: string };
-  onUpdate: (name: string, icon: string, color: string) => void;
+  page: { name: string; icon: string; color: string; shared?: boolean };
+  isInCampaign: boolean;
+  onUpdate: (name: string, icon: string, color: string, shared: boolean) => void;
   onDelete: () => void;
 }>) {
   const [title, setTitle] = useState(innerProps.page.name);
   const [icon, setIcon] = useState(innerProps.page.icon);
   const [color, setColor] = useState(innerProps.page.color);
+  const [shared, setShared] = useState(innerProps.page.shared ?? false);
 
   const openConfirmModal = () =>
     modals.openConfirmModal({
@@ -65,6 +68,16 @@ export default function UpdateNotePageModal({
         }}
       />
 
+      {innerProps.isInCampaign && (
+        <Switch
+          label='Share with Campaign'
+          description='Allow campaign members to view this page'
+          labelPosition='left'
+          checked={shared}
+          onChange={(e) => setShared(e.currentTarget.checked)}
+        />
+      )}
+
       <Group justify='space-between'>
         <Button variant='light' size='compact-xs' color='red' onClick={() => openConfirmModal()}>
           Delete Page
@@ -76,7 +89,7 @@ export default function UpdateNotePageModal({
           <Button
             disabled={!title.trim() || !icon || !color}
             onClick={() => {
-              innerProps.onUpdate(title, icon, color);
+              innerProps.onUpdate(title, icon, color, shared);
               context.closeModal(id);
             }}
           >

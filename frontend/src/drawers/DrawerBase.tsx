@@ -9,6 +9,7 @@ import { useAtom } from 'jotai';
 import { PrevMetadata } from './drawer-utils';
 import ContentFeedbackModal from '@modals/ContentFeedbackModal';
 import useRefresh from '@utils/use-refresh';
+import { useSwipeGesture } from '@utils/use-swipe-gesture';
 import { modals } from '@mantine/modals';
 import { wideDesktopQuery } from '@utils/mobile-responsive';
 import { cloneDeep } from 'lodash-es';
@@ -121,6 +122,8 @@ export default function DrawerBase() {
     refreshTitle();
   }, [_drawer]);
 
+  const swipeHandlers = useSwipeGesture({ onSwipeLeft: handleDrawerGoBack });
+
   const opened = !!_drawer;
   return (
     <>
@@ -187,19 +190,20 @@ export default function DrawerBase() {
           overflow: 'hidden',
         }}
       >
-        <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
-          {opened && (
-            <Suspense fallback={<div></div>}>
-              <DrawerContent
-                onMetadataChange={(openedDict) => {
-                  saveMetadata(openedDict);
-                }}
-              />
-            </Suspense>
-          )}
-        </ScrollArea>
+        <Box onTouchStart={swipeHandlers.onTouchStart} onTouchEnd={swipeHandlers.onTouchEnd} style={{ height: '100%' }}>
+          <ScrollArea viewportRef={viewport} h='100%' pr={16} scrollbars='y'>
+            {opened && (
+              <Suspense fallback={<div></div>}>
+                <DrawerContent
+                  onMetadataChange={(openedDict) => {
+                    saveMetadata(openedDict);
+                  }}
+                />
+              </Suspense>
+            )}
+          </ScrollArea>
 
-        {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
+          {_drawer && !NO_FEEDBACK_DRAWERS.includes(_drawer.type) && _drawer.data?.noFeedback !== true && (
           <>
             <HoverCard shadow='md' openDelay={500} zIndex={1000} withArrow withinPortal>
               <HoverCard.Target>
@@ -236,6 +240,7 @@ export default function DrawerBase() {
             </HoverCard>
           </>
         )}
+        </Box>
       </Drawer>
       {feedbackData && (
         <ContentFeedbackModal

@@ -19,6 +19,7 @@ import {
   isItemWeapon,
   isItemMetaAttack,
   isItemWithGradeImprovement,
+  isItemWithMaterial,
   isItemWithPropertyRunes,
   isItemWithQuantity,
   isItemWithRunes,
@@ -62,6 +63,8 @@ import { sign } from '@utils/numbers';
 import { toLabel } from '@utils/strings';
 import { evaluate } from 'mathjs/number';
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchItemByName } from '@content/content-store';
 import { useAtom, useAtomValue } from 'jotai';
 import { SetterOrUpdater } from '@utils/type-fixing';
 import { getArmorSpecialization } from '@specializations/armor-specializations';
@@ -445,6 +448,19 @@ function InvItemSections(props: {
   openDrawer: SetterOrUpdater<any>;
 }) {
   const [drawer, openDrawer] = useAtom(drawerState);
+
+  const materialType = props.invItem.item.meta_data?.material?.type;
+  const materialGrade = props.invItem.item.meta_data?.material?.grade;
+
+  const { data: materialItem } = useQuery({
+    queryKey: [`find-material-item-${materialType}`],
+    queryFn: async () => {
+      if (!materialType) return null;
+      return await fetchItemByName(materialType);
+    },
+    enabled: !!materialType,
+  });
+
   const ac = props.invItem.item.meta_data?.ac_bonus;
   let dexCap = props.invItem.item.meta_data?.dex_cap;
   let strength = props.invItem.item.meta_data?.strength;
@@ -713,7 +729,7 @@ function InvItemSections(props: {
             <Badge
               size='lg'
               variant='light'
-              color='gray.5'
+              color='gray'
               style={{ cursor: 'pointer' }}
               styles={{ root: { textTransform: 'initial' } }}
               onClick={() => {
@@ -733,7 +749,7 @@ function InvItemSections(props: {
             <Badge
               size='lg'
               variant='light'
-              color='gray.5'
+              color='gray'
               style={{ cursor: 'pointer' }}
               styles={{ root: { textTransform: 'initial' } }}
               onClick={() => {
@@ -757,7 +773,7 @@ function InvItemSections(props: {
                 <Badge
                   key={index}
                   variant='light'
-                  color='gray.5'
+                  color='gray'
                   style={{
                     cursor: 'pointer',
                   }}
@@ -778,6 +794,32 @@ function InvItemSections(props: {
                 </Badge>
               ))}
             </>
+          )}
+        </Group>
+      </Paper>
+    );
+  }
+
+  let materialSection = null;
+  if (isItemWithMaterial(props.invItem.item)) {
+    materialSection = (
+      <Paper shadow='xs' my={5} py={10} px={10} bg='dark.6' radius='md'>
+        <Group gap={5}>
+          {materialType && (
+            <Badge
+              size='lg'
+              variant='light'
+              color='gray'
+              style={{ cursor: materialItem ? 'pointer' : undefined }}
+              styles={{ root: { textTransform: 'initial' } }}
+              onClick={() => {
+                if (materialItem) {
+                  openDrawer({ type: 'item', data: { id: materialItem.id }, extra: { addToHistory: true } });
+                }
+              }}
+            >
+              {toLabel(materialType)} {materialGrade ? `– ${toLabel(materialGrade)}-grade` : ''}
+            </Badge>
           )}
         </Group>
       </Paper>
@@ -1094,6 +1136,7 @@ function InvItemSections(props: {
     <>
       <Stack gap={0}>
         <>{runesSection}</>
+        <>{materialSection}</>
         <>{upgradeSection}</>
         <>{attackAndDamageSection}</>
         <>{rangeAndReloadSection}</>
