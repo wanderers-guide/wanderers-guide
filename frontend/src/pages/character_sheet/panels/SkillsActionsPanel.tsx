@@ -199,10 +199,10 @@ export default function SkillsActionsPanel(props: {
         invItem: invItem,
         leftSection: (
           <Group wrap='nowrap' gap={10} maw={300}>
-            <Text c='gray.6' fz='xs' fs='italic' span>
+            <Text c='gray.5' fz='xs' fs='italic' span>
               {sign(weaponStats.attack_bonus.total[0])}
             </Text>
-            <EllipsisText c='gray.6' fz='xs' fs='italic' span>
+            <EllipsisText c='gray.5' fz='xs' fs='italic' span>
               {weaponStats.damage.dice}
               {weaponStats.damage.die}
               {weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``}{' '}

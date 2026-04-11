@@ -685,10 +685,10 @@ function InvItemOption(props: {
 
           {isItemWeapon(props.invItem.item) && weaponStats && (
             <Group wrap='nowrap' gap={10} maw={300}>
-              <Text c='gray.6' fz='xs' fs='italic' span>
+              <Text c='gray.5' fz='xs' fs='italic' span>
                 {sign(weaponStats.attack_bonus.total[0])}
               </Text>
-              <EllipsisText c='gray.6' fz='xs' fs='italic' span>
+              <EllipsisText c='gray.5' fz='xs' fs='italic' span>
                 {truncate(
                   `${weaponStats.damage.dice}${weaponStats.damage.die}${weaponStats.damage.bonus.total > 0 ? ` + ${weaponStats.damage.bonus.total}` : ``} ${weaponStats.damage.damageType}${parseOtherDamage(weaponStats.damage.other)}${weaponStats.damage.extra ? ` + ${weaponStats.damage.extra}` : ''}`,
                   { length: props.isPhone ? 15 : 45 }
